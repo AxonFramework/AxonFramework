@@ -83,8 +83,8 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
     public void afterPropertiesSet() throws Exception {
         if (localSegment == null) {
             SimpleCommandBus bus = new SimpleCommandBus();
-            if (interceptors != null && !interceptors.isEmpty()) {
-                bus.setHandlerInterceptors(interceptors);
+            if (interceptors != null) {
+                interceptors.forEach(bus::registerHandlerInterceptor);
             }
             localSegment = bus;
         }

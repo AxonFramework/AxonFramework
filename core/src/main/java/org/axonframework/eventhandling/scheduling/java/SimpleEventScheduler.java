@@ -18,15 +18,17 @@ package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +55,7 @@ public class SimpleEventScheduler implements EventScheduler {
 
     private final ScheduledExecutorService executorService;
     private final EventBus eventBus;
-    private final UnitOfWorkFactory unitOfWorkFactory;
+    private final TransactionManager transactionManager;
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
     /**
@@ -64,7 +66,7 @@ public class SimpleEventScheduler implements EventScheduler {
      * @param eventBus        The Event Bus on which Events are to be published
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus) {
-        this(executorService, eventBus, new DefaultUnitOfWorkFactory());
+        this(executorService, eventBus, NoTransactionManager.INSTANCE);
     }
 
     /**
@@ -74,17 +76,17 @@ public class SimpleEventScheduler implements EventScheduler {
      *
      * @param executorService   The backing ScheduledExecutorService
      * @param eventBus          The Event Bus on which Events are to be published
-     * @param unitOfWorkFactory The factory that creates the Unit of Work to manage transactions
+     * @param transactionManager to manage the transaction around Event publication
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus,
-                                UnitOfWorkFactory unitOfWorkFactory) {
+                                TransactionManager transactionManager) {
         Assert.notNull(executorService, () -> "executorService may not be null");
         Assert.notNull(eventBus, () -> "eventBus may not be null");
-        Assert.notNull(unitOfWorkFactory, () -> "unitOfWorkFactory may not be null");
+        Assert.notNull(transactionManager, () -> "transactionManager may not be null");
 
         this.executorService = executorService;
         this.eventBus = eventBus;
-        this.unitOfWorkFactory = unitOfWorkFactory;
+        this.transactionManager = transactionManager;
     }
 
     @Override
@@ -131,7 +133,10 @@ public class SimpleEventScheduler implements EventScheduler {
                 logger.debug("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
             try {
-                UnitOfWork<EventMessage<?>> unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+                UnitOfWork<EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(null);
+                Transaction transaction = transactionManager.startTransaction();
+                unitOfWork.onCommit(u -> transaction.commit());
+                unitOfWork.onRollback(u -> transaction.rollback());
                 unitOfWork.execute(() -> eventBus.publish(eventMessage));
             } finally {
                 tokens.remove(tokenId);
