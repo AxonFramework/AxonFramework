@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-amqp</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>optional</scope>
         </dependency>
         <dependency>

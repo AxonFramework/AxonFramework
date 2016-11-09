@@ -130,7 +130,6 @@ public class AxonAutoConfiguration {
         private AMQPProperties amqpProperties;
 
         @ConditionalOnProperty("axon.amqp.exchange")
-        @ConditionalOnMissingBean
         @Bean(initMethod = "start", destroyMethod = "shutDown")
         public SpringAMQPPublisher amqpBridge(EventBus eventBus, ConnectionFactory connectionFactory) {
             SpringAMQPPublisher publisher = new SpringAMQPPublisher(eventBus);
