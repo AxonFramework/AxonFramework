@@ -93,7 +93,7 @@
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-rabbit</artifactId>
             <!-- other version than the axon-amqp dependency, do validate compatibility -->
-            <version>1.3.5.RELEASE</version>
+            <version>1.6.2.RELEASE</version>
             <optional>true</optional>
         </dependency>
         <dependency>

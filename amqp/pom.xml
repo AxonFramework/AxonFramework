@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-rabbit</artifactId>
-            <version>1.6.1.RELEASE</version>
+            <version>1.6.2.RELEASE</version>
             <optional>true</optional>
         </dependency>
         <dependency>
