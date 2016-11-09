@@ -13,8 +13,20 @@
     <version>3.0-SNAPSHOT</version>
 
     <organization>
+        <name>Trifork B.V.</name>
         <url>http://www.axonframework.org</url>
     </organization>
+
+    <licenses>
+        <license>
+            <name>Apache 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <issueManagement>
+        <system>YouTrack</system>
+        <url>http://issues.axonframework.org</url>
+    </issueManagement>
 
     <dependencies>
         <dependency>

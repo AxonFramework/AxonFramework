@@ -149,6 +149,21 @@
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
             <version>1.4.9</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>xpp3</groupId>
+                    <artifactId>xpp3_min</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xmlpull</groupId>
+                    <artifactId>xmlpull</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>xpp3</groupId>
+            <artifactId>xpp3</artifactId>
+            <version>1.1.4c</version>
         </dependency>
         <dependency>
             <groupId>dom4j</groupId>
