@@ -32,6 +32,7 @@
         <module>amqp</module>
         <module>quickstart</module>
         <module>metrics</module>
+        <module>spring-boot-starter</module>
     </modules>
     <packaging>pom</packaging>
 
