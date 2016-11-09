@@ -1,6 +1,10 @@
 package org.axonframework.boot;
 
 
+import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
+import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.spring.SpringAMQPPublisher;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -129,12 +133,37 @@ public class AxonAutoConfiguration {
         @Autowired
         private AMQPProperties amqpProperties;
 
+        @ConditionalOnMissingBean
+        @Bean
+        public RoutingKeyResolver routingKeyResolver() {
+            return new PackageRoutingKeyResolver();
+        }
+
+        @ConditionalOnMissingBean
+        @Bean
+        public AMQPMessageConverter amqpMessageConverter(Serializer serializer, RoutingKeyResolver routingKeyResolver) {
+            return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
+        }
+
         @ConditionalOnProperty("axon.amqp.exchange")
         @Bean(initMethod = "start", destroyMethod = "shutDown")
-        public SpringAMQPPublisher amqpBridge(EventBus eventBus, ConnectionFactory connectionFactory) {
+        public SpringAMQPPublisher amqpBridge(EventBus eventBus, ConnectionFactory connectionFactory,
+                                              AMQPMessageConverter amqpMessageConverter) {
             SpringAMQPPublisher publisher = new SpringAMQPPublisher(eventBus);
             publisher.setExchangeName(amqpProperties.getExchange());
             publisher.setConnectionFactory(connectionFactory);
+            publisher.setMessageConverter(amqpMessageConverter);
+            switch (amqpProperties.getTransactionMode()) {
+
+                case TRANSACTIONAL:
+                    publisher.setTransactional(true);
+                    break;
+                case PUBLISHER_ACK:
+                    publisher.setWaitForPublisherAck(true);
+                    break;
+                case NONE:
+                    break;
+            }
             return publisher;
         }
     }
