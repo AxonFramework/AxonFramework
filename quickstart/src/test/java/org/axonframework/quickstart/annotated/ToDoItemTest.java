@@ -20,9 +20,10 @@ import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.axonframework.test.FixtureConfiguration;
-import org.axonframework.test.Fixtures;
-import org.junit.*;
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Jettro Coenradie
@@ -33,7 +34,7 @@ public class ToDoItemTest {
 
     @Before
     public void setUp() throws Exception {
-        fixture = Fixtures.newGivenWhenThenFixture(ToDoItem.class);
+        fixture = new AggregateTestFixture<>(ToDoItem.class);
     }
 
     @Test

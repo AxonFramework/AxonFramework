@@ -17,7 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.ResultValidator;
+import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
 

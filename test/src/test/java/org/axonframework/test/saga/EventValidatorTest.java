@@ -2,7 +2,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.MyOtherEvent;
+import org.axonframework.test.aggregate.MyOtherEvent;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.junit.Before;
