@@ -75,7 +75,7 @@ public class RunBasicCommandHandlingWithMetrics {
 
         // Create a message monitor that will monitor the messages going through the event processor
         MessageMonitor<EventMessage<?>> eventProcessorMessageMonitor =
-                MessageMonitorFactory.createEventProcessorMonitor(mr);
+                MessageMonitorFactory.createEventProcessorMonitor("eventProcessing", mr);
 
         // We register an event listener to see which events are created
         new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out

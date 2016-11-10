@@ -32,19 +32,15 @@ import java.util.concurrent.TimeUnit;
 public class MessageMonitorFactory {
 
     /**
-     * Private constructor to prevent instantiation.
-     */
-    private MessageMonitorFactory() {
-    }
-
-    /**
-     * Factory method to create a new {@link MessageMonitor} to monitor the behavior of EventProcessors. The monitor
-     * will be registered with the provided {@code globalRegistry} under 'eventProcessing'.
+     * Factory method to create a new {@link MessageMonitor} to monitor the behavior of an Event Processor with given
+     * {@code eventProcessorName}. The monitor will be registered with the provided {@code globalRegistry}
+     * under {@code eventProcessorName}.
      *
-     * @param globalRegistry global monitor registry to which the monitor should be added
+     * @param eventProcessorName the name of the Event Processor
+     * @param globalRegistry     global monitor registry to which the monitor should be added
      * @return the new MessageMonitor to monitor the behavior of EventProcessors
      */
-    public static MessageMonitor<EventMessage<?>> createEventProcessorMonitor(MetricRegistry globalRegistry) {
+    public static MessageMonitor<EventMessage<?>> createEventProcessorMonitor(String eventProcessorName, MetricRegistry globalRegistry) {
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
         EventProcessorLatencyMonitor eventProcessorLatencyMonitor = new EventProcessorLatencyMonitor();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
@@ -54,7 +50,7 @@ public class MessageMonitorFactory {
         eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
         eventProcessingRegistry.register("latency", eventProcessorLatencyMonitor);
         eventProcessingRegistry.register("messageCounter", messageCountingMonitor);
-        globalRegistry.register("eventProcessing", eventProcessingRegistry);
+        globalRegistry.register(eventProcessorName, eventProcessingRegistry);
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(messageTimerMonitor);
@@ -102,6 +98,12 @@ public class MessageMonitorFactory {
         globalRegistry.register("commandHandling", commandHandlingRegistry);
 
         return new MultiMessageMonitor<>(messageTimerMonitor, capacityMonitor, messageCountingMonitor);
+    }
+
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private MessageMonitorFactory() {
     }
 }
 
