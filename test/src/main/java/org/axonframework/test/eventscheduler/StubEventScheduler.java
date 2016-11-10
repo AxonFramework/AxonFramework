@@ -133,8 +133,9 @@ public class StubEventScheduler implements EventScheduler {
      *
      * @param newDateTime   The time to advance the "current time" of the scheduler to
      * @param eventConsumer The function to invoke for each event to trigger
+     * @throws Exception when an exception is thrown by the consumer handling events
      */
-    public void advanceTime(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
+    public void advanceTimeTo(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             eventConsumer.accept(advanceToNextTrigger());
         }
@@ -151,7 +152,7 @@ public class StubEventScheduler implements EventScheduler {
      * @param eventConsumer The function to invoke for each event to trigger
      * @throws Exception when an exception is thrown by the consumer handling events
      */
-    public void advanceTime(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
-        advanceTime(currentDateTime.plus(duration), eventConsumer);
+    public void advanceTimeBy(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
+        advanceTimeTo(currentDateTime.plus(duration), eventConsumer);
     }
 }

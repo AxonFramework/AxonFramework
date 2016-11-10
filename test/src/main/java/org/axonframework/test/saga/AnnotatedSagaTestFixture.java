@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
@@ -90,15 +91,24 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
     }
 
+    /**
+     * Handles the given {@code event} in the scope of a Unit of Work.
+     *
+     * @param event The event message to handle
+     * @throws Exception when a handlers throws an exception
+     */
     protected void handleInSaga(EventMessage<?> event) throws Exception {
         DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> sagaManager.handle(event));
     }
 
     @Override
-    public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) throws Exception {
+    public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(elapsedTime, this::handleInSaga);
+            eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
+        } catch (Exception e) {
+            throw new FixtureExecutionException("Exception occurred while trying to advance time " +
+                                                        "and handle scheduled events", e);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -106,10 +116,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     @Override
-    public FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) throws Exception {
+    public FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(newDateTime, this::handleInSaga);
+            eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
+        } catch (Exception e) {
+            throw new FixtureExecutionException("Exception occurred while trying to advance time " +
+                                                        "and handle scheduled events", e);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -151,13 +164,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     @Override
     public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
-        eventScheduler.advanceTime(elapsedTime, this::handleInSaga);
+        eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) throws Exception {
-        eventScheduler.advanceTime(newDateTime, this::handleInSaga);
+        eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
         return this;
     }
 
@@ -174,10 +187,12 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     @Override
-    public FixtureExecutionResult whenPublishingA(Object event) throws Exception {
+    public FixtureExecutionResult whenPublishingA(Object event) {
         try {
             fixtureExecutionResult.startRecording();
             handleInSaga(timeCorrectedEventMessage(event));
+        } catch (Exception e) {
+            throw new FixtureExecutionException("Exception occurred while handling an event", e);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
