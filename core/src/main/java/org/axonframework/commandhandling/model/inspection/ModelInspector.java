@@ -121,7 +121,7 @@ public class ModelInspector<T> implements AggregateModel<T> {
 
     private void inspectAggregateType() {
         aggregateType = AnnotationUtils.findAnnotationAttributes(inspectedType, AggregateRoot.class)
-                .map(map -> (String) map.get("type")).filter(String::isEmpty).orElse(inspectedType.getSimpleName());
+                .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
     }
 
     private void inspectFields() {

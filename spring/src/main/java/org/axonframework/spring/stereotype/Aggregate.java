@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.stereotype;
 
+import org.axonframework.commandhandling.model.AggregateRoot;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +32,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Component
 @Scope("prototype")
+@AggregateRoot
 public @interface Aggregate {
 
     /**
@@ -38,4 +40,10 @@ public @interface Aggregate {
      * name of the repository will be based on the simple name of the aggregate's class.
      */
     String repository() default "";
+
+    /**
+     * Get the String representation of the aggregate's type. Optional. This defaults to the simple name of the
+     * annotated class.
+     */
+    String type() default "";
 }

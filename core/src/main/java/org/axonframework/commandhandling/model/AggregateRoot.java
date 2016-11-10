@@ -21,6 +21,9 @@ import java.lang.annotation.*;
 /**
  * Annotation placed on types that should be treated as the root of an aggregate. Such types will be the entry point for
  * command messages that target the aggregate.
+ * <p>
+ * The use of this annotation is not mandatory for the framework. It allows setting an explicit type name for the
+ * Aggregate. Other than that, it's probably useful for developers.
  */
 @Documented
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
