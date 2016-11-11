@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.messaging.adapter;
+package org.axonframework.spring.messaging;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -32,19 +31,17 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class EventListeningMessageChannelAdapterTest {
+public class OutboundEventMessageChannelAdapterTest {
 
-    private EventListeningMessageChannelAdapter testSubject;
+    private OutboundEventMessageChannelAdapter testSubject;
     private EventBus mockEventBus;
     private MessageChannel mockChannel;
-    private EventFilter mockFilter;
 
     @Before
     public void setUp() {
         mockEventBus = mock(EventBus.class);
         mockChannel = mock(MessageChannel.class);
-        mockFilter = mock(EventFilter.class);
-        testSubject = new EventListeningMessageChannelAdapter(mockEventBus, mockChannel);
+        testSubject = new OutboundEventMessageChannelAdapter(mockEventBus, mockChannel);
     }
 
     @Test
@@ -65,8 +62,7 @@ public class EventListeningMessageChannelAdapterTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testFilterBlocksEvents() throws Exception {
-        when(mockFilter.accept(isA(Class.class))).thenReturn(false);
-        testSubject = new EventListeningMessageChannelAdapter(mockEventBus, mockChannel, mockFilter);
+        testSubject = new OutboundEventMessageChannelAdapter(mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class));
         testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));
     }

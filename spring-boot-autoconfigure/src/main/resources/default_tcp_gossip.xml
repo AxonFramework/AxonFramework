@@ -1,0 +1,16 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="urn:org:jgroups"
+        xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd">
+    <TCP bind_addr="${jgroups.bind_addr}" bind_port="${jgroups.bind_port}"
+         sock_conn_timeout="300"/>
+    <TCPGOSSIP initial_hosts="${jgroups.tunnel.gossip_router_hosts}"/>
+    <MERGE3/>
+    <FD/>
+    <VERIFY_SUSPECT/>
+    <pbcast.NAKACK2 use_mcast_xmit="false"/>
+    <UNICAST3/>
+    <pbcast.STABLE/>
+    <pbcast.GMS/>
+    <MFC/>
+    <FRAG2/>
+</config>

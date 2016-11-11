@@ -46,7 +46,7 @@ public class RunDistributedCommandBusOverJGroupsWithSpring {
         System.setProperty("loadFactor", loadFactor.toString());
 
         // Start the GossipRouter if it is not already running
-        GossipRouter gossipRouter = new GossipRouter();
+        GossipRouter gossipRouter = new GossipRouter("localhost", 12001);
         try {
             gossipRouter.start();
         } catch (BindException e) {

@@ -12,5 +12,4 @@ cache:
   - $HOME/.m2
 
 script:
-  - java -version
   - mvn clean verify

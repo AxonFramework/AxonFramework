@@ -24,6 +24,7 @@
     <modules>
         <module>core</module>
         <module>spring</module>
+        <module>spring-boot-autoconfigure</module>
         <module>test</module>
         <module>distributed-commandbus</module>
         <module>integrationtests</module>
@@ -31,6 +32,8 @@
         <module>amqp</module>
         <module>quickstart</module>
         <module>metrics</module>
+        <module>spring-boot-starter</module>
+        <module>spring-boot-starter-jgroups</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -93,7 +96,7 @@
     <properties>
         <slf4j.version>1.7.5</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
-        <spring.version>4.3.2.RELEASE</spring.version>
+        <spring.version>4.3.3.RELEASE</spring.version>
         <spring.boot.version>1.4.1.RELEASE</spring.boot.version>
         <rabbitmq.version>3.6.5</rabbitmq.version>
         <felix.bundle.plugin.version>2.4.0</felix.bundle.plugin.version>
@@ -236,7 +239,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.18.2-GA</version>
+                <version>3.20.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>

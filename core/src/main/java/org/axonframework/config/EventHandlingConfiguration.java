@@ -16,11 +16,13 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
 import java.util.*;
@@ -53,17 +55,28 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * At a minimum, the Event Handler beans need to be registered before this component is useful.
      */
     public EventHandlingConfiguration() {
-        byDefaultAssignTo(o -> o.getClass().getPackage().getName());
+        byDefaultAssignTo(o -> {
+            Class<?> handlerType = o.getClass();
+            Optional<Map<String, Object>> annAttr = AnnotationUtils.findAnnotationAttributes(handlerType, ProcessingGroup.class);
+            return annAttr
+                    .map(attr -> (String) attr.get("processingGroup"))
+                    .orElseGet(() -> handlerType.getPackage().getName());
+        });
     }
 
     private SubscribingEventProcessor defaultEventProcessor(Configuration conf, String name, List<?> eh) {
+        return subscribingEventProcessor(conf, name, eh, Configuration::eventBus);
+    }
+
+    private SubscribingEventProcessor subscribingEventProcessor(Configuration conf, String name, List<?> eh,
+                                                                Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
-                                                                                            new SimpleEventHandlerInvoker(eh,
-                                                                                                                          conf.getComponent(
+                                                                            new SimpleEventHandlerInvoker(eh,
+                                                                                                          conf.getComponent(
                                                                                                                                   ListenerErrorHandler.class,
                                                                                                                                   LoggingListenerErrorHandler::new)),
-                                                                                            conf.eventBus(),
-                                                                                            conf.messageMonitor(SubscribingEventProcessor.class,
+                                                                            messageSource.apply(conf),
+                                                                            conf.messageMonitor(SubscribingEventProcessor.class,
                                                                                                                 name));
         processor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
         return processor;
@@ -247,6 +260,22 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     @Override
     public void shutdown() {
         initializedProcessors.forEach(EventProcessor::shutDown);
+    }
+
+    /**
+     * Register a subscribing processor with given {@code name} that subscribed to the given {@code messageSource}.
+     * This allows the use of standard Subscribing Processors that listen to another source than the Event Bus.
+     *
+     * @param name          The name of the Event Processor
+     * @param messageSource The source the processor should read from
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerSubscribingEventProcessor(
+            String name,
+            SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+        return registerEventProcessor(
+                name,
+                (configuration, name1, eh) -> subscribingEventProcessor(configuration, name1, eh, c -> messageSource));
     }
 
     /**

@@ -179,6 +179,7 @@ public class DistributedCommandBus implements CommandBus {
      * @param loadFactor the new load factor of this node
      */
     public void updateLoadFactor(int loadFactor) {
+        this.loadFactor = loadFactor;
         commandRouter.updateMembership(loadFactor, commandFilter.get());
     }
 

@@ -70,7 +70,7 @@ public class JgroupsConnectorTest_Gossip {
         serializer = spy(new XStreamSerializer());
         connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
         connector2 = new JGroupsConnector(mockCommandBus2, channel2, clusterName, serializer, routingStrategy);
-        gossipRouter = new GossipRouter(12001, "127.0.0.1");
+        gossipRouter = new GossipRouter("127.0.0.1", 12001);
     }
 
     @After
