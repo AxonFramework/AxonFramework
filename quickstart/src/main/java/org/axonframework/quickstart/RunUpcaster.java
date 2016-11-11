@@ -29,9 +29,9 @@ import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.upcasting.event.AbstractSingleEventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.serialization.upcasting.event.SingleEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -92,7 +92,7 @@ public class RunUpcaster {
      * This is our upcaster. It converts the XML representation of a ToItemCreatedEvent to a
      * NewToDoItemWithDeadlineCreatedEvent. The latter contains an explicit deadline of the task at hand.
      */
-    public static class ToDoItemUpcaster extends AbstractSingleEventUpcaster {
+    public static class ToDoItemUpcaster extends SingleEventUpcaster {
 
         @Override
         protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {

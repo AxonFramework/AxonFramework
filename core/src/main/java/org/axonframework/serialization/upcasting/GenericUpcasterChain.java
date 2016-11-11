@@ -19,17 +19,30 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
+ * Implementation of an {@link Upcaster} that is formed of a chain of other upcasters which are combined to upcast a
+ * stream of intermediate objects.
+ *
  * @author Rene de Waele
  */
 public class GenericUpcasterChain<T> implements Upcaster<T> {
 
     private final List<? extends Upcaster<T>> upcasters;
 
+    /**
+     * Initializes an upcaster chain from one or more upcasters.
+     *
+     * @param upcasters the upcasters to chain
+     */
     @SafeVarargs
     public GenericUpcasterChain(Upcaster<T>... upcasters) {
         this(Arrays.asList(upcasters));
     }
 
+    /**
+     * Initializes an upcaster chain from the given list of upcasters.
+     *
+     * @param upcasters the upcasters to chain
+     */
     public GenericUpcasterChain(List<? extends Upcaster<T>> upcasters) {
         this.upcasters = new ArrayList<>(upcasters);
     }

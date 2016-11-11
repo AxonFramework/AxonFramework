@@ -21,9 +21,9 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.junit.Test;
 
 import javax.persistence.Id;
@@ -87,6 +87,7 @@ public class ModelInspectorTest {
     public void testFindIdentifier() throws Exception {
         AggregateModel<SomeAnnotatedHandlers> inspector = ModelInspector.inspectAggregate(SomeAnnotatedHandlers.class);
 
+        assertEquals("SomeAnnotatedHandlers", inspector.type());
         assertEquals("id", inspector.getIdentifier(new SomeAnnotatedHandlers()));
         assertEquals("id", inspector.routingKey());
     }
@@ -103,6 +104,7 @@ public class ModelInspectorTest {
     public void testFindIdentifierInSuperClass() throws Exception {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
+        assertEquals("SomeOtherName", inspector.type());
         assertEquals("id", inspector.getIdentifier(new SomeSubclass()));
     }
 
@@ -138,6 +140,7 @@ public class ModelInspectorTest {
         }
     }
 
+    @AggregateRoot(type = "SomeOtherName")
     private static class SomeSubclass extends SomeAnnotatedHandlers {
 
         @AggregateMember

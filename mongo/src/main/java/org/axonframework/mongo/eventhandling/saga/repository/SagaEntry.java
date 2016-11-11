@@ -60,8 +60,10 @@ public class SagaEntry<T> {
      * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
      * saga is not modified by this operation.
      *
-     * @param saga       The saga to store
-     * @param serializer The serialization mechanism to convert the Saga to a byte stream
+     * @param identifier        The identifier of the saga
+     * @param saga              The saga to store
+     * @param associationValues The associations of the saga
+     * @param serializer        The serialization mechanism to convert the Saga to a byte stream
      */
     public SagaEntry(String identifier, T saga, Set<AssociationValue> associationValues, Serializer serializer) {
         this.sagaId = identifier;
@@ -97,10 +99,20 @@ public class SagaEntry<T> {
         return serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class, sagaType, ""));
     }
 
+    /**
+     * Get the identifier of this Saga.
+     *
+     * @return the saga identifier
+     */
     public String getSagaId() {
         return sagaId;
     }
 
+    /**
+     * Get a set of all the Saga's associations.
+     *
+     * @return association values of this Saga
+     */
     public Set<AssociationValue> getAssociationValues() {
         return associationValues;
     }
@@ -111,9 +123,7 @@ public class SagaEntry<T> {
      * @return the Mongo Document representing the Saga provided in this entry
      */
     public Document asDocument() {
-        return new Document(SAGA_TYPE, sagaType)
-                .append(SAGA_IDENTIFIER, sagaId)
-                .append(SERIALIZED_SAGA, serializedSaga)
+        return new Document(SAGA_TYPE, sagaType).append(SAGA_IDENTIFIER, sagaId).append(SERIALIZED_SAGA, serializedSaga)
                 .append(ASSOCIATIONS, toDBList(associationValues));
     }
 

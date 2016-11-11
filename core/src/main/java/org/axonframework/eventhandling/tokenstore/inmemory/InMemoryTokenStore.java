@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Implementation of a {@link TokenStore} that stores tracking tokens in memory. This implementation is thread-safe.
+ *
  * @author Rene de Waele
  */
 public class InMemoryTokenStore implements TokenStore {

@@ -16,10 +16,11 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.test.MyEvent;
-import org.axonframework.test.MyOtherEvent;
+import org.axonframework.test.aggregate.MyEvent;
+import org.axonframework.test.aggregate.MyOtherEvent;
 import org.hamcrest.StringDescription;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.*;
 
@@ -76,7 +77,7 @@ public class EqualFieldsMatcherTest {
         testSubject.matches(expectedEvent);
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
-        assertEquals("org.axonframework.test.MyEvent", description.toString());
+        assertEquals("org.axonframework.test.aggregate.MyEvent", description.toString());
     }
 
     @Test
@@ -84,7 +85,7 @@ public class EqualFieldsMatcherTest {
         testSubject.matches(new MyOtherEvent());
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
-        assertEquals("org.axonframework.test.MyEvent", description.toString());
+        assertEquals("org.axonframework.test.aggregate.MyEvent", description.toString());
     }
 
     @Test
@@ -92,6 +93,6 @@ public class EqualFieldsMatcherTest {
         testSubject.matches(new MyEvent(aggregateId, 2));
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
-        assertEquals("org.axonframework.test.MyEvent (failed on field 'someValue')", description.toString());
+        assertEquals("org.axonframework.test.aggregate.MyEvent (failed on field 'someValue')", description.toString());
     }
 }

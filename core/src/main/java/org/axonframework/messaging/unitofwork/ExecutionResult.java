@@ -26,6 +26,11 @@ public class ExecutionResult {
 
     private final Object result;
 
+    /**
+     * Initializes an {@link ExecutionResult} from the given {@code object}.
+     *
+     * @param result the result of an executed task
+     */
     public ExecutionResult(Object result) {
         this.result = result;
     }

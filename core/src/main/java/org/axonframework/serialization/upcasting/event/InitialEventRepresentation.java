@@ -29,6 +29,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
+ * Implementation of an {@link IntermediateEventRepresentation} that contains the original serialized payload and
+ * metadata before these have been upcast. Usually there is one {@link InitialEventRepresentation} per event entry
+ * from the data store.
+ *
  * @author Rene de Waele
  */
 public class InitialEventRepresentation implements IntermediateEventRepresentation {
@@ -47,6 +51,15 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
 
     private final Serializer serializer;
 
+    /**
+     * Initializes an {@link InitialEventRepresentation} from the given {@code eventData}. The provided {@code
+     * serializer} is used to deserialize metadata if the metadata is required during upcasting. The serializer also
+     * provides the {@link ConverterFactory} used to convert serialized data from one format to another if required
+     * by any upcaster.
+     *
+     * @param eventData  the serialized event data
+     * @param serializer the serializer to deserialize metadata and provide the converter factory
+     */
     @SuppressWarnings("unchecked")
     public InitialEventRepresentation(EventData<?> eventData, Serializer serializer) {
         outputType = eventData.getPayload().getType();

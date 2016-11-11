@@ -17,6 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Implementation of a {@link ListenerErrorHandler} that logs exceptions as errors but otherwise does nothing to
+ * prevent event handling from continuing.
+ *
  * @author Rene de Waele
  */
 public class LoggingListenerErrorHandler implements ListenerErrorHandler {

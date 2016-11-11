@@ -43,8 +43,7 @@ public class AxonAssertionError extends AssertionError {
     private StackTraceElement[] cleanStackTrace(StackTraceElement[] original) {
         int ignoreCount = 0;
         for (StackTraceElement element : original) {
-            if (element.getClassName().equals(Reporter.class.getName())
-                    || element.getClassName().equals(GivenWhenThenTestFixture.class.getName())) {
+            if (element.getClassName().startsWith("org.axonframework.test")) {
                 ignoreCount++;
             } else {
                 break;

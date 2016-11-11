@@ -24,9 +24,6 @@ public class MySqlEventTableFactory extends AbstractEventTableFactory {
      */
     public static final MySqlEventTableFactory INSTANCE = new MySqlEventTableFactory();
 
-    protected MySqlEventTableFactory() {
-    }
-
     @Override
     protected String idColumnType() {
         return "BIGINT AUTO_INCREMENT";

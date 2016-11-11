@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
- * A endpoint in the network for a command handling service
+ * An endpoint in the network for a command handling service.
  *
  * @param <E> The type of the identifier of this entry in the set of nodes
  */
@@ -33,7 +33,7 @@ public class SimpleMember<E> implements Member {
     /**
      * Create the service member
      *
-     * @param name
+     * @param name           the member name
      * @param endpoint       The object describing the endpoint
      * @param suspectHandler The operation to execute when this member is marked as a suspect
      */
@@ -64,6 +64,11 @@ public class SimpleMember<E> implements Member {
         }
     }
 
+    /**
+     * Returns this Member's endpoint.
+     *
+     * @return the endpoint of this member
+     */
     public E endpoint() {
         return endpoint;
     }
@@ -77,8 +82,7 @@ public class SimpleMember<E> implements Member {
             return false;
         }
         SimpleMember<?> that = (SimpleMember<?>) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(endpoint, that.endpoint);
+        return Objects.equals(name, that.name) && Objects.equals(endpoint, that.endpoint);
     }
 
     @Override
@@ -88,9 +92,6 @@ public class SimpleMember<E> implements Member {
 
     @Override
     public String toString() {
-        return "SimpleMember{" +
-                "name=" + name +
-                ", endpoint=" + endpoint +
-                '}';
+        return "SimpleMember{" + "name=" + name + ", endpoint=" + endpoint + '}';
     }
 }

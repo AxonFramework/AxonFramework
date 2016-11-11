@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventUtils;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.mongo.eventsourcing.eventstore.AbstractMongoEventStorageStrategy;
+import org.axonframework.mongo.eventsourcing.eventstore.StorageStrategy;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
 
@@ -30,22 +31,31 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
+ * Implementation of a {@link StorageStrategy} that stores one {@link Document} per {@link EventMessage}.
+ *
  * @author Rene de Waele
  */
 public class DocumentPerEventStorageStrategy extends AbstractMongoEventStorageStrategy {
 
+    /**
+     * Initializes a {@link DocumentPerEventStorageStrategy} with default configuration.
+     */
     public DocumentPerEventStorageStrategy() {
         this(EventEntryConfiguration.getDefault());
     }
 
+    /**
+     * Initializes a {@link DocumentPerEventStorageStrategy} with given {@code eventConfiguration}.
+     *
+     * @param eventConfiguration object that configures the naming of event entry properties
+     */
     public DocumentPerEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
         super(eventConfiguration);
     }
 
     @Override
     protected Stream<Document> createEventDocuments(List<? extends EventMessage<?>> events, Serializer serializer) {
-        return events.stream().map(EventUtils::asDomainEventMessage)
-                .map(event -> new EventEntry(event, serializer))
+        return events.stream().map(EventUtils::asDomainEventMessage).map(event -> new EventEntry(event, serializer))
                 .map(entry -> entry.asDocument(eventConfiguration()));
     }
 

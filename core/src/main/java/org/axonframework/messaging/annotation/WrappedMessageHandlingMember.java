@@ -22,6 +22,12 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Abstract implementation of a {@link MessageHandlingMember} that delegates to a wrapped MessageHandlingMember. Extend
+ * this class to provide additional functionality to the delegate member.
+ *
+ * @param <T> the entity type
+ */
 public abstract class WrappedMessageHandlingMember<T> implements MessageHandlingMember<T> {
 
     private final MessageHandlingMember<T> delegate;

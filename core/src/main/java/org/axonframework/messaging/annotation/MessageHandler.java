@@ -31,7 +31,14 @@ import java.lang.annotation.*;
 @Documented
 public @interface MessageHandler {
 
+    /**
+     * Specifies the type of message that can be handled by the member method. Defaults to any {@link Message}.
+     */
     Class<? extends Message> messageType() default Message.class;
 
+    /**
+     * Specifies the type of message payload that can be handled by the member method. The payload of the message should
+     * be assignable to this type. Defaults to any {@link Object}.
+     */
     Class<?> payloadType() default Object.class;
 }
