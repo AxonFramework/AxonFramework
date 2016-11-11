@@ -52,7 +52,7 @@ public class RunDistributedCommandBusOverJGroups {
         Integer loadFactor = determineLoadFactor();
 
         // Start the GossipRouter if it is not already running
-        GossipRouter gossipRouter = new GossipRouter();
+        GossipRouter gossipRouter = new GossipRouter("localhost", 12001);
         try {
             gossipRouter.start();
         } catch (BindException e) {
