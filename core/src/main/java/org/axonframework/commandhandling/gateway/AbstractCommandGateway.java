@@ -108,4 +108,13 @@ public abstract class AbstractCommandGateway {
         }
         return message;
     }
+
+    /**
+     * Returns the CommandBus used by this gateway. Should be used to monitoring or testing.
+     *
+     * @return The CommandBus used by this gateway
+     */
+    public CommandBus getCommandBus() {
+        return commandBus;
+    }
 }

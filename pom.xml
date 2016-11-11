@@ -33,6 +33,7 @@
         <module>quickstart</module>
         <module>metrics</module>
         <module>spring-boot-starter</module>
+        <module>spring-boot-starter-jgroups</module>
     </modules>
     <packaging>pom</packaging>
 

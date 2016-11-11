@@ -8,8 +8,13 @@ import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.spring.SpringAMQPPublisher;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
@@ -21,23 +26,33 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.config.EnableAxon;
 import org.axonframework.spring.config.EventHandlingConfigurer;
 import org.axonframework.spring.config.SpringAxonAutoConfigurer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.jgroups.JChannel;
+import org.jgroups.stack.GossipRouter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.persistence.EntityManagerFactory;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Allard Buijze
@@ -78,9 +93,23 @@ public class AxonAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(PlatformTransactionManager.class)
-    public TransactionManager getTransactionManager(PlatformTransactionManager txManager) {
+    public TransactionManager getSpringTransactionManager(PlatformTransactionManager txManager) {
         return new SpringTransactionManager(txManager);
     }
+
+    @Bean
+    @ConditionalOnMissingBean({TransactionManager.class, PlatformTransactionManager.class})
+    public TransactionManager getNoTransactionManager() {
+        return NoTransactionManager.INSTANCE;
+    }
+
+    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class})
+    @Qualifier("localSegment")
+    @Bean
+    public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
+        return new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
+    }
+
 
     @ConditionalOnMissingClass("javax.persistence.EntityManager")
     @Configuration
@@ -103,13 +132,6 @@ public class AxonAutoConfiguration {
         @Bean
         public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider) {
             return new JpaEventStorageEngine(entityManagerProvider);
-        }
-
-        @ConditionalOnBean(PlatformTransactionManager.class)
-        @ConditionalOnMissingBean
-        @Bean
-        public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
-            return new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         }
 
         @ConditionalOnMissingBean
@@ -167,4 +189,193 @@ public class AxonAutoConfiguration {
             return publisher;
         }
     }
+
+    @ConditionalOnClass({JGroupsConnector.class, JChannel.class})
+    @EnableConfigurationProperties(JGroupsProperties.class)
+    @ConditionalOnProperty("axon.distributed.jgroups.enabled")
+    @AutoConfigureAfter(JpaConfiguration.class)
+    @Configuration
+    public static class JGroupsConfiguration {
+
+        private static final Logger logger = LoggerFactory.getLogger(JGroupsConfiguration.class);
+        @Autowired
+        private JGroupsProperties jGroupsProperties;
+
+        @ConditionalOnProperty("axon.distributed.jgroups.gossip.autoStart")
+        @Bean(destroyMethod = "stop")
+        public GossipRouter gossipRouter() {
+            Matcher matcher = Pattern.compile("([^[\\[]]*)\\[(\\d*)\\]").matcher(jGroupsProperties.getGossip().getHosts());
+            if (matcher.find()) {
+
+                GossipRouter gossipRouter = new GossipRouter(matcher.group(1),
+                                                             Integer.parseInt(matcher.group(2)));
+                try {
+                    gossipRouter.start();
+                } catch (Exception e) {
+                    logger.warn("Unable to autostart start embedded Gossip server: {}", e.getMessage());
+                }
+                return gossipRouter;
+            } else {
+                logger.error("Wrong hosts pattern, cannot start embedded Gossip Router: " + jGroupsProperties.getGossip().getHosts());
+            }
+            return null;
+        }
+
+        @ConditionalOnMissingBean
+        @Primary
+        @Bean
+        public DistributedCommandBus distributedCommandBus(CommandRouter router, CommandBusConnector connector) {
+            DistributedCommandBus commandBus = new DistributedCommandBus(router, connector);
+            commandBus.updateLoadFactor(jGroupsProperties.getLoadFactor());
+            return commandBus;
+        }
+
+        @ConditionalOnMissingBean({CommandRouter.class, CommandBusConnector.class})
+        @Bean
+        public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
+                                                                       @Qualifier("localSegment")
+                                                                               CommandBus localSegment) {
+
+            System.setProperty("jgroups.tunnel.gossip_router_hosts", jGroupsProperties.getGossip().getHosts());
+            System.setProperty("jgroups.bind_addr", String.valueOf(jGroupsProperties.getBindAddr()));
+            System.setProperty("jgroups.bind_port", String.valueOf(jGroupsProperties.getBindPort()));
+
+            JGroupsConnectorFactoryBean jGroupsConnectorFactoryBean = new JGroupsConnectorFactoryBean();
+            jGroupsConnectorFactoryBean.setClusterName(jGroupsProperties.getClusterName());
+            jGroupsConnectorFactoryBean.setLocalSegment(localSegment);
+            jGroupsConnectorFactoryBean.setSerializer(serializer);
+            jGroupsConnectorFactoryBean.setConfiguration(jGroupsProperties.getConfigurationFile());
+            return jGroupsConnectorFactoryBean;
+        }
+    }
+
+    @ConfigurationProperties(prefix = "axon.distributed.jgroups")
+    public static class JGroupsProperties {
+
+        private Gossip gossip;
+
+        /**
+         * Enables JGroups configuration for this application
+         */
+        private boolean enabled = false;
+
+        /**
+         * The name of the JGroups cluster to connect to. Defaults to "Axon".
+         */
+        private String clusterName = "Axon";
+
+        /**
+         * The JGroups configuration file to use. Defaults to a TCP Gossip based configuration
+         */
+        private String configurationFile = "default_tcp_gossip.xml";
+
+        /**
+         * The address of the network interface to bind JGroups to. Defaults to a global IP address of this node.
+         */
+        private String bindAddr = "GLOBAL";
+
+        /**
+         * Sets the initial port to bind the JGroups connection to. If this port is taken, JGroups will find the next
+         * available port.
+         */
+        private String bindPort = "7800";
+
+        /**
+         * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will receive
+         * compared to other nodes in the cluster. Defaults to 100.
+         */
+        private int loadFactor = 100;
+
+        public Gossip getGossip() {
+            return gossip;
+        }
+
+        public void setGossip(Gossip gossip) {
+            this.gossip = gossip;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getClusterName() {
+            return clusterName;
+        }
+
+        public void setClusterName(String clusterName) {
+            this.clusterName = clusterName;
+        }
+
+        public String getConfigurationFile() {
+            return configurationFile;
+        }
+
+        public void setConfigurationFile(String configurationFile) {
+            this.configurationFile = configurationFile;
+        }
+
+        public String getBindAddr() {
+            return bindAddr;
+        }
+
+        public void setBindAddr(String bindAddr) {
+            this.bindAddr = bindAddr;
+        }
+
+        public String getBindPort() {
+            return bindPort;
+        }
+
+        public void setBindPort(String bindPort) {
+            this.bindPort = bindPort;
+        }
+
+        public int getLoadFactor() {
+            return loadFactor;
+        }
+
+        public void setLoadFactor(int loadFactor) {
+            this.loadFactor = loadFactor;
+        }
+
+        public static class Gossip {
+
+            /**
+             * Whether to automatically attempt to start a Gossip Routers. The host and port of the Gossip server are
+             * taken from the first define host in 'hosts'.
+             */
+            private boolean autoStart = false;
+
+            /**
+             * Defines the hosts of the Gossip Routers to connect to, in the form of host[port],...
+             * <p>
+             * If autoStart is set to {@code true}, the first host and port are used as bind address and bind port
+             * of the Gossip server to start.
+             * <p>
+             * Defaults to localhost[12001].
+             */
+            private String hosts = "localhost[12001]";
+
+            public boolean isAutoStart() {
+                return autoStart;
+            }
+
+            public void setAutoStart(boolean autoStart) {
+                this.autoStart = autoStart;
+            }
+
+            public String getHosts() {
+                return hosts;
+            }
+
+            public void setHosts(String hosts) {
+                this.hosts = hosts;
+            }
+        }
+    }
+
 }
