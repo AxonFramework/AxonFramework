@@ -17,7 +17,6 @@
 package org.axonframework.quickstart;
 
 import com.codahale.metrics.ConsoleReporter;
-import com.codahale.metrics.MetricRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -32,7 +31,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.metrics.MessageMonitorFactory;
+import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
@@ -52,9 +51,8 @@ public class RunBasicCommandHandlingWithMetrics {
 
     public static void main(String[] args) throws InterruptedException {
         // Create a message message monitor that will monitor the messages going through the commandbus
-        MetricRegistry mr = new MetricRegistry();
-        MessageMonitor<CommandMessage<?>> commandBusMessageMonitor =
-                MessageMonitorFactory.createCommandBusMonitor(mr);
+        GlobalMetricRegistry registry = new GlobalMetricRegistry();
+        MessageMonitor<CommandMessage<?>> commandBusMessageMonitor = registry.registerCommandBus("commandBus");
 
         // let's start with the Command Bus
         CommandBus commandBus = new SimpleCommandBus(NoTransactionManager.INSTANCE, commandBusMessageMonitor);
@@ -63,7 +61,7 @@ public class RunBasicCommandHandlingWithMetrics {
         CommandGateway commandGateway = new DefaultCommandGateway(commandBus);
 
         // we'll store Events in memory
-        MessageMonitor<EventMessage<?>> eventBusMessageMonitor = MessageMonitorFactory.createEventBusMonitor(mr);
+        MessageMonitor<EventMessage<?>> eventBusMessageMonitor = registry.registerEventBus("eventBus");
         EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine(), eventBusMessageMonitor);
 
         // we need to configure the repository
@@ -74,8 +72,7 @@ public class RunBasicCommandHandlingWithMetrics {
         commandBus.subscribe(MarkCompletedCommand.class.getName(), new MarkCompletedCommandHandler(repository));
 
         // Create a message monitor that will monitor the messages going through the event processor
-        MessageMonitor<EventMessage<?>> eventProcessorMessageMonitor =
-                MessageMonitorFactory.createEventProcessorMonitor("eventProcessing", mr);
+        MessageMonitor<EventMessage<?>> eventProcessorMessageMonitor = registry.registerEventProcessor("eventProcessing");
 
         // We register an event listener to see which events are created
         new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out
@@ -85,7 +82,7 @@ public class RunBasicCommandHandlingWithMetrics {
         CommandGenerator.sendCommands(commandGateway);
 
         // Print the collected metrics
-        ConsoleReporter reporter = ConsoleReporter.forRegistry(mr).convertRatesTo(TimeUnit.SECONDS)
+        ConsoleReporter reporter = ConsoleReporter.forRegistry(registry.getRegistry()).convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS).build();
         reporter.report();
     }
