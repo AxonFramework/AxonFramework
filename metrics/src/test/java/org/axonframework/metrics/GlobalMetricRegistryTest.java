@@ -25,8 +25,8 @@ public class GlobalMetricRegistryTest {
 
     @Test
     public void createEventProcessorMonitor() throws Exception {
-        MessageMonitor<EventMessage<?>> monitor1 = subject.registerEventProcessor("test1");
-        MessageMonitor<EventMessage<?>> monitor2 = subject.registerEventProcessor("test2");
+        MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor("test1");
+        MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor("test2");
 
         monitor1.onMessageIngested(asEventMessage("test")).reportSuccess();
         monitor2.onMessageIngested(asEventMessage("test")).reportSuccess();

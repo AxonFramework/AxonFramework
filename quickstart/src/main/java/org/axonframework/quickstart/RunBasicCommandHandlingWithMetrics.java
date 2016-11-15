@@ -72,7 +72,7 @@ public class RunBasicCommandHandlingWithMetrics {
         commandBus.subscribe(MarkCompletedCommand.class.getName(), new MarkCompletedCommandHandler(repository));
 
         // Create a message monitor that will monitor the messages going through the event processor
-        MessageMonitor<EventMessage<?>> eventProcessorMessageMonitor = registry.registerEventProcessor("eventProcessing");
+        MessageMonitor<? super EventMessage<?>> eventProcessorMessageMonitor = registry.registerEventProcessor("eventProcessing");
 
         // We register an event listener to see which events are created
         new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out
