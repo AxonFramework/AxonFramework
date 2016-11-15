@@ -1,5 +1,6 @@
 package org.axonframework.metrics;
 
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import org.axonframework.messaging.Message;
@@ -31,22 +32,23 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     private Map<Class<?>, MessageMonitor<Message<?>>> payloadTypeMonitors;
 
     private final MetricRegistry metricRegistry;
-    private final String groupName;
+    private final String metricNamePrepend;
 
     /**
-     * Create a PayloadTypeMessageMonitorWrapper which builds monitors based on the given monitorClass,
-     * registers them to the given metricRegistry and prepend the metric names with the given groupName.
+     * Create a PayloadTypeMessageMonitorWrapper which builds monitors based on the given {@code monitorClass},
+     * registers them to the given {@code metricRegistry} and prepend the metric names with the given
+     * {@code metricNamePrepend}.
      *
      * @param monitorClass the MessageMonitor Class used to instantiate a monitor per payload type
      * @param metricRegistry the MetricRegistry where newly created monitors will be registered to
-     * @param groupName a String used as a prepend for the metric name given upon registration to the MetricRegistry
+     * @param metricNamePrepend a String used as a prepend for the metric metricNamePrepend given upon registration to the MetricRegistry
      */
-    public PayloadTypeMessageMonitorWrapper(Class<T> monitorClass, MetricRegistry metricRegistry, String groupName) {
+    public PayloadTypeMessageMonitorWrapper(Class<T> monitorClass, MetricRegistry metricRegistry, String metricNamePrepend) {
         this.monitorClass = monitorClass;
         this.payloadTypeMonitors = new HashMap<>();
 
         this.metricRegistry = metricRegistry;
-        this.groupName = groupName;
+        this.metricNamePrepend = metricNamePrepend;
     }
 
     @Override
@@ -57,7 +59,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
                 payloadTypeMonitors.computeIfAbsent(messagePayloadType, payloadType -> {
                     try {
                         MessageMonitor<Message<?>> newMessageMonitor = monitorClass.newInstance();
-                        registerMessageMonitor((MetricSet) newMessageMonitor, groupName, payloadType);
+                        registerMessageMonitor((Metric) newMessageMonitor, metricNamePrepend, payloadType);
                         return newMessageMonitor;
                     } catch (InstantiationException | IllegalAccessException e) {
                         String errorMessage = "Failed to create a MessageMonitor " +
@@ -71,9 +73,9 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
         return messageMonitorForPayloadType.onMessageIngested(message);
     }
 
-    private void registerMessageMonitor(MetricSet messageMonitor, String groupName, Class<?> payloadType) {
+    private void registerMessageMonitor(Metric messageMonitor, String metricNamePrepend, Class<?> payloadType) {
         try {
-            String metricName = name(groupName, this.getClass().getSimpleName(), monitorClass.getSimpleName(),
+            String metricName = name(metricNamePrepend, this.getClass().getSimpleName(), monitorClass.getSimpleName(),
                     payloadType.getSimpleName());
             metricRegistry.register(metricName, messageMonitor);
         } catch (IllegalArgumentException e) {
