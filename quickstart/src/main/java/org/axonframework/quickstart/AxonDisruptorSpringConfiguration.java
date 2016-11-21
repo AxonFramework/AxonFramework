@@ -43,6 +43,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AxonDisruptorSpringConfiguration {
 
+    /**
+     * Creates the
+     *
+     * @return
+     */
     @Bean(destroyMethod = "stop")
     public DisruptorCommandBus commandBus() {
         return new DisruptorCommandBus(eventStore());

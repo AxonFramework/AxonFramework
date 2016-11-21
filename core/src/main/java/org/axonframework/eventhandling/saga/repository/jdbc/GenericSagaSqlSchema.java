@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class GenericSagaSqlSchema implements SagaSqlSchema {
 
-    protected final SagaSchema sagaSchema;
+    private final SagaSchema sagaSchema;
 
     /**
      * Initialize a GenericSagaSqlSchema using default settings.
@@ -204,5 +204,14 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
         return new SimpleSerializedObject<>(resultSet.getBytes(1), byte[].class,
                                             resultSet.getString(2),
                                             resultSet.getString(3));
+    }
+
+    /**
+     * Returns the {@link SagaSchema} used to configure this sql saga schema.
+     *
+     * @return the saga schema
+     */
+    public SagaSchema sagaSchema() {
+        return sagaSchema;
     }
 }

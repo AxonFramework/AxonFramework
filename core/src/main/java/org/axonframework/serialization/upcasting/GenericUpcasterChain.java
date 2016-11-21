@@ -56,6 +56,11 @@ public class GenericUpcasterChain<T> implements Upcaster<T> {
         return result;
     }
 
+    /**
+     * Returns the list of {@link Upcaster upcasters} that makes up this chain.
+     *
+     * @return the upcaster chain
+     */
     protected List<? extends Upcaster<T>> getUpcasters() {
         return upcasters;
     }

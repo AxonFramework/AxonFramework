@@ -99,6 +99,16 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
         this.sequenceNumber = sequenceNumber;
     }
 
+    /**
+     * Initialize a DomainEventMessage originating from an Aggregate with the given {@code aggregateIdentifier},
+     * with given {@code sequenceNumber} and {@code payload}, {@code metaData} and {@code timestamp}.
+     *
+     * @param type the aggregate type
+     * @param aggregateIdentifier the aggregate identifier
+     * @param sequenceNumber the sequence number of the event
+     * @param delegate The delegate message providing the payload, metadata and identifier of the event
+     * @param timestamp the timestamp of the event
+     */
     protected GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber,
                                         Message<T> delegate, Instant timestamp) {
         super(delegate, timestamp);

@@ -86,8 +86,8 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      * Transforms the given incoming Spring Messaging {@code message} to an Axon EventMessage. This method may be
      * overridden to change how messages are translated between the two frameworks.
      *
-     * @param message
-     * @return
+     * @param message the Spring message to convert to an event
+     * @return an EventMessage from given Spring message
      */
     protected GenericEventMessage<?> transformMessage(Message<?> message) {
         return new GenericEventMessage<>(

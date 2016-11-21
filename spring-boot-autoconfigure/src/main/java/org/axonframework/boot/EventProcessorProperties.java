@@ -3,7 +3,6 @@ package org.axonframework.boot;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
-import java.util.Map;
 
 @ConfigurationProperties(prefix = "axon.eventhandling")
 public class EventProcessorProperties {
@@ -54,6 +53,6 @@ public class EventProcessorProperties {
     public enum Mode {
 
         TRACKING,
-        SUBSCRIBING;
+        SUBSCRIBING
     }
 }

@@ -17,7 +17,6 @@
 package org.axonframework.mongo.eventsourcing.eventstore.documentpercommit;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexOptions;
 import org.axonframework.eventhandling.EventMessage;
@@ -92,11 +91,6 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
     @Override
     protected Stream<? extends DomainEventData<?>> extractDomainEvents(Document object) {
         return Stream.of(new CommitEntry(object, commitEntryConfiguration, eventConfiguration()).getEvents());
-    }
-
-    @Override
-    protected FindIterable<Document> applyBatchSize(FindIterable<Document> cursor, int batchSize) {
-        return cursor.batchSize(batchSize);
     }
 
     @Override

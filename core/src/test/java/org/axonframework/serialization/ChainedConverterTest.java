@@ -124,7 +124,7 @@ public class ChainedConverterTest {
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testInexistentRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<Reader>(new StringReader("hello"), Reader.class, mockType);
+        source = new SimpleSerializedObject<>(new StringReader("hello"), Reader.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
     }
 

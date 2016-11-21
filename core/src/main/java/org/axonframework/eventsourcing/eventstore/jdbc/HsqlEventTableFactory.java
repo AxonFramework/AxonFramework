@@ -25,6 +25,9 @@ public class HsqlEventTableFactory extends AbstractEventTableFactory {
      */
     public static final HsqlEventTableFactory INSTANCE = new HsqlEventTableFactory();
 
+    /**
+     * Default constructor of the factory
+     */
     protected HsqlEventTableFactory() {
     }
 

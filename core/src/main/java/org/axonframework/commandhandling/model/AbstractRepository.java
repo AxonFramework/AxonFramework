@@ -86,6 +86,14 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         return aggregate;
     }
 
+    /**
+     * Creates a new aggregate instance using the given {@code factoryMethod}. Implementations should assume that this
+     * method is only called if a UnitOfWork is currently active.
+     *
+     * @param factoryMethod The method to create the aggregate's root instance
+     * @return an Aggregate instance describing the aggregate's state
+     * @throws Exception when the factoryMethod throws an exception
+     */
     protected abstract A doCreateNew(Callable<T> factoryMethod) throws Exception;
 
     /**
@@ -154,6 +162,11 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         });
     }
 
+    /**
+     * Returns the aggregate model stored by this repository.
+     *
+     * @return the aggregate model stored by this repository
+     */
     protected AggregateModel<T> aggregateModel() {
         return aggregateModel;
     }

@@ -83,7 +83,8 @@ public class JpaTokenStore implements TokenStore {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         TokenEntry entry = entityManager.find(TokenEntry.class, new TokenEntry.PK(processorName, segment));
         if (!entry.releaseClaim(nodeId)) {
-            logger.warn("Releasing claim of token {}/{} failed. It was owned by {}", processorName, segment, entry.getOwner());
+            logger.warn("Releasing claim of token {}/{} failed. It was owned by {}", processorName, segment,
+                        entry.getOwner());
         }
     }
 
@@ -93,6 +94,17 @@ public class JpaTokenStore implements TokenStore {
         return loadOrCreateToken(processorName, segment, entityManager).getToken(serializer);
     }
 
+    /**
+     * Loads an existing {@link TokenEntry} or creates a new one using the given {@code entityManager} for given {@code
+     * processorName} and {@code segment}.
+     *
+     * @param processorName the name of the event processor
+     * @param segment the segment of the event processor
+     * @param entityManager the entity manager instance to use for the query
+     * @return the token entry for the given processor name and segment
+     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
+     * it is claimed by another process.
+     */
     protected TokenEntry loadOrCreateToken(String processorName, int segment, EntityManager entityManager) {
         TokenEntry token = entityManager
                 .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), LockModeType.PESSIMISTIC_WRITE);
@@ -104,8 +116,9 @@ public class JpaTokenStore implements TokenStore {
             // hibernate complains about updates in different transactions if this isn't flushed
             entityManager.flush();
         } else if (!token.claim(nodeId, claimTimeout)) {
-            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It is owned by '%s'",
-                                                         token.getProcessorName(), token.getSegment(), token.getOwner()));
+            throw new UnableToClaimTokenException(
+                    format("Unable to claim token '%s[%s]'. It is owned by '%s'", token.getProcessorName(),
+                           token.getSegment(), token.getOwner()));
         }
         return token;
     }

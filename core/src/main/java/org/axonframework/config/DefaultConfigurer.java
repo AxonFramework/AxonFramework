@@ -79,11 +79,13 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
-    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
-    private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
-                                                                                            c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
-                                                                                                        msg -> singletonMap("traceId", msg.getMetaData().getOrDefault("traceId", msg.getIdentifier()))
-                                                                                            ));
+    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory =
+            new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
+    private final Component<List<CorrelationDataProvider>> correlationProviders =
+            new Component<>(config, "correlationProviders",
+                            c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
+                                        msg -> singletonMap("traceId", msg.getMetaData()
+                                                .getOrDefault("traceId", msg.getIdentifier()))));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
@@ -112,15 +114,13 @@ public class DefaultConfigurer implements Configurer {
      * @return a Configurer instance for further configuration
      */
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
-        return new DefaultConfigurer()
-                .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
-                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.getComponent(EntityManagerProvider.class,
-                                                                                           () -> entityManagerProvider)))
-                .registerComponent(TokenStore.class, c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class,
-                                                                                           () -> entityManagerProvider),
-                                                                            c.serializer()))
-                .registerComponent(SagaStore.class, c -> new JpaSagaStore(c.getComponent(EntityManagerProvider.class,
-                                                                                         () -> entityManagerProvider)));
+        return new DefaultConfigurer().registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
+                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
+                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider)))
+                .registerComponent(TokenStore.class, c -> new JpaTokenStore(
+                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider), c.serializer()))
+                .registerComponent(SagaStore.class, c -> new JpaSagaStore(
+                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider)));
     }
 
     /**
@@ -133,9 +133,17 @@ public class DefaultConfigurer implements Configurer {
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(CommandGateway.class, new Component<>(config, "resourceInjector", this::defaultCommandGateway));
-        components.put(ResourceInjector.class, new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(ResourceInjector.class,
+                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
     }
 
+    /**
+     * Returns a {@link DefaultCommandGateway} that will use the configuration's {@link CommandBus} to dispatch
+     * commands.
+     *
+     * @param config the configuration that supplies the command bus
+     * @return the default command gateway
+     */
     protected CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(config.commandBus());
     }
@@ -157,12 +165,20 @@ public class DefaultConfigurer implements Configurer {
      * @return the default CommandBus to use
      */
     protected CommandBus defaultCommandBus(Configuration config) {
-        SimpleCommandBus cb = new SimpleCommandBus(config.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE),
-                                                   config.messageMonitor(SimpleCommandBus.class, "commandBus"));
+        SimpleCommandBus cb =
+                new SimpleCommandBus(config.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE),
+                                     config.messageMonitor(SimpleCommandBus.class, "commandBus"));
         cb.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
         return cb;
     }
 
+    /**
+     * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given {@code config
+     * Configuration}.
+     *
+     * @param config the configuration that supplies registered components
+     * @return a resource injector that supplies components registered with the configuration
+     */
     protected ResourceInjector defaultResourceInjector(Configuration config) {
         return new ConfigurationResourceInjector(config);
     }
@@ -188,13 +204,16 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer configureMessageMonitor(Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder) {
+    public Configurer configureMessageMonitor(
+            Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>>
+                    messageMonitorFactoryBuilder) {
         messageMonitorFactory.update(messageMonitorFactoryBuilder);
         return this;
     }
 
     @Override
-    public Configurer configureCorrelationDataProviders(Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
+    public Configurer configureCorrelationDataProviders(
+            Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
         correlationProviders.update(correlationDataProviderBuilder);
         return this;
     }
@@ -214,14 +233,18 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder) {
         startHandlers.add(() -> {
-            Registration registration = new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config), config.parameterResolverFactory()).subscribe(config.commandBus());
+            Registration registration =
+                    new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config),
+                                                        config.parameterResolverFactory())
+                            .subscribe(config.commandBus());
             shutdownHandlers.add(registration::cancel);
         });
         return this;
     }
 
     @Override
-    public <C> Configurer registerComponent(Class<C> componentType, Function<Configuration, ? extends C> componentBuilder) {
+    public <C> Configurer registerComponent(Class<C> componentType,
+                                            Function<Configuration, ? extends C> componentBuilder) {
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
         return this;
     }
@@ -229,7 +252,8 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
-            MessageMonitor<Message<?>> monitor = messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
+            MessageMonitor<Message<?>> monitor =
+                    messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
             return new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
         });
     }
@@ -300,24 +324,28 @@ public class DefaultConfigurer implements Configurer {
         @Override
         @SuppressWarnings("unchecked")
         public <T> Repository<T> repository(Class<T> aggregateType) {
-            AggregateConfiguration<T> aggregateConfigurer = DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
+            AggregateConfiguration<T> aggregateConfigurer =
+                    DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
             if (aggregateConfigurer == null) {
-                throw new IllegalArgumentException("Aggregate " + aggregateType.getSimpleName() + " has not been configured");
+                throw new IllegalArgumentException(
+                        "Aggregate " + aggregateType.getSimpleName() + " has not been configured");
             }
             return aggregateConfigurer.repository();
         }
 
         @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
-            return componentType.cast(
-                    components.computeIfAbsent(componentType,
-                                               k -> new Component<>(config,
-                                                                    componentType.getSimpleName(),
-                                                                    c -> defaultImpl.get())).get());
+            return componentType.cast(components.computeIfAbsent(componentType, k -> new Component<>(config,
+                                                                                                     componentType
+                                                                                                             .getSimpleName(),
+                                                                                                     c -> defaultImpl
+                                                                                                             .get()))
+                                              .get());
         }
 
         @Override
-        public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName) {
+        public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType,
+                                                                               String componentName) {
             return messageMonitorFactory.get().apply(componentType, componentName);
         }
 

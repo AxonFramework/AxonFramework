@@ -162,6 +162,9 @@ public class EventSchema {
         return metaDataColumn;
     }
 
+    /**
+     * Builder for an {@link EventSchema} that gets initialized with default values.
+     */
     @SuppressWarnings("SqlResolve")
     protected static class Builder {
         private String domainEventTable = "DomainEventEntry";
@@ -177,66 +180,143 @@ public class EventSchema {
         private String payloadColumn = "payload";
         private String metaDataColumn = "metaData";
 
+        /**
+         * Sets the name of the domain events table. Defaults to 'DomainEventEntry'.
+         *
+         * @param eventTable the event table name
+         * @return the modified Builder instance
+         */
         public Builder withEventTable(String eventTable) {
             this.domainEventTable = eventTable;
             return this;
         }
 
+        /**
+         * Sets the name of the snapshot events table. Defaults to 'SnapshotEventEntry'.
+         *
+         * @param snapshotTable the snapshot table name
+         * @return the modified Builder instance
+         */
         public Builder withSnapshotTable(String snapshotTable) {
             this.snapshotTable = snapshotTable;
             return this;
         }
 
+        /**
+         * Sets the name of the global index column. Defaults to 'globalIndex'.
+         *
+         * @param globalIndexColumn the name of the global index column.
+         * @return the modified Builder instance
+         */
         public Builder withGlobalIndexColumn(String globalIndexColumn) {
             this.globalIndexColumn = globalIndexColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the timestamp column. Defaults to 'timeStamp'.
+         *
+         * @param timestampColumn the name of the timestamp column.
+         * @return the modified Builder instance
+         */
         public Builder withTimestampColumn(String timestampColumn) {
             this.timestampColumn = timestampColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event identifier column. Defaults to 'eventIdentifier'.
+         *
+         * @param eventIdentifierColumn the name of the event identifier column.
+         * @return the modified Builder instance
+         */
         public Builder withEventIdentifierColumn(String eventIdentifierColumn) {
             this.eventIdentifierColumn = eventIdentifierColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event identifier column. Defaults to 'aggregateIdentifier'.
+         *
+         * @param aggregateIdentifierColumn the name of the aggregate identifier column.
+         * @return the modified Builder instance
+         */
         public Builder withAggregateIdentifierColumn(String aggregateIdentifierColumn) {
             this.aggregateIdentifierColumn = aggregateIdentifierColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event identifier column. Defaults to 'sequenceNumber'.
+         *
+         * @param sequenceNumberColumn the name of the sequence number column.
+         * @return the modified Builder instance
+         */
         public Builder withSequenceNumberColumn(String sequenceNumberColumn) {
             this.sequenceNumberColumn = sequenceNumberColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the aggregate type column. Defaults to 'type'.
+         *
+         * @param typeColumn the name of the aggregate type column.
+         * @return the modified Builder instance
+         */
         public Builder withTypeColumn(String typeColumn) {
             this.typeColumn = typeColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event payload type column. Defaults to 'payloadType'.
+         *
+         * @param payloadTypeColumn the name of the payload type column.
+         * @return the modified Builder instance
+         */
         public Builder withPayloadTypeColumn(String payloadTypeColumn) {
             this.payloadTypeColumn = payloadTypeColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event payload revision column. Defaults to 'payloadRevision'.
+         *
+         * @param payloadRevisionColumn the name of the payload revision column.
+         * @return the modified Builder instance
+         */
         public Builder withPayloadRevisionColumn(String payloadRevisionColumn) {
             this.payloadRevisionColumn = payloadRevisionColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event payload column. Defaults to 'payload'.
+         *
+         * @param payloadColumn the name of the payload column.
+         * @return the modified Builder instance
+         */
         public Builder withPayloadColumn(String payloadColumn) {
             this.payloadColumn = payloadColumn;
             return this;
         }
 
+        /**
+         * Sets the name of the event metadata column. Defaults to 'metaData'.
+         *
+         * @param metaDataColumn the name of the metadata column.
+         * @return the modified Builder instance
+         */
         public Builder withMetaDataColumn(String metaDataColumn) {
             this.metaDataColumn = metaDataColumn;
             return this;
         }
 
+        /**
+         * Builds a new {@link EventSchema} from builder values.
+         *
+         * @return new EventSchema
+         */
         public EventSchema build() {
             return new EventSchema(this);
         }

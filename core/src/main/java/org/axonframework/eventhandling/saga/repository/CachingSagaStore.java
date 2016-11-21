@@ -84,20 +84,23 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     }
 
     @Override
-    public void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
+                           Set<AssociationValue> associationValues) {
         delegate.insertSaga(sagaType, sagaIdentifier, saga, token, associationValues);
         sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, token, associationValues));
         addCachedAssociations(associationValues, sagaIdentifier, sagaType);
     }
 
     @Override
-    public void deleteSaga(Class<? extends T> sagaType, String sagaIdentifier, Set<AssociationValue> associationValues) {
+    public void deleteSaga(Class<? extends T> sagaType, String sagaIdentifier,
+                           Set<AssociationValue> associationValues) {
         sagaCache.remove(sagaIdentifier);
         associationValues.forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
         delegate.deleteSaga(sagaType, sagaIdentifier, associationValues);
     }
 
-    private void removeAssociationValueFromCache(Class<?> sagaType, String sagaIdentifier, AssociationValue associationValue) {
+    private void removeAssociationValueFromCache(Class<?> sagaType, String sagaIdentifier,
+                                                 AssociationValue associationValue) {
         String key = cacheKey(associationValue, sagaType);
         Set<String> associations = associationsCache.get(key);
         if (associations != null && associations.remove(sagaIdentifier)) {
@@ -105,8 +108,16 @@ public class CachingSagaStore<T> implements SagaStore<T> {
         }
     }
 
-    protected void addCachedAssociations(Iterable<AssociationValue> associationValues,
-                                         String sagaIdentifier, Class<?> sagaType) {
+    /**
+     * Registers the associations of a saga with given {@code sagaIdentifier} and given {@code sagaType} with the
+     * associations cache.
+     *
+     * @param associationValues the association values of the saga
+     * @param sagaIdentifier    the identifier of the saga
+     * @param sagaType          the type of the saga
+     */
+    protected void addCachedAssociations(Iterable<AssociationValue> associationValues, String sagaIdentifier,
+                                         Class<?> sagaType) {
         for (AssociationValue associationValue : associationValues) {
             String key = cacheKey(associationValue, sagaType);
             Set<String> identifiers = associationsCache.get(key);
@@ -117,11 +128,12 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     }
 
     @Override
-    public void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
-                           TrackingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
+                           AssociationValues associationValues) {
         sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, token, associationValues.asSet()));
         delegate.updateSaga(sagaType, sagaIdentifier, saga, token, associationValues);
-        associationValues.removedAssociations().forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
+        associationValues.removedAssociations()
+                .forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
         addCachedAssociations(associationValues.addedAssociations(), sagaIdentifier, sagaType);
     }
 

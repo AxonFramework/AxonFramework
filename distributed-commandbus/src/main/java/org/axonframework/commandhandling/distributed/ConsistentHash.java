@@ -67,6 +67,12 @@ public class ConsistentHash {
         return foundMember;
     }
 
+    /**
+     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
+     *
+     * @param routingKey the routing key to hash
+     * @return a hash of the input key
+     */
     protected static String hash(String routingKey) {
         return Digester.md5Hex(routingKey);
     }
@@ -186,7 +192,8 @@ public class ConsistentHash {
 
         /**
          * Returns the hashes covered by the member. If the hash of the routing key matches with one of the returned
-         * hashes and the member is capable of handling the command then it will be selected as a target for the command.
+         * hashes and the member is capable of handling the command then it will be selected as a target for the
+         * command.
          *
          * @return the hashes covered by this member
          */

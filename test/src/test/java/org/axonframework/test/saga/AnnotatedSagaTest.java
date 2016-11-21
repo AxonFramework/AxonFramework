@@ -78,7 +78,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_PublishedEvent_NoHistoricActivity() throws Exception {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-                .whenPublishingA(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent("id")))
+                .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
                 .expectActiveSagas(1)
                 .expectAssociationWith("identifier", "id");
     }

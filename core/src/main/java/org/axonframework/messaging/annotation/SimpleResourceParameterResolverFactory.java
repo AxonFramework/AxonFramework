@@ -1,9 +1,9 @@
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.Priority;
+
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
-
-import org.axonframework.common.Priority;
 
 /**
  * A {@link ParameterResolverFactory} implementation for simple resource injections.
@@ -16,8 +16,7 @@ public class SimpleResourceParameterResolverFactory implements ParameterResolver
     private final Object resource;
 
     /**
-     * Initialize the ParameterResolverFactory to inject the given
-     * <code>resource</code> in applicable parameters.
+     * Initialize the ParameterResolverFactory to inject the given {@code resource} in applicable parameters.
      *
      * @param resource The resource to inject
      */

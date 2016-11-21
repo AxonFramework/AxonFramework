@@ -92,6 +92,11 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return Optional.ofNullable(snapshots.get(aggregateIdentifier));
     }
 
+    /**
+     * Returns the tracking token to use for the next event to be stored.
+     *
+     * @return the tracking token for the next event
+     */
     protected GlobalSequenceTrackingToken nextTrackingToken() {
         return events.isEmpty() ? new GlobalSequenceTrackingToken(0) :
                 ((GlobalSequenceTrackingToken) events.lastKey()).next();

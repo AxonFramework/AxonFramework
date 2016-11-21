@@ -16,7 +16,6 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 
-import com.mongodb.client.FindIterable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
@@ -67,11 +66,6 @@ public class DocumentPerEventStorageStrategy extends AbstractMongoEventStorageSt
     @Override
     protected Stream<? extends DomainEventData<?>> extractDomainEvents(Document object) {
         return Stream.of(extractEvent(object));
-    }
-
-    @Override
-    protected FindIterable<Document> applyBatchSize(FindIterable<Document> cursor, int batchSize) {
-        return cursor.batchSize(batchSize);
     }
 
     @Override

@@ -39,11 +39,12 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- * JPA implementation of the Saga Store. It uses an {@link javax.persistence.EntityManager} to persist the actual
- * saga in a backing store in serialized form.
+ * JPA implementation of the Saga Store. It uses an {@link javax.persistence.EntityManager} to persist the actual saga
+ * in a backing store in serialized form.
  * <p/>
  * After each operations that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
- * ensure the store contains the last modifications. To override this behavior, see {@link #setUseExplicitFlush(boolean)}
+ * ensure the store contains the last modifications. To override this behavior, see {@link
+ * #setUseExplicitFlush(boolean)}
  *
  * @author Allard Buijze
  * @since 3.0
@@ -52,28 +53,26 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaSagaStore.class);
 
-    private static final String LOAD_SAGA_QUERY = "SELECT new org.axonframework.eventhandling.saga.repository.jpa.SerializedSaga("
-            + "se.serializedSaga, se.sagaType, se.revision) "
-            + "FROM SagaEntry se "
-            + "WHERE se.sagaId = :sagaId "
-            + "AND se.sagaType = :sagaType";
-    private static final String DELETE_ASSOCIATION_QUERY = "DELETE FROM AssociationValueEntry ae "
-            + "WHERE ae.associationKey = :associationKey "
-            + "AND ae.associationValue = :associationValue "
-            + "AND ae.sagaType = :sagaType "
-            + "AND ae.sagaId = :sagaId";
-    private static final String FIND_ASSOCIATION_IDS_QUERY = "SELECT ae.sagaId FROM AssociationValueEntry ae "
-            + "WHERE ae.associationKey = :associationKey "
-            + "AND ae.associationValue = :associationValue "
-            + "AND ae.sagaType = :sagaType";
-    private static final String FIND_ASSOCIATIONS_QUERY = "SELECT ae FROM AssociationValueEntry ae "
-            + "WHERE ae.sagaType = :sagaType "
-            + "AND ae.sagaId = :sagaId";
+    private static final String LOAD_SAGA_QUERY =
+            "SELECT new org.axonframework.eventhandling.saga.repository.jpa.SerializedSaga(" +
+                    "se.serializedSaga, se.sagaType, se.revision) " + "FROM SagaEntry se " +
+                    "WHERE se.sagaId = :sagaId " + "AND se.sagaType = :sagaType";
+    private static final String DELETE_ASSOCIATION_QUERY =
+            "DELETE FROM AssociationValueEntry ae " + "WHERE ae.associationKey = :associationKey " +
+                    "AND ae.associationValue = :associationValue " + "AND ae.sagaType = :sagaType " +
+                    "AND ae.sagaId = :sagaId";
+    private static final String FIND_ASSOCIATION_IDS_QUERY =
+            "SELECT ae.sagaId FROM AssociationValueEntry ae " + "WHERE ae.associationKey = :associationKey " +
+                    "AND ae.associationValue = :associationValue " + "AND ae.sagaType = :sagaType";
+    private static final String FIND_ASSOCIATIONS_QUERY =
+            "SELECT ae FROM AssociationValueEntry ae " + "WHERE ae.sagaType = :sagaType " + "AND ae.sagaId = :sagaId";
 
-    private static final String DELETE_ASSOCIATIONS_QUERY = "DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId";
+    private static final String DELETE_ASSOCIATIONS_QUERY =
+            "DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId";
     private static final String DELETE_SAGA_QUERY = "DELETE FROM SagaEntry se WHERE se.sagaId = :id";
-    private static final String UPDATE_SAGA_QUERY = "UPDATE SagaEntry s SET s.serializedSaga = :serializedSaga, s.revision = :revision "
-            + "WHERE s.sagaId = :sagaId AND s.sagaType = :sagaType";
+    private static final String UPDATE_SAGA_QUERY =
+            "UPDATE SagaEntry s SET s.serializedSaga = :serializedSaga, s.revision = :revision " +
+                    "WHERE s.sagaId = :sagaId AND s.sagaType = :sagaType";
 
     private static final String LOAD_SAGA_NAMED_QUERY = "LOAD_SAGA_NAMED_QUERY";
     private static final String DELETE_ASSOCIATION_NAMED_QUERY = "DELETE_ASSOCIATION_NAMED_QUERY";
@@ -100,7 +99,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     /**
      * Initializes a Saga Repository with the given {@code serializer} and {@code entityManagerProvider}.
      *
-     * @param serializer The serializer to serialize saga instances with
+     * @param serializer            The serializer to serialize saga instances with
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      */
     public JpaSagaStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
@@ -112,10 +111,14 @@ public class JpaSagaStore implements SagaStore<Object> {
         EntityManager entityManager = this.entityManagerProvider.getEntityManager();
         EntityManagerFactory entityManagerFactory = entityManager.getEntityManagerFactory();
         entityManagerFactory.addNamedQuery(LOAD_SAGA_NAMED_QUERY, entityManager.createQuery(LOAD_SAGA_QUERY));
-        entityManagerFactory.addNamedQuery(DELETE_ASSOCIATION_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATION_QUERY));
-        entityManagerFactory.addNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATION_IDS_QUERY));
-        entityManagerFactory.addNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATIONS_QUERY));
-        entityManagerFactory.addNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATIONS_QUERY));
+        entityManagerFactory
+                .addNamedQuery(DELETE_ASSOCIATION_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATION_QUERY));
+        entityManagerFactory
+                .addNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATION_IDS_QUERY));
+        entityManagerFactory
+                .addNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATIONS_QUERY));
+        entityManagerFactory
+                .addNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATIONS_QUERY));
         entityManagerFactory.addNamedQuery(DELETE_SAGA_NAMED_QUERY, entityManager.createQuery(DELETE_SAGA_QUERY));
         entityManagerFactory.addNamedQuery(UPDATE_SAGA_NAMED_QUERY, entityManager.createQuery(UPDATE_SAGA_QUERY));
     }
@@ -123,12 +126,10 @@ public class JpaSagaStore implements SagaStore<Object> {
     @Override
     public <S> Entry<S> loadSaga(Class<S> sagaType, String sagaIdentifier) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        List<SerializedSaga> serializedSagaList = entityManager
-                .createNamedQuery(LOAD_SAGA_NAMED_QUERY, SerializedSaga.class)
-                .setParameter("sagaId", sagaIdentifier)
-                .setParameter("sagaType", getSagaTypeName(sagaType))
-                .setMaxResults(1)
-                .getResultList();
+        List<SerializedSaga> serializedSagaList =
+                entityManager.createNamedQuery(LOAD_SAGA_NAMED_QUERY, SerializedSaga.class)
+                        .setParameter("sagaId", sagaIdentifier).setParameter("sagaType", getSagaTypeName(sagaType))
+                        .setMaxResults(1).getResultList();
         if (serializedSagaList == null || serializedSagaList.isEmpty()) {
             return null;
         }
@@ -145,22 +146,40 @@ public class JpaSagaStore implements SagaStore<Object> {
         return new EntryImpl<>(associationValues, loadedSaga);
     }
 
-    protected Set<AssociationValue> loadAssociationValues(EntityManager entityManager, Class<?> sagaType, String sagaIdentifier) {
-        List<AssociationValueEntry> associationValueEntries = entityManager
-                .createNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY, AssociationValueEntry.class)
-                .setParameter("sagaType", getSagaTypeName(sagaType))
-                .setParameter("sagaId", sagaIdentifier)
-                .getResultList();
+    /**
+     * Loads the {@link AssociationValue association values} of the saga with given {@code sagaIdentifier} and {@code
+     * sagaType}.
+     *
+     * @param entityManager  the entity manager instance to use for the query
+     * @param sagaType       the saga instance class
+     * @param sagaIdentifier the saga identifier
+     * @return the associations of the given saga
+     */
+    protected Set<AssociationValue> loadAssociationValues(EntityManager entityManager, Class<?> sagaType,
+                                                          String sagaIdentifier) {
+        List<AssociationValueEntry> associationValueEntries =
+                entityManager.createNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY, AssociationValueEntry.class)
+                        .setParameter("sagaType", getSagaTypeName(sagaType)).setParameter("sagaId", sagaIdentifier)
+                        .getResultList();
 
-        return associationValueEntries.stream().map(AssociationValueEntry::getAssociationValue).collect(Collectors.toCollection(HashSet::new));
+        return associationValueEntries.stream().map(AssociationValueEntry::getAssociationValue)
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
-    protected void removeAssociationValue(EntityManager entityManager, Class<?> sagaType, String sagaIdentifier, AssociationValue associationValue) {
+    /**
+     * Removes the given {@code associationValue} of the saga with given {@code sagaIdentifier} and {@code sagaType}.
+     *
+     * @param entityManager    the entity manager instance to use for the query
+     * @param sagaType         the saga instance class
+     * @param sagaIdentifier   the saga identifier
+     * @param associationValue the association value to remove
+     */
+    protected void removeAssociationValue(EntityManager entityManager, Class<?> sagaType, String sagaIdentifier,
+                                          AssociationValue associationValue) {
         int updateCount = entityManager.createNamedQuery(DELETE_ASSOCIATION_NAMED_QUERY)
                 .setParameter("associationKey", associationValue.getKey())
                 .setParameter("associationValue", associationValue.getValue())
-                .setParameter("sagaType", getSagaTypeName(sagaType))
-                .setParameter("sagaId", sagaIdentifier)
+                .setParameter("sagaType", getSagaTypeName(sagaType)).setParameter("sagaId", sagaIdentifier)
                 .executeUpdate();
         if (updateCount == 0 && logger.isWarnEnabled()) {
             logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
@@ -168,7 +187,16 @@ public class JpaSagaStore implements SagaStore<Object> {
         }
     }
 
-    protected void storeAssociationValue(EntityManager entityManager, Class<?> sagaType, String sagaIdentifier, AssociationValue associationValue) {
+    /**
+     * Stores the given {@code associationValue} of the saga with given {@code sagaIdentifier} and {@code sagaType}.
+     *
+     * @param entityManager    the entity manager instance to use for the query
+     * @param sagaType         the saga instance class
+     * @param sagaIdentifier   the saga identifier
+     * @param associationValue the association value to add
+     */
+    protected void storeAssociationValue(EntityManager entityManager, Class<?> sagaType, String sagaIdentifier,
+                                         AssociationValue associationValue) {
         entityManager.persist(new AssociationValueEntry(getSagaTypeName(sagaType), sagaIdentifier, associationValue));
     }
 
@@ -179,12 +207,10 @@ public class JpaSagaStore implements SagaStore<Object> {
     @Override
     public Set<String> findSagas(Class<?> sagaType, AssociationValue associationValue) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        List<String> entries =
-                entityManager.createNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, String.class)
-                        .setParameter("associationKey", associationValue.getKey())
-                        .setParameter("associationValue", associationValue.getValue())
-                        .setParameter("sagaType", getSagaTypeName(sagaType))
-                        .getResultList();
+        List<String> entries = entityManager.createNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, String.class)
+                .setParameter("associationKey", associationValue.getKey())
+                .setParameter("associationValue", associationValue.getValue())
+                .setParameter("sagaType", getSagaTypeName(sagaType)).getResultList();
         return new TreeSet<>(entries);
     }
 
@@ -192,15 +218,11 @@ public class JpaSagaStore implements SagaStore<Object> {
     public void deleteSaga(Class<?> sagaType, String sagaIdentifier, Set<AssociationValue> associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         try {
-            entityManager.createNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY)
-                    .setParameter("sagaId", sagaIdentifier)
+            entityManager.createNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY).setParameter("sagaId", sagaIdentifier)
                     .executeUpdate();
-            entityManager.createNamedQuery(DELETE_SAGA_NAMED_QUERY)
-                    .setParameter("id", sagaIdentifier)
-                    .executeUpdate();
+            entityManager.createNamedQuery(DELETE_SAGA_NAMED_QUERY).setParameter("id", sagaIdentifier).executeUpdate();
         } catch (EntityNotFoundException e) {
-            logger.info("Could not delete SagaEntry {}, it appears to have already been deleted.",
-                        sagaIdentifier);
+            logger.info("Could not delete SagaEntry {}, it appears to have already been deleted.", sagaIdentifier);
         }
         if (useExplicitFlush) {
             entityManager.flush();
@@ -208,20 +230,19 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token,
+                           AssociationValues associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
-            logger.debug("Updating saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
-                                                                                 Charset.forName("UTF-8")));
+            logger.debug("Updating saga id {} as {}", sagaIdentifier,
+                         new String(entry.getSerializedSaga(), Charset.forName("UTF-8")));
         }
         int updateCount = entityManager.createNamedQuery(UPDATE_SAGA_NAMED_QUERY)
                 .setParameter("serializedSaga", entry.getSerializedSaga())
 
-                .setParameter("revision", entry.getRevision())
-                .setParameter("sagaId", entry.getSagaId())
-                .setParameter("sagaType", entry.getSagaType())
-                .executeUpdate();
+                .setParameter("revision", entry.getRevision()).setParameter("sagaId", entry.getSagaId())
+                .setParameter("sagaType", entry.getSagaType()).executeUpdate();
         for (AssociationValue associationValue : associationValues.addedAssociations()) {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
         }
@@ -237,7 +258,8 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token,
+                           Set<AssociationValue> associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         entityManager.persist(entry);
@@ -245,8 +267,8 @@ public class JpaSagaStore implements SagaStore<Object> {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Storing saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
-                                                                                Charset.forName("UTF-8")));
+            logger.debug("Storing saga id {} as {}", sagaIdentifier,
+                         new String(entry.getSerializedSaga(), Charset.forName("UTF-8")));
         }
         if (useExplicitFlush) {
             entityManager.flush();

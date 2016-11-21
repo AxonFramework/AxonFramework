@@ -415,7 +415,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Write a timestamp from a {@link Instant} to a data value suitable for the database scheme.
      *
+     * @param preparedStatement the statement to update
+     * @param position the position of the timestamp parameter in the statement
      * @param timestamp {@link Instant} to convert
+     * @throws SQLException if modification of the statement fails
      */
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
                                   Instant timestamp) throws SQLException {
@@ -439,16 +442,31 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         return (T) resultSet.getObject(columnName);
     }
 
+    /**
+     * Returns a comma separated list of domain event column names to select from an event or snapshot entry.
+     *
+     * @return comma separated domain event column names
+     */
     protected String domainEventFields() {
         return String.join(", ", schema.eventIdentifierColumn(), schema.timestampColumn(), schema.payloadTypeColumn(),
                            schema.payloadRevisionColumn(), schema.payloadColumn(), schema.metaDataColumn(),
                            schema.typeColumn(), schema.aggregateIdentifierColumn(), schema.sequenceNumberColumn());
     }
 
+    /**
+     * Returns a comma separated list of tracked domain event column names to select from an event entry.
+     *
+     * @return comma separated tracked domain event column names
+     */
     protected String trackedEventFields() {
         return schema.globalIndexColumn() + ", " + domainEventFields();
     }
 
+    /**
+     * Returns the {@link EventSchema} that defines the table and column names of event tables in the database.
+     *
+     * @return the event schema
+     */
     protected EventSchema schema() {
         return schema;
     }
