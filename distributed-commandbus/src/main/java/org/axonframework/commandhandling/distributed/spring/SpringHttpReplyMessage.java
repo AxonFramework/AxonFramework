@@ -2,13 +2,14 @@ package org.axonframework.commandhandling.distributed.spring;
 
 import org.axonframework.commandhandling.distributed.ReplyMessage;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.Serializable;
 
 /**
  * Spring Http Message representing a reply to a dispatched command.
  */
-public class SpringHttpReplyMessage extends ReplyMessage implements Serializable {
+public class SpringHttpReplyMessage<R> extends ReplyMessage implements Serializable {
 
     /**
      * Initialized a SpringHttpReplyMessage containing a reply to the command with given {commandIdentifier}, containing
@@ -28,6 +29,17 @@ public class SpringHttpReplyMessage extends ReplyMessage implements Serializable
     @SuppressWarnings("unused")
     private SpringHttpReplyMessage() {
         // Used for de-/serialization
+    }
+
+    @Override
+    public R getReturnValue(Serializer serializer) {
+        if (!success || resultType == null) {
+            return null;
+        }
+
+        SimpleSerializedObject<byte[]> serializedObject =
+                new SimpleSerializedObject<>(serializedResult, byte[].class, resultType, resultRevision);
+        return serializer.deserialize(serializedObject);
     }
 
 }
