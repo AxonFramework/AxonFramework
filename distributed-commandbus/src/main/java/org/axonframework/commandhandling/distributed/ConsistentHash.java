@@ -92,8 +92,9 @@ public class ConsistentHash {
     }
 
     /**
-     * Registers the given {@code member} with given {@code loadFactor} and {@code commandFilter} and returns a new
-     * {@link ConsistentHash} with updated memberships.
+     * Registers the given {@code member} with given {@code loadFactor} and {@code commandFilter} if it is not
+     * already contained in the {@link ConsistentHash}. It will return the current ConsistentHash if the addition is
+     * a duplicate and returns a new ConsistentHash with updated memberships if it is not.
      * <p>
      * The relative loadFactor of the member determines the likelihood of being selected as a destination for a command.
      *
@@ -104,9 +105,13 @@ public class ConsistentHash {
      */
     public ConsistentHash with(Member member, int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
         Assert.notNull(member, () -> "Member may not be null");
-        SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
 
         ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);
+        if (getMembers().contains(newMember)) {
+            return this;
+        }
+
+        SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
         newMember.hashes().forEach(h -> members.put(h, newMember));
 
         return new ConsistentHash(members);
@@ -150,6 +155,7 @@ public class ConsistentHash {
      * Member implementation used by a {@link ConsistentHash} registry.
      */
     public static class ConsistentHashMember implements Member {
+
         private final Member member;
         private final int segmentCount;
         private final Predicate<? super CommandMessage<?>> commandFilter;
@@ -213,7 +219,8 @@ public class ConsistentHash {
                 return false;
             }
             ConsistentHashMember that = (ConsistentHashMember) o;
-            return segmentCount == that.segmentCount && Objects.equals(member, that.member) &&
+            return segmentCount == that.segmentCount &&
+                    Objects.equals(member, that.member) &&
                     Objects.equals(commandFilter, that.commandFilter);
         }
 
@@ -221,7 +228,9 @@ public class ConsistentHash {
         public int hashCode() {
             return Objects.hash(member, segmentCount, commandFilter);
         }
+
     }
+
 }
 
 
