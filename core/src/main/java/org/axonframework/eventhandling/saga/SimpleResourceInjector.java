@@ -16,9 +16,6 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,10 +33,6 @@ import java.util.stream.StreamSupport;
  */
 public class SimpleResourceInjector extends AbstractResourceInjector {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimpleResourceInjector.class);
-
-    private static final String FULLY_QUALIFIED_CLASS_NAME_INJECT = "javax.inject.Inject";
-
     private final Iterable<?> resources;
 
     /**
@@ -53,6 +46,8 @@ public class SimpleResourceInjector extends AbstractResourceInjector {
 
     /**
      * Initializes the resource injector to inject to given {@code resources}.
+     * <p>
+     * Note that any changes to the given collection will not be reflected by this injector.
      *
      * @param resources The resources to inject
      */
