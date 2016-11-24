@@ -20,7 +20,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
-import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.Serializer;
@@ -36,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -83,7 +83,6 @@ public class JpaSagaStore implements SagaStore<Object> {
     private static final String UPDATE_SAGA_NAMED_QUERY = "UPDATE_SAGA_NAMED_QUERY";
 
     private final EntityManagerProvider entityManagerProvider;
-    private ResourceInjector injector;
     private final Serializer serializer;
     private volatile boolean useExplicitFlush = true;
 
@@ -136,12 +135,9 @@ public class JpaSagaStore implements SagaStore<Object> {
 
         SerializedSaga serializedSaga = serializedSagaList.get(0);
         S loadedSaga = serializer.deserialize(serializedSaga);
-        if (injector != null) {
-            injector.injectResources(loadedSaga);
-        }
         Set<AssociationValue> associationValues = loadAssociationValues(entityManager, sagaType, sagaIdentifier);
         if (logger.isDebugEnabled()) {
-            logger.debug("Loaded saga id [{}] of type [{}]", sagaIdentifier, loadedSaga.getClass().getName());
+            logger.debug("Loaded saga id [{}] of type [{}]", sagaIdentifier, serializedSaga.getType().getName());
         }
         return new EntryImpl<>(associationValues, loadedSaga);
     }
@@ -273,16 +269,6 @@ public class JpaSagaStore implements SagaStore<Object> {
         if (useExplicitFlush) {
             entityManager.flush();
         }
-    }
-
-    /**
-     * Sets the ResourceInjector to use to inject Saga instances with any (temporary) resources they might need. These
-     * are typically the resources that could not be persisted with the Saga.
-     *
-     * @param resourceInjector The resource injector
-     */
-    public void setResourceInjector(ResourceInjector resourceInjector) {
-        this.injector = resourceInjector;
     }
 
     /**
