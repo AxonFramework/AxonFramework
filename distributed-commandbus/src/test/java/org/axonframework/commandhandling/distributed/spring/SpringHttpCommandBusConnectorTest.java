@@ -250,10 +250,9 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Test
     public void testReceiveCommandHandlesCommandWithoutCallback() throws Exception {
-        SpringHttpReplyMessage result =
-                (SpringHttpReplyMessage) testSubject.receiveCommand(buildDispatchMessage(false)).get();
+        String result = (String) testSubject.receiveCommand(buildDispatchMessage(false)).get();
 
-        assertNull(result);
+        assertEquals("", result);
 
         verify(localCommandBus).dispatch(any());
     }

@@ -102,8 +102,6 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     public <C, R> CompletableFuture<?> receiveCommand(
             @RequestBody SpringHttpDispatchMessage<C> dispatchMessage) throws ExecutionException, InterruptedException {
         CommandMessage<C> commandMessage = dispatchMessage.getCommandMessage(serializer);
-        CompletableFuture<SpringHttpReplyMessage<R>> result = new CompletableFuture<>();
-
         if (dispatchMessage.isExpectReply()) {
             try {
                 SpringHttpReplyFutureCallback<C, R> replyFutureCallback = new SpringHttpReplyFutureCallback<>();
@@ -111,19 +109,19 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return replyFutureCallback;
             } catch (Exception e) {
                 LOGGER.error("Could not dispatch command", e);
-                result.complete(new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
+                return CompletableFuture.completedFuture(
+                        new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
             }
         } else {
             try {
                 localCommandBus.dispatch(commandMessage);
-                result.complete(null);
+                return CompletableFuture.completedFuture("");
             } catch (Exception e) {
                 LOGGER.error("Could not dispatch command", e);
-                result.complete(new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
+                return CompletableFuture.completedFuture(
+                        new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
             }
         }
-
-        return result;
     }
 
     public class SpringHttpReplyFutureCallback<C, R>  extends CompletableFuture<SpringHttpReplyMessage>
