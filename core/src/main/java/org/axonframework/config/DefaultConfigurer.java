@@ -254,7 +254,9 @@ public class DefaultConfigurer implements Configurer {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
-            return new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
+            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
+            c.onShutdown(eventStore::shutDown);
+            return eventStore;
         });
     }
 
