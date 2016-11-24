@@ -3,7 +3,6 @@ package org.axonframework.commandhandling.distributed.spring;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.common.Registration;
@@ -35,8 +34,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     private static final boolean EXPECT_REPLY = true;
     private static final boolean DO_NOT_EXPECT_REPLY = false;
-    private static final String COMMAND_BUS_CONNECTOR_PATH = "/spring-command-bus-connector";
-    private static final String COMMAND_PATH = "/command";
+    private static final String COMMAND_BUS_CONNECTOR_PATH = "/spring-command-bus-connector/command";
 
     private final CommandBus localCommandBus;
     private final RestTemplate restTemplate;
@@ -71,10 +69,10 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (optionalEndpoint.isPresent()) {
             URI endpointUri = optionalEndpoint.get();
             URI destinationUri = buildURIForPath(endpointUri.getScheme(), endpointUri.getUserInfo(),
-                    endpointUri.getHost(), endpointUri.getPort(), COMMAND_PATH);
+                    endpointUri.getHost(), endpointUri.getPort());
 
-            SpringHttpDispatchMessage dispatchMessage =
-                    new SpringHttpDispatchMessage(commandMessage, serializer, expectReply);
+            SpringHttpDispatchMessage<C> dispatchMessage =
+                    new SpringHttpDispatchMessage<>(commandMessage, serializer, expectReply);
             return restTemplate.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
                     new ParameterizedTypeReference<SpringHttpReplyMessage<R>>(){});
         } else {
@@ -85,13 +83,12 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         }
     }
 
-    private URI buildURIForPath(String scheme, String userInfo, String host, int port, String path) {
-        path = COMMAND_BUS_CONNECTOR_PATH + path;
+    private URI buildURIForPath(String scheme, String userInfo, String host, int port) {
         try {
-            return new URI(scheme, userInfo, host, port, path, null, null);
+            return new URI(scheme, userInfo, host, port, COMMAND_BUS_CONNECTOR_PATH, null, null);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to build URI for [{}{}{}], with user info [{}] and path [{}]",
-                    scheme, host, port, userInfo, path, e);
+                    scheme, host, port, userInfo, COMMAND_BUS_CONNECTOR_PATH, e);
             throw new IllegalArgumentException(e);
         }
     }
@@ -102,35 +99,38 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     }
 
     @PostMapping("/command")
-    public CompletableFuture<SpringHttpReplyMessage> receiveCommand(
-            @RequestBody SpringHttpDispatchMessage dispatchMessage) throws ExecutionException, InterruptedException {
-        CommandMessage commandMessage = dispatchMessage.getCommandMessage(serializer);
-        CompletableFuture<SpringHttpReplyMessage> result = new CompletableFuture<>();
+    public <C, R> CompletableFuture<?> receiveCommand(
+            @RequestBody SpringHttpDispatchMessage<C> dispatchMessage) throws ExecutionException, InterruptedException {
+        CommandMessage<C> commandMessage = dispatchMessage.getCommandMessage(serializer);
+        CompletableFuture<SpringHttpReplyMessage<R>> result = new CompletableFuture<>();
 
         if (dispatchMessage.isExpectReply()) {
             try {
-                result = new SpringHttpReplyFutureCallback<>();
-                localCommandBus.dispatch(commandMessage, (SpringHttpReplyFutureCallback) result);
+                SpringHttpReplyFutureCallback<C, R> replyFutureCallback = new SpringHttpReplyFutureCallback<>();
+                localCommandBus.dispatch(commandMessage, replyFutureCallback);
+                return replyFutureCallback;
             } catch (Exception e) {
                 LOGGER.error("Could not dispatch command", e);
-                result.complete(new SpringHttpReplyMessage(commandMessage.getIdentifier(), null, e, serializer));
+                result.complete(new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
             }
         } else {
             try {
                 localCommandBus.dispatch(commandMessage);
+                result.complete(null);
             } catch (Exception e) {
                 LOGGER.error("Could not dispatch command", e);
-                result.complete(new SpringHttpReplyMessage(commandMessage.getIdentifier(), null, e, serializer));
+                result.complete(new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
             }
         }
 
         return result;
     }
 
-    private class SpringHttpReplyFutureCallback<C> extends FutureCallback<C, SpringHttpReplyMessage> {
+    public class SpringHttpReplyFutureCallback<C, R>  extends CompletableFuture<SpringHttpReplyMessage>
+            implements CommandCallback<C, R> {
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, SpringHttpReplyMessage result) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
             super.complete(new SpringHttpReplyMessage(commandMessage.getIdentifier(), result, null, serializer));
         }
 

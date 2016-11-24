@@ -1,15 +1,20 @@
 package org.axonframework.commandhandling.distributed.spring;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.DispatchMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.Serializable;
 
 /**
  * Spring Http message that contains a CommandMessage that needs to be dispatched on a remote command bus segment.
  */
-public class SpringHttpDispatchMessage extends DispatchMessage implements Serializable {
+public class SpringHttpDispatchMessage<C> extends DispatchMessage implements Serializable {
 
     /**
      * Initialize a SpringHttpDispatchMessage for the given {@code commandMessage}, to be serialized using given
@@ -28,4 +33,14 @@ public class SpringHttpDispatchMessage extends DispatchMessage implements Serial
         // Used for de-/serialization
     }
 
+    @Override
+    public CommandMessage<C> getCommandMessage(Serializer serializer) {
+        SimpleSerializedObject<byte[]> serializedPayload =
+                new SimpleSerializedObject<>(this.serializedPayload, byte[].class, payloadType, payloadRevision);
+        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(this.serializedMetaData, byte[].class);
+        final MetaData metaData = serializer.deserialize(serializedMetaData);
+        GenericMessage<C> genericMessage =
+                new GenericMessage<>(commandIdentifier, serializer.deserialize(serializedPayload), metaData);
+        return new GenericCommandMessage<>(genericMessage, commandName);
+    }
 }
