@@ -1,5 +1,6 @@
 package org.axonframework.commandhandling.distributed.spring;
 
+import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
@@ -23,10 +24,7 @@ import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -159,6 +157,37 @@ public class SpringCloudCommandRouterTest {
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
+        verify(serializer).deserialize(expectedSerializedObject);
+    }
+
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventFiltersInstancesWithoutCommandRouterSpecificMetadata() throws Exception {
+        int expectedMemberSetSize = 1;
+        String expectedServiceInstanceId = "nonCommandRouterServiceInstance";
+
+        serviceInstanceMetadata.put("loadFactor", Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put("serializedCommandFilter", SERIALIZED_COMMAND_FILTER);
+        serviceInstanceMetadata.put("serializedCommandFilterClassName", SERIALIZED_COMMAND_FILTER_CLASS_NAME);
+
+        ServiceInstance nonCommandRouterServiceInstance = mock(ServiceInstance.class);
+        when(nonCommandRouterServiceInstance.getServiceId()).thenReturn(expectedServiceInstanceId);
+
+        when(discoveryClient.getServices())
+                .thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, expectedServiceInstanceId));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(ImmutableList.of(serviceInstance, nonCommandRouterServiceInstance));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        ConsistentHash resultConsistentHash =
+                (ConsistentHash) ReflectionTestUtils.getField(testSubject, "consistentHash");
+
+        Set<Member> resultMemberSet = resultConsistentHash.getMembers();
+        assertEquals(expectedMemberSetSize, resultMemberSet.size());
+
+        verify(discoveryClient).getServices();
+        verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
+        verify(discoveryClient).getInstances(expectedServiceInstanceId);
         verify(serializer).deserialize(expectedSerializedObject);
     }
 

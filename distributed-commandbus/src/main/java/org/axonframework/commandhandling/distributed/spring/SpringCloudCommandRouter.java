@@ -57,6 +57,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
         Set<ServiceInstance> allServiceInstances = discoveryClient.getServices().stream()
                 .map(discoveryClient::getInstances)
                 .flatMap(Collection::stream)
+                .filter(serviceInstance -> serviceInstance.getMetadata().containsKey(LOAD_FACTOR) &&
+                        serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER) &&
+                        serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME) )
                 .collect(Collectors.toSet());
         updateMemberships(allServiceInstances);
     }
