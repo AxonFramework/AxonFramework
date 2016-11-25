@@ -83,7 +83,11 @@
                                         <exclude>org.springframework</exclude>
                                     </excludes>
                                     <includes>
-                                        <!-- allow any spring dependency with test scope -->
+                                        <!-- allow any smvn dependency:treepring dependency with test scope -->
+                                        <include>org.springframework:spring-web</include>
+                                        <include>org.springframework:spring-context</include>
+                                        <include>org.springframework:spring-core</include>
+                                        <include>org.springframework.cloud:spring-cloud-commons</include>
                                         <include>org.springframework:*:*:*:test</include>
                                     </includes>
                                 </bannedDependencies>
@@ -119,6 +123,16 @@
             <artifactId>spring-web</artifactId>
             <version>4.3.4.RELEASE</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-beans</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-expression</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
