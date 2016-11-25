@@ -135,23 +135,27 @@ public abstract class DispatchMessage {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DispatchMessage that = (DispatchMessage) o;
-        return expectReply == that.expectReply &&
-                Objects.equals(commandIdentifier, that.commandIdentifier) &&
-                Arrays.equals(serializedMetaData, that.serializedMetaData) &&
-                Objects.equals(payloadType, that.payloadType) &&
-                Objects.equals(payloadRevision, that.payloadRevision) &&
-                Arrays.equals(serializedPayload, that.serializedPayload) &&
-                Objects.equals(commandName, that.commandName);
-    }
-
-    @Override
     public int hashCode() {
         return Objects.hash(commandIdentifier, serializedMetaData, payloadType, payloadRevision, serializedPayload,
                 commandName, expectReply);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final DispatchMessage other = (DispatchMessage) obj;
+        return Objects.equals(this.commandIdentifier, other.commandIdentifier)
+                && Objects.deepEquals(this.serializedMetaData, other.serializedMetaData)
+                && Objects.equals(this.payloadType, other.payloadType)
+                && Objects.equals(this.payloadRevision, other.payloadRevision)
+                && Objects.deepEquals(this.serializedPayload, other.serializedPayload)
+                && Objects.equals(this.commandName, other.commandName)
+                && Objects.equals(this.expectReply, other.expectReply);
     }
 
     @Override

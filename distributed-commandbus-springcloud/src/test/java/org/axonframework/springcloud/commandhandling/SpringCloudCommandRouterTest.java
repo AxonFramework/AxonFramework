@@ -13,7 +13,6 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -201,10 +200,10 @@ public class SpringCloudCommandRouterTest {
     }
 
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
-        Assert.assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
+        assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        Assert.assertEquals(result.name(), expectedMemberName);
-        Assert.assertEquals(result.segmentCount(), LOAD_FACTOR);
+        assertEquals(result.name(), expectedMemberName);
+        assertEquals(result.segmentCount(), LOAD_FACTOR);
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
         assertTrue(connectionEndpointOptional.isPresent());

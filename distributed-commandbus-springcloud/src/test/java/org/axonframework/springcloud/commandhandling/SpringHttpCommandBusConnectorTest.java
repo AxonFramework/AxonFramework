@@ -274,7 +274,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     private class ParameterizedTypeReferenceMatcher<R> extends BaseMatcher<ParameterizedTypeReference<SpringHttpReplyMessage<R>>> {
 
-        ParameterizedTypeReference<SpringHttpReplyMessage<R>> expected =
+        private ParameterizedTypeReference<SpringHttpReplyMessage<R>> expected =
                 new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() { };
 
         @Override

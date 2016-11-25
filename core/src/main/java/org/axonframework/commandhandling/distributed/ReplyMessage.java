@@ -137,20 +137,24 @@ public abstract class ReplyMessage {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ReplyMessage that = (ReplyMessage) o;
-        return success == that.success &&
-                Objects.equals(commandIdentifier, that.commandIdentifier) &&
-                Objects.equals(resultType, that.resultType) &&
-                Objects.equals(resultRevision, that.resultRevision) &&
-                Arrays.equals(serializedResult, that.serializedResult);
+    public int hashCode() {
+        return Objects.hash(commandIdentifier, success, resultType, resultRevision, serializedResult);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(commandIdentifier, success, resultType, resultRevision, serializedResult);
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final ReplyMessage other = (ReplyMessage) obj;
+        return Objects.equals(this.commandIdentifier, other.commandIdentifier)
+                && Objects.equals(this.success, other.success)
+                && Objects.equals(this.resultType, other.resultType)
+                && Objects.equals(this.resultRevision, other.resultRevision)
+                && Objects.deepEquals(this.serializedResult, other.serializedResult);
     }
 
     @Override
