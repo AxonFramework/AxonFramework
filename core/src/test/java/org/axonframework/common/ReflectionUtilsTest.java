@@ -96,6 +96,14 @@ public class ReflectionUtilsTest {
     }
 
     @Test
+    public void testSetFieldValue() throws Exception {
+        int expectedFieldValue = 4;
+        SomeSubType testObject = new SomeSubType();
+        ReflectionUtils.setFieldValue(SomeSubType.class.getDeclaredField("field3"), testObject, expectedFieldValue);
+        assertEquals(expectedFieldValue, testObject.getField3());
+    }
+
+    @Test
     public void testIsAccessible() throws NoSuchFieldException {
         Field field1 = SomeType.class.getDeclaredField("field1");
         Field field2 = SomeType.class.getDeclaredField("field2");
