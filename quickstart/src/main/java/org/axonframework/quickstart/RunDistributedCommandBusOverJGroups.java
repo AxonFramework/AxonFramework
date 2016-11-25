@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
+import org.axonframework.jgroups.commandhandling.JGroupsConnector;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;

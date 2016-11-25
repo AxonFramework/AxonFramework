@@ -11,7 +11,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
+import org.axonframework.jgroups.commandhandling.JGroupsConnector;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;

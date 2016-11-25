@@ -18,7 +18,7 @@ package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
+import org.axonframework.jgroups.commandhandling.JGroupsConnector;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
