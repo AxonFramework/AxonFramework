@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -56,7 +57,7 @@ public class SpringCloudCommandRouterTest {
     @Mock
     private Serializer serializer;
 
-    private Field consistentHashField;
+    private Field atomicConsistentHashField;
     @Mock
     private SerializedObject<String> serializedObject;
     private HashMap<String, String> serviceInstanceMetadata;
@@ -66,8 +67,8 @@ public class SpringCloudCommandRouterTest {
 
     @Before
     public void setUp() throws Exception {
-        String consistentHashFieldName = "consistentHash";
-        consistentHashField = SpringCloudCommandRouter.class.getDeclaredField(consistentHashFieldName);
+        String atomicConsistentHashFieldName = "atomicConsistentHash";
+        atomicConsistentHashField = SpringCloudCommandRouter.class.getDeclaredField(atomicConsistentHashFieldName);
 
         SerializedType serializedType = mock(SerializedType.class);
         when(serializedType.getName()).thenReturn(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
@@ -103,8 +104,9 @@ public class SpringCloudCommandRouterTest {
     @Test
     public void testFindDestinationReturnsMemberForCommandMessage() throws Exception {
         SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, null);
-        ConsistentHash testConsistentHash = new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true);
-        ReflectionUtils.setFieldValue(consistentHashField, testSubject, testConsistentHash);
+        AtomicReference<ConsistentHash> testAtomicConsistentHash =
+                new AtomicReference<>(new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true));
+        ReflectionUtils.setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
 
         Optional<Member> resultOptional = testSubject.findDestination(TEST_COMMAND);
 
@@ -133,9 +135,10 @@ public class SpringCloudCommandRouterTest {
     public void testUpdateMemberShipUpdatesConsistentHash() throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
-        ConsistentHash resultConsistentHash = ReflectionUtils.getFieldValue(consistentHashField, testSubject);
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
 
-        Set<Member> resultMemberSet = resultConsistentHash.getMembers();
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
         assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
@@ -153,9 +156,10 @@ public class SpringCloudCommandRouterTest {
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
-        ConsistentHash resultConsistentHash = ReflectionUtils.getFieldValue(consistentHashField, testSubject);
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
 
-        Set<Member> resultMemberSet = resultConsistentHash.getMembers();
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
         assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
@@ -184,9 +188,10 @@ public class SpringCloudCommandRouterTest {
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
-        ConsistentHash resultConsistentHash = ReflectionUtils.getFieldValue(consistentHashField, testSubject);
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
 
-        Set<Member> resultMemberSet = resultConsistentHash.getMembers();
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
 
         verify(discoveryClient).getServices();

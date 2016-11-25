@@ -13,6 +13,7 @@ import org.springframework.context.event.EventListener;
 
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private final DiscoveryClient discoveryClient;
     private final RoutingStrategy routingStrategy;
     private final Serializer serializer;
-    private ConsistentHash consistentHash = new ConsistentHash();
+    private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
 
     public SpringCloudCommandRouter(DiscoveryClient discoveryClient, RoutingStrategy routingStrategy,
                                     Serializer serializer) {
@@ -36,7 +37,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     @Override
     public Optional<Member> findDestination(CommandMessage<?> commandMessage) {
-        return consistentHash.getMember(routingStrategy.getRoutingKey(commandMessage), commandMessage);
+        return atomicConsistentHash.get().getMember(routingStrategy.getRoutingKey(commandMessage), commandMessage);
     }
 
     @Override
@@ -68,7 +69,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
         serviceInstances.forEach(serviceInstance -> {
             SimpleMember<URI> simpleMember = new SimpleMember<>(
                     serviceInstance.getServiceId().toUpperCase(),
-                    serviceInstance.getUri(), member -> consistentHash.without(member));
+                    serviceInstance.getUri(),
+                    member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
+            );
 
             Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
 
@@ -78,7 +81,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
             CommandNameFilter commandNameFilter = serializer.deserialize(serializedObject);
 
-            consistentHash = consistentHash.with(simpleMember, loadFactor, commandNameFilter);
+            atomicConsistentHash.updateAndGet(
+                    consistentHash -> consistentHash.with(simpleMember, loadFactor, commandNameFilter)
+            );
         });
     }
 
