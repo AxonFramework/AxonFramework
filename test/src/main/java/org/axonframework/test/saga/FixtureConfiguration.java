@@ -130,7 +130,7 @@ public interface FixtureConfiguration {
      * @param event The event to publish
      * @return an object that allows chaining of more given state
      */
-    ContinuedGivenState givenAPublished(Object event) throws Exception;
+    ContinuedGivenState givenAPublished(Object event);
 
     /**
      * Indicates that no relevant activity has occurred in the past.

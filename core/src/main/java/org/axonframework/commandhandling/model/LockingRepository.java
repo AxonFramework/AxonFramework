@@ -45,7 +45,8 @@ import java.util.concurrent.Callable;
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class LockingRepository<T, A extends Aggregate<T>> extends AbstractRepository<T, LockAwareAggregate<T, A>> {
+public abstract class LockingRepository<T, A extends Aggregate<T>> extends AbstractRepository<T,
+        LockAwareAggregate<T, A>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
@@ -63,8 +64,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     /**
      * Initialize a repository with a pessimistic locking strategy and a parameter resolver factory.
      *
-     * @param aggregateType The type of aggregate stored in this repository
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
      */
     protected LockingRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
         this(aggregateType, new PessimisticLockFactory(), parameterResolverFactory);
@@ -74,7 +75,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      * Initialize the repository with the given {@code LockFactory}.
      *
      * @param aggregateType The type of aggregate stored in this repository
-     * @param lockFactory the lock factory to use
+     * @param lockFactory   the lock factory to use
      */
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory) {
         super(aggregateType);
@@ -85,11 +86,12 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     /**
      * Initialize the repository with the given {@code LockFactory} and {@code ParameterResolverFactory}.
      *
-     * @param aggregateType             The type of aggregate stored in this repository
-     * @param lockFactory               The lock factory to use
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param lockFactory              The lock factory to use
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
      */
-    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory) {
+    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
+                                ParameterResolverFactory parameterResolverFactory) {
         super(aggregateType, parameterResolverFactory);
         Assert.notNull(lockFactory, () -> "LockFactory may not be null");
         this.lockFactory = lockFactory;
@@ -112,6 +114,14 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
         return new LockAwareAggregate<>(aggregate, lock);
     }
 
+    /**
+     * Creates a new aggregate instance using the given {@code factoryMethod}. Implementations should assume that this
+     * method is only called if a UnitOfWork is currently active.
+     *
+     * @param factoryMethod The method to create the aggregate's root instance
+     * @return an Aggregate instance describing the aggregate's state
+     * @throws Exception when the factoryMethod throws an exception
+     */
     protected abstract A doCreateNewForLock(Callable<T> factoryMethod) throws Exception;
 
     /**
@@ -152,11 +162,10 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     protected void doSave(LockAwareAggregate<T, A> aggregate) {
         if (aggregate.version() != null && !aggregate.isLockHeld()) {
             throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be "
-                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            + "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(),
-                    aggregate.identifierAsString()));
+                    "The aggregate of type [%s] with identifier [%s] could not be " +
+                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or " +
+                            "the current thread had released its lock earlier on.",
+                    aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
         }
         doSaveWithLock(aggregate.getWrappedAggregate());
     }
@@ -171,11 +180,10 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     protected final void doDelete(LockAwareAggregate<T, A> aggregate) {
         if (aggregate.version() != null && !aggregate.isLockHeld()) {
             throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be "
-                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            + "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(),
-                    aggregate.identifierAsString()));
+                    "The aggregate of type [%s] with identifier [%s] could not be " +
+                            "saved, as a valid lock is not held. Either another thread has saved an aggregate, or " +
+                            "the current thread had released its lock earlier on.",
+                    aggregate.getClass().getSimpleName(), aggregate.identifierAsString()));
         }
         doDeleteWithLock(aggregate.getWrappedAggregate());
     }
@@ -194,5 +202,13 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      */
     protected abstract void doDeleteWithLock(A aggregate);
 
+    /**
+     * Loads the aggregate with the given aggregateIdentifier. All necessary locks have been obtained.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the aggregate to load
+     * @return a fully initialized aggregate
+     * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
+     */
     protected abstract A doLoadWithLock(String aggregateIdentifier, Long expectedVersion);
 }

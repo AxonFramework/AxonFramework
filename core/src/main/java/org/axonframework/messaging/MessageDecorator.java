@@ -35,6 +35,12 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
     private final Message<T> delegate;
     private transient volatile SerializedObjectHolder serializedObjectHolder;
 
+    /**
+     * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
+     * the message's payload, metadata and identifier.
+     *
+     * @param delegate the message delegate
+     */
     protected MessageDecorator(Message<T> delegate) {
         this.delegate = delegate;
     }
@@ -82,6 +88,11 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
         return serializedObjectHolder;
     }
 
+    /**
+     * Returns the wrapped message delegate.
+     *
+     * @return the delegate message
+     */
     protected Message<T> getDelegate() {
         return delegate;
     }

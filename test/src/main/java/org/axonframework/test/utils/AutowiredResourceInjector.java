@@ -21,8 +21,11 @@ import org.axonframework.eventhandling.saga.AbstractResourceInjector;
 import java.util.Optional;
 
 /**
- * Resource injector that uses setter methods to inject resources. All methods starting with "set" are evaluated. If
- * that method has a single parameter, a Resource of that type is injected into it, if present.
+ * Resource injector that uses setter methods to inject resources. All methods and fields annotated with
+ * {@code @Inject} are evaluated. If that method has a single parameter, a Resource of that type
+ * is injected into it, if present.
+ * <p>
+ * Unlike the SimpleResourceInjector, changes in the provided {@link Iterable} are reflected in this injector.
  *
  * @author Allard Buijze
  * @since 1.1

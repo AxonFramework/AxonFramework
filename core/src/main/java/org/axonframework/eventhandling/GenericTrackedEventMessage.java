@@ -51,6 +51,14 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
         this.trackingToken = trackingToken;
     }
 
+    /**
+     * Initializes a {@link GenericTrackedEventMessage} with given message as delegate and given {@code timestamp}. The
+     * given message will be used supply the payload, metadata and identifier of the resulting event message.
+     *
+     * @param trackingToken the tracking token of the resulting message
+     * @param delegate      the message that will be used used as delegate
+     * @param timestamp     the timestamp of the resulting event message
+     */
     protected GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Instant timestamp) {
         super(delegate, timestamp);
         this.trackingToken = trackingToken;

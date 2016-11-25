@@ -208,6 +208,13 @@ public class ModelInspector<T> implements AggregateModel<T> {
         return null;
     }
 
+    /**
+     * Returns the {@link MessageHandlingMember} that is capable of handling the given {@code message}. If no member is
+     * found an empty optional is returned.
+     *
+     * @param message the message to find a handler for
+     * @return the handler of the message if present on the model
+     */
     @SuppressWarnings("unchecked")
     protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
         for (MessageHandlingMember<? super T> handler : eventHandlers) {

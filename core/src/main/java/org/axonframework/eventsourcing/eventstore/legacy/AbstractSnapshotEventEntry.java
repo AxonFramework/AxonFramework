@@ -25,15 +25,14 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Abstract base class of a serialized domain event with a format that is compatible with that of events stored using
- * Axon 2. If JPA is used these entries have a primary key that is a combination of the aggregate's identifier,
- * sequence number and type.
+ * Abstract base class of a serialized snapshot event storing the state of an aggregate. If JPA is used these entries
+ * have a primary key that is a combination of the aggregate's identifier, sequence number and type.
  *
  * @author Rene de Waele
  */
 @MappedSuperclass
-@IdClass(AbstractLegacyDomainEventEntry.PK.class)
-public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
+@IdClass(AbstractSnapshotEventEntry.PK.class)
+public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 
     @Id
     private String aggregateIdentifier;
@@ -53,8 +52,7 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
      * @param serializer   The serializer to convert the event
      * @param contentType  The data type of the payload and metadata after serialization
      */
-    public AbstractLegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
-                                          Class<T> contentType) {
+    public AbstractSnapshotEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
         super(eventMessage, serializer, contentType);
         type = eventMessage.getType();
         aggregateIdentifier = eventMessage.getAggregateIdentifier();
@@ -74,9 +72,9 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
      * @param payload             The serialized payload
      * @param metaData            The serialized metadata
      */
-    public AbstractLegacyDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
-                                          String eventIdentifier, Object timestamp, String payloadType,
-                                          String payloadRevision, T payload, T metaData) {
+    public AbstractSnapshotEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
+                                      String eventIdentifier, Object timestamp, String payloadType,
+                                      String payloadRevision, T payload, T metaData) {
         super(eventIdentifier, timestamp, payloadType, payloadRevision, payload, metaData);
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -86,7 +84,7 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
     /**
      * Default constructor required by JPA
      */
-    protected AbstractLegacyDomainEventEntry() {
+    protected AbstractSnapshotEventEntry() {
     }
 
     @Override
@@ -131,8 +129,7 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
                 return false;
             }
             PK pk = (PK) o;
-            return sequenceNumber == pk.sequenceNumber &&
-                    Objects.equals(aggregateIdentifier, pk.aggregateIdentifier) &&
+            return sequenceNumber == pk.sequenceNumber && Objects.equals(aggregateIdentifier, pk.aggregateIdentifier) &&
                     Objects.equals(type, pk.type);
         }
 

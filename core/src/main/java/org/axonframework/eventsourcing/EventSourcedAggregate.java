@@ -167,7 +167,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     }
 
     @Override
-    protected <P> GenericDomainEventMessage<P> createMessage(P payload, MetaData metaData) {
+    protected <P> DomainEventMessage<P> createMessage(P payload, MetaData metaData) {
         String id = identifierAsString();
         long seq = nextSequence();
         if (id == null) {

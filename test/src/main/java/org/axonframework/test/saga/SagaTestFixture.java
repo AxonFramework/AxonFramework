@@ -92,13 +92,17 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     /**
-     * Handles the given {@code event} in the scope of a Unit of Work.
+     * Handles the given {@code event} in the scope of a Unit of Work. If handling the event results in an exception
+     * the exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param event The event message to handle
-     * @throws Exception when a handlers throws an exception
      */
-    protected void handleInSaga(EventMessage<?> event) throws Exception {
-        DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> sagaManager.handle(event));
+    protected void handleInSaga(EventMessage<?> event) {
+        try {
+            DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> sagaManager.handle(event));
+        } catch (Exception e) {
+            throw new FixtureExecutionException("Exception occurred while handling an event", e);
+        }
     }
 
     @Override
@@ -147,7 +151,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState givenAPublished(Object event) throws Exception {
+    public ContinuedGivenState givenAPublished(Object event) {
         handleInSaga(timeCorrectedEventMessage(event));
         return this;
     }
@@ -191,12 +195,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         try {
             fixtureExecutionResult.startRecording();
             handleInSaga(timeCorrectedEventMessage(event));
-        } catch (Exception e) {
-            throw new FixtureExecutionException("Exception occurred while handling an event", e);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
-
         return fixtureExecutionResult;
     }
 
@@ -317,13 +318,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
 
         @Override
-        public ContinuedGivenState published(Object... events) throws Exception {
+        public ContinuedGivenState published(Object... events) {
             publish(events);
             return SagaTestFixture.this;
         }
 
         @Override
-        public FixtureExecutionResult publishes(Object event) throws Exception {
+        public FixtureExecutionResult publishes(Object event) {
             try {
                 publish(event);
             } finally {
@@ -332,7 +333,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             return fixtureExecutionResult;
         }
 
-        private void publish(Object... events) throws Exception {
+        private void publish(Object... events) {
             for (Object event : events) {
                 EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event);
                 handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,

@@ -93,10 +93,24 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
                 parametersMatch(message);
     }
 
+    /**
+     * Checks if this member can handle the type of the given {@code message}. This method does not check if the
+     * parameter resolvers of this member are compatible with the given message. Use {@link #parametersMatch(Message)}
+     * for that.
+     *
+     * @param message the message to check for
+     * @return {@code true} if this member can handle the message type. {@code false} otherwise
+     */
     protected boolean typeMatches(Message<?> message) {
         return messageType.isInstance(message);
     }
 
+    /**
+     * Checks if the parameter resolvers of this member are compatible with the given {@code message}.
+     *
+     * @param message the message to check for
+     * @return {@code true} if the parameter resolvers can handle this message. {@code false} otherwise
+     */
     @SuppressWarnings("unchecked")
     protected boolean parametersMatch(Message<?> message) {
         for (ParameterResolver resolver : parameterResolvers) {

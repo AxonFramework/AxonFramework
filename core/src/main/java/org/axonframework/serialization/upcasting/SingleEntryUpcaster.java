@@ -37,7 +37,24 @@ public abstract class SingleEntryUpcaster<T> implements Upcaster<T> {
         });
     }
 
+    /**
+     * Checks if this upcaster can upcast the given {@code intermediateRepresentation}. If the upcaster cannot upcast
+     * the representation the {@link #doUpcast(Object)} is not invoked.
+     *
+     * @param intermediateRepresentation the intermediate object representation to upcast
+     * @return {@code true} if the representation can be upcast, {@code false} otherwise
+     */
     protected abstract boolean canUpcast(T intermediateRepresentation);
 
+    /**
+     * Upcasts the given {@code intermediateRepresentation}. This method is only invoked if {@link #canUpcast(Object)}
+     * returned {@code true} for the given representation.
+     * <p>
+     * Note that the returned representation should not be {@code null}. To remove an intermediateRepresentation
+     * add a filter to the input stream.
+     *
+     * @param intermediateRepresentation the representation of the object to upcast
+     * @return the upcasted representation
+     */
     protected abstract T doUpcast(T intermediateRepresentation);
 }

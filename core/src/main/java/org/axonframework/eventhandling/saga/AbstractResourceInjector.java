@@ -56,6 +56,14 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
                         }));
     }
 
+    /**
+     * Returns a resource of given {@code requiredType} or an empty Optional if the resource is not registered with the
+     * injector.
+     *
+     * @param requiredType the class of the resource to find
+     * @param <R> the resource type
+     * @return an Optional that contains the resource if it was found
+     */
     protected abstract <R> Optional<R> findResource(Class<R> requiredType);
 
     private void injectFieldResource(Object saga, Field injectField, Object resource) {

@@ -240,6 +240,11 @@ public class JacksonSerializer implements Serializer {
         return converterFactory;
     }
 
+    /**
+     * Returns the revision resolver used by this serializer.
+     *
+     * @return the revision resolver
+     */
     protected RevisionResolver getRevisionResolver() {
         return revisionResolver;
     }

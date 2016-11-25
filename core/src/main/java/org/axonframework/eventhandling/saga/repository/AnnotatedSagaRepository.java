@@ -149,10 +149,23 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
     }
 
+    /**
+     * Returns a set of identifiers of sagas that may have changed in the context of the given {@code unitOfWork} and
+     * have not been saved yet.
+     *
+     * @param unitOfWork the unit of work to inspect for unsaved sagas
+     * @return set of saga identifiers of unsaved sagas
+     */
     protected Set<String> unsavedSagaResource(UnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(unsavedSagasResourceKey, i -> new HashSet<>());
     }
 
+    /**
+     * Commits the given modified {@code saga} to the underlying saga store. If the saga is not active anymore it will
+     * be deleted. Otherwise the stored saga and its associations will be updated.
+     *
+     * @param saga the saga to commit to the store
+     */
     protected void commit(AnnotatedSaga<T> saga) {
         if (!saga.isActive()) {
             deleteSaga(saga);
@@ -205,6 +218,14 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
                              saga.getAssociationValues().asSet());
     }
 
+    /**
+     * Loads the saga with given {@code sagaIdentifier} from the underlying saga store and returns it as a {@link
+     * AnnotatedSaga}. Resources of the saga will be injected using the {@link ResourceInjector} configured with the
+     * repository.
+     *
+     * @param sagaIdentifier the identifier of the saga to load
+     * @return AnnotatedSaga instance with the loaded saga
+     */
     protected AnnotatedSaga<T> doLoadSaga(String sagaIdentifier) {
         SagaStore.Entry<T> entry = sagaStore.loadSaga(sagaType, sagaIdentifier);
         if (entry != null) {

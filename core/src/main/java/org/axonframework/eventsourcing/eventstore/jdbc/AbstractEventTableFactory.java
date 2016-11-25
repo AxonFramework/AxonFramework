@@ -66,7 +66,17 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
         return connection.prepareStatement(sql);
     }
 
+    /**
+     * Returns the sql to register the auto incrementing global sequence column.
+     *
+     * @return the sql for the global id column
+     */
     protected abstract String idColumnType();
 
+    /**
+     * Returns the sql to describe the type of payload column.
+     *
+     * @return the sql for the payload column
+     */
     protected abstract String payloadType();
 }

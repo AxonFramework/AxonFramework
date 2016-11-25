@@ -24,7 +24,7 @@ public class PostgresEventTableFactory extends AbstractEventTableFactory {
      */
     public static final PostgresEventTableFactory INSTANCE = new PostgresEventTableFactory();
 
-    protected PostgresEventTableFactory() {
+    private PostgresEventTableFactory() {
     }
 
     @Override

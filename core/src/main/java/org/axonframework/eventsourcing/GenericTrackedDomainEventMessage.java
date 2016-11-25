@@ -31,7 +31,7 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
     private final TrackingToken trackingToken;
 
     /**
-     * Initialize a DomainEventMessage originating from existing data.
+     * Initialize a DomainEventMessage originating from an aggregate.
      *
      * @param trackingToken Tracking token of the event
      * @param delegate      Delegate domain event containing other event data
@@ -58,6 +58,16 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
         this.trackingToken = trackingToken;
     }
 
+    /**
+     * Initialize a DomainEventMessage originating from an aggregate.
+     *
+     * @param trackingToken       Tracking token of the event
+     * @param type                The domain type
+     * @param aggregateIdentifier The identifier of the aggregate generating this message
+     * @param sequenceNumber      The message's sequence number
+     * @param delegate            The delegate message providing the payload, metadata and identifier of the event
+     * @param timestamp           The event's timestamp
+     */
     protected GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
                                                long sequenceNumber, Message<T> delegate, Instant timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);

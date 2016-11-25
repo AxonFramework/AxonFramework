@@ -201,28 +201,64 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         }
     }
 
+    /**
+     * Deletes all snapshots from the underlying storage with given {@code aggregateIdentifier}.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to delete snapshots for
+     */
     protected void deleteSnapshots(String aggregateIdentifier) {
         entityManager().createQuery("DELETE FROM " + snapshotEventEntryEntityName() +
                                             " e WHERE e.aggregateIdentifier = :aggregateIdentifier")
                 .setParameter("aggregateIdentifier", aggregateIdentifier).executeUpdate();
     }
 
+    /**
+     * Returns a Jpa event entity for given {@code eventMessage}. Use the given {@code serializer} to serialize the
+     * payload and metadata of the event.
+     *
+     * @param eventMessage the event message to store
+     * @param serializer   the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
     protected Object createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
         return new DomainEventEntry(asDomainEventMessage(eventMessage), serializer);
     }
 
+    /**
+     * Returns a Jpa snapshot entity for given {@code snapshot} of an aggregate. Use the given {@code serializer} to
+     * serialize the payload and metadata of the snapshot event.
+     *
+     * @param snapshot   the domain event message containing a snapshot of the aggregate
+     * @param serializer the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
     protected Object createSnapshotEntity(DomainEventMessage<?> snapshot, Serializer serializer) {
         return new SnapshotEventEntry(snapshot, serializer);
     }
 
+    /**
+     * Returns the name of the Jpa event entity. Defaults to 'DomainEventEntry'.
+     *
+     * @return the name of the Jpa event entity
+     */
     protected String domainEventEntryEntityName() {
         return DomainEventEntry.class.getSimpleName();
     }
 
+    /**
+     * Returns the name of the Snaphot event entity. Defaults to 'SnapshotEventEntry'.
+     *
+     * @return the name of the Jpa snapshot entity
+     */
     protected String snapshotEventEntryEntityName() {
         return SnapshotEventEntry.class.getSimpleName();
     }
 
+    /**
+     * Provides an {@link EntityManager} instance for storing and fetching event data.
+     *
+     * @return a provided entity manager
+     */
     protected EntityManager entityManager() {
         return entityManagerProvider.getEntityManager();
     }

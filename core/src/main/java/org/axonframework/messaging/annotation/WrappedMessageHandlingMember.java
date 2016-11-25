@@ -32,6 +32,11 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
 
     private final MessageHandlingMember<T> delegate;
 
+    /**
+     * Initializes the member using the given {@code delegate}.
+     *
+     * @param delegate the actual message handling member to delegate to
+     */
     protected WrappedMessageHandlingMember(MessageHandlingMember<T> delegate) {
         this.delegate = delegate;
     }

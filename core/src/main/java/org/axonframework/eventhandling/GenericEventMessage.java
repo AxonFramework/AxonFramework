@@ -107,6 +107,13 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         this.timestampSupplier = CachingSupplier.of(timestampSupplier);
     }
 
+    /**
+     * Initializes a {@link GenericEventMessage} with given message as delegate and given {@code timestamp}. The
+     * given message will be used supply the payload, metadata and identifier of the resulting event message.
+     *
+     * @param delegate  the message that will be used used as delegate
+     * @param timestamp the timestamp of the resulting event message
+     */
     protected GenericEventMessage(Message<T> delegate, Instant timestamp) {
         this(delegate, CachingSupplier.of(timestamp));
     }
