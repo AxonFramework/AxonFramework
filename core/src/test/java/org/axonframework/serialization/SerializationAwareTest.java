@@ -53,6 +53,8 @@ public class SerializationAwareTest {
     @Test
     public void testSerializePayloadTwice() {
         Serializer serializer = mock(Serializer.class);
+        ConverterFactory converterFactory = new ChainingConverterFactory(getClass().getClassLoader());
+        when(serializer.getConverterFactory()).thenReturn(converterFactory);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
@@ -60,12 +62,15 @@ public class SerializationAwareTest {
         SerializedObject<byte[]> actual2 = testSubject.serializePayload(serializer, byte[].class);
         assertSame(actual1, actual2);
         verify(serializer, times(1)).serialize("payload", byte[].class);
+        verify(serializer).getConverterFactory();
         verifyNoMoreInteractions(serializer);
     }
 
     @Test
     public void testSerializePayloadTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
+        ConverterFactory converterFactory = new ChainingConverterFactory(getClass().getClassLoader());
+        when(serializer.getConverterFactory()).thenReturn(converterFactory);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
@@ -75,24 +80,30 @@ public class SerializationAwareTest {
         assertNotSame(actual1, actual2);
         assertEquals(String.class, actual2.getContentType());
         verify(serializer, times(1)).serialize("payload", byte[].class);
+        verify(serializer).getConverterFactory();
         verifyNoMoreInteractions(serializer);
     }
 
     @Test
     public void testSerializeMetaDataTwice() {
         Serializer serializer = mock(Serializer.class);
+        ConverterFactory converterFactory = new ChainingConverterFactory(getClass().getClassLoader());
+        when(serializer.getConverterFactory()).thenReturn(converterFactory);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
         testSubject.serializeMetaData(serializer, byte[].class);
         testSubject.serializeMetaData(serializer, byte[].class);
         verify(serializer, times(1)).serialize(isA(MetaData.class), eq(byte[].class));
+        verify(serializer).getConverterFactory();
         verifyNoMoreInteractions(serializer);
     }
 
     @Test
     public void testSerializeMetaDataTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
+        ConverterFactory converterFactory = new ChainingConverterFactory(getClass().getClassLoader());
+        when(serializer.getConverterFactory()).thenReturn(converterFactory);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
@@ -102,6 +113,7 @@ public class SerializationAwareTest {
         assertNotSame(actual1, actual2);
         assertEquals(String.class, actual2.getContentType());
         verify(serializer, times(1)).serialize(isA(MetaData.class), eq(byte[].class));
+        verify(serializer).getConverterFactory();
         verifyNoMoreInteractions(serializer);
     }
 }
