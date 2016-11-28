@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.legacy.AbstractSnapshotEventEntry;
+import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.Entity;

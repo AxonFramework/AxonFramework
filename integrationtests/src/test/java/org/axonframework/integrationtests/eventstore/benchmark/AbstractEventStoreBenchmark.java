@@ -5,7 +5,10 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -29,7 +32,7 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  */
 public abstract class AbstractEventStoreBenchmark {
 
-    private static final int DEFAULT_THREAD_COUNT = 100, DEFAULT_BATCH_SIZE = 50, DEFAULT_BATCH_COUNT = 50;
+    private static final int DEFAULT_THREAD_COUNT = 100, DEFAULT_BATCH_SIZE = 5, DEFAULT_BATCH_COUNT = 50;
     private static final DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -161,18 +164,12 @@ public abstract class AbstractEventStoreBenchmark {
 
     private class GapDetector implements EventListener {
 
-        private TrackingToken lastToken;
         private final NavigableSet<GapAwareTrackingToken> trackingTokensWithGap = new TreeSet<>();
 
         @Override
         public void handle(EventMessage event) throws Exception {
             remainingEvents.countDown();
             TrackedEventMessage<?> trackedEvent = (TrackedEventMessage<?>) event;
-            if (lastToken != null && lastToken.isAfter(trackedEvent.trackingToken())) {
-                logger.error("Received events in the wrong order! Received token {} but last processed token was {}.",
-                             trackedEvent.trackingToken(), lastToken);
-            }
-            lastToken = trackedEvent.trackingToken();
             if (trackedEvent.trackingToken() instanceof GapAwareTrackingToken) {
                 GapAwareTrackingToken trackingToken = (GapAwareTrackingToken) trackedEvent.trackingToken();
                 if (trackingToken.hasGaps()) {

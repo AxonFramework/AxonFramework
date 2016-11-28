@@ -23,13 +23,13 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventUtils;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.mongo.eventsourcing.eventstore.AbstractMongoEventStorageStrategy;
 import org.axonframework.mongo.eventsourcing.eventstore.StorageStrategy;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.EventEntryConfiguration;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,7 +59,7 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
      * @param commitEntryConfiguration object that configures the naming of commit entry properties
      */
     public DocumentPerCommitStorageStrategy(CommitEntryConfiguration commitEntryConfiguration) {
-        this(EventEntryConfiguration.getDefault(), commitEntryConfiguration);
+        this(EventEntryConfiguration.getDefault(), commitEntryConfiguration, null);
     }
 
     /**
@@ -68,10 +68,11 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
      *
      * @param eventConfiguration       object that configures the naming of event entry properties
      * @param commitEntryConfiguration object that configures the naming of event entry properties
+     * @param lookBackTime       the maximum time to look back when fetching new events while tracking.
      */
     public DocumentPerCommitStorageStrategy(EventEntryConfiguration eventConfiguration,
-                                            CommitEntryConfiguration commitEntryConfiguration) {
-        super(eventConfiguration);
+                                            CommitEntryConfiguration commitEntryConfiguration, Duration lookBackTime) {
+        super(eventConfiguration, lookBackTime);
         this.commitEntryConfiguration = commitEntryConfiguration;
     }
 
@@ -89,12 +90,7 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
     }
 
     @Override
-    protected Stream<? extends DomainEventData<?>> extractDomainEvents(Document object) {
-        return Stream.of(new CommitEntry(object, commitEntryConfiguration, eventConfiguration()).getEvents());
-    }
-
-    @Override
-    protected Stream<? extends TrackedEventData<?>> extractTrackedEvents(Document object) {
+    protected Stream<? extends DomainEventData<?>> extractEvents(Document object) {
         return Stream.of(new CommitEntry(object, commitEntryConfiguration, eventConfiguration()).getEvents());
     }
 

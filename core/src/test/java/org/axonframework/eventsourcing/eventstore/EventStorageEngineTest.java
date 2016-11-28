@@ -13,12 +13,16 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.junit.Test;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 
@@ -101,10 +105,12 @@ public abstract class EventStorageEngineTest {
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void testLoadPartialStreamOfTrackedEvents() {
-        testSubject.appendEvents(createEvents(4));
+        List<DomainEventMessage<?>> events = createEvents(4);
+        testSubject.appendEvents(events);
         TrackingToken token = testSubject.readEvents(null, false).findFirst().get().trackingToken();
         assertEquals(3, testSubject.readEvents(token, false).count());
-        assertTrue(testSubject.readEvents(token, false).allMatch(event -> event.trackingToken().isAfter(token)));
+        assertEquals(events.subList(1, events.size()).stream().map(EventMessage::getIdentifier).collect(toList()),
+                     testSubject.readEvents(token, false).map(EventMessage::getIdentifier).collect(toList()));
     }
 
     protected void setTestSubject(EventStorageEngine testSubject) {

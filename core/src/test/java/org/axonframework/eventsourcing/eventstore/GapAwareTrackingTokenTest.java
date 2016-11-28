@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptySortedSet;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 
 public class GapAwareTrackingTokenTest {
 
@@ -64,37 +63,4 @@ public class GapAwareTrackingTokenTest {
     public void testNewInstanceWithGapHigherThanSequenceNotAllowed() {
         GapAwareTrackingToken.newInstance(9L, Arrays.asList(1L, 5L, 12L));
     }
-
-    @Test
-    public void testCompareTokensWithoutGaps() {
-        GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(10L, Collections.emptyList());
-        GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(13L, Collections.emptyList());
-        assertTrue(token2.isAfter(token1));
-    }
-
-    @Test
-    public void testTokensWithSameSequenceAndSameGapsAreEqual() {
-        GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(1L, 5L, 12L));
-        GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(1L, 5L, 12L));
-        assertTrue(token1.equals(token2));
-        assertEquals(0, token1.compareTo(token2));
-    }
-
-    @Test
-    public void testCompareTokensWithSameSequenceButDifferentGaps() {
-        GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(1L, 5L, 12L));
-        GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(1L, 8L, 12L));
-        assertTrue(token2.isAfter(token1));
-        token1 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(1L, 8L, 12L));
-        token2 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(2L, 5L, 12L));
-        assertTrue(token2.isAfter(token1));
-    }
-
-    @Test
-    public void testCompareTokensWithSameSequenceButDifferentGapCount() {
-        GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(1L, 5L, 12L));
-        GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(19L, Arrays.asList(15L, 18L));
-        assertTrue(token2.isAfter(token1));
-    }
-
 }
