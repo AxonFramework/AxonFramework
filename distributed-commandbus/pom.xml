@@ -83,7 +83,11 @@
                                         <exclude>org.springframework</exclude>
                                     </excludes>
                                     <includes>
-                                        <!-- allow any spring dependency with test scope -->
+                                        <!-- allow any smvn dependency:treepring dependency with test scope -->
+                                        <include>org.springframework:spring-web</include>
+                                        <include>org.springframework:spring-context</include>
+                                        <include>org.springframework:spring-core</include>
+                                        <include>org.springframework.cloud:spring-cloud-commons</include>
                                         <include>org.springframework:*:*:*:test</include>
                                     </includes>
                                 </bannedDependencies>
@@ -98,21 +102,45 @@
 
     <dependencies>
         <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>axon-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
             <version>3.6.10.Final</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>${project.parent.groupId}</groupId>
-            <artifactId>axon-core</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>4.3.4.RELEASE</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-beans</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-expression</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+            <version>1.1.5.RELEASE</version>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>

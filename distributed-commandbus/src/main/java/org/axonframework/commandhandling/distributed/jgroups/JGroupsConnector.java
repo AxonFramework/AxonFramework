@@ -227,14 +227,14 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         Object message = msg.getObject();
         if (message instanceof JoinMessage) {
             processJoinMessage(msg, (JoinMessage) message);
-        } else if (message instanceof DispatchMessage) {
-            processDispatchMessage(msg, (DispatchMessage) message);
-        } else if (message instanceof ReplyMessage) {
-            processReplyMessage((ReplyMessage) message);
+        } else if (message instanceof JGroupsDispatchMessage) {
+            processDispatchMessage(msg, (JGroupsDispatchMessage) message);
+        } else if (message instanceof JGroupsReplyMessage) {
+            processReplyMessage((JGroupsReplyMessage) message);
         }
     }
 
-    private void processReplyMessage(ReplyMessage message) {
+    private void processReplyMessage(JGroupsReplyMessage message) {
         CommandCallbackWrapper<Object, Object, Object> callbackWrapper =
                 callbackRepository.fetchAndRemove(message.getCommandIdentifier());
         if (callbackWrapper == null) {
@@ -248,7 +248,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
     }
 
-    private <C, R> void processDispatchMessage(Message msg, DispatchMessage message) {
+    private <C, R> void processDispatchMessage(Message msg, JGroupsDispatchMessage message) {
         if (message.isExpectReply()) {
             try {
                 CommandMessage commandMessage = message.getCommandMessage(serializer);
@@ -277,10 +277,10 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     private <R> void sendReply(Address address, String commandIdentifier, R result, Throwable cause) {
         try {
-            channel.send(address, new ReplyMessage(commandIdentifier, result, cause, serializer));
+            channel.send(address, new JGroupsReplyMessage(commandIdentifier, result, cause, serializer));
         } catch (Exception e) {
             try {
-                channel.send(address, new ReplyMessage(commandIdentifier, null, e, serializer));
+                channel.send(address, new JGroupsReplyMessage(commandIdentifier, null, e, serializer));
             } catch (Exception e1) {
                 logger.error("Could not send reply", e1);
             }
@@ -355,13 +355,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     @Override
     public <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception {
-        channel.send(resolveAddress(destination), new DispatchMessage(command, serializer, false));
+        channel.send(resolveAddress(destination), new JGroupsDispatchMessage(command, serializer, false));
     }
 
     @Override
     public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception {
         callbackRepository.store(command.getIdentifier(), new CommandCallbackWrapper<>(destination, command, callback));
-        channel.send(resolveAddress(destination), new DispatchMessage(command, serializer, true));
+        channel.send(resolveAddress(destination), new JGroupsDispatchMessage(command, serializer, true));
     }
 
     @Override

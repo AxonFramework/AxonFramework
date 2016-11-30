@@ -16,9 +16,9 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
+import org.axonframework.commandhandling.distributed.ReplyMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
 import org.jgroups.util.Streamable;
 
 import java.io.*;
@@ -29,27 +29,21 @@ import java.io.*;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ReplyMessage implements Streamable, Externalizable {
+public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Externalizable {
 
     private static final long serialVersionUID = 6955710928767199410L;
     private static final String NULL = "_null";
-
-    private String commandIdentifier;
-    private boolean success;
-    private String resultType;
-    private String resultRevision;
-    private byte[] serializedResult;
 
     /**
      * Default constructor required by the {@link Streamable} and {@link Externalizable} interfaces. Do not use
      * directly.
      */
     @SuppressWarnings("UnusedDeclaration")
-    public ReplyMessage() {
+    public JGroupsReplyMessage() {
     }
 
     /**
-     * Constructs a message containing a reply to the command with given {@code commandIdentifier}, containing
+     * Initialized a JGroupsReplyMessage containing a reply to the command with given {commandIdentifier}, containing
      * either given {@code returnValue} or {@code error}, which uses the given {@code serializer} to
      * deserialize its contents.
      *
@@ -59,7 +53,7 @@ public class ReplyMessage implements Streamable, Externalizable {
      *                          {@code null}, the given {@code returnValue} is ignored.
      * @param serializer        The serializer to serialize the message contents with
      */
-    public ReplyMessage(String commandIdentifier, Object returnValue, Throwable error, Serializer serializer) {
+    public JGroupsReplyMessage(String commandIdentifier, Object returnValue, Throwable error, Serializer serializer) {
         this.success = error == null;
         SerializedObject<byte[]> result;
         if (success) {
@@ -77,59 +71,6 @@ public class ReplyMessage implements Streamable, Externalizable {
             this.resultRevision = result.getType().getRevision();
             this.serializedResult = result.getData();
         }
-    }
-
-    /**
-     * Whether the reply message represents a successfully executed command. In this case, successful means that the
-     * command's execution did not result in an exception.
-     *
-     * @return {@code true} if this reply contains a return value, {@code false} if it contains an error.
-     */
-    public boolean isSuccess() {
-        return success;
-    }
-
-    /**
-     * Returns the returnValue of the command processing. If {@link #isSuccess()} return {@code false}, this
-     * method returns {@code null}. This method also returns {@code null} if response processing returned
-     * a {@code null} value.
-     *
-     * @param serializer The serializer to deserialize the result with
-     * @return The return value of command processing
-     */
-    public Object getReturnValue(Serializer serializer) {
-        if (!success || resultType == null) {
-            return null;
-        }
-        return deserializeResult(serializer);
-    }
-
-    /**
-     * Returns the error of the command processing. If {@link #isSuccess()} return {@code true}, this
-     * method returns {@code null}.
-     *
-     * @param serializer The serializer to deserialize the result with
-     * @return The exception thrown during command processing
-     */
-    public Throwable getError(Serializer serializer) {
-        if (success) {
-            return null;
-        }
-        return (Throwable) deserializeResult(serializer);
-    }
-
-    private Object deserializeResult(Serializer serializer) {
-        return serializer.deserialize(new SimpleSerializedObject<>(serializedResult, byte[].class,
-                                                                   resultType, resultRevision));
-    }
-
-    /**
-     * Returns the identifier of the command for which this message is a reply.
-     *
-     * @return the identifier of the command for which this message is a reply
-     */
-    public String getCommandIdentifier() {
-        return commandIdentifier;
     }
 
     @Override
@@ -172,4 +113,5 @@ public class ReplyMessage implements Streamable, Externalizable {
     public void readExternal(ObjectInput in) throws IOException {
         readFrom(in);
     }
+
 }
