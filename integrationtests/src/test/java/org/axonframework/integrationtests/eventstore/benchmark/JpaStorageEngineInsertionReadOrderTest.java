@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,7 +79,9 @@ public class JpaStorageEngineInsertionReadOrderTest {
         });
 
         testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, 20,
-                                                new SimpleEntityManagerProvider(entityManager), 1L, 10000);
+                                                new SimpleEntityManagerProvider(entityManager),
+                                                new SpringTransactionManager(tx),
+                                                1L, 10000);
     }
 
     @Test(timeout = 30000)
@@ -120,7 +123,8 @@ public class JpaStorageEngineInsertionReadOrderTest {
     public void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
         //increase batch size to 100
         testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, 100,
-                                                new SimpleEntityManagerProvider(entityManager), 1L, 10000);
+                                                new SimpleEntityManagerProvider(entityManager),
+                                                new SpringTransactionManager(tx), 1L, 10000);
         int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;

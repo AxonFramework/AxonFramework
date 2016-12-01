@@ -59,8 +59,8 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS);
+        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE,
+                                             cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
     }
 
     @After

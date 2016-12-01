@@ -133,8 +133,8 @@ public class AxonAutoConfiguration {
 
         @ConditionalOnMissingBean
         @Bean
-        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider) {
-            return new JpaEventStorageEngine(entityManagerProvider);
+        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+            return new JpaEventStorageEngine(entityManagerProvider, transactionManager);
         }
 
         @ConditionalOnMissingBean
