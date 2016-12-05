@@ -123,8 +123,9 @@ public class EventSourcingRepositoryTest {
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", MetaData.emptyInstance()),
                 event2, event3));
 
+        testSubject.load(identifier, 1L);
         try {
-            testSubject.load(identifier, 1L);
+            CurrentUnitOfWork.commit();
             fail("Expected ConflictingAggregateVersionException");
         } catch (ConflictingAggregateVersionException e) {
             assertEquals(identifier, e.getAggregateIdentifier());

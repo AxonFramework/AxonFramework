@@ -87,11 +87,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                                  format("Aggregate [%s] with identifier [%s] not found",
                                                         getAggregateType().getSimpleName(), aggregateIdentifier));
         }
-        AnnotatedAggregate<T> aggregate = AnnotatedAggregate.initialize(aggregateRoot, aggregateModel(), eventBus);
-        if (expectedVersion != null && aggregate.version() != null && !expectedVersion.equals(aggregate.version())) {
-            throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, aggregate.version());
-        }
-        return aggregate;
+        return AnnotatedAggregate.initialize(aggregateRoot, aggregateModel(), eventBus);
     }
 
     @Override

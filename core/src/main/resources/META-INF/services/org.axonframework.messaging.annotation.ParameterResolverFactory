@@ -15,6 +15,7 @@
 #
 
 org.axonframework.commandhandling.CurrentUnitOfWorkParameterResolverFactory
+org.axonframework.commandhandling.conflictresolution.ConflictResolution
 org.axonframework.eventhandling.TimestampParameterResolverFactory
 org.axonframework.eventsourcing.SequenceNumberParameterResolverFactory
 org.axonframework.eventsourcing.eventstore.TrackingTokenParameterResolverFactory
