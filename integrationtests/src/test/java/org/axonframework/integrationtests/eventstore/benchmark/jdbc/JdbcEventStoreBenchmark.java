@@ -14,6 +14,7 @@
 package org.axonframework.integrationtests.eventstore.benchmark.jdbc;
 
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.MySqlEventTableFactory;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
@@ -43,7 +44,8 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
     }
 
     public JdbcEventStoreBenchmark(DataSource dataSource, PlatformTransactionManager transactionManager) {
-        super(new JdbcEventStorageEngine(new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection)));
+        super(new JdbcEventStorageEngine(new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection),
+                                         NoTransactionManager.INSTANCE));
         this.dataSource = dataSource;
         this.transactionManager = transactionManager;
     }

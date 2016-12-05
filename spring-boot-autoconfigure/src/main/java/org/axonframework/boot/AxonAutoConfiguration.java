@@ -91,11 +91,11 @@ public class AxonAutoConfiguration {
 
     @AutoConfigureAfter(TransactionConfiguration.class)
     @Configuration
-    public static class DefaultConfiguration {
+    public static class DefaultTransactionConfiguration {
 
         @Bean
         @ConditionalOnMissingBean(TransactionManager.class)
-        public TransactionManager transactionManager() {
+        public TransactionManager axonTransactionManager() {
             return NoTransactionManager.INSTANCE;
         }
 
@@ -103,13 +103,14 @@ public class AxonAutoConfiguration {
 
     @Configuration
     @ConditionalOnClass(PlatformTransactionManager.class)
+    @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration")
     public static class TransactionConfiguration {
 
         @Bean
         @ConditionalOnMissingBean
         @ConditionalOnBean(PlatformTransactionManager.class)
-        public TransactionManager springTransactionManager(PlatformTransactionManager txManager) {
-            return new SpringTransactionManager(txManager);
+        public TransactionManager axonTransactionManager(PlatformTransactionManager transactionManager) {
+            return new SpringTransactionManager(transactionManager);
         }
     }
 
@@ -132,8 +133,8 @@ public class AxonAutoConfiguration {
 
         @ConditionalOnMissingBean
         @Bean
-        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider) {
-            return new JpaEventStorageEngine(entityManagerProvider);
+        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+            return new JpaEventStorageEngine(entityManagerProvider, transactionManager);
         }
 
         @ConditionalOnMissingBean

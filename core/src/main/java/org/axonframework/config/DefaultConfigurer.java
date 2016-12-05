@@ -116,7 +116,8 @@ public class DefaultConfigurer implements Configurer {
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
         return new DefaultConfigurer().registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
-                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider)))
+                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider),
+                        c.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE)))
                 .registerComponent(TokenStore.class, c -> new JpaTokenStore(
                         c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider), c.serializer()))
                 .registerComponent(SagaStore.class, c -> new JpaSagaStore(
@@ -254,7 +255,8 @@ public class DefaultConfigurer implements Configurer {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
+            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor
+            );
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });
