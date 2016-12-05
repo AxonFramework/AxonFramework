@@ -107,43 +107,90 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectDispatchedCommands_FailedCount() {
+    public void testExpectSequenceOfDispatchedCommands_FailedCount() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"));
 
+        testSubject.expectSequenceOfDispatchedCommandsEqualTo("First", "Second", "Third");
+    }
+
+    @Test(expected = AxonAssertionError.class)
+    public void testExpectDispatchedCommands_FailedCount() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
+
         testSubject.expectDispatchedCommandsEqualTo("First", "Second", "Third");
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectDispatchedCommands_FailedType() {
+    public void testExpectSequenceOfDispatchedCommands_FailedType() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+
+        testSubject.expectSequenceOfDispatchedCommandsEqualTo("First", "Third");
+    }
+
+    @Test(expected = AxonAssertionError.class)
+    public void testExpectDispatchedCommands_FailedType() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
 
         testSubject.expectDispatchedCommandsEqualTo("First", "Third");
     }
 
     @Test
-    public void testExpectDispatchedCommands() {
+    public void testExpectSequenceOfDispatchedCommands() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+
+        testSubject.expectSequenceOfDispatchedCommandsEqualTo("First", "Second");
+    }
+
+    @Test
+    public void testExpectDispatchedCommands() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
 
         testSubject.expectDispatchedCommandsEqualTo("First", "Second");
     }
 
     @Test
-    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals() {
+    public void testExpectSequenceOfDispatchedCommands_ObjectsNotImplementingEquals() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+
+        testSubject.expectSequenceOfDispatchedCommandsEqualTo(new SimpleCommand("First"), new SimpleCommand("Second"));
+    }
+
+    @Test
+    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
 
         testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("First"), new SimpleCommand("Second"));
     }
 
     @Test
-    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
+    public void testExpectSequenceOfDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+
+        try {
+            testSubject.expectSequenceOfDispatchedCommandsEqualTo(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
+            fail("Expected exception");
+        } catch (AxonAssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(CommandValidator.REASON_COMMAND_MISMATCH));
+        }
+    }
+
+    @Test
+    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_FailedField() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
 
         try {
             testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
@@ -154,9 +201,22 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test
-    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
+    public void testExpectSequenceOfDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+
+        try {
+            testSubject.expectSequenceOfDispatchedCommandsEqualTo("Second", new SimpleCommand("Thrid"));
+            fail("Expected exception");
+        } catch (AxonAssertionError e) {
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(CommandValidator.REASON_COMMAND_MISMATCH));
+        }
+    }
+
+    @Test
+    public void testExpectDispatchedCommands_ObjectsNotImplementingEquals_WrongType() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
 
         try {
             testSubject.expectDispatchedCommandsEqualTo("Second", new SimpleCommand("Thrid"));
@@ -175,6 +235,11 @@ public class FixtureExecutionResultImplTest {
     @Test
     public void testExpectNoDispatchedCommands() {
         testSubject.expectNoDispatchedCommands();
+    }
+
+    @Test(expected = AxonAssertionError.class)
+    public void testExpectSequenceOfDispatchedCommands_FailedMatcher() {
+        testSubject.expectSequenceOfDispatchedCommandsEqualTo(new FailingMatcher<String>());
     }
 
     @Test(expected = AxonAssertionError.class)

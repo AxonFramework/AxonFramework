@@ -125,8 +125,14 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... expected) {
+    public FixtureExecutionResult expectSequenceOfDispatchedCommandsEqualTo(Object... expected) {
         commandValidator.assertDispatchedEqualTo(expected);
+        return this;
+    }
+
+    @Override
+    public FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... expected) {
+        commandValidator.assertDispatchedEqualToIgnoringSequence(expected);
         return this;
     }
 
