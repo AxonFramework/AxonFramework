@@ -31,7 +31,7 @@ public class MatcherExecutionException extends AxonNonTransientException {
     private static final long serialVersionUID = 2867528683103491260L;
 
     /**
-     * Construct the exception with the given <code>message</code>.
+     * Construct the exception with the given {@code message}.
      *
      * @param message the message describing the cause
      */
@@ -40,7 +40,7 @@ public class MatcherExecutionException extends AxonNonTransientException {
     }
 
     /**
-     * Construct the exception with the given <code>message</code> and <code>cause</code>.
+     * Construct the exception with the given {@code message} and {@code cause}.
      *
      * @param message the message describing the cause
      * @param cause   the underlying cause

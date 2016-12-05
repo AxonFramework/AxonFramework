@@ -60,8 +60,8 @@ public class DispatchMessage implements Streamable, Externalizable {
     }
 
     /**
-     * Initialized a DispatchMessage for the given <code>commandMessage</code>, to be serialized using given
-     * <code>serializer</code>. <code>expectReply</code> indicates whether the sender will be expecting a reply.
+     * Initialized a DispatchMessage for the given {@code commandMessage}, to be serialized using given
+     * {@code serializer}. {@code expectReply} indicates whether the sender will be expecting a reply.
      *
      * @param commandMessage The message to send to the remote segment
      * @param serializer     The serialize to serialize the message payload and metadata with
@@ -82,7 +82,7 @@ public class DispatchMessage implements Streamable, Externalizable {
     /**
      * Indicates whether the sender of this message requests a reply.
      *
-     * @return <code>true</code> if a reply is expected, otherwise <code>false</code>.
+     * @return {@code true} if a reply is expected, otherwise {@code false}.
      */
     public boolean isExpectReply() {
         return expectReply;

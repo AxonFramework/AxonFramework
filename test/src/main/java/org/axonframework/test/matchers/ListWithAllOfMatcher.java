@@ -22,7 +22,7 @@ import org.hamcrest.Matcher;
 import java.util.List;
 
 /**
- * A matcher that will match if all the given <code>matchers</code> match against at least one item in a given List.
+ * A matcher that will match if all the given {@code matchers} match against at least one item in a given List.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -30,7 +30,7 @@ import java.util.List;
 public class ListWithAllOfMatcher extends ListMatcher {
 
     /**
-     * Construct a matcher that will return true if all the given <code>matchers</code> match against at least one
+     * Construct a matcher that will return true if all the given {@code matchers} match against at least one
      * item in any given List.
      *
      * @param matchers The matchers that must match against at least one item in the list.

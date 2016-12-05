@@ -24,6 +24,9 @@ package org.axonframework.monitoring;
  */
 public enum NoOpMessageMonitorCallback implements MessageMonitor.MonitorCallback {
 
+    /**
+     * Singleton instance of a {@link NoOpMessageMonitorCallback}.
+     */
     INSTANCE;
 
     @Override

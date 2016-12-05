@@ -17,30 +17,26 @@
 
 package org.axonframework.commandhandling;
 
-import static java.lang.String.format;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.axonframework.common.Registration;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.*;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static java.lang.String.format;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific type of
@@ -59,28 +55,31 @@ public class SimpleCommandBus implements CommandBus {
 
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
-    private volatile Iterable<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors
-            = Collections.emptyList();
-    private volatile Iterable<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
-            = Collections.emptyList();
-    private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors
+            = new CopyOnWriteArrayList<>();
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+            = new CopyOnWriteArrayList<>();
     private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+    private final TransactionManager transactionManager;
 
     /**
      * Initializes the SimpleCommandBus.
      */
     public SimpleCommandBus() {
-        this(NoOpMessageMonitor.INSTANCE);
+        this(NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
-     * Initializes the SimpleCommandBus with the given <name>messageMonitor</name>
+     * Initializes the SimpleCommandBus with the given {@code transactionManager} and {@code messageMonitor}
      *
+     * @param transactionManager The transactionManager to manage transaction with
      * @param messageMonitor the message monitor to monitor the command bus
      */
-    public SimpleCommandBus(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+    public SimpleCommandBus(TransactionManager transactionManager,
+                            MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        this.transactionManager = transactionManager;
         this.messageMonitor = messageMonitor;
     }
 
@@ -138,7 +137,10 @@ public class SimpleCommandBus implements CommandBus {
         if (logger.isDebugEnabled()) {
             logger.debug("Dispatching command [{}]", command.getCommandName());
         }
-        UnitOfWork<CommandMessage<?>> unitOfWork = unitOfWorkFactory.createUnitOfWork(command);
+        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
+        Transaction transaction = transactionManager.startTransaction();
+        unitOfWork.onCommit(u -> transaction.commit());
+        unitOfWork.onRollback(u -> transaction.rollback());
         InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
         return unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
     }
@@ -157,48 +159,23 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Registers the given list of interceptors to the command bus. All incoming commands will pass through the
-     * interceptors at the given order before the command is passed to the handler for processing.
+     * Registers the given interceptor to the command bus. All incoming commands will pass through the
+     * registered interceptors at the given order before the command is passed to the handler for processing.
      *
-     * @param handlerInterceptors The interceptors to invoke when commands are handled
+     * @param handlerInterceptor The interceptor to invoke when commands are handled
      */
-    public void setHandlerInterceptors(List<? extends MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors) {
-        this.handlerInterceptors = new ArrayList<>(handlerInterceptors);
+    public void registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        this.handlerInterceptors.add(handlerInterceptor);
     }
 
     /**
      * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through
      * the interceptors at the given order before the command is dispatched toward the command handler.
      *
-     * @param dispatchInterceptors The interceptors to invoke when commands are dispatched
+     * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
      */
-    public void setDispatchInterceptors(
-            List<? extends MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-        this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
-    }
-
-    /**
-     * Sets the UnitOfWorkFactory that provides the UnitOfWork instances for handling incoming commands. Defaults to a
-     * {@link DefaultUnitOfWorkFactory}.
-     * <p/>
-     * This method should not be used in combination with
-     * {@link #setTransactionManager(TransactionManager)}. For transaction support, ensure
-     * the provided UnitOfWorkFactory implementation binds each UnitOfWork to a transaction.
-     *
-     * @param unitOfWorkFactory The UnitOfWorkFactory providing UoW instances for this Command Bus.
-     */
-    public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
-        this.unitOfWorkFactory = unitOfWorkFactory;
-    }
-
-    /**
-     * Sets the transaction manager that manages the transaction around command handling. This should not be used in
-     * combination with {@link #setUnitOfWorkFactory(UnitOfWorkFactory)}.
-     *
-     * @param transactionManager the transaction manager to use
-     */
-    public void setTransactionManager(TransactionManager transactionManager) {
-        this.unitOfWorkFactory = new DefaultUnitOfWorkFactory(transactionManager);
+    public void registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        this.dispatchInterceptors.add(dispatchInterceptor);
     }
 
     /**

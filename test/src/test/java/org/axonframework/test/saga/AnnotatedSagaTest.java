@@ -40,7 +40,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WhenEventOccurs() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 .givenAggregate(aggregate1).published(
                         GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
@@ -67,7 +67,7 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_AggregatePublishedEvent_NoHistoricActivity() throws Exception {
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
                 .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
                 .expectActiveSagas(1)
@@ -76,9 +76,9 @@ public class AnnotatedSagaTest {
 
     @Test // testing issue AXON-279
     public void testFixtureApi_PublishedEvent_NoHistoricActivity() throws Exception {
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-                .whenPublishingA(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent("id")))
+                .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
                 .expectActiveSagas(1)
                 .expectAssociationWith("identifier", "id");
     }
@@ -87,7 +87,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WithApplicationEvents() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
                 .andThenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
 
@@ -105,7 +105,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WhenEventIsPublishedToEventBus() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1),
                                                       new TriggerExistingSagaEvent(aggregate1))
@@ -123,7 +123,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 // event schedules a TriggerEvent after 10 minutes from t0
                 .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1))
@@ -149,7 +149,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WhenTimeElapses_UsingMockGateway() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         final StubGateway gateway = mock(StubGateway.class);
         fixture.registerCommandGateway(StubGateway.class, gateway);
         when(gateway.send(eq("Say hi!"))).thenReturn("Hi again!");
@@ -171,7 +171,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testSchedulingEventsAsMessage() throws Exception {
         UUID identifier = UUID.randomUUID();
-        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenNoPriorActivity()
@@ -183,7 +183,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testSchedulingEventsAsDomainEventMessage() throws Exception {
         UUID identifier = UUID.randomUUID();
-        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenNoPriorActivity()
@@ -195,7 +195,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testScheduledEventsInPastAsDomainEventMessage() throws Exception {
         UUID identifier = UUID.randomUUID();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenAggregate(UUID.randomUUID().toString()).published(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
@@ -206,7 +206,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testScheduledEventsInPastAsEventMessage() throws Exception {
         UUID identifier = UUID.randomUUID();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenAPublished(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
@@ -218,7 +218,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WhenTimeElapses_UsingDefaults() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
@@ -237,7 +237,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         CallbackBehavior commandHandler = mock(CallbackBehavior.class);
         when(commandHandler.handle(eq("Say hi!"), isA(MetaData.class))).thenReturn("Hi again!");
         fixture.setCallbackBehavior(commandHandler);
@@ -260,7 +260,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_WhenTimeAdvances() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
-        AnnotatedSagaTestFixture<StubSaga> fixture = new AnnotatedSagaTestFixture<>(StubSaga.class);
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                 .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))

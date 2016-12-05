@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.MockException;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -35,7 +36,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -59,8 +59,8 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS);
+        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE,
+                                             cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
     }
 
     @After
@@ -102,7 +102,7 @@ public class EmbeddedEventStoreTest {
     public void testReadingIsBlockedWhenStoreIsEmpty() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
         TrackingEventStream stream = testSubject.streamEvents(null);
-        Thread t = new Thread(() -> asStream(stream).findFirst().ifPresent(event -> lock.countDown()));
+        Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
         testSubject.publish(createEvent());
@@ -115,7 +115,7 @@ public class EmbeddedEventStoreTest {
         testSubject.publish(createEvent());
         CountDownLatch lock = new CountDownLatch(2);
         TrackingEventStream stream = testSubject.streamEvents(null);
-        Thread t = new Thread(() -> asStream(stream).limit(2).forEach(event -> lock.countDown()));
+        Thread t = new Thread(() -> stream.asStream().limit(2).forEach(event -> lock.countDown()));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
         assertEquals(1, lock.getCount());
@@ -126,23 +126,23 @@ public class EmbeddedEventStoreTest {
 
     @Test(timeout = 5000)
     public void testReadingCanBeContinuedUsingLastToken() throws Exception {
-        testSubject.publish(createEvents(2));
+        List<? extends EventMessage<?>> events = createEvents(2);
+        testSubject.publish(events);
         TrackedEventMessage<?> first = testSubject.streamEvents(null).nextAvailable();
         TrackingToken firstToken = first.trackingToken();
         TrackedEventMessage<?> second = testSubject.streamEvents(firstToken).nextAvailable();
-        assertTrue(second.trackingToken().isAfter(firstToken));
+        assertEquals(events.get(0).getIdentifier(), first.getIdentifier());
+        assertEquals(events.get(1).getIdentifier(), second.getIdentifier());
     }
 
     @Test(timeout = 5000)
     public void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
         List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
-        Thread t = new Thread(() -> {
-            asStream(testSubject.streamEvents(null)).limit(2).forEach(event -> {
-                lock.countDown();
-                events.add(event);
-            });
-        });
+        Thread t = new Thread(() -> testSubject.streamEvents(null).asStream().limit(2).forEach(event -> {
+            lock.countDown();
+            events.add(event);
+        }));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
         testSubject.publish(createEvents(2));
@@ -158,7 +158,7 @@ public class EmbeddedEventStoreTest {
         newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY);
         TrackingEventStream stream = testSubject.streamEvents(null);
         CountDownLatch lock = new CountDownLatch(1);
-        Thread t = new Thread(() -> asStream(stream).findFirst().ifPresent(event -> lock.countDown()));
+        Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
         storageEngine.appendEvents(createEvent());
@@ -188,7 +188,7 @@ public class EmbeddedEventStoreTest {
     public void testLoadWithoutSnapshot() {
         testSubject.publish(createEvents(110));
         List<DomainEventMessage<?>> eventMessages =
-                asStream(testSubject.readEvents(AGGREGATE)).collect(Collectors.toList());
+                testSubject.readEvents(AGGREGATE).asStream().collect(Collectors.toList());
         assertEquals(110, eventMessages.size());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
     }
@@ -198,7 +198,7 @@ public class EmbeddedEventStoreTest {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
         List<DomainEventMessage<?>> eventMessages =
-                asStream(testSubject.readEvents(AGGREGATE)).collect(Collectors.toList());
+                testSubject.readEvents(AGGREGATE).asStream().collect(Collectors.toList());
         assertEquals(110 - 30, eventMessages.size());
         assertEquals(30, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
@@ -210,7 +210,7 @@ public class EmbeddedEventStoreTest {
         storageEngine.storeSnapshot(createEvent(30));
         when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
         List<DomainEventMessage<?>> eventMessages =
-                asStream(testSubject.readEvents(AGGREGATE)).collect(Collectors.toList());
+                testSubject.readEvents(AGGREGATE).asStream().collect(Collectors.toList());
         assertEquals(110, eventMessages.size());
         assertEquals(0, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());

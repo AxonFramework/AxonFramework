@@ -32,7 +32,7 @@ import java.io.*;
  */
 public class JavaSerializer implements Serializer {
 
-    private final ConverterFactory converterFactory = new ChainingConverterFactory();
+    private final ConverterFactory converterFactory = new ChainingConverterFactory(Thread.currentThread().getContextClassLoader());
     private final RevisionResolver revisionResolver;
 
     /**
@@ -49,7 +49,7 @@ public class JavaSerializer implements Serializer {
      * @param revisionResolver The revision resolver providing the revision numbers for a given class
      */
     public JavaSerializer(RevisionResolver revisionResolver) {
-        Assert.notNull(revisionResolver, "revisionResolver may not be null");
+        Assert.notNull(revisionResolver, () -> "revisionResolver may not be null");
         this.revisionResolver = revisionResolver;
     }
 

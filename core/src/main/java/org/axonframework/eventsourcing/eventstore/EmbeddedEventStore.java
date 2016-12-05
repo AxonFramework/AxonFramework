@@ -37,7 +37,21 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
+ * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
+ * supported by its storage engine the embedded event store provides event tracking and replaying capabilities.
+ * <p>
+ * The event store can be tracked by multiple event processors simultaneously. To prevent that each event processor
+ * needs to read from the storage engine individually the embedded event store contains a cache of the most recent
+ * events. This cache is shared between the streams of various event processors. So, assuming an event processor
+ * processes events fast enough and is not far behind the head of the event log it will not need a private connection
+ * to the underlying data store. The size of the cache (in number of events) is configurable.
+ * <p>
+ * The embedded event store automatically fetches new events from the store if there is at least one registered tracking
+ * event processor present. It will do so after new events are committed to the store, as well as periodically as
+ * events may have been committed by other nodes or applications. This periodic fetch delay is configurable.
+ *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class EmbeddedEventStore extends AbstractEventStore {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
@@ -54,14 +68,46 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private volatile Node oldest;
     private final AtomicBoolean producerStarted = new AtomicBoolean();
 
+    /**
+     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and default settings.
+     *
+     * @param storageEngine the storage engine to use
+     */
     public EmbeddedEventStore(EventStorageEngine storageEngine) {
         this(storageEngine, NoOpMessageMonitor.INSTANCE);
     }
 
+    /**
+     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and default
+     * settings.
+     *
+     * @param storageEngine the storage engine to use
+     * @param monitor       the metrics monitor that tracks how many events are ingested by the event store
+     */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor) {
         this(storageEngine, monitor, 10000, 1000L, 10000L, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and custom
+     * settings.
+     *
+     * @param storageEngine the storage engine to use
+     * @param monitor       the metrics monitor that tracks how many events are ingested by the event store
+     * @param cachedEvents  the maximum number of events in the cache that is shared between the streams of tracking
+     *                      event processors
+     * @param fetchDelay    the time to wait before fetching new events from the backing storage engine while tracking
+     *                      after a previous stream was fetched and read. Note that this only applies to situations in
+     *                      which no events from the current application have meanwhile been committed. If the current
+     *                      application commits events then those events are fetched without delay.
+     * @param cleanupDelay  the delay between two clean ups of lagging event processors. An event processor is lagging
+     *                      behind and removed from the set of processors that track cached events if the oldest event
+     *                      in the cache is newer than the last processed event of the event processor. Once removed the
+     *                      processor will be independently fetching directly from the event storage engine until it has
+     *                      caught up again. Event processors will not notice this change during tracking (i.e. the
+     *                      stream is not closed when an event processor falls behind and is removed).
+     * @param timeUnit      time unit for fetch and clean up delay
+     */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
                               int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit) {
         super(storageEngine, monitor);
@@ -71,6 +117,9 @@ public class EmbeddedEventStore extends AbstractEventStore {
         cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
     }
 
+    /**
+     * Method to invoke when the application shuts down. This closes all event streams used for event store tracking.
+     */
     @PreDestroy
     public void shutDown() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
@@ -88,8 +137,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
                     Thread.currentThread().interrupt();
                 }
             }).start();
-            cleanupService
-                    .scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis, TimeUnit.MILLISECONDS);
+            cleanupService.scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis,
+                                                  TimeUnit.MILLISECONDS);
         }
     }
 
@@ -112,10 +161,6 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     private Node findNode(TrackingToken trackingToken) {
-        Node oldest = this.oldest;
-        if (trackingToken == null || oldest == null || oldest.event.trackingToken().isAfter(trackingToken)) {
-            return null;
-        }
         Node node = oldest;
         while (node != null && !node.event.trackingToken().equals(trackingToken)) {
             node = node.next;
@@ -212,9 +257,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         private TrackingToken lastToken() {
             if (newest == null) {
-                List<TrackingToken> sortedTokens = tailingConsumers.stream().map(EventConsumer::lastToken)
-                        .sorted(Comparator.nullsFirst(Comparator.naturalOrder())).collect(toList());
-                return sortedTokens.isEmpty() ? null : sortedTokens.get(0);
+                List<TrackingToken> tokens = tailingConsumers.stream().map(EventConsumer::lastToken).collect(toList());
+                return tokens.isEmpty() || tokens.contains(null) ? null : tokens.get(0);
             } else {
                 return newest.event.trackingToken();
             }
@@ -234,15 +278,16 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void trimCache() {
-            while (newest != null && oldest != null && newest.index - oldest.index >= cachedEvents) {
-                oldest = oldest.next;
+            Node last = oldest;
+            while (newest != null && last != null && newest.index - last.index >= cachedEvents) {
+                last = last.next;
             }
+            oldest = last;
         }
 
         @Override
         public void close() {
             closed = true;
-            oldest = null;
             if (eventStream != null) {
                 eventStream.close();
             }
@@ -266,6 +311,11 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return Optional.ofNullable(peekedEvent == null && !hasNextAvailable() ? null : peekedEvent);
+        }
+
+        @Override
         public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
             return peekedEvent != null || (peekedEvent = peek(timeout, unit)) != null;
         }
@@ -281,12 +331,22 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return isTailingConsumer() ? peekGlobalStream(timeout, timeUnit) :
-                    peekPrivateStream(timeout, timeUnit);
+            if (tailingConsumers.contains(this)) {
+                if (!behindGlobalCache()) {
+                    return peekGlobalStream(timeout, timeUnit);
+                }
+                stopTailingGlobalStream();
+            }
+            return peekPrivateStream(timeout, timeUnit);
         }
 
-        private boolean isTailingConsumer() {
-            return tailingConsumers.contains(this) && (this.lastToken == null || oldest == null || this.lastToken.isAfter(oldest.previousToken));
+        private boolean behindGlobalCache() {
+            return oldest != null && (this.lastNode != null ? this.lastNode.index < oldest.index : nextNode() == null);
+        }
+
+        private void stopTailingGlobalStream() {
+            tailingConsumers.remove(this);
+            this.lastNode = null; //makes old nodes garbage collectible
         }
 
         private TrackedEventMessage<?> peekGlobalStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
@@ -348,7 +408,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         @Override
         public void close() {
             closePrivateStream();
-            tailingConsumers.remove(this);
+            stopTailingGlobalStream();
         }
 
         private void closePrivateStream() {
@@ -367,12 +427,10 @@ public class EmbeddedEventStore extends AbstractEventStore {
             if (oldestCachedNode == null || oldestCachedNode.previousToken == null) {
                 return;
             }
-            tailingConsumers.stream().filter(consumer -> consumer.lastToken == null ||
-                    oldestCachedNode.previousToken.isAfter(consumer.lastToken)).forEach(consumer -> {
+            tailingConsumers.stream().filter(EventConsumer::behindGlobalCache).forEach(consumer -> {
                 logger.warn("An event processor fell behind the tail end of the event store cache. " +
                                     "This usually indicates a badly performing event processor.");
-                tailingConsumers.remove(consumer);
-                consumer.lastNode = null; //make old nodes garbage collectible
+                consumer.stopTailingGlobalStream();
             });
         }
     }

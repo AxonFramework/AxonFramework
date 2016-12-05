@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
@@ -80,7 +81,17 @@ public interface Configuration {
      * @return the ResourceInjector used to provide resources to Saga instances
      */
     default ResourceInjector resourceInjector() {
-        return getComponent(ResourceInjector.class, NoResourceInjector::new);
+        return getComponent(ResourceInjector.class, () -> NoResourceInjector.INSTANCE);
+    }
+
+    /**
+     * Returns the Command Gateway defined in this Configuration. Note that this Configuration should be started (see
+     * {@link #start()}) before sending Commands using this Command Gateway.
+     *
+     * @return the CommandGateway defined in this configuration
+     */
+    default CommandGateway commandGateway() {
+        return getComponent(CommandGateway.class);
     }
 
     /**
@@ -162,4 +173,26 @@ public interface Configuration {
     default ParameterResolverFactory parameterResolverFactory() {
         return getComponent(ParameterResolverFactory.class);
     }
+
+    /**
+     * Registers a handler to be executed when this Configuration is started.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already started is undefined.
+     *
+     * @param startHandler The handler to execute when the configuration is started
+     * @see #start()
+     * @see #onShutdown(Runnable)
+     */
+    void onStart(Runnable startHandler);
+
+    /**
+     * Registers a handler to be executed when the Configuration is shut down.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
+     *
+     * @param shutdownHandler The handler to execute when the Configuration is shut down
+     * @see #shutdown()
+     * @see #onStart(Runnable)
+     */
+    void onShutdown(Runnable shutdownHandler);
 }

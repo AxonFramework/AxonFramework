@@ -30,13 +30,13 @@ import org.axonframework.messaging.MessageHandler;
 public interface CommandBusConnector {
 
     /**
-     * Sends the given <code>command</code> to the node assigned to handle messages with the given
-     * <code>routingKey</code>. The sender does not expect a reply.
+     * Sends the given {@code command} to the node assigned to handle messages with the given
+     * {@code routingKey}. The sender does not expect a reply.
      * <p/>
      * If this method throws an exception, the sender is guaranteed that the destination of the command did not receive
      * it. If the method returns normally, the actual implementation of the connector defines the delivery guarantees.
      * <p/>
-     * Connectors route the commands based on the given <code>routingKey</code>. Using the same <code>routingKey</code>
+     * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey}
      * will result in the command being sent to the same member. Each message must be sent to <em>exactly one
      * member</em>.
      *
@@ -47,9 +47,9 @@ public interface CommandBusConnector {
     <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception;
 
     /**
-     * Sends the given <code>command</code> to the node assigned to handle messages with the given
-     * <code>routingKey</code>. The sender expect a reply, and will be notified of the result in the given
-     * <code>callback</code>.
+     * Sends the given {@code command} to the node assigned to handle messages with the given
+     * {@code routingKey}. The sender expect a reply, and will be notified of the result in the given
+     * {@code callback}.
      * <p/>
      * If this method throws an exception, the sender is guaranteed that the destination of the command did not receive
      * it. If the method returns normally, the actual implementation of the connector defines the delivery guarantees.
@@ -60,7 +60,7 @@ public interface CommandBusConnector {
      * {@link RemoteCommandHandlingException} describing
      * the failed connection. A client may choose to resend a command.
      * <p/>
-     * Connectors route the commands based on the given <code>routingKey</code>. Using the same <code>routingKey</code>
+     * Connectors route the commands based on the given {@code routingKey}. Using the same {@code routingKey}
      * will result in the command being sent to the same member.
      *
      * @param destination The member of the network to send the message to
@@ -72,5 +72,12 @@ public interface CommandBusConnector {
      */
     <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception;
 
+    /**
+     * Subscribes a command message handler for commands with given {@code commandName}.
+     *
+     * @param commandName the command name. Usually this equals the fully qualified class name of the command.
+     * @param handler the handler to subscribe
+     * @return a handle that can be used to end the subscription
+     */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 }

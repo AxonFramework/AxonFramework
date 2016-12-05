@@ -32,12 +32,12 @@
         <property name="jpaVendorAdapter">
             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
                 <property name="databasePlatform" value="${hibernate.sql.dialect}"/>
-                <property name="generateDdl" value="${hibernate.sql.generateddl}"/>
                 <property name="showSql" value="${hibernate.sql.show}"/>
             </bean>
         </property>
         <property name="jpaPropertyMap">
             <map>
+                <entry key="javax.persistence.schema-generation.database.action" value="${javax.schema.generation}"/>
                 <entry key="hibernate.id.new_generator_mappings" value="true"/>
             </map>
         </property>

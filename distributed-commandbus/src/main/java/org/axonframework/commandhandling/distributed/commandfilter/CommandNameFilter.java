@@ -37,10 +37,20 @@ public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializ
 
     private final Set<String> commandNames;
 
+    /**
+     * Initializes a {@link CommandNameFilter} for the given set of {@code commandNames}.
+     *
+     * @param commandNames commands that can be handled
+     */
     public CommandNameFilter(Set<String> commandNames) {
         this.commandNames = new HashSet<>(commandNames);
     }
 
+    /**
+     * Initializes a {@link CommandNameFilter} for a single command name.
+     *
+     * @param commandName command that can be handled
+     */
     public CommandNameFilter(String commandName) {
         this(Collections.singleton(commandName));
     }
@@ -58,10 +68,9 @@ public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializ
     @Override
     public Predicate<CommandMessage<?>> and(Predicate<? super CommandMessage<?>> other) {
         if (other instanceof CommandNameFilter) {
-            Set<String> otherCommandNames = ((CommandNameFilter) other).commandNames;
             return new CommandNameFilter(commandNames
                     .stream()
-                    .filter(otherCommandNames::contains)
+                    .filter(((CommandNameFilter) other).commandNames::contains)
                     .collect(Collectors.toSet()));
         } else {
             return (t) -> test(t) && other.test(t);

@@ -50,7 +50,7 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
      */
     public GenericAggregateFactory(Class<T> aggregateType) {
         super(aggregateType);
-        Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
+        Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), () -> "Given aggregateType may not be abstract");
         try {
             this.constructor = ensureAccessible(aggregateType.getDeclaredConstructor());
         } catch (NoSuchMethodException e) {

@@ -79,7 +79,7 @@ public class CommandHandlingTest {
 
         @Override
         public DomainEventStream readEvents(String identifier) {
-            return DomainEventStream.of(new ArrayList<>(storedEvents).iterator());
+            return DomainEventStream.of(new ArrayList<>(storedEvents));
         }
 
         @Override

@@ -25,6 +25,13 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
+ * Implementation of an {@link IntermediateEventRepresentation} that contains upcast functions for the payload
+ * and metadata of a previous representation. Note that the upcast functions are to go from one representation to
+ * another (never to more than one). In other words, the upcast functions stored in the UpcastedEventRepresentation are
+ * not mapping one to one to the upcast method of an upcaster.
+ *
+ * @param <T> the required type of the serialized data. If the data is not of this type the representation uses a {@link
+ *            ConverterFactory} to convert to the required type.
  * @author Rene de Waele
  */
 public class UpcastedEventRepresentation<T> implements IntermediateEventRepresentation {
@@ -33,19 +40,31 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     private final IntermediateEventRepresentation source;
     private final Function<T, T> upcastFunction;
     private final Function<MetaData, MetaData> metaDataUpcastFunction;
-    private final Class<T> expectedType;
+    private final Class<T> requiredType;
     private final ConverterFactory converterFactory;
     private LazyDeserializingObject<MetaData> metaData;
 
+    /**
+     * Initializes an {@link UpcastedEventRepresentation} from source data and given upcast functions for payload and
+     * metadata. The given {@code converterFactory} is used to convert to the serialized data format required by the
+     * upcast functions.
+     *
+     * @param outputType the output type of the payload data after upcasting
+     * @param source the intermediate representation that will be upcast
+     * @param upcastFunction the function to upcast the payload data
+     * @param metaDataUpcastFunction the function to upcast the metadata
+     * @param requiredType the type that is needed for the upcastFunction
+     * @param converterFactory produces converters to convert the serialized data type if required
+     */
     public UpcastedEventRepresentation(SerializedType outputType, IntermediateEventRepresentation source,
                                        Function<T, T> upcastFunction,
-                                       Function<MetaData, MetaData> metaDataUpcastFunction, Class<T> expectedType,
+                                       Function<MetaData, MetaData> metaDataUpcastFunction, Class<T> requiredType,
                                        ConverterFactory converterFactory) {
         this.outputType = outputType;
         this.source = source;
         this.upcastFunction = upcastFunction;
         this.metaDataUpcastFunction = metaDataUpcastFunction;
-        this.expectedType = expectedType;
+        this.requiredType = requiredType;
         this.converterFactory = converterFactory;
     }
 
@@ -65,11 +84,13 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     @Override
     @SuppressWarnings("unchecked")
     public SerializedObject<T> getOutputData() {
-        SerializedObject<T> serializedInput =
-                converterFactory.getConverter(source.getOutputData().getContentType(), expectedType)
-                        .convert((SerializedObject) source.getOutputData());
-        T result = upcastFunction.apply(serializedInput.getData());
-        return new SimpleSerializedObject<>(result, expectedType, getOutputType());
+        SerializedObject<?> serializedInput = source.getOutputData();
+        if (!serializedInput.getContentType().equals(requiredType)) {
+            serializedInput = converterFactory.getConverter(source.getOutputData().getContentType(), requiredType)
+                    .convert((SerializedObject) source.getOutputData());
+        }
+        return new SimpleSerializedObject<>(upcastFunction.apply((T) serializedInput.getData()), requiredType,
+                                            getOutputType());
     }
 
     @Override

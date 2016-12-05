@@ -19,7 +19,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Default implementation of the AssociationValues interface.
+ * Default implementation of the AssociationValues interface. Note that this implementation is meant to be used by
+ * a single thread at a time.
  *
  * @author Allard Buijze
  * @since 0.7
@@ -32,9 +33,17 @@ public class AssociationValuesImpl implements AssociationValues {
     private final Set<AssociationValue> addedValues = new HashSet<>();
     private final Set<AssociationValue> removedValues = new HashSet<>();
 
+    /**
+     * Initializes a new AssociationValues object without initial associations.
+     */
     public AssociationValuesImpl() {
     }
 
+    /**
+     * Initializes a new AssociationValues object with given initial associations.
+     *
+     * @param initialValues initial set of association values
+     */
     public AssociationValuesImpl(Set<AssociationValue> initialValues) {
         this.values.addAll(initialValues);
     }

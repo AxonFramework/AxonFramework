@@ -14,13 +14,15 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 /**
+ * Jdbc table factory for MySql databases.
+ *
  * @author Rene de Waele
  */
 public class MySqlEventTableFactory extends AbstractEventTableFactory {
+    /**
+     * Singleton MySqlEventTableFactory instance
+     */
     public static final MySqlEventTableFactory INSTANCE = new MySqlEventTableFactory();
-
-    protected MySqlEventTableFactory() {
-    }
 
     @Override
     protected String idColumnType() {

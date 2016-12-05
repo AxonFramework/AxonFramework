@@ -26,18 +26,12 @@ import org.axonframework.commandhandling.model.LockingRepository;
  * @author Allard Buijze
  * @since 0.6
  */
-public class NullLockFactory implements LockFactory {
+public enum NullLockFactory implements LockFactory {
 
-    public static final Lock NO_LOCK = new Lock() {
-        @Override
-        public void release() {
-        }
-
-        @Override
-        public boolean isHeld() {
-            return true;
-        }
-    };
+    /**
+     * Singleton instance of a {@link NullLockFactory}.
+     */
+    INSTANCE;
 
     /**
      * {@inheritDoc}
@@ -48,5 +42,16 @@ public class NullLockFactory implements LockFactory {
     public Lock obtainLock(String identifier) {
         return NO_LOCK;
     }
+
+    private static final Lock NO_LOCK = new Lock() {
+        @Override
+        public void release() {
+        }
+
+        @Override
+        public boolean isHeld() {
+            return true;
+        }
+    };
 
 }

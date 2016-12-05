@@ -16,28 +16,26 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.common.ReflectionUtils;
-import org.axonframework.eventhandling.saga.ResourceInjector;
-import org.axonframework.test.FixtureExecutionException;
+import org.axonframework.eventhandling.saga.AbstractResourceInjector;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import static org.axonframework.common.ReflectionUtils.methodsOf;
+import java.util.Optional;
 
 /**
- * Resource injector that uses setter methods to inject resources. All methods starting with "set" are evaluated. If
- * that method has a single parameter, a Resource of that type is injected into it, if present.
+ * Resource injector that uses setter methods to inject resources. All methods and fields annotated with
+ * {@code @Inject} are evaluated. If that method has a single parameter, a Resource of that type
+ * is injected into it, if present.
+ * <p>
+ * Unlike the SimpleResourceInjector, changes in the provided {@link Iterable} are reflected in this injector.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class AutowiredResourceInjector implements ResourceInjector {
+public class AutowiredResourceInjector extends AbstractResourceInjector {
 
-    private Iterable<?> resources;
+    private final Iterable<?> resources;
 
     /**
-     * Initializes the resource injector to inject to given <code>resources</code>.
+     * Initializes the resource injector to inject to given {@code resources}.
      *
      * @param resources The resources to inject
      */
@@ -46,29 +44,13 @@ public class AutowiredResourceInjector implements ResourceInjector {
     }
 
     @Override
-    public void injectResources(Object saga) {
-        for (Method method : methodsOf(saga.getClass())) {
-            if (isSetter(method)) {
-                Class<?> requiredType = method.getParameterTypes()[0];
-                for (Object resource : resources) {
-                    if (requiredType.isInstance(resource)) {
-                        injectResource(saga, method, resource);
-                    }
-                }
+    protected <R> Optional<R> findResource(Class<R> requiredType) {
+        for (Object resource : resources) {
+            if (requiredType.isInstance(resource)) {
+                return Optional.of(requiredType.cast(resource));
             }
         }
+        return Optional.empty();
     }
 
-    private void injectResource(Object saga, Method setterMethod, Object resource) {
-        try {
-            ReflectionUtils.ensureAccessible(setterMethod);
-            setterMethod.invoke(saga, resource);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new FixtureExecutionException("An exception occurred while trying to inject a resource", e);
-        }
-    }
-
-    private boolean isSetter(Method method) {
-        return method.getParameterTypes().length == 1 && method.getName().startsWith("set");
-    }
 }

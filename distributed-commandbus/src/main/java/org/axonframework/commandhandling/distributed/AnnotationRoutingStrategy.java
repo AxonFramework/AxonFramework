@@ -70,7 +70,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
     }
 
     /**
-     * Initializes a Routing Strategy that uses the given <code>unresolvedRoutingKeyPolicy</code> when an incoming
+     * Initializes a Routing Strategy that uses the given {@code unresolvedRoutingKeyPolicy} when an incoming
      * command does not define an AggregateIdentifier to base the routing key on.
      *
      * @param unresolvedRoutingKeyPolicy The policy indication what should be done when a Command does not contain
@@ -82,7 +82,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
     /**
      * Initializes a Routing Strategy that uses the given annotation to resolve the targeted identifier and the given
-     * <code>unresolvedRoutingKeyPolicy</code> when an incoming command does not define an AggregateIdentifier to base
+     * {@code unresolvedRoutingKeyPolicy} when an incoming command does not define an AggregateIdentifier to base
      * the routing key on.
      *
      * @param annotationType             The type of annotation marking the field or method providing the identifier of

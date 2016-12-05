@@ -29,7 +29,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -47,8 +46,8 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 2.0
  */
-public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector>, InitializingBean, SmartLifecycle, BeanNameAware,
-        ApplicationContextAware {
+public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector>, InitializingBean, SmartLifecycle,
+        BeanNameAware, ApplicationContextAware {
 
     private JGroupsConnector connector;
     private JChannelFactory channelFactory = new JGroupsXmlConfigurationChannelFactory("tcp_mcast.xml");
@@ -84,8 +83,8 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
     public void afterPropertiesSet() throws Exception {
         if (localSegment == null) {
             SimpleCommandBus bus = new SimpleCommandBus();
-            if (interceptors != null && !interceptors.isEmpty()) {
-                bus.setHandlerInterceptors(interceptors);
+            if (interceptors != null) {
+                interceptors.forEach(bus::registerHandlerInterceptor);
             }
             localSegment = bus;
         }
@@ -125,6 +124,12 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
         this.channelFactory = new JGroupsXmlConfigurationChannelFactory(configuration);
     }
 
+    /**
+     * Sets the {@link RoutingStrategy} that the JGroupsConnector will use to determine to which endpoint a message
+     * should be routed.
+     *
+     * @param routingStrategy the routing strategy of the connector
+     */
     public void setRoutingStrategy(RoutingStrategy routingStrategy) {
         this.routingStrategy = routingStrategy;
     }
@@ -196,7 +201,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
     /**
      * Registers the JChannel monitoring bean after the channel has connected. Defaults to false.
      *
-     * @param registerMBean
+     * @param registerMBean if {@code true} the JGroups channel will be registered with the MBeanServer
      */
     public void setRegisterMBean(boolean registerMBean) {
         this.registerMBean = registerMBean;

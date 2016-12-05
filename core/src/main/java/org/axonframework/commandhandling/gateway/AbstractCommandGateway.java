@@ -53,7 +53,7 @@ public abstract class AbstractCommandGateway {
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
                                      List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.notNull(commandBus, "commandBus may not be null");
+        Assert.notNull(commandBus, () -> "commandBus may not be null");
         this.commandBus = commandBus;
         if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
             this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
@@ -107,5 +107,14 @@ public abstract class AbstractCommandGateway {
             message = (CommandMessage) dispatchInterceptor.handle(message);
         }
         return message;
+    }
+
+    /**
+     * Returns the CommandBus used by this gateway. Should be used to monitoring or testing.
+     *
+     * @return The CommandBus used by this gateway
+     */
+    public CommandBus getCommandBus() {
+        return commandBus;
     }
 }

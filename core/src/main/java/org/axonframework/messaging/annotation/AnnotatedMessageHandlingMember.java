@@ -25,6 +25,12 @@ import java.lang.reflect.*;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on a target of type
+ * {@link T}.
+ *
+ * @param <T> the target type
+ */
 public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<T> {
 
     private final Class<?> payloadType;
@@ -33,8 +39,18 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
     private final Executable executable;
     private final Class<? extends Message> messageType;
 
+    /**
+     * Initializes a new instance that will invoke the given {@code executable} (method) on a target to handle a message
+     * of the given {@code messageType}.
+     *
+     * @param executable               the method to invoke on a target
+     * @param messageType              the type of message that is expected by the target method
+     * @param explicitPayloadType      the expected message payload type
+     * @param parameterResolverFactory factory used to resolve method parameters
+     */
     public AnnotatedMessageHandlingMember(Executable executable, Class<? extends Message> messageType,
-                                          Class<?> explicitPayloadType, ParameterResolverFactory parameterResolverFactory) {
+                                          Class<?> explicitPayloadType,
+                                          ParameterResolverFactory parameterResolverFactory) {
         this.executable = executable;
         this.messageType = messageType;
         ReflectionUtils.ensureAccessible(this.executable);
@@ -45,12 +61,17 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
         for (int i = 0; i < parameterCount; i++) {
             parameterResolvers[i] = parameterResolverFactory.createInstance(executable, parameters, i);
             if (parameterResolvers[i] == null) {
-                throw new UnsupportedHandlerException("Unable to resolver parameter " + i + " (" + parameters[i].getType().getSimpleName() + ") in handler " + executable.toGenericString() + ".", executable);
+                throw new UnsupportedHandlerException(
+                        "Unable to resolver parameter " + i + " (" + parameters[i].getType().getSimpleName() +
+                                ") in handler " + executable.toGenericString() + ".", executable);
             }
             if (supportedPayloadType.isAssignableFrom(parameterResolvers[i].supportedPayloadType())) {
                 supportedPayloadType = parameterResolvers[i].supportedPayloadType();
             } else if (!parameterResolvers[i].supportedPayloadType().isAssignableFrom(supportedPayloadType)) {
-                throw new UnsupportedHandlerException(String.format("The method %s seems to have parameters that put conflicting requirements on the payload type applicable on that method: %s vs %s", executable.toGenericString(), supportedPayloadType, parameterResolvers[i].supportedPayloadType()), executable);
+                throw new UnsupportedHandlerException(String.format(
+                        "The method %s seems to have parameters that put conflicting requirements on the payload type" +
+                                " applicable on that method: %s vs %s", executable.toGenericString(),
+                        supportedPayloadType, parameterResolvers[i].supportedPayloadType()), executable);
             }
         }
         this.payloadType = supportedPayloadType;
@@ -68,13 +89,29 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
 
     @Override
     public boolean canHandle(Message<?> message) {
-        return typeMatches(message) && payloadType.isAssignableFrom(message.getPayloadType()) && parametersMatch(message);
+        return typeMatches(message) && payloadType.isAssignableFrom(message.getPayloadType()) &&
+                parametersMatch(message);
     }
 
+    /**
+     * Checks if this member can handle the type of the given {@code message}. This method does not check if the
+     * parameter resolvers of this member are compatible with the given message. Use {@link #parametersMatch(Message)}
+     * for that.
+     *
+     * @param message the message to check for
+     * @return {@code true} if this member can handle the message type. {@code false} otherwise
+     */
     protected boolean typeMatches(Message<?> message) {
         return messageType.isInstance(message);
     }
 
+    /**
+     * Checks if the parameter resolvers of this member are compatible with the given {@code message}.
+     *
+     * @param message the message to check for
+     * @return {@code true} if the parameter resolvers can handle this message. {@code false} otherwise
+     */
+    @SuppressWarnings("unchecked")
     protected boolean parametersMatch(Message<?> message) {
         for (ParameterResolver resolver : parameterResolvers) {
             if (!resolver.matches(message)) {

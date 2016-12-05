@@ -40,8 +40,8 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectActiveSagas(int expected);
 
     /**
-     * Asserts that at least one of the active sagas is associated with the given <code>associationKey</code> and
-     * <code>associationValue</code>.
+     * Asserts that at least one of the active sagas is associated with the given {@code associationKey} and
+     * {@code associationValue}.
      *
      * @param associationKey   The key of the association to verify
      * @param associationValue The value of the association to verify
@@ -50,8 +50,8 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectAssociationWith(String associationKey, Object associationValue);
 
     /**
-     * Asserts that at none of the active sagas is associated with the given <code>associationKey</code> and
-     * <code>associationValue</code>.
+     * Asserts that at none of the active sagas is associated with the given {@code associationKey} and
+     * {@code associationValue}.
      *
      * @param associationKey   The key of the association to verify
      * @param associationValue The value of the association to verify
@@ -60,8 +60,8 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoAssociationWith(String associationKey, Object associationValue);
 
     /**
-     * Asserts that an event matching the given <code>matcher</code> has been scheduled to be published after the given
-     * <code>duration</code>.
+     * Asserts that an event matching the given {@code matcher} has been scheduled to be published after the given
+     * {@code duration}.
      *
      * @param duration The time to wait before the event should be published
      * @param matcher  A matcher defining the event expected to be published
@@ -71,7 +71,7 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication after the given
-     * <code>duration</code>.
+     * {@code duration}.
      * <p/>
      * Note that the source attribute of the application event is ignored when comparing events. Events are compared
      * using an "equals" check on all fields in the events.
@@ -83,8 +83,8 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEvent(Duration duration, Object event);
 
     /**
-     * Asserts that an event of the given <code>eventType</code> has been scheduled for publication after the given
-     * <code>duration</code>.
+     * Asserts that an event of the given {@code eventType} has been scheduled for publication after the given
+     * {@code duration}.
      *
      * @param duration  The time to wait before the event should be published
      * @param eventType The type of the expected event
@@ -93,10 +93,10 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType);
 
     /**
-     * Asserts that an event matching the given <code>matcher</code> has been scheduled to be published at the given
-     * <code>scheduledTime</code>.
+     * Asserts that an event matching the given {@code matcher} has been scheduled to be published at the given
+     * {@code scheduledTime}.
      * <p/>
-     * If the <code>scheduledTime</code> is calculated based on the "current time", use the {@link
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * org.axonframework.test.saga.FixtureConfiguration#currentTime()} to get the time to use as "current time".
      *
      * @param scheduledTime The time at which the event should be published
@@ -107,9 +107,9 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication at the given
-     * <code>scheduledTime</code>.
+     * {@code scheduledTime}.
      * <p/>
-     * If the <code>scheduledTime</code> is calculated based on the "current time", use the {@link
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * org.axonframework.test.saga.FixtureConfiguration#currentTime()} to get the time to use as "current time".
      * <p/>
      * Note that the source attribute of the application event is ignored when comparing events. Events are compared
@@ -122,10 +122,10 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object event);
 
     /**
-     * Asserts that an event of the given <code>eventType</code> has been scheduled for publication at the given
-     * <code>scheduledTime</code>.
+     * Asserts that an event of the given {@code eventType} has been scheduled for publication at the given
+     * {@code scheduledTime}.
      * <p/>
-     * If the <code>scheduledTime</code> is calculated based on the "current time", use the {@link
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
      * org.axonframework.test.saga.FixtureConfiguration#currentTime()} to get the time to use as "current time".
      *
      * @param scheduledTime The time at which the event should be published
@@ -155,7 +155,7 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... commands);
 
     /**
-     * Asserts that the sagas dispatched commands as defined by the given <code>matcher</code>. Only commands as a
+     * Asserts that the sagas dispatched commands as defined by the given {@code matcher}. Only commands as a
      * result of the event in the "when" stage of the fixture are matched.
      *
      * @param matcher The matcher that describes the expected list of commands
@@ -180,7 +180,7 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoScheduledEvents();
 
     /**
-     * Assert that the saga published events on the EventBus as defined by the given <code>matcher</code>. Only events
+     * Assert that the saga published events on the EventBus as defined by the given {@code matcher}. Only events
      * published in the "when" stage of the tests are matched.
      *
      * @param matcher The matcher that defines the expected list of published events.
@@ -189,7 +189,7 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher);
 
     /**
-     * Assert that the saga published events on the EventBus in the exact sequence of the given <code>expected</code>
+     * Assert that the saga published events on the EventBus in the exact sequence of the given {@code expected}
      * events. Events are compared comparing their type and fields using equals. Sequence number, aggregate identifier
      * (for domain events) and source (for application events) are ignored in the comparison.
      *

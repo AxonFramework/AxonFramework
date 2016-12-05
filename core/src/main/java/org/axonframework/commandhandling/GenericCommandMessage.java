@@ -24,11 +24,24 @@ import org.axonframework.messaging.MetaData;
 import java.util.Map;
 
 /**
- * @author Rene de Waele
+ * Implementation of the CommandMessage that takes all properties as constructor parameters.
+ *
+ * @param <T> The type of payload contained in this Message
+ * @author Allard Buijze
+ * @since 2.0
  */
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
     private final String commandName;
 
+    /**
+     * Returns the given command as a CommandMessage. If {@code command} already implements CommandMessage, it is
+     * returned as-is. Otherwise, the given {@code command} is wrapped into a GenericCommandMessage as its
+     * payload.
+     *
+     * @param command the command to wrap as CommandMessage
+     * @return a CommandMessage containing given {@code command} as payload, or {@code command} if it already implements
+     * CommandMessage.
+     */
     @SuppressWarnings("unchecked")
     public static <C> CommandMessage<C> asCommandMessage(Object command) {
         if (CommandMessage.class.isInstance(command)) {
@@ -37,14 +50,32 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
         return new GenericCommandMessage<>((C) command, MetaData.emptyInstance());
     }
 
+    /**
+     * Create a CommandMessage with the given {@code command} as payload and empty metaData
+     *
+     * @param payload the payload for the Message
+     */
     public GenericCommandMessage(T payload) {
         this(payload, MetaData.emptyInstance());
     }
 
+    /**
+     * Create a CommandMessage with the given {@code command} as payload.
+     *
+     * @param payload  the payload for the Message
+     * @param metaData The meta data for this message
+     */
     public GenericCommandMessage(T payload, Map<String, ?> metaData) {
         this(new GenericMessage<>(payload, metaData), payload.getClass().getName());
     }
 
+    /**
+     * Create a CommandMessage from the given {@code delegate} message containing payload, metadata and message
+     * identifier, and the given {@code commandName}.
+     *
+     * @param delegate    the delegate message
+     * @param commandName The name of the command
+     */
     public GenericCommandMessage(Message<T> delegate, String commandName) {
         super(delegate);
         this.commandName = commandName;

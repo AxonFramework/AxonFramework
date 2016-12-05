@@ -16,22 +16,11 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
-
-import static org.axonframework.common.ReflectionUtils.fieldsOf;
-import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
  * A resource injector that checks for {@see javax.inject.Inject} annotated fields and setter methods to inject
@@ -42,11 +31,7 @@ import static org.axonframework.common.ReflectionUtils.methodsOf;
  * @author Allard Buijze
  * @since 1.1
  */
-public class SimpleResourceInjector implements ResourceInjector {
-
-    private static final Logger logger = LoggerFactory.getLogger(SimpleResourceInjector.class);
-
-    private static final String FULLY_QUALIFIED_CLASS_NAME_INJECT = "javax.inject.Inject";
+public class SimpleResourceInjector extends AbstractResourceInjector {
 
     private final Iterable<?> resources;
 
@@ -61,6 +46,8 @@ public class SimpleResourceInjector implements ResourceInjector {
 
     /**
      * Initializes the resource injector to inject to given {@code resources}.
+     * <p>
+     * Note that any changes to the given collection will not be reflected by this injector.
      *
      * @param resources The resources to inject
      */
@@ -68,50 +55,12 @@ public class SimpleResourceInjector implements ResourceInjector {
         this.resources = new ArrayList<>(resources);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void injectResources(Object saga) {
-        injectFieldResources(saga);
-        injectMethodResources(saga);
-    }
-
-    private void injectFieldResources(Object saga) {
-        fieldsOf(saga.getClass()).forEach(
-                field -> Optional.ofNullable(AnnotationUtils.findAnnotation(field, FULLY_QUALIFIED_CLASS_NAME_INJECT))
-                        .ifPresent(annotatedFields -> {
-                            Class<?> requiredType = field.getType();
-                            StreamSupport.stream(resources.spliterator(), false).filter(requiredType::isInstance)
-                                    .forEach(resource -> injectFieldResource(saga, field, resource));
-                        }));
-    }
-
-    private void injectFieldResource(Object saga, Field injectField, Object resource) {
-        try {
-            ReflectionUtils.ensureAccessible(injectField);
-            injectField.set(saga, resource);
-        } catch (IllegalAccessException e) {
-            logger.warn("Unable to inject resource. Exception while setting field: ", e);
-        }
-    }
-
-    private void injectMethodResources(Object saga) {
-        methodsOf(saga.getClass()).forEach(
-                method -> Optional.ofNullable(AnnotationUtils.findAnnotation(method, FULLY_QUALIFIED_CLASS_NAME_INJECT))
-                        .ifPresent(annotatedMethods -> {
-                            Class<?> requiredType = method.getParameterTypes()[0];
-                            StreamSupport.stream(resources.spliterator(), false).filter(requiredType::isInstance)
-                                    .forEach(resource -> injectMethodResource(saga, method, resource));
-                        }));
-    }
-
-    private void injectMethodResource(Object saga, Method injectMethod, Object resource) {
-        try {
-            ReflectionUtils.ensureAccessible(injectMethod);
-            injectMethod.invoke(saga, resource);
-        } catch (IllegalAccessException e) {
-            logger.warn("Unable to inject resource. Exception while invoking setter: ", e);
-        } catch (InvocationTargetException e) {
-            logger.warn("Unable to inject resource. Exception while invoking setter: ", e.getCause());
-        }
+    protected <R> Optional<R> findResource(Class<R> requiredType) {
+        return (Optional<R>) StreamSupport.stream(resources.spliterator(), false)
+                .filter(requiredType::isInstance)
+                .findFirst();
     }
 
 }

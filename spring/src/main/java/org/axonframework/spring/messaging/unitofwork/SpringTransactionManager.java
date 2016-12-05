@@ -15,15 +15,11 @@ package org.axonframework.spring.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionIsolationLevel;
 import org.axonframework.common.transaction.TransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
@@ -35,8 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SpringTransactionManager implements TransactionManager {
 
     private final PlatformTransactionManager transactionManager;
-    private final TransactionDefinition defaultTransactionDefinition;
-    private final Map<Integer, TransactionDefinition> transactionDefinitions = new ConcurrentHashMap<>();
+    private final TransactionDefinition transactionDefinition;
 
     /**
      * @param transactionManager    The transaction manager to use
@@ -44,13 +39,13 @@ public class SpringTransactionManager implements TransactionManager {
      */
     public SpringTransactionManager(PlatformTransactionManager transactionManager,
                                     TransactionDefinition transactionDefinition) {
-        Assert.notNull(transactionManager, "transactionManager may not be null");
+        Assert.notNull(transactionManager, () -> "transactionManager may not be null");
         this.transactionManager = transactionManager;
-        this.defaultTransactionDefinition = transactionDefinition;
+        this.transactionDefinition = transactionDefinition;
     }
 
     /**
-     * Initializes the SpringTransactionManager with the given <code>transactionManager</code> and the default
+     * Initializes the SpringTransactionManager with the given {@code transactionManager} and the default
      * transaction definition.
      *
      * @param transactionManager the transaction manager to use
@@ -60,14 +55,8 @@ public class SpringTransactionManager implements TransactionManager {
     }
 
     @Override
-    public Transaction startTransaction(TransactionIsolationLevel isolationLevel) {
-        TransactionStatus status =
-                transactionManager.getTransaction(transactionDefinitions.computeIfAbsent(isolationLevel.get(), i -> {
-                    DefaultTransactionDefinition result =
-                            new DefaultTransactionDefinition(defaultTransactionDefinition);
-                    result.setIsolationLevel(i);
-                    return result;
-                }));
+    public Transaction startTransaction() {
+        TransactionStatus status = transactionManager.getTransaction(transactionDefinition);
         return new Transaction() {
             @Override
             public void commit() {
@@ -82,7 +71,7 @@ public class SpringTransactionManager implements TransactionManager {
     }
 
     /**
-     * Commits the transaction with given <code>status</code> if the transaction is new and not completed.
+     * Commits the transaction with given {@code status} if the transaction is new and not completed.
      *
      * @param status The status of the transaction to commit
      */
@@ -93,7 +82,7 @@ public class SpringTransactionManager implements TransactionManager {
     }
 
     /**
-     * Rolls back the transaction with given <code>status</code> if the transaction is new and not completed.
+     * Rolls back the transaction with given {@code status} if the transaction is new and not completed.
      *
      * @param status The status of the transaction to roll back
      */

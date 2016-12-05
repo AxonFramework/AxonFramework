@@ -15,10 +15,8 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -52,7 +50,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @return the next event in the stream.
      */
     @Override
-    DomainEventMessage next();
+    DomainEventMessage<?> next();
 
     /**
      * Returns the next events in the stream, if available, without moving the pointer forward. Hence, a call to {@link
@@ -66,6 +64,19 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @return the next event in the stream.
      */
     DomainEventMessage<?> peek();
+
+    /**
+     * Get the highest known sequence number in the upstream event entry stream. Note that, as result of upcasting it is
+     * possible that the last event in this stream has a lower sequence number than that returned by this method.
+     * <p>
+     * To get the highest absolute sequence number of the underlying event entry stream make sure to iterate over all
+     * elements in the stream before calling this method.
+     * <p>
+     * If the stream is empty this method returns {@code null}.
+     *
+     * @return the sequence number of the last known upstream event entry
+     */
+    Long getLastSequenceNumber();
 
     @Override
     default void remove() {
@@ -86,13 +97,58 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
     }
 
     /**
-     * Create a new DomainEventStream from the given {@code events}.
+     * Create a new DomainEventStream with events obtained from the given {@code stream}.
      *
-     * @param events Events to add to the resulting DomainEventStream
-     * @return A DomainEventStream consisting of all given events
+     * @param stream                 Stream that serves as a source of events in the resulting DomainEventStream
+     * @param sequenceNumberSupplier supplier of the sequence number of the last used upstream event entry
+     * @return A DomainEventStream containing all events contained in the stream
      */
-    static DomainEventStream of(DomainEventMessage<?>... events) {
-        return DomainEventStream.of(Arrays.asList(events).iterator());
+    static DomainEventStream of(Stream<? extends DomainEventMessage<?>> stream, Supplier<Long> sequenceNumberSupplier) {
+        Objects.requireNonNull(stream);
+        return new DomainEventStream() {
+            private final Iterator<? extends DomainEventMessage<?>> iterator = stream.iterator();
+            private boolean hasPeeked;
+            private DomainEventMessage<?> peekEvent;
+
+            @Override
+            public DomainEventMessage<?> peek() {
+                if (!hasPeeked) {
+                    peekEvent = iterator.next();
+                    hasPeeked = true;
+                }
+                return peekEvent;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return hasPeeked || iterator.hasNext();
+            }
+
+            @Override
+            public DomainEventMessage<?> next() {
+                if (!hasPeeked) {
+                    return iterator.next();
+                }
+                DomainEventMessage<?> result = peekEvent;
+                peekEvent = null;
+                hasPeeked = false;
+                return result;
+            }
+
+            @Override
+            public Long getLastSequenceNumber() {
+                return sequenceNumberSupplier.get();
+            }
+        };
+    }
+
+    /**
+     * Create an empty DomainEventStream.
+     *
+     * @return A DomainEventStream containing no events
+     */
+    static DomainEventStream empty() {
+        return DomainEventStream.of();
     }
 
     /**
@@ -127,46 +183,33 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
                 }
                 throw new NoSuchElementException();
             }
+
+            @Override
+            public Long getLastSequenceNumber() {
+                return event.getSequenceNumber();
+            }
         };
     }
 
     /**
-     * Create a new DomainEventStream with events obtained from the given {@code iterator}.
+     * Create a new DomainEventStream from the given {@code events}.
      *
-     * @param iterator The iterator that serves as a source of events in the resulting DomainEventStream
-     * @return A DomainEventStream containing all events returned by the iterator
+     * @param events Events to add to the resulting DomainEventStream
+     * @return A DomainEventStream consisting of all given events
      */
-    static DomainEventStream of(Iterator<? extends DomainEventMessage<?>> iterator) {
-        Objects.requireNonNull(iterator);
-        return new DomainEventStream() {
-            private boolean hasPeeked;
-            private DomainEventMessage<?> peekEvent;
+    static DomainEventStream of(DomainEventMessage<?>... events) {
+        return DomainEventStream.of(Arrays.asList(events));
+    }
 
-            @Override
-            public DomainEventMessage<?> peek() {
-                if (!hasPeeked) {
-                    peekEvent = iterator.next();
-                    hasPeeked = true;
-                }
-                return peekEvent;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return hasPeeked || iterator.hasNext();
-            }
-
-            @Override
-            public DomainEventMessage<?> next() {
-                if (!hasPeeked) {
-                    return iterator.next();
-                }
-                DomainEventMessage<?> result = peekEvent;
-                peekEvent = null;
-                hasPeeked = false;
-                return result;
-            }
-        };
+    /**
+     * Create a new DomainEventStream with events obtained from the given {@code list}.
+     *
+     * @param list list that serves as a source of events in the resulting DomainEventStream
+     * @return A DomainEventStream containing all events returned by the list
+     */
+    static DomainEventStream of(List<? extends DomainEventMessage<?>> list) {
+        return list.isEmpty() ? of(Stream.empty(), () -> null) :
+                of(list.stream(), () -> list.isEmpty() ? null : list.get(list.size() - 1).getSequenceNumber());
     }
 
     /**
@@ -194,6 +237,11 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
             @Override
             public DomainEventMessage<?> next() {
                 return a.hasNext() ? a.next() : b.next();
+            }
+
+            @Override
+            public Long getLastSequenceNumber() {
+                return b.getLastSequenceNumber();
             }
         };
     }

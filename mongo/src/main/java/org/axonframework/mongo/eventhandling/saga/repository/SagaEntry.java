@@ -29,6 +29,7 @@ import org.bson.types.Binary;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -47,20 +48,22 @@ public class SagaEntry<T> {
     private static final String ASSOCIATION_KEY = "key";
     private static final String ASSOCIATION_VALUE = "value";
 
-    private String sagaId;
-    private String sagaType;
+    private final String sagaId;
+    private final String sagaType;
 
-    private byte[] serializedSaga;
+    private final byte[] serializedSaga;
 
     private volatile T saga;
     private final Set<AssociationValue> associationValues;
 
     /**
-     * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
+     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
      * saga is not modified by this operation.
      *
-     * @param saga       The saga to store
-     * @param serializer The serialization mechanism to convert the Saga to a byte stream
+     * @param identifier        The identifier of the saga
+     * @param saga              The saga to store
+     * @param associationValues The associations of the saga
+     * @param serializer        The serialization mechanism to convert the Saga to a byte stream
      */
     public SagaEntry(String identifier, T saga, Set<AssociationValue> associationValues, Serializer serializer) {
         this.sagaId = identifier;
@@ -96,10 +99,20 @@ public class SagaEntry<T> {
         return serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class, sagaType, ""));
     }
 
+    /**
+     * Get the identifier of this Saga.
+     *
+     * @return the saga identifier
+     */
     public String getSagaId() {
         return sagaId;
     }
 
+    /**
+     * Get a set of all the Saga's associations.
+     *
+     * @return association values of this Saga
+     */
     public Set<AssociationValue> getAssociationValues() {
         return associationValues;
     }
@@ -110,21 +123,18 @@ public class SagaEntry<T> {
      * @return the Mongo Document representing the Saga provided in this entry
      */
     public Document asDocument() {
-        return new Document(SAGA_TYPE, sagaType)
-                .append(SAGA_IDENTIFIER, sagaId)
-                .append(SERIALIZED_SAGA, serializedSaga)
+        return new Document(SAGA_TYPE, sagaType).append(SAGA_IDENTIFIER, sagaId).append(SERIALIZED_SAGA, serializedSaga)
                 .append(ASSOCIATIONS, toDBList(associationValues));
     }
 
     @SuppressWarnings("unchecked")
     private Set<AssociationValue> toAssociationSet(Document dbSaga) {
-        Set<AssociationValue> values = new HashSet<AssociationValue>();
+        Set<AssociationValue> values = new HashSet<>();
         List<Document> list = (List<Document>) dbSaga.get(ASSOCIATIONS);
         if (list != null) {
-            for (Document item : list) {
-                values.add(new AssociationValue((String) item.get(ASSOCIATION_KEY),
-                                                (String) item.get(ASSOCIATION_VALUE)));
-            }
+            values.addAll(list.stream().map(item -> new AssociationValue((String) item.get(ASSOCIATION_KEY),
+                                                                         (String) item.get(ASSOCIATION_VALUE)))
+                                  .collect(Collectors.toList()));
         }
         return values;
     }

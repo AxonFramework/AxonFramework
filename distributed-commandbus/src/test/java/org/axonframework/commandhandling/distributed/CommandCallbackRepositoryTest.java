@@ -6,9 +6,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Created by axon on 17-6-16.
@@ -78,8 +76,7 @@ public class CommandCallbackRepositoryTest {
 
     private CommandCallbackWrapper<Object, Object, Object> createWrapper(Object sessionId) {
         return new CommandCallbackWrapper<>(
-                sessionId,
-                new GenericCommandMessage<Object>(new Object()),
+                sessionId, new GenericCommandMessage<>(new Object()),
                 new CommandCallback<Object, Object>() {
                     @Override
                     public void onSuccess(CommandMessage<?> commandMessage, Object result) {

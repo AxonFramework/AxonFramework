@@ -29,7 +29,7 @@ public class ConnectionFailedException extends AxonException {
     private static final long serialVersionUID = -5193897502103028801L;
 
     /**
-     * Initializes the exception using the given <code>message</code>.
+     * Initializes the exception using the given {@code message}.
      *
      * @param message The message describing the exception
      */
@@ -38,7 +38,7 @@ public class ConnectionFailedException extends AxonException {
     }
 
     /**
-     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
+     * Initializes the exception using the given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception

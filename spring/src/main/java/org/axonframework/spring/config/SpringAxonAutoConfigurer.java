@@ -18,6 +18,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.context.ApplicationContext;
@@ -44,100 +45,139 @@ import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
+import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
+/**
+ * ImportBeanDefinitionRegistrar implementation that sets up an infrastructure Configuration based on beans available
+ * in the application context.
+ * <p>
+ * This component is backed by a DefaultConfiguration (see {@link DefaultConfigurer#defaultConfiguration()}
+ * and registers the following beans if present in the ApplicationContext:
+ * <ul>
+ * <li>{@link CommandBus}</li>
+ * <li>{@link EventStorageEngine} or {@link EventBus}</li>
+ * <li>{@link Serializer}</li>
+ * <li>{@link TokenStore}</li>
+ * <li>{@link PlatformTransactionManager}</li>
+ * <li>{@link TransactionManager}</li>
+ * <li>{@link SagaStore}</li>
+ * <li>{@link ResourceInjector} (which defaults to {@link SpringResourceInjector}</li>
+ * </ul>
+ * <p>
+ * Furthermore, all beans with an {@link Aggregate @Aggregate} or {@link Saga @Saga} annotation are inspected and
+ * required components to operate the Aggregate or Saga are registered.
+ *
+ * @see EnableAxon
+ */
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
-    private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
+    /**
+     * Name of the {@link AxonConfiguration} bean.
+     */
+    public static final String AXON_CONFIGURATION_BEAN = "org.axonframework.spring.config.AxonConfiguration";
 
+    private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         registry.registerBeanDefinition("commandHandlerSubscriber",
-                                        BeanDefinitionBuilder.genericBeanDefinition(CommandHandlerSubscriber.class)
-                                                .getBeanDefinition());
+                                        genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
-        RuntimeBeanReference parameterResolver = SpringContextParameterResolverFactoryBuilder.getBeanReference(registry);
-        configurer.registerComponent(ParameterResolverFactory.class,
-                                     c -> beanFactory.getBean(parameterResolver.getBeanName(),
-                                                              ParameterResolverFactory.class));
+        RuntimeBeanReference parameterResolver =
+                SpringContextParameterResolverFactoryBuilder.getBeanReference(registry);
+        configurer.registerComponent(ParameterResolverFactory.class, c -> beanFactory
+                .getBean(parameterResolver.getBeanName(), ParameterResolverFactory.class));
 
-        findComponent(CommandBus.class).ifPresent(
-                commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
-        findComponent(EventStorageEngine.class).ifPresent(
-                ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
-        findComponent(EventBus.class).ifPresent(
-                eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
-        findComponent(Serializer.class).ifPresent(
-                serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
-        findComponent(TokenStore.class).ifPresent(
-                tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
-        findComponent(PlatformTransactionManager.class).ifPresent(
-                ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
-        findComponent(TransactionManager.class).ifPresent(
-                tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
-        findComponent(SagaStore.class).ifPresent(
-                sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
-        findComponent(ResourceInjector.class).ifPresent(
-                resourceInjector -> configurer.configureResourceInjector(c -> getBean(resourceInjector, c)));
+        findComponent(CommandBus.class)
+                .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
+        findComponent(EventStorageEngine.class)
+                .ifPresent(ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
+        findComponent(EventBus.class).ifPresent(eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
+        findComponent(Serializer.class)
+                .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
+        findComponent(TokenStore.class)
+                .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
+        try {
+            findComponent(PlatformTransactionManager.class).ifPresent(
+                    ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
+        } catch (NoClassDefFoundError error) {
+            // that's fine...
+        }
+        findComponent(TransactionManager.class)
+                .ifPresent(tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
+        findComponent(SagaStore.class)
+                .ifPresent(sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
+
+        String resourceInjector = findComponent(ResourceInjector.class, registry,
+                                                () -> genericBeanDefinition(SpringResourceInjector.class)
+                                                        .getBeanDefinition());
+        configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
         registerAggregateBeanDefinitions(configurer, registry);
-        registerSagaBeanDefinitions(configurer, registry);
+        registerSagaBeanDefinitions(configurer);
         registerModules(configurer);
 
-        if (!findComponent(EventHandlingConfiguration.class).isPresent()) {
-            registerDefaultEventHandlerConfiguration(registry);
+        Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
+        String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
+        if (!eventHandlingConfiguration.isPresent()) {
+            registry.registerBeanDefinition(ehConfigBeanName, genericBeanDefinition(EventHandlingConfiguration.class)
+                    .getBeanDefinition());
         }
-
-        registry.registerBeanDefinition("axonConfiguration",
-                                        BeanDefinitionBuilder.genericBeanDefinition(AxonConfiguration.class)
-                                                .addConstructorArgValue(configurer)
-                                                .getBeanDefinition());
+        registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN, genericBeanDefinition(AxonConfiguration.class)
+                .addConstructorArgValue(configurer).getBeanDefinition());
+        registerEventHandlerRegistrar(ehConfigBeanName, registry);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T getBean(String beanName, Configuration configuration) {
         return (T) configuration.getComponent(ApplicationContext.class).getBean(beanName);
     }
 
-    private void registerDefaultEventHandlerConfiguration(BeanDefinitionRegistry registry) {
+    private void registerEventHandlerRegistrar(String ehConfigBeanName, BeanDefinitionRegistry registry) {
         List<RuntimeBeanReference> beans = new ManagedList<>();
         beanFactory.getBeanNamesIterator().forEachRemaining(bean -> {
-            Class<?> beanType = beanFactory.getType(bean);
-            if (beanFactory.containsBeanDefinition(bean) && beanFactory.getBeanDefinition(bean).isSingleton()) {
-                boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
-                        .map(m -> AnnotationUtils.findAnnotationAttributes(m, MessageHandler.class).orElse(null))
-                        .filter(Objects::nonNull)
-                        .anyMatch(attr -> EventMessage.class.isAssignableFrom((Class) attr.get("messageType")));
-                if (hasHandler) {
-                    beans.add(new RuntimeBeanReference(bean));
+            if (!beanFactory.isFactoryBean(bean)) {
+                Class<?> beanType = beanFactory.getType(bean);
+                if (beanType != null && beanFactory.containsBeanDefinition(bean) &&
+                        beanFactory.getBeanDefinition(bean).isSingleton()) {
+                    boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
+                            .map(m -> AnnotationUtils.findAnnotationAttributes(m, MessageHandler.class).orElse(null))
+                            .filter(Objects::nonNull)
+                            .anyMatch(attr -> EventMessage.class.isAssignableFrom((Class) attr.get("messageType")));
+                    if (hasHandler) {
+                        beans.add(new RuntimeBeanReference(bean));
+                    }
                 }
             }
         });
-        registry.registerBeanDefinition("eventHandlingConfiguration",
-                                        BeanDefinitionBuilder.genericBeanDefinition(DefaultSpringEventHandlingConfiguration.class)
-                                                .addPropertyReference("axonConfiguration", "axonConfiguration")
-                                                .addPropertyValue("eventHandlers", beans).getBeanDefinition());
+        registry.registerBeanDefinition("eventHandlerRegistrar", genericBeanDefinition(EventHandlerRegistrar.class)
+                .addConstructorArgReference(AXON_CONFIGURATION_BEAN).addConstructorArgReference(ehConfigBeanName)
+                .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }
 
     private String[] registerModules(Configurer configurer) {
         // find all modules. If none, create standard event handler module
         String[] modules = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
         for (String module : modules) {
-            configurer.registerModule(new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(module, ModuleConfiguration.class)));
+            configurer.registerModule(
+                    new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(module, ModuleConfiguration.class)));
         }
         return modules;
     }
 
-    private void registerSagaBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
+    private void registerSagaBeanDefinitions(Configurer configurer) {
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
-            SagaConfiguration<?> sagaConfiguration = SagaConfiguration.subscribingSagaManager(beanFactory.getType(saga));
+            SagaConfiguration<?> sagaConfiguration =
+                    SagaConfiguration.subscribingSagaManager(beanFactory.getType(saga));
 
             if (!"".equals(sagaAnnotation.sagaStore())) {
-                sagaConfiguration.configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                sagaConfiguration
+                        .configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
             }
             configurer.registerModule(sagaConfiguration);
         }
@@ -147,27 +187,41 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
         for (String aggregate : aggregates) {
             Aggregate aggregateAnnotation = beanFactory.findAnnotationOnBean(aggregate, Aggregate.class);
-            AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(beanFactory.getType(aggregate));
+            AggregateConfigurer<?> aggregateConf =
+                    AggregateConfigurer.defaultConfiguration(beanFactory.getType(aggregate));
             if ("".equals(aggregateAnnotation.repository())) {
                 String repositoryName = aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "Repository";
-                String factoryName = aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "AggregateFactory";
+                String factoryName =
+                        aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "AggregateFactory";
                 if (beanFactory.containsBean(repositoryName)) {
                     aggregateConf.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
                 } else {
                     if (!registry.isBeanNameInUse(factoryName)) {
-                        registry.registerBeanDefinition(factoryName, BeanDefinitionBuilder.genericBeanDefinition(
-                                SpringPrototypeAggregateFactory.class)
-                                .addPropertyValue("prototypeBeanName", aggregate)
-                                .getBeanDefinition());
+                        registry.registerBeanDefinition(factoryName,
+                                                        genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+                                                                .addPropertyValue("prototypeBeanName", aggregate)
+                                                                .getBeanDefinition());
                     }
-                    aggregateConf.configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
+                    aggregateConf
+                            .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
                 }
             } else {
-                aggregateConf.configureRepository(c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
+                aggregateConf.configureRepository(
+                        c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
             }
 
             configurer.configureAggregate(aggregateConf);
         }
+    }
+
+    private <T> String findComponent(Class<T> componentType, BeanDefinitionRegistry registry,
+                                     Supplier<BeanDefinition> defaultBean) {
+        return findComponent(componentType).orElseGet(() -> {
+            BeanDefinition beanDefinition = defaultBean.get();
+            String beanName = BeanDefinitionReaderUtils.generateBeanName(beanDefinition, registry);
+            registry.registerBeanDefinition(beanName, beanDefinition);
+            return beanName;
+        });
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType) {
@@ -193,6 +247,10 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
+    /**
+     * Implementation of an {@link ImportSelector} that enables the import of the {@link SpringAxonAutoConfigurer} after
+     * all {@code @Configuration} beans have been processed.
+     */
     public static class ImportSelector implements DeferredImportSelector {
 
         @Override

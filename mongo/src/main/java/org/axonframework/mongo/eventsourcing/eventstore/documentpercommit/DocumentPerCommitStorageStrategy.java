@@ -17,45 +17,62 @@
 package org.axonframework.mongo.eventsourcing.eventstore.documentpercommit;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexOptions;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventUtils;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.mongo.eventsourcing.eventstore.AbstractMongoEventStorageStrategy;
+import org.axonframework.mongo.eventsourcing.eventstore.StorageStrategy;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.EventEntryConfiguration;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Implementation of a Mongo {@link StorageStrategy} that stores one {@link Document} per commit of a batch of events.
+ * <p>
+ * For instance, one command commonly gives rise to more than one event. Using this strategt all events for that single
+ * command will be grouped in a single Mongo Document.
+ */
 public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageStrategy {
 
     private final CommitEntryConfiguration commitEntryConfiguration;
 
+    /**
+     * Initializes a {@link DocumentPerCommitStorageStrategy} with default event entry and commit entry configuration.
+     */
     public DocumentPerCommitStorageStrategy() {
         this(CommitEntryConfiguration.getDefault());
     }
 
+    /**
+     * Initializes a {@link DocumentPerCommitStorageStrategy} with default event entry and given {@code
+     * commitEntryConfiguration}.
+     *
+     * @param commitEntryConfiguration object that configures the naming of commit entry properties
+     */
     public DocumentPerCommitStorageStrategy(CommitEntryConfiguration commitEntryConfiguration) {
-        this(EventEntryConfiguration.getDefault(), commitEntryConfiguration);
+        this(EventEntryConfiguration.getDefault(), commitEntryConfiguration, null);
     }
 
+    /**
+     * Initializes a {@link DocumentPerCommitStorageStrategy} with given {@code eventConfiguration} and {@code
+     * commitEntryConfiguration}.
+     *
+     * @param eventConfiguration       object that configures the naming of event entry properties
+     * @param commitEntryConfiguration object that configures the naming of event entry properties
+     * @param lookBackTime       the maximum time to look back when fetching new events while tracking.
+     */
     public DocumentPerCommitStorageStrategy(EventEntryConfiguration eventConfiguration,
-                                            CommitEntryConfiguration commitEntryConfiguration) {
-        super(eventConfiguration);
-        this.commitEntryConfiguration = commitEntryConfiguration;
-    }
-
-    public DocumentPerCommitStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval,
-                                            CommitEntryConfiguration commitEntryConfiguration) {
-        super(eventConfiguration, gapDetectionInterval);
+                                            CommitEntryConfiguration commitEntryConfiguration, Duration lookBackTime) {
+        super(eventConfiguration, lookBackTime);
         this.commitEntryConfiguration = commitEntryConfiguration;
     }
 
@@ -73,17 +90,7 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
     }
 
     @Override
-    protected Stream<? extends DomainEventData<?>> extractDomainEvents(Document object) {
-        return Stream.of(new CommitEntry(object, commitEntryConfiguration, eventConfiguration()).getEvents());
-    }
-
-    @Override
-    protected FindIterable<Document> applyBatchSize(FindIterable<Document> cursor, int batchSize) {
-        return cursor.batchSize(batchSize);
-    }
-
-    @Override
-    protected Stream<? extends TrackedEventData<?>> extractTrackedEvents(Document object) {
+    protected Stream<? extends DomainEventData<?>> extractEvents(Document object) {
         return Stream.of(new CommitEntry(object, commitEntryConfiguration, eventConfiguration()).getEvents());
     }
 
@@ -93,7 +100,8 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
     }
 
     @Override
-    public void ensureIndexes(MongoCollection<Document> eventsCollection, MongoCollection<Document> snapshotsCollection) {
+    public void ensureIndexes(MongoCollection<Document> eventsCollection,
+                              MongoCollection<Document> snapshotsCollection) {
         super.ensureIndexes(eventsCollection, snapshotsCollection);
         //prevents duplicate commits
         eventsCollection.createIndex(new BasicDBObject(eventConfiguration().aggregateIdentifierProperty(), ORDER_ASC)

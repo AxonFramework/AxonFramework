@@ -87,8 +87,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     @SuppressWarnings("unchecked")
     public static <T> DisruptorRepository<T> getRepository(Class<?> type) {
         final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
-        Assert.state(invoker != null, "The repositories of a DisruptorCommandBus are only available "
-                + "in the invoker thread");
+        Assert.state(invoker != null,
+                     () -> "The repositories of a DisruptorCommandBus are only available " + "in the invoker thread");
         return invoker.repositories.get(type);
     }
 
@@ -113,17 +113,19 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * Create a repository instance for an aggregate created by the given {@code aggregateFactory}. The returning
      * repository must be sage to use by this invoker instance.
      *
-     * @param <T>                The type of aggregate created by the factory
-     * @param aggregateFactory   The factory creating aggregate instances
+     * @param <T>                       The type of aggregate created by the factory
+     * @param aggregateFactory          The factory creating aggregate instances
      * @param snapshotTriggerDefinition The trigger definition for snapshots
+     * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
      * @return A Repository instance for the given aggregate
      */
     @SuppressWarnings("unchecked")
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
-                                              SnapshotTriggerDefinition snapshotTriggerDefinition, ParameterResolverFactory parameterResolverFactory) {
+                                              SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                              ParameterResolverFactory parameterResolverFactory) {
         return repositories.computeIfAbsent(aggregateFactory.getAggregateType(),
-                                            k -> new DisruptorRepository<>(aggregateFactory, cache,
-                                                                           eventStore, parameterResolverFactory,
+                                            k -> new DisruptorRepository<>(aggregateFactory, cache, eventStore,
+                                                                           parameterResolverFactory,
                                                                            snapshotTriggerDefinition));
     }
 
@@ -173,8 +175,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
             Aggregate<T> aggregate = load(aggregateIdentifier);
             if (expectedVersion != null && aggregate.version() > expectedVersion) {
-                throw new ConflictingAggregateVersionException(aggregateIdentifier,
-                                                               expectedVersion,
+                throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion,
                                                                aggregate.version());
             }
             return aggregate;
@@ -226,8 +227,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
-            EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod, model, eventStore,
-                                                                                  trigger);
+            EventSourcedAggregate<T> aggregate =
+                    EventSourcedAggregate.initialize(factoryMethod, model, eventStore, trigger);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.identifierAsString(), aggregate);
             return aggregate;

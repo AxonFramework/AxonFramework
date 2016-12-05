@@ -48,7 +48,7 @@ public class JacksonSerializer implements Serializer {
      * org.axonframework.serialization.Revision @Revision} annotations on the serialized classes.
      */
     public JacksonSerializer() {
-        this(new AnnotationRevisionResolver(), new ChainingConverterFactory());
+        this(new AnnotationRevisionResolver(), new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
@@ -58,7 +58,7 @@ public class JacksonSerializer implements Serializer {
      * @param objectMapper The objectMapper to serialize objects and parse JSON with
      */
     public JacksonSerializer(ObjectMapper objectMapper) {
-        this(objectMapper, new AnnotationRevisionResolver(), new ChainingConverterFactory());
+        this(objectMapper, new AnnotationRevisionResolver(), new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
@@ -82,7 +82,7 @@ public class JacksonSerializer implements Serializer {
      * @param revisionResolver The strategy to use to resolve the revision of an object
      */
     public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver) {
-        this(objectMapper, revisionResolver, new ChainingConverterFactory());
+        this(objectMapper, revisionResolver, new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
@@ -240,6 +240,11 @@ public class JacksonSerializer implements Serializer {
         return converterFactory;
     }
 
+    /**
+     * Returns the revision resolver used by this serializer.
+     *
+     * @return the revision resolver
+     */
     protected RevisionResolver getRevisionResolver() {
         return revisionResolver;
     }

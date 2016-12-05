@@ -24,7 +24,7 @@ import java.util.Deque;
 import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
  * Maintains the context around the processing of a single Message. This class notifies handlers when the Unit of Work
@@ -100,7 +100,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void setExecutionResult(ExecutionResult executionResult) {
         Assert.state(this.executionResult == null || executionResult.isExceptionResult(),
-                String.format("Cannot change execution result [%s] to [%s] for message [%s].",
+                     () -> String.format("Cannot change execution result [%s] to [%s] for message [%s].",
                         message, this.executionResult, executionResult));
         if (this.executionResult != null && this.executionResult.isExceptionResult()) {
             this.executionResult.getExceptionResult().addSuppressed(executionResult.getExceptionResult());
@@ -133,8 +133,8 @@ public class MessageProcessingContext<T extends Message<?>> {
      *
      * @param transformOperator The transform operator to apply to the stored message
      */
-    public void transformMessage(UnaryOperator<T> transformOperator) {
-        message = transformOperator.apply(message);
+    public void transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+        message = (T) transformOperator.apply(message);
     }
 
     /**

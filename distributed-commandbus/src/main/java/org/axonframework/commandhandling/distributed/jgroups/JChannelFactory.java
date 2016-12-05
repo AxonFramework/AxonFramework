@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.distributed.jgroups;
 import org.jgroups.JChannel;
 
 /**
- * JChannel factory used by the {@link JGroupsConnectorFactoryBean} to create the actual {@link JChannel}.
+ * Factory of a {@link JChannel}.
  *
  * @author Patrick Haas
  * @since 2.5

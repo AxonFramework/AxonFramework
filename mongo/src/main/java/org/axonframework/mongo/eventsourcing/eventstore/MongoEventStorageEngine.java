@@ -19,7 +19,6 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoBulkWriteException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
@@ -28,7 +27,7 @@ import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.annotation.PostConstruct;
@@ -64,7 +63,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param template        MongoTemplate instance to obtain the database and the collections.
      * @param storageStrategy The strategy for storing and retrieving events from the collections
      */
-    public MongoEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, MongoTemplate template,
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, MongoTemplate template,
                                    StorageStrategy storageStrategy) {
         this(serializer, upcasterChain, null, template, storageStrategy);
     }
@@ -82,10 +81,9 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param template        MongoTemplate instance to obtain the database and the collections.
      * @param storageStrategy The strategy for storing and retrieving events from the collections
      */
-    public MongoEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, Integer batchSize,
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, Integer batchSize,
                                    MongoTemplate template, StorageStrategy storageStrategy) {
-        super(serializer, upcasterChain, MongoEventStorageEngine::isDuplicateKeyException,
-              NoTransactionManager.INSTANCE, batchSize);
+        super(serializer, upcasterChain, MongoEventStorageEngine::isDuplicateKeyException, batchSize);
         this.template = template;
         this.storageStrategy = storageStrategy;
     }
@@ -104,10 +102,10 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param template                     MongoTemplate instance to obtain the database and the collections.
      * @param storageStrategy              The strategy for storing and retrieving events from the collections
      */
-    public MongoEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                    PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                    MongoTemplate template, StorageStrategy storageStrategy) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, NoTransactionManager.INSTANCE, batchSize);
+        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize);
         this.template = template;
         this.storageStrategy = storageStrategy;
     }
@@ -161,10 +159,5 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         return storageStrategy.findTrackedEvents(template.eventCollection(), lastToken, batchSize);
-    }
-
-    @Override
-    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
-        return storageStrategy.getTokenForGapDetection(token);
     }
 }

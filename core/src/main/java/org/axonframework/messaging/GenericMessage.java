@@ -22,6 +22,11 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import java.util.Map;
 
 /**
+ * Generic implementation of a {@link Message} that contains the payload and metadata as unserialized values.
+ * <p>
+ * If a GenericMessage is created while a {@link org.axonframework.messaging.unitofwork.UnitOfWork} is active it copies
+ * over the correlation data of the UnitOfWork to the created message.
+ *
  * @author Rene de Waele
  */
 public class GenericMessage<T> extends AbstractMessage<T> {

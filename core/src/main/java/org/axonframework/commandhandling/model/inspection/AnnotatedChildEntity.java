@@ -20,38 +20,48 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+/**
+ * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
+ * handlers.
+ *
+ * @param <P> the parent entity type
+ * @param <C> the child entity type
+ */
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
-    private final Field field;
     private final EntityModel<C> entityModel;
     private final boolean forwardEvents;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
 
+    /**
+     * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command
+     * and event handling to an annotated child entity.
+     *
+     * @param entityModel model describing the entity
+     * @param forwardCommands flag indicating whether commands should be forwarded to the entity
+     * @param forwardEvents flag indicating whether events should be forwarded to the entity
+     * @param commandTargetResolver resolver for command handler methods on the target
+     * @param eventTargetResolver resolver for event handler methods on the target
+     */
     @SuppressWarnings("unchecked")
-    public AnnotatedChildEntity(Field field, EntityModel<C> entityModel,
-                                boolean forwardCommands, boolean forwardEvents,
+    public AnnotatedChildEntity(EntityModel<C> entityModel, boolean forwardCommands, boolean forwardEvents,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
                                 BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver) {
-        this.field = field;
         this.entityModel = entityModel;
         this.forwardEvents = forwardEvents;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
-            entityModel
-                    .commandHandlers()
-                    .forEach((commandType, childHandler) -> {
-                        commandHandlers.put(commandType,
-                                            new ChildForwardingCommandMessageHandlingMember<>(
-                                                    entityModel.routingKey(),
-                                                    childHandler,
-                                                    commandTargetResolver));
-                    });
+            entityModel.commandHandlers().forEach((commandType, childHandler) -> commandHandlers.put(commandType,
+                                                                                                     new ChildForwardingCommandMessageHandlingMember<>(
+                                                                                                             entityModel
+                                                                                                                     .routingKey(),
+                                                                                                             childHandler,
+                                                                                                             commandTargetResolver)));
         }
     }
 

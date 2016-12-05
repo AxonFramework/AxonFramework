@@ -25,13 +25,18 @@ import java.util.function.Supplier;
  * Spring Configuration class that defines a number of conditional beans. It also allows for access to components that
  * are available in the Configuration, but not made available as Spring beans by default.
  */
-@org.springframework.context.annotation.Configuration
+@org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
     private Configuration config;
     private final Configurer configurer;
     private volatile boolean running = false;
 
+    /**
+     * Initializes a new {@link AxonConfiguration} that uses the given {@code configurer} to build the configuration.
+     *
+     * @param configurer configuration builder for the AxonConfiguration
+     */
     public AxonConfiguration(Configurer configurer) {
         this.configurer = configurer;
     }
@@ -54,6 +59,12 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.resourceInjector();
     }
 
+    /**
+     * Returns the CommandGateway used to send commands to command handlers.
+     *
+     * @param commandBus the command bus to be used by the gateway
+     * @return the CommandGateway used to send commands to command handlers
+     */
     @NoBeanOfType(CommandGateway.class)
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
@@ -78,6 +89,16 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public List<CorrelationDataProvider> correlationDataProviders() {
         return config.correlationDataProviders();
+    }
+
+    @Override
+    public void onStart(Runnable startHandler) {
+        config.onStart(startHandler);
+    }
+
+    @Override
+    public void onShutdown(Runnable shutdownHandler) {
+        config.onShutdown(shutdownHandler);
     }
 
     @Override

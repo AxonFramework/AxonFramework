@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.legacy.AbstractLegacyDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.Entity;
@@ -26,7 +26,7 @@ import javax.persistence.Entity;
  * @author Allard Buijze
  */
 @Entity
-public class CustomSnapshotEventEntry extends AbstractLegacyDomainEventEntry<String> {
+public class CustomSnapshotEventEntry extends AbstractSnapshotEventEntry<String> {
 
     public CustomSnapshotEventEntry(DomainEventMessage event, Serializer serializer) {
         super(event, serializer, String.class);

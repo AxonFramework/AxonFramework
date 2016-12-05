@@ -48,7 +48,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<CommandTargetResolver> commandTargetResolver;
     private Configuration parent;
 
-    private List<Registration> registrations = new ArrayList<>();
+    private final List<Registration> registrations = new ArrayList<>();
 
     /**
      * Creates a default Configuration for an aggregate of the given {@code aggregateType}. This required either a
@@ -75,8 +75,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      */
     public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType,
                                                                     EntityManagerProvider entityManagerProvider) {
-        return new AggregateConfigurer<>(aggregateType)
-                .configureRepository(c -> new GenericJpaRepository<>(entityManagerProvider, aggregateType, c.eventBus()));
+        return new AggregateConfigurer<>(aggregateType).configureRepository(
+                c -> new GenericJpaRepository<>(entityManagerProvider, aggregateType, c.eventBus()));
     }
 
     /**
@@ -92,21 +92,20 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                 c -> new AnnotationCommandTargetResolver());
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
-        aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
-                                           c -> new GenericAggregateFactory<>(aggregate));
-        repository = new Component<>(() -> parent, "Repository<" + aggregate.getSimpleName() + ">",
-                                     c -> {
-                                         Assert.state(c.eventBus() instanceof EventStore, "Default configuration requires the use of event sourcing. Either configure an Event Store to use, or configure a specific repository implementation for " + aggregate.toString());
-                                         if (c.commandBus() instanceof DisruptorCommandBus) {
-                                             return ((DisruptorCommandBus) c.commandBus())
-                                                     .createRepository(aggregateFactory.get(),
-                                                                       c.parameterResolverFactory());
-                                         }
-                                         return new EventSourcingRepository<>(aggregateFactory.get(),
-                                                                              c.eventStore(),
-                                                                              c.parameterResolverFactory(),
-                                                                              snapshotTriggerDefinition.get());
-                                     });
+        aggregateFactory =
+                new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
+        repository = new Component<>(() -> parent, "Repository<" + aggregate.getSimpleName() + ">", c -> {
+            Assert.state(c.eventBus() instanceof EventStore,
+                         () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
+                                 "Store to use, or configure a specific repository implementation for " +
+                                 aggregate.toString());
+            if (c.commandBus() instanceof DisruptorCommandBus) {
+                return ((DisruptorCommandBus) c.commandBus())
+                        .createRepository(aggregateFactory.get(), c.parameterResolverFactory());
+            }
+            return new EventSourcingRepository<>(aggregateFactory.get(), c.eventStore(), c.parameterResolverFactory(),
+                                                 snapshotTriggerDefinition.get());
+        });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
                                          c -> new AggregateAnnotationCommandHandler<>(aggregate, repository.get(),
                                                                                       commandTargetResolver.get(),
@@ -135,7 +134,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param aggregateFactoryBuilder The builder function for the AggregateFactory
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureAggregateFactory(Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
+    public AggregateConfigurer<A> configureAggregateFactory(
+            Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
         aggregateFactory.update(aggregateFactoryBuilder);
         return this;
     }
@@ -146,7 +146,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param aggregateCommandHandlerBuilder The builder function for the AggregateCommandHandler
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureCommandHandler(Function<Configuration, AggregateAnnotationCommandHandler> aggregateCommandHandlerBuilder) {
+    public AggregateConfigurer<A> configureCommandHandler(
+            Function<Configuration, AggregateAnnotationCommandHandler> aggregateCommandHandlerBuilder) {
         commandHandler.update(aggregateCommandHandlerBuilder);
         return this;
     }
@@ -158,7 +159,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param commandTargetResolverBuilder the builder function for the CommandTargetResolver.
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureCommandTargetResolver(Function<Configuration, CommandTargetResolver> commandTargetResolverBuilder) {
+    public AggregateConfigurer<A> configureCommandTargetResolver(
+            Function<Configuration, CommandTargetResolver> commandTargetResolverBuilder) {
         commandTargetResolver.update(commandTargetResolverBuilder);
         return this;
     }

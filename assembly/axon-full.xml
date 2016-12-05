@@ -49,14 +49,6 @@
                 <outputDirectoryMapping>sources/${module.artifactId}/src/</outputDirectoryMapping>
             </sources>
         </moduleSet>
-        <moduleSet>
-            <includes>
-                <include>*:axon-quickstart</include>
-            </includes>
-            <sources>
-                <outputDirectoryMapping>quickstart/src</outputDirectoryMapping>
-            </sources>
-        </moduleSet>
     </moduleSets>
     <fileSets>
         <fileSet>

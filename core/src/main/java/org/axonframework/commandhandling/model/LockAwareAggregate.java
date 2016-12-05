@@ -22,20 +22,42 @@ import org.axonframework.common.lock.Lock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * Aggregate implementation that provides access to the lock held by the aggregate while a command is handled.
+ *
+ * @param <AR> The aggregate root type
+ * @param <A> The {@link Aggregate} implementation type
+ */
 public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregate<AR> {
 
     private final A wrappedAggregate;
     private final Lock lock;
 
+    /**
+     * Initializes a new {@link LockAwareAggregate} for given {@code wrappedAggregate} and {@code lock}.
+     *
+     * @param wrappedAggregate the aggregate instance to which the LockAwareAggregate will delegate
+     * @param lock the lock held by the aggregate
+     */
     public LockAwareAggregate(A wrappedAggregate, Lock lock) {
         this.wrappedAggregate = wrappedAggregate;
         this.lock = lock;
     }
 
+    /**
+     * Get the delegate aggregate wrapped by this instance.
+     *
+     * @return the wrapped aggregate
+     */
     public A getWrappedAggregate() {
         return wrappedAggregate;
     }
 
+    /**
+     * Check if the aggregate currently holds a lock.
+     *
+     * @return {@code true} if the lock is held, {@code false} otherwise
+     */
     public boolean isLockHeld() {
         return lock.isHeld();
     }

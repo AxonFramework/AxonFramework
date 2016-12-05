@@ -66,6 +66,8 @@ public @interface CommandHandler {
     /**
      * The type of payload expected by this handler. Defaults to the expected types expresses by (primarily the first)
      * parameters of the annotated Method or Constructor.
+     *
+     * @return the payload type expected by this handler
      */
     Class<?> payloadType() default Object.class;
 }

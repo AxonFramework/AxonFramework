@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Mongo event storage entry containing an array of {@link EventEntry event entries} that are part of the same
+ * UnitOfWork commit.
+ *
  * @author Rene de Waele
  */
 public class CommitEntry {
@@ -62,9 +65,11 @@ public class CommitEntry {
     }
 
     /**
-     * Creates a new CommitEntry based onm data provided by Mongo.
+     * Creates a new CommitEntry based on data provided by Mongo.
      *
-     * @param dbObject Mongo object that contains data to represent an CommitEntry
+     * @param dbObject            Mongo object that contains data to represent a CommitEntry
+     * @param commitConfiguration commit entry specific configuration
+     * @param eventConfiguration  event entry specific configuration
      */
     @SuppressWarnings("unchecked")
     public CommitEntry(Document dbObject, CommitEntryConfiguration commitConfiguration,
@@ -96,7 +101,7 @@ public class CommitEntry {
      * Returns the current CommitEntry as a mongo Document.
      *
      * @param commitConfiguration Configuration of commit-specific properties on the document
-     * @param eventConfiguration Configuration of event-related properties on the document
+     * @param eventConfiguration  Configuration of event-related properties on the document
      * @return Document representing the CommitEntry
      */
     public Document asDocument(CommitEntryConfiguration commitConfiguration,

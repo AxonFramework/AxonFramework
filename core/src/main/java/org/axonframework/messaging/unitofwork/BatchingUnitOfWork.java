@@ -19,7 +19,7 @@ import org.axonframework.messaging.Message;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -33,20 +33,30 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     private final List<MessageProcessingContext<T>> processingContexts;
     private MessageProcessingContext<T> processingContext;
 
+    /**
+     * Initializes a BatchingUnitOfWork for processing the given batch of {@code messages}.
+     *
+     * @param messages batch of messages to process
+     */
     @SafeVarargs
     public BatchingUnitOfWork(T... messages) {
         this(Arrays.asList(messages));
     }
 
+    /**
+     * Initializes a BatchingUnitOfWork for processing the given list of {@code messages}.
+     *
+     * @param messages batch of messages to process
+     */
     public BatchingUnitOfWork(List<T> messages) {
-        Assert.isFalse(messages.isEmpty(), "The list of Messages to process is empty");
+        Assert.isFalse(messages.isEmpty(), () -> "The list of Messages to process is empty");
         processingContexts = messages.stream().map(MessageProcessingContext::new).collect(Collectors.toList());
         processingContext = processingContexts.get(0);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * <p/>
      * This implementation executes the given {@code task} for each of its messages. The return value is the
      * result of the last executed task.
@@ -56,7 +66,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
-        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        Assert.state(phase() == Phase.STARTED,
+                     () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
         Exception exception = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
@@ -92,8 +103,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      * @return a Map of ExecutionResult per Message processed by this Unit of Work
      */
     public Map<Message<?>, ExecutionResult> getExecutionResults() {
-        return processingContexts.stream().collect(Collectors.toMap(
-                MessageProcessingContext::getMessage, MessageProcessingContext::getExecutionResult));
+        return processingContexts.stream().collect(
+                Collectors.toMap(MessageProcessingContext::getMessage, MessageProcessingContext::getExecutionResult));
     }
 
     @Override
@@ -102,7 +113,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
@@ -114,8 +125,9 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
 
     @Override
     protected void notifyHandlers(Phase phase) {
-        Iterator<MessageProcessingContext<T>> iterator = phase.isReverseCallbackOrder()
-                ? new LinkedList<>(processingContexts).descendingIterator() : processingContexts.iterator();
+        Iterator<MessageProcessingContext<T>> iterator =
+                phase.isReverseCallbackOrder() ? new LinkedList<>(processingContexts).descendingIterator() :
+                        processingContexts.iterator();
         iterator.forEachRemaining(context -> (processingContext = context).notifyHandlers(this, phase));
     }
 
@@ -134,6 +146,11 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         processingContext.setExecutionResult(executionResult);
     }
 
+    /**
+     * Get the batch of messages that is being processed (or has been processed) by this unit of work.
+     *
+     * @return the message batch
+     */
     public List<? extends Message<?>> getMessages() {
         return processingContexts.stream().map(MessageProcessingContext::getMessage).collect(Collectors.toList());
     }

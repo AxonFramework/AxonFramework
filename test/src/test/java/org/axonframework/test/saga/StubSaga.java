@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
+import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -39,8 +40,11 @@ import java.util.List;
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
+    @Inject
     private transient StubGateway stubGateway;
+    @Inject
     private transient EventBus eventBus;
+    @Inject
     private transient EventScheduler scheduler;
     private List<Object> handledEvents = new ArrayList<>();
     private ScheduleToken timer;
@@ -100,20 +104,8 @@ public class StubSaga {
         return eventBus;
     }
 
-    public void setEventBus(EventBus eventBus) {
-        this.eventBus = eventBus;
-    }
-
     public EventScheduler getScheduler() {
         return scheduler;
-    }
-
-    public void setScheduler(EventScheduler scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    public void setStubGateway(StubGateway stubGateway) {
-        this.stubGateway = stubGateway;
     }
 
     public void associateWith(String key, String value) {

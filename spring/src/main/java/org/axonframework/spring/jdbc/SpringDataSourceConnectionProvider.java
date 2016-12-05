@@ -37,7 +37,7 @@ public class SpringDataSourceConnectionProvider implements ConnectionProvider {
     private final SpringConnectionCloseHandler closeHandler;
 
     /**
-     * Initialize the connection provider, using given <code>dataSource</code> to obtain a connection, when required.
+     * Initialize the connection provider, using given {@code dataSource} to obtain a connection, when required.
      *
      * @param dataSource The data source to obtain connections from, when required
      */

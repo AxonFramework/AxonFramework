@@ -13,12 +13,37 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.serialization.upcasting.UpcasterChain;
+import org.axonframework.serialization.upcasting.GenericUpcasterChain;
+import org.axonframework.serialization.upcasting.Upcaster;
+
+import java.util.List;
 
 /**
- * Upcaster chain used when upcasting events. The chain uses {@link IntermediateEventRepresentation} objects as
- * intermediate representation.
+ * Upcaster chain used to upcast {@link IntermediateEventRepresentation event representations}.
+ * <p/>
+ * Upcasters expecting different serialized object types may be merged into a single chain, as long as the order of
+ * related upcasters can be guaranteed.
  *
  * @author Rene de Waele
  */
-public interface EventUpcasterChain extends UpcasterChain<IntermediateEventRepresentation> {}
+public class EventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcaster {
+
+    /**
+     * Initializes an upcaster chain from one or more upcasters.
+     *
+     * @param upcasters the upcasters to chain
+     */
+    @SafeVarargs
+    public EventUpcasterChain(Upcaster<IntermediateEventRepresentation>... upcasters) {
+        super(upcasters);
+    }
+
+    /**
+     * Initializes an upcaster chain from the given list of upcasters.
+     *
+     * @param upcasters the upcasters to chain
+     */
+    public EventUpcasterChain(List<? extends Upcaster<IntermediateEventRepresentation>> upcasters) {
+        super(upcasters);
+    }
+}

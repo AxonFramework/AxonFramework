@@ -207,11 +207,11 @@ public abstract class ReflectionUtils {
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
-        Assert.notNull(primitiveType, "primitiveType may not be null");
-        Assert.isTrue(primitiveType.isPrimitive(), "primitiveType is not actually primitive: " + primitiveType);
+        Assert.notNull(primitiveType, () -> "primitiveType may not be null");
+        Assert.isTrue(primitiveType.isPrimitive(), () -> "primitiveType is not actually primitive: " + primitiveType);
 
         Class<?> primitiveWrapperType = primitiveWrapperTypeMap.get(primitiveType);
-        Assert.notNull(primitiveWrapperType, "no wrapper found for primitiveType: " + primitiveType);
+        Assert.notNull(primitiveWrapperType, () -> "no wrapper found for primitiveType: " + primitiveType);
         return primitiveWrapperType;
     }
 

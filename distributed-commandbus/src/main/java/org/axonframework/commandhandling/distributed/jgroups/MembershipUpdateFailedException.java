@@ -30,7 +30,7 @@ public class MembershipUpdateFailedException extends AxonException {
     private static final long serialVersionUID = -433655641071800433L;
 
     /**
-     * Initializes the exception using the given <code>message</code>.
+     * Initializes the exception using the given {@code message}.
      *
      * @param message The message describing the exception
      */
@@ -39,7 +39,7 @@ public class MembershipUpdateFailedException extends AxonException {
     }
 
     /**
-     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
+     * Initializes the exception using the given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception

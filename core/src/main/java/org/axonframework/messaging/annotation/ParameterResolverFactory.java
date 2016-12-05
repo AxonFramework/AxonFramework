@@ -38,6 +38,7 @@ import java.lang.reflect.Parameter;
  * @see ClasspathParameterResolverFactory
  * @since 2.1
  */
+@FunctionalInterface
 public interface ParameterResolverFactory {
 
     /**

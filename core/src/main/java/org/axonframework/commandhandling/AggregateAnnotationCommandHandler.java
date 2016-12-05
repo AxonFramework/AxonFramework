@@ -20,10 +20,10 @@ import org.axonframework.commandhandling.model.inspection.CommandMessageHandling
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.MessageHandler;
 
 import java.util.*;
 
@@ -99,9 +99,9 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     public AggregateAnnotationCommandHandler(Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver,
                                              AggregateModel<T> aggregateModel) {
-        Assert.notNull(aggregateModel, "aggregateModel may not be null");
-        Assert.notNull(repository, "repository may not be null");
-        Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
+        Assert.notNull(aggregateModel, () -> "aggregateModel may not be null");
+        Assert.notNull(repository, () -> "repository may not be null");
+        Assert.notNull(commandTargetResolver, () -> "commandTargetResolver may not be null");
         this.repository = repository;
         this.commandTargetResolver = commandTargetResolver;
         this.handlers = initializeHandlers(aggregateModel);

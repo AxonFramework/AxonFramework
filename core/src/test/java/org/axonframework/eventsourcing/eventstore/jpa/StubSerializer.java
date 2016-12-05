@@ -43,7 +43,7 @@ public enum StubSerializer implements Serializer {
         }
     };
 
-    private final ConverterFactory converterFactory = new ChainingConverterFactory();
+    private final ConverterFactory converterFactory = new ChainingConverterFactory(getClass().getClassLoader());
 
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {

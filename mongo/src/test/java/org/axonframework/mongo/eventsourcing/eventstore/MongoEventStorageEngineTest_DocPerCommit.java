@@ -26,8 +26,8 @@ import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -116,14 +116,14 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
     }
 
     @Override
-    protected MongoEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+    protected MongoEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return new MongoEventStorageEngine(new XStreamSerializer(), upcasterChain, mongoTemplate,
                                            new DocumentPerCommitStorageStrategy());
     }
 
     @Override
     protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
+        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
                                            persistenceExceptionResolver, 100, mongoTemplate,
                                            new DocumentPerCommitStorageStrategy());
     }

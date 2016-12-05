@@ -19,7 +19,7 @@ package org.axonframework.serialization.upcasting.event;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.GlobalIndexTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -33,6 +33,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
@@ -53,7 +54,7 @@ public class AbstractSingleEventUpcasterTest {
                 serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
         List<IntermediateEventRepresentation> result =
-                upcaster.upcast(new InitialEventRepresentation(eventData, serializer)).collect(toList());
+                upcaster.upcast(Stream.of(new InitialEventRepresentation(eventData, serializer))).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation firstEvent = result.get(0);
         assertEquals("1", firstEvent.getOutputType().getRevision());
@@ -69,20 +70,20 @@ public class AbstractSingleEventUpcasterTest {
     public void testUpcastingDomainEventData() {
         String aggregateType = "test";
         String aggregateId = "aggregateId";
-        GlobalIndexTrackingToken trackingToken = new GlobalIndexTrackingToken(10);
+        GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
         long sequenceNumber = 100;
         Serializer serializer = new XStreamSerializer();
         Object payload = new StubEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData =
-                new GenericTrackedDomainEventEntry<>(trackingToken.getGlobalIndex(), aggregateType, aggregateId,
+                new GenericTrackedDomainEventEntry<>(trackingToken, aggregateType, aggregateId,
                                                      sequenceNumber, "eventId", Instant.now(),
                                                      serializedPayload.getType().getName(),
                                                      serializedPayload.getType().getRevision(), serializedPayload,
                                                      serializer.serialize(MetaData.emptyInstance(), String.class));
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        List<IntermediateEventRepresentation> result = upcaster.upcast(input).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation firstEvent = result.get(0);
         assertEquals(aggregateType, firstEvent.getAggregateType().get());
@@ -99,7 +100,7 @@ public class AbstractSingleEventUpcasterTest {
                                      serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = spy(new InitialEventRepresentation(eventData, serializer));
-        List<IntermediateEventRepresentation> result = upcaster.upcast(input).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertEquals(1, result.size());
         IntermediateEventRepresentation output = result.get(0);
         assertSame(input, output);
@@ -113,17 +114,17 @@ public class AbstractSingleEventUpcasterTest {
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName")), serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        List<IntermediateEventRepresentation> result = upcaster.upcast(input).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         input = spy(result.get(0));
         assertEquals("1", input.getOutputType().getRevision()); //initial upcast was successful
-        result = upcaster.upcast(input).collect(toList());
+        result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation output = result.get(0);
         assertSame(input, output);
         verify(input, never()).getOutputData();
     }
 
-    private static class StubEventUpcaster extends AbstractSingleEventUpcaster {
+    private static class StubEventUpcaster extends SingleEventUpcaster {
 
         private final SerializedType targetType = new SimpleSerializedType(StubEvent.class.getName(), null);
         private final Class<Document> expectedType = Document.class;
@@ -134,14 +135,16 @@ public class AbstractSingleEventUpcasterTest {
         }
 
         @Override
+        protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
+            return intermediateRepresentation.getOutputType().equals(targetType);
+        }
+
+        @Override
         protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation ir) {
-            if (ir.getOutputType().equals(targetType)) {
-                return ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"), expectedType, doc -> {
-                    doc.getRootElement().element("name").setText(newNameValue);
-                    return doc;
-                });
-            }
-            return ir;
+            return ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"), expectedType, doc -> {
+                doc.getRootElement().element("name").setText(newNameValue);
+                return doc;
+            });
         }
     }
 

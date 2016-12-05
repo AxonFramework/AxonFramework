@@ -13,6 +13,8 @@
 
 package org.axonframework.serialization.upcasting;
 
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -23,36 +25,28 @@ import java.util.stream.Stream;
  * <p/>
  * Upcasters work on intermediate representations of the object to upcast. In some cases, this representation contains a
  * byte array, while in other cases they contain an object structure. For performance reasons, it is advisable to ensure
- * that all upcasters in the same {@link UpcasterChain} (where one's output is another's input) use the same
+ * that all upcasters in the same upcaster chain (where one's output is another's input) use the same
  * intermediate representation content type.
  *
- * @param <T> The data format that this upcaster uses to represent the event
+ * @param <T> The data format that this upcaster uses to represent the data
  * @author Rene de Waele
  */
+@FunctionalInterface
 public interface Upcaster<T> {
 
     /**
-     * Upcasts the given {@code intermediateRepresentation} to a Stream containing zero or more upcasted
-     * representations.
+     * Apply this upcaster to a stream of {@code intermediateRepresentations} and return the altered stream.
      * <p>
-     * If this upcaster cannot upcast the given input object or upcasting is not required it should simply return a
-     * Stream containing only the given input object. The returned Stream may be left empty if the input object is to be
-     * ignored. An Upcaster may also decide to 'split up' the given input into a Stream containing more than one output
-     * objects.
+     * To upcast an object an upcaster should apply a mapping function to the input stream ({@link
+     * Stream#map(Function)}). To remove an object from the stream the upcaster should filter the input stream ({@link
+     * Stream#filter(Predicate)}). To split an input object into more than one objects use {@link
+     * Stream#flatMap(Function)}.
      * <p>
      * In some cases the upcasting result of an Upcaster may depend on more than one input object. In that case an
-     * Upcaster may build up state while it is used to upcast a stream of input objects.
+     * Upcaster may store state in the method during upcasting or even read ahead in the stream.
      *
-     * @param intermediateRepresentation The representation of the object to upcast
-     * @return the new representations of the input object
+     * @param intermediateRepresentations The input stream of representations of objects
+     * @return the output stream of representations after applying the upcast function
      */
-    Stream<T> upcast(T intermediateRepresentation);
-
-    /**
-     * Method that is invoked by the {@link UpcasterChain} after all input objects have been upcast. This method is
-     * invoked to enable stateful Upcasters to release any remaining objects.
-     *
-     * @return A Stream of remainder representations
-     */
-    Stream<T> remainder();
+    Stream<T> upcast(Stream<T> intermediateRepresentations);
 }

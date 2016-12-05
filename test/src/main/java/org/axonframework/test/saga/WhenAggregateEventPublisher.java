@@ -26,12 +26,11 @@ package org.axonframework.test.saga;
 public interface WhenAggregateEventPublisher {
 
     /**
-     * Register the given <code>event</code> to be published on behalf of an aggregate. Activity caused by this event
-     * on
-     * the CommandBus and EventBus is monitored and can be checked in the FixtureExecutionResult.
+     * Register the given {@code event} to be published on behalf of an aggregate. Activity caused by this event
+     * on the CommandBus and EventBus is monitored and can be checked in the FixtureExecutionResult.
      *
      * @param event The event published by the aggregate
      * @return a reference to the test results for the validation  phase
      */
-    FixtureExecutionResult publishes(Object event) throws Exception;
+    FixtureExecutionResult publishes(Object event);
 }

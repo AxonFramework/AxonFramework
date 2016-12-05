@@ -29,9 +29,8 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -92,7 +91,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     private final List<String> events = new ArrayList<>();
     private CachingEventSourcingRepository<TestAggregate> repository;
-    private UnitOfWorkFactory uowFactory;
     private Cache realCache;
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
@@ -110,8 +108,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         eventProcessor.start();
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
-
-        uowFactory = new DefaultUnitOfWorkFactory();
     }
 
     @Test
@@ -148,7 +144,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                                               new CommandExecutingEventListener("2", null, true)), eventStore);
         eventProcessor.start();
 
-        UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new TestAggregate(id));
         uow.commit();
 
@@ -188,7 +184,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         eventProcessor.start();
 
         // First command: Create Aggregate
-        UnitOfWork<?> uow1 = uowFactory.createUnitOfWork(null);
+        UnitOfWork<?> uow1 = DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new TestAggregate(id));
         uow1.commit();
 
@@ -207,7 +203,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @SuppressWarnings("unchecked")
     private TestAggregate loadAggregate(String id) {
-        UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Aggregate<TestAggregate> verify = repository.load(id);
         uow.rollback();
         return verify.invoke(Function.identity());
@@ -320,13 +316,13 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
 
         @Override
-        public void handle(@SuppressWarnings("rawtypes") EventMessage event) {
+        public void handle(EventMessage<?> event) {
             Object payload = event.getPayload();
 
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
-                UnitOfWork<EventMessage<?>> nested = uowFactory.createUnitOfWork(event);
+                UnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
                 nested.execute(() -> {
                     Aggregate<TestAggregate> aggregate = repository.load(created.id);
                     aggregate.execute(r -> r.update(token));
@@ -336,7 +332,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken != null && payload instanceof AggregateUpdatedEvent) {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
                 if (updated.token.equals(previousToken)) {
-                    UnitOfWork<EventMessage<?>> nested = uowFactory.createUnitOfWork(event);
+                    UnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
                     if (commit) {
                         nested.execute(() -> {
                             Aggregate<TestAggregate> aggregate = repository.load(updated.id);

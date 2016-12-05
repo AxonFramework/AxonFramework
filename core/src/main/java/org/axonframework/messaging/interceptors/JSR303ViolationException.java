@@ -18,10 +18,10 @@ package org.axonframework.messaging.interceptors;
 
 import org.axonframework.common.AxonNonTransientException;
 
+import javax.validation.ConstraintViolation;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.validation.ConstraintViolation;
 
 /**
  * Exception indicating that a Message has been refused due to a structural validation failure. Typically, resending
@@ -66,6 +66,8 @@ public class JSR303ViolationException extends AxonNonTransientException {
      *
      * </pre>
      * <pre>property notNull in class my.some.TheClass may not be null</pre>
+     * @param violations set of violations that were detected when the execption was thrown
+     * @return a human readable string describing the violations
      */
     protected static String convert(Set<ConstraintViolation<Object>> violations) {
         // sort the violations on bean class and property name
@@ -76,7 +78,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
             msg += " " + violation.getMessage();
             sortedViolations.add(msg);
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Iterator<String> it = sortedViolations.iterator();
         while (it.hasNext()) {
             sb.append(it.next());

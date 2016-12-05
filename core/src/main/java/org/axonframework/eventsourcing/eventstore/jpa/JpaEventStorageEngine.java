@@ -16,20 +16,23 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.LongStream;
 
+import static java.util.stream.Collectors.toSet;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
 
 /**
@@ -41,7 +44,13 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEven
  * @author Rene de Waele
  */
 public class JpaEventStorageEngine extends BatchingEventStorageEngine {
+    private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
+    private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
+
     private final EntityManagerProvider entityManagerProvider;
+    private final long lowestGlobalSequence;
+    private final int maxGapOffset;
+    private final TransactionManager transactionManager;
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. The payload and metadata of events is
@@ -50,11 +59,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
      *
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
-     * @param transactionManager    The transaction manager used to set the isolation level of the transaction when
-     *                              loading events
      */
     public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
-        this(null, null, null, transactionManager, null, entityManagerProvider);
+        this(null, null, null, null, entityManagerProvider, transactionManager, null, null);
     }
 
     /**
@@ -62,18 +69,15 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param serializer            Used to serialize and deserialize event payload and metadata.
      * @param upcasterChain         Allows older revisions of serialized objects to be deserialized.
-     * @param dataSource            Allows the EventStore to detect the database type and define the
-     *                              error codes that represent concurrent access failures for most database types.
-     * @param transactionManager    The transaction manager used to set the isolation level of the transaction when
-     *                              loading events
+     * @param dataSource            Allows the EventStore to detect the database type and define the error codes that
+     *                              represent concurrent access failures for most database types.
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
-     * @throws SQLException         If the database product name can not be determined from the given {@code dataSource}
+     * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
-    public JpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, DataSource dataSource,
-                                 TransactionManager transactionManager,
-                                 EntityManagerProvider entityManagerProvider) throws SQLException {
-        this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), transactionManager, null,
-             entityManagerProvider);
+    public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, DataSource dataSource,
+                                 EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) throws SQLException {
+        this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), null, entityManagerProvider, transactionManager,
+             null, null);
     }
 
     /**
@@ -83,67 +87,114 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
      *                                     sure to choose snapshot trigger and batch size such that a single batch will
      *                                     generally retrieve all events required to rebuild an aggregate's state.
      * @param entityManagerProvider        Provider for the {@link EntityManager} used by this EventStorageEngine.
+     * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
+     *                                     event with the highest known index. If the gap is bigger it is assumed that
+     *                                     the missing event will not be committed to the store anymore. This event
+     *                                     storage engine will no longer look for those events the next time a batch is
+     *                                     fetched.
+     * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
+     *                                     is 1 unless the table has contained entries before.
      */
-    public JpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
-                                 PersistenceExceptionResolver persistenceExceptionResolver,
-                                 TransactionManager transactionManager, Integer batchSize,
-                                 EntityManagerProvider entityManagerProvider) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, batchSize);
+    public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
+                                 PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
+                                 EntityManagerProvider entityManagerProvider, TransactionManager transactionManager,
+                                 Long lowestGlobalSequence, Integer maxGapOffset) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize);
         this.entityManagerProvider = entityManagerProvider;
+        this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
+        this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
+        this.transactionManager = transactionManager;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
-                      String.format("Token %s is of the wrong type", lastToken));
-        return entityManager().createQuery(
-                "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
-                        "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                        "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                        "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
-                        "WHERE e.globalIndex > :token " + "ORDER BY e.globalIndex ASC")
-                .setParameter("token", lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex())
-                .setMaxResults(batchSize).getResultList();
-    }
-
-    @Override
-    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
-        return token;
+        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () -> String
+                .format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
+                        GapAwareTrackingToken.class.getSimpleName()));
+        GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
+        Collection<Long> gaps = previousToken == null ? Collections.emptySet() : previousToken.getGaps();
+        List<Object[]> entries;
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            if (previousToken == null || gaps.isEmpty()) {
+                entries = entityManager().createQuery(
+                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                                "FROM " + domainEventEntryEntityName() + " e " +
+                                "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class)
+                        .setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
+                        .setMaxResults(batchSize).getResultList();
+            } else {
+                entries = entityManager().createQuery(
+                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                                "FROM " + domainEventEntryEntityName() + " e " +
+                                "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
+                        Object[].class).setParameter("token", previousToken.getIndex())
+                        .setParameter("gaps", previousToken.getGaps()).setMaxResults(batchSize).getResultList();
+            }
+        } finally {
+            tx.commit();
+        }
+        List<TrackedEventData<?>> result = new ArrayList<>();
+        for (Object[] entry : entries) {
+            long globalSequence = (Long) entry[0];
+            GapAwareTrackingToken trackingToken;
+            if (previousToken == null) {
+                trackingToken = GapAwareTrackingToken.newInstance(globalSequence, LongStream
+                        .range(Math.min(lowestGlobalSequence, globalSequence), globalSequence).mapToObj(Long::valueOf)
+                        .collect(toSet()));
+            } else {
+                trackingToken = previousToken.advanceTo(globalSequence, maxGapOffset);
+            }
+            result.add(new GenericTrackedDomainEventEntry<>(trackingToken, (String) entry[1], (String) entry[2],
+                                                            (Long) entry[3], (String) entry[4], entry[5],
+                                                            (String) entry[6], (String) entry[7], entry[8], entry[9]));
+            previousToken = trackingToken;
+        }
+        return result;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        return entityManager().createQuery(
-                "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
-                        "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                        "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                        "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
-                        "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
-                        "ORDER BY e.sequenceNumber ASC").setParameter("id", aggregateIdentifier)
-                .setParameter("seq", firstSequenceNumber).setMaxResults(batchSize).getResultList();
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            return entityManager().createQuery(
+                    "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
+                            "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                            "e.eventIdentifier, e.timeStamp, e.payloadType, " +
+                            "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
+                            "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
+                            "ORDER BY e.sequenceNumber ASC").setParameter("id", aggregateIdentifier)
+                    .setParameter("seq", firstSequenceNumber).setMaxResults(batchSize).getResultList();
+        } finally {
+            tx.commit();
+        }
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        return entityManager().createQuery(
-                "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                        "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
-                        "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
-                        snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
-                        "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier).setMaxResults(1)
-                .getResultList().stream().findFirst();
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            return entityManager().createQuery(
+                    "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                            "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
+                            "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
+                            snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
+                            "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier).setMaxResults(1)
+                    .getResultList().stream().findFirst();
+        } finally {
+            tx.commit();
+        }
     }
 
     @Override
@@ -170,28 +221,64 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         }
     }
 
+    /**
+     * Deletes all snapshots from the underlying storage with given {@code aggregateIdentifier}.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to delete snapshots for
+     */
     protected void deleteSnapshots(String aggregateIdentifier) {
         entityManager().createQuery("DELETE FROM " + snapshotEventEntryEntityName() +
                                             " e WHERE e.aggregateIdentifier = :aggregateIdentifier")
                 .setParameter("aggregateIdentifier", aggregateIdentifier).executeUpdate();
     }
 
+    /**
+     * Returns a Jpa event entity for given {@code eventMessage}. Use the given {@code serializer} to serialize the
+     * payload and metadata of the event.
+     *
+     * @param eventMessage the event message to store
+     * @param serializer   the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
     protected Object createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
         return new DomainEventEntry(asDomainEventMessage(eventMessage), serializer);
     }
 
+    /**
+     * Returns a Jpa snapshot entity for given {@code snapshot} of an aggregate. Use the given {@code serializer} to
+     * serialize the payload and metadata of the snapshot event.
+     *
+     * @param snapshot   the domain event message containing a snapshot of the aggregate
+     * @param serializer the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
     protected Object createSnapshotEntity(DomainEventMessage<?> snapshot, Serializer serializer) {
         return new SnapshotEventEntry(snapshot, serializer);
     }
 
+    /**
+     * Returns the name of the Jpa event entity. Defaults to 'DomainEventEntry'.
+     *
+     * @return the name of the Jpa event entity
+     */
     protected String domainEventEntryEntityName() {
         return DomainEventEntry.class.getSimpleName();
     }
 
+    /**
+     * Returns the name of the Snaphot event entity. Defaults to 'SnapshotEventEntry'.
+     *
+     * @return the name of the Jpa snapshot entity
+     */
     protected String snapshotEventEntryEntityName() {
         return SnapshotEventEntry.class.getSimpleName();
     }
 
+    /**
+     * Provides an {@link EntityManager} instance for storing and fetching event data.
+     *
+     * @return a provided entity manager
+     */
     protected EntityManager entityManager() {
         return entityManagerProvider.getEntityManager();
     }

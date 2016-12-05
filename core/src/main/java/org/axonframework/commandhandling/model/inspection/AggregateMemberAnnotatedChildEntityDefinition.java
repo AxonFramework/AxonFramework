@@ -27,6 +27,10 @@ import java.util.Optional;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
+/**
+ * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
+ * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
+ */
 public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntityDefinition {
 
     @Override
@@ -40,7 +44,7 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
         }
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
-        return Optional.of(new AnnotatedChildEntity<>(field, entityModel,
+        return Optional.of(new AnnotatedChildEntity<>(entityModel,
                                                       (Boolean) attributes.get("forwardCommands"),
                                                       (Boolean) attributes.get("forwardEvents"),
                                                       (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),

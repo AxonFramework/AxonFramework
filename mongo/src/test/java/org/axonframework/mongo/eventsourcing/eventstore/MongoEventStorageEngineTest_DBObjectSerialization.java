@@ -26,8 +26,8 @@ import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -96,7 +96,7 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends BatchingE
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         Serializer serializer = context.getBean(Serializer.class);
         return new MongoEventStorageEngine(serializer, upcasterChain, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
@@ -105,7 +105,7 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends BatchingE
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
         Serializer serializer = context.getBean(Serializer.class);
-        return new MongoEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE,
+        return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE,
                                            persistenceExceptionResolver, 100, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
     }

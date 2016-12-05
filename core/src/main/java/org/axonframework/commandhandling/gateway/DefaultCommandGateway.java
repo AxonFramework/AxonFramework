@@ -25,8 +25,11 @@ import java.util.concurrent.TimeUnit;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.callbacks.FailureLoggingCallback;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and
@@ -39,6 +42,8 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
  * @since 2.0
  */
 public class DefaultCommandGateway extends AbstractCommandGateway implements CommandGateway {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultCommandGateway.class);
 
     /**
      * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
@@ -135,7 +140,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     public <R> CompletableFuture<R> send(Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
-        send(command, callback);
-        return callback.toCompletableFuture();
+        send(command, new FailureLoggingCallback<>(logger, callback));
+        return callback;
     }
 }

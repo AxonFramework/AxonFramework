@@ -40,7 +40,7 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
 
     /**
      * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given
-     * <code>expected</code> object.
+     * {@code expected} object.
      *
      * @param expected The expected object
      */
@@ -50,7 +50,7 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
 
     /**
      * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given
-     * <code>expected</code> object.
+     * {@code expected} object.
      *
      * @param expected The expected object
      * @param filter   The filter describing the fields to include in the comparison

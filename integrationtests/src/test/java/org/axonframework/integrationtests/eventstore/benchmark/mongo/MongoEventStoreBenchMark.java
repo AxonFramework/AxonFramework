@@ -17,54 +17,41 @@
 package org.axonframework.integrationtests.eventstore.benchmark.mongo;
 
 import com.mongodb.MongoClient;
-import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate;
 import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
-import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * @author Jettro Coenradie
  */
 public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
-    private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
-    private EventStore eventStore;
-
-    private MongoClient mongoDb;
+    private final MongoClient mongoDb;
 
     public static void main(String[] args) throws Exception {
-        AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-mongo-context.xml");
-        benchmark.startBenchMark();
+        ApplicationContext context = new ClassPathXmlApplicationContext("META-INF/spring/benchmark-mongo-context.xml");
+        AbstractEventStoreBenchmark benchmark = context.getBean(AbstractEventStoreBenchmark.class);
+        benchmark.start();
     }
 
     public MongoEventStoreBenchMark(MongoClient mongoDb, MongoEventStorageEngine mongoEventStorageEngine) {
+        super(mongoEventStorageEngine);
         this.mongoDb = mongoDb;
-        this.eventStore = new EmbeddedEventStore(mongoEventStorageEngine);
     }
 
     @Override
-    protected Runnable getRunnableInstance() {
-        return new MongoBenchmark();
-    }
-
-    @Override
-    protected void prepareEventStore() {
+    protected void prepareForBenchmark() {
         DefaultMongoTemplate mongoTemplate = new DefaultMongoTemplate(mongoDb);
         mongoTemplate.eventCollection().drop();
         mongoTemplate.snapshotCollection().drop();
+        getStorageEngine().ensureIndexes();
+        super.prepareForBenchmark();
     }
 
-    private class MongoBenchmark implements Runnable {
-
-        @Override
-        public void run() {
-            final String aggregateId = IDENTIFIER_FACTORY.generateIdentifier();
-            int eventSequence = 0;
-            for (int t = 0; t < getTransactionCount(); t++) {
-                eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence);
-            }
-        }
+    @Override
+    protected MongoEventStorageEngine getStorageEngine() {
+        return (MongoEventStorageEngine) super.getStorageEngine();
     }
 }

@@ -35,7 +35,7 @@ public interface WhenState {
      * {@link org.axonframework.test.saga.ContinuedGivenState#andThenAggregate(String)} andThen} methods, this method
      * will start recording activity on the EventBus and CommandBus.
      * <p/>
-     * Can be chained to build natural sentences:<br/> <code>whenAggregate(someIdentifier).publishes(anEvent)</code>
+     * Can be chained to build natural sentences:<br/> {@code whenAggregate(someIdentifier).publishes(anEvent)}
      * <p/>
      * Note that if you inject resources using {@link FixtureConfiguration#registerResource(Object)}, you may need to
      * reset them yourself if they are manipulated by the Saga in the "given" stage of the test.
@@ -54,7 +54,7 @@ public interface WhenState {
      * @param event the event to publish
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenPublishingA(Object event) throws Exception;
+    FixtureExecutionResult whenPublishingA(Object event);
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within
@@ -67,7 +67,7 @@ public interface WhenState {
      * @param elapsedTime The amount of time to elapse
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenTimeElapses(Duration elapsedTime) throws Exception;
+    FixtureExecutionResult whenTimeElapses(Duration elapsedTime);
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within
@@ -80,5 +80,5 @@ public interface WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) throws Exception;
+    FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime);
 }

@@ -60,7 +60,7 @@ public class FixtureExecutionResultImplTest {
         eventScheduler = new StubEventScheduler();
         sagaStore = new InMemorySagaStore();
         testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus,
-                                                     commandBus, StubSaga.class, AllFieldsFilter.instance());
+                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
         applicationEvent = new TimerTriggeredEvent(identifier);
@@ -69,7 +69,7 @@ public class FixtureExecutionResultImplTest {
     @Test
     public void testStartRecording() {
         testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus,
-                                                     commandBus, StubSaga.class, AllFieldsFilter.instance());
+                                                       commandBus, StubSaga.class, AllFieldsFilter.instance());
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaStartEvent(identifier)));
         testSubject.startRecording();
@@ -271,7 +271,8 @@ public class FixtureExecutionResultImplTest {
     public void testExpectScheduledEvent_WrongDateTime() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
-        eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
         testSubject.expectScheduledEvent(Duration.ofSeconds(1), applicationEvent);
     }
 
@@ -279,7 +280,8 @@ public class FixtureExecutionResultImplTest {
     public void testExpectScheduledEvent_WrongClass() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
-        eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
         testSubject.expectScheduledEventOfType(Duration.ofSeconds(1), Object.class);
     }
 
@@ -287,7 +289,8 @@ public class FixtureExecutionResultImplTest {
     public void testExpectScheduledEvent_WrongEvent() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1),
                                 new GenericEventMessage<>(applicationEvent));
-        eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
         testSubject.expectScheduledEvent(Duration.ofSeconds(1),
                                          new GenericEventMessage<>(new TimerTriggeredEvent(
                                                  "unexpected")));
@@ -298,7 +301,8 @@ public class FixtureExecutionResultImplTest {
     public void testExpectScheduledEvent_FailedMatcher() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
-        eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
         testSubject.expectScheduledEvent(Duration.ofSeconds(1),
                                          new FailingMatcher());
     }
@@ -307,7 +311,8 @@ public class FixtureExecutionResultImplTest {
     public void testExpectScheduledEvent_Found() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
-        eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
+        eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
+        });
         testSubject.expectScheduledEvent(Duration.ofMillis(500), applicationEvent);
     }
 
@@ -380,6 +385,15 @@ public class FixtureExecutionResultImplTest {
         testSubject.expectActiveSagas(1);
     }
 
+    private static class SimpleCommand {
+
+        private final String content;
+
+        public SimpleCommand(String content) {
+            this.content = content;
+        }
+    }
+
     private class FailingMatcher<T> extends BaseMatcher<List<? extends T>> {
 
         @Override
@@ -390,15 +404,6 @@ public class FixtureExecutionResultImplTest {
         @Override
         public void describeTo(Description description) {
             description.appendText("something you'll never be able to deliver");
-        }
-    }
-
-    private static class SimpleCommand {
-
-        private final String content;
-
-        public SimpleCommand(String content) {
-            this.content = content;
         }
     }
 }

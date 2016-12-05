@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.TrackedEventMessage;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -41,6 +42,14 @@ public interface TrackingEventStream extends AutoCloseable {
             return false;
         }
     }
+
+    /**
+     * Checks whether or not the next event message in the stream is immediately available. If so, an Optional with
+     * the next event is returned (without moving the stream pointer), otherwise an empty Optional is returned.
+     *
+     * @return the next event if immediately available
+     */
+    Optional<TrackedEventMessage<?>> peek();
 
     /**
      * Checks whether or not the next event message in the stream is available. If an event is available when this

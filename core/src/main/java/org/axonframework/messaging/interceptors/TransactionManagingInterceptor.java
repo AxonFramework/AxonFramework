@@ -33,6 +33,11 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
 
     private final TransactionManager transactionManager;
 
+    /**
+     * Initializes a {@link TransactionManagingInterceptor} that uses the given {@code transactionManager}.
+     *
+     * @param transactionManager the transaction manager that is used set up a new transaction
+     */
     public TransactionManagingInterceptor(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }

@@ -38,7 +38,7 @@ public class EventSchedulerValidator {
     private final StubEventScheduler eventScheduler;
 
     /**
-     * Initializes the validator to validate the state of the given <code>eventScheduler</code>.
+     * Initializes the validator to validate the state of the given {@code eventScheduler}.
      *
      * @param eventScheduler The event scheduler to monitor
      */
@@ -47,8 +47,8 @@ public class EventSchedulerValidator {
     }
 
     /**
-     * Asserts that an event matching the given <code>matcher</code> is scheduled for publication after the given
-     * <code>duration</code>.
+     * Asserts that an event matching the given {@code matcher} is scheduled for publication after the given
+     * {@code duration}.
      *
      * @param duration The delay expected before the event is published
      * @param matcher  The matcher that must match with the event scheduled at the given time

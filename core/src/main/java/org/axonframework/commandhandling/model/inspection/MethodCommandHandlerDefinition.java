@@ -28,6 +28,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.util.Map;
 
+/**
+ * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link CommandHandler} annotated methods.
+ */
 public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition {
 
     @SuppressWarnings("unchecked")
@@ -38,17 +41,21 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
                 .orElse(original);
     }
 
-    private static class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements CommandMessageHandlingMember<T> {
+    private static class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements
+            CommandMessageHandlingMember<T> {
 
         private final String commandName;
         private final boolean isFactoryHandler;
         private final String routingKey;
 
-        public MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate, Map<String, Object> annotationAttributes) {
+        private MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate,
+                                                   Map<String, Object> annotationAttributes) {
             super(delegate);
-            this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null : (String) annotationAttributes.get("routingKey");
-            Executable executable = delegate.unwrap(Executable.class)
-                    .orElseThrow(() -> new AxonConfigurationException("The @CommandHandler annotation must be put on an Executable (either directly or as Meta Annotation)"));
+            this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null :
+                    (String) annotationAttributes.get("routingKey");
+            Executable executable = delegate.unwrap(Executable.class).orElseThrow(() -> new AxonConfigurationException(
+                    "The @CommandHandler annotation must be put on an Executable (either directly or as Meta " +
+                            "Annotation)"));
             if ("".equals(annotationAttributes.get("commandName"))) {
                 commandName = executable.getParameters()[0].getType().getName();
             } else {

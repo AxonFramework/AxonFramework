@@ -17,9 +17,9 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.MessageHandler;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -58,7 +58,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
     @SuppressWarnings("unchecked")
     public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory) {
-        Assert.notNull(annotatedCommandHandler, "annotatedCommandHandler may not be null");
+        Assert.notNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
         this.modelInspector = ModelInspector.inspectAggregate((Class<Object>)annotatedCommandHandler.getClass(),
                                                               parameterResolverFactory);
 

@@ -31,6 +31,12 @@ import java.util.*;
 
 import static java.lang.String.format;
 
+/**
+ * Inspector of an entity of type {@link T} that creates command and event handlers that delegate to a target entity and
+ * its child entities.
+ *
+ * @param <T> the target type of the inspector
+ */
 public class ModelInspector<T> implements AggregateModel<T> {
 
     private final Class<? extends T> inspectedType;
@@ -45,8 +51,8 @@ public class ModelInspector<T> implements AggregateModel<T> {
     private Field versionField;
     private String routingKey;
 
-    private ModelInspector(Class<? extends T> inspectedType,
-                           Map<Class<?>, ModelInspector> registry, AnnotatedHandlerInspector<T> handlerInspector) {
+    private ModelInspector(Class<? extends T> inspectedType, Map<Class<?>, ModelInspector> registry,
+                           AnnotatedHandlerInspector<T> handlerInspector) {
         this.inspectedType = inspectedType;
         this.registry = registry;
         this.commandHandlers = new HashMap<>();
@@ -55,11 +61,27 @@ public class ModelInspector<T> implements AggregateModel<T> {
         this.handlerInspector = handlerInspector;
     }
 
+    /**
+     * Create an inspector for given {@code aggregateType} that uses a {@link ClasspathParameterResolverFactory} to
+     * resolve method parameters.
+     *
+     * @param aggregateType the target aggregate type
+     * @param <AT>          the aggregate's type
+     * @return a new inspector instance for the inspected class
+     */
     public static <AT> AggregateModel<AT> inspectAggregate(Class<AT> aggregateType) {
-        return inspectAggregate(aggregateType,
-                                ClasspathParameterResolverFactory.forClass(aggregateType));
+        return inspectAggregate(aggregateType, ClasspathParameterResolverFactory.forClass(aggregateType));
     }
 
+    /**
+     * Create an inspector for given {@code aggregateType} that uses given {@code parameterResolverFactory} to resolve
+     * method parameters.
+     *
+     * @param aggregateType            the target aggregate type
+     * @param parameterResolverFactory the resolver factory to use during detection
+     * @param <T>                      the aggregate's type
+     * @return a new inspector instance for the inspected class
+     */
     public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
                                                          ParameterResolverFactory parameterResolverFactory) {
         return createInspector(aggregateType,
@@ -71,8 +93,8 @@ public class ModelInspector<T> implements AggregateModel<T> {
                                                          AnnotatedHandlerInspector<T> handlerInspector,
                                                          Map<Class<?>, ModelInspector> registry) {
         //noinspection unchecked
-        return registry.computeIfAbsent(inspectedType, k -> ModelInspector.initialize(inspectedType, handlerInspector,
-                                                                                      registry));
+        return registry.computeIfAbsent(inspectedType,
+                                        k -> ModelInspector.initialize(inspectedType, handlerInspector, registry));
     }
 
     private static <T> ModelInspector<T> initialize(Class<? extends T> inspectedType,
@@ -99,21 +121,17 @@ public class ModelInspector<T> implements AggregateModel<T> {
 
     private void inspectAggregateType() {
         aggregateType = AnnotationUtils.findAnnotationAttributes(inspectedType, AggregateRoot.class)
-                .map(map -> (String) map.get("type"))
-                .filter(String::isEmpty)
-                .orElse(inspectedType.getSimpleName());
+                .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
     }
 
     private void inspectFields() {
-        ServiceLoader<ChildEntityDefinition> childEntityDefinitions = ServiceLoader.load(ChildEntityDefinition.class,
-                                                                                         inspectedType.getClassLoader());
+        ServiceLoader<ChildEntityDefinition> childEntityDefinitions =
+                ServiceLoader.load(ChildEntityDefinition.class, inspectedType.getClassLoader());
         for (Field field : ReflectionUtils.fieldsOf(inspectedType)) {
-            childEntityDefinitions
-                    .forEach(def -> def.createChildDefinition(field, this)
-                            .ifPresent(child -> {
-                                children.add(child);
-                                child.commandHandlers().forEach(commandHandlers::putIfAbsent);
-                            }));
+            childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
+                children.add(child);
+                child.commandHandlers().forEach(commandHandlers::putIfAbsent);
+            }));
 
             AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {
                 identifierField = field;
@@ -124,12 +142,10 @@ public class ModelInspector<T> implements AggregateModel<T> {
                 }
             });
             if (identifierField == null) {
-                AnnotationUtils.findAnnotationAttributes(field, "javax.persistence.Id"
-                )
-                        .ifPresent(a -> {
-                            identifierField = field;
-                            routingKey = field.getName();
-                        });
+                AnnotationUtils.findAnnotationAttributes(field, "javax.persistence.Id").ifPresent(a -> {
+                    identifierField = field;
+                    routingKey = field.getName();
+                });
             }
             AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
                     .ifPresent(attributes -> versionField = field);
@@ -192,6 +208,13 @@ public class ModelInspector<T> implements AggregateModel<T> {
         return null;
     }
 
+    /**
+     * Returns the {@link MessageHandlingMember} that is capable of handling the given {@code message}. If no member is
+     * found an empty optional is returned.
+     *
+     * @param message the message to find a handler for
+     * @return the handler of the message if present on the model
+     */
     @SuppressWarnings("unchecked")
     protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
         for (MessageHandlingMember<? super T> handler : eventHandlers) {

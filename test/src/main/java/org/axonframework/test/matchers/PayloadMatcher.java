@@ -33,7 +33,7 @@ public class PayloadMatcher<T extends Message> extends BaseMatcher<T> {
     private final Matcher<?> payloadMatcher;
 
     /**
-     * Constructs an instance with the given <code>payloadMatcher</code>.
+     * Constructs an instance with the given {@code payloadMatcher}.
      *
      * @param payloadMatcher The matcher that must match the Message's payload.
      */

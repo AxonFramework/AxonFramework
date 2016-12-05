@@ -97,8 +97,8 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
     public ChainedConverter(List<ContentTypeConverter<?,?>> delegates) {
-        Assert.isTrue(delegates != null && !delegates.isEmpty(), "The given delegates may not be null or empty");
-        Assert.isTrue(isContinuous(delegates), "The given delegates must form a continuous chain");
+        Assert.isTrue(delegates != null && !delegates.isEmpty(), () -> "The given delegates may not be null or empty");
+        Assert.isTrue(isContinuous(delegates), () -> "The given delegates must form a continuous chain");
         this.delegates = new ArrayList<>(delegates);
         target = (Class<T>) this.delegates.get(this.delegates.size() - 1).targetType();
         source = (Class<S>) delegates.get(0).expectedSourceType();
@@ -218,7 +218,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
 
         private Route joinedWith(ContentTypeConverter newVertex) {
             Assert.isTrue(endPoint.equals(newVertex.expectedSourceType()),
-                          "Cannot append a vertex if it does not start where the current Route ends");
+                          () -> "Cannot append a vertex if it does not start where the current Route ends");
             return new Route(nodes, newVertex);
         }
 

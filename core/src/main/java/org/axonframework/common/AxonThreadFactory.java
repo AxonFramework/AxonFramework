@@ -60,7 +60,8 @@ public class AxonThreadFactory implements ThreadFactory {
      * @see Thread#setPriority(int)
      */
     public AxonThreadFactory(int priority, ThreadGroup group) {
-        Assert.isTrue(priority <= Thread.MAX_PRIORITY && priority >= Thread.MIN_PRIORITY, "Given priority is invalid");
+        Assert.isTrue(priority <= Thread.MAX_PRIORITY && priority >= Thread.MIN_PRIORITY,
+                      () -> "Given priority is invalid");
         this.priority = priority;
         this.groupName = group;
     }

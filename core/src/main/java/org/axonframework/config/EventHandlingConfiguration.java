@@ -16,9 +16,13 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
 import java.util.*;
@@ -34,20 +38,14 @@ import static java.util.Comparator.comparing;
  */
 public class EventHandlingConfiguration implements ModuleConfiguration {
 
-    private List<Component<Object>> eventHandlers = new ArrayList<>();
-    private Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
-    private EventProcessorBuilder defaultEventProcessorBuilder = (conf, name, eh) ->
-            new SubscribingEventProcessor(name,
-                                          new SimpleEventHandlerInvoker(
-                                                  eh, conf.getComponent(ListenerErrorHandler.class,
-                                                                        LoggingListenerErrorHandler::new)),
-                                          conf.eventBus(),
-                                          conf.messageMonitor(SubscribingEventProcessor.class, name));
-    private List<ProcessorSelector> selectors = new ArrayList<>();
+    private final List<Component<Object>> eventHandlers = new ArrayList<>();
+    private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
+    private final List<ProcessorSelector> selectors = new ArrayList<>();
+    private final List<EventProcessor> initializedProcessors = new ArrayList<>();
+    private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private ProcessorSelector defaultSelector;
 
     private Configuration config;
-    private List<EventProcessor> initializedProcessors = new ArrayList<>();
 
     /**
      * Creates a default configuration for an Event Handling module that assigns Event Handlers to Subscribing Event
@@ -55,14 +53,33 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * with the package name as the processor name. This default behavior can be overridden in the instance returned.
      * <p>
      * At a minimum, the Event Handler beans need to be registered before this component is useful.
-     *
-     * @return an EventHandlingConfiguration instance for further configuration
      */
-    public static EventHandlingConfiguration assigningHandlersByPackage() {
-        return new EventHandlingConfiguration().byDefaultAssignTo(o -> o.getClass().getPackage().getName());
+    public EventHandlingConfiguration() {
+        byDefaultAssignTo(o -> {
+            Class<?> handlerType = o.getClass();
+            Optional<Map<String, Object>> annAttr = AnnotationUtils.findAnnotationAttributes(handlerType, ProcessingGroup.class);
+            return annAttr
+                    .map(attr -> (String) attr.get("processingGroup"))
+                    .orElseGet(() -> handlerType.getPackage().getName());
+        });
     }
 
-    private EventHandlingConfiguration() {
+    private SubscribingEventProcessor defaultEventProcessor(Configuration conf, String name, List<?> eh) {
+        return subscribingEventProcessor(conf, name, eh, Configuration::eventBus);
+    }
+
+    private SubscribingEventProcessor subscribingEventProcessor(Configuration conf, String name, List<?> eh,
+                                                                Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
+        SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
+                                                                            new SimpleEventHandlerInvoker(eh,
+                                                                                                          conf.getComponent(
+                                                                                                                                  ListenerErrorHandler.class,
+                                                                                                                                  LoggingListenerErrorHandler::new)),
+                                                                            messageSource.apply(conf),
+                                                                            conf.messageMonitor(SubscribingEventProcessor.class,
+                                                                                                                name));
+        processor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
+        return processor;
     }
 
     /**
@@ -76,22 +93,36 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration usingTrackingProcessors() {
-        return registerEventProcessorFactory(
-                (conf, name, handlers) -> {
-                    TrackingEventProcessor processor = new TrackingEventProcessor(
-                            name,
-                            new SimpleEventHandlerInvoker(
-                                    handlers,
-                                    conf.getComponent(ListenerErrorHandler.class, LoggingListenerErrorHandler::new)),
-                            conf.eventBus(),
-                            conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
-                            conf.messageMonitor(EventProcessor.class, name)
-                    );
-                    CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
-                    interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
-                    processor.registerInterceptor(interceptor);
-                    return processor;
-                });
+        return registerEventProcessorFactory(this::buildTrackingEventProcessor);
+    }
+
+    /**
+     * Register a TrackingProcessor using default configuration for the given {@code name}. Unlike
+     * {@link #usingTrackingProcessors()}, this method will not default to tracking, but instead only use tracking for
+     * event handler that have been assigned to the processor with given {@code name}.
+     *
+     * @param name The name of the processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTrackingProcessor(String name) {
+        return registerEventProcessor(name, this::buildTrackingEventProcessor);
+    }
+
+    private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers) {
+        TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
+                                                                                                          conf.getComponent(
+                                                                                                                  ListenerErrorHandler.class,
+                                                                                                                  LoggingListenerErrorHandler::new)),
+                                                                      conf.eventBus(),
+                                                                      conf.getComponent(TokenStore.class,
+                                                                                        InMemoryTokenStore::new),
+                                                                      conf.getComponent(TransactionManager.class,
+                                                                                        NoTransactionManager::instance),
+                                                                      conf.messageMonitor(EventProcessor.class,
+                                                                                          name));
+        CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>(conf.correlationDataProviders());
+        processor.registerInterceptor(interceptor);
+        return processor;
     }
 
     /**
@@ -107,7 +138,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder) {
-        defaultEventProcessorBuilder = eventProcessorBuilder;
+        this.defaultEventProcessorBuilder = eventProcessorBuilder;
         return this;
     }
 
@@ -209,18 +240,16 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         Map<String, List<Object>> assignments = new HashMap<>();
 
         eventHandlers.stream().map(Component::get).forEach(handler -> {
-            String processor = selectors.stream().map(s -> s.select(handler))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .findFirst()
-                    .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
+            String processor =
+                    selectors.stream().map(s -> s.select(handler)).filter(Optional::isPresent).map(Optional::get)
+                            .findFirst()
+                            .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
             assignments.computeIfAbsent(processor, k -> new ArrayList<>()).add(handler);
         });
 
-        assignments.forEach((name, handlers) -> {
-            initializedProcessors.add(eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
-                                              .createEventProcessor(config, name, handlers));
-        });
+        assignments.forEach((name, handlers) -> initializedProcessors
+                .add(eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
+                             .createEventProcessor(config, name, handlers)));
     }
 
     @Override
@@ -230,7 +259,23 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     @Override
     public void shutdown() {
-        initializedProcessors.forEach(EventProcessor::shutdown);
+        initializedProcessors.forEach(EventProcessor::shutDown);
+    }
+
+    /**
+     * Register a subscribing processor with given {@code name} that subscribed to the given {@code messageSource}.
+     * This allows the use of standard Subscribing Processors that listen to another source than the Event Bus.
+     *
+     * @param name          The name of the Event Processor
+     * @param messageSource The source the processor should read from
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerSubscribingEventProcessor(
+            String name,
+            SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+        return registerEventProcessor(
+                name,
+                (configuration, name1, eh) -> subscribingEventProcessor(configuration, name1, eh, c -> messageSource));
     }
 
     /**

@@ -14,7 +14,7 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.legacy.AbstractLegacyDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.Entity;
@@ -27,7 +27,7 @@ import javax.persistence.Entity;
  * @author Rene de Waele
  */
 @Entity
-public class SnapshotEventEntry extends AbstractLegacyDomainEventEntry<byte[]> {
+public class SnapshotEventEntry extends AbstractSnapshotEventEntry<byte[]> {
 
     /**
      * Construct a new default snapshot event entry from an aggregate. The snapshot payload and metadata will be

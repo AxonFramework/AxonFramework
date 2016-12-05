@@ -16,22 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -40,6 +24,12 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -64,8 +54,8 @@ public class AsynchronousCommandBusTest {
             return null;
         }).when(executorService).execute(isA(Runnable.class));
         testSubject = new AsynchronousCommandBus(executorService);
-        testSubject.setDispatchInterceptors(Arrays.<MessageDispatchInterceptor<CommandMessage<?>>>asList(dispatchInterceptor));
-        testSubject.setHandlerInterceptors(Arrays.<MessageHandlerInterceptor<CommandMessage<?>>>asList(handlerInterceptor));
+        testSubject.registerDispatchInterceptor(dispatchInterceptor);
+        testSubject.registerHandlerInterceptor(handlerInterceptor);
         when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());

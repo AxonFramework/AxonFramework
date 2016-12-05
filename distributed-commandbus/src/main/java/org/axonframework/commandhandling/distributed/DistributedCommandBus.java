@@ -16,12 +16,6 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -36,6 +30,12 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
  * spread load. Each "physical" CommandBus instance is considered a "segment" of a conceptual distributed CommandBus.
@@ -48,7 +48,11 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
  */
 public class DistributedCommandBus implements CommandBus {
 
+    /**
+     * The initial load factor of this node when it is registered with the {@link CommandRouter}.
+     */
     public static final int INITIAL_LOAD_FACTOR = 100;
+
     private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command "
             + "on the DistributedCommandBus";
 
@@ -56,7 +60,7 @@ public class DistributedCommandBus implements CommandBus {
     private final CommandBusConnector connector;
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
-    private AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
+    private final AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     /**
@@ -82,9 +86,9 @@ public class DistributedCommandBus implements CommandBus {
      * @param messageMonitor the message monitor to notify of incoming messages and their execution result
      */
     public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector, MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-        Assert.notNull(commandRouter, "serviceRegistry may not be null");
-        Assert.notNull(connector, "connector may not be null");
-        Assert.notNull(messageMonitor, "messageMonitor may not be null");
+        Assert.notNull(commandRouter, () -> "serviceRegistry may not be null");
+        Assert.notNull(connector, () -> "connector may not be null");
+        Assert.notNull(messageMonitor, () -> "messageMonitor may not be null");
 
         this.commandRouter = commandRouter;
         this.connector = connector;
@@ -160,10 +164,20 @@ public class DistributedCommandBus implements CommandBus {
         }
     }
 
+    /**
+     * Returns the current load factor of this node.
+     *
+     * @return the current load factor
+     */
     public int getLoadFactor() {
         return loadFactor;
     }
 
+    /**
+     * Updates the load factor of this node compared to other nodes registered with the {@link CommandRouter}.
+     *
+     * @param loadFactor the new load factor of this node
+     */
     public void updateLoadFactor(int loadFactor) {
         this.loadFactor = loadFactor;
         commandRouter.updateMembership(loadFactor, commandFilter.get());

@@ -16,37 +16,22 @@
 
 package org.axonframework.commandhandling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -88,10 +73,9 @@ public class SimpleCommandBusTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testDispatchCommand_ImplicitUnitOfWorkIsCommittedOnReturnValue() {
-        UnitOfWorkFactory spyUnitOfWorkFactory = spy(new DefaultUnitOfWorkFactory());
-        testSubject.setUnitOfWorkFactory(spyUnitOfWorkFactory);
+        final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
         testSubject.subscribe(String.class.getName(), command -> {
-            assertTrue(CurrentUnitOfWork.isStarted());
+            unitOfWork.set(CurrentUnitOfWork.get());
             assertTrue(CurrentUnitOfWork.isStarted());
             assertNotNull(CurrentUnitOfWork.get());
             return command;
@@ -108,13 +92,16 @@ public class SimpleCommandBusTest {
                                      fail("Did not expect exception");
                                  }
                              });
-        verify(spyUnitOfWorkFactory).createUnitOfWork(any(GenericCommandMessage.class));
         assertFalse(CurrentUnitOfWork.isStarted());
+        assertFalse(unitOfWork.get().isRolledBack());
+        assertFalse(unitOfWork.get().isActive());
     }
 
     @Test
     public void testDispatchCommand_ImplicitUnitOfWorkIsRolledBackOnException() {
+        final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
         testSubject.subscribe(String.class.getName(), command -> {
+            unitOfWork.set(CurrentUnitOfWork.get());
             assertTrue(CurrentUnitOfWork.isStarted());
             assertNotNull(CurrentUnitOfWork.get());
             throw new RuntimeException();
@@ -131,17 +118,15 @@ public class SimpleCommandBusTest {
             }
         });
         assertFalse(CurrentUnitOfWork.isStarted());
+        assertTrue(unitOfWork.get().isRolledBack());
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() throws Exception {
-        UnitOfWorkFactory mockUnitOfWorkFactory = mock(DefaultUnitOfWorkFactory.class);
-        UnitOfWork<CommandMessage<?>> mockUnitOfWork = spy(new DefaultUnitOfWork<>(null));
-        when(mockUnitOfWorkFactory.createUnitOfWork(any())).thenReturn(mockUnitOfWork);
-
-        testSubject.setUnitOfWorkFactory(mockUnitOfWorkFactory);
+        final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
         testSubject.subscribe(String.class.getName(), command -> {
+            unitOfWork.set(CurrentUnitOfWork.get());
             throw new Exception();
         });
         testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
@@ -157,8 +142,8 @@ public class SimpleCommandBusTest {
                 assertEquals(cause.getClass(), Exception.class);
             }
         });
-
-        verify(mockUnitOfWork).commit();
+        assertTrue(!unitOfWork.get().isActive());
+        assertTrue(!unitOfWork.get().isRolledBack());
     }
 
 
@@ -189,7 +174,8 @@ public class SimpleCommandBusTest {
                                                                   (InterceptorChain) invocation.getArguments()[1]));
         when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> commandHandler.handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
-        testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
+        testSubject.registerHandlerInterceptor(mockInterceptor1);
+        testSubject.registerHandlerInterceptor(mockInterceptor2);
         when(commandHandler.handle(isA(CommandMessage.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
 
@@ -227,7 +213,8 @@ public class SimpleCommandBusTest {
         when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> commandHandler.handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
 
-        testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
+        testSubject.registerHandlerInterceptor(mockInterceptor1);
+        testSubject.registerHandlerInterceptor(mockInterceptor2);
         when(commandHandler.handle(isA(CommandMessage.class)))
                 .thenThrow(new RuntimeException("Faking failed command handling"));
         testSubject.subscribe(String.class.getName(), commandHandler);
@@ -256,20 +243,17 @@ public class SimpleCommandBusTest {
     @SuppressWarnings({"ThrowableInstanceNeverThrown", "unchecked"})
     @Test
     public void testInterceptorChain_InterceptorThrowsException() throws Exception {
-        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
+        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class, "stubName");
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> mockInterceptor2.handle(
-                        (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
-                                                                  (InterceptorChain) invocation.getArguments()[1]));
-        testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
+        testSubject.registerHandlerInterceptor(mockInterceptor1);
+        testSubject.registerHandlerInterceptor(mockInterceptor2);
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         when(commandHandler.handle(isA(CommandMessage.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
-        doThrow(someException).when(mockInterceptor2).handle(
-                isA(UnitOfWork.class),
-                                                             isA(InterceptorChain.class));
+        doThrow(someException).when(mockInterceptor2).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
             @Override

@@ -13,11 +13,11 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
 /**
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
@@ -40,6 +40,7 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
      * @param delegate            The message handler for the event
      * @param associationKey      The association key configured for this handler
      * @param associationProperty The association property configured for this handler
+     * @param endingHandler       Flag to indicate if an invocation of the given handler should end the saga
      */
     public SagaMethodMessageHandlingMember(MessageHandlingMember<T> delegate, SagaCreationPolicy creationPolicy,
                                            String associationKey, Property associationProperty, boolean endingHandler) {

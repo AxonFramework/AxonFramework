@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -60,6 +61,7 @@ public class SimpleEventBus extends AbstractEventBus {
      * Initializes an event bus. Uses the given {@code messageMonitor} to report ingested messages and report the
      * result of processing the message.
      *
+     * @param queueCapacity  The maximum number of events to hold in memory for event tracking
      * @param messageMonitor The monitor used to monitor the ingested messages
      */
     public SimpleEventBus(int queueCapacity, MessageMonitor<? super EventMessage<?>> messageMonitor) {
@@ -109,6 +111,11 @@ public class SimpleEventBus extends AbstractEventBus {
                     Thread.currentThread().interrupt();
                 }
             });
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return Optional.ofNullable(peekEvent == null && !hasNextAvailable() ? null : peekEvent);
         }
 
         @Override

@@ -110,11 +110,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
         try {
             unitOfWork.executeWithResult(() -> {
+                unitOfWork.resources().put("messageMonitor", monitorCallbacks.get(unitOfWork.getMessage()));
                 unitOfWork.onRollback(uow -> errorHandler
                         .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
                                      () -> process(eventMessages)));
                 unitOfWork.onCleanup(uow -> {
-                    MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
+                    MessageMonitor.MonitorCallback callback = uow.getResource("messageMonitor");
                     if (uow.isRolledBack()) {
                         callback.reportFailure(uow.getExecutionResult().getExceptionResult());
                     } else {

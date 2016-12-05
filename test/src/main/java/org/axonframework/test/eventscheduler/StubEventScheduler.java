@@ -55,7 +55,7 @@ public class StubEventScheduler implements EventScheduler {
     }
 
     /**
-     * Creates an instance of the StubScheduler that uses the given <code>currentDateTime</code> as its conceptual
+     * Creates an instance of the StubScheduler that uses the given {@code currentDateTime} as its conceptual
      * "current time".
      *
      * @param currentDateTime The instant to use as current Date and Time
@@ -128,13 +128,14 @@ public class StubEventScheduler implements EventScheduler {
     }
 
     /**
-     * Advance time to the given <code>newDateTime</code> and invokes the given <code>eventConsumer</code> for each
+     * Advance time to the given {@code newDateTime} and invokes the given {@code eventConsumer} for each
      * event scheduled for publication until that time.
      *
      * @param newDateTime   The time to advance the "current time" of the scheduler to
      * @param eventConsumer The function to invoke for each event to trigger
+     * @throws Exception when an exception is thrown by the consumer handling events
      */
-    public void advanceTime(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
+    public void advanceTimeTo(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             eventConsumer.accept(advanceToNextTrigger());
         }
@@ -151,7 +152,7 @@ public class StubEventScheduler implements EventScheduler {
      * @param eventConsumer The function to invoke for each event to trigger
      * @throws Exception when an exception is thrown by the consumer handling events
      */
-    public void advanceTime(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
-        advanceTime(currentDateTime.plus(duration), eventConsumer);
+    public void advanceTimeBy(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
+        advanceTimeTo(currentDateTime.plus(duration), eventConsumer);
     }
 }

@@ -17,19 +17,49 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;
+import java.util.function.Supplier;
 
 /**
- * @author Rene de Waele
+ * Generic implementation of a {@link TrackedEventMessage}.
+ *
+ * @param <T> The type of payload contained in this Message
  */
 public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implements TrackedEventMessage<T> {
     private final TrackingToken trackingToken;
 
+    /**
+     * Creates a GenericTrackedEventMessage with given {@code trackingToken} and delegate event message.
+     *
+     * @param trackingToken tracking token of the event
+     * @param delegate      delegate message containing payload, metadata, identifier and timestamp
+     */
     public GenericTrackedEventMessage(TrackingToken trackingToken, EventMessage<T> delegate) {
         super(delegate, delegate.getTimestamp());
         this.trackingToken = trackingToken;
     }
 
-    public GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Instant timestamp) {
+    /**
+     * Creates a GenericTrackedEventMessage with given {@code trackingToken} and delegate event message. The timestamp
+     * of the event is supplied lazily to prevent unnecessary deserialization of the timestamp.
+     *
+     * @param trackingToken tracking token of the event
+     * @param delegate      delegate message containing payload, metadata, identifier and timestamp
+     * @param timestamp     supplier of the message's timestamp
+     */
+    public GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Supplier<Instant> timestamp) {
+        super(delegate, timestamp);
+        this.trackingToken = trackingToken;
+    }
+
+    /**
+     * Initializes a {@link GenericTrackedEventMessage} with given message as delegate and given {@code timestamp}. The
+     * given message will be used supply the payload, metadata and identifier of the resulting event message.
+     *
+     * @param trackingToken the tracking token of the resulting message
+     * @param delegate      the message that will be used used as delegate
+     * @param timestamp     the timestamp of the resulting event message
+     */
+    protected GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Instant timestamp) {
         super(delegate, timestamp);
         this.trackingToken = trackingToken;
     }

@@ -38,8 +38,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions = new ConcurrentHashMap<>();
-    private List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
@@ -79,23 +79,23 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     /**
-     * Indicates whether the given <code>commandHandler</code> is subscribed to this command bus.
+     * Indicates whether the given {@code commandHandler} is subscribed to this command bus.
      *
      * @param commandHandler The command handler to verify the subscription for
-     * @return <code>true</code> if the handler is subscribed, otherwise <code>false</code>.
+     * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
     public boolean isSubscribed(MessageHandler<? super CommandMessage<?>> commandHandler) {
         return subscriptions.containsValue(commandHandler);
     }
 
     /**
-     * Indicates whether the given <code>commandHandler</code> is subscribed to commands of the given
-     * <code>commandType</code> on this command bus.
+     * Indicates whether the given {@code commandHandler} is subscribed to commands of the given
+     * {@code commandType} on this command bus.
      *
      * @param commandName    The name of the command to verify the subscription for
      * @param commandHandler The command handler to verify the subscription for
      * @param <C>            The type of command to verify the subscription for
-     * @return <code>true</code> if the handler is subscribed, otherwise <code>false</code>.
+     * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
     public <C> boolean isSubscribed(String commandName, MessageHandler<? super CommandMessage<?>> commandHandler) {
         return subscriptions.containsKey(commandName) && subscriptions.get(commandName).equals(commandHandler);

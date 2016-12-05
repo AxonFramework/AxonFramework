@@ -22,16 +22,21 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+/**
+ * Implementation of an {@link org.axonframework.commandhandling.model.Aggregate} that is sourced from events that have
+ * been published by the aggregate.
+ *
+ * @param <T> The type of the aggregate root object
+ */
 public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
     private final SnapshotTrigger snapshotTrigger;
@@ -55,39 +60,78 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     }
 
     /**
-     * Creates a new EventSourcedAggregate instance based on the given {@code model}, which publishes events to the given
-     * {@code eventBus} and stores events in the given {@code eventStore}.
-     * This aggregate is not assigned a root instance yet.
+     * Creates a new EventSourcedAggregate instance based on the given {@code model}, which publishes events to the
+     * given {@code eventBus} and stores events in the given {@code eventStore}. This aggregate is not assigned a root
+     * instance yet.
      *
      * @param model           The model describing the aggregate structure
      * @param eventStore      The event store to store generated events in
      * @param snapshotTrigger The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
-    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventStore,
-                                    SnapshotTrigger snapshotTrigger) {
+    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventStore, SnapshotTrigger snapshotTrigger) {
         super(model, eventStore);
         this.lastEventSequenceNumber = -1;
         this.snapshotTrigger = snapshotTrigger;
     }
 
+    /**
+     * Initializes an EventSourcedAggregate instance for the given {@code aggregateRoot}, based on the given {@code
+     * inspector}, which publishes events to the given {@code eventBus} and stores events in the given {@code
+     * eventStore}.
+     *
+     * @param aggregateRoot   The aggregate root instance
+     * @param inspector       The inspector describing the aggregate structure
+     * @param eventStore      The event store to store generated events in
+     * @param snapshotTrigger The trigger to notify of events and initialization
+     * @param <T>             the aggregate root type
+     * @return the initialized EventSourcedAggregate instance
+     */
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
                                                           EventStore eventStore, SnapshotTrigger snapshotTrigger) {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(aggregateRoot, inspector, eventStore,
-                                                                         snapshotTrigger);
+        EventSourcedAggregate<T> aggregate =
+                new EventSourcedAggregate<>(aggregateRoot, inspector, eventStore, snapshotTrigger);
         aggregate.registerWithUnitOfWork();
         return aggregate;
     }
 
+    /**
+     * Initializes an EventSourcedAggregate instance using the given {@code aggregateFactory}, based on the given {@code
+     * inspector}, which publishes events to the given {@code eventBus} and stores events in the given {@code
+     * eventStore}.
+     *
+     * @param aggregateFactory The aggregate root factory
+     * @param inspector        The inspector describing the aggregate structure
+     * @param eventStore       The event store to store generated events in
+     * @param snapshotTrigger  The trigger to notify of events and initialization
+     * @param <T>              the aggregate root type
+     * @return the initialized EventSourcedAggregate instance
+     * @throws Exception if the aggregate cannot be initialized
+     */
     public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
-                                                          EventStore eventStore, SnapshotTrigger snapshotTrigger)
-            throws Exception {
+                                                          EventStore eventStore,
+                                                          SnapshotTrigger snapshotTrigger) throws Exception {
         EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector, eventStore, snapshotTrigger);
         aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);
         return aggregate;
     }
 
+    /**
+     * Reconstructs an EventSourcedAggregate instance with given {@code aggregateRoot}. The aggregate's sequence number
+     * should be set to the given {@code seqNo} and its deleted flag to the given {@code isDeleted}.
+     * <p>
+     * Use this method to initialize an EventSourcedAggregate without having to replay the aggregate from events.
+     *
+     * @param aggregateRoot   The aggregate root instance
+     * @param model           The model describing the aggregate structure
+     * @param seqNo           The last event sequence number of the aggregate
+     * @param isDeleted       Flag to indicate whether or not the aggregate is deleted
+     * @param eventStore      The event store to store generated events in
+     * @param snapshotTrigger The trigger to notify of events and initialization
+     * @param <T>             the aggregate root type
+     * @return the reconstructed EventSourcedAggregate instance
+     */
     public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
                                                            boolean isDeleted, EventStore eventStore,
                                                            SnapshotTrigger snapshotTrigger) {
@@ -123,12 +167,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     }
 
     @Override
-    protected <P> GenericDomainEventMessage<P> createMessage(P payload, MetaData metaData) {
+    protected <P> DomainEventMessage<P> createMessage(P payload, MetaData metaData) {
         String id = identifierAsString();
         long seq = nextSequence();
         if (id == null) {
-            Assert.state(seq == 0, "The aggregate identifier has not been set. It must be set at the latest by the " +
-                    "event sourcing handler of the creation event");
+            Assert.state(seq == 0,
+                         () -> "The aggregate identifier has not been set. It must be set at the latest by the " +
+                                 "event sourcing handler of the creation event");
             return new LazyIdentifierDomainEventMessage<>(type(), seq, payload, metaData);
         }
         return new GenericDomainEventMessage<>(type(), identifierAsString(), nextSequence(), payload, metaData);
@@ -163,14 +208,20 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      *
      * @param eventStream The Event Stream containing the events to be used to reconstruct this Aggregate's state.
      */
-    public void initializeState(Iterator<? extends DomainEventMessage<?>> eventStream) {
+    public void initializeState(DomainEventStream eventStream) {
         this.initializing = true;
         try {
             eventStream.forEachRemaining(this::publish);
+            lastEventSequenceNumber = eventStream.getLastSequenceNumber();
         } finally {
             this.initializing = false;
             snapshotTrigger.initializationFinished();
         }
+    }
+
+    @Override
+    protected boolean getIsLive() {
+        return !initializing;
     }
 
     /**
@@ -207,8 +258,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(getIdentifier(),
-                                                                                 getPayload(), getMetaData(), getTimestamp()));
+                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp());
             } else {
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
                                                               MetaData.from(newMetaData));
@@ -220,8 +270,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(getIdentifier(), getPayload(),
-                                                                                 getMetaData(), getTimestamp()))
+                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp())
                         .andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),

@@ -22,16 +22,27 @@ import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
 /**
+ * Abstract implementation of a {@link Message} that delegates to an existing message. Extend this decorator class to
+ * extend the message with additional features.
+ * <p>
+ * Messages of this type are {@link SerializationAware} meaning they will not be serialized more than once by the same
+ * serializer.
+ *
  * @author Rene de Waele
  */
 public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
 
     private final Message<T> delegate;
-    private transient final SerializedObjectHolder serializedObjectHolder;
+    private transient volatile SerializedObjectHolder serializedObjectHolder;
 
-    public MessageDecorator(Message<T> delegate) {
+    /**
+     * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
+     * the message's payload, metadata and identifier.
+     *
+     * @param delegate the message delegate
+     */
+    protected MessageDecorator(Message<T> delegate) {
         this.delegate = delegate;
-        serializedObjectHolder = new SerializedObjectHolder(delegate);
     }
 
     @Override
@@ -59,7 +70,7 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
         if (delegate instanceof SerializationAware) {
             return ((SerializationAware) delegate).serializePayload(serializer, expectedRepresentation);
         }
-        return serializedObjectHolder.serializePayload(serializer, expectedRepresentation);
+        return serializedObjectHolder().serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
@@ -67,9 +78,21 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
         if (delegate instanceof SerializationAware) {
             return ((SerializationAware) delegate).serializeMetaData(serializer, expectedRepresentation);
         }
-        return serializedObjectHolder.serializeMetaData(serializer, expectedRepresentation);
+        return serializedObjectHolder().serializeMetaData(serializer, expectedRepresentation);
     }
 
+    private SerializedObjectHolder serializedObjectHolder() {
+        if (serializedObjectHolder == null) {
+            serializedObjectHolder = new SerializedObjectHolder(delegate);
+        }
+        return serializedObjectHolder;
+    }
+
+    /**
+     * Returns the wrapped message delegate.
+     *
+     * @return the delegate message
+     */
     protected Message<T> getDelegate() {
         return delegate;
     }

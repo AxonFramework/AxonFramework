@@ -47,7 +47,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
 
     @Override
     public Connection getConnection() throws SQLException {
-        if (!CurrentUnitOfWork.isStarted()) {
+        if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT)) {
             return delegate.getConnection();
         }
 
@@ -63,28 +63,28 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
             uow.onCommit(u -> {
                 Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 try {
-                    if (!cx.getAutoCommit()) {
+                    if (!cx.isClosed() && !cx.getAutoCommit()) {
                         cx.commit();
                     }
                 } catch (SQLException e) {
-                    throw new JdbcTransactionException("Unable to commit transaction", e);
+                    throw new JdbcException("Unable to commit transaction", e);
                 }
             });
             uow.onCleanup(u -> {
-                Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
+                Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 JdbcUtils.closeQuietly(cx);
                 if (cx instanceof UoWAttachedConnection) {
                     ((UoWAttachedConnection) cx).forceClose();
                 }
             });
             uow.onRollback(u -> {
-                Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
+                Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 try {
                     if (!cx.isClosed() && !cx.getAutoCommit()) {
                         cx.rollback();
                     }
                 } catch (SQLException ex) {
-                    throw new JdbcTransactionException("Unable to rollback transaction", ex);
+                    throw new JdbcException("Unable to rollback transaction", ex);
                 }
             });
         }

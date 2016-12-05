@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 
 /**
  * RoutingStrategy implementation that uses the value in the MetaData of a CommandMessage assigned to a given key. The
- * value's <code>toString()</code> is used to convert the MetaData value to a String.
+ * value's {@code toString()} is used to convert the MetaData value to a String.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -30,7 +30,7 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy {
     private final String metaDataKey;
 
     /**
-     * Initializes the MetaDataRoutingStrategy where the given <code>metaDataKey</code> is used to get the Meta Data
+     * Initializes the MetaDataRoutingStrategy where the given {@code metaDataKey} is used to get the Meta Data
      * value. An error is raised when the MetaData key cannot be found.
      *
      * @param metaDataKey The key on which the value is retrieved from the MetaData.
@@ -40,8 +40,8 @@ public class MetaDataRoutingStrategy extends AbstractRoutingStrategy {
     }
 
     /**
-     * Initializes the MetaDataRoutingStrategy where the given <code>metaDataKey</code> is used to get the Meta Data
-     * value. The given <code>unresolvedRoutingKeyPolicy</code> presecribes what to do when the Meta Data properties
+     * Initializes the MetaDataRoutingStrategy where the given {@code metaDataKey} is used to get the Meta Data
+     * value. The given {@code unresolvedRoutingKeyPolicy} presecribes what to do when the Meta Data properties
      * cannot be found.
      *
      * @param metaDataKey                The key on which the value is retrieved from the MetaData.

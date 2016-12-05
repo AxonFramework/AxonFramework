@@ -35,7 +35,7 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
     private final String sagasCollectionName;
 
     /**
-     * Initialize a template for the given <code>mongoDb</code> instance, using default database name ("axonframework")
+     * Initialize a template for the given {@code mongoDb} instance, using default database name ("axonframework")
      * and collection name ("sagas").
      *
      * @param mongo The Mongo instance providing access to the database
@@ -46,8 +46,8 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
     }
 
     /**
-     * Creates a template connecting to given <code>mongo</code> instance, and loads sagas in the collection with given
-     * <code>sagasCollectionName</code>, in a database with given <code>databaseName</code>.
+     * Creates a template connecting to given {@code mongo} instance, and loads sagas in the collection with given
+     * {@code sagasCollectionName}, in a database with given {@code databaseName}.
      *
      * @param mongo               The Mongo instance configured to connect to the Mongo Server
      * @param databaseName        The name of the database containing the data

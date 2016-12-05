@@ -118,6 +118,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         this.eventBus = eventBus;
     }
 
+    /**
+     * Registers the aggregate root created by the given {@code aggregateFactory} with this aggregate. Applies any
+     * delayed events that have not been applied to the aggregate yet.
+     * <p>
+     * This is method is commonly called while an aggregate is being initialized.
+     *
+     * @param aggregateFactory the factory to create the aggregate root
+     * @throws Exception if the aggregate factory fails to create the aggregate root
+     */
     protected void registerRoot(Callable<T> aggregateFactory) throws Exception {
         this.aggregateRoot = executeWithResult(aggregateFactory);
         execute(() -> {
@@ -125,7 +134,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 delayedTasks.poll().run();
             }
         });
-
     }
 
     @Override
@@ -141,6 +149,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public Long version() {
         return inspector.getVersion(aggregateRoot);
+    }
+
+    @Override
+    protected boolean getIsLive() {
+        return true;
     }
 
     @Override
@@ -175,11 +188,22 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         this.isDeleted = true;
     }
 
+    /**
+     * Publish an event to the aggregate root and its entities first and external event handlers (using the given
+     * event bus) later.
+     *
+     * @param msg the event message to publish
+     */
     protected void publish(EventMessage<?> msg) {
         inspector.publish(msg, aggregateRoot);
         publishOnEventBus(msg);
     }
 
+    /**
+     * Publish an event to external event handlers using the given event bus.
+     *
+     * @param msg the event message to publish
+     */
     protected void publishOnEventBus(EventMessage<?> msg) {
         if (eventBus != null) {
             eventBus.publish(msg);
@@ -200,6 +224,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         });
     }
 
+    @Override
     protected <P> ApplyMore doApply(P payload, MetaData metaData) {
         if (!applying && aggregateRoot != null) {
             applying = true;
@@ -218,10 +243,24 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return this;
     }
 
+    /**
+     * Creates an {@link EventMessage} with given {@code payload} and {@code metaData}.
+     *
+     * @param payload  payload of the resulting message
+     * @param metaData metadata of the resulting message
+     * @param <P>      the payload type
+     * @return the resulting message
+     */
     protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
         return new GenericEventMessage<>(payload, metaData);
     }
 
+    /**
+     * Get the annotated aggregate instance. Note that this method should probably never be used in normal use. If you
+     * need to operate on the aggregate use {@link #invoke(Function)} or {@link #execute(Consumer)} instead.
+     *
+     * @return the aggregate instance
+     */
     public T getAggregateRoot() {
         return aggregateRoot;
     }
@@ -236,6 +275,13 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return this;
     }
 
+    /**
+     * Apply a new event message to the aggregate and then publish this message to external systems. If the given {@code
+     * payloadOrMessage} is an instance of a {@link Message} an event message is applied with the payload and metadata
+     * of the given message, otherwise an event message is applied with given payload and empty metadata.
+     *
+     * @param payloadOrMessage defines the payload and optionally metadata to apply to the aggregate
+     */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
         if (payloadOrMessage instanceof Message) {
             Message message = (Message) payloadOrMessage;

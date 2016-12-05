@@ -14,12 +14,15 @@
 package org.axonframework.eventhandling;
 
 /**
- * Implementation that simply throws the reported error.
+ * Implementation that simply throws the reported exception.
  *
  * @author Rene de Waele
  */
 public enum ThrowingListenerErrorHandler implements ListenerErrorHandler {
 
+    /**
+     * Singleton error handler instance that throws exceptions without modification
+     */
     INSTANCE;
 
     @Override

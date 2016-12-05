@@ -26,39 +26,59 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.legacy.LegacyTrackingToken;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.EventEntryConfiguration;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.*;
 import static java.util.stream.StreamSupport.stream;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
+ * Abstract implementation of a Mongo {@link StorageStrategy}. Implementations only need to provide methods to convert
+ * events and snapshots into Documents and vice versa.
+ *
  * @author Rene de Waele
  */
 public abstract class AbstractMongoEventStorageStrategy implements StorageStrategy {
 
-    protected static final int ORDER_ASC = 1, ORDER_DESC = -1;
-    private static final long DEFAULT_GAP_DETECTION_INTERVAL = 10000L;
+    /**
+     * The value to pass to Mongo to fetch documents in ascending order.
+     */
+    protected static final int ORDER_ASC = 1;
+
+    /**
+     * The value to pass to Mongo to fetch documents in descending order.
+     */
+    protected static final int ORDER_DESC = -1;
+
     private final EventEntryConfiguration eventConfiguration;
-    private final long gapDetectionInterval;
+    private final Duration lookBackTime;
 
-    public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
-        this(eventConfiguration, DEFAULT_GAP_DETECTION_INTERVAL);
-    }
-
-    public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval) {
-        this.eventConfiguration = eventConfiguration;
-        this.gapDetectionInterval = gapDetectionInterval;
+    /**
+     * Initializes a new StorageStrategy for a EventStorageEngine that uses Mongo.
+     *
+     * @param eventConfiguration configuration of the event entry 'schema'. If {@code null} the schema with default
+     *                           values is used.
+     * @param lookBackTime       the maximum time to look back when fetching new events while tracking. If {@code null}
+     *                           a 10 second interval is used.
+     */
+    public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration, Duration lookBackTime) {
+        this.eventConfiguration = getOrDefault(eventConfiguration, EventEntryConfiguration.getDefault());
+        this.lookBackTime = getOrDefault(lookBackTime, Duration.ofSeconds(0L));
     }
 
     @Override
@@ -67,6 +87,15 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         eventCollection.insertMany(createEventDocuments(events, serializer).collect(Collectors.toList()));
     }
 
+    /**
+     * Returns a stream of Mongo documents that represent the given batch of events. The given list of {@code events}
+     * represents events produced in the context of a single unit of work. Uses the given {@code serializer} to
+     * serialize event payload and metadata.
+     *
+     * @param events     the events to convert to Mongo documents
+     * @param serializer the serializer to convert the events' payload and metadata
+     * @return stream of Mongo documents from the given event batch
+     */
     protected abstract Stream<Document> createEventDocuments(List<? extends EventMessage<?>> events,
                                                              Serializer serializer);
 
@@ -76,80 +105,93 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         snapshotCollection.insertOne(createSnapshotDocument(snapshot, serializer));
     }
 
+    /**
+     * Returns a Mongo document for given snapshot event. Uses the given {@code serializer} to serialize event payload
+     * and metadata.
+     *
+     * @param snapshot   the snapshot to convert
+     * @param serializer the to convert the snapshot's payload and metadata
+     * @return a Mongo documents from given snapshot
+     */
     protected abstract Document createSnapshotDocument(DomainEventMessage<?> snapshot, Serializer serializer);
 
     @Override
     public void deleteSnapshots(MongoCollection<Document> snapshotCollection, String aggregateIdentifier) {
-        Bson mongoEntry = new BsonDocument(eventConfiguration.aggregateIdentifierProperty(), new BsonString(aggregateIdentifier));
+        Bson mongoEntry =
+                new BsonDocument(eventConfiguration.aggregateIdentifierProperty(), new BsonString(aggregateIdentifier));
         snapshotCollection.deleteMany(mongoEntry);
     }
 
     @Override
-    public List<? extends DomainEventData<?>> findDomainEvents(MongoCollection<Document> collection, String aggregateIdentifier,
-                                                               long firstSequenceNumber, int batchSize) {
-        FindIterable<Document> cursor = collection.find(and(
-                eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier),
-                gte(eventConfiguration.sequenceNumberProperty(), firstSequenceNumber)))
+    public List<? extends DomainEventData<?>> findDomainEvents(MongoCollection<Document> collection,
+                                                               String aggregateIdentifier, long firstSequenceNumber,
+                                                               int batchSize) {
+        FindIterable<Document> cursor = collection
+                .find(and(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier),
+                          gte(eventConfiguration.sequenceNumberProperty(), firstSequenceNumber)))
                 .sort(new BasicDBObject(eventConfiguration().sequenceNumberProperty(), ORDER_ASC));
-        cursor = applyBatchSize(cursor, batchSize);
-        return stream(cursor.spliterator(), false).flatMap(this::extractDomainEvents)
-                .filter(event -> event.getSequenceNumber() >= firstSequenceNumber)
-                .collect(Collectors.toList());
+        cursor = cursor.batchSize(batchSize);
+        return stream(cursor.spliterator(), false).flatMap(this::extractEvents)
+                .filter(event -> event.getSequenceNumber() >= firstSequenceNumber).collect(Collectors.toList());
     }
 
-    protected abstract Stream<? extends DomainEventData<?>> extractDomainEvents(Document object);
+    /**
+     * Retrieves event data from the given Mongo {@code object}.
+     *
+     * @param object the object to convert to event data
+     * @return stream of events from given document
+     */
+    protected abstract Stream<? extends DomainEventData<?>> extractEvents(Document object);
 
     @Override
     public List<? extends TrackedEventData<?>> findTrackedEvents(MongoCollection<Document> eventCollection,
-                                                                 TrackingToken lastToken,
-                                                                 int batchSize) {
+                                                                 TrackingToken lastToken, int batchSize) {
         FindIterable<Document> cursor;
         if (lastToken == null) {
             cursor = eventCollection.find();
         } else {
-            Assert.isTrue(lastToken instanceof LegacyTrackingToken,
-                          String.format("Token %s is of the wrong type", lastToken));
-            LegacyTrackingToken legacyTrackingToken = (LegacyTrackingToken) lastToken;
-            cursor = eventCollection.find(
-                    and(gte(eventConfiguration.timestampProperty(), legacyTrackingToken
-                                .getTimestamp().toString()),
-                        gte(eventConfiguration.sequenceNumberProperty(), legacyTrackingToken.getSequenceNumber())));
+            Assert.isTrue(lastToken instanceof MongoTrackingToken,
+                          () -> String.format("Token %s is of the wrong type", lastToken));
+            MongoTrackingToken trackingToken = (MongoTrackingToken) lastToken;
+            cursor = eventCollection.find(and(gte(eventConfiguration.timestampProperty(),
+                                                  trackingToken.getTimestamp().minus(lookBackTime).toString()),
+                                              nin(eventConfiguration.eventIdentifierProperty(),
+                                                  trackingToken.getKnownEventIds())));
         }
         cursor = cursor.sort(new BasicDBObject(eventConfiguration().timestampProperty(), ORDER_ASC)
                                      .append(eventConfiguration().sequenceNumberProperty(), ORDER_ASC));
-        cursor = applyBatchSize(cursor, batchSize);
-        return stream(cursor.spliterator(), false).flatMap(this::extractTrackedEvents)
-                .filter(event -> event.trackingToken().isAfter(lastToken)).limit(batchSize)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public TrackingToken getTokenForGapDetection(TrackingToken token) {
-        if (token == null) {
-            return null;
+        cursor = cursor.batchSize(batchSize);
+        AtomicReference<MongoTrackingToken> previousToken = new AtomicReference<>((MongoTrackingToken) lastToken);
+        List<TrackedEventData<?>> results = new ArrayList<>();
+        for (Document document : cursor) {
+            extractEvents(document).map(event -> new TrackedMongoEventEntry<>(event, previousToken.updateAndGet(
+                    token -> token == null ? MongoTrackingToken.of(event.getTimestamp(), event.getEventIdentifier()) :
+                            token.advanceTo(event.getTimestamp(), event.getEventIdentifier(), lookBackTime))))
+                    .forEach(results::add);
         }
-        Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
-        LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp(),
-                                       legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
+        return results;
     }
-
-    protected abstract FindIterable<Document> applyBatchSize(FindIterable<Document> cursor, int batchSize);
-
-    protected abstract Stream<? extends TrackedEventData<?>> extractTrackedEvents(Document object);
 
     @Override
     public Optional<? extends DomainEventData<?>> findLastSnapshot(MongoCollection<Document> snapshotCollection,
                                                                    String aggregateIdentifier) {
-        FindIterable<Document> cursor = snapshotCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
-                .sort(new BasicDBObject(eventConfiguration.sequenceNumberProperty(), ORDER_DESC)).limit(1);
-            return stream(cursor.spliterator(), false).findFirst().map(this::extractSnapshot);
+        FindIterable<Document> cursor =
+                snapshotCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
+                        .sort(new BasicDBObject(eventConfiguration.sequenceNumberProperty(), ORDER_DESC)).limit(1);
+        return stream(cursor.spliterator(), false).findFirst().map(this::extractSnapshot);
     }
 
+    /**
+     * Retrieves snapshot event data from the given Mongo {@code object}.
+     *
+     * @param object the object to convert to snapshot data
+     * @return snapshot data contained in given document
+     */
     protected abstract DomainEventData<?> extractSnapshot(Document object);
 
     @Override
-    public void ensureIndexes(MongoCollection<Document> eventsCollection, MongoCollection<Document> snapshotsCollection) {
+    public void ensureIndexes(MongoCollection<Document> eventsCollection,
+                              MongoCollection<Document> snapshotsCollection) {
         eventsCollection.createIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
                                              .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                      new IndexOptions().unique(true).name("uniqueAggregateIndex"));
@@ -162,7 +204,63 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
                                         new IndexOptions().unique(true).name("uniqueAggregateIndex"));
     }
 
+    /**
+     * Returns the {@link EventEntryConfiguration} that configures how event entries are to be stored.
+     *
+     * @return the event entry configuration
+     */
     protected EventEntryConfiguration eventConfiguration() {
         return eventConfiguration;
+    }
+
+    private static class TrackedMongoEventEntry<T> implements DomainEventData<T>, TrackedEventData<T> {
+
+        private final DomainEventData<T> delegate;
+        private final TrackingToken trackingToken;
+
+        public TrackedMongoEventEntry(DomainEventData<T> delegate, TrackingToken trackingToken) {
+            this.delegate = delegate;
+            this.trackingToken = trackingToken;
+        }
+
+        @Override
+        public String getType() {
+            return delegate.getType();
+        }
+
+        @Override
+        public String getAggregateIdentifier() {
+            return delegate.getAggregateIdentifier();
+        }
+
+        @Override
+        public long getSequenceNumber() {
+            return delegate.getSequenceNumber();
+        }
+
+        @Override
+        public TrackingToken trackingToken() {
+            return trackingToken;
+        }
+
+        @Override
+        public String getEventIdentifier() {
+            return delegate.getEventIdentifier();
+        }
+
+        @Override
+        public Instant getTimestamp() {
+            return delegate.getTimestamp();
+        }
+
+        @Override
+        public SerializedObject<T> getMetaData() {
+            return delegate.getMetaData();
+        }
+
+        @Override
+        public SerializedObject<T> getPayload() {
+            return delegate.getPayload();
+        }
     }
 }

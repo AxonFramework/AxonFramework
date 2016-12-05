@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
  * Implementation of the UnitOfWork that processes a single message.
@@ -34,19 +34,13 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     private final MessageProcessingContext<T> processingContext;
 
     /**
-     * Initializes a Unit of Work (without starting it).
-     */
-    public DefaultUnitOfWork(T message) {
-        processingContext = new MessageProcessingContext<>(message);
-    }
-
-    /**
      * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
      * UnitOfWork instance.
      * <p>
      * Note that this Unit Of Work type is not meant to be shared among different Threads. A single DefaultUnitOfWork
      * instance should be used exclusively by the Thread that created it.
      *
+     * @param message the message that will be processed in the context of the unit of work
      * @return the started UnitOfWork instance
      */
     public static <T extends Message<?>> DefaultUnitOfWork<T> startAndGet(T message) {
@@ -55,12 +49,21 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         return uow;
     }
 
+    /**
+     * Initializes a Unit of Work (without starting it).
+     *
+     * @param message the message that will be processed in the context of the unit of work
+     */
+    public DefaultUnitOfWork(T message) {
+        processingContext = new MessageProcessingContext<>(message);
+    }
+
     @Override
     public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
-        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
         try {
             result = task.call();
@@ -90,7 +93,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
-        Assert.state(!phase.isBefore(phase()), "Cannot register a listener for phase: " + phase
+        Assert.state(!phase.isBefore(phase()), () -> "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + phase());
         processingContext.addHandler(phase, handler);
     }
@@ -101,18 +104,18 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
 
     @Override
-    protected void setExecutionResult(ExecutionResult executionResult) {
-        processingContext.setExecutionResult(executionResult);
+    public ExecutionResult getExecutionResult() {
+        return processingContext.getExecutionResult();
     }
 
     @Override
-    public ExecutionResult getExecutionResult() {
-        return processingContext.getExecutionResult();
+    protected void setExecutionResult(ExecutionResult executionResult) {
+        processingContext.setExecutionResult(executionResult);
     }
 }

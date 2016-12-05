@@ -16,49 +16,53 @@ package org.axonframework.serialization.upcasting;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
-
 /**
+ * Implementation of an {@link Upcaster} that is formed of a chain of other upcasters which are combined to upcast a
+ * stream of intermediate objects.
+ *
  * @author Rene de Waele
  */
-public class GenericUpcasterChain<T> implements UpcasterChain<T> {
+public class GenericUpcasterChain<T> implements Upcaster<T> {
 
-    private final List<Supplier<Upcaster<T>>> upcasterSuppliers;
+    private final List<? extends Upcaster<T>> upcasters;
 
+    /**
+     * Initializes an upcaster chain from one or more upcasters.
+     *
+     * @param upcasters the upcasters to chain
+     */
     @SafeVarargs
     public GenericUpcasterChain(Upcaster<T>... upcasters) {
-        this(Arrays.stream(upcasters).map(upcaster -> (Supplier<Upcaster<T>>) () -> upcaster).collect(toList()));
+        this(Arrays.asList(upcasters));
     }
 
-    public GenericUpcasterChain(List<Supplier<Upcaster<T>>> upcasterSuppliers) {
-        this.upcasterSuppliers = new ArrayList<>(upcasterSuppliers);
+    /**
+     * Initializes an upcaster chain from the given list of upcasters.
+     *
+     * @param upcasters the upcasters to chain
+     */
+    public GenericUpcasterChain(List<? extends Upcaster<T>> upcasters) {
+        this.upcasters = new ArrayList<>(upcasters);
     }
 
     @Override
-    public Stream<T> upcast(Stream<T> intermediateRepresentations) {
-        List<Upcaster<T>> upcasters = getUpcasters();
-        Stream<T> result = intermediateRepresentations.flatMap(intermediateRepresentation -> {
-            Stream<T> entryResult = Stream.of(intermediateRepresentation);
-            for (Upcaster<T> upcaster : upcasters) {
-                entryResult = entryResult.flatMap(upcaster::upcast);
-            }
-            return entryResult;
-        });
-        Stream<T> remainder = upcasters.stream().flatMap(upcaster -> {
-            Stream<T> entryResult = upcaster.remainder();
-            for (Upcaster<T> otherUpcaster : upcasters.subList(upcasters.indexOf(upcaster) + 1, upcasters.size())) {
-                entryResult = entryResult.flatMap(otherUpcaster::upcast);
-            }
-            return entryResult;
-        });
-        return Stream.concat(result, remainder);
+    public Stream<T> upcast(Stream<T> initialRepresentations) {
+        Stream<T> result = initialRepresentations;
+        for (Upcaster<T> upcaster : getUpcasters()) {
+            result = upcaster.upcast(result);
+        }
+        return result;
     }
 
-    protected List<Upcaster<T>> getUpcasters() {
-        return upcasterSuppliers.stream().map(Supplier::get).collect(toList());
+    /**
+     * Returns the list of {@link Upcaster upcasters} that makes up this chain.
+     *
+     * @return the upcaster chain
+     */
+    protected List<? extends Upcaster<T>> getUpcasters() {
+        return upcasters;
     }
 
 }

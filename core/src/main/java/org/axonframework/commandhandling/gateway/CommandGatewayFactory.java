@@ -22,14 +22,14 @@ import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
-import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaData;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
@@ -151,7 +151,7 @@ public class CommandGatewayFactory {
      */
     public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
                                  List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.notNull(commandBus, "commandBus may not be null");
+        Assert.notNull(commandBus, () -> "commandBus may not be null");
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
         if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
@@ -174,8 +174,7 @@ public class CommandGatewayFactory {
     public <T> T createGateway(Class<T> gatewayInterface) {
         Map<Method, InvocationHandler> dispatchers = new HashMap<>();
         for (Method gatewayMethod : gatewayInterface.getMethods()) {
-            MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterTypes(),
-                                                             gatewayMethod.getParameterAnnotations());
+            MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameters());
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
 
@@ -374,16 +373,15 @@ public class CommandGatewayFactory {
         return this;
     }
 
-    private MetaDataExtractor[] extractMetaData(Class<?>[] parameterTypes, Annotation[][] parameterAnnotations) {
+    private MetaDataExtractor[] extractMetaData(Parameter[] parameters) {
         List<MetaDataExtractor> extractors = new ArrayList<>();
-        for (int i = 0; i < parameterAnnotations.length; i++) {
-            if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameterTypes[i])) {
+        for (int i = 0; i < parameters.length; i++) {
+            if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameters[i].getType())) {
                 extractors.add(new MetaDataExtractor(i, null));
             } else {
-                Annotation[] annotations = parameterAnnotations[i];
-                final MetaData metaDataAnnotation = CollectionUtils.getAnnotation(annotations, MetaData.class);
-                if (metaDataAnnotation != null) {
-                    extractors.add(new MetaDataExtractor(i, metaDataAnnotation.value()));
+                Optional<Map<String, Object>> metaDataAnnotation = AnnotationUtils.findAnnotationAttributes(parameters[i], MetaData.class);
+                if (metaDataAnnotation.isPresent()) {
+                    extractors.add(new MetaDataExtractor(i, (String) metaDataAnnotation.get().get("metaData")));
                 }
             }
         }

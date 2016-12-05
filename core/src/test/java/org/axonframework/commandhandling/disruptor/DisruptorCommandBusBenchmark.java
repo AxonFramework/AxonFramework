@@ -42,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -71,7 +70,8 @@ public class DisruptorCommandBusBenchmark {
         eventStore.countDownLatch.await(5, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
         try {
-            assertEquals("Seems that some events are not stored", COMMAND_COUNT, asStream(eventStore.readEvents(aggregateIdentifier)).count());
+            assertEquals("Seems that some events are not stored", COMMAND_COUNT,
+                         eventStore.readEvents(aggregateIdentifier).asStream().count());
             System.out.println("Did " + ((COMMAND_COUNT * 1000L) / (end - start)) + " commands per second");
         } finally {
             commandBus.stop();
@@ -118,7 +118,8 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+        public Registration registerDispatchInterceptor(
+                MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }

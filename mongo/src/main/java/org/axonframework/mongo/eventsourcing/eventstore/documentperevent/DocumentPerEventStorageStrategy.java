@@ -16,36 +16,46 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 
-import com.mongodb.client.FindIterable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventUtils;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.mongo.eventsourcing.eventstore.AbstractMongoEventStorageStrategy;
+import org.axonframework.mongo.eventsourcing.eventstore.StorageStrategy;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
 
 /**
+ * Implementation of a {@link StorageStrategy} that stores one {@link Document} per {@link EventMessage}.
+ *
  * @author Rene de Waele
  */
 public class DocumentPerEventStorageStrategy extends AbstractMongoEventStorageStrategy {
 
+    /**
+     * Initializes a {@link DocumentPerEventStorageStrategy} with default configuration.
+     */
     public DocumentPerEventStorageStrategy() {
-        this(EventEntryConfiguration.getDefault());
+        this(EventEntryConfiguration.getDefault(), null);
     }
 
-    public DocumentPerEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
-        super(eventConfiguration);
+    /**
+     * Initializes a {@link DocumentPerEventStorageStrategy} with given {@code eventConfiguration}.
+     *
+     * @param eventConfiguration object that configures the naming of event entry properties
+     * @param lookBackTime       the maximum time to look back when fetching new events while tracking.
+     */
+    public DocumentPerEventStorageStrategy(EventEntryConfiguration eventConfiguration, Duration lookBackTime) {
+        super(eventConfiguration, lookBackTime);
     }
 
     @Override
     protected Stream<Document> createEventDocuments(List<? extends EventMessage<?>> events, Serializer serializer) {
-        return events.stream().map(EventUtils::asDomainEventMessage)
-                .map(event -> new EventEntry(event, serializer))
+        return events.stream().map(EventUtils::asDomainEventMessage).map(event -> new EventEntry(event, serializer))
                 .map(entry -> entry.asDocument(eventConfiguration()));
     }
 
@@ -55,17 +65,7 @@ public class DocumentPerEventStorageStrategy extends AbstractMongoEventStorageSt
     }
 
     @Override
-    protected Stream<? extends DomainEventData<?>> extractDomainEvents(Document object) {
-        return Stream.of(extractEvent(object));
-    }
-
-    @Override
-    protected FindIterable<Document> applyBatchSize(FindIterable<Document> cursor, int batchSize) {
-        return cursor.batchSize(batchSize);
-    }
-
-    @Override
-    protected Stream<? extends TrackedEventData<?>> extractTrackedEvents(Document object) {
+    protected Stream<? extends DomainEventData<?>> extractEvents(Document object) {
         return Stream.of(extractEvent(object));
     }
 

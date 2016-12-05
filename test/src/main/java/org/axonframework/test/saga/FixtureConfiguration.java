@@ -17,7 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.ResultValidator;
+import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
 
@@ -33,7 +33,7 @@ import java.time.Instant;
 public interface FixtureConfiguration {
 
     /**
-     * Registers the given <code>resource</code>. When a Saga is created, all resources are injected on that instance
+     * Registers the given {@code resource}. When a Saga is created, all resources are injected on that instance
      * before any Events are passed onto it.
      * <p/>
      * Note that a CommandBus, EventBus and EventScheduler are already registered as resources, and need not be
@@ -47,7 +47,7 @@ public interface FixtureConfiguration {
     void registerResource(Object resource);
 
     /**
-     * Creates a Command Gateway for the given <code>gatewayInterface</code> and registers that as a resource. The
+     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The
      * gateway will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands
      * using {@link FixtureExecutionResult#expectDispatchedCommandsEqualTo(Object...)} and {@link
      * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
@@ -63,12 +63,12 @@ public interface FixtureConfiguration {
     <T> T registerCommandGateway(Class<T> gatewayInterface);
 
     /**
-     * Creates a Command Gateway for the given <code>gatewayInterface</code> and registers that as a resource. The
+     * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The
      * gateway will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands
      * using {@link FixtureExecutionResult#expectDispatchedCommandsEqualTo(Object...)} and {@link
      * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
      * <p/>
-     * The behavior of the created gateway is defined by the given <code>stubImplementation</code>, if not null.
+     * The behavior of the created gateway is defined by the given {@code stubImplementation}, if not null.
      * Dispatched Commands are still recorded for verification. Note that only commands executed in the "when" phase
      * are recorded, while the stub implementation may record activity during the "given" phase as well.
      *
@@ -80,7 +80,7 @@ public interface FixtureConfiguration {
     <T> T registerCommandGateway(Class<T> gatewayInterface, T stubImplementation);
 
     /**
-     * Registers the given <code>fieldFilter</code>, which is used to define which Fields are used when comparing
+     * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
      * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
      * for example, use this filter.
      * <p/>
@@ -95,7 +95,7 @@ public interface FixtureConfiguration {
     FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter);
 
     /**
-     * Indicates that a field with given <code>fieldName</code>, which is declared in given <code>declaringClass</code>
+     * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass}
      * is ignored when performing deep equality checks.
      *
      * @param declaringClass The class declaring the field
@@ -116,7 +116,7 @@ public interface FixtureConfiguration {
      * Use this method to indicate that an aggregate with given identifier published certain events.
      * <p/>
      * Can be chained to build natural sentences:<br/>
-     * <code>andThenAggregate(someIdentifier).published(someEvents)</code>
+     * {@code andThenAggregate(someIdentifier).published(someEvents)}
      *
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
@@ -124,13 +124,13 @@ public interface FixtureConfiguration {
     GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier);
 
     /**
-     * Indicates that the given <code>applicationEvent</code> has been published in the past. This event is sent to the
+     * Indicates that the given {@code applicationEvent} has been published in the past. This event is sent to the
      * associated sagas.
      *
      * @param event The event to publish
      * @return an object that allows chaining of more given state
      */
-    ContinuedGivenState givenAPublished(Object event) throws Exception;
+    ContinuedGivenState givenAPublished(Object event);
 
     /**
      * Indicates that no relevant activity has occurred in the past.

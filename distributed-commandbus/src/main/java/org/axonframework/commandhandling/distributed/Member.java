@@ -19,16 +19,32 @@ package org.axonframework.commandhandling.distributed;
 import java.util.Optional;
 
 /**
- * Member of the Axon network.
+ * Member of a cluster of connected command endpoints.
  *
  * @author Koen Lavooij
  */
 public interface Member {
 
+    /**
+     * Returns the name of this Member.
+     *
+     * @return the member name
+     */
     String name();
 
+    /**
+     * Get the endpoint of this Member given a {@code protocol}. Returns an empty optional if the protocol is not a
+     * supported endpoint of this member.
+     *
+     * @param protocol the expected
+     * @param <T> the protocol type
+     * @return the endpoint if this member supports the protocol. An empty optional otherwise.
+     */
     <T> Optional<T> getConnectionEndpoint(Class<T> protocol);
 
+    /**
+     * Mark this member as suspect, i.e. suspected of being (temporarily) unavailable.
+     */
     void suspect();
 
 }

@@ -16,7 +16,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -50,7 +49,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @DirtiesContext
     @SuppressWarnings({"unchecked", "OptionalGetWithoutIsPresent"})
     public void testStoreAndLoadEventsWithUpcaster() {
-        EventUpcasterChain mockUpcasterChain = mock(EventUpcasterChain.class);
+        EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
         when(mockUpcasterChain.upcast(isA(Stream.class))).thenAnswer(invocation -> {
             Stream<?> inputStream = (Stream) invocation.getArguments()[0];
             return inputStream.flatMap(e -> Stream.of(e, e));
@@ -58,7 +57,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
         testSubject = createEngine(mockUpcasterChain);
 
         testSubject.appendEvents(createEvents(4));
-        List<DomainEventMessage> upcastedEvents = asStream(testSubject.readEvents(AGGREGATE)).collect(toList());
+        List<DomainEventMessage> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(8, upcastedEvents.size());
 
         Iterator<DomainEventMessage> iterator = upcastedEvents.iterator();
@@ -87,7 +86,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
         super.setTestSubject(this.testSubject = testSubject);
     }
 
-    protected abstract AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain);
+    protected abstract AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain);
 
     protected abstract AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver);
 

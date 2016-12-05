@@ -26,6 +26,9 @@ import org.axonframework.messaging.Message;
  */
 public enum NoOpMessageMonitor implements MessageMonitor<Message<?>> {
 
+    /**
+     * Singleton instance of a {@link NoOpMessageMonitor}.
+     */
     INSTANCE;
 
     /**

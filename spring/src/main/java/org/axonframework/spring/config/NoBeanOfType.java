@@ -28,13 +28,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
 
+/**
+ * Annotation to be used in a configuration class on @{@link org.springframework.context.annotation.Bean} annotated
+ * methods if the method should only provide its bean if a bean of a given type does not exist yet.
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Conditional(NoBeanOfType.NoBeanOfTypeDefined.class)
 public @interface NoBeanOfType {
 
+    /**
+     *  The class of the bean to find in the Spring context. If a bean with that type already exists the annotated
+     *  method will not also provide its bean.
+     */
     Class<?> value();
 
+    /**
+     * Condition that checks if a bean with given class already exists in the Spring context. If so this condition
+     * returns {@code false} preventing the creation of another bean.
+     */
     class NoBeanOfTypeDefined implements Condition {
         @Override
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {

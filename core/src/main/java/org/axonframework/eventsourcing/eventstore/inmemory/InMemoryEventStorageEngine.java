@@ -18,7 +18,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.GlobalIndexTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.List;
@@ -27,6 +27,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -35,6 +36,8 @@ import java.util.stream.Stream;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
+ * Thread-safe event storage engine that stores events and snapshots in memory.
+ *
  * @author Rene de Waele
  */
 public class InMemoryEventStorageEngine implements EventStorageEngine {
@@ -45,7 +48,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
         synchronized (this.events) {
-            GlobalIndexTrackingToken trackingToken = nextTrackingToken();
+            GlobalSequenceTrackingToken trackingToken = nextTrackingToken();
             this.events.putAll(IntStream.range(0, events.size()).mapToObj(
                     i -> asTrackedEventMessage((EventMessage<?>) events.get(i), trackingToken.offsetBy(i))).collect(
                     Collectors.toMap(TrackedEventMessage::trackingToken, Function.identity())));
@@ -72,12 +75,16 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
-        Stream<? extends DomainEventMessage<?>> stream = events.values().stream()
-                .filter(event -> event instanceof DomainEventMessage<?>)
-                .map(event -> (DomainEventMessage<?>) event)
-                .filter(event -> aggregateIdentifier.equals(event.getAggregateIdentifier()) && event
-                        .getSequenceNumber() >= firstSequenceNumber);
-        return DomainEventStream.of(stream.iterator());
+        AtomicReference<Long> sequenceNumber = new AtomicReference<>();
+        Stream<? extends DomainEventMessage<?>> stream =
+                events.values().stream().filter(event -> event instanceof DomainEventMessage<?>)
+                        .map(event -> (DomainEventMessage<?>) event)
+                        .filter(event -> aggregateIdentifier.equals(event.getAggregateIdentifier()) &&
+                                event.getSequenceNumber() >= firstSequenceNumber).map(event -> {
+                    sequenceNumber.set(event.getSequenceNumber());
+                    return event;
+                });
+        return DomainEventStream.of(stream, sequenceNumber::get);
     }
 
     @Override
@@ -85,7 +92,13 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return Optional.ofNullable(snapshots.get(aggregateIdentifier));
     }
 
-    protected GlobalIndexTrackingToken nextTrackingToken() {
-        return events.isEmpty() ? new GlobalIndexTrackingToken(0) : ((GlobalIndexTrackingToken) events.lastKey()).next();
+    /**
+     * Returns the tracking token to use for the next event to be stored.
+     *
+     * @return the tracking token for the next event
+     */
+    protected GlobalSequenceTrackingToken nextTrackingToken() {
+        return events.isEmpty() ? new GlobalSequenceTrackingToken(0) :
+                ((GlobalSequenceTrackingToken) events.lastKey()).next();
     }
 }

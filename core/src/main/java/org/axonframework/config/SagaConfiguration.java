@@ -1,5 +1,7 @@
 package org.axonframework.config;
 
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
@@ -34,7 +36,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @return a SagaConfiguration instance, ready for further configuration
      */
     public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType) {
-        return new SagaConfiguration<S>(sagaType);
+        return new SagaConfiguration<>(sagaType);
     }
 
 
@@ -52,7 +54,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         configuration.processor.update(c -> new TrackingEventProcessor(
                 sagaType.getSimpleName() + "Processor",
                 configuration.sagaManager.get(),
-                c.eventBus(), c.getComponent(TokenStore.class, InMemoryTokenStore::new)));
+                c.eventBus(),
+                c.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                c.getComponent(TransactionManager.class, NoTransactionManager::instance)));
         return configuration;
     }
 
@@ -95,7 +99,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
 
     @Override
     public void shutdown() {
-        processor.get().shutdown();
+        processor.get().shutDown();
     }
 
 }

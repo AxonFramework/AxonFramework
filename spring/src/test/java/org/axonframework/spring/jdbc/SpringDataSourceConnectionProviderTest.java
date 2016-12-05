@@ -18,17 +18,18 @@ package org.axonframework.spring.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -55,13 +56,14 @@ public class SpringDataSourceConnectionProviderTest {
     private PlatformTransactionManager transactionManager;
     @Autowired
     private ConnectionProvider connectionProvider;
-    private DefaultUnitOfWorkFactory unitOfWorkFactory;
+    private SpringTransactionManager springTransactionManager;
 
     @Before
     public void setUp() throws Exception {
-        unitOfWorkFactory = new DefaultUnitOfWorkFactory(new SpringTransactionManager(transactionManager));
+        springTransactionManager  = new SpringTransactionManager(transactionManager);
     }
 
+    @DirtiesContext
     @Transactional
     @Test
     public void testConnectionNotCommittedWhenTransactionScopeOutsideUnitOfWork() throws Exception {
@@ -70,7 +72,7 @@ public class SpringDataSourceConnectionProviderTest {
             return null;
         });
 
-        UnitOfWork<?> uow = unitOfWorkFactory.createUnitOfWork(null);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Connection connection = connectionProvider.getConnection();
 
         connection.commit();
@@ -78,7 +80,6 @@ public class SpringDataSourceConnectionProviderTest {
         uow.commit();
     }
 
-    @Ignore("TODO: Figure out why this test fails")
     @Test
     public void testConnectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
         doAnswer(invocation -> {
@@ -86,11 +87,16 @@ public class SpringDataSourceConnectionProviderTest {
             mockConnection = (Connection) spy;
             return spy;
         }).when(dataSource).getConnection();
-        UnitOfWork<?> uow = unitOfWorkFactory.createUnitOfWork(null);
-        Connection connection = connectionProvider.getConnection();
-        assertNotSame(connection, mockConnection);
 
-        connection.commit();
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        Transaction transaction = springTransactionManager.startTransaction();
+        uow.onCommit(u -> transaction.commit());
+        uow.onRollback(u -> transaction.rollback());
+
+        Connection innerConnection = connectionProvider.getConnection();
+        assertNotSame(innerConnection, mockConnection);
+
+        innerConnection.commit();
         verify(mockConnection, never()).commit();
 
         uow.commit();

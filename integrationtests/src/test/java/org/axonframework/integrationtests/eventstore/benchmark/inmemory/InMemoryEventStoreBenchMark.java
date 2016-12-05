@@ -13,9 +13,6 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.inmemory;
 
-import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 
@@ -24,32 +21,11 @@ import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStor
  */
 public class InMemoryEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
-    private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
-    private EventStore eventStore;
-
     public static void main(String[] args) throws Exception {
-        new InMemoryEventStoreBenchMark().startBenchMark();
+        new InMemoryEventStoreBenchMark().start();
     }
 
-    @Override
-    protected Runnable getRunnableInstance() {
-        return new MongoBenchmark();
-    }
-
-    @Override
-    protected void prepareEventStore() {
-        eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-    }
-
-    private class MongoBenchmark implements Runnable {
-
-        @Override
-        public void run() {
-            final String aggregateId = IDENTIFIER_FACTORY.generateIdentifier();
-            int eventSequence = 0;
-            for (int t = 0; t < getTransactionCount(); t++) {
-                eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence);
-            }
-        }
+    public InMemoryEventStoreBenchMark() {
+        super(new InMemoryEventStorageEngine());
     }
 }

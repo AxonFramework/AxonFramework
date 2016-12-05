@@ -24,32 +24,20 @@ package org.axonframework.common.transaction;
 public interface TransactionManager {
 
     /**
-     * Starts a transaction with {@link java.sql.Connection#TRANSACTION_READ_COMMITTED} isolation level. The return
-     * value is the started transaction that can be committed or rolled back.
+     * Starts a transaction. The return value is the started transaction that can be committed or rolled back.
      *
      * @return The object representing the transaction
      */
-    default Transaction startTransaction() {
-        return startTransaction(TransactionIsolationLevel.READ_COMMITTED);
-    }
+    Transaction startTransaction();
 
     /**
-     * Starts a transaction with given {@code isolationLevel}. The return value is the started transaction that can
-     * be committed or rolled back.
-     *
-     * @param isolationLevel The required isolation level of the returned Transaction
-     * @return The object representing the transaction
-     */
-    Transaction startTransaction(TransactionIsolationLevel isolationLevel);
-
-    /**
-     * Executes the given {@code task} in a new {@link Transaction} of given {@code isolationLevel}.
+     * Executes the given {@code task} in a new {@link Transaction}. The transaction is committed when the task
+     * completes normally, and rolled back when it throws an exception.
      *
      * @param task           The task to execute
-     * @param isolationLevel The isolation level of the transaction in which to execute the task
      */
-    default void executeInTransaction(Runnable task, TransactionIsolationLevel isolationLevel) {
-        Transaction transaction = startTransaction(isolationLevel);
+    default void executeInTransaction(Runnable task) {
+        Transaction transaction = startTransaction();
         try {
             task.run();
             transaction.commit();
@@ -57,15 +45,5 @@ public interface TransactionManager {
             transaction.rollback();
             throw e;
         }
-    }
-
-    /**
-     * Executes the given {@code task} in a new {@link Transaction} of {@link TransactionIsolationLevel#READ_COMMITTED}
-     * isolation level.
-     *
-     * @param task           The task to execute
-     */
-    default void executeInTransaction(Runnable task) {
-        executeInTransaction(task, TransactionIsolationLevel.READ_COMMITTED);
     }
 }

@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.stereotype;
 
+import org.axonframework.commandhandling.model.AggregateRoot;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -24,11 +25,25 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation that informs Axon's auto configurer for Spring that a given {@link Component} is an aggregate instance.
+ */
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Component
 @Scope("prototype")
+@AggregateRoot
 public @interface Aggregate {
 
+    /**
+     * Selects the name of the AggregateRepository bean. If left empty a new repository is created. In that case the
+     * name of the repository will be based on the simple name of the aggregate's class.
+     */
     String repository() default "";
+
+    /**
+     * Get the String representation of the aggregate's type. Optional. This defaults to the simple name of the
+     * annotated class.
+     */
+    String type() default "";
 }
