@@ -19,9 +19,6 @@ package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 import com.mongodb.DBObject;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.legacy.LegacyTrackingToken;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -36,7 +33,7 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
 /**
  * Implementation of a serialized event message that can be used to create a Mongo document.
  */
-public class EventEntry implements DomainEventData<Object>, TrackedEventData<Object> {
+public class EventEntry implements DomainEventData<Object> {
 
     private final String aggregateIdentifier;
     private final String aggregateType;
@@ -121,11 +118,6 @@ public class EventEntry implements DomainEventData<Object>, TrackedEventData<Obj
     @Override
     public long getSequenceNumber() {
         return sequenceNumber;
-    }
-
-    @Override
-    public TrackingToken trackingToken() {
-        return new LegacyTrackingToken(getTimestamp(), aggregateIdentifier, sequenceNumber);
     }
 
     @Override

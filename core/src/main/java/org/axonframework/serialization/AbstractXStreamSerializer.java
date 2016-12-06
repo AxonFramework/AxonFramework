@@ -88,7 +88,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param xStream The XStream instance to use
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream) {
-        this(charset, xStream, new AnnotationRevisionResolver(), new ChainingConverterFactory());
+        this(charset, xStream, new AnnotationRevisionResolver(),
+             new ChainingConverterFactory(xStream.getClassLoader()));
     }
 
     /**
@@ -100,7 +101,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param revisionResolver The strategy to use to resolve the revision of an object
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
-        this(charset, xStream, revisionResolver, new ChainingConverterFactory());
+        this(charset, xStream, revisionResolver,
+             new ChainingConverterFactory(xStream.getClassLoader()));
     }
 
     /**

@@ -51,7 +51,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource            The EventBus to which this event processor will subscribe
+     * @param messageSource       The EventBus to which this event processor will subscribe
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<EventMessage<?>> messageSource) {
@@ -67,7 +67,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
-     * @param messageSource            The EventBus to which this event processor will subscribe
+     * @param messageSource       The EventBus to which this event processor will subscribe
      * @param messageMonitor      Monitor to be invoked before and after event processing
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
@@ -84,7 +84,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * @param name                  The name of the event processor
      * @param eventHandlerInvoker   The component that handles the individual events
      * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
-     * @param messageSource              The EventBus to which this event processor will subscribe
+     * @param messageSource         The EventBus to which this event processor will subscribe
      * @param processingStrategy    Strategy that determines whether events are processed directly or asynchronously
      * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing
      * @param messageMonitor        Monitor to be invoked before and after event processing
@@ -104,8 +104,11 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     @Override
     public void start() {
-        eventBusRegistration =
-                messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+        // prevent double registration
+        if (eventBusRegistration == null) {
+            eventBusRegistration =
+                    messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+        }
     }
 
     /**

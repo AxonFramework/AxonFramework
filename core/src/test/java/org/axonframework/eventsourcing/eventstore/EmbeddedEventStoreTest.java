@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.MockException;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -58,8 +59,8 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS);
+        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE,
+                                             cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
     }
 
     @After
@@ -125,11 +126,13 @@ public class EmbeddedEventStoreTest {
 
     @Test(timeout = 5000)
     public void testReadingCanBeContinuedUsingLastToken() throws Exception {
-        testSubject.publish(createEvents(2));
+        List<? extends EventMessage<?>> events = createEvents(2);
+        testSubject.publish(events);
         TrackedEventMessage<?> first = testSubject.streamEvents(null).nextAvailable();
         TrackingToken firstToken = first.trackingToken();
         TrackedEventMessage<?> second = testSubject.streamEvents(firstToken).nextAvailable();
-        assertTrue(second.trackingToken().isAfter(firstToken));
+        assertEquals(events.get(0).getIdentifier(), first.getIdentifier());
+        assertEquals(events.get(1).getIdentifier(), second.getIdentifier());
     }
 
     @Test(timeout = 5000)

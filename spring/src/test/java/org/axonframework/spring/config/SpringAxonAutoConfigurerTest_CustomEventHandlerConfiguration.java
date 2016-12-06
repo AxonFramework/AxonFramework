@@ -81,25 +81,20 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             return new AsynchronousCommandBus();
         }
 
-        @Bean
-        public EventHandlingConfigurer myComponentEventConfiguration() {
-            return new EventHandlingConfigurer() {
-                @Override
-                protected void configure(EventHandlingConfiguration eventHandlingConfiguration) {
-                    eventHandlingConfiguration.byDefaultAssignTo("test")
-                            .registerEventProcessor("test", (c, name, eh) -> {
-                                SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
-                                                                                                    new SimpleEventHandlerInvoker(eh),
-                                                                                                    c.eventBus());
-                                processor.registerInterceptor((unitOfWork, interceptorChain) -> {
-                                    unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
-                                    return interceptorChain.proceed();
-                                });
-                                return processor;
-                            });
+        @Autowired
+        public void configure(EventHandlingConfiguration config) {
+            config.byDefaultAssignTo("test")
+                    .registerEventProcessor("test", (c, name, eh) -> {
+                        SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
+                                                                                            new SimpleEventHandlerInvoker(eh),
+                                                                                            c.eventBus());
+                        processor.registerInterceptor((unitOfWork, interceptorChain) -> {
+                            unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
+                            return interceptorChain.proceed();
+                        });
+                        return processor;
+                    });
 
-                }
-            };
         }
 
         @Bean

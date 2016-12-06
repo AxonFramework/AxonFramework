@@ -46,8 +46,9 @@ public class ChainingConverterFactory implements ConverterFactory {
      * Instances of ChainingConverterFactory are safe for use in a multi-threaded environment, with exception of the
      * {@link #registerConverter(ContentTypeConverter)} method.
      */
-    public ChainingConverterFactory() {
-        ServiceLoader<ContentTypeConverter> converterLoader = ServiceLoader.load(ContentTypeConverter.class);
+    public ChainingConverterFactory(ClassLoader classLoader) {
+        ServiceLoader<ContentTypeConverter> converterLoader = ServiceLoader.load(ContentTypeConverter.class,
+                                                                                 classLoader);
         for (ContentTypeConverter converter : converterLoader) {
             converters.add(converter);
         }

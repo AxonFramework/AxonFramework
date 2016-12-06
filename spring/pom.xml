@@ -38,6 +38,7 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-distributed-commandbus-jgroups</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
