@@ -57,7 +57,7 @@
 
     <TCPPING timeout="3000"
              initial_hosts="${jgroups.tcpping.initial_hosts:127.0.0.1[7800],127.0.0.1[7801]}"
-             port_range="1"
+             port_range="10"
              num_initial_members="2"/>
     <MERGE2 min_interval="10000"
             max_interval="30000"/>
