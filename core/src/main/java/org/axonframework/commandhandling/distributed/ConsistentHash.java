@@ -236,8 +236,22 @@ public class ConsistentHash {
             return Objects.hash(member, segmentCount, commandFilter);
         }
 
+        @Override
+        public String toString() {
+            return member.name() + "("+ segmentCount +")";
+        }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("ConsistentHash [");
+        Set<ConsistentHashMember> members = new TreeSet<>(Comparator.comparing(ConsistentHashMember::name));
+        members.addAll(this.hashToMember.values());
+        members.forEach(m -> sb.append(m.toString()).append(","));
+        sb.delete(sb.length() - 1, sb.length());
+        sb.append("]");
+        return sb.toString();
+    }
 }
 
 
