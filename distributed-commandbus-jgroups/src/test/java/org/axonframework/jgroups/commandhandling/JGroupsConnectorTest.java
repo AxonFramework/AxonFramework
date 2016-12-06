@@ -231,11 +231,11 @@ public class JGroupsConnectorTest {
         int t = 0;
         while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
-            if (t++ > 150) {
-                assertEquals("Connectors did not synchronize within 30 seconds.", connector1.getConsistentHash(),
+            if (t++ > 300) {
+                assertEquals("Connectors did not synchronize within 15 seconds.", connector1.getConsistentHash(),
                         connector2.getConsistentHash());
             }
-            Thread.sleep(20);
+            Thread.sleep(50);
         }
         Thread.yield();
     }
