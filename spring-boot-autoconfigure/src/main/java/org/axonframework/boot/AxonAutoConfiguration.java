@@ -194,7 +194,7 @@ public class AxonAutoConfiguration {
         }
     }
 
-    @ConditionalOnClass(name = {"org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector",
+    @ConditionalOnClass(name = {"org.axonframework.jgroups.commandhandling.JGroupsConnector",
             "org.jgroups.JChannel"})
     @EnableConfigurationProperties(JGroupsConfiguration.JGroupsProperties.class)
     @ConditionalOnProperty("axon.distributed.jgroups.enabled")
