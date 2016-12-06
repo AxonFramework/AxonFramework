@@ -154,4 +154,14 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     public List<? extends Message<?>> getMessages() {
         return processingContexts.stream().map(MessageProcessingContext::getMessage).collect(Collectors.toList());
     }
+
+    /**
+     * Checks if the given {@code message} is the last of the batch being processed in this unit of work.
+     *
+     * @param message the message to check for
+     * @return {@code true} if the message is the last of this batch, {@code false} otherwise
+     */
+    public boolean isLastMessage(Message<?> message) {
+        return processingContexts.get(processingContexts.size() - 1).getMessage().equals(message);
+    }
 }
