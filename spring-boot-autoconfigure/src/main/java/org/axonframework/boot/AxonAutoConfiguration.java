@@ -70,9 +70,10 @@ public class AxonAutoConfiguration {
         return new XStreamSerializer();
     }
 
-    @Autowired(required = false) // live reload support (spring boot devtools) has trouble starting with this dependency.
+    @Autowired(required = false)
+    // live reload support (spring boot devtools) has trouble starting with this dependency.
     public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
-                                              ApplicationContext applicationContext) {
+                                       ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
                 eventHandlingConfiguration.registerTrackingProcessor(k);
