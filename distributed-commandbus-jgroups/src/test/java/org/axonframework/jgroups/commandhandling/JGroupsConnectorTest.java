@@ -63,7 +63,7 @@ public class JGroupsConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty("-Djava.net.preferIPv4Stack", "true");
+        System.setProperty("java.net.preferIPv4Stack", "true");
         routingStrategy = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
         channel1 = createChannel();
         channel2 = createChannel();
