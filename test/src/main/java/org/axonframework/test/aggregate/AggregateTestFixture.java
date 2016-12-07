@@ -526,7 +526,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        public TrackingEventStream openStream(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
 

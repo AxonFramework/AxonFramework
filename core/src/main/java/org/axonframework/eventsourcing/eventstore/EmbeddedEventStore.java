@@ -148,7 +148,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     @Override
-    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+    public TrackingEventStream openStream(TrackingToken trackingToken) {
         Node node = findNode(trackingToken);
         EventConsumer eventConsumer;
         if (node != null) {

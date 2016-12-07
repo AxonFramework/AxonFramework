@@ -48,7 +48,7 @@ public interface EventStore extends EventBus {
      * number}.
      * <p>
      * These snapshots will only affect the {@link DomainEventStream} returned by the {@link #readEvents(String)}
-     * method. They do not change the events returned by {@link EventBus#streamEvents(TrackingToken)} or those received
+     * method. They do not change the events returned by {@link EventBus#openStream(TrackingToken)} or those received
      * by using {@link #subscribe(java.util.function.Consumer)}.
      * <p>
      * Note that snapshots are considered a temporary replacement for Events, and are used as performance optimization.

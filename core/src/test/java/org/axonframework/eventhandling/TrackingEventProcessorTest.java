@@ -122,7 +122,7 @@ public class TrackingEventProcessorTest {
 
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));
-        TrackedEventMessage<?> firstEvent = eventBus.streamEvents(null).nextAvailable();
+        TrackedEventMessage<?> firstEvent = eventBus.openStream(null).nextAvailable();
         tokenStore.storeToken(firstEvent.trackingToken(), testSubject.getName(), 0);
         assertEquals(firstEvent.trackingToken(), tokenStore.fetchToken(testSubject.getName(), 0));
 
@@ -173,7 +173,7 @@ public class TrackingEventProcessorTest {
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
-        when(eventBus.streamEvents(null)).thenReturn(trackingEventStreamOf(events.iterator()));
+        when(eventBus.openStream(null)).thenReturn(trackingEventStreamOf(events.iterator()));
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
 
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {

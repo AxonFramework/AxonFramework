@@ -223,7 +223,7 @@ public class AbstractEventBusTest {
         }
 
         @Override
-        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        public TrackingEventStream openStream(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
 

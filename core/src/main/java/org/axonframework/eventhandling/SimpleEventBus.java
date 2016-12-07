@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
- * Implementation of the {@link EventBus} that supports streaming of events via {@link #streamEvents(TrackingToken)} but
+ * Implementation of the {@link EventBus} that supports streaming of events via {@link #openStream(TrackingToken)} but
  * only of the most recently published events as it is not backed by a cache or event storage.
  *
  * @author Allard Buijze
@@ -84,7 +84,7 @@ public class SimpleEventBus extends AbstractEventBus {
      * {@inheritDoc}
      */
     @Override
-    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+    public TrackingEventStream openStream(TrackingToken trackingToken) {
         if (trackingToken != null) {
             throw new UnsupportedOperationException("The simple event bus does not support non-null tracking tokens");
         }

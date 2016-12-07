@@ -42,7 +42,7 @@ import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
  * subscribed event processors. Event processors are expected to implement asynchronous handling themselves or
- * alternatively open an event stream using {@link #streamEvents(TrackingToken)}.
+ * alternatively open an event stream using {@link #openStream(TrackingToken)}.
  *
  * @author Allard Buijze
  * @author René de Waele
