@@ -102,10 +102,9 @@ public interface ResultValidator {
     ResultValidator expectException(Matcher<?> matcher);
 
     /**
-     * Explicitly expect a {@code void} return type on the given command handler. {@code void} is the
-     * recommended return value for all command handlers as they allow for a more scalable architecture.
+     * Expect a successful execution of the given command handler, regardless of the actual return value.
      *
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectVoidReturnType();
+    ResultValidator expectSuccessfulHandlerExecution();
 }
