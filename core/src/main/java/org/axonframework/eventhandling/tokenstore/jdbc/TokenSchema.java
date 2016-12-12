@@ -16,6 +16,8 @@
 package org.axonframework.eventhandling.tokenstore.jdbc;
 
 /**
+ * Schema of an token entry to be stored using Jdbc.
+ *
  * @author Rene de Waele
  */
 public class TokenSchema {
@@ -49,35 +51,73 @@ public class TokenSchema {
         return new Builder();
     }
 
+    /**
+     * Returns the name of the token entry table.
+     *
+     * @return the name of the token entry table
+     */
     public String tokenTable() {
         return tokenTable;
     }
 
+    /**
+     * Returns the name of the column containing the name of the processor to which the token belongs.
+     *
+     * @return the name of the column containing the name of the processor owning the token
+     */
     public String processorNameColumn() {
         return processorNameColumn;
     }
 
+    /**
+     * Returns the name of the column containing the segment of the processor to which the token belongs.
+     *
+     * @return the name of the column containing the segement of the processor owning the token
+     */
     public String segmentColumn() {
         return segmentColumn;
     }
 
+    /**
+     * Returns the name of the column containing the serialized token.
+     *
+     * @return the name of the column containing the serialized token
+     */
     public String tokenColumn() {
         return tokenColumn;
     }
 
+    /**
+     * Returns the name of the column containing the name of the type to which the token should be deserialized.
+     *
+     * @return the name of the column containing the token type
+     */
     public String tokenTypeColumn() {
         return tokenTypeColumn;
     }
 
+    /**
+     * Returns the name of the column containing the timestamp of the token (the time this token was last saved).
+     *
+     * @return the name of the column containing the token timestamp
+     */
     public String timestampColumn() {
         return timestampColumn;
     }
 
+    /**
+     * Returns the name of the column containing the name of the machine that is currently the owner of this token.
+     *
+     * @return the name of the column containing the name of the owner node
+     */
     public String ownerColum() {
         return ownerColum;
     }
 
-    public static class Builder {
+    /**
+     * Builder for an {@link TokenSchema} that gets initialized with default values.
+     */
+    protected static class Builder {
         private String tokenTable = "TokenEntry";
         private String processorNameColumn = "processorName";
         private String segmentColumn = "segment";
@@ -86,41 +126,88 @@ public class TokenSchema {
         private String timestampColumn = "timestamp";
         private String ownerColum = "owner";
 
+        /**
+         * Sets the name of the token entry table. Defaults to 'TokenEntry'.
+         *
+         * @param tokenTable the token table name
+         * @return the modified Builder instance
+         */
         public Builder setTokenTable(String tokenTable) {
             this.tokenTable = tokenTable;
             return this;
         }
 
-        public Builder setProcessorNameColumn(String processorNameColumn) {
+        /**
+         * Sets the name of the processor name column. Defaults to 'processorName'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setProcessorNameColumn(String columnName) {
             this.processorNameColumn = processorNameColumn;
             return this;
         }
 
-        public Builder setSegmentColumn(String segmentColumn) {
-            this.segmentColumn = segmentColumn;
+        /**
+         * Sets the name of the processor segment column. Defaults to 'segment'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setSegmentColumn(String columnName) {
+            this.segmentColumn = columnName;
             return this;
         }
 
-        public Builder setTokenColumn(String tokenColumn) {
-            this.tokenColumn = tokenColumn;
+        /**
+         * Sets the name of the serialized token column. Defaults to 'token'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setTokenColumn(String columnName) {
+            this.tokenColumn = columnName;
             return this;
         }
 
-        public Builder setTokenTypeColumn(String tokenTypeColumn) {
-            this.tokenTypeColumn = tokenTypeColumn;
+        /**
+         * Sets the name of the token type column. Defaults to 'tokenType'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setTokenTypeColumn(String columnName) {
+            this.tokenTypeColumn = columnName;
             return this;
         }
 
-        public Builder setTimestampColumn(String timestampColumn) {
-            this.timestampColumn = timestampColumn;
+        /**
+         * Sets the name of the timestamp column. Defaults to 'timestamp'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setTimestampColumn(String columnName) {
+            this.timestampColumn = columnName;
             return this;
         }
 
-        public Builder setOwnerColum(String ownerColum) {
-            this.ownerColum = ownerColum;
+        /**
+         * Sets the name of the owner column. Defaults to 'owner'.
+         *
+         * @param columnName the name of the column
+         * @return the modified Builder instance
+         */
+        public Builder setOwnerColum(String columnName) {
+            this.ownerColum = columnName;
             return this;
         }
 
+        /**
+         * Builds a new {@link TokenSchema} from builder values.
+         *
+         * @return TokenSchema from this builder
+         */
         public TokenSchema build() {
             return new TokenSchema(this);
         }
