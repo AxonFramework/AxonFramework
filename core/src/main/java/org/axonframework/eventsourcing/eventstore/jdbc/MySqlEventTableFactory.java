@@ -14,7 +14,7 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 /**
- * Jdbc table factory for MySql databases.
+ * Jdbc event entry table factory for MySql databases.
  *
  * @author Rene de Waele
  */

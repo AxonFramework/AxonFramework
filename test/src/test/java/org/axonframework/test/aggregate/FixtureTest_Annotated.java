@@ -57,7 +57,7 @@ public class FixtureTest_Annotated {
             fixture.given(new MyEvent(null, 0))
                     .when(new TestCommand("test"))
                     .expectEvents(new MyEvent("test", 1))
-                    .expectVoidReturnType();
+                    .expectSuccessfulHandlerExecution();
             fail("Expected test fixture to report failure");
         } catch (AxonAssertionError error) {
             assertTrue("Expected test to fail with IncompatibleAggregateException", error.getMessage().contains("IncompatibleAggregateException"));

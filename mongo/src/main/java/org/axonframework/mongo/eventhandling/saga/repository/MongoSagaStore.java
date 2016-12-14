@@ -47,14 +47,25 @@ public class MongoSagaStore implements SagaStore<Object> {
 
     /**
      * Initializes the Repository, using given {@code mongoTemplate} to access the collections containing the
-     * stored Saga instances.
+     * stored Saga instances. Serialization is done using an XStream based serializer.
      *
      * @param mongoTemplate the template providing access to the collections
      */
     public MongoSagaStore(MongoTemplate mongoTemplate) {
+        this(mongoTemplate, new XStreamSerializer());
+    }
+
+    /**
+     * Initializes the Repository, using given {@code mongoTemplate} to access the collections containing the
+     * stored Saga instances, serializing Saga instances using the given {@code serializer}.
+     *
+     * @param mongoTemplate the template providing access to the collections
+     * @param serializer    the serializer to serialize Saga instances with
+     */
+    public MongoSagaStore(MongoTemplate mongoTemplate, Serializer serializer) {
         Assert.notNull(mongoTemplate, () -> "mongoTemplate may not be null");
         this.mongoTemplate = mongoTemplate;
-        this.serializer = new XStreamSerializer();
+        this.serializer = serializer;
     }
 
     @Override

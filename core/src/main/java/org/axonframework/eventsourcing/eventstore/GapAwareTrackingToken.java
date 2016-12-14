@@ -32,26 +32,6 @@ import java.util.stream.LongStream;
  */
 public class GapAwareTrackingToken implements TrackingToken {
 
-    private static final Comparator<GapAwareTrackingToken> COMPARATOR =
-            Comparator.comparingLong(GapAwareTrackingToken::getIndex).thenComparing((t1, t2) -> {
-                if (t1.gaps.equals(t2.gaps)) {
-                    return 0;
-                }
-                int sizeDelta = t1.gaps.size() - t2.gaps.size();
-                if (sizeDelta != 0) {
-                    return -sizeDelta;
-                }
-                Iterator<Long> it1 = t1.gaps.iterator();
-                Iterator<Long> it2 = t2.gaps.iterator();
-                while (it1.hasNext()) {
-                    int sign = Long.signum(it1.next() - it2.next());
-                    if (sign != 0) {
-                        return sign;
-                    }
-                }
-                throw new AssertionError("This point should be unreachable");
-            });
-
     private final long index;
     private final SortedSet<Long> gaps;
 
@@ -102,7 +82,7 @@ public class GapAwareTrackingToken implements TrackingToken {
             LongStream.range(this.index + 1L, index).forEach(gaps::add);
         } else {
             throw new IllegalArgumentException(String.format(
-                    "The given index [%d] should be larger than the token index [%d] or one of the token's gaps [%s]",
+                    "The given index [%d] should be larger than the token index [%d] or be one of the token's gaps [%s]",
                     index, this.index, gaps));
         }
         gaps = gaps.tailSet(newIndex - maxGapOffset);
@@ -151,11 +131,6 @@ public class GapAwareTrackingToken implements TrackingToken {
     @Override
     public int hashCode() {
         return Objects.hash(index, gaps);
-    }
-
-    @Override
-    public int compareTo(TrackingToken o) {
-        return COMPARATOR.compare(this, (GapAwareTrackingToken) o);
     }
 
     @Override

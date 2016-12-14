@@ -100,8 +100,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
         findComponent(TokenStore.class)
                 .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
-        findComponent(PlatformTransactionManager.class).ifPresent(
-                ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
+        try {
+            findComponent(PlatformTransactionManager.class).ifPresent(
+                    ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
+        } catch (NoClassDefFoundError error) {
+            // that's fine...
+        }
         findComponent(TransactionManager.class)
                 .ifPresent(tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
         findComponent(SagaStore.class)

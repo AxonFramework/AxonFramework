@@ -88,8 +88,8 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectVoidReturnType() {
-        return expectReturnValue(nullValue());
+    public ResultValidator expectSuccessfulHandlerExecution() {
+        return expectReturnValue(anything());
     }
 
     @Override

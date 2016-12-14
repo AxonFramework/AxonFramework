@@ -16,6 +16,8 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
@@ -48,6 +50,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     private final EntityManagerProvider entityManagerProvider;
     private final long lowestGlobalSequence;
     private final int maxGapOffset;
+    private final TransactionManager transactionManager;
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. The payload and metadata of events is
@@ -57,8 +60,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
      */
-    public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider) {
-        this(null, null, null, null, entityManagerProvider, null, null);
+    public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+        this(null, null, null, null, entityManagerProvider, transactionManager, null, null);
     }
 
     /**
@@ -72,8 +75,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
     public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, DataSource dataSource,
-                                 EntityManagerProvider entityManagerProvider) throws SQLException {
-        this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), null, entityManagerProvider, null, null);
+                                 EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) throws SQLException {
+        this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), null, entityManagerProvider, transactionManager,
+             null, null);
     }
 
     /**
@@ -99,12 +103,13 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      */
     public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                  PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
-                                 EntityManagerProvider entityManagerProvider, Long lowestGlobalSequence,
-                                 Integer maxGapOffset) {
+                                 EntityManagerProvider entityManagerProvider, TransactionManager transactionManager,
+                                 Long lowestGlobalSequence, Integer maxGapOffset) {
         super(serializer, upcasterChain, persistenceExceptionResolver, batchSize);
         this.entityManagerProvider = entityManagerProvider;
         this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
         this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
+        this.transactionManager = transactionManager;
     }
 
     @Override
@@ -115,22 +120,27 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
         Collection<Long> gaps = previousToken == null ? Collections.emptySet() : previousToken.getGaps();
         List<Object[]> entries;
-        if (previousToken == null || gaps.isEmpty()) {
-            entries = entityManager().createQuery(
-                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                            "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
-                            "FROM " + domainEventEntryEntityName() + " e " +
-                            "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class)
-                    .setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
-                    .setMaxResults(batchSize).getResultList();
-        } else {
-            entries = entityManager().createQuery(
-                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                            "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
-                            "FROM " + domainEventEntryEntityName() + " e " +
-                            "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
-                    Object[].class).setParameter("token", previousToken.getIndex())
-                    .setParameter("gaps", previousToken.getGaps()).setMaxResults(batchSize).getResultList();
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            if (previousToken == null || gaps.isEmpty()) {
+                entries = entityManager().createQuery(
+                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                                "FROM " + domainEventEntryEntityName() + " e " +
+                                "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class)
+                        .setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
+                        .setMaxResults(batchSize).getResultList();
+            } else {
+                entries = entityManager().createQuery(
+                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                                "FROM " + domainEventEntryEntityName() + " e " +
+                                "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
+                        Object[].class).setParameter("token", previousToken.getIndex())
+                        .setParameter("gaps", previousToken.getGaps()).setMaxResults(batchSize).getResultList();
+            }
+        } finally {
+            tx.commit();
         }
         List<TrackedEventData<?>> result = new ArrayList<>();
         for (Object[] entry : entries) {
@@ -155,26 +165,36 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @SuppressWarnings("unchecked")
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        return entityManager().createQuery(
-                "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
-                        "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                        "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                        "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
-                        "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
-                        "ORDER BY e.sequenceNumber ASC").setParameter("id", aggregateIdentifier)
-                .setParameter("seq", firstSequenceNumber).setMaxResults(batchSize).getResultList();
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            return entityManager().createQuery(
+                    "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
+                            "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                            "e.eventIdentifier, e.timeStamp, e.payloadType, " +
+                            "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
+                            "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
+                            "ORDER BY e.sequenceNumber ASC").setParameter("id", aggregateIdentifier)
+                    .setParameter("seq", firstSequenceNumber).setMaxResults(batchSize).getResultList();
+        } finally {
+            tx.commit();
+        }
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        return entityManager().createQuery(
-                "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                        "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
-                        "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
-                        snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
-                        "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier).setMaxResults(1)
-                .getResultList().stream().findFirst();
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            return entityManager().createQuery(
+                    "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                            "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
+                            "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
+                            snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
+                            "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier).setMaxResults(1)
+                    .getResultList().stream().findFirst();
+        } finally {
+            tx.commit();
+        }
     }
 
     @Override

@@ -16,6 +16,8 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
@@ -57,6 +59,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
 
     private final ConnectionProvider connectionProvider;
+    private final TransactionManager transactionManager;
     private final Class<?> dataType;
     private final EventSchema schema;
     private final int maxGapOffset;
@@ -70,8 +73,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param connectionProvider The provider of connections to the underlying database
      */
-    public JdbcEventStorageEngine(ConnectionProvider connectionProvider) {
-        this(null, null, null, null, connectionProvider, byte[].class, new EventSchema(), null, null);
+    public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
+        this(null, null, null, null, connectionProvider, transactionManager, byte[].class, new EventSchema(), null, null);
     }
 
     /**
@@ -89,9 +92,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver,
-                                  ConnectionProvider connectionProvider) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, null, connectionProvider, byte[].class,
-             new EventSchema(), null, null);
+                                  ConnectionProvider connectionProvider, TransactionManager transactionManager) {
+        this(serializer, upcasterChain, persistenceExceptionResolver, null, connectionProvider, transactionManager,
+             byte[].class, new EventSchema(), null, null);
     }
 
     /**
@@ -118,11 +121,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
-                                  ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema,
+                                  ConnectionProvider connectionProvider, TransactionManager transactionManager,
+                                  Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
         super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
               batchSize);
         this.connectionProvider = connectionProvider;
+        this.transactionManager = transactionManager;
         this.dataType = dataType;
         this.schema = schema;
         this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
@@ -153,33 +158,36 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                             schema.sequenceNumberColumn(), schema.typeColumn(), schema.timestampColumn(),
                             schema.payloadTypeColumn(), schema.payloadRevisionColumn(), schema.payloadColumn(),
                             schema.metaDataColumn()) + ") VALUES (?,?,?,?,?,?,?,?,?)";
-        executeBatch(getConnection(), connection -> {
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        transactionManager.executeInTransaction(
+                () ->
+                        executeBatch(getConnection(), connection -> {
+                            PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
-            for (EventMessage<?> eventMessage : events) {
-                DomainEventMessage<?> event = (DomainEventMessage<?>) eventMessage;
-                SerializedObject<?> payload = serializePayload(event, serializer, dataType);
-                SerializedObject<?> metaData = serializeMetaData(event, serializer, dataType);
-                preparedStatement.setString(1, event.getIdentifier());
-                preparedStatement.setString(2, event.getAggregateIdentifier());
-                preparedStatement.setLong(3, event.getSequenceNumber());
-                preparedStatement.setString(4, event.getType());
-                writeTimestamp(preparedStatement, 5, event.getTimestamp());
-                preparedStatement.setString(6, payload.getType().getName());
-                preparedStatement.setString(7, payload.getType().getRevision());
-                preparedStatement.setObject(8, payload.getData());
-                preparedStatement.setObject(9, metaData.getData());
-                preparedStatement.addBatch();
-            }
-            return preparedStatement;
-        }, e -> handlePersistenceException(e, events.get(0)));
+                            for (EventMessage<?> eventMessage : events) {
+                                DomainEventMessage<?> event = (DomainEventMessage<?>) eventMessage;
+                                SerializedObject<?> payload = serializePayload(event, serializer, dataType);
+                                SerializedObject<?> metaData = serializeMetaData(event, serializer, dataType);
+                                preparedStatement.setString(1, event.getIdentifier());
+                                preparedStatement.setString(2, event.getAggregateIdentifier());
+                                preparedStatement.setLong(3, event.getSequenceNumber());
+                                preparedStatement.setString(4, event.getType());
+                                writeTimestamp(preparedStatement, 5, event.getTimestamp());
+                                preparedStatement.setString(6, payload.getType().getName());
+                                preparedStatement.setString(7, payload.getType().getRevision());
+                                preparedStatement.setObject(8, payload.getData());
+                                preparedStatement.setObject(9, metaData.getData());
+                                preparedStatement.addBatch();
+                            }
+                            return preparedStatement;
+                        }, e -> handlePersistenceException(e, events.get(0))));
     }
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        executeUpdates(getConnection(), e -> handlePersistenceException(e, snapshot),
-                       connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
-                       connection -> appendSnapshot(connection, snapshot, serializer));
+        transactionManager.executeInTransaction(
+                () -> executeUpdates(getConnection(), e -> handlePersistenceException(e, snapshot),
+                                     connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
+                                     connection -> appendSnapshot(connection, snapshot, serializer)));
     }
 
     /**
@@ -232,39 +240,54 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        return executeQuery(getConnection(), connection -> {
-            PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
-            statement.setMaxRows(batchSize);
-            return statement;
-        }, listResults(this::getDomainEventData), e -> new EventStoreException(
-                format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            return executeQuery(getConnection(), connection -> {
+                PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
+                statement.setMaxRows(batchSize);
+                return statement;
+            }, listResults(this::getDomainEventData), e -> new EventStoreException(
+                    format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
+        } finally {
+            tx.commit();
+        }
     }
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        return executeQuery(getConnection(), connection -> {
-            PreparedStatement statement = readEventData(connection, lastToken);
-            statement.setMaxRows(batchSize);
-            return statement;
-        }, resultSet -> {
-            TrackingToken previousToken = lastToken;
-            List<TrackedEventData<?>> results = new ArrayList<>();
-            while (resultSet.next()) {
-                TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
-                results.add(next);
-                previousToken = next.trackingToken();
-            }
-            return results;
-        }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            return executeQuery(getConnection(), connection -> {
+                PreparedStatement statement = readEventData(connection, lastToken);
+                statement.setMaxRows(batchSize);
+                return statement;
+            }, resultSet -> {
+                TrackingToken previousToken = lastToken;
+                List<TrackedEventData<?>> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
+                    results.add(next);
+                    previousToken = next.trackingToken();
+                }
+                return results;
+            }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
+        } finally {
+            tx.commit();
+        }
     }
 
     @Override
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        List<DomainEventData<?>> result =
-                executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
-                             listResults(this::getSnapshotData), e -> new EventStoreException(
-                                format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
-        return result.stream().findFirst();
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            List<DomainEventData<?>> result =
+                    executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
+                                 listResults(this::getSnapshotData), e -> new EventStoreException(
+                                    format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
+            return result.stream().findFirst();
+        } finally {
+            tx.commit();
+        }
     }
 
     /**
@@ -277,15 +300,21 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
+
     protected PreparedStatement readEventData(Connection connection, String identifier,
                                               long firstSequenceNumber) throws SQLException {
-        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
-                schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? ORDER BY " +
-                schema.sequenceNumberColumn() + " ASC";
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        preparedStatement.setString(1, identifier);
-        preparedStatement.setLong(2, firstSequenceNumber);
-        return preparedStatement;
+        Transaction tx = transactionManager.startTransaction();
+        try {
+            final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
+                    schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? ORDER BY " +
+                    schema.sequenceNumberColumn() + " ASC";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, identifier);
+            preparedStatement.setLong(2, firstSequenceNumber);
+            return preparedStatement;
+        } finally {
+            tx.commit();
+        }
     }
 
     /**
@@ -416,8 +445,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Write a timestamp from a {@link Instant} to a data value suitable for the database scheme.
      *
      * @param preparedStatement the statement to update
-     * @param position the position of the timestamp parameter in the statement
-     * @param timestamp {@link Instant} to convert
+     * @param position          the position of the timestamp parameter in the statement
+     * @param timestamp         {@link Instant} to convert
      * @throws SQLException if modification of the statement fails
      */
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,

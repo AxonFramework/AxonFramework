@@ -30,8 +30,6 @@ import java.util.Map;
  */
 public class SerializedObjectHolder implements SerializationAware {
 
-    private static final ConverterFactory CONVERTER_FACTORY = new ChainingConverterFactory();
-
     private final Message message;
     private final Object payloadGuard = new Object();
     // guarded by "payloadGuard"
@@ -61,8 +59,9 @@ public class SerializedObjectHolder implements SerializationAware {
                 serializedPayload.put(serializer, serialized);
                 return serialized;
             } else {
-                return CONVERTER_FACTORY.getConverter(existingForm.getContentType(), expectedRepresentation)
-                                        .convert(existingForm);
+                return serializer.getConverterFactory()
+                        .getConverter(existingForm.getContentType(), expectedRepresentation)
+                        .convert(existingForm);
             }
         }
     }
@@ -77,8 +76,9 @@ public class SerializedObjectHolder implements SerializationAware {
                 serializedMetaData.put(serializer, serialized);
                 return serialized;
             } else {
-                return CONVERTER_FACTORY.getConverter(existingForm.getContentType(), expectedRepresentation)
-                                        .convert(existingForm);
+                return serializer.getConverterFactory()
+                        .getConverter(existingForm.getContentType(), expectedRepresentation)
+                        .convert(existingForm);
             }
         }
     }

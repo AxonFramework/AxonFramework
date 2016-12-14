@@ -45,7 +45,7 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Override
     public void releaseClaim(String processorName, int segment) {
-        // no-op, the in-memory implementation isn't accessible my multiple processes
+        // no-op, the in-memory implementation isn't accessible by multiple processes
     }
 
     private static class ProcessAndSegment {

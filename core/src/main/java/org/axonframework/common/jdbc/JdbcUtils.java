@@ -18,10 +18,10 @@ package org.axonframework.common.jdbc;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 /**
  * Utility class for safely executing Jdbc queries.
@@ -77,22 +77,26 @@ public class JdbcUtils {
      * {@code errorHandler}.
      *
      * @param connection   connection to the underlying database that should be used for the update
-     * @param sqlFunctions the functions that produce the update statements
      * @param errorHandler handles errors as result of executing the update
+     * @param sqlFunctions the functions that produce the update statements
+     * @return an array of update counts containing one element for each sql function
      */
-    public static void executeUpdates(Connection connection, Consumer<SQLException> errorHandler,
-                                      SqlFunction... sqlFunctions) {
+    public static int[] executeUpdates(Connection connection, Consumer<SQLException> errorHandler,
+                                       SqlFunction... sqlFunctions) {
         try {
-            Arrays.stream(sqlFunctions).forEach(sqlFunction -> {
+            int[] result = new int[sqlFunctions.length];
+            IntStream.range(0, sqlFunctions.length).forEach(i -> {
+                SqlFunction sqlFunction = sqlFunctions[i];
                 PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
                 try {
-                    preparedStatement.executeUpdate();
+                    result[i] = preparedStatement.executeUpdate();
                 } catch (SQLException e) {
                     errorHandler.accept(e);
                 } finally {
                     closeQuietly(preparedStatement);
                 }
             });
+            return result;
         } finally {
             closeQuietly(connection);
         }
@@ -105,13 +109,14 @@ public class JdbcUtils {
      * @param connection   connection to the underlying database that should be used for the update
      * @param sqlFunction  the function that produces the batch update statement
      * @param errorHandler handles errors as result of executing the update
+     * @return an array of update counts containing one element for each sql function
      */
-    public static void executeBatch(Connection connection, SqlFunction sqlFunction,
-                                    Consumer<SQLException> errorHandler) {
+    public static int[] executeBatch(Connection connection, SqlFunction sqlFunction,
+                                     Consumer<SQLException> errorHandler) {
         try {
             PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
             try {
-                preparedStatement.executeBatch();
+                return preparedStatement.executeBatch();
             } catch (SQLException e) {
                 errorHandler.accept(e);
             } finally {
@@ -120,6 +125,7 @@ public class JdbcUtils {
         } finally {
             closeQuietly(connection);
         }
+        return new int[0];
     }
 
     /**
@@ -127,8 +133,9 @@ public class JdbcUtils {
      * result. The returned converter iterates over the resultSet until all results have been converted and added to
      * the list.
      *
-     * @param singleResultConverter the converter that can convert a single result from the current position of the resultSet
-     * @param <R> the type of result produced by the {@code singleResultConverter}
+     * @param singleResultConverter the converter that can convert a single result from the current position of the
+     *                              resultSet
+     * @param <R>                   the type of result produced by the {@code singleResultConverter}
      * @return converter that produces a list of results
      */
     public static <R> SqlResultConverter<List<R>> listResults(SqlResultConverter<R> singleResultConverter) {

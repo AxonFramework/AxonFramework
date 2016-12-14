@@ -32,7 +32,7 @@ import java.io.*;
  */
 public class JavaSerializer implements Serializer {
 
-    private final ConverterFactory converterFactory = new ChainingConverterFactory();
+    private final ConverterFactory converterFactory = new ChainingConverterFactory(Thread.currentThread().getContextClassLoader());
     private final RevisionResolver revisionResolver;
 
     /**

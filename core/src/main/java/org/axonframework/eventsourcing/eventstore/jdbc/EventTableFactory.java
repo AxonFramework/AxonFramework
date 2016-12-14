@@ -18,7 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Interface describing a factory for JDBC to create the Domain and Snapshot Event schemas.
+ * Interface describing a factory for JDBC to create the Domain and Snapshot Event tables.
  *
  * @author Rene de Waele
  */

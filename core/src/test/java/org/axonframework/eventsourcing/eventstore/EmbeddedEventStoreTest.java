@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.MockException;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -58,8 +59,8 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS);
+        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE,
+                                             cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
     }
 
     @After
@@ -71,7 +72,7 @@ public class EmbeddedEventStoreTest {
     public void testExistingEventIsPassedToReader() throws Exception {
         DomainEventMessage<?> expected = createEvent();
         testSubject.publish(expected);
-        TrackingEventStream stream = testSubject.streamEvents(null);
+        TrackingEventStream stream = testSubject.openStream(null);
         assertTrue(stream.hasNextAvailable());
         TrackedEventMessage<?> actual = stream.nextAvailable();
         assertEquals(expected.getIdentifier(), actual.getIdentifier());
@@ -82,7 +83,7 @@ public class EmbeddedEventStoreTest {
 
     @Test(timeout = FETCH_DELAY / 10)
     public void testEventPublishedAfterOpeningStreamIsPassedToReaderImmediately() throws Exception {
-        TrackingEventStream stream = testSubject.streamEvents(null);
+        TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable());
         DomainEventMessage<?> expected = createEvent();
         Thread t = new Thread(() -> {
@@ -100,7 +101,7 @@ public class EmbeddedEventStoreTest {
     @Test(timeout = 5000)
     public void testReadingIsBlockedWhenStoreIsEmpty() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
-        TrackingEventStream stream = testSubject.streamEvents(null);
+        TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
@@ -113,7 +114,7 @@ public class EmbeddedEventStoreTest {
     public void testReadingIsBlockedWhenEndOfStreamIsReached() throws Exception {
         testSubject.publish(createEvent());
         CountDownLatch lock = new CountDownLatch(2);
-        TrackingEventStream stream = testSubject.streamEvents(null);
+        TrackingEventStream stream = testSubject.openStream(null);
         Thread t = new Thread(() -> stream.asStream().limit(2).forEach(event -> lock.countDown()));
         t.start();
         assertFalse(lock.await(100, MILLISECONDS));
@@ -125,18 +126,20 @@ public class EmbeddedEventStoreTest {
 
     @Test(timeout = 5000)
     public void testReadingCanBeContinuedUsingLastToken() throws Exception {
-        testSubject.publish(createEvents(2));
-        TrackedEventMessage<?> first = testSubject.streamEvents(null).nextAvailable();
+        List<? extends EventMessage<?>> events = createEvents(2);
+        testSubject.publish(events);
+        TrackedEventMessage<?> first = testSubject.openStream(null).nextAvailable();
         TrackingToken firstToken = first.trackingToken();
-        TrackedEventMessage<?> second = testSubject.streamEvents(firstToken).nextAvailable();
-        assertTrue(second.trackingToken().isAfter(firstToken));
+        TrackedEventMessage<?> second = testSubject.openStream(firstToken).nextAvailable();
+        assertEquals(events.get(0).getIdentifier(), first.getIdentifier());
+        assertEquals(events.get(1).getIdentifier(), second.getIdentifier());
     }
 
     @Test(timeout = 5000)
     public void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
         List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
-        Thread t = new Thread(() -> testSubject.streamEvents(null).asStream().limit(2).forEach(event -> {
+        Thread t = new Thread(() -> testSubject.openStream(null).asStream().limit(2).forEach(event -> {
             lock.countDown();
             events.add(event);
         }));
@@ -145,7 +148,7 @@ public class EmbeddedEventStoreTest {
         testSubject.publish(createEvents(2));
         t.join();
         reset(storageEngine);
-        TrackedEventMessage<?> second = testSubject.streamEvents(events.get(0).trackingToken()).nextAvailable();
+        TrackedEventMessage<?> second = testSubject.openStream(events.get(0).trackingToken()).nextAvailable();
         assertSame(events.get(1), second);
         verifyNoMoreInteractions(storageEngine);
     }
@@ -153,7 +156,7 @@ public class EmbeddedEventStoreTest {
     @Test(timeout = 5000)
     public void testPeriodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
         newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY);
-        TrackingEventStream stream = testSubject.streamEvents(null);
+        TrackingEventStream stream = testSubject.openStream(null);
         CountDownLatch lock = new CountDownLatch(1);
         Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
         t.start();
@@ -166,7 +169,7 @@ public class EmbeddedEventStoreTest {
     @Test(timeout = 5000)
     public void testConsumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20);
-        TrackingEventStream stream = testSubject.streamEvents(null);
+        TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable()); //now we should be tailing
         testSubject.publish(createEvents(CACHED_EVENTS)); //triggers event producer to open a stream
         Thread.sleep(100);

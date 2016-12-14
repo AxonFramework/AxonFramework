@@ -20,7 +20,7 @@ import java.util.Objects;
  *
  * @author Rene de Waele
  */
-public class GlobalSequenceTrackingToken implements TrackingToken {
+public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken> {
 
     private final long globalIndex;
 
@@ -80,12 +80,12 @@ public class GlobalSequenceTrackingToken implements TrackingToken {
     }
 
     @Override
-    public int compareTo(TrackingToken o) {
-        return Long.compare(globalIndex, ((GlobalSequenceTrackingToken) o).globalIndex);
+    public String toString() {
+        return "IndexTrackingToken{" + "globalIndex=" + globalIndex + '}';
     }
 
     @Override
-    public String toString() {
-        return "IndexTrackingToken{" + "globalIndex=" + globalIndex + '}';
+    public int compareTo(GlobalSequenceTrackingToken o) {
+        return Long.compare(globalIndex, o.globalIndex);
     }
 }

@@ -97,7 +97,7 @@ public class FixtureTest_RegularParams {
                 .given(givenEvents)
                 .when(new TestCommand("aggregateId"))
                 .expectEvents(new MyEvent("aggregateId", 4))
-                .expectVoidReturnType();
+                .expectSuccessfulHandlerExecution();
     }
 
     @Test
@@ -260,7 +260,7 @@ public class FixtureTest_RegularParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new StrangeCommand("aggregateId"))
-                    .expectVoidReturnType();
+                    .expectSuccessfulHandlerExecution();
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
@@ -334,7 +334,7 @@ public class FixtureTest_RegularParams {
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
                     .expectEvents(new MyEvent("aggregateId", 5)) // should be 4
-                    .expectVoidReturnType();
+                    .expectSuccessfulHandlerExecution();
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(
@@ -355,7 +355,7 @@ public class FixtureTest_RegularParams {
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
                     .expectEvents(new MyEvent("aggregateId", null)) // should be 4
-                    .expectVoidReturnType();
+                    .expectSuccessfulHandlerExecution();
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains(

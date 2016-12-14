@@ -25,11 +25,11 @@
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>test</module>
-        <module>distributed-commandbus</module>
+        <module>distributed-commandbus-jgroups</module>
+        <module>distributed-commandbus-springcloud</module>
         <module>integrationtests</module>
         <module>mongo</module>
         <module>amqp</module>
-        <module>quickstart</module>
         <module>metrics</module>
         <module>spring-boot-starter</module>
         <module>spring-boot-starter-jgroups</module>
@@ -117,12 +117,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>1.7.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -431,13 +425,21 @@
             </roles>
         </developer>
         <developer>
-            <name>Jettro Coenradie</name>
-            <email>jettro.coenradie@trifork.nl</email>
+            <name>Rene de Waele</name>
+            <email>rene.dewaele@trifork.nl</email>
             <organization>Trifork</organization>
             <organizationUrl>www.trifork.nl</organizationUrl>
             <roles>
                 <role>Committer</role>
-                <role>Sample Application Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Steven van Beelen</name>
+            <email>steven.vanbeelen@trifork.nl</email>
+            <organization>Trifork</organization>
+            <organizationUrl>www.trifork.nl</organizationUrl>
+            <roles>
+                <role>Committer</role>
             </roles>
         </developer>
     </developers>
