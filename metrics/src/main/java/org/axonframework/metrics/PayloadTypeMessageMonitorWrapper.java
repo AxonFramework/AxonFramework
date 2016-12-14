@@ -28,6 +28,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     private final Supplier<T> monitorSupplier;
     private final Function<Class<?>, String> monitorNameBuilder;
     private final Map<String, T> payloadTypeMonitors;
+    private final Map<String, Metric> metricSet;
 
     /**
      * Create a PayloadTypeMessageMonitorWrapper which builds monitors through a given {@code monitorSupplier} for
@@ -51,6 +52,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
         this.monitorSupplier = monitorSupplier;
         this.monitorNameBuilder = monitorNameBuilder;
         this.payloadTypeMonitors = new ConcurrentHashMap<>();
+        this.metricSet = Collections.unmodifiableMap(payloadTypeMonitors);
     }
 
     @Override
@@ -66,7 +68,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     @SuppressWarnings({"unchecked"})
     @Override
     public Map<String, Metric> getMetrics() {
-        return Collections.unmodifiableMap(payloadTypeMonitors);
+        return metricSet;
     }
 
 }
