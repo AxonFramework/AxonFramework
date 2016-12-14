@@ -18,8 +18,8 @@ import java.util.function.Supplier;
  * The type of MessageMonitor which is created for every payload type is configurable, as long as it implements
  * MessageMonitor and {@link MetricSet}.
  *
- * @param <T> The type of the MessageMonitor created for every payload type.
- *            Required to extends MessageMonitor and MetricSet
+ * @param <T> The type of the MessageMonitor created for every payload type.Must implement both {@link MessageMonitor}
+ *           and {@link MetricSet}
  */
 public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>> & MetricSet> implements MessageMonitor<Message<?>>, MetricSet {
 
@@ -61,10 +61,10 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
         return messageMonitorForPayloadType.onMessageIngested(message);
     }
 
-    @SuppressWarnings({"unchecked", "RedundantCast"})
+    @SuppressWarnings({"unchecked"})
     @Override
     public Map<String, Metric> getMetrics() {
-        return (Map<String, Metric>) (Map<String, ?>) payloadTypeMonitors;
+        return (Map<String, Metric>) payloadTypeMonitors;
     }
 
 }
