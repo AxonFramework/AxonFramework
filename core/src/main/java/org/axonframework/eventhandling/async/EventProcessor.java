@@ -24,13 +24,7 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -78,7 +72,7 @@ public class EventProcessor implements Runnable {
                           MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.eventProcessingMonitor = eventProcessingMonitor;
-        this.eventQueue = new LinkedList<EventMessage<?>>();
+        this.eventQueue = new OrderAndSizeBalancedDeque<EventMessage<?>>();
         this.shutDownCallback = shutDownCallback;
         this.executor = executor;
         this.errorHandler = errorHandler;
@@ -94,7 +88,6 @@ public class EventProcessor implements Runnable {
      *
      * @param event the event to schedule
      * @return true if the event was scheduled successfully, false if this scheduler is not available to process events
-     *
      * @throws IllegalStateException if the queue in this scheduler does not have the capacity to add this event
      */
     public synchronized boolean scheduleEvent(EventMessage<?> event) {
@@ -145,8 +138,8 @@ public class EventProcessor implements Runnable {
                     boolean executionScheduled = scheduleDelayedExecution(waitTimeRemaining);
                     if (!executionScheduled) {
                         logger.warn("The provided executor does not seem to support delayed execution. Scheduling for "
-                                            + "immediate processing and expecting processing to wait "
-                                            + "if scheduled to soon.");
+                                + "immediate processing and expecting processing to wait "
+                                + "if scheduled to soon.");
                         executor.execute(this);
                     }
                 }
@@ -163,7 +156,7 @@ public class EventProcessor implements Runnable {
         if (waitTimeRemaining > 0) {
             try {
                 logger.warn("Event processing started before delay expired. Forcing thread to sleep for {} millis.",
-                            waitTimeRemaining);
+                        waitTimeRemaining);
                 Thread.sleep(waitTimeRemaining);
             } catch (InterruptedException e) {
                 logger.warn("Thread was interrupted while waiting for retry. Scheduling for immediate retry.");
@@ -177,7 +170,7 @@ public class EventProcessor implements Runnable {
     private boolean scheduleDelayedExecution(long waitTimeRemaining) {
         if (executor instanceof ScheduledExecutorService) {
             logger.debug("Executor supports delayed executing. Rescheduling for processing in {} millis",
-                         waitTimeRemaining);
+                    waitTimeRemaining);
             ((ScheduledExecutorService) executor).schedule(this, waitTimeRemaining, TimeUnit.MILLISECONDS);
             return true;
         }
@@ -233,7 +226,7 @@ public class EventProcessor implements Runnable {
                 } else if (processingResult.isFailure()) {
                     notifyProcessingHandlers();
                     eventProcessingMonitor.onEventProcessingFailed(Arrays.<EventMessage>asList(event),
-                                                                   processingResult.getError());
+                            processingResult.getError());
                 } else {
                     processedEvents.add(event);
                 }
@@ -362,6 +355,56 @@ public class EventProcessor implements Runnable {
         @Override
         public boolean requiresRollback() {
             return retryPolicy.requiresRollback();
+        }
+    }
+
+    private class OrderAndSizeBalancedDeque<T extends EventMessage<?>> extends LinkedList<T> implements Comparator<T> {
+
+        public OrderAndSizeBalancedDeque() {
+        }
+
+        @Override
+        public int compare(T o1, T o2) {
+            return o1.getTimestamp().compareTo(o2.getTimestamp());
+        }
+
+        @Override
+        public boolean add(T eventMessage) {
+            if (isEmpty()) {
+                return super.add(eventMessage);
+            }
+
+            if (size() < 100) {
+                if (laterThanLast(eventMessage)) {
+                    return super.add(eventMessage);
+                }
+
+                keepOrderForSmallQueue(eventMessage);
+                return true;
+            }
+
+            return super.add(eventMessage);
+        }
+
+        private boolean laterThanLast(T eventMessage) {
+            return compare(eventMessage, getLast()) >= 0;
+        }
+
+        private void keepOrderForSmallQueue(T eventMessage) {
+            int index = Collections.binarySearch(this, eventMessage, this);
+            if (index < 0) {
+                index = -1 - index;
+            } else {
+                index = findLast(index, eventMessage);
+            }
+            super.add(index, eventMessage);
+        }
+
+        private int findLast(int index, T eventMessage) {
+            while (index < size() && compare(get(index), eventMessage) == 0) {
+                index += 1;
+            }
+            return index;
         }
     }
 }
