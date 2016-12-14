@@ -184,6 +184,11 @@ public class AsynchronousCluster extends AbstractCluster {
                         schedule(event, eventProcessingMonitor);
                     }
                 }
+
+                @Override
+                public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
+                    eventProcessingMonitor.onEventProcessingFailed(events, failureCause);
+                }
             });
         } else {
             for (EventMessage event : events) {
