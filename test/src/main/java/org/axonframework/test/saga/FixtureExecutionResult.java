@@ -142,6 +142,16 @@ public interface FixtureExecutionResult {
      * @param commands The expected commands
      * @return the FixtureExecutionResult for method chaining
      */
+    FixtureExecutionResult expectSequenceOfDispatchedCommandsEqualTo(Object... commands);
+
+    /**
+     * Asserts that the given commands have been dispatched ignoring the order given. The command objects are
+     * compared
+     * using the equals method. Only commands as a result of the event in the "when" stage of the fixture are compared.
+     *
+     * @param commands The expected commands
+     * @return the FixtureExecutionResult for method chaining
+     */
     FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... commands);
 
     /**

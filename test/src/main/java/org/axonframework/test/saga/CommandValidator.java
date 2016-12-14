@@ -18,19 +18,18 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-
 import static java.lang.String.format;
 import static org.axonframework.test.saga.DescriptionUtils.describe;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Helper class for validation of dispatched commands.
@@ -42,6 +41,17 @@ public class CommandValidator {
 
     private final RecordingCommandBus commandBus;
     private final FieldFilter fieldFilter;
+    public final static String REASON_SIZE_MISMATCH = "Number of commands dispatched is equal.";
+    public final static String REASON_COMMAND_MISMATCH = "Expected command is not present in actual list.";
+
+    /**
+     * Creates a validator with {@link AllFieldsFilter} which monitors the given <code>commandBus</code>.
+     *
+     * @param commandBus the command bus to monitor
+     */
+    public CommandValidator(RecordingCommandBus commandBus) {
+        this(commandBus, AllFieldsFilter.instance());
+    }
 
     /**
      * Creates a validator which monitors the given {@code commandBus}.
@@ -66,43 +76,47 @@ public class CommandValidator {
      *
      * @param expected The commands expected to have been published on the bus
      */
-    public void assertDispatchedEqualTo(Object... expected) {
-        List<CommandMessage<?>> actual = commandBus.getDispatchedCommands();
-        if (actual.size() != expected.length) {
-            throw new AxonAssertionError(format(
-                    "Got wrong number of commands dispatched. Expected <%s>, got <%s>",
-                    expected.length,
-                    actual.size()));
+    public void assertDispatchedEqualTo(Object... expected) throws AxonAssertionError {
+        try {
+            assertThat(CommandValidator.REASON_SIZE_MISMATCH,
+                    commandBus.getDispatchedCommands().size(),
+                    Matchers.equalTo(expected.length));
+            assertThat(CommandValidator.REASON_COMMAND_MISMATCH,
+                    commandBus.getDispatchedCommands(),
+                    Matchers.payloadsMatching(Matchers.exactSequenceOf(equalsTo(expected))));
+        } catch (AssertionError e) {
+            throw new AxonAssertionError(e.getMessage());
         }
-        Iterator<CommandMessage<?>> actualIterator = actual.iterator();
-        Iterator<Object> expectedIterator = Arrays.asList(expected).iterator();
+    }
 
-        int counter = 0;
-        while (actualIterator.hasNext()) {
-            CommandMessage<?> actualItem = actualIterator.next();
-            Object expectedItem = expectedIterator.next();
-            if (expectedItem instanceof CommandMessage) {
-                CommandMessage<?> expectedMessage = (CommandMessage<?>) expectedItem;
-                if (!expectedMessage.getPayloadType().equals(actualItem.getPayloadType())) {
-                    throw new AxonAssertionError(format(
-                            "Unexpected payload type of command at position %s (0-based). Expected <%s>, got <%s>",
-                            counter,
-                            expectedMessage.getPayloadType(),
-                            actualItem.getPayloadType()));
-                }
-                assertCommandEquality(counter, expectedMessage.getPayload(), actualItem.getPayload());
-                if (!expectedMessage.getMetaData().equals(actualItem.getMetaData())) {
-                    throw new AxonAssertionError(format(
-                            "Unexpected Meta Data of command at position %s (0-based). Expected <%s>, got <%s>",
-                            counter,
-                            expectedMessage.getMetaData(),
-                            actualItem.getMetaData()));
-                }
-            } else {
-                assertCommandEquality(counter, expectedItem, actualItem.getPayload());
-            }
-            counter++;
+    /**
+     * Assert that the given commands have been dispatched ignoring the exact sequence provided.
+     *
+     * @param expected The commands expected to have been published on the bus
+     */
+    public void assertDispatchedEqualToIgnoringSequence(Object... expected) throws AxonAssertionError {
+        try {
+            assertThat(CommandValidator.REASON_SIZE_MISMATCH,
+                    commandBus.getDispatchedCommands().size(),
+                    Matchers.equalTo(expected.length));
+            assertThat(CommandValidator.REASON_COMMAND_MISMATCH,
+                    commandBus.getDispatchedCommands(),
+                    Matchers.payloadsMatching(Matchers.listWithAllOf(equalsTo(expected))));
+        } catch (AssertionError e) {
+            throw new AxonAssertionError(e.getMessage());
         }
+    }
+
+    private Matcher[] equalsTo(Object... expected) {
+        Matcher[] expectedCommands = new EqualFieldsMatcher[expected.length];
+        for (int i = 0; i < expected.length; i++) {
+            if (expected[i] instanceof CommandMessage) {
+                CommandMessage msg = (CommandMessage) expected[i];
+                expected[i] = msg.getPayload();
+            }
+            expectedCommands[i] = Matchers.equalTo(expected[i], fieldFilter);
+        }
+        return expectedCommands;
     }
 
     /**
@@ -117,29 +131,7 @@ public class CommandValidator {
             matcher.describeTo(expectedDescription);
             describe(commandBus.getDispatchedCommands(), actualDescription);
             throw new AxonAssertionError(format("Incorrect dispatched command. Expected <%s>, but got <%s>",
-                                                expectedDescription, actualDescription));
-        }
-    }
-
-    private void assertCommandEquality(int commandIndex, Object expected, Object actual) {
-        if (!expected.equals(actual)) {
-            if (!expected.getClass().equals(actual.getClass())) {
-                throw new AxonAssertionError(format("Wrong command type at index %s (0-based). "
-                                                            + "Expected <%s>, but got <%s>",
-                                                    commandIndex,
-                                                    expected.getClass().getSimpleName(),
-                                                    actual.getClass().getSimpleName()));
-            }
-            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expected, fieldFilter);
-            if (!matcher.matches(actual)) {
-                throw new AxonAssertionError(format("Unexpected command at index %s (0-based). "
-                                                            + "Field value of '%s.%s', expected <%s>, but got <%s>",
-                                                    commandIndex,
-                                                    expected.getClass().getSimpleName(),
-                                                    matcher.getFailedField().getName(),
-                                                    matcher.getFailedFieldExpectedValue(),
-                                                    matcher.getFailedFieldActualValue()));
-            }
+                    expectedDescription, actualDescription));
         }
     }
 }
