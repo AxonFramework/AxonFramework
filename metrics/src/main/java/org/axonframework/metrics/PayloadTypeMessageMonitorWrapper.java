@@ -27,7 +27,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
 
     private final Supplier<T> monitorSupplier;
     private final Function<Class<?>, String> monitorNameBuilder;
-    private Map<String, T> payloadTypeMonitors;
+    private final Map<String, T> payloadTypeMonitors;
 
     /**
      * Create a PayloadTypeMessageMonitorWrapper which builds monitors through a given {@code monitorSupplier} for
