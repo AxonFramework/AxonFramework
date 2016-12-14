@@ -5,8 +5,10 @@ import com.codahale.metrics.MetricSet;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -48,7 +50,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     public PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier, Function<Class<?>, String> monitorNameBuilder) {
         this.monitorSupplier = monitorSupplier;
         this.monitorNameBuilder = monitorNameBuilder;
-        this.payloadTypeMonitors = new HashMap<>();
+        this.payloadTypeMonitors = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -64,7 +66,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     @SuppressWarnings({"unchecked"})
     @Override
     public Map<String, Metric> getMetrics() {
-        return (Map<String, Metric>) payloadTypeMonitors;
+        return Collections.unmodifiableMap(payloadTypeMonitors);
     }
 
 }
