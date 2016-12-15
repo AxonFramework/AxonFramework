@@ -22,12 +22,13 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
 
@@ -39,7 +40,7 @@ import static org.hamcrest.CoreMatchers.*;
  */
 public class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Object> {
 
-    private final Collection<EventMessage<?>> publishedEvents;
+    private final List<EventMessage<?>> publishedEvents;
     private final Reporter reporter = new Reporter();
     private final FieldFilter fieldFilter;
     private Object actualReturnValue;
@@ -51,7 +52,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
      * @param publishedEvents The events that were published during command execution
      * @param fieldFilter     The filter describing which fields to include in the comparison
      */
-    public ResultValidatorImpl(Collection<EventMessage<?>> publishedEvents,
+    public ResultValidatorImpl(List<EventMessage<?>> publishedEvents,
                                FieldFilter fieldFilter) {
         this.publishedEvents = publishedEvents;
         this.fieldFilter = fieldFilter;
@@ -74,7 +75,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectEventsMatching(Matcher<? extends Iterable<?>> matcher) {
+    public ResultValidator expectEventsMatching(Matcher<List<EventMessage<?>>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
         }
@@ -89,21 +90,21 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
 
     @Override
     public ResultValidator expectSuccessfulHandlerExecution() {
-        return expectReturnValue(anything());
+        return expectReturnValueMatching(anything());
     }
 
     @Override
     public ResultValidator expectReturnValue(Object expectedReturnValue) {
         if (expectedReturnValue == null) {
-            return expectReturnValue(nullValue());
+            return expectReturnValueMatching(nullValue());
         }
-        return expectReturnValue(equalTo(expectedReturnValue));
+        return expectReturnValueMatching(equalTo(expectedReturnValue));
     }
 
     @Override
-    public ResultValidator expectReturnValue(Matcher<?> matcher) {
+    public ResultValidator expectReturnValueMatching(Matcher<?> matcher) {
         if (matcher == null) {
-            return expectReturnValue(nullValue());
+            return expectReturnValueMatching(nullValue());
         }
         StringDescription description = new StringDescription();
         matcher.describeTo(description);

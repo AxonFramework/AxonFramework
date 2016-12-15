@@ -83,7 +83,7 @@ public class FixtureTest_RegularParams {
         fixture.registerAnnotatedCommandHandler(commandHandler)
                 .given(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2))
                 .when(new TestCommand("aggregateId"))
-                .expectReturnValue(IsNull.nullValue())
+                .expectReturnValueMatching(IsNull.nullValue())
                 .expectEvents(new MyEvent("aggregateId", 3));
     }
 

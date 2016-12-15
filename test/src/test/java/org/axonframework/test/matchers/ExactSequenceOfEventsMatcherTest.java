@@ -17,6 +17,7 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -38,10 +39,10 @@ import static org.mockito.Mockito.*;
  */
 public class ExactSequenceOfEventsMatcherTest {
 
-    private Matcher<EventMessage> mockMatcher1;
-    private Matcher<EventMessage> mockMatcher2;
-    private Matcher<EventMessage> mockMatcher3;
-    private Matcher<List<?>> testSubject;
+    private Matcher<EventMessage<?>> mockMatcher1;
+    private Matcher<EventMessage<?>> mockMatcher2;
+    private Matcher<EventMessage<?>> mockMatcher3;
+    private Matcher<List<EventMessage<?>>> testSubject;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
     private StubEvent stubEvent3;

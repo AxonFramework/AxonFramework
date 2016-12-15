@@ -34,7 +34,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class SequenceMatcher extends ListMatcher {
+public class SequenceMatcher<T> extends ListMatcher<T> {
 
     /**
      * Construct a matcher that will return true if all the given {@code matchers} match against an item
@@ -42,15 +42,16 @@ public class SequenceMatcher extends ListMatcher {
      *
      * @param matchers The matchers that must match against at least one item in the list.
      */
-    public SequenceMatcher(Matcher<?>... matchers) {
+    @SafeVarargs
+    public SequenceMatcher(Matcher<? super T>... matchers) {
         super(matchers);
     }
 
     @Override
-    public boolean matchesList(List<?> items) {
+    public boolean matchesList(List<T> items) {
         Iterator<?> itemIterator = items.iterator();
-        Iterator<Matcher<?>> matcherIterator = getMatchers().iterator();
-        Matcher currentMatcher = null;
+        Iterator<Matcher<? super T>> matcherIterator = getMatchers().iterator();
+        Matcher<? super T> currentMatcher = null;
         if (matcherIterator.hasNext()) {
             currentMatcher = matcherIterator.next();
         }

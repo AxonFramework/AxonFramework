@@ -18,7 +18,6 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.BaseMatcher;
@@ -31,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.axonframework.test.matchers.Matchers.matches;
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -55,8 +55,8 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectReturnValue(new DoesMatch())
-                .expectEventsMatching(sequenceOf(new DoesMatch<Message>()));
+                .expectReturnValueMatching(new DoesMatch())
+                .expectEventsMatching(sequenceOf(matches(i -> true)));
     }
 
     @Test
@@ -70,7 +70,7 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new StrangeCommand("aggregateId"))
-                    .expectReturnValue(new DoesMatch());
+                    .expectReturnValueMatching(new DoesMatch());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
@@ -106,7 +106,7 @@ public class FixtureTest_MatcherParams {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
-                    .expectReturnValue(new DoesNotMatch());
+                    .expectReturnValueMatching(new DoesNotMatch());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("<something you can never give me> but got <null>"));
@@ -181,7 +181,7 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
-                    .expectEventsMatching(new DoesNotMatch<List<?>>());
+                    .expectEventsMatching(new DoesNotMatch<>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("something you can never give me"));

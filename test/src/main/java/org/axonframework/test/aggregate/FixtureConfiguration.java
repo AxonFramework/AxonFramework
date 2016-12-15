@@ -61,7 +61,7 @@ import java.util.List;
  *     public void testCommandHandlerCase() {
  *         fixture.<strong>given(new MyEvent(1), new MyEvent(2))</strong>
  *                .when(new TestCommand())
- *                .expectReturnValue(Void.TYPE)
+ *                .expectReturnValue(null)
  *                .expectEvents(new MyEvent(3));
  *     }
  * <br/>  }

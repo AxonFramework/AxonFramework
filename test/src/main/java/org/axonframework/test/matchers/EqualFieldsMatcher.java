@@ -80,10 +80,10 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
                     Object expectedFieldValue = field.get(expectedValue);
                     Object actualFieldValue = field.get(actual);
                     if (!Objects.deepEquals(expectedFieldValue, actualFieldValue)) {
-                            failedField = field;
-                            failedFieldExpectedValue = expectedFieldValue;
-                            failedFieldActualValue = actualFieldValue;
-                            return false;
+                        failedField = field;
+                        failedFieldExpectedValue = expectedFieldValue;
+                        failedFieldActualValue = actualFieldValue;
+                        return false;
                     }
                 } catch (IllegalAccessException e) {
                     throw new MatcherExecutionException("Could not confirm object equality due to an exception", e);

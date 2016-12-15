@@ -83,7 +83,7 @@ public class EventValidator implements EventListener {
                     publishedEvents.size()));
         }
 
-        assertPublishedEventsMatching(payloadsMatching(exactSequenceOf((Matcher<?>[]) createEqualToMatchers(expected))));
+        assertPublishedEventsMatching(payloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
     }
 
     @Override
