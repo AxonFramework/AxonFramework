@@ -24,7 +24,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * ConverterFactory implementation that will combine converters to form chains of converters to be able to convert
+ * Converter implementation that will combine converters to form chains of converters to be able to convert
  * from one type to another, for which there is no suitable single converter.
  * <p/>
  * This implementation will also autodetect ContentTypeConverter implementations by scanning
@@ -34,68 +34,66 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ChainingConverterFactory implements ConverterFactory {
+public class ChainingConverter implements Converter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChainingConverterFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChainingConverter.class);
     private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<>();
 
     /**
-     * Initialize a new ChainingConverterFactory. Will autodetect all converters mentioned in
+     * Initialize a new ChainingConverter. Will autodetect all converters mentioned in
      * {@code /META-INF/services/org.axonframework.serializer.ContentTypeConverter} files on the class path.
      * <p/>
-     * Instances of ChainingConverterFactory are safe for use in a multi-threaded environment, with exception of the
+     * Instances of ChainingConverter are safe for use in a multi-threaded environment, with exception of the
      * {@link #registerConverter(ContentTypeConverter)} method.
+     *
+     * @param classLoader the class loader used to load the converters
      */
-    public ChainingConverterFactory(ClassLoader classLoader) {
-        ServiceLoader<ContentTypeConverter> converterLoader = ServiceLoader.load(ContentTypeConverter.class,
-                                                                                 classLoader);
+    public ChainingConverter(ClassLoader classLoader) {
+        ServiceLoader<ContentTypeConverter> converterLoader =
+                ServiceLoader.load(ContentTypeConverter.class, classLoader);
         for (ContentTypeConverter converter : converterLoader) {
             converters.add(converter);
         }
     }
 
     @Override
-    public <S, T> boolean hasConverter(Class<S> sourceContentType, Class<T> targetContentType) {
-        if (sourceContentType.equals(targetContentType)) {
+    public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
+        if (sourceType.equals(targetType)) {
             return true;
         }
         for (ContentTypeConverter converter : converters) {
-            if (canConvert(converter, sourceContentType, targetContentType)) {
+            if (canConvert(converter, sourceType, targetType)) {
                 return true;
             }
         }
-        return ChainedConverter.canConvert(sourceContentType, targetContentType, converters);
+        return ChainedConverter.canConvert(sourceType, targetType, converters);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <S, T> ContentTypeConverter<S, T> getConverter(Class<S> sourceContentType, Class<T> targetContentType) {
-        if (sourceContentType.equals(targetContentType)) {
-            return new NoConversion(sourceContentType);
-        }
+    @SuppressWarnings("unchecked")
+    public <T> T convert(Object original, Class<?> sourceType, Class<T> targetType) {
         for (ContentTypeConverter converter : converters) {
-            if (canConvert(converter, sourceContentType, targetContentType)) {
-                return converter;
+            if (canConvert(converter, sourceType, targetType)) {
+                return (T) converter.convert(original);
             }
         }
-        ChainedConverter<S, T> converter = ChainedConverter.calculateChain(sourceContentType, targetContentType,
-                                                                           converters);
+        ChainedConverter converter = ChainedConverter.calculateChain(sourceType, targetType, converters);
         converters.add(0, converter);
-        return converter;
+        return (T) converter.convert(original);
     }
 
     private <S, T> boolean canConvert(ContentTypeConverter<?, ?> converter, Class<S> sourceContentType,
                                       Class<T> targetContentType) {
         try {
-            if (converter.expectedSourceType().isAssignableFrom(sourceContentType)
-                    && targetContentType.isAssignableFrom(converter.targetType())) {
+            if (converter.expectedSourceType().isAssignableFrom(sourceContentType) &&
+                    targetContentType.isAssignableFrom(converter.targetType())) {
                 return true;
             }
             // we do this call to make sure target Type is on the classpath
             converter.targetType();
         } catch (NoClassDefFoundError e) {
-            logger.info("ContentTypeConverter [{}] is ignored. It seems to rely on a class that is "
-                                + "not available in the class loader: {}", converter, e.getMessage());
+            logger.info("ContentTypeConverter [{}] is ignored. It seems to rely on a class that is " +
+                                "not available in the class loader: {}", converter, e.getMessage());
             converters.remove(converter);
         }
         return false;
@@ -141,8 +139,8 @@ public class ChainingConverterFactory implements ConverterFactory {
         } catch (Exception e) {
             logger.warn("An exception occurred while trying to initialize a [{}].", converterType.getName(), e);
         } catch (NoClassDefFoundError e) {
-            logger.info("ContentTypeConverter of type [{}] is ignored. It seems to rely on a class that is "
-                                + "not available in the class loader: {}", converterType, e.getMessage());
+            logger.info("ContentTypeConverter of type [{}] is ignored. It seems to rely on a class that is " +
+                                "not available in the class loader: {}", converterType, e.getMessage());
         }
     }
 
@@ -155,34 +153,5 @@ public class ChainingConverterFactory implements ConverterFactory {
      */
     public void setAdditionalConverters(List<ContentTypeConverter> additionalConverters) {
         additionalConverters.forEach(this::registerConverter);
-    }
-
-    private static class NoConversion<T> implements ContentTypeConverter<T, T> {
-
-        private final Class<T> type;
-
-        public NoConversion(Class<T> type) {
-            this.type = type;
-        }
-
-        @Override
-        public Class<T> expectedSourceType() {
-            return type;
-        }
-
-        @Override
-        public Class<T> targetType() {
-            return type;
-        }
-
-        @Override
-        public SerializedObject<T> convert(SerializedObject<T> original) {
-            return original;
-        }
-
-        @Override
-        public T convert(T original) {
-            return original;
-        }
     }
 }

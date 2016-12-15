@@ -50,7 +50,7 @@ public class SerializedMessageTest {
         when(serializer.deserialize(serializedMetaData)).thenReturn(deserializedMetaData);
         when(serializer.deserialize(serializedPayload)).thenReturn(deserializedPayload);
         when(serializer.classForType(isA(SerializedType.class))).thenReturn(Object.class);
-        when(serializer.getConverterFactory()).thenReturn(new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
+        when(serializer.getConverter()).thenReturn(new ChainingConverter(Thread.currentThread().getContextClassLoader()));
     }
 
     @Test
@@ -107,7 +107,7 @@ public class SerializedMessageTest {
         assertArrayEquals("serializedPayload".getBytes(Charset.forName("UTF-8")), actual.getData());
         // this call is allowed
         verify(serializer, atLeast(0)).classForType(isA(SerializedType.class));
-        verify(serializer, atLeast(0)).getConverterFactory();
+        verify(serializer, atLeast(0)).getConverter();
         verifyNoMoreInteractions(serializer);
     }
 
@@ -120,7 +120,7 @@ public class SerializedMessageTest {
         assertArrayEquals("serializedMetaData".getBytes(Charset.forName("UTF-8")), actual.getData());
         // this call is allowed
         verify(serializer, atLeast(0)).classForType(isA(SerializedType.class));
-        verify(serializer, atLeast(0)).getConverterFactory();
+        verify(serializer, atLeast(0)).getConverter();
         verifyNoMoreInteractions(serializer);
     }
 }

@@ -37,8 +37,8 @@ import java.util.function.Supplier;
  */
 public class InitialEventRepresentation implements IntermediateEventRepresentation {
 
-    private final SerializedType outputType;
-    private final SerializedObject<Object> outputData;
+    private final SerializedType type;
+    private final SerializedObject<Object> data;
     private final LazyDeserializingObject<MetaData> metaData;
     private final String eventIdentifier;
     private final Supplier<Instant> timestamp;
@@ -54,7 +54,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     /**
      * Initializes an {@link InitialEventRepresentation} from the given {@code eventData}. The provided {@code
      * serializer} is used to deserialize metadata if the metadata is required during upcasting. The serializer also
-     * provides the {@link ConverterFactory} used to convert serialized data from one format to another if required
+     * provides the {@link Converter} used to convert serialized data from one format to another if required
      * by any upcaster.
      *
      * @param eventData  the serialized event data
@@ -62,8 +62,8 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
      */
     @SuppressWarnings("unchecked")
     public InitialEventRepresentation(EventData<?> eventData, Serializer serializer) {
-        outputType = eventData.getPayload().getType();
-        outputData = (SerializedObject<Object>) eventData.getPayload();
+        type = eventData.getPayload().getType();
+        data = (SerializedObject<Object>) eventData.getPayload();
         metaData = new LazyDeserializingObject<>(eventData.getMetaData(), serializer);
         eventIdentifier = eventData.getEventIdentifier();
         timestamp = CachingSupplier.of(eventData::getTimestamp);
@@ -90,17 +90,23 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
                                                       Function<T, T> upcastFunction,
                                                       Function<MetaData, MetaData> metaDataUpcastFunction) {
         return new UpcastedEventRepresentation<>(outputType, this, upcastFunction, metaDataUpcastFunction,
-                                                 expectedRepresentationType, serializer.getConverterFactory());
+                                                 expectedRepresentationType, serializer.getConverter());
     }
 
     @Override
-    public SerializedType getOutputType() {
-        return outputType;
+    public SerializedType getType() {
+        return type;
     }
 
     @Override
-    public SerializedObject<?> getOutputData() {
-        return outputData;
+    public SerializedObject<?> getData() {
+        return data;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <D> SerializedObject<D> getData(Class<D> requiredType) {
+        return serializer.getConverter().convert(data, requiredType);
     }
 
     @Override

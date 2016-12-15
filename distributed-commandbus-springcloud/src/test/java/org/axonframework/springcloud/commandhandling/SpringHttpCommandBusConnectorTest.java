@@ -105,8 +105,8 @@ public class SpringHttpCommandBusConnectorTest {
                 String.class.getName(), null))).thenReturn(COMMAND_MESSAGE.getPayload());
         when(serializer.deserialize(new SerializedMetaData<>(SERIALIZED_COMMAND_METADATA, byte[].class)))
                 .thenReturn(COMMAND_MESSAGE.getMetaData());
-        when(serializer.getConverterFactory())
-                .thenReturn(new ChainingConverterFactory(this.getClass().getClassLoader()));
+        when(serializer.getConverter())
+                .thenReturn(new ChainingConverter(this.getClass().getClassLoader()));
     }
 
     @Test

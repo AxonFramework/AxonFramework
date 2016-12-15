@@ -91,10 +91,10 @@ public interface Serializer {
     SerializedType typeForClass(Class type);
 
     /**
-     * Returns the converter factory used by this Serializer to convert between serialized representations. Generally,
-     * this ConverterFactory depends on the type of data the serializer serializes to.
+     * Returns the {@link Converter} used by this Serializer to convert between serialized representations. Generally,
+     * this Converter depends on the type of data the serializer serializes to.
      *
-     * @return the converter factory used by this Serializer
+     * @return the converter used by this Serializer
      */
-    ConverterFactory getConverterFactory();
+    Converter getConverter();
 }

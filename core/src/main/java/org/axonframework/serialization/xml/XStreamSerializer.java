@@ -104,24 +104,24 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
 
     /**
      * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The given
-     * {@code converterFactory} is used to convert serialized objects for use by Upcasters. The
+     * {@code converter} is used to convert serialized objects for use by Upcasters. The
      * {@code xStream} instance is configured with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
      * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converterFactory The factory providing the converter instances for upcasters
+     * @param converter The factory providing the converter instances for upcasters
      */
     public XStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
-                             ConverterFactory converterFactory) {
-        super(charset, xStream, revisionResolver, converterFactory);
+                             Converter converter) {
+        super(charset, xStream, revisionResolver, converter);
     }
 
     @Override
     protected <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         xStream.toXML(object, new OutputStreamWriter(baos, getCharset()));
-        return convert(byte[].class, expectedFormat, baos.toByteArray());
+        return convert(baos.toByteArray(), byte[].class, expectedFormat);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -133,16 +133,16 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         if("nu.xom.Document".equals(serializedObject.getContentType().getName())) {
             return xStream.unmarshal(new XomReader((nu.xom.Document) serializedObject.getData()));
         }
-        InputStream serializedData = convert(serializedObject.getContentType(), InputStream.class,
-                                                           serializedObject.getData());
+        InputStream serializedData = convert(serializedObject.getData(), serializedObject.getContentType(),
+                                             InputStream.class);
         return xStream.fromXML(new InputStreamReader(serializedData, getCharset()));
     }
 
     @Override
-    protected void registerConverters(ChainingConverterFactory converterFactory) {
-        converterFactory.registerConverter(Dom4JToByteArrayConverter.class);
-        converterFactory.registerConverter(InputStreamToDom4jConverter.class);
-        converterFactory.registerConverter(XomToStringConverter.class);
-        converterFactory.registerConverter(InputStreamToXomConverter.class);
+    protected void registerConverters(ChainingConverter converter) {
+        converter.registerConverter(Dom4JToByteArrayConverter.class);
+        converter.registerConverter(InputStreamToDom4jConverter.class);
+        converter.registerConverter(XomToStringConverter.class);
+        converter.registerConverter(InputStreamToXomConverter.class);
     }
 }

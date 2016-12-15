@@ -135,7 +135,7 @@ public class MessageSerializer implements Serializer {
     }
 
     @Override
-    public ConverterFactory getConverterFactory() {
-        return serializer.getConverterFactory();
+    public Converter getConverter() {
+        return serializer.getConverter();
     }
 }

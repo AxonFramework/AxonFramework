@@ -110,35 +110,35 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
 
     /**
      * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
-     * given {@code converterFactory} instance is used to convert between serialized representation types.
+     * given {@code converter} instance is used to convert between serialized representation types.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
      * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converterFactory The converter factory to provide the converters
+     * @param converter The converter factory to provide the converters
      */
     public DBObjectXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
-                                     ConverterFactory converterFactory) {
-        super(charset, xStream, revisionResolver, converterFactory);
+                                     Converter converter) {
+        super(charset, xStream, revisionResolver, converter);
     }
 
     @Override
-    protected void registerConverters(ChainingConverterFactory converterFactory) {
-        converterFactory.registerConverter(new DBObjectToStringContentTypeConverter());
-        converterFactory.registerConverter(new StringToDBObjectContentTypeConverter());
+    protected void registerConverters(ChainingConverter converter) {
+        converter.registerConverter(new DBObjectToStringContentTypeConverter());
+        converter.registerConverter(new StringToDBObjectContentTypeConverter());
     }
 
     @Override
     protected <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream) {
         BasicDBObject root = new BasicDBObject();
         getXStream().marshal(object, new DBObjectHierarchicalStreamWriter(root));
-        return convert(DBObject.class, expectedFormat, root);
+        return convert(root, DBObject.class, expectedFormat);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected Object doDeserialize(SerializedObject serializedObject, XStream xStream) {
-        DBObject serialized = convert(serializedObject.getContentType(), DBObject.class, serializedObject.getData());
+        DBObject serialized = convert(serializedObject.getData(), serializedObject.getContentType(), DBObject.class);
         return getXStream().unmarshal(new DBObjectHierarchicalStreamReader(serialized));
     }
 }

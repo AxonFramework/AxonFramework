@@ -39,7 +39,7 @@ import java.io.IOException;
 public class JacksonSerializer implements Serializer {
 
     private final RevisionResolver revisionResolver;
-    private final ConverterFactory converterFactory;
+    private final Converter converter;
     private final ObjectMapper objectMapper;
     private final ClassLoader classLoader;
 
@@ -48,7 +48,7 @@ public class JacksonSerializer implements Serializer {
      * org.axonframework.serialization.Revision @Revision} annotations on the serialized classes.
      */
     public JacksonSerializer() {
-        this(new AnnotationRevisionResolver(), new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
+        this(new AnnotationRevisionResolver(), new ChainingConverter(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
@@ -58,19 +58,20 @@ public class JacksonSerializer implements Serializer {
      * @param objectMapper The objectMapper to serialize objects and parse JSON with
      */
     public JacksonSerializer(ObjectMapper objectMapper) {
-        this(objectMapper, new AnnotationRevisionResolver(), new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
+        this(objectMapper, new AnnotationRevisionResolver(),
+             new ChainingConverter(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
      * Initialize the serializer using a default ObjectMapper instance, using the given {@code revisionResolver}
-     * to define revision for each object to serialize, and given {@code converterFactory} to be used by
+     * to define revision for each object to serialize, and given {@code converter} to be used by
      * upcasters.
      *
      * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converterFactory The factory providing the converter instances for upcasters
+     * @param converter        The factory providing the converter instances for upcasters
      */
-    public JacksonSerializer(RevisionResolver revisionResolver, ConverterFactory converterFactory) {
-        this(new ObjectMapper(), revisionResolver, converterFactory);
+    public JacksonSerializer(RevisionResolver revisionResolver, Converter converter) {
+        this(new ObjectMapper(), revisionResolver, converter);
     }
 
     /**
@@ -82,59 +83,57 @@ public class JacksonSerializer implements Serializer {
      * @param revisionResolver The strategy to use to resolve the revision of an object
      */
     public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver) {
-        this(objectMapper, revisionResolver, new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
+        this(objectMapper, revisionResolver, new ChainingConverter(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
      * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
      * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
-     * used to resolve the revision from an object to be serialized. The given {@code converterFactory} is the
+     * used to resolve the revision from an object to be serialized. The given {@code converter} is the
      * converter factory used by upcasters to convert between content types.
      *
      * @param objectMapper     The objectMapper to serialize objects and parse JSON with
      * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converterFactory The factory providing the converter instances for upcasters
+     * @param converter        The factory providing the converter instances for upcasters
      */
-    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver,
-                             ConverterFactory converterFactory) {
-        this(objectMapper, revisionResolver, converterFactory, null);
+    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver, Converter converter) {
+        this(objectMapper, revisionResolver, converter, null);
     }
 
     /**
      * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
      * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
-     * used to resolve the revision from an object to be serialized. The given {@code converterFactory} is the
+     * used to resolve the revision from an object to be serialized. The given {@code converter} is the
      * converter factory used by upcasters to convert between content types.
      *
      * @param objectMapper     The objectMapper to serialize objects and parse JSON with
      * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converterFactory The factory providing the converter instances for upcasters
+     * @param converter        The factory providing the converter instances for upcasters
      * @param classLoader      The class loader to load classes with when deserializing
      */
-    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver,
-                             ConverterFactory converterFactory, ClassLoader classLoader) {
+    public JacksonSerializer(ObjectMapper objectMapper, RevisionResolver revisionResolver, Converter converter,
+                             ClassLoader classLoader) {
         this.revisionResolver = revisionResolver;
-        this.converterFactory = converterFactory;
+        this.converter = converter;
         this.objectMapper = objectMapper;
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module")
-                        .addDeserializer(MetaData.class, new MetaDataDeserializer()));
+                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer()));
         this.objectMapper.registerModule(new JSR310Module());
-        if (converterFactory instanceof ChainingConverterFactory) {
-            registerConverters((ChainingConverterFactory) converterFactory);
+        if (converter instanceof ChainingConverter) {
+            registerConverters((ChainingConverter) converter);
         }
     }
 
     /**
-     * Registers converters with the given {@code converterFactory} which depend on the actual contents of the
+     * Registers converters with the given {@code converter} which depend on the actual contents of the
      * serialized for to represent a JSON format.
      *
-     * @param converterFactory The ChainingConverterFactory instance to register the converters with.
+     * @param converter The ChainingConverter instance to register the converters with.
      */
-    protected void registerConverters(ChainingConverterFactory converterFactory) {
-        converterFactory.registerConverter(new JsonNodeToByteArrayConverter(objectMapper));
-        converterFactory.registerConverter(new ByteArrayToJsonNodeConverter(objectMapper));
+    protected void registerConverters(ChainingConverter converter) {
+        converter.registerConverter(new JsonNodeToByteArrayConverter(objectMapper));
+        converter.registerConverter(new ByteArrayToJsonNodeConverter(objectMapper));
     }
 
     @Override
@@ -143,15 +142,14 @@ public class JacksonSerializer implements Serializer {
         try {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
-                return new SimpleSerializedObject<>((T) getWriter().writeValueAsString(object),
-                                                     expectedRepresentation, typeForClass(object.getClass()));
+                return new SimpleSerializedObject<>((T) getWriter().writeValueAsString(object), expectedRepresentation,
+                                                    typeForClass(object.getClass()));
             }
 
             byte[] serializedBytes = getWriter().writeValueAsBytes(object);
-            T serializedContent = converterFactory.getConverter(byte[].class, expectedRepresentation)
-                                                  .convert(serializedBytes);
+            T serializedContent = converter.convert(serializedBytes, expectedRepresentation);
             return new SimpleSerializedObject<>(serializedContent, expectedRepresentation,
-                                                 typeForClass(object.getClass()));
+                                                typeForClass(object.getClass()));
         } catch (JsonProcessingException e) {
             throw new SerializationException("Unable to serialize object", e);
         }
@@ -189,9 +187,8 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
-        return JsonNode.class.equals(expectedRepresentation)
-                || String.class.equals(expectedRepresentation)
-                || converterFactory.hasConverter(byte[].class, expectedRepresentation);
+        return JsonNode.class.equals(expectedRepresentation) || String.class.equals(expectedRepresentation) ||
+                converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @Override
@@ -201,9 +198,7 @@ public class JacksonSerializer implements Serializer {
                 return getReader(classForType(serializedObject.getType()))
                         .readValue((JsonNode) serializedObject.getData());
             }
-            SerializedObject<byte[]> byteSerialized = converterFactory.getConverter(serializedObject.getContentType(),
-                                                                                    byte[].class)
-                                                                      .convert(serializedObject);
+            SerializedObject<byte[]> byteSerialized = converter.convert(serializedObject, byte[].class);
             return getReader(classForType(serializedObject.getType())).readValue(byteSerialized.getData());
         } catch (IOException e) {
             throw new SerializationException("Error while deserializing object", e);
@@ -236,8 +231,8 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public ConverterFactory getConverterFactory() {
-        return converterFactory;
+    public Converter getConverter() {
+        return converter;
     }
 
     /**

@@ -59,9 +59,7 @@ public class SerializedObjectHolder implements SerializationAware {
                 serializedPayload.put(serializer, serialized);
                 return serialized;
             } else {
-                return serializer.getConverterFactory()
-                        .getConverter(existingForm.getContentType(), expectedRepresentation)
-                        .convert(existingForm);
+                return serializer.getConverter().convert(existingForm, expectedRepresentation);
             }
         }
     }
@@ -76,9 +74,7 @@ public class SerializedObjectHolder implements SerializationAware {
                 serializedMetaData.put(serializer, serialized);
                 return serialized;
             } else {
-                return serializer.getConverterFactory()
-                        .getConverter(existingForm.getContentType(), expectedRepresentation)
-                        .convert(existingForm);
+                return serializer.getConverter().convert(existingForm, expectedRepresentation);
             }
         }
     }

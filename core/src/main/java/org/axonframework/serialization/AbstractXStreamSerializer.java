@@ -53,7 +53,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     private final XStream xStream;
     private final Charset charset;
     private final RevisionResolver revisionResolver;
-    private final ConverterFactory converterFactory;
+    private final Converter converter;
 
     /**
      * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
@@ -88,8 +88,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param xStream The XStream instance to use
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream) {
-        this(charset, xStream, new AnnotationRevisionResolver(),
-             new ChainingConverterFactory(xStream.getClassLoader()));
+        this(charset, xStream, new AnnotationRevisionResolver(), new ChainingConverter(xStream.getClassLoader()));
     }
 
     /**
@@ -101,32 +100,31 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param revisionResolver The strategy to use to resolve the revision of an object
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
-        this(charset, xStream, revisionResolver,
-             new ChainingConverterFactory(xStream.getClassLoader()));
+        this(charset, xStream, revisionResolver, new ChainingConverter(xStream.getClassLoader()));
     }
 
     /**
      * Initialize the serializer using the given {@code charset}, {@code xStream} instance,
-     * {@code revisionResolver} and {@code converterFactory}. The {@code xStream} instance is configured
+     * {@code revisionResolver} and {@code converter}. The {@code xStream} instance is configured
      * with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
      * @param revisionResolver The strategy to use to resolve the revision of an object
-     * @param converterFactory The ConverterFactory providing the necessary content converters
+     * @param converter        The converter providing the necessary content converters
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver,
-                                        ConverterFactory converterFactory) {
+                                        Converter converter) {
         Assert.notNull(charset, () -> "charset may not be null");
         Assert.notNull(xStream, () -> "xStream may not be null");
-        Assert.notNull(converterFactory, () -> "converterFactory may not be null");
+        Assert.notNull(converter, () -> "converter may not be null");
         Assert.notNull(revisionResolver, () -> "revisionResolver may not be null");
         this.charset = charset;
         this.xStream = xStream;
-        this.converterFactory = converterFactory;
+        this.converter = converter;
         this.revisionResolver = revisionResolver;
-        if (converterFactory instanceof ChainingConverterFactory) {
-            registerConverters((ChainingConverterFactory) converterFactory);
+        if (converter instanceof ChainingConverter) {
+            registerConverters((ChainingConverter) converter);
         }
         xStream.addImmutableType(UUID.class, true);
 
@@ -152,13 +150,13 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     /**
      * Registers any converters that are specific to the type of content written by this serializer.
      *
-     * @param converterFactory the ConverterFactory to register the converters with
+     * @param converter the Converter to register the converters with
      */
-    protected abstract void registerConverters(ChainingConverterFactory converterFactory);
+    protected abstract void registerConverters(ChainingConverter converter);
 
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
-        return converterFactory.hasConverter(byte[].class, expectedRepresentation);
+        return converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @Override
@@ -169,7 +167,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
     /**
      * Serialize the given {@code object} to the given {@code expectedFormat}. The subclass may use {@link
-     * #convert(Class, Class, Object)} to convert the result of the serialization to the expected type.
+     * #convert(Object, Class)} to convert the result of the serialization to the expected type.
      *
      * @param object         The object to serialize
      * @param expectedFormat The format in which the serialized object must be returned
@@ -191,16 +189,14 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     /**
      * Convert the given {@code source}, of type {@code sourceType} to the given {@code targetType}.
      *
-     * @param sourceType The type of data that needs to be converted. Should be a content type identifier, not
-     *                   necessarily the result of {@code source.getClass()}.
-     * @param targetType The target type of the conversion
-     * @param source     The object to convert
      * @param <S>        The type of data that needs to be converted
      * @param <T>        The target type of the conversion
+     * @param source     The object to convert
+     * @param targetType The target type of the conversion
      * @return The converted object
      */
-    protected <S, T> T convert(Class<S> sourceType, Class<T> targetType, S source) {
-        return getConverterFactory().getConverter(sourceType, targetType).convert(source);
+    protected <S, T> T convert(S source, Class<S> sourceType, Class<T> targetType) {
+        return getConverter().convert(source, sourceType, targetType);
     }
 
     private String revisionOf(Class<?> type) {
@@ -270,7 +266,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * serialization.
      *
      * @return the XStream instance that does the actual (de)serialization.
-     *
      * @see com.thoughtworks.xstream.XStream
      */
     public XStream getXStream() {
@@ -287,14 +282,14 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Returns the ConverterFactory used by this serialized. The converter factory allows registration of
+     * Returns the Converter used by this serialized. The converter factory allows registration of
      * ContentTypeConverters needed by the upcasters.
      *
-     * @return the ConverterFactory used by this serialized
+     * @return the Converter used by this serializer
      */
     @Override
-    public ConverterFactory getConverterFactory() {
-        return converterFactory;
+    public Converter getConverter() {
+        return converter;
     }
 
     /**
