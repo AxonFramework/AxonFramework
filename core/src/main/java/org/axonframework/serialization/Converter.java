@@ -67,7 +67,8 @@ public interface Converter {
         if (original.getContentType().equals(targetType)) {
             return (SerializedObject<T>) original;
         }
-        return new SimpleSerializedObject<>(convert(original.getData(), targetType), targetType, original.getType());
+        return new SimpleSerializedObject<>(convert(original.getData(), original.getContentType(), targetType),
+                                            targetType, original.getType());
     }
 
 }

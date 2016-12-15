@@ -72,6 +72,9 @@ public class ChainingConverter implements Converter {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T convert(Object original, Class<?> sourceType, Class<T> targetType) {
+        if (sourceType.equals(targetType)) {
+            return (T) original;
+        }
         for (ContentTypeConverter converter : converters) {
             if (canConvert(converter, sourceType, targetType)) {
                 return (T) converter.convert(original);

@@ -167,7 +167,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
     /**
      * Serialize the given {@code object} to the given {@code expectedFormat}. The subclass may use {@link
-     * #convert(Object, Class)} to convert the result of the serialization to the expected type.
+     * #convert(Object, Class, Class)} to convert the result of the serialization to the expected type.
      *
      * @param object         The object to serialize
      * @param expectedFormat The format in which the serialized object must be returned
@@ -192,6 +192,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param <S>        The type of data that needs to be converted
      * @param <T>        The target type of the conversion
      * @param source     The object to convert
+     * @param sourceType The source type of the conversion
      * @param targetType The target type of the conversion
      * @return The converted object
      */
