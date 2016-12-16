@@ -19,8 +19,8 @@ package org.axonframework.serialization.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.serialization.AbstractContentTypeConverter;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ContentTypeConverter;
 
 /**
  * ContentTypeConverter implementation that converts a JsonNode object into a byte[]. The byte[] will contain the UTF8
@@ -29,7 +29,7 @@ import org.axonframework.serialization.CannotConvertBetweenTypesException;
  * @author Allard Buijze
  * @since 2.2
  */
-public class JsonNodeToByteArrayConverter extends AbstractContentTypeConverter<JsonNode, byte[]> {
+public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNode,byte[]> {
 
     private final ObjectMapper objectMapper;
 

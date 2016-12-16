@@ -38,9 +38,8 @@ import static org.mockito.Mockito.*;
 public class ChainedConverterTest {
 
     private ContentTypeConverter testSubject;
-    private SerializedObject<?> source;
+    private Object source;
     private Class<?> target;
-    private SimpleSerializedType mockType;
     private List<ContentTypeConverter<?, ?>> candidates;
     private ContentTypeConverter<?, ?> stringToReaderConverter;
     private ContentTypeConverter<?, ?> stringToByteConverter;
@@ -49,7 +48,6 @@ public class ChainedConverterTest {
 
     @Before
     public void setUp() throws Exception {
-        mockType = new SimpleSerializedType("mock", "0");
         candidates = new ArrayList<>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
@@ -72,76 +70,76 @@ public class ChainedConverterTest {
         ContentTypeConverter mock = mock(ContentTypeConverter.class);
         when(mock.expectedSourceType()).thenReturn(expectedType);
         when(mock.targetType()).thenReturn(targetType);
-        when(mock.convert(isA(SerializedObject.class))).thenReturn(new SimpleSerializedObject(representation,
-                                                                                              targetType,
-                                                                                              mockType));
+        when(mock.convert(any())).thenReturn(representation);
         return mock;
     }
 
     @Test
     public void testComplexRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<>(1L, Number.class, mockType);
-        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+        source = 1L;
+        testSubject = ChainedConverter.calculateChain(Number.class, target, candidates);
         assertNotNull(testSubject);
-        verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
-        verify(stringToReaderConverter, never()).convert(any(SerializedObject.class));
-        verify(bytesToInputStreamConverter, never()).convert(any(SerializedObject.class));
-        verify(stringToByteConverter, never()).convert(any(SerializedObject.class));
+        verify(numberToStringConverter, never()).convert(any());
+        verify(stringToReaderConverter, never()).convert(any());
+        verify(bytesToInputStreamConverter, never()).convert(any());
+        verify(stringToByteConverter, never()).convert(any());
 
-        SerializedObject<InputStream> actual = testSubject.convert(source);
-        assertEquals(target, actual.getContentType());
-        InputStream actualContents = actual.getData();
-        assertNotNull(actualContents);
-        assertArrayEquals("hello".getBytes(), IOUtils.toByteArray(actualContents));
+        InputStream actual = convertSource();
+        assertNotNull(actual);
+        assertArrayEquals("hello".getBytes(), IOUtils.toByteArray(actual));
 
-        verify(numberToStringConverter).convert(isA(SerializedObject.class));
-        verify(stringToByteConverter).convert(isA(SerializedObject.class));
-        verify(bytesToInputStreamConverter).convert(isA(SerializedObject.class));
-        verify(stringToReaderConverter, never()).convert(isA(SerializedObject.class));
+        verify(numberToStringConverter).convert(any());
+        verify(stringToByteConverter).convert(any());
+        verify(bytesToInputStreamConverter).convert(any());
+        verify(stringToReaderConverter, never()).convert(any());
     }
 
+    private <T> T convertSource() {
+        return (T) testSubject.convert(source);
+    }
+    
     @Test
     public void testSimpleRoute() {
         target = String.class;
-        source = new SimpleSerializedObject<>(1L, Number.class, mockType);
-        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+        source = 1L;
+        testSubject = ChainedConverter.calculateChain(Number.class, target, candidates);
         assertNotNull(testSubject);
-        verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
-        verify(stringToReaderConverter, never()).convert(any(SerializedObject.class));
-        verify(bytesToInputStreamConverter, never()).convert(any(SerializedObject.class));
-        verify(stringToByteConverter, never()).convert(any(SerializedObject.class));
+        verify(numberToStringConverter, never()).convert(any());
+        verify(stringToReaderConverter, never()).convert(any());
+        verify(bytesToInputStreamConverter, never()).convert(any());
+        verify(stringToByteConverter, never()).convert(any());
 
-        SerializedObject<String> actual = testSubject.convert(source);
-        assertEquals("hello", actual.getData());
+        String actual = convertSource();
+        assertEquals("hello", actual);
 
-        verify(numberToStringConverter).convert(any(SerializedObject.class));
-        verify(stringToReaderConverter, never()).convert(any(SerializedObject.class));
-        verify(bytesToInputStreamConverter, never()).convert(any(SerializedObject.class));
-        verify(stringToByteConverter, never()).convert(any(SerializedObject.class));
+        verify(numberToStringConverter).convert(any());
+        verify(stringToReaderConverter, never()).convert(any());
+        verify(bytesToInputStreamConverter, never()).convert(any());
+        verify(stringToByteConverter, never()).convert(any());
     }
 
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testInexistentRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<>(new StringReader("hello"), Reader.class, mockType);
-        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+        source = new StringReader("hello");
+        testSubject = ChainedConverter.calculateChain(Reader.class, target, candidates);
     }
 
     // Detects an issue where the ChainedConverter hangs as it evaluates a recursive route
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testAnotherInexistentRoute() throws Exception {
         target = Number.class;
-        source = new SimpleSerializedObject<>("hello", String.class, mockType);
+        source = "hello";
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
-        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+        testSubject = ChainedConverter.calculateChain(String.class, target, candidates);
     }
 
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testAThirdInexistentRoute() throws Exception {
         target = Documented.class;
-        source = new SimpleSerializedObject<>("hello".getBytes(), byte[].class, mockType);
-        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+        source = "hello".getBytes();
+        testSubject = ChainedConverter.calculateChain(byte[].class, target, candidates);
     }
 
     @Test

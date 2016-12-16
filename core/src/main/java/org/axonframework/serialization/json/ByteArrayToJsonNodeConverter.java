@@ -18,8 +18,8 @@ package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.serialization.AbstractContentTypeConverter;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
 
@@ -29,7 +29,7 @@ import java.io.IOException;
  * @author Allard Buijze
  * @since 2.2
  */
-public class ByteArrayToJsonNodeConverter extends AbstractContentTypeConverter<byte[], JsonNode> {
+public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[],JsonNode> {
 
     private final ObjectMapper objectMapper;
 

@@ -17,7 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.serialization.AbstractContentTypeConverter;
+import org.axonframework.serialization.ContentTypeConverter;
 import org.dom4j.Document;
 
 /**
@@ -27,7 +27,7 @@ import org.dom4j.Document;
  * @author Allard Buijze
  * @since 2.0
  */
-public class Dom4JToByteArrayConverter extends AbstractContentTypeConverter<Document, byte[]> {
+public class Dom4JToByteArrayConverter implements ContentTypeConverter<Document,byte[]> {
 
     @Override
     public Class<Document> expectedSourceType() {

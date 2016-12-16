@@ -16,8 +16,8 @@
 
 package org.axonframework.serialization.converters;
 
-import org.axonframework.serialization.AbstractContentTypeConverter;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.InputStream;
 import java.sql.Blob;
@@ -26,7 +26,7 @@ import java.sql.SQLException;
 /**
  * @author Allard Buijze
  */
-public class BlobToInputStreamConverter extends AbstractContentTypeConverter<Blob, InputStream> {
+public class BlobToInputStreamConverter implements ContentTypeConverter<Blob,InputStream> {
 
     @Override
     public Class<Blob> expectedSourceType() {

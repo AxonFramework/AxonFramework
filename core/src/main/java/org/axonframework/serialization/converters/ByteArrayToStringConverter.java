@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.converters;
 
-import org.axonframework.serialization.AbstractContentTypeConverter;
+import org.axonframework.serialization.ContentTypeConverter;
 
 import java.nio.charset.Charset;
 
@@ -26,7 +26,7 @@ import java.nio.charset.Charset;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ByteArrayToStringConverter extends AbstractContentTypeConverter<byte[], String> {
+public class ByteArrayToStringConverter implements ContentTypeConverter<byte[],String> {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
 

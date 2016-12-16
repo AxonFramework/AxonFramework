@@ -18,9 +18,6 @@ package org.axonframework.serialization.xml;
 
 import nu.xom.Document;
 import nu.xom.Element;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,12 +29,10 @@ import static org.junit.Assert.*;
 public class XomToStringConverterTest {
 
     private XomToStringConverter testSubject;
-    private SimpleSerializedType serializedType;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new XomToStringConverter();
-        serializedType = new SimpleSerializedType("custom", "0");
     }
 
     @Test
@@ -50,15 +45,10 @@ public class XomToStringConverterTest {
     public void testConvert() throws Exception {
         Document doc = new Document(new Element("rootElement"));
 
-        SimpleSerializedObject<Document> original = new SimpleSerializedObject<>(doc,
-                Document.class,
-                serializedType);
-        SerializedObject<String> actual = testSubject.convert(original);
+        String actual = testSubject.convert(doc);
 
         assertNotNull(actual);
-        String actualString = actual.getData();
-        assertNotNull(actualString);
 
-        assertTrue("Wrong output: " + actualString, actualString.contains("rootElement"));
+        assertTrue("Wrong output: " + actual, actual.contains("rootElement"));
     }
 }

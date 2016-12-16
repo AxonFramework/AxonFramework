@@ -17,8 +17,8 @@
 package org.axonframework.serialization.converters;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.axonframework.serialization.AbstractContentTypeConverter;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +30,7 @@ import java.io.InputStream;
  * @author Allard Buijze
  * @since 2.0
  */
-public class InputStreamToByteArrayConverter extends AbstractContentTypeConverter<InputStream, byte[]> {
+public class InputStreamToByteArrayConverter implements ContentTypeConverter<InputStream,byte[]> {
 
     @Override
     public Class<InputStream> expectedSourceType() {

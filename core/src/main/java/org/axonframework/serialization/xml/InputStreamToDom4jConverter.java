@@ -16,8 +16,8 @@
 
 package org.axonframework.serialization.xml;
 
-import org.axonframework.serialization.AbstractContentTypeConverter;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ContentTypeConverter;
 import org.dom4j.Document;
 import org.dom4j.io.STAXEventReader;
 
@@ -33,7 +33,7 @@ import java.nio.charset.Charset;
  * @author Allard Buijze
  * @since 2.0
  */
-public class InputStreamToDom4jConverter extends AbstractContentTypeConverter<InputStream, Document> {
+public class InputStreamToDom4jConverter implements ContentTypeConverter<InputStream,Document> {
 
     @Override
     public Class<InputStream> expectedSourceType() {
