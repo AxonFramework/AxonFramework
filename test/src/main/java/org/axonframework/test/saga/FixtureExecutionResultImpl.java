@@ -16,7 +16,9 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
@@ -26,6 +28,7 @@ import org.hamcrest.Matcher;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
@@ -91,8 +94,9 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
         return this;
     }
 
+
     @Override
-    public FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<?> matcher) {
+    public FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage<?>> matcher) {
         eventSchedulerValidator.assertScheduledEventMatching(duration, matcher);
         return this;
     }
@@ -108,8 +112,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime,
-                                                               Matcher<?> matcher) {
+    public FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage<?>> matcher) {
         eventSchedulerValidator.assertScheduledEventMatching(scheduledTime, matcher);
         return this;
     }
@@ -131,7 +134,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<? extends Iterable<?>> matcher) {
+    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<? extends List<? super CommandMessage<?>>> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
     }
@@ -149,7 +152,7 @@ public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher) {
+    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher) {
         eventValidator.assertPublishedEventsMatching(matcher);
         return this;
     }

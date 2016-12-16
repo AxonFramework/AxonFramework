@@ -17,7 +17,7 @@
 package org.axonframework.serialization.xml;
 
 import nu.xom.Document;
-import org.axonframework.serialization.AbstractContentTypeConverter;
+import org.axonframework.serialization.ContentTypeConverter;
 
 /**
  * Converter that converts XOM Document instances to a String. The Document is written as XML string.
@@ -25,7 +25,7 @@ import org.axonframework.serialization.AbstractContentTypeConverter;
  * @author Jochen Munz
  * @since 2.2
  */
-public class XomToStringConverter extends AbstractContentTypeConverter<Document, String> {
+public class XomToStringConverter implements ContentTypeConverter<Document,String> {
 
     @Override
     public Class<Document> expectedSourceType() {

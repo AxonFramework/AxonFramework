@@ -92,12 +92,12 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testCustomObjectMapperRevisionResolverAndConverterFactory() {
+    public void testCustomObjectMapperRevisionResolverAndConverter() {
         ObjectMapper objectMapper = spy(new ObjectMapper());
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
-        ChainingConverterFactory converterFactory = spy(new ChainingConverterFactory(Thread.currentThread().getContextClassLoader()));
+        ChainingConverter converter = spy(new ChainingConverter(Thread.currentThread().getContextClassLoader()));
 
-        testSubject = new JacksonSerializer(objectMapper, revisionResolver, converterFactory);
+        testSubject = new JacksonSerializer(objectMapper, revisionResolver, converter);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -107,7 +107,7 @@ public class JacksonSerializerTest {
         verify(objectMapper).reader(SimpleSerializableType.class);
         verify(objectMapper).writer();
         verify(revisionResolver).revisionOf(SimpleSerializableType.class);
-        verify(converterFactory, times(2)).registerConverter(isA(ContentTypeConverter.class));
+        verify(converter, times(2)).registerConverter(isA(ContentTypeConverter.class));
         assertSame(objectMapper, testSubject.getObjectMapper());
     }
 
@@ -123,7 +123,7 @@ public class JacksonSerializerTest {
         SimpleSerializableType actual = testSubject.deserialize(serialized);
 
         assertNotNull(actual);
-        assertTrue(testSubject.getConverterFactory() instanceof ChainingConverterFactory);
+        assertTrue(testSubject.getConverter() instanceof ChainingConverter);
         verify(objectMapper).reader(SimpleSerializableType.class);
         verify(objectMapper).writer();
         verify(revisionResolver).revisionOf(SimpleSerializableType.class);
@@ -140,7 +140,7 @@ public class JacksonSerializerTest {
         SimpleSerializableType actual = testSubject.deserialize(serialized);
 
         assertNotNull(actual);
-        assertTrue(testSubject.getConverterFactory() instanceof ChainingConverterFactory);
+        assertTrue(testSubject.getConverter() instanceof ChainingConverter);
         verify(objectMapper).reader(SimpleSerializableType.class);
         verify(objectMapper).writer();
     }

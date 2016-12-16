@@ -22,8 +22,9 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -42,8 +43,7 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- * EventProcessor implementation that {@link EventBus#streamEvents(TrackingToken) tracks} events published to the {@link
- * EventBus}.
+ * EventProcessor implementation that tracks events from a {@link StreamableMessageSource}.
  * <p>
  * A supplied {@link TokenStore} allows the EventProcessor to keep track of its position in the event log. After
  * processing an event batch the EventProcessor updates its tracking token in the TokenStore.
@@ -62,7 +62,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
     private static final ThreadGroup threadGroup = new ThreadGroup(TrackingEventProcessor.class.getSimpleName());
 
-    private final EventBus eventBus;
+    private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final int batchSize;
@@ -71,72 +71,76 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private volatile State state = State.NOT_STARTED;
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code eventBus} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
      * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler}, a {@link
      * RollbackConfigurationType#ANY_THROWABLE} and a {@link NoOpMessageMonitor}.
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
-     * @param eventBus            The EventBus which this event processor will track
+     * @param messageSource       The message source (e.g. Event Bus) which this event processor will track
      * @param tokenStore          Used to store and fetch event tokens that enable the processor to track its progress
      * @param transactionManager  The transaction manager used when processing messages
      */
-    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
-                                  TokenStore tokenStore, TransactionManager transactionManager) {
-        this(name, eventHandlerInvoker, eventBus, tokenStore, transactionManager, NoOpMessageMonitor.INSTANCE);
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
+                                  TransactionManager transactionManager) {
+        this(name, eventHandlerInvoker, messageSource, tokenStore, transactionManager, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code eventBus} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
      * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler}, a {@link
      * RollbackConfigurationType#ANY_THROWABLE} and a {@link NoOpMessageMonitor}.
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
-     * @param eventBus            The EventBus which this event processor will track
+     * @param messageSource       The message source (e.g. Event Bus) which this event processor will track
      * @param tokenStore          Used to store and fetch event tokens that enable the processor to track its progress
      * @param transactionManager  The transaction manager used when processing messages
      * @param batchSize           The maximum number of events to process in a single batch
      */
-    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
-                                  TokenStore tokenStore, TransactionManager transactionManager, int batchSize) {
-        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
-             tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
+                                  TransactionManager transactionManager, int batchSize) {
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE,
+             messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code eventBus} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
      * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler} and a {@link
      * RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
-     * @param eventBus            The EventBus which this event processor will track
+     * @param messageSource       The message source (e.g. Event Bus) which this event processor will track
      * @param tokenStore          Used to store and fetch event tokens that enable the processor to track its progress
      * @param transactionManager  The transaction manager used when processing messages
      * @param messageMonitor      Monitor to be invoked before and after event processing
      */
-    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
-                                  TokenStore tokenStore, TransactionManager transactionManager,
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
+                                  TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
-             tokenStore, transactionManager, 1, messageMonitor);
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE,
+             messageSource, tokenStore, transactionManager, 1, messageMonitor);
     }
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code eventBus} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
-     *  @param name                  The name of the event processor
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     *
+     * @param name                  The name of the event processor
      * @param eventHandlerInvoker   The component that handles the individual events
      * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
      * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing
-     * @param eventBus              The EventBus which this event processor will track
+     * @param messageSource         The message source (e.g. Event Bus) which this event processor will track
      * @param tokenStore            Used to store and fetch event tokens that enable the processor to track its
      *                              progress
      * @param transactionManager    The transaction manager used when processing messages
@@ -145,11 +149,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                   RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
-                                  EventBus eventBus, TokenStore tokenStore,
+                                  StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
-        this.eventBus = requireNonNull(eventBus);
+        this.messageSource = requireNonNull(messageSource);
         this.tokenStore = requireNonNull(tokenStore);
         this.transactionManager = transactionManager;
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
@@ -158,8 +162,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Start this processor. The processor will open an event stream on the {@link EventBus} in a new thread using
-     * {@link EventBus#streamEvents(TrackingToken)}. The {@link TrackingToken} used to open the stream will be
+     * Start this processor. The processor will open an event stream on its message source in a new thread using {@link
+     * StreamableMessageSource#openStream(TrackingToken)}. The {@link TrackingToken} used to open the stream will be
      * fetched from the {@link TokenStore}.
      */
     @Override
@@ -205,7 +209,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * the same batch. In those cases the batch size may be larger than the one configured.
      */
     protected void processingLoop() {
-        TrackingEventStream eventStream = null;
+        MessageStream<TrackedEventMessage<?>> eventStream = null;
         try {
             while (state != State.SHUT_DOWN) {
                 eventStream = ensureEventStreamOpened(eventStream);
@@ -232,7 +236,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private void processBatch(TrackingEventStream eventStream) {
+    private void processBatch(MessageStream<TrackedEventMessage<?>> eventStream) {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
@@ -262,13 +266,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private TrackingEventStream ensureEventStreamOpened(TrackingEventStream eventStreamIn) {
-        TrackingEventStream eventStream = eventStreamIn;
+    private MessageStream<TrackedEventMessage<?>> ensureEventStreamOpened(
+            MessageStream<TrackedEventMessage<?>> eventStreamIn) {
+        MessageStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         while (eventStream == null && state == State.STARTED) {
             Transaction tx = transactionManager.startTransaction();
             try {
                 TrackingToken startToken = tokenStore.fetchToken(getName(), 0);
-                eventStream = eventBus.streamEvents(startToken);
+                eventStream = messageSource.openStream(startToken);
                 tx.commit();
             } catch (UnableToClaimTokenException e) {
                 tx.rollback();

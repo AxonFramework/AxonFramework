@@ -34,7 +34,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class ExactSequenceMatcher extends ListMatcher {
+public class ExactSequenceMatcher<T> extends ListMatcher<T> {
 
     /**
      * Construct a matcher that will return true if all the given {@code matchers} match against the event with
@@ -42,16 +42,16 @@ public class ExactSequenceMatcher extends ListMatcher {
      *
      * @param matchers The matchers that must match against at least one Event in the list.
      */
-    public ExactSequenceMatcher(Matcher<?>... matchers) {
+    public ExactSequenceMatcher(Matcher<? super T>... matchers) {
         super(matchers);
     }
 
     @Override
-    public boolean matchesList(List<?> events) {
+    public boolean matchesList(List<T> events) {
         Iterator<?> eventIterator = events.iterator();
-        Iterator<Matcher<?>> matcherIterator = getMatchers().iterator();
+        Iterator<Matcher<? super T>> matcherIterator = getMatchers().iterator();
         while (eventIterator.hasNext() && matcherIterator.hasNext()) {
-            Matcher matcher = matcherIterator.next();
+            Matcher<? super T> matcher = matcherIterator.next();
             if (!matcher.matches(eventIterator.next())) {
                 reportFailed(matcher);
                 return false;

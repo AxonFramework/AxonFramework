@@ -21,6 +21,7 @@ import org.hamcrest.Description;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Matches any empty collection.
@@ -28,7 +29,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.1
  */
-public class EmptyCollectionMatcher extends BaseMatcher<List<?>> {
+public class EmptyCollectionMatcher<T> extends BaseMatcher<List<T>> {
 
     private final String contentDescription;
 

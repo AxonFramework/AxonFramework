@@ -16,9 +16,6 @@
 
 package org.axonframework.serialization.xml;
 
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
 import org.junit.Before;
@@ -32,12 +29,10 @@ import static org.junit.Assert.*;
 public class Dom4JToByteArrayConverterTest {
 
     private Dom4JToByteArrayConverter testSubject;
-    private SimpleSerializedType serializedType;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new Dom4JToByteArrayConverter();
-        serializedType = new SimpleSerializedType("custom", "0");
     }
 
     @Test
@@ -52,14 +47,10 @@ public class Dom4JToByteArrayConverterTest {
         Document doc = df.createDocument("UTF-8");
         doc.setRootElement(df.createElement("rootElement"));
 
-        SimpleSerializedObject<Document> original = new SimpleSerializedObject<>(doc,
-                                                                                         Document.class,
-                                                                                         serializedType);
-        SerializedObject<byte[]> actual = testSubject.convert(original);
+        byte[] actual = testSubject.convert(doc);
 
         assertNotNull(actual);
-        assertNotNull(actual.getData());
-        String actualString = new String(actual.getData());
+        String actualString = new String(actual);
 
         assertTrue("Wrong output: " + actualString, actualString.contains("rootElement"));
     }

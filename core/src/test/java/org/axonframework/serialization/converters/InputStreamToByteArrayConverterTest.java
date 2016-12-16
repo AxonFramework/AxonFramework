@@ -16,9 +16,6 @@
 
 package org.axonframework.serialization.converters;
 
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -34,22 +30,18 @@ import static org.junit.Assert.assertEquals;
 public class InputStreamToByteArrayConverterTest {
 
     private InputStreamToByteArrayConverter testSubject;
-    private SimpleSerializedType type;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new InputStreamToByteArrayConverter();
-        type = new SimpleSerializedType("bla", "0");
     }
 
     @Test
     public void testConvert() {
         byte[] bytes = "Hello, world!".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
-        SerializedObject<byte[]> actual = testSubject
-                .convert(new SimpleSerializedObject<>(inputStream, InputStream.class, type));
+        byte[] actual = testSubject.convert(inputStream);
 
-        assertEquals(type, actual.getType());
-        assertArrayEquals(bytes, actual.getData());
+        assertArrayEquals(bytes, actual);
     }
 }

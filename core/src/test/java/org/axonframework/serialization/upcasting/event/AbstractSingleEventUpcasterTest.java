@@ -57,8 +57,8 @@ public class AbstractSingleEventUpcasterTest {
                 upcaster.upcast(Stream.of(new InitialEventRepresentation(eventData, serializer))).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation firstEvent = result.get(0);
-        assertEquals("1", firstEvent.getOutputType().getRevision());
-        StubEvent upcastedEvent = serializer.deserialize(firstEvent.getOutputData());
+        assertEquals("1", firstEvent.getType().getRevision());
+        StubEvent upcastedEvent = serializer.deserialize(firstEvent.getData());
         assertEquals(newValue, upcastedEvent.getName());
         assertEquals(eventData.getEventIdentifier(), firstEvent.getMessageIdentifier());
         assertEquals(eventData.getTimestamp(), firstEvent.getTimestamp());
@@ -104,7 +104,7 @@ public class AbstractSingleEventUpcasterTest {
         assertEquals(1, result.size());
         IntermediateEventRepresentation output = result.get(0);
         assertSame(input, output);
-        verify(input, never()).getOutputData();
+        verify(input, never()).getData();
     }
 
     @Test
@@ -116,12 +116,12 @@ public class AbstractSingleEventUpcasterTest {
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         input = spy(result.get(0));
-        assertEquals("1", input.getOutputType().getRevision()); //initial upcast was successful
+        assertEquals("1", input.getType().getRevision()); //initial upcast was successful
         result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation output = result.get(0);
         assertSame(input, output);
-        verify(input, never()).getOutputData();
+        verify(input, never()).getData();
     }
 
     private static class StubEventUpcaster extends SingleEventUpcaster {
@@ -136,7 +136,7 @@ public class AbstractSingleEventUpcasterTest {
 
         @Override
         protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
-            return intermediateRepresentation.getOutputType().equals(targetType);
+            return intermediateRepresentation.getType().equals(targetType);
         }
 
         @Override

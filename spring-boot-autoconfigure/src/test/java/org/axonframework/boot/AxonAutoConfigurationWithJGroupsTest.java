@@ -38,11 +38,13 @@ public class AxonAutoConfigurationWithJGroupsTest {
     @Qualifier("localSegment")
     private CommandBus localSegment;
 
+    @Autowired
+    private CommandBus commandBus;
+
     @Test
     public void testContextInitialization() throws Exception {
         assertNotNull(applicationContext);
 
-        CommandBus commandBus = applicationContext.getBean(CommandBus.class);
         assertNotNull(commandBus);
         assertNotNull(localSegment);
         assertNotSame(commandBus, localSegment);

@@ -20,7 +20,7 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Matcher that will match an Object if all the fields on that Object contain values equal to the same field in the
@@ -79,17 +79,7 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
                 try {
                     Object expectedFieldValue = field.get(expectedValue);
                     Object actualFieldValue = field.get(actual);
-                    if (expectedFieldValue != null
-                            && actualFieldValue != null
-                            && expectedFieldValue.getClass().isArray()) {
-                        if (!Arrays.deepEquals(new Object[]{expectedFieldValue}, new Object[]{actualFieldValue})) {
-                            failedField = field;
-                            failedFieldExpectedValue = expectedFieldValue;
-                            failedFieldActualValue = actualFieldValue;
-                            return false;
-                        }
-                    } else if ((expectedFieldValue != null && !expectedFieldValue.equals(actualFieldValue))
-                            || (expectedFieldValue == null && actualFieldValue != null)) {
+                    if (!Objects.deepEquals(expectedFieldValue, actualFieldValue)) {
                         failedField = field;
                         failedFieldExpectedValue = expectedFieldValue;
                         failedFieldActualValue = actualFieldValue;

@@ -110,8 +110,8 @@ public abstract class EventUtils {
         Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
                                                                              new LazyDeserializingObject<>(
-                                                                                     ir::getOutputData,
-                                                                                     ir.getOutputType(), serializer),
+                                                                                     ir::getData,
+                                                                                     ir.getType(), serializer),
                                                                              ir.getMetaData());
             if (ir.getTrackingToken().isPresent()) {
                 return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
@@ -150,8 +150,8 @@ public abstract class EventUtils {
         return upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
                                                                              new LazyDeserializingObject<>(
-                                                                                     ir::getOutputData,
-                                                                                     ir.getOutputType(), serializer),
+                                                                                     ir::getData,
+                                                                                     ir.getType(), serializer),
                                                                              ir.getMetaData());
             if (ir.getAggregateIdentifier().isPresent()) {
                 return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(),
@@ -211,7 +211,7 @@ public abstract class EventUtils {
         if (skipUnknownTypes) {
             upcastResult = upcastResult.filter(ir -> {
                 try {
-                    serializer.classForType(ir.getOutputType());
+                    serializer.classForType(ir.getType());
                     return true;
                 } catch (UnknownSerializedTypeException e) {
                     return false;

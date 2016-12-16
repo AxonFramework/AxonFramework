@@ -64,7 +64,25 @@ public abstract class ReflectionUtils {
         try {
             return (R) field.get(object);
         } catch (IllegalArgumentException | IllegalAccessException ex) {
-            throw new IllegalStateException("Unable to access field.", ex);
+            throw new IllegalStateException("Unable to access field for getting.", ex);
+        }
+    }
+
+    /**
+     * Set the {@code field} of {@code object} to a certain {@code value}. If necessary, the field is made accessible,
+     * assuming the security manager allows it.
+     *
+     * @param field The field to set {@code value} on
+     * @param object The object to set the {@code value} on {@code field}
+     * @param value The value to set on {@code field}
+     * @param <T> The type of the {@code value}
+     */
+    public static <T> void setFieldValue(Field field, Object object, T value) {
+        ensureAccessible(field);
+        try {
+            field.set(object, value);
+        } catch (IllegalAccessException ex) {
+            throw new IllegalStateException("Unable to access field for setting.", ex);
         }
     }
 

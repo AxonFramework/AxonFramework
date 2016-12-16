@@ -16,11 +16,14 @@
 
 package org.axonframework.test.matchers;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Utility class containing static methods to obtain instances of (List) Matchers.
@@ -40,7 +43,7 @@ public abstract class Matchers {
      * @param matcher The mather to match against the Message payloads
      * @return a Matcher that matches against the Message payloads
      */
-    public static Matcher<List<? extends Message<?>>> payloadsMatching(final Matcher<? extends Iterable<?>> matcher) {
+    public static Matcher<List<Message<?>>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
         return new PayloadsMatcher(matcher);
     }
 
@@ -50,7 +53,7 @@ public abstract class Matchers {
      * @param payloadMatcher The matcher to match against the Message's payload
      * @return a Matcher that evaluates a Message's payload.
      */
-    public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
+    public static Matcher<Message<?>> messageWithPayload(Matcher<?> payloadMatcher) {
         return new PayloadMatcher<>(payloadMatcher);
     }
 
@@ -60,9 +63,10 @@ public abstract class Matchers {
      * @param matchers the matchers that should match against one of the items in the List.
      * @return a matcher that matches a number of matchers against a list
      */
+    @SafeVarargs
     @Factory
-    public static Matcher<List<?>> listWithAllOf(Matcher<?>... matchers) {
-        return new ListWithAllOfMatcher(matchers);
+    public static <T> Matcher<List<T>> listWithAllOf(Matcher<T>... matchers) {
+        return new ListWithAllOfMatcher<>(matchers);
     }
 
     /**
@@ -72,9 +76,10 @@ public abstract class Matchers {
      * @param matchers the matchers that should match against one of the items in the List of Events.
      * @return a matcher that matches a number of event-matchers against a list of events
      */
+    @SafeVarargs
     @Factory
-    public static Matcher<List<?>> listWithAnyOf(Matcher<?>... matchers) {
-        return new ListWithAnyOfMatcher(matchers);
+    public static <T> Matcher<List<T>> listWithAnyOf(Matcher<T>... matchers) {
+        return new ListWithAnyOfMatcher<>(matchers);
     }
 
     /**
@@ -87,9 +92,10 @@ public abstract class Matchers {
      * @param matchers the matchers to match against the list of events
      * @return a matcher that matches a number of event-matchers against a list of events
      */
+    @SafeVarargs
     @Factory
-    public static Matcher<List<?>> sequenceOf(Matcher<?>... matchers) {
-        return new SequenceMatcher(matchers);
+    public static <T> Matcher<List<T>> sequenceOf(Matcher<T>... matchers) {
+        return new SequenceMatcher<>(matchers);
     }
 
     /**
@@ -107,9 +113,21 @@ public abstract class Matchers {
      * @param matchers the matchers to match against the list of events
      * @return a matcher that matches a number of event-matchers against a list of events
      */
+    @SafeVarargs
     @Factory
-    public static Matcher<List<?>> exactSequenceOf(Matcher<?>... matchers) {
-        return new ExactSequenceMatcher(matchers);
+    public static <T> Matcher<List<T>> exactSequenceOf(Matcher<? super T>... matchers) {
+        return new ExactSequenceMatcher<>(matchers);
+    }
+
+    /**
+     * Returns a Matcher that matches with values defined by the given {@code predicate}.
+     *
+     * @param predicate The predicate defining matching values
+     * @param <T> The type of value matched against
+     * @return A Matcher that matches against values defined by the predicate
+     */
+    public static <T> Matcher<T> matches(Predicate<T> predicate) {
+        return new PredicateMatcher<>(predicate);
     }
 
     /**
@@ -118,8 +136,8 @@ public abstract class Matchers {
      * @return a matcher that matches an empty list of events
      */
     @Factory
-    public static Matcher<List<?>> noEvents() {
-        return new EmptyCollectionMatcher("events");
+    public static Matcher<List<EventMessage<?>>> noEvents() {
+        return new EmptyCollectionMatcher<>("events");
     }
 
     /**
@@ -128,8 +146,8 @@ public abstract class Matchers {
      * @return a matcher that matches an empty list of Commands
      */
     @Factory
-    public static Matcher<List<?>> noCommands() {
-        return new EmptyCollectionMatcher("commands");
+    public static Matcher<List<CommandMessage<?>>> noCommands() {
+        return new EmptyCollectionMatcher<>("commands");
     }
 
     /**
@@ -170,7 +188,7 @@ public abstract class Matchers {
      * @return a matcher that matches against "nothing".
      */
     @Factory
-    public static Matcher<?> andNoMore() {
+    public static Matcher<Message<?>> andNoMore() {
         return nothing();
     }
 
@@ -181,7 +199,7 @@ public abstract class Matchers {
      * @return a matcher that matches against "nothing".
      */
     @Factory
-    public static Matcher<?> nothing() {
-        return new NullOrVoidMatcher();
+    public static Matcher<Message<?>> nothing() {
+        return new NullOrVoidMatcher<>();
     }
 }

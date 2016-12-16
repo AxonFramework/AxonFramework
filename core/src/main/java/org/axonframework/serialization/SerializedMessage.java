@@ -108,9 +108,7 @@ public class SerializedMessage<T> extends AbstractMessage<T> implements Serializ
     @Override
     public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(payload.getSerializer())) {
-            final SerializedObject serializedObject = payload.getSerializedObject();
-            return serializer.getConverterFactory()
-                    .getConverter(serializedObject.getContentType(), expectedRepresentation).convert(serializedObject);
+            return serializer.getConverter().convert(payload.getSerializedObject(), expectedRepresentation);
         }
         return serializer.serialize(payload.getObject(), expectedRepresentation);
     }
@@ -119,9 +117,7 @@ public class SerializedMessage<T> extends AbstractMessage<T> implements Serializ
     @Override
     public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(metaData.getSerializer())) {
-            final SerializedObject serializedObject = metaData.getSerializedObject();
-            return serializer.getConverterFactory()
-                    .getConverter(serializedObject.getContentType(), expectedRepresentation).convert(serializedObject);
+            return serializer.getConverter().convert(metaData.getSerializedObject(), expectedRepresentation);
         }
         return serializer.serialize(metaData.getObject(), expectedRepresentation);
     }

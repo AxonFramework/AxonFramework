@@ -67,15 +67,23 @@ public interface IntermediateEventRepresentation {
      *
      * @return the type and version of the represented data
      */
-    SerializedType getOutputType();
+    SerializedType getType();
 
     /**
-     * Get the data of this representation. The type of the returned data should match that of {@link
-     * #getOutputType()}.
+     * Get the data of this representation. The type of the returned data should match that of {@link #getType()}.
      *
      * @return the data representation of the object
      */
-    SerializedObject<?> getOutputData();
+    SerializedObject<?> getData();
+
+    /**
+     * Get the data of this representation. The type of the returned data will be converted to the given {@code
+     * requiredType}.
+     *
+     * @param requiredType the type to convert to
+     * @return the data representation of the object converted to the required type
+     */
+    <D> SerializedObject<D> getData(Class<D> requiredType);
 
     /**
      * Returns the identifier of the message wrapping the object to upcast.

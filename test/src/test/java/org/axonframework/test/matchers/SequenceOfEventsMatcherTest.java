@@ -16,6 +16,7 @@
 
 package org.axonframework.test.matchers;
 
+import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -28,7 +29,6 @@ import org.mockito.stubbing.Answer;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -37,15 +37,15 @@ import static org.mockito.Mockito.*;
  */
 public class SequenceOfEventsMatcherTest {
 
-    private Matcher<EventMessage> mockMatcher1;
-    private Matcher<EventMessage> mockMatcher2;
-    private Matcher<EventMessage> mockMatcher3;
+    private Matcher<EventMessage<?>> mockMatcher1;
+    private Matcher<EventMessage<?>> mockMatcher2;
+    private Matcher<EventMessage<?>> mockMatcher3;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
     private StubEvent stubEvent3;
     private StubEvent stubEvent4;
     private StubEvent stubEvent5;
-    private Matcher<List<?>> testSubject;
+    private Matcher<List<EventMessage<?>>> testSubject;
 
     @SuppressWarnings({"unchecked"})
     @Before
@@ -53,7 +53,7 @@ public class SequenceOfEventsMatcherTest {
         mockMatcher1 = mock(Matcher.class);
         mockMatcher2 = mock(Matcher.class);
         mockMatcher3 = mock(Matcher.class);
-        testSubject = sequenceOf(mockMatcher1, mockMatcher2, mockMatcher3);
+        testSubject = Matchers.sequenceOf(mockMatcher1, mockMatcher2, mockMatcher3);
         stubEvent1 = new StubEvent();
         stubEvent2 = new StubEvent();
         stubEvent3 = new StubEvent();

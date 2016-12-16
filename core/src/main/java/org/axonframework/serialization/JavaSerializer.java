@@ -32,7 +32,7 @@ import java.io.*;
  */
 public class JavaSerializer implements Serializer {
 
-    private final ConverterFactory converterFactory = new ChainingConverterFactory(Thread.currentThread().getContextClassLoader());
+    private final Converter converter = new ChainingConverter(Thread.currentThread().getContextClassLoader());
     private final RevisionResolver revisionResolver;
 
     /**
@@ -67,23 +67,21 @@ public class JavaSerializer implements Serializer {
         } catch (IOException e) {
             throw new SerializationException("An exception occurred writing serialized data to the output stream", e);
         }
-        T converted = converterFactory.getConverter(byte[].class, expectedType)
-                                      .convert(baos.toByteArray());
+        T converted = converter.convert(baos.toByteArray(), expectedType);
         return new SimpleSerializedObject<>(converted, expectedType, instance.getClass().getName(),
-                                             revisionOf(instance.getClass()));
+                                            revisionOf(instance.getClass()));
     }
 
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
-        return (converterFactory.hasConverter(byte[].class, expectedRepresentation));
+        return converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
-        SerializedObject<InputStream> converted = converterFactory.getConverter(serializedObject.getContentType(),
-                                                                                InputStream.class)
-                                                                  .convert(serializedObject);
+        SerializedObject<InputStream> converted =
+                converter.convert(serializedObject, InputStream.class);
         ObjectInputStream ois = null;
         try {
             ois = new ObjectInputStream(converted.getData());
@@ -110,8 +108,8 @@ public class JavaSerializer implements Serializer {
     }
 
     @Override
-    public ConverterFactory getConverterFactory() {
-        return converterFactory;
+    public Converter getConverter() {
+        return converter;
     }
 
     private String revisionOf(Class<?> type) {

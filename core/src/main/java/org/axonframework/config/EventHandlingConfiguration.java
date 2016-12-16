@@ -49,7 +49,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     /**
      * Creates a default configuration for an Event Handling module that assigns Event Handlers to Subscribing Event
-     * Processors based on the package they're in. FOr each package found, a new Event Processor instance is created,
+     * Processors based on the package they're in. For each package found, a new Event Processor instance is created,
      * with the package name as the processor name. This default behavior can be overridden in the instance returned.
      * <p>
      * At a minimum, the Event Handler beans need to be registered before this component is useful.

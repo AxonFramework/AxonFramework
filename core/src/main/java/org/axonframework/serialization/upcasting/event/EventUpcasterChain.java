@@ -14,7 +14,6 @@
 package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.serialization.upcasting.GenericUpcasterChain;
-import org.axonframework.serialization.upcasting.Upcaster;
 
 import java.util.List;
 
@@ -33,8 +32,7 @@ public class EventUpcasterChain extends GenericUpcasterChain<IntermediateEventRe
      *
      * @param upcasters the upcasters to chain
      */
-    @SafeVarargs
-    public EventUpcasterChain(Upcaster<IntermediateEventRepresentation>... upcasters) {
+    public EventUpcasterChain(EventUpcaster... upcasters) {
         super(upcasters);
     }
 
@@ -43,7 +41,7 @@ public class EventUpcasterChain extends GenericUpcasterChain<IntermediateEventRe
      *
      * @param upcasters the upcasters to chain
      */
-    public EventUpcasterChain(List<? extends Upcaster<IntermediateEventRepresentation>> upcasters) {
+    public EventUpcasterChain(List<? extends EventUpcaster> upcasters) {
         super(upcasters);
     }
 }

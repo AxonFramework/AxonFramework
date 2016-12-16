@@ -16,7 +16,10 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
+
+import java.util.List;
 
 /**
  * Interface describing the operations available on the "validate result" (a.k.a. "then") stage of the test execution.
@@ -56,16 +59,14 @@ public interface ResultValidator {
     }
 
     /**
-     * Expect the published events to match the given {@code matcher}. Note that this assertion will fail if
-     * events
-     * were published but not saved.
+     * Expect the published events to match the given {@code matcher}.
      * <p>
-     * Note: if no events were published or stored, the matcher receives an empty List.
+     * Note: if no events were published, the matcher receives an empty List.
      *
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEventsMatching(Matcher<? extends Iterable<?>> matcher);
+    ResultValidator expectEventsMatching(Matcher<List<EventMessage<?>>> matcher);
 
     /**
      * Expect the command handler to return the given {@code expectedReturnValue} after execution. The actual and
@@ -82,7 +83,7 @@ public interface ResultValidator {
      * @param matcher The matcher to verify the actual return value against
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectReturnValue(Matcher<?> matcher);
+    ResultValidator expectReturnValueMatching(Matcher<?> matcher);
 
     /**
      * Expect the given {@code expectedException} to occur during command handler execution. The actual exception
@@ -102,10 +103,9 @@ public interface ResultValidator {
     ResultValidator expectException(Matcher<?> matcher);
 
     /**
-     * Explicitly expect a {@code void} return type on the given command handler. {@code void} is the
-     * recommended return value for all command handlers as they allow for a more scalable architecture.
+     * Expect a successful execution of the given command handler, regardless of the actual return value.
      *
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectVoidReturnType();
+    ResultValidator expectSuccessfulHandlerExecution();
 }

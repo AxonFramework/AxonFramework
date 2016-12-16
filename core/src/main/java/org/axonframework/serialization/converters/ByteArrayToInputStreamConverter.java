@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization.converters;
 
-import org.axonframework.serialization.AbstractContentTypeConverter;
+import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -28,7 +28,7 @@ import java.io.InputStream;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ByteArrayToInputStreamConverter extends AbstractContentTypeConverter<byte[], InputStream> {
+public class ByteArrayToInputStreamConverter implements ContentTypeConverter<byte[],InputStream> {
 
     @Override
     public Class<byte[]> expectedSourceType() {

@@ -43,14 +43,6 @@ public interface ContentTypeConverter<S, T> {
     Class<T> targetType();
 
     /**
-     * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.
-     *
-     * @param original The source to convert
-     * @return the converted representation
-     */
-    SerializedObject<T> convert(SerializedObject<S> original);
-
-    /**
      * Converts the given object into another. Typically, these values are contained by a {@link SerializedObject}
      * instance.
      *

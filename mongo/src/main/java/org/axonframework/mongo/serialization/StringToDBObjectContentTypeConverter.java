@@ -18,7 +18,7 @@ package org.axonframework.mongo.serialization;
 
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
-import org.axonframework.serialization.AbstractContentTypeConverter;
+import org.axonframework.serialization.ContentTypeConverter;
 
 /**
  * ContentTypeConverter implementation that converts a String containing its Binary JSON representation into a DBObject
@@ -27,7 +27,7 @@ import org.axonframework.serialization.AbstractContentTypeConverter;
  * @author Allard Buijze
  * @since 2.0
  */
-public class StringToDBObjectContentTypeConverter extends AbstractContentTypeConverter<String, DBObject> {
+public class StringToDBObjectContentTypeConverter implements ContentTypeConverter<String,DBObject> {
 
     @Override
     public Class<String> expectedSourceType() {

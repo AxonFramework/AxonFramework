@@ -16,9 +16,6 @@
 
 package org.axonframework.serialization.xml;
 
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
 import org.dom4j.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,11 +31,9 @@ import static org.junit.Assert.assertEquals;
 public class InputStreamToDom4jConverterTest {
 
     private InputStreamToDom4jConverter testSubject;
-    private SimpleSerializedType type;
 
     @Before
     public void setUp() throws Exception {
-        type = new SimpleSerializedType("bla", "0");
         testSubject = new InputStreamToDom4jConverter();
     }
 
@@ -46,9 +41,8 @@ public class InputStreamToDom4jConverterTest {
     public void testConvert() throws Exception {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
-        SerializedObject<Document> actual = testSubject
-                .convert(new SimpleSerializedObject<>(inputStream, InputStream.class, type));
+        Document actual = testSubject.convert(inputStream);
 
-        assertEquals("parent", actual.getData().getRootElement().getName());
+        assertEquals("parent", actual.getRootElement().getName());
     }
 }

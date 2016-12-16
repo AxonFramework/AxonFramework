@@ -25,7 +25,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.annotation.MetaData;
+import org.axonframework.messaging.annotation.MetaDataValue;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -38,56 +38,42 @@ import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 
 /**
- * Factory that creates Gateway implementations from custom interface definitions. The behavior of the method is
- * defined by the parameters, declared exceptions and return type of the method.
+ * Factory that creates Gateway implementations from custom interface definitions. The behavior of the method is defined
+ * by the parameters, declared exceptions and return type of the method.
  * <p/>
- * <em>Supported parameter types:</em><ul>
- * <li>The first parameter of the method is considered the payload of the message. If the first parameter is a Message
- * itself, a new message is created using the payload and metadata of the message passed as parameter.</li>
- * <li>Parameters that are annotated with {@link MetaData @MetaData} are will cause the parameter values to be added as
- * meta data values to the outgoing message.</li>
- * <li>If the last two parameters are of type {@link Long long} and {@link TimeUnit}, they are considered to represent
- * the timeout for the command. The method will block for as long as the command requires to execute, or until the
- * timeout expires.</li>
+ * <em>Supported parameter types:</em><ul> <li>The first parameter of the method is considered the payload of the
+ * message. If the first parameter is a Message itself, a new message is created using the payload and metadata of the
+ * message passed as parameter.</li> <li>Parameters that are annotated with {@link MetaDataValue @MetaDataValue} will
+ * cause the parameter values to be added as meta data values to the outgoing message.</li> <li>If the last two
+ * parameters are of type {@link Long long} and {@link TimeUnit}, they are considered to represent the timeout for the
+ * command. The method will block for as long as the command requires to execute, or until the timeout expires.</li>
  * </ul>
  * <p/>
- * <em>Effect of return values</em><ul>
- * <li>{@code void} return types are always allowed. Unless another parameter makes the method blocking, void
- * methods are non-blocking by default.</li>
- * <li>Declaring a {@link Future} return type will always result in a non-blocking operation. A future is returned
- * that allows you to retrieve the execution's result at your own convenience. Note that declared exceptions and
- * timeouts are ignored.</li>
- * <li>Any other return type will cause the dispatch to block (optionally with timeout) until a result is
- * available</li>
- * </ul>
+ * <em>Effect of return values</em><ul> <li>{@code void} return types are always allowed. Unless another parameter makes
+ * the method blocking, void methods are non-blocking by default.</li> <li>Declaring a {@link Future} return type will
+ * always result in a non-blocking operation. A future is returned that allows you to retrieve the execution's result at
+ * your own convenience. Note that declared exceptions and timeouts are ignored.</li> <li>Any other return type will
+ * cause the dispatch to block (optionally with timeout) until a result is available</li> </ul>
  * <p/>
- * <em>Effect of declared exceptions</em> <ul>
- * <li>Any checked exception declared on the method will cause it to block (optionally with timeout). If the command
- * results in a declared checked exception, that exception is thrown from the method.</li>
- * <li>Declaring a {@link TimeoutException} will throw that exception when a configured timeout expires. If no such
- * exception is declared, but a timeout is configured, the method will return {@code null}.</li>
- * <li>Declaring an {@link InterruptedException} will throw that exception when a thread blocked while waiting for a
- * response is interrupted. Not declaring the exception will have the method return {@code null} when a blocked
- * thread is interrupted. Note that when no InterruptedException is declared, the interrupt flag is set back on the
- * interrupted thread</li>
- * </ul>
+ * <em>Effect of declared exceptions</em> <ul> <li>Any checked exception declared on the method will cause it to block
+ * (optionally with timeout). If the command results in a declared checked exception, that exception is thrown from the
+ * method.</li> <li>Declaring a {@link TimeoutException} will throw that exception when a configured timeout expires. If
+ * no such exception is declared, but a timeout is configured, the method will return {@code null}.</li> <li>Declaring
+ * an {@link InterruptedException} will throw that exception when a thread blocked while waiting for a response is
+ * interrupted. Not declaring the exception will have the method return {@code null} when a blocked thread is
+ * interrupted. Note that when no InterruptedException is declared, the interrupt flag is set back on the interrupted
+ * thread</li> </ul>
  * <p/>
- * <em>Effect of unchecked exceptions</em> <ul>
- * <li>Any unchecked exception thrown during command handling will cause it to block. If the method is blocking (see
- * below) the
- * unchecked exception will be thrown from the method</li>
- * </ul>
+ * <em>Effect of unchecked exceptions</em> <ul> <li>Any unchecked exception thrown during command handling will cause it
+ * to block. If the method is blocking (see below) the unchecked exception will be thrown from the method</li> </ul>
  * <p/>
  * Finally, the {@link Timeout @Timeout} annotation can be used to define a timeout on a method. This will always cause
  * a method invocation to block until a response is available, or the timeout expires.
  * <p/>
- * Any method will be blocking if: <ul>
- * <li>It declares a return type other than {@code void} or {@code Future}, or</li>
- * <li>It declares an exception, or</li>
- * <li>The last two parameters are of type {@link TimeUnit} and {@link Long long}, or</li>
- * <li>The method is annotated with {@link Timeout @Timeout}</li>
- * </ul>
- * In other cases, the method is non-blocking and will return immediately after dispatching a command.
+ * Any method will be blocking if: <ul> <li>It declares a return type other than {@code void} or {@code Future}, or</li>
+ * <li>It declares an exception, or</li> <li>The last two parameters are of type {@link TimeUnit} and {@link Long long},
+ * or</li> <li>The method is annotated with {@link Timeout @Timeout}</li> </ul> In other cases, the method is
+ * non-blocking and will return immediately after dispatching a command.
  * <p/>
  * This factory is thread safe once configured, and so are the gateways it creates.
  *
@@ -126,8 +112,8 @@ public class CommandGatewayFactory {
      * have been created using this factory.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
-     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
-     *                                    {@code null} to report failures without rescheduling
+     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be {@code
+     *                                    null} to report failures without rescheduling
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     @SafeVarargs
@@ -145,8 +131,8 @@ public class CommandGatewayFactory {
      * have been created using this factory.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
-     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
-     *                                    {@code null} to report failures without rescheduling
+     * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be {@code
+     *                                    null} to report failures without rescheduling
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
@@ -178,32 +164,31 @@ public class CommandGatewayFactory {
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
 
-            InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
-                                                                           dispatchInterceptors, extractors,
-                                                                           commandCallbacks, true);
+            InvocationHandler dispatcher =
+                    new DispatchOnInvocationHandler(commandBus, retryScheduler, dispatchInterceptors, extractors,
+                                                    commandCallbacks, true);
 
             if (!Arrays.asList(CompletableFuture.class, Future.class, CompletionStage.class)
                     .contains(gatewayMethod.getReturnType())) {
 
-                if (arguments.length >= 3
-                        && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
-                        && (Long.TYPE.isAssignableFrom(arguments[arguments.length - 2])
-                        || Integer.TYPE.isAssignableFrom(arguments[arguments.length - 2]))) {
-                    dispatcher = wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2,
-                                                                    arguments.length - 1);
+                if (arguments.length >= 3 && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1]) &&
+                        (Long.TYPE.isAssignableFrom(arguments[arguments.length - 2]) ||
+                                Integer.TYPE.isAssignableFrom(arguments[arguments.length - 2]))) {
+                    dispatcher =
+                            wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2, arguments.length - 1);
                 } else {
                     Timeout timeout = gatewayMethod.getAnnotation(Timeout.class);
                     timeout = resolveTimeout(gatewayMethod, timeout);
                     if (timeout != null) {
                         dispatcher = wrapToReturnWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
-                    } else if (!Void.TYPE.equals(gatewayMethod.getReturnType())
-                            || gatewayMethod.getExceptionTypes().length > 0) {
+                    } else if (!Void.TYPE.equals(gatewayMethod.getReturnType()) ||
+                            gatewayMethod.getExceptionTypes().length > 0) {
                         dispatcher = wrapToWaitForResult(dispatcher);
                     } else if (commandCallbacks.isEmpty() && !hasCallbackParameters(gatewayMethod)) {
                         // switch to fire-and-forget mode
-                        dispatcher = wrapToFireAndForget(new DispatchOnInvocationHandler(
-                                commandBus, retryScheduler, dispatchInterceptors, extractors,
-                                commandCallbacks, false));
+                        dispatcher = wrapToFireAndForget(
+                                new DispatchOnInvocationHandler(commandBus, retryScheduler, dispatchInterceptors,
+                                                                extractors, commandCallbacks, false));
                     }
                 }
                 Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
@@ -218,11 +203,10 @@ public class CommandGatewayFactory {
             dispatchers.put(gatewayMethod, dispatcher);
         }
 
-        return gatewayInterface.cast(
-                Proxy.newProxyInstance(gatewayInterface.getClassLoader(),
-                                       new Class[]{gatewayInterface},
-                                       new GatewayInvocationHandler(dispatchers, commandBus, retryScheduler,
-                                                                    dispatchInterceptors)));
+        return gatewayInterface
+                .cast(Proxy.newProxyInstance(gatewayInterface.getClassLoader(), new Class[]{gatewayInterface},
+                                             new GatewayInvocationHandler(dispatchers, commandBus, retryScheduler,
+                                                                          dispatchInterceptors)));
     }
 
     private Timeout resolveTimeout(Method gatewayMethod, Timeout timeout) {
@@ -379,9 +363,10 @@ public class CommandGatewayFactory {
             if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameters[i].getType())) {
                 extractors.add(new MetaDataExtractor(i, null));
             } else {
-                Optional<Map<String, Object>> metaDataAnnotation = AnnotationUtils.findAnnotationAttributes(parameters[i], MetaData.class);
+                Optional<Map<String, Object>> metaDataAnnotation =
+                        AnnotationUtils.findAnnotationAttributes(parameters[i], MetaDataValue.class);
                 if (metaDataAnnotation.isPresent()) {
-                    extractors.add(new MetaDataExtractor(i, (String) metaDataAnnotation.get().get("metaData")));
+                    extractors.add(new MetaDataExtractor(i, (String) metaDataAnnotation.get().get("metaDataValue")));
                 }
             }
         }
@@ -409,14 +394,15 @@ public class CommandGatewayFactory {
         R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
     }
 
-    private static class GatewayInvocationHandler extends AbstractCommandGateway implements
-                                                                                 java.lang.reflect.InvocationHandler {
+    private static class GatewayInvocationHandler extends AbstractCommandGateway implements java.lang.reflect
+            .InvocationHandler {
 
         private final Map<Method, InvocationHandler> dispatchers;
 
         public GatewayInvocationHandler(Map<Method, InvocationHandler> dispatchers, CommandBus commandBus,
                                         RetryScheduler retryScheduler,
-                                        List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+                                        List<MessageDispatchInterceptor<? super CommandMessage<?>>>
+                                                dispatchInterceptors) {
             super(commandBus, retryScheduler, dispatchInterceptors);
             this.dispatchers = new HashMap<>(dispatchers);
         }
@@ -432,15 +418,16 @@ public class CommandGatewayFactory {
         }
     }
 
-    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
-            implements InvocationHandler<CompletableFuture<R>> {
+    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway implements
+            InvocationHandler<CompletableFuture<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
         private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
         private final boolean forceCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
-                                              List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors,
+                                              List<MessageDispatchInterceptor<? super CommandMessage<?>>>
+                                                      messageDispatchInterceptors,
                                               MetaDataExtractor[] metaDataExtractors, // NOSONAR
                                               List<CommandCallback<? super C, ? super R>> commandCallbacks,
                                               boolean forceCallbacks) {
@@ -531,8 +518,9 @@ public class CommandGatewayFactory {
                         throw cause instanceof Exception ? (Exception) cause : e;
                     }
                 }
-                throw new CommandExecutionException("Command execution resulted in a checked exception that was "
-                                                            + "not declared on the gateway", cause);
+                throw new CommandExecutionException(
+                        "Command execution resulted in a checked exception that was " + "not declared on the gateway",
+                        cause);
             }
         }
     }
@@ -608,8 +596,8 @@ public class CommandGatewayFactory {
 
         @Override
         public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
-            return delegate.invoke(proxy, invokedMethod, args).get(toLong(args[timeoutIndex]),
-                                                                   (TimeUnit) args[timeUnitIndex]);
+            return delegate.invoke(proxy, invokedMethod, args)
+                    .get(toLong(args[timeoutIndex]), (TimeUnit) args[timeUnitIndex]);
         }
 
         private long toLong(Object arg) {
@@ -682,10 +670,8 @@ public class CommandGatewayFactory {
             this.delegate = delegate;
             Class discoveredParameterType = Object.class;
             for (Method m : ReflectionUtils.methodsOf(delegate.getClass())) {
-                if (m.getGenericParameterTypes().length == 2
-                        && m.getGenericParameterTypes()[1] != Object.class
-                        && "onSuccess".equals(m.getName())
-                        && Modifier.isPublic(m.getModifiers())) {
+                if (m.getGenericParameterTypes().length == 2 && m.getGenericParameterTypes()[1] != Object.class &&
+                        "onSuccess".equals(m.getName()) && Modifier.isPublic(m.getModifiers())) {
                     discoveredParameterType = m.getParameterTypes()[1];
                     if (discoveredParameterType != Object.class) {
                         break;

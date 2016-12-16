@@ -205,7 +205,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        public TrackingEventStream openStream(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
     }
@@ -294,7 +294,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        public TrackingEventStream openStream(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
 

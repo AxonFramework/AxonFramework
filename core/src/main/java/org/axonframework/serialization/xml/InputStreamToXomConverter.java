@@ -19,8 +19,8 @@ package org.axonframework.serialization.xml;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
-import org.axonframework.serialization.AbstractContentTypeConverter;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
+import org.axonframework.serialization.ContentTypeConverter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +33,7 @@ import java.io.InputStreamReader;
  * @author Jochen Munz
  * @since 2.2
  */
-public class InputStreamToXomConverter extends AbstractContentTypeConverter<InputStream, Document> {
+public class InputStreamToXomConverter implements ContentTypeConverter<InputStream,Document> {
 
     @Override
     public Class<InputStream> expectedSourceType() {

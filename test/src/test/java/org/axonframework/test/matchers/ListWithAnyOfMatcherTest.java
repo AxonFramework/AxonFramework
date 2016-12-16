@@ -37,10 +37,10 @@ import static org.mockito.Mockito.*;
  */
 public class ListWithAnyOfMatcherTest {
 
-    private Matcher<EventMessage> mockMatcher1;
-    private Matcher<EventMessage> mockMatcher2;
-    private Matcher<EventMessage> mockMatcher3;
-    private Matcher<List<?>> testSubject;
+    private Matcher<EventMessage<?>> mockMatcher1;
+    private Matcher<EventMessage<?>> mockMatcher2;
+    private Matcher<EventMessage<?>> mockMatcher3;
+    private Matcher<List<EventMessage<?>>> testSubject;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
 
