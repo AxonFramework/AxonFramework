@@ -25,7 +25,7 @@ import java.lang.reflect.Parameter;
 
 /**
  * Factory for the default parameter resolvers. This factory is capable for providing parameter resolvers for Message,
- * MetaData and @MetaData annotated parameters.
+ * MetaData and @MetaDataValue annotated parameters.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -40,9 +40,10 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         if (Message.class.isAssignableFrom(parameterType)) {
             return new MessageParameterResolver(parameterType);
         }
-        MetaData metaDataAnnotation = AnnotationUtils.findAnnotation(parameters[parameterIndex], MetaData.class);
-        if (metaDataAnnotation != null) {
-            return new AnnotatedMetaDataParameterResolver(metaDataAnnotation, parameterType);
+        MetaDataValue
+                metaDataValueAnnotation = AnnotationUtils.findAnnotation(parameters[parameterIndex], MetaDataValue.class);
+        if (metaDataValueAnnotation != null) {
+            return new AnnotatedMetaDataParameterResolver(metaDataValueAnnotation, parameterType);
         }
         if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameterType)) {
             return MetaDataParameterResolver.INSTANCE;
@@ -55,25 +56,25 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
     private static class AnnotatedMetaDataParameterResolver implements ParameterResolver<Object> {
 
-        private final MetaData metaData;
+        private final MetaDataValue metaDataValue;
         private final Class parameterType;
 
-        public AnnotatedMetaDataParameterResolver(MetaData metaData, Class parameterType) {
-            this.metaData = metaData;
+        public AnnotatedMetaDataParameterResolver(MetaDataValue metaDataValue, Class parameterType) {
+            this.metaDataValue = metaDataValue;
             this.parameterType = parameterType;
         }
 
         @Override
         public Object resolveParameterValue(Message<?> message) {
-            return message.getMetaData().get(metaData.value());
+            return message.getMetaData().get(metaDataValue.value());
         }
 
         @Override
         public boolean matches(Message<?> message) {
-            return !(parameterType.isPrimitive() || metaData.required())
+            return !(parameterType.isPrimitive() || metaDataValue.required())
                     || (
-                    message.getMetaData().containsKey(metaData.value())
-                            && parameterType.isInstance(message.getMetaData().get(metaData.value()))
+                    message.getMetaData().containsKey(metaDataValue.value())
+                            && parameterType.isInstance(message.getMetaData().get(metaDataValue.value()))
             );
         }
     }

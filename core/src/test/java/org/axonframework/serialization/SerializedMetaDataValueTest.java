@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class SerializedMetaDataTest {
+public class SerializedMetaDataValueTest {
 
     @Test
     public void testSerializeMetaData() {

@@ -29,7 +29,7 @@ import java.lang.annotation.*;
 @Documented
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MetaData {
+public @interface MetaDataValue {
 
     /**
      * The key of the MetaData field to inject as method parameter.

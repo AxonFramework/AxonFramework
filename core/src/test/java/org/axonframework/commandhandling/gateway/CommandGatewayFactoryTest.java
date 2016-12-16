@@ -21,21 +21,18 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.lock.DeadlockException;
-import org.axonframework.messaging.annotation.MetaData;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonMap;
@@ -105,7 +102,7 @@ public class CommandGatewayFactoryTest {
         CommandGatewayFactory testSubject = new CommandGatewayFactory(mockCommandBus);
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
         gateway.fireAndForget("Command",
-                              org.axonframework.messaging.MetaData.from(singletonMap("otherKey", "otherVal")),
+                              MetaData.from(singletonMap("otherKey", "otherVal")),
                               metaTest,
                               "value");
         // in this case, no callback is used
@@ -614,8 +611,8 @@ public class CommandGatewayFactoryTest {
 
     private interface CompleteGateway {
 
-        void fireAndForget(Object command, org.axonframework.messaging.MetaData meta,
-                           @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
+        void fireAndForget(Object command, MetaData meta,
+                           @MetaDataValue("test") Object metaTest, @MetaDataValue("key") Object metaKey);
 
         String waitForReturnValue(Object command);
 

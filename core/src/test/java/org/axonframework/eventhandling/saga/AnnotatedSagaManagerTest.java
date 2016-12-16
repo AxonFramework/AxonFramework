@@ -13,13 +13,13 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.messaging.annotation.MetaData;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
@@ -194,7 +194,7 @@ public class AnnotatedSagaManagerTest {
         }
 
         @SagaEventHandler(associationProperty = "myIdentifier")
-        public void handleSpecificMiddleEvent(MiddleEvent event, @MetaData(value = "catA", required = true) String category) {
+        public void handleSpecificMiddleEvent(MiddleEvent event, @MetaDataValue(value = "catA", required = true) String category) {
             // this handler is more specific, but requires meta data that not all events might have
             capturedEvents.add(event);
             specificHandlerInvocations++;

@@ -33,10 +33,7 @@ import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Assert;
 import org.junit.Before;
@@ -579,7 +576,7 @@ public class AggregateAnnotationCommandHandlerTest {
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
                                              UnitOfWork<CommandMessage<?>> unitOfWork,
-                                             @org.axonframework.messaging.annotation.MetaData("notExist") String value) {
+                                             @MetaDataValue("notExist") String value) {
             super(createCommand.getId());
             Assert.assertNotNull(metaData);
             Assert.assertNotNull(unitOfWork);

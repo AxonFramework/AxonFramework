@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class MetaDataTest {
+public class MetaDataValueTest {
 
     @Test
     public void createMetaData() {

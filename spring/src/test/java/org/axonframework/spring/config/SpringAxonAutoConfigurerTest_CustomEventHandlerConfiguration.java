@@ -18,7 +18,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.MetaData;
+import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.Test;
@@ -169,7 +169,7 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             }
 
             @EventHandler(payloadType = String.class)
-            public void handle(@MetaData("key") String event) {
+            public void handle(@MetaDataValue("key") String event) {
                 assertNotNull(eventBus);
                 received.add(event);
             }
