@@ -16,6 +16,9 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.conflictresolution.ConflictResolution;
+import org.axonframework.commandhandling.conflictresolution.DefaultConflictResolver;
+import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.common.Assert;
@@ -23,6 +26,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.concurrent.Callable;
 
@@ -169,8 +173,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         if (!eventStream.hasNext()) {
-            throw new AggregateNotFoundException(aggregateIdentifier,
-                                                 "The aggregate was not found in the event store");
+            throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found in the event store");
         }
         EventSourcedAggregate<T> aggregate = EventSourcedAggregate
                 .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier, eventStream.peek()),
@@ -180,6 +183,19 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
             throw new AggregateDeletedException(aggregateIdentifier);
         }
         return aggregate;
+    }
+
+    @Override
+    protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
+        if (expectedVersion != null && expectedVersion < aggregate.version()) {
+            DefaultConflictResolver conflictResolver =
+                    new DefaultConflictResolver(eventStore, aggregate.identifierAsString(), expectedVersion,
+                                                aggregate.version());
+            ConflictResolution.initialize(conflictResolver);
+            CurrentUnitOfWork.get().onPrepareCommit(uow -> conflictResolver.ensureConflictsResolved());
+        } else {
+            super.validateOnLoad(aggregate, expectedVersion);
+        }
     }
 
     @Override
@@ -204,5 +220,4 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     public AggregateFactory<T> getAggregateFactory() {
         return aggregateFactory;
     }
-
 }

@@ -91,6 +91,11 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     @Override
+    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+        return storageEngine.readEvents(aggregateIdentifier, firstSequenceNumber);
+    }
+
+    @Override
     public void storeSnapshot(DomainEventMessage<?> snapshot) {
         storageEngine.storeSnapshot(snapshot);
     }

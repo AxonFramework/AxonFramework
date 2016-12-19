@@ -42,6 +42,26 @@ public interface EventStore extends EventBus {
     DomainEventStream readEvents(String aggregateIdentifier);
 
     /**
+     * Open an event stream containing all domain events belonging to the given {@code aggregateIdentifier}.
+     * <p>
+     * The returned stream is <em>finite</em>, ending with the last known event of the aggregate. If the event store
+     * holds no events of the given aggregate an empty stream is returned.
+     * <p>
+     * The default implementation invokes {@link #readEvents(String)} and then filters out events with a sequence number
+     * smaller than {@code firstSequenceNumber}.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate whose events to fetch
+     * @param firstSequenceNumber the expected sequence number of the first event in the returned stream
+     * @return a stream of all currently stored events of the aggregate
+     */
+    default DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+        DomainEventStream wholeStream = readEvents(aggregateIdentifier);
+        return DomainEventStream
+                .of(wholeStream.asStream().filter(event -> event.getSequenceNumber() >= firstSequenceNumber),
+                    wholeStream::getLastSequenceNumber);
+    }
+
+    /**
      * Stores the given (temporary) {@code snapshot} event. This snapshot replaces the segment of the event stream
      * identified by the {@code snapshot}'s {@link DomainEventMessage#getAggregateIdentifier() Aggregate Identifier} up
      * to (and including) the event with the {@code snapshot}'s {@link DomainEventMessage#getSequenceNumber() sequence
