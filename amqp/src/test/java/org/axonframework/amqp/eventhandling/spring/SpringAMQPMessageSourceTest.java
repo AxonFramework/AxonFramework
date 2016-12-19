@@ -47,7 +47,7 @@ public class SpringAMQPMessageSourceTest {
     public void testMessageListenerInvokesAllEventProcessors() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(new DefaultAMQPMessageConverter(serializer));
+        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(serializer);
         testSubject.subscribe(eventProcessor);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
