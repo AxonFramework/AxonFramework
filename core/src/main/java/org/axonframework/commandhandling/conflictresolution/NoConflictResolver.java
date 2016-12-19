@@ -19,7 +19,6 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * Implementation of a {@link ConflictResolver} that does nothing.
@@ -33,9 +32,10 @@ public enum NoConflictResolver implements ConflictResolver {
      */
     INSTANCE;
 
+
     @Override
-    public void detectConflicts(Predicate<List<? extends DomainEventMessage<?>>> predicate,
-                                Supplier<Exception> causeSupplier) {
+    public <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate,
+                                                      ConflictExceptionSupplier<T> exceptionSupplier) throws T {
         //no op
     }
 }

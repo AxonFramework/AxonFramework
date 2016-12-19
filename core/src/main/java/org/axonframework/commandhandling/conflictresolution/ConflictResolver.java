@@ -15,12 +15,12 @@
 
 package org.axonframework.commandhandling.conflictresolution;
 
+import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
 import org.axonframework.commandhandling.model.ConflictingModificationException;
 import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * Interface describing an object that is capable of detecting conflicts between changes to be applied to an aggregate,
@@ -40,10 +40,11 @@ public interface ConflictResolver {
      * by the given {@code causeSupplier} (supplying a {@code null} cause is allowed).
      *
      * @param predicate     test for conflicting unseen changes. Returns {@code true} if there is a conflict.
-     * @param causeSupplier custom exception that is used as the cause of the ConflictingModificationException
+     * @param exceptionSupplier exception to throw when a conflict is detected
+     * @throws T The type of exception to throw when conflicts are detected
      */
-    void detectConflicts(Predicate<List<? extends DomainEventMessage<?>>> predicate,
-                         Supplier<Exception> causeSupplier);
+    <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate,
+                         ConflictExceptionSupplier<T> exceptionSupplier) throws T;
 
     /**
      * Resolve conflicts between changes to be applied to the aggregate and unseen changes made to the aggregate.
@@ -54,8 +55,8 @@ public interface ConflictResolver {
      *
      * @param predicate test for conflicting unseen changes. Returns {@code true} if there is a conflict.
      */
-    default void detectConflicts(Predicate<List<? extends DomainEventMessage<?>>> predicate) {
-        detectConflicts(predicate, () -> null);
+    default void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate) {
+        detectConflicts(predicate, ConflictingAggregateVersionException::new);
     }
 
 }

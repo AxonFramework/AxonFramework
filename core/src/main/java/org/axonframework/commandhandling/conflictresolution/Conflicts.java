@@ -15,6 +15,7 @@
 
 package org.axonframework.commandhandling.conflictresolution;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.Message;
 
@@ -37,8 +38,8 @@ public class Conflicts {
      * @param messageFilter predicate for a single event
      * @return a Predicate to detect conflicts in unseen aggregate events
      */
-    public static Predicate<List<? extends DomainEventMessage<?>>> eventMatching(
-            Predicate<? super DomainEventMessage<?>> messageFilter) {
+    public static <T extends EventMessage<?>> Predicate<List<T>> eventMatching(
+            Predicate<? super T> messageFilter) {
         return events -> events.stream().anyMatch(messageFilter::test);
     }
 
@@ -50,7 +51,7 @@ public class Conflicts {
      * @param payloadFilter predicate for the payload of a single event
      * @return a Predicate to detect conflicts in unseen aggregate events
      */
-    public static Predicate<List<? extends DomainEventMessage<?>>> payloadMatching(Predicate<Object> payloadFilter) {
+    public static Predicate<List<DomainEventMessage<?>>> payloadMatching(Predicate<Object> payloadFilter) {
         return events -> events.stream().map(Message::getPayload).anyMatch(payloadFilter::test);
     }
 
@@ -63,8 +64,9 @@ public class Conflicts {
      * @param payloadFilter predicate for the payload of a single event
      * @return a Predicate to detect conflicts in unseen aggregate events
      */
-    public static <T> Predicate<List<? extends DomainEventMessage<?>>> payloadMatching(Class<T> payloadType,
-                                                                                       Predicate<? super T>
+    @SuppressWarnings("unchecked")
+    public static <T> Predicate<List<DomainEventMessage<?>>> payloadMatching(Class<T> payloadType,
+                                                                       Predicate<? super T>
                                                                                                payloadFilter) {
         return events -> events.stream().filter(event -> payloadType.isAssignableFrom(event.getPayloadType()))
                 .map(event -> (T) event.getPayload()).anyMatch(payloadFilter::test);
@@ -78,7 +80,7 @@ public class Conflicts {
      * @param payloadType the type of event payload to filter for
      * @return a Predicate to detect conflicts in unseen aggregate events
      */
-    public static <T> Predicate<List<? extends DomainEventMessage<?>>> payloadTypeOf(Class<T> payloadType) {
+    public static <T> Predicate<List<DomainEventMessage<?>>> payloadTypeOf(Class<T> payloadType) {
         return eventMatching(event -> payloadType.isAssignableFrom(event.getPayloadType()));
     }
 

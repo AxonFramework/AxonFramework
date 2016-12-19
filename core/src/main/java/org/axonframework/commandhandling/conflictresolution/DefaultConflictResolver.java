@@ -23,7 +23,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
 
@@ -38,7 +37,7 @@ public class DefaultConflictResolver implements ConflictResolver {
     private final String aggregateIdentifier;
     private final long expectedVersion;
     private final long actualVersion;
-    private transient List<? extends DomainEventMessage<?>> events;
+    private List<DomainEventMessage<?>> events;
     private boolean conflictsResolved;
 
     /**
@@ -59,12 +58,11 @@ public class DefaultConflictResolver implements ConflictResolver {
     }
 
     @Override
-    public void detectConflicts(Predicate<List<? extends DomainEventMessage<?>>> predicate,
-                                Supplier<Exception> causeSupplier) {
+    public <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate,
+                                                      ConflictExceptionSupplier<T> exceptionSupplier) throws T {
         conflictsResolved = true;
-        if (predicate.test(ensureEvents())) {
-            throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, actualVersion,
-                                                           causeSupplier.get());
+        if (predicate.test(unexpectedEvents())) {
+            throw exceptionSupplier.supplyException(aggregateIdentifier, expectedVersion, actualVersion);
         }
     }
 
@@ -78,7 +76,7 @@ public class DefaultConflictResolver implements ConflictResolver {
         }
     }
 
-    private List<? extends DomainEventMessage<?>> ensureEvents() {
+    private List<DomainEventMessage<?>> unexpectedEvents() {
         if (events == null) {
             if (expectedVersion >= actualVersion) {
                 return Collections.emptyList();

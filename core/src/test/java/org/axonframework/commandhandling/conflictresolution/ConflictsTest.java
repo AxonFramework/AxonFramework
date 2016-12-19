@@ -29,7 +29,7 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 
 public class ConflictsTest {
 
-    private final List<? extends DomainEventMessage<?>> events = IntStream.range(0, 10)
+    private final List<DomainEventMessage<?>> events = IntStream.range(0, 10)
             .mapToObj(sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber))
             .collect(toList());
 

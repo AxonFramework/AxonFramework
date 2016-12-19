@@ -67,7 +67,7 @@ public class DefaultConflictResolverTest {
     @Test
     public void testEnsureConflictsResolvedDoesNothingWithRegisteredConflicts() {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
-        subject.detectConflicts(Conflicts.payloadTypeOf(Long.class));
+        subject.detectConflicts(Conflicts.payloadMatching(Long.class::isInstance));
         subject.ensureConflictsResolved();
     }
 }
