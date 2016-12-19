@@ -50,11 +50,14 @@ public abstract class CurrentUnitOfWork {
      * it does nothing
      *
      * @param consumer The consumer to invoke if a Unit of Work is active
+     * @return {@code true} if a unit of work is active, {@code false} otherwise
      */
-    public static void ifStarted(Consumer<UnitOfWork<?>> consumer) {
+    public static boolean ifStarted(Consumer<UnitOfWork<?>> consumer) {
         if (isStarted()) {
             consumer.accept(get());
+            return true;
         }
+        return false;
     }
 
     /**
