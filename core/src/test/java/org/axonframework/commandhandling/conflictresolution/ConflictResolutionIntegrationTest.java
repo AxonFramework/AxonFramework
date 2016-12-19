@@ -35,13 +35,11 @@ import static org.junit.Assert.fail;
 
 public class ConflictResolutionIntegrationTest {
 
-
-    private Configuration configuration;
     private CommandGateway commandGateway;
 
     @Before
     public void setUp() throws Exception {
-        configuration = DefaultConfigurer.defaultConfiguration()
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .configureAggregate(StubAggregate.class)
                 .buildConfiguration();
@@ -90,6 +88,7 @@ public class ConflictResolutionIntegrationTest {
 
     public static class StubAggregate {
 
+        @SuppressWarnings("unused")
         @AggregateIdentifier
         private String aggregateId;
 
@@ -163,6 +162,7 @@ public class ConflictResolutionIntegrationTest {
         private final String aggregateId;
         private final String update;
 
+        @SuppressWarnings("unused")
         @TargetAggregateVersion
         private final Long expectedVersion;
 
