@@ -25,6 +25,8 @@ import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -57,7 +59,7 @@ public class JGroupsConnectorTest {
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
     private DistributedCommandBus dcb2;
-    private XStreamSerializer serializer;
+    private Serializer serializer;
     private String clusterName;
     private RoutingStrategy routingStrategy;
 
@@ -279,6 +281,39 @@ public class JGroupsConnectorTest {
         System.out.println("Node 2 got " + counter2.get());
         verify(mockCommandBus1, times(100)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, never()).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+    }
+
+    @Test
+    public void testUnserializableResponseConvertedToNull() throws Exception {
+        serializer = spy(new XStreamSerializer());
+        Object successResponse = new Object();
+        Exception failureResponse = new MockException("This cannot be serialized");
+        when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize success"));
+        when(serializer.serialize(failureResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize failure"));
+
+        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
+        dcb1 = new DistributedCommandBus(connector1, connector1);
+
+        dcb1.subscribe(String.class.getName(), c -> successResponse);
+        dcb1.subscribe(Integer.class.getName(), c -> {
+            throw failureResponse;
+        });
+        connector1.connect();
+
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+
+        dcb1.dispatch(new GenericCommandMessage<>(1), callback);
+        try {
+            callback.getResult();
+            fail("Expected exception");
+        } catch (Exception e) {
+            //expected
+        }
+        verify(mockCommandBus1).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+
+        callback = new FutureCallback<>();
+        dcb1.dispatch(new GenericCommandMessage<>("string"), callback);
+        assertNull(callback.getResult());
     }
 
     @SuppressWarnings("unchecked")

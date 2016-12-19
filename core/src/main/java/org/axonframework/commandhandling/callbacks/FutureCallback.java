@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Command Handler Callback that allows the dispatching thread to wait for the result of the callback, using the Future
  * mechanism. This callback allows the caller to synchronize calls when an asynchronous command bus is being used.
@@ -43,7 +45,7 @@ public class FutureCallback<C, R> extends CompletableFuture<R> implements Comman
 
     @Override
     public void onFailure(CommandMessage commandMessage, Throwable cause) {
-        super.completeExceptionally(cause);
+        super.completeExceptionally(requireNonNull(cause));
     }
 
     /**

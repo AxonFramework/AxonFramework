@@ -135,7 +135,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         HttpEntity<SpringHttpDispatchMessage> expectedHttpEntity = new HttpEntity<>(buildDispatchMessage(true));
         SpringHttpReplyMessage<String> testReplyMessage =
-                new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(), COMMAND_RESULT, null, serializer);
+                new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(), true, COMMAND_RESULT, serializer);
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
         when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
@@ -159,7 +159,7 @@ public class SpringHttpCommandBusConnectorTest {
 
         HttpEntity<SpringHttpDispatchMessage> expectedHttpEntity = new HttpEntity<>(buildDispatchMessage(true));
         SpringHttpReplyMessage<String> testReplyMessage =
-                new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(), null, COMMAND_ERROR, serializer);
+                new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(), false, COMMAND_ERROR, serializer);
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
         when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),

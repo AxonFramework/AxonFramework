@@ -109,8 +109,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return replyFutureCallback;
             } catch (Exception e) {
                 LOGGER.error("Could not dispatch command", e);
-                return CompletableFuture.completedFuture(
-                        new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
+                return CompletableFuture.completedFuture(createReply(commandMessage, false, e));
             }
         } else {
             try {
@@ -118,9 +117,17 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
                 return CompletableFuture.completedFuture("");
             } catch (Exception e) {
                 LOGGER.error("Could not dispatch command", e);
-                return CompletableFuture.completedFuture(
-                        new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), null, e, serializer));
+                return CompletableFuture.completedFuture(createReply(commandMessage, false, e));
             }
+        }
+    }
+
+    private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage, boolean success, Object result) {
+        try {
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), success, result, serializer);
+        } catch (Exception e) {
+            LOGGER.warn("Could not serialize command reply [{}]. Sending back NULL.", result, e);
+            return new SpringHttpReplyMessage(commandMessage.getIdentifier(), success, null, serializer);
         }
     }
 
@@ -129,12 +136,12 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
         @Override
         public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-            super.complete(new SpringHttpReplyMessage(commandMessage.getIdentifier(), result, null, serializer));
+            super.complete(createReply(commandMessage, true, result));
         }
 
         @Override
         public void onFailure(CommandMessage commandMessage, Throwable cause) {
-            super.complete(new SpringHttpReplyMessage(commandMessage.getIdentifier(), null, cause, serializer));
+            super.complete(createReply(commandMessage, false, cause));
         }
 
     }

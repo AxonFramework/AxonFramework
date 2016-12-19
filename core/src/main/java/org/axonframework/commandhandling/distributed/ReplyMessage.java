@@ -26,27 +26,22 @@ public abstract class ReplyMessage {
     }
 
     /**
-     * Initialized a ReplyMessage containing a reply to the command with given {commandIdentifier}, containing
-     * either given {@code returnValue} or {@code error}, which uses the given {@code serializer} to
-     * deserialize its contents.
+     * Initializes a ReplyMessage containing a reply to the command with given {commandIdentifier} and given
+     * {@code returnValue}. The parameter {@code success} determines whether the was executed successfully or not.
      *
      * @param commandIdentifier The identifier of the command to which the message is a reply
+     * @param success           Whether or not the command executed successfully or not
      * @param returnValue       The return value of command process
-     * @param error             The error that occuered during event processing. When provided (i.e. not
-     *                          {@code null}, the given {@code returnValue} is ignored.
+     *                          the given {@code returnValue} is ignored.
      * @param serializer        The serializer to serialize the message contents with
      */
-    protected ReplyMessage(String commandIdentifier, Object returnValue, Throwable error, Serializer serializer) {
-        this.success = error == null;
+    public ReplyMessage(String commandIdentifier, boolean success, Object returnValue, Serializer serializer) {
+        this.success = success;
         SerializedObject<byte[]> result;
-        if (success) {
-            if (returnValue == null) {
-                result = null;
-            } else {
-                result = serializer.serialize(returnValue, byte[].class);
-            }
+        if (returnValue == null) {
+            result = null;
         } else {
-            result = serializer.serialize(error, byte[].class);
+            result = serializer.serialize(returnValue, byte[].class);
         }
         this.commandIdentifier = commandIdentifier;
         if (result != null) {
@@ -79,7 +74,7 @@ public abstract class ReplyMessage {
      * @return The exception thrown during command processing
      */
     public Throwable getError(Serializer serializer) {
-        if (success) {
+        if (success || resultType == null) {
             return null;
         }
         return (Throwable) deserializeResult(serializer);

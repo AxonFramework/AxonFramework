@@ -38,7 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static java.lang.String.format;
 import static java.util.Arrays.stream;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * A Connector for the {@link DistributedCommandBus} based on JGroups that acts both as the discovery and routing
@@ -70,13 +72,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * connect to each other. The given {@code serializer} is used to serialize messages when they are sent between
      * nodes.
      * <p>
-     * Commands are routed based on the {@link org.axonframework.commandhandling.TargetAggregateIdentifier @TargetAggregateIdentifier}
-     * annotation on the Command's payload.
+     * Commands are routed based on the {@link org.axonframework.commandhandling.TargetAggregateIdentifier
      *
      * @param localSegment The CommandBus implementation that handles the local Commands
      * @param channel      The JGroups Channel used to communicate between nodes
      * @param clusterName  The name of the Cluster
      * @param serializer   The serializer to serialize Command Messages with
+     * @TargetAggregateIdentifier} annotation on the Command's payload.
      */
     public JGroupsConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer) {
         this(localSegment, channel, clusterName, serializer, new AnnotationRoutingStrategy());
@@ -184,16 +186,14 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             Address[] joined = diff[0];
             Address[] left = diff[1];
 
-            stream(joined)
-                    .filter(member -> !member.equals(channel.getAddress()))
-                    .forEach(member -> {
-                        logger.info("New member detected: [{}]. Sending it my configuration.", member);
-                        try {
-                            channel.send(member, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
-                        } catch (Exception e) {
-                            throw new MembershipUpdateFailedException("Failed to notify my existence to " + member);
-                        }
-                    });
+            stream(joined).filter(member -> !member.equals(channel.getAddress())).forEach(member -> {
+                logger.info("New member detected: [{}]. Sending it my configuration.", member);
+                try {
+                    channel.send(member, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
+                } catch (Exception e) {
+                    throw new MembershipUpdateFailedException("Failed to notify my existence to " + member);
+                }
+            });
 
             stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> {
                 SimpleMember<Address> member = members.get(lm);
@@ -238,12 +238,16 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         CommandCallbackWrapper<Object, Object, Object> callbackWrapper =
                 callbackRepository.fetchAndRemove(message.getCommandIdentifier());
         if (callbackWrapper == null) {
-            logger.warn("Received a callback for a message that has either already received a callback, or which was not sent through this node. Ignoring.");
+            logger.warn(
+                    "Received a callback for a message that has either already received a callback, or which was not " +
+                            "sent through this node. Ignoring.");
         } else {
             if (message.isSuccess()) {
                 callbackWrapper.success(message.getReturnValue(serializer));
             } else {
-                callbackWrapper.fail(message.getError(serializer));
+                Throwable exception = getOrDefault(message.getError(serializer), new IllegalStateException(
+                        format("Unknown execution failure for command [%s]", message.getCommandIdentifier())));
+                callbackWrapper.fail(exception);
             }
         }
     }
@@ -252,6 +256,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         if (message.isExpectReply()) {
             try {
                 CommandMessage commandMessage = message.getCommandMessage(serializer);
+                //noinspection unchecked
                 localSegment.dispatch(commandMessage, new CommandCallback<C, R>() {
                     @Override
                     public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
@@ -276,14 +281,19 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private <R> void sendReply(Address address, String commandIdentifier, R result, Throwable cause) {
+        boolean success = cause == null;
+        Object reply;
         try {
-            channel.send(address, new JGroupsReplyMessage(commandIdentifier, result, cause, serializer));
+            reply = new JGroupsReplyMessage(commandIdentifier, success, success ? result : cause, serializer);
         } catch (Exception e) {
-            try {
-                channel.send(address, new JGroupsReplyMessage(commandIdentifier, null, e, serializer));
-            } catch (Exception e1) {
-                logger.error("Could not send reply", e1);
-            }
+            logger.warn(String.format("Could not serialize command reply [%s]. Sending back NULL.",
+                                      success ? result : cause), e);
+            reply = new JGroupsReplyMessage(commandIdentifier, success, null, serializer);
+        }
+        try {
+            channel.send(address, reply);
+        } catch (Exception e) {
+            logger.error("Could not send reply", e);
         }
     }
 
@@ -359,7 +369,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception {
+    public <C, R> void send(Member destination, CommandMessage<C> command,
+                            CommandCallback<? super C, R> callback) throws Exception {
         callbackRepository.store(command.getIdentifier(), new CommandCallbackWrapper<>(destination, command, callback));
         channel.send(resolveAddress(destination), new JGroupsDispatchMessage(command, serializer, true));
     }
@@ -377,7 +388,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * @throws CommandBusConnectorCommunicationException when an error occurs resolving the adress
      */
     protected Address resolveAddress(Member destination) {
-        return destination.getConnectionEndpoint(Address.class).orElseThrow(() -> new CommandBusConnectorCommunicationException("The target member doesn't expose a JGroups endpoint"));
+        return destination.getConnectionEndpoint(Address.class).orElseThrow(
+                () -> new CommandBusConnectorCommunicationException(
+                        "The target member doesn't expose a JGroups endpoint"));
     }
 
     @Override
