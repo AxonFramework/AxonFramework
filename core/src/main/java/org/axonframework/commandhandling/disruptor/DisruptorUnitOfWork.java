@@ -36,7 +36,7 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
     private MessageProcessingContext<T> processingContext;
 
     /**
-     * Resets the state of this Unit of Work, by setting its phase to {@link Phase#NOT_STARTED}, replacing the message
+     * Resets the state of this Unit of Work, by setting its phase to {@code NOT_STARTED}, replacing the message
      * of this Unit of Work with given {@code message}, and clearing its collection of registered handlers.
      *
      * @param message the new Message that is about to be processed.

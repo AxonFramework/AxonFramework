@@ -25,21 +25,19 @@
     <moduleSets>
         <moduleSet>
             <includes>
-                <include>*:axon-integration</include>
-                <include>*:axon-core</include>
-                <include>*:axon-test</include>
-                <include>*:axon-amqp</include>
-                <include>*:axon-mongo</include>
-                <include>*:axon-distributed-commandbus</include>
+                <include>org.axonframework:*</include>
             </includes>
+            <excludes>
+                <exclude>*:axon-integrationtests</exclude>
+                <exclude>*:axon-spring-boot-starter</exclude>
+                <exclude>*:axon-spring-boot-starter-jgroups</exclude>
+            </excludes>
             <binaries>
                 <outputDirectory>dist</outputDirectory>
                 <dependencySets>
                     <dependencySet>
-                        <unpack>false</unpack>
-                        <outputDirectory>dist/dependencies</outputDirectory>
                         <excludes>
-                            <exclude>org.axonframework:*</exclude>
+                            <exclude>*:*</exclude>
                         </excludes>
                     </dependencySet>
                 </dependencySets>
@@ -52,33 +50,16 @@
     </moduleSets>
     <fileSets>
         <fileSet>
-            <directory>documentation/target/docbook/publish/en-US/pdf/</directory>
-            <outputDirectory>documentation</outputDirectory>
-            <includes>
-                <include>reference-guide-*.pdf</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>documentation/target/</directory>
-            <outputDirectory>documentation</outputDirectory>
-            <includes>
-                <include>*html*.zip</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>/</directory>
-            <outputDirectory>/</outputDirectory>
+            <directory>./</directory>
+            <outputDirectory />
             <includes>
                 <include>LICENSE.txt</include>
                 <include>README.txt</include>
             </includes>
         </fileSet>
-    </fileSets>
-    <files>
-        <file>
-            <source>target/${project.artifactId}-${project.version}-javadoc.jar</source>
-            <destName>axon-apidoc-${project.version}.zip</destName>
+        <fileSet>
+            <directory>target/apidocs</directory>
             <outputDirectory>documentation</outputDirectory>
-        </file>
-    </files>
+        </fileSet>
+    </fileSets>
 </assembly>

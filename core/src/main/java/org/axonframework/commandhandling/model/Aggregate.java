@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * Interface that describes an aggregate. An aggregate is an isolated tree of entities that is capable of handling
  * {@link CommandMessage commands}. Implementations of this interface defer the actual handling of commands to a wrapped
- * instance of type {@link T} or one of its entities.
+ * instance of type {@code T} or one of its entities.
  * <p>
  * When a command is dispatched to an aggregate Axon will load the aggregate instance and invoke the related command
  * handler method. It is rarely necessary to interact with {@link Aggregate aggregates} directly. Though it is not

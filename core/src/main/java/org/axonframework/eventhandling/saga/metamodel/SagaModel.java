@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Interface of a model that describes a Saga of type {@link T}. Use the SagaModel to obtain associations and
+ * Interface of a model that describes a Saga of type {@code T}. Use the SagaModel to obtain associations and
  * event handlers for the Saga.
  *
  * @param <T> The saga type
@@ -32,7 +32,7 @@ import java.util.Optional;
 public interface SagaModel<T> {
 
     /**
-     * Returns the {@link AssociationValue} used to find sagas of type {@link T} that can handle the given {@code
+     * Returns the {@link AssociationValue} used to find sagas of type {@code T} that can handle the given {@code
      * eventMessage}. If the saga type does not handle events of this type an empty Optional is returned.
      *
      * @param eventMessage The event to find the association value for

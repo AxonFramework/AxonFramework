@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 /**
- * Specialized EntityModel that describes the capabilities and properties of an aggregate root of type {@link T}.
+ * Specialized EntityModel that describes the capabilities and properties of an aggregate root of type {@code T}.
  *
  * @param <T> The type of the aggregate root
  */

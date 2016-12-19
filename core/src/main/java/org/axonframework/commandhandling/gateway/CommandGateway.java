@@ -72,8 +72,8 @@ public interface CommandGateway {
      * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
      * available. This method will block until a result is available, or the given {@code timeout} was reached, or
      * until the Thread is interrupted. When the timeout is reached or the thread is interrupted, this method returns
-     * {@code null}. If command execution resulted in an exception, it is wrapped in a {@link
-     * CommandExecutionException}.
+     * {@code null}. If command execution resulted in an exception, it is wrapped in a
+     * {@link CommandExecutionException}.
      * <p/>
      * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
      * Command Bus, unless Command already implements {@link Message}. In that case, a
@@ -101,7 +101,7 @@ public interface CommandGateway {
      * CommandMessage is constructed from that message's payload and MetaData.
      *
      * @param command The command to dispatch
-     * @return a {@link CompletableFuture<R>} which is resolved when the command is executed
+     * @return a {@link CompletableFuture} which is resolved when the command is executed
      */
     <R> CompletableFuture<R> send(Object command);
 }

@@ -32,7 +32,7 @@ import java.util.*;
 import static java.lang.String.format;
 
 /**
- * Inspector of an entity of type {@link T} that creates command and event handlers that delegate to a target entity and
+ * Inspector of an entity of type {@code T} that creates command and event handlers that delegate to a target entity and
  * its child entities.
  *
  * @param <T> the target type of the inspector

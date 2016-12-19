@@ -42,7 +42,7 @@ public interface CommandMessageHandlingMember<T> extends MessageHandlingMember<T
     String routingKey();
 
     /**
-     * Check if this message handler creates a new instance of the entity of type {@link T} to handle this command.
+     * Check if this message handler creates a new instance of the entity of type {@code T} to handle this command.
      * <p>
      * This is for instance the case if the message is handled in the constructor method of the entity.
      *

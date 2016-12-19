@@ -42,9 +42,8 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
      * Initializes the MongoTemplate using the given {@code mongo} for database access, using default database
      * and collection names.
      * <p/>
-     * Database name: {@value DefaultMongoTemplate#DEFAULT_AXONFRAMEWORK_DATABASE}<br/>
-     * Domain events collection name: {@value DefaultMongoTemplate#DEFAULT_DOMAINEVENTS_COLLECTION}<br/>
-     * Snapshot events collection name: {@value DefaultMongoTemplate#DEFAULT_SNAPSHOTEVENTS_COLLECTION}
+     * Domain events collection name: {@code "domainevents"}<br/>
+     * Snapshot events collection name: {@code "snapshotsevents"}
      * <p/>
      * Consider using {@link #DefaultMongoTemplate(com.mongodb.MongoClient, String, String, String)} to
      * provide different names for database and/or collections.

@@ -26,8 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on a target of type
- * {@link T}.
+ * Implementation of a {@link MessageHandlingMember} that is used to invoke message handler methods on the target type.
  *
  * @param <T> the target type
  */

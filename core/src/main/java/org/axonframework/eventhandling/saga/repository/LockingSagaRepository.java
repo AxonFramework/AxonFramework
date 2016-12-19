@@ -89,7 +89,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      *
      * @param sagaIdentifier the identifier to use for the new saga instance
      * @param factoryMethod Used to create a new Saga delegate
-     * @return a new Saga instance wrapping an instance of type {@link T}
+     * @return a new Saga instance wrapping an instance of type {@code T}
      */
     protected abstract Saga<T> doCreateInstance(String sagaIdentifier, Supplier<T> factoryMethod);
 

@@ -31,7 +31,7 @@ public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
     INSTANCE;
 
     /**
-     * The singleton instance of a {@link NoSnapshotTrigger}.
+     * A singleton instance of a {@link SnapshotTrigger} that does nothing.
      */
     public static final SnapshotTrigger TRIGGER = new NoSnapshotTrigger();
 

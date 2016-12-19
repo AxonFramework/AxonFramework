@@ -40,7 +40,7 @@ public class JdbcUtils {
      *
      * @param connection         connection to the underlying database that should be used for the query
      * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
-     * @param sqlResultConverter converts the result set to a value of type {@link R}
+     * @param sqlResultConverter converts the result set to a value of type R
      * @param errorHandler       handles errors as result of executing the query or converting the result set
      * @param <R>                the result of the query after conversion
      * @return the query result
@@ -129,7 +129,7 @@ public class JdbcUtils {
     }
 
     /**
-     * Create a converter that produces a List of results of type {@link R} from a converter that produces a single
+     * Create a converter that produces a List of results of type {@code R} from a converter that produces a single
      * result. The returned converter iterates over the resultSet until all results have been converted and added to
      * the list.
      *
@@ -221,12 +221,12 @@ public class JdbcUtils {
     }
 
     /**
-     * Describes a function that converts a {@link ResultSet} into a result of type {@link R}.
+     * Describes a function that converts a {@link ResultSet} into a result of type {@code R}.
      */
     @FunctionalInterface
     public interface SqlResultConverter<R> {
         /**
-         * Convert the given resultSet to a result of type {@link R}.
+         * Convert the given resultSet to a result of type {@code R}.
          *
          * @param resultSet the sql result set containing results of a prior sql query
          * @return the conversion result

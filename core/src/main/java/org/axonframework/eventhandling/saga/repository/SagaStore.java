@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import java.util.Set;
 
 /**
- * Provides a mechanism to find, load update and delete sagas of type {@link T} from an underlying storage like a
+ * Provides a mechanism to find, load update and delete sagas of type {@code T} from an underlying storage like a
  * database.
  *
  * @param <T> The saga type

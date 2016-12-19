@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * Inspector for a message handling target of type {@link T} that uses annotations on the target to inspect the
+ * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
  * capabilities of the target.
  *
  * @param <T> the target type

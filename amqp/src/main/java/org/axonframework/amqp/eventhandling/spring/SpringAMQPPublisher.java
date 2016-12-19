@@ -43,7 +43,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
- * outgoing messages are sent to a configured Exchange, which defaults to {@value #DEFAULT_EXCHANGE_NAME}.
+ * outgoing messages are sent to a configured Exchange, which defaults to "{@code Axon.EventBus}".
  * <p>
  * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP Queue.
  *
@@ -355,7 +355,7 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     /**
-     * Sets the name of the exchange to dispatch published messages to. Defaults to "{@value #DEFAULT_EXCHANGE_NAME}".
+     * Sets the name of the exchange to dispatch published messages to. Defaults to "{@code Axon.EventBus}".
      *
      * @param exchangeName the name of the exchange to dispatch messages to
      */
@@ -364,8 +364,8 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     /**
-     * Sets the name of the exchange to dispatch published messages to. Defaults to the exchange named "{@value
-     * #DEFAULT_EXCHANGE_NAME}".
+     * Sets the name of the exchange to dispatch published messages to. Defaults to the exchange named
+     * "{@code Axon.EventBus}".
      *
      * @param exchange the exchange to dispatch messages to
      */

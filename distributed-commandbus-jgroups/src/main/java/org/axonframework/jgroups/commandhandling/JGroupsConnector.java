@@ -72,13 +72,12 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * connect to each other. The given {@code serializer} is used to serialize messages when they are sent between
      * nodes.
      * <p>
-     * Commands are routed based on the {@link org.axonframework.commandhandling.TargetAggregateIdentifier
+     * Commands are routed based on the {@link org.axonframework.commandhandling.TargetAggregateIdentifier}
      *
      * @param localSegment The CommandBus implementation that handles the local Commands
      * @param channel      The JGroups Channel used to communicate between nodes
      * @param clusterName  The name of the Cluster
      * @param serializer   The serializer to serialize Command Messages with
-     * @TargetAggregateIdentifier} annotation on the Command's payload.
      */
     public JGroupsConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer) {
         this(localSegment, channel, clusterName, serializer, new AnnotationRoutingStrategy());

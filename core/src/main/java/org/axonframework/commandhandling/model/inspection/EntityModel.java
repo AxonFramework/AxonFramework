@@ -26,7 +26,7 @@ import java.util.Map;
 import static java.lang.String.format;
 
 /**
- * Interface of an entity model that describes the properties and capabilities of an entity of type {@link T}. The
+ * Interface of an entity model that describes the properties and capabilities of an entity of type {@code T}. The
  * entity may be child entity or an aggregate root.
  *
  * @param <T> The type of entity described by this model

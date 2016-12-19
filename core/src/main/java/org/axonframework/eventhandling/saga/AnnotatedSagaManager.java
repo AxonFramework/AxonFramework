@@ -53,7 +53,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      *
      * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaFactory    the factory for new saga instances of type {@link T}
+     * @param sagaFactory    the factory for new saga instances of type {@code T}
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
         this(sagaType, sagaRepository, sagaFactory, new DefaultSagaMetaModelFactory().modelOf(sagaType));
@@ -65,7 +65,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      *
      * @param sagaType the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaFactory the factory for new saga instances of type {@link T}
+     * @param sagaFactory the factory for new saga instances of type {@code T}
      * @param sagaMetaModel the meta model to delegate messages to a saga instance
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
