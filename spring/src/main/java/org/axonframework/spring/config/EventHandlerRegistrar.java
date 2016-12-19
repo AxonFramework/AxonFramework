@@ -3,12 +3,13 @@ package org.axonframework.spring.config;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
 import java.util.List;
 
 /**
  * Spring Bean that registers Event Handler beans with the EventHandlingConfiguration.
- *
+ * <p>
  * To customize this behavior, define a Bean of type {@link EventHandlingConfiguration} in the application context:
  * <pre>
  *     &#64;Bean
@@ -38,11 +39,13 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
     }
 
     /**
-     * Registers the given {@code beans} as event handlers with the Event Handler Configuration
+     * Registers the given {@code beans} as event handlers with the Event Handler Configuration. The beans are sorted
+     * (see {@link AnnotationAwareOrderComparator}) before registering them to the configuration.
      *
      * @param beans the beans to register
      */
     public void setEventHandlers(List<Object> beans) {
+        AnnotationAwareOrderComparator.sort(beans);
         beans.forEach(b -> delegate.registerEventHandler(c -> b));
     }
 
