@@ -18,9 +18,11 @@ package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.Channel;
 import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +53,16 @@ public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
 
     private final List<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArrayList<>();
     private final AMQPMessageConverter messageConverter;
+
+
+    /**
+     * Initializes an SpringAMQPMessageSource with {@link DefaultAMQPMessageConverter} using given {@code serializer}.
+     *
+     * @param serializer The serializer to serialize payload and metadata of events
+     */
+    public SpringAMQPMessageSource(Serializer serializer) {
+        this(new DefaultAMQPMessageConverter(serializer));
+    }
 
     /**
      * Initializes an SpringAMQPMessageSource with given {@code messageConverter} to convert the incoming AMQP
