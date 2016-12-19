@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
@@ -59,8 +59,8 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE,
-                                             cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
+        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
+                                             cleanupDelay, MILLISECONDS);
     }
 
     @After
@@ -147,10 +147,9 @@ public class EmbeddedEventStoreTest {
         assertFalse(lock.await(100, MILLISECONDS));
         testSubject.publish(createEvents(2));
         t.join();
-        reset(storageEngine);
+
         TrackedEventMessage<?> second = testSubject.openStream(events.get(0).trackingToken()).nextAvailable();
         assertSame(events.get(1), second);
-        verifyNoMoreInteractions(storageEngine);
     }
 
     @Test(timeout = 5000)
@@ -187,8 +186,7 @@ public class EmbeddedEventStoreTest {
     @Test
     public void testLoadWithoutSnapshot() {
         testSubject.publish(createEvents(110));
-        List<DomainEventMessage<?>> eventMessages =
-                testSubject.readEvents(AGGREGATE).asStream().collect(Collectors.toList());
+        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
     }
@@ -197,8 +195,7 @@ public class EmbeddedEventStoreTest {
     public void testLoadWithSnapshot() {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
-        List<DomainEventMessage<?>> eventMessages =
-                testSubject.readEvents(AGGREGATE).asStream().collect(Collectors.toList());
+        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(110 - 30, eventMessages.size());
         assertEquals(30, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
@@ -209,8 +206,7 @@ public class EmbeddedEventStoreTest {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
         when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
-        List<DomainEventMessage<?>> eventMessages =
-                testSubject.readEvents(AGGREGATE).asStream().collect(Collectors.toList());
+        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(0, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
