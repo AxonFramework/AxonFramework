@@ -81,7 +81,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
         testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, 20,
                                                 new SimpleEntityManagerProvider(entityManager),
                                                 new SpringTransactionManager(tx),
-                                                1L, 10000);
+                                                1L, 10000, true);
     }
 
     @Test(timeout = 30000)
@@ -124,7 +124,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
         //increase batch size to 100
         testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, 100,
                                                 new SimpleEntityManagerProvider(entityManager),
-                                                new SpringTransactionManager(tx), 1L, 10000);
+                                                new SpringTransactionManager(tx), 1L, 10000, true);
         int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
