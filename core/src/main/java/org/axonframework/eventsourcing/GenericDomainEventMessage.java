@@ -61,7 +61,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      */
     public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload,
                                      Map<String, ?> metaData) {
-        this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(payload, metaData), Instant.now());
+        this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(payload, metaData), GenericEventMessage.clock.instant());
     }
 
     /**
