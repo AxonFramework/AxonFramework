@@ -48,6 +48,7 @@ import java.sql.SQLException;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Rene de Waele
@@ -105,7 +106,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     public void testStoreEventsWithCustomEntity() throws Exception {
         testSubject = new JpaEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
                                                 defaultPersistenceExceptionResolver, 100,
-                                                entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000) {
+                                                entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, false) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -130,6 +131,8 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"));
         testSubject.storeSnapshot(createEvent(AGGREGATE, 1, "Snapshot1"));
+
+        entityManager.flush();
         entityManager.clear();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
@@ -150,6 +153,6 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver) {
         return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
-                                         entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000);
+                                         entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, true);
     }
 }

@@ -51,6 +51,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     private final long lowestGlobalSequence;
     private final int maxGapOffset;
     private final TransactionManager transactionManager;
+    private final boolean explicitFlush;
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. The payload and metadata of events is
@@ -59,9 +60,11 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
      *
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
+     * @param transactionManager    The instance managing transactions around fetching event data. Required by certain
+     *                              databases for reading blob data.
      */
     public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
-        this(null, null, null, null, entityManagerProvider, transactionManager, null, null);
+        this(null, null, null, null, entityManagerProvider, transactionManager, null, null, true);
     }
 
     /**
@@ -72,12 +75,14 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param dataSource            Allows the EventStore to detect the database type and define the error codes that
      *                              represent concurrent access failures for most database types.
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
+     * @param transactionManager    The instance managing transactions around fetching event data. Required by certain
+     *                              databases for reading blob data.
      * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
     public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, DataSource dataSource,
                                  EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) throws SQLException {
         this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), null, entityManagerProvider, transactionManager,
-             null, null);
+             null, null, true);
     }
 
     /**
@@ -98,18 +103,27 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      *                                     the missing event will not be committed to the store anymore. This event
      *                                     storage engine will no longer look for those events the next time a batch is
      *                                     fetched.
+     * @param explicitFlush                Whether to explicitly call {@link EntityManager#flush()} after inserting the
+     *                                     Events published in this Unit of Work. If {@code false}, this instance relies
+     *                                     on the transaction manager to flush data. Note that the
+     *                                     {@code persistenceExceptionResolver} may not be able to translate exceptions
+     *                                     anymore. {@code false} Should only be used to optimize performance for batch
+     *                                     operations. In other cases, {@code true} is recommended.
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by certain
+     *                                     databases for reading blob data.
      * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
      *                                     is 1 unless the table has contained entries before.
      */
     public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                  PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                  EntityManagerProvider entityManagerProvider, TransactionManager transactionManager,
-                                 Long lowestGlobalSequence, Integer maxGapOffset) {
+                                 Long lowestGlobalSequence, Integer maxGapOffset, boolean explicitFlush) {
         super(serializer, upcasterChain, persistenceExceptionResolver, batchSize);
         this.entityManagerProvider = entityManagerProvider;
         this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
         this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
         this.transactionManager = transactionManager;
+        this.explicitFlush = explicitFlush;
     }
 
     @Override
@@ -204,7 +218,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         }
         try {
             events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
-            entityManager().flush();
+            if (explicitFlush) {
+                entityManager().flush();
+            }
         } catch (Exception e) {
             handlePersistenceException(e, events.get(0));
         }
@@ -215,7 +231,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         deleteSnapshots(snapshot.getAggregateIdentifier());
         try {
             entityManager().persist(createSnapshotEntity(snapshot, serializer));
-            entityManager().flush();
+            if (explicitFlush) {
+                entityManager().flush();
+            }
         } catch (Exception e) {
             handlePersistenceException(e, snapshot);
         }
