@@ -80,7 +80,7 @@ public class FixtureExecutionResultImplTest {
         testSubject.expectPublishedEvents(endEvent);
         testSubject.expectPublishedEventsMatching(payloadsMatching(exactSequenceOf(equalTo(endEvent), andNoMore())));
 
-        testSubject.expectDispatchedCommandsEqualTo("Second");
+        testSubject.expectDispatchedCommands("Second");
         testSubject.expectDispatchedCommandsMatching(payloadsMatching(exactSequenceOf(equalTo("Second"), andNoMore())));
     }
 
@@ -113,7 +113,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Third"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Fourth"));
 
-        testSubject.expectDispatchedCommandsEqualTo("First", "Second", "Third");
+        testSubject.expectDispatchedCommands("First", "Second", "Third");
     }
 
     @Test(expected = AxonAssertionError.class)
@@ -121,7 +121,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
-        testSubject.expectDispatchedCommandsEqualTo("First", "Third");
+        testSubject.expectDispatchedCommands("First", "Third");
     }
 
     @Test
@@ -129,7 +129,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("Second"));
 
-        testSubject.expectDispatchedCommandsEqualTo("First", "Second");
+        testSubject.expectDispatchedCommands("First", "Second");
     }
 
     @Test
@@ -137,7 +137,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("First")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
-        testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("First"), new SimpleCommand("Second"));
+        testSubject.expectDispatchedCommands(new SimpleCommand("First"), new SimpleCommand("Second"));
     }
 
     @Test
@@ -146,7 +146,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
         try {
-            testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
+            testSubject.expectDispatchedCommands(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
             fail("Expected exception");
         } catch (AxonAssertionError e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("expected <Second>"));
@@ -159,7 +159,7 @@ public class FixtureExecutionResultImplTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new SimpleCommand("Second")));
 
         try {
-            testSubject.expectDispatchedCommandsEqualTo("Second", new SimpleCommand("Thrid"));
+            testSubject.expectDispatchedCommands("Second", new SimpleCommand("Thrid"));
             fail("Expected exception");
         } catch (AxonAssertionError e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("Expected <String>"));
@@ -179,7 +179,7 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectDispatchedCommands_FailedMatcher() {
-        testSubject.expectDispatchedCommandsEqualTo(new FailingMatcher<String>());
+        testSubject.expectDispatchedCommands(new FailingMatcher<String>());
     }
 
     @Test(expected = AxonAssertionError.class)

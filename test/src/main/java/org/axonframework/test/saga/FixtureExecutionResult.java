@@ -140,13 +140,16 @@ public interface FixtureExecutionResult {
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are
-     * compared
-     * using the equals method. Only commands as a result of the event in the "when" stage of the fixture are compared.
+     * compared using the equals method. Only commands as a result of the event in the "when" stage of the fixture are
+     * compared.
+     *
+     * If exact order doesn't matter, or the validation needs be done in another way than "equal payload", consider
+     * using {@link #expectDispatchedCommandsMatching(Matcher)} instead.
      *
      * @param commands The expected commands
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectDispatchedCommandsEqualTo(Object... commands);
+    FixtureExecutionResult expectDispatchedCommands(Object... commands);
 
     /**
      * Asserts that the sagas dispatched commands as defined by the given {@code matcher}. Only commands as a

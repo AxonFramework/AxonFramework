@@ -60,7 +60,7 @@ public class AnnotatedSagaTest {
                                                messageWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
         validator.expectScheduledEvent(fixture.currentTime().plusSeconds(600),
                                        new TimerTriggeredEvent(aggregate1));
-        validator.expectDispatchedCommandsEqualTo();
+        validator.expectDispatchedCommands();
         validator.expectNoDispatchedCommands();
         validator.expectPublishedEventsMatching(noEvents());
     }
@@ -97,7 +97,7 @@ public class AnnotatedSagaTest {
                 .expectNoAssociationWith("identifier", aggregate2)
                 .expectNoAssociationWith("identifier", aggregate1)
                 .expectNoScheduledEvents()
-                .expectDispatchedCommandsEqualTo()
+                .expectDispatchedCommands()
                 .expectPublishedEvents();
     }
 
@@ -116,7 +116,7 @@ public class AnnotatedSagaTest {
         validator.expectNoAssociationWith("identifier", aggregate2);
         validator.expectScheduledEventMatching(Duration.ofMinutes(10),
                                                Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
-        validator.expectDispatchedCommandsEqualTo();
+        validator.expectDispatchedCommands();
         validator.expectPublishedEventsMatching(listWithAnyOf(messageWithPayload(any(SagaWasTriggeredEvent.class))));
     }
 
@@ -161,7 +161,7 @@ public class AnnotatedSagaTest {
                 .expectAssociationWith("identifier", identifier)
                 .expectNoAssociationWith("identifier", identifier2)
                 .expectNoScheduledEvents()
-                .expectDispatchedCommandsEqualTo("Say hi!", "Hi again!")
+                .expectDispatchedCommands("Say hi!", "Hi again!")
                 .expectPublishedEventsMatching(noEvents());
 
         verify(gateway).send("Say hi!");
@@ -229,7 +229,7 @@ public class AnnotatedSagaTest {
                 .expectNoAssociationWith("identifier", identifier2)
                 .expectNoScheduledEvents()
                 // since we return null for the command, the other is never sent...
-                .expectDispatchedCommandsEqualTo("Say hi!")
+                .expectDispatchedCommands("Say hi!")
                 .expectPublishedEventsMatching(noEvents());
     }
 
@@ -250,7 +250,7 @@ public class AnnotatedSagaTest {
                 .expectAssociationWith("identifier", identifier)
                 .expectNoAssociationWith("identifier", identifier2)
                 .expectNoScheduledEvents()
-                .expectDispatchedCommandsEqualTo("Say hi!", "Hi again!")
+                .expectDispatchedCommands("Say hi!", "Hi again!")
                 .expectPublishedEventsMatching(noEvents());
 
         verify(commandHandler, times(2)).handle(isA(Object.class), eq(MetaData.emptyInstance()));
@@ -271,6 +271,6 @@ public class AnnotatedSagaTest {
                 .expectAssociationWith("identifier", identifier)
                 .expectNoAssociationWith("identifier", identifier2)
                 .expectNoScheduledEvents()
-                .expectDispatchedCommandsEqualTo("Say hi!");
+                .expectDispatchedCommands("Say hi!");
     }
 }

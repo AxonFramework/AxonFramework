@@ -49,7 +49,7 @@ public interface FixtureConfiguration {
     /**
      * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The
      * gateway will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands
-     * using {@link FixtureExecutionResult#expectDispatchedCommandsEqualTo(Object...)} and {@link
+     * using {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
      * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
      * <p/>
      * Note that you need to use {@link #setCallbackBehavior(org.axonframework.test.utils.CallbackBehavior)} to defined
@@ -65,7 +65,7 @@ public interface FixtureConfiguration {
     /**
      * Creates a Command Gateway for the given {@code gatewayInterface} and registers that as a resource. The
      * gateway will dispatch commands on the Command Bus contained in this Fixture, so that you can validate commands
-     * using {@link FixtureExecutionResult#expectDispatchedCommandsEqualTo(Object...)} and {@link
+     * using {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} and {@link
      * FixtureExecutionResult#expectDispatchedCommandsMatching(org.hamcrest.Matcher)}.
      * <p/>
      * The behavior of the created gateway is defined by the given {@code stubImplementation}, if not null.
