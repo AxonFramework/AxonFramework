@@ -17,10 +17,12 @@ package org.axonframework.messaging;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 /**
  * Interface for a tracked stream of {@link Message Messages}.
  *
+ * @param <M> the type of Message contained in this stream
  * @author Rene de Waele
  */
 public interface MessageStream<M extends Message<?>> extends AutoCloseable {
@@ -74,4 +76,17 @@ public interface MessageStream<M extends Message<?>> extends AutoCloseable {
 
     @Override
     void close();
+
+    /**
+     * Returns this MessageStream as a {@link Stream} of Messages. Note that the returned Stream will
+     * start at the current position this instance.
+     * <p>
+     * Note that iterating over the returned Stream may affect this MessageStream and vice versa. It is therefore
+     * not recommended to use this MessageStream after invoking this method.
+     *
+     * @return This MessageStream as a Stream of Messages
+     */
+    default Stream<M> asStream() {
+        return StreamUtils.asStream(this);
+    }
 }

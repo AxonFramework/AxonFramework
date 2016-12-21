@@ -19,6 +19,8 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
@@ -174,33 +176,6 @@ public abstract class EventUtils {
      */
     public static Stream<? extends DomainEventMessage<?>> asStream(DomainEventStream domainEventStream) {
         return stream(spliteratorUnknownSize(domainEventStream, DISTINCT | NONNULL | ORDERED), false);
-    }
-
-    /**
-     * Convert the given {@code trackingEventStream} to a regular java {@link Stream} of tracked event messages. Note
-     * that the returned stream will block during iteration if the end of the stream is reached so take heed of this
-     * in production code.
-     *
-     * @param trackingEventStream the input {@link TrackingEventStream}
-     * @return the output {@link Stream} after conversion
-     */
-    public static Stream<? extends TrackedEventMessage<?>> asStream(TrackingEventStream trackingEventStream) {
-        Spliterator<? extends TrackedEventMessage<?>> spliterator =
-                new Spliterators.AbstractSpliterator<TrackedEventMessage<?>>(Long.MAX_VALUE,
-                                                                             DISTINCT | NONNULL | ORDERED) {
-                    @Override
-                    public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
-                        try {
-                            action.accept(trackingEventStream.nextAvailable());
-                        } catch (InterruptedException e) {
-                            logger.warn("Event stream interrupted", e);
-                            Thread.currentThread().interrupt();
-                            return false;
-                        }
-                        return true;
-                    }
-                };
-        return stream(spliterator, false);
     }
 
     private static Stream<IntermediateEventRepresentation> upcastAndDeserialize(

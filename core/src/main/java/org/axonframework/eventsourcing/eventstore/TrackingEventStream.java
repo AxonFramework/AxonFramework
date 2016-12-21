@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.StreamUtils;
 
 import java.util.stream.Stream;
 
@@ -28,16 +29,4 @@ import java.util.stream.Stream;
  */
 public interface TrackingEventStream extends MessageStream<TrackedEventMessage<?>> {
 
-    /**
-     * Returns this TrackingEventStream as a {@link Stream} of TrackedEventMessages. Note that the returned Stream will
-     * start at the current position of the TrackingEventStream.
-     * <p>
-     * Note that iterating over the returned Stream may affect this TrackingEventStream and vice versa. It is therefore
-     * not recommended to use this TrackingEventStream after invoking this method.
-     *
-     * @return This TrackingEventStream as a Stream of event messages
-     */
-    default Stream<? extends TrackedEventMessage> asStream() {
-        return EventUtils.asStream(this);
-    }
 }
