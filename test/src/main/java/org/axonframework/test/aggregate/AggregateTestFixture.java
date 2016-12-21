@@ -69,6 +69,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
     private final List<MessageHandlerInterceptor<CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
     private final EventStore eventStore;
+    private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private Repository<T> repository;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage<?>> givenEvents;
@@ -78,7 +79,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private Aggregate<T> workingAggregate;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
-    private final List<FieldFilter> fieldFilters = new ArrayList<>();
 
     /**
      * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
@@ -279,6 +279,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
+        logger.debug("Starting separate Unit of Work for the purpose of checking illegal state changes in Aggregate");
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
             try {
