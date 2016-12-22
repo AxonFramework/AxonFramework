@@ -40,6 +40,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -48,17 +49,11 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
 
 /**
  * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
@@ -83,9 +78,7 @@ public class DefaultConfigurer implements Configurer {
             new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
     private final Component<List<CorrelationDataProvider>> correlationProviders =
             new Component<>(config, "correlationProviders",
-                            c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
-                                        msg -> singletonMap("traceId", msg.getMetaData()
-                                                .getOrDefault("traceId", msg.getIdentifier()))));
+                            c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();

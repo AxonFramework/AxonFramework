@@ -18,7 +18,7 @@ package org.axonframework.messaging.correlation;
 
 import org.axonframework.messaging.Message;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,48 +28,56 @@ import java.util.Map;
  * @author Rene de Waele
  */
 public class MessageOriginProvider implements CorrelationDataProvider {
-    private static final String DEFAULT_CORRELATION_KEY = "message-origin";
+    private static final String DEFAULT_CORRELATION_KEY = "correlationId";
+    private static final String DEFAULT_TRACE_KEY = "traceId";
 
     /**
-     * Returns the default meta-data key for the message origin.
+     * Returns the default metadata key for the correlation id of a message.
      *
-     * @return the default meta-data key for the message origin
+     * @return the default metadata key for the correlation id
      */
     public static String getDefaultCorrelationKey() {
         return DEFAULT_CORRELATION_KEY;
     }
 
+    /**
+     * Returns the default metadata key for the trace id of a message.
+     *
+     * @return the default metadata key for the trace id
+     */
+    public static String getDefaultTraceKey() {
+        return DEFAULT_TRACE_KEY;
+    }
+
     private final String correlationKey;
+    private final String traceKey;
 
     /**
-     * Initializes a {@link MessageOriginProvider} that uses the default key {@link #getDefaultCorrelationKey()}.
+     * Initializes a {@link MessageOriginProvider} that uses the default correlation id key: {@link
+     * #getDefaultCorrelationKey()} and trace id key: {@link #getDefaultTraceKey()}.
      */
     public MessageOriginProvider() {
-        this(DEFAULT_CORRELATION_KEY);
+        this(DEFAULT_CORRELATION_KEY, DEFAULT_TRACE_KEY);
     }
 
     /**
      * Initializes a {@link MessageOriginProvider} that uses the given {@code correlationKey}.
      *
-     * @param correlationKey the key used to store the origin message identifier in the metadata of another message
+     * @param correlationKey the key used to store the identifier of a message in the metadata of a resulting message
+     * @param traceKey       the key used to store the identifier of the original message giving rise to the current
+     *                       message
      */
-    public MessageOriginProvider(String correlationKey) {
+    public MessageOriginProvider(String correlationKey, String traceKey) {
         this.correlationKey = correlationKey;
+        this.traceKey = traceKey;
     }
 
     @Override
     public Map<String, ?> correlationDataFor(Message<?> message) {
-        return Collections.singletonMap(correlationKey, message.getIdentifier());
-    }
-
-    /**
-     * Returns the meta-data key for the message origin, which is used to identify the {@link Message} that triggered
-     * another message.
-     *
-     * @return he meta-data key for the message origin
-     */
-    public String getCorrelationKey() {
-        return correlationKey;
+        Map<String, Object> result = new HashMap<>();
+        result.put(correlationKey, message.getIdentifier());
+        result.put(traceKey, message.getMetaData().getOrDefault(traceKey, message.getIdentifier()));
+        return result;
     }
 
 }
