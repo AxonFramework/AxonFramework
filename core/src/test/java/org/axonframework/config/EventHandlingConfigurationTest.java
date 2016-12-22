@@ -52,6 +52,7 @@ public class EventHandlingConfigurationTest {
                 });
         ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
         AnnotatedBean annotatedBean = new AnnotatedBean();
+        AnnotatedBeanSubclass annotatedBeanSubclass = new AnnotatedBeanSubclass();
 
         module.assignHandlersMatching("java.util.concurrent", "concurrent"::equals);
         module.registerEventHandler(c -> new Object()); // --> java.lang
@@ -59,6 +60,7 @@ public class EventHandlingConfigurationTest {
         module.registerEventHandler(c -> "concurrent"); // --> java.util.concurrent
         module.registerEventHandler(c -> map); // --> java.util.concurrent
         module.registerEventHandler(c -> annotatedBean);
+        module.registerEventHandler(c -> annotatedBeanSubclass);
         module.initialize(configuration);
 
         assertEquals(3, processors.size());
@@ -66,6 +68,7 @@ public class EventHandlingConfigurationTest {
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
+        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
     }
 
     @Test
@@ -130,5 +133,9 @@ public class EventHandlingConfigurationTest {
 
     @ProcessingGroup("processingGroup")
     public static class AnnotatedBean {
+    }
+
+    public static class AnnotatedBeanSubclass extends AnnotatedBean {
+
     }
 }
