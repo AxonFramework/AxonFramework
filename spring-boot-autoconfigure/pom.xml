@@ -26,8 +26,6 @@
     <artifactId>axon-spring-boot-autoconfigure</artifactId>
     <name>Axon Framework Spring Boot Support</name>
 
-    <packaging>jar</packaging>
-
     <dependencies>
         <dependency>
             <groupId>org.axonframework</groupId>
