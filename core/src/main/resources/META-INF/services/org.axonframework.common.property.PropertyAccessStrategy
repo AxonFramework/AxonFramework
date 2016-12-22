@@ -16,3 +16,4 @@
 
 org.axonframework.common.property.UniformPropertyAccessStrategy
 org.axonframework.common.property.BeanPropertyAccessStrategy
+org.axonframework.common.property.DirectPropertyAccessStrategy
