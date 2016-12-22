@@ -22,7 +22,7 @@ public class Oracle11EventTableFactoryTest {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
         try {
-            connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");
+            connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "system", "oracle");
         } catch (SQLException e) {
             assumeNoException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
         }
