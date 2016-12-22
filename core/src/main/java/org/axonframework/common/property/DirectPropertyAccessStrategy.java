@@ -19,7 +19,7 @@ public class DirectPropertyAccessStrategy extends PropertyAccessStrategy {
 	protected <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
 		Iterable<Field> fields = fieldsOf(targetClass);
 		for(Field field : fields) {
-			if (field.getName().equals(property) && ((field.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC)) {
+			if (field.getName().equals(property) && (field.getModifiers() & Modifier.PUBLIC) == Modifier.PUBLIC) {
 				return new DirectlyAccessedProperty<>(field, property);
 			}
 		}
