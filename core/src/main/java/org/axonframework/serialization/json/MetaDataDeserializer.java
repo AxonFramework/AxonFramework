@@ -17,11 +17,18 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.impl.TypeWrappedDeserializer;
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import org.axonframework.messaging.MetaData;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,6 +38,20 @@ import java.util.Map;
  * @since 2.4.2
  */
 public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
+
+    @Override
+    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext deserializationContext, TypeDeserializer typeDeserializer) throws IOException, JsonProcessingException {
+        if (jsonParser.getCurrentToken().equals(JsonToken.START_ARRAY)) {
+            jsonParser.nextToken();
+            jsonParser.nextToken();
+            ObjectMapper om = new ObjectMapper();
+            MetaData metaData = MetaData.from(om.readValue(jsonParser, new TypeReference<HashMap<String, Object>>() {
+            }));
+            jsonParser.nextToken();
+            return metaData;
+        }
+        return super.deserializeWithType(jsonParser, deserializationContext, typeDeserializer);
+    }
 
     @SuppressWarnings("unchecked")
     @Override
