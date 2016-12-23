@@ -43,11 +43,11 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
 
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and
-     * a {@link RollbackConfigurationType#ANY_THROWABLE}.
+     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and a
+     * {@link RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
@@ -55,31 +55,51 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<EventMessage<?>> messageSource) {
-        this(name, eventHandlerInvoker, messageSource, NoOpMessageMonitor.INSTANCE);
+        this(name, eventHandlerInvoker, messageSource, DirectEventProcessingStrategy.INSTANCE);
     }
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and
-     * a {@link RollbackConfigurationType#ANY_THROWABLE}.
+     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and a
+     * {@link RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
      * @param eventHandlerInvoker The component that handles the individual events
      * @param messageSource       The EventBus to which this event processor will subscribe
+     * @param processingStrategy  Strategy that determines whether events are processed directly or asynchronously
+     */
+    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                     SubscribableMessageSource<EventMessage<?>> messageSource,
+                                     EventProcessingStrategy processingStrategy) {
+        this(name, eventHandlerInvoker, messageSource, processingStrategy, NoOpMessageMonitor.INSTANCE);
+    }
+
+    /**
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * <p>
+     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and a
+     * {@link RollbackConfigurationType#ANY_THROWABLE}.
+     *
+     * @param name                The name of the event processor
+     * @param eventHandlerInvoker The component that handles the individual events
+     * @param messageSource       The EventBus to which this event processor will subscribe
+     * @param processingStrategy  Strategy that determines whether events are processed directly or asynchronously
      * @param messageMonitor      Monitor to be invoked before and after event processing
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<? extends EventMessage<?>> messageSource,
+                                     EventProcessingStrategy processingStrategy,
                                      MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, messageSource,
-             DirectEventProcessingStrategy.INSTANCE, NoOpErrorHandler.INSTANCE, messageMonitor);
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, messageSource, processingStrategy,
+             NoOpErrorHandler.INSTANCE, messageMonitor);
     }
 
     /**
-     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for events.
-     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
+     * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      *
      * @param name                  The name of the event processor
      * @param eventHandlerInvoker   The component that handles the individual events
