@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.apache.commons.collections.set.ListOrderedSet;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -27,6 +26,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -116,7 +116,7 @@ public class SagaManagerTest {
 
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
-        return ListOrderedSet.decorate(Arrays.asList(items));
+        return new CopyOnWriteArraySet<T>(Arrays.asList(items));
     }
 
     private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
