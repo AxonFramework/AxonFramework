@@ -29,7 +29,6 @@ import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStor
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -87,8 +86,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
                                                                   sagaType, fieldFilters);
-        FixtureResourceParameterResolverFactory.clear();
-        registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
     }
 
     /**
@@ -113,8 +110,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while trying to advance time " +
                                                         "and handle scheduled events", e);
-        } finally {
-            FixtureResourceParameterResolverFactory.clear();
         }
         return fixtureExecutionResult;
     }
@@ -127,8 +122,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while trying to advance time " +
                                                         "and handle scheduled events", e);
-        } finally {
-            FixtureResourceParameterResolverFactory.clear();
         }
 
         return fixtureExecutionResult;
@@ -137,7 +130,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public void registerResource(Object resource) {
         registeredResources.add(resource);
-        FixtureResourceParameterResolverFactory.registerResource(resource);
+//        FixtureResourceParameterResolverFactory.registerResource(resource);
     }
 
     @Override
@@ -192,12 +185,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event) {
-        try {
-            fixtureExecutionResult.startRecording();
-            handleInSaga(timeCorrectedEventMessage(event));
-        } finally {
-            FixtureResourceParameterResolverFactory.clear();
-        }
+        fixtureExecutionResult.startRecording();
+        handleInSaga(timeCorrectedEventMessage(event));
         return fixtureExecutionResult;
     }
 
@@ -325,11 +314,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         @Override
         public FixtureExecutionResult publishes(Object event) {
-            try {
-                publish(event);
-            } finally {
-                FixtureResourceParameterResolverFactory.clear();
-            }
+            publish(event);
             return fixtureExecutionResult;
         }
 

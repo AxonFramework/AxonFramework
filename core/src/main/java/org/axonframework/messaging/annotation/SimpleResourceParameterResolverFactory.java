@@ -13,21 +13,23 @@ import java.lang.reflect.Parameter;
 @Priority(Priority.LOW)
 public class SimpleResourceParameterResolverFactory implements ParameterResolverFactory {
 
-    private final Object resource;
+    private final Iterable<?> resources;
 
     /**
      * Initialize the ParameterResolverFactory to inject the given {@code resource} in applicable parameters.
      *
-     * @param resource The resource to inject
+     * @param resources The resource to inject
      */
-    public SimpleResourceParameterResolverFactory(Object resource) {
-        this.resource = resource;
+    public SimpleResourceParameterResolverFactory(Iterable<?> resources) {
+        this.resources = resources;
     }
 
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        if (parameters[parameterIndex].getType().isInstance(resource)) {
-            return new FixedValueParameterResolver<>(resource);
+        for (Object resource : resources) {
+            if (parameters[parameterIndex].getType().isInstance(resource)) {
+                return new FixedValueParameterResolver<>(resource);
+            }
         }
         return null;
     }

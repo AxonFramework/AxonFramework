@@ -1,5 +1,6 @@
 package org.axonframework.messaging.annotation;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -15,18 +16,21 @@ import org.junit.Test;
 public class SimpleResourceParameterResolverFactoryTest {
 
     private static final String TEST_RESOURCE = "testResource";
+    private static final Long TEST_RESOURCE2 = 42L;
 
     private SimpleResourceParameterResolverFactory testSubject;
 
     private Method messageHandlingMethodWithResourceParameter;
+    private Method messageHandlingMethodWithResource2Parameter;
     private Method messageHandlingMethodWithoutResourceParameter;
     private Method messageHandlingMethodWithResourceParameterOfDifferentType;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SimpleResourceParameterResolverFactory(TEST_RESOURCE);
+        testSubject = new SimpleResourceParameterResolverFactory(asList(TEST_RESOURCE, TEST_RESOURCE2));
 
         messageHandlingMethodWithResourceParameter = getClass().getMethod("someMessageHandlingMethodWithResource", Message.class, String.class);
+        messageHandlingMethodWithResource2Parameter = getClass().getMethod("someMessageHandlingMethodWithResource2", Message.class, Long.class);
         messageHandlingMethodWithoutResourceParameter = getClass().getMethod("someMessageHandlingMethodWithoutResource", Message.class);
         messageHandlingMethodWithResourceParameterOfDifferentType =
                 getClass().getMethod("someMessageHandlingMethodWithResourceOfDifferentType", Message.class, Integer.class);
@@ -34,6 +38,10 @@ public class SimpleResourceParameterResolverFactoryTest {
 
     @SuppressWarnings("unused") //Used in setUp()
     public void someMessageHandlingMethodWithResource(Message message, String resource) {
+    }
+
+    @SuppressWarnings("unused") //Used in setUp()
+    public void someMessageHandlingMethodWithResource2(Message message, Long resource) {
     }
 
     @SuppressWarnings("unused") //Used in setUp()
@@ -52,6 +60,16 @@ public class SimpleResourceParameterResolverFactoryTest {
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(eventMessage));
         assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(eventMessage));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testResolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() throws Exception {
+        ParameterResolver resolver =
+                testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
+        final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
+        assertTrue(resolver.matches(eventMessage));
+        assertEquals(TEST_RESOURCE2, resolver.resolveParameterValue(eventMessage));
     }
 
     @Test
