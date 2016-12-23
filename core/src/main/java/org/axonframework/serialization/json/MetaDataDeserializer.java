@@ -17,12 +17,9 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import org.axonframework.messaging.MetaData;
 
@@ -39,17 +36,15 @@ import java.util.Map;
 public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
 
     @Override
-    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext deserializationContext, TypeDeserializer typeDeserializer) throws IOException, JsonProcessingException {
-        if (jsonParser.getCurrentToken().equals(JsonToken.START_ARRAY)) {
-            jsonParser.nextToken();
-            jsonParser.nextToken();
-            ObjectMapper om = new ObjectMapper();
-            MetaData metaData = MetaData.from(om.readValue(jsonParser, new TypeReference<HashMap<String, Object>>() {
-            }));
-            jsonParser.nextToken();
+    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {
+        if (JsonToken.START_ARRAY.equals(jsonParser.getCurrentToken())) {
+            jsonParser.nextToken(); // START_ARRAY
+            jsonParser.nextToken(); // VALUE_STRING (type)
+            MetaData metaData = deserialize(jsonParser, ctxt);
+            jsonParser.nextToken(); // END_ARRAY
             return metaData;
         }
-        return super.deserializeWithType(jsonParser, deserializationContext, typeDeserializer);
+        return deserialize(jsonParser, ctxt);
     }
 
     @SuppressWarnings("unchecked")
@@ -59,6 +54,6 @@ public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
         JsonDeserializer<Object> deserializer = ctxt.findRootValueDeserializer(
                 ctxt.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
-        return MetaData.from((Map) deserializer.deserialize(jp, ctxt));
+        return MetaData.from((Map) deserializer.deserialize(jp, ctxt, new HashMap<>()));
     }
 }
