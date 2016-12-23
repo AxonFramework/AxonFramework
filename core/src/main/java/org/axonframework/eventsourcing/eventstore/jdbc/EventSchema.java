@@ -166,7 +166,7 @@ public class EventSchema {
      * Builder for an {@link EventSchema} that gets initialized with default values.
      */
     @SuppressWarnings("SqlResolve")
-    protected static class Builder {
+    public static class Builder {
         private String domainEventTable = "DomainEventEntry";
         private String snapshotTable = "SnapshotEventEntry";
         private String globalIndexColumn = "globalIndex";
