@@ -17,18 +17,14 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import org.axonframework.messaging.MetaData;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * JsonDeserializer implementation that deserializes MetaData instances.
@@ -37,28 +33,13 @@ import java.util.Map;
  * @since 2.4.2
  */
 public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
-
     @Override
-    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext deserializationContext, TypeDeserializer typeDeserializer) throws IOException, JsonProcessingException {
-        if (jsonParser.getCurrentToken().equals(JsonToken.START_ARRAY)) {
-            jsonParser.nextToken();
-            jsonParser.nextToken();
-            ObjectMapper om = new ObjectMapper();
-            MetaData metaData = MetaData.from(om.readValue(jsonParser, new TypeReference<HashMap<String, Object>>() {
-            }));
-            jsonParser.nextToken();
-            return metaData;
-        }
-        return super.deserializeWithType(jsonParser, deserializationContext, typeDeserializer);
+    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext deserializationContext, TypeDeserializer typeDeserializer) throws IOException {
+        return deserialize(jsonParser, deserializationContext);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public MetaData deserialize(JsonParser jp, DeserializationContext ctxt)
-            throws IOException {
-        JsonDeserializer<Object> deserializer = ctxt.findRootValueDeserializer(
-                ctxt.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
-
-        return MetaData.from((Map) deserializer.deserialize(jp, ctxt));
+    public MetaData deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+        return MetaData.from(jp.readValueAs(new TypeReference<HashMap<String,Object>>(){}));
     }
 }
