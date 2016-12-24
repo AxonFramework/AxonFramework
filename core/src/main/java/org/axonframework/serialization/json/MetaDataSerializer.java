@@ -28,10 +28,12 @@ import java.util.HashMap;
 /**
  * JsonSerializer implementation that serializes MetaData instances.
  */
-public class MetaDataSerializer extends JsonSerializer<MetaData> {
+class MetaDataSerializer extends JsonSerializer<MetaData> {
 	@Override
 	public void serializeWithType(MetaData value, JsonGenerator jgen, SerializerProvider provider, TypeSerializer typeSer) throws IOException {
+		typeSer.writeTypePrefixForScalar(value, jgen, MetaData.class);
 		serialize(value, jgen, provider);
+		typeSer.writeTypeSuffixForScalar(value, jgen);
 	}
 
 	@Override

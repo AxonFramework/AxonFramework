@@ -30,7 +30,7 @@ public class MetaDataDeserializerTest {
     private static String serializedDataInDataStringDT;
     private static ObjectMapper objectMapperDT;
 
-    public static class Container {
+    private static class Container {
 
         private String a;
         private MetaData b;

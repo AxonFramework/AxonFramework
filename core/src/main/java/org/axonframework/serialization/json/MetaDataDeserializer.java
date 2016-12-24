@@ -17,10 +17,18 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.json.ReaderBasedJsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.util.JsonParserSequence;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
+import com.fasterxml.jackson.databind.jsontype.impl.AsWrapperTypeDeserializer;
+import com.fasterxml.jackson.databind.node.TreeTraversingParser;
+import com.fasterxml.jackson.databind.util.TokenBuffer;
 import org.axonframework.messaging.MetaData;
 
 import java.io.IOException;
@@ -32,12 +40,7 @@ import java.util.HashMap;
  * @author Allard Buijze
  * @since 2.4.2
  */
-public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
-    @Override
-    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext deserializationContext, TypeDeserializer typeDeserializer) throws IOException {
-        return deserialize(jsonParser, deserializationContext);
-    }
-
+class MetaDataDeserializer extends JsonDeserializer<MetaData> {
     @Override
     public MetaData deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
         return MetaData.from(jp.readValueAs(new TypeReference<HashMap<String,Object>>(){}));
