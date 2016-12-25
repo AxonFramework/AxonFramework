@@ -117,7 +117,7 @@ public class TokenSchema {
     /**
      * Builder for an {@link TokenSchema} that gets initialized with default values.
      */
-    protected static class Builder {
+    public static class Builder {
         private String tokenTable = "TokenEntry";
         private String processorNameColumn = "processorName";
         private String segmentColumn = "segment";

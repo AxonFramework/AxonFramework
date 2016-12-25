@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -29,7 +30,6 @@ import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStor
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -39,12 +39,17 @@ import org.axonframework.test.utils.RecordingCommandBus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
+
+import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.fieldsOf;
 
 /**
  * Fixture for testing Annotated Sagas based on events and time passing. This fixture allows resources to be configured
@@ -64,6 +69,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final RecordingCommandBus commandBus;
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
 
+    private boolean transienceCheckEnabled = true;
+
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given {@code sagaType}.
      *
@@ -74,9 +81,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         eventScheduler = new StubEventScheduler();
         EventBus eventBus = new SimpleEventBus();
         InMemorySagaStore sagaStore = new InMemorySagaStore();
-        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
-                                                                         new AutowiredResourceInjector(
-                                                                                 registeredResources));
+        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(
+                sagaType, sagaStore, new TransienceValidatingResourceInjector());
         sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository);
         sagaManager.setSuppressExceptions(false);
 
@@ -87,8 +93,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
                                                                   sagaType, fieldFilters);
-        FixtureResourceParameterResolverFactory.clear();
-        registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
     }
 
     /**
@@ -106,6 +110,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public FixtureConfiguration withTransienceCheckDisabled() {
+        this.transienceCheckEnabled = false;
+        return this;
+    }
+
+    @Override
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
         try {
             fixtureExecutionResult.startRecording();
@@ -113,8 +123,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while trying to advance time " +
                                                         "and handle scheduled events", e);
-        } finally {
-            FixtureResourceParameterResolverFactory.clear();
         }
         return fixtureExecutionResult;
     }
@@ -127,8 +135,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while trying to advance time " +
                                                         "and handle scheduled events", e);
-        } finally {
-            FixtureResourceParameterResolverFactory.clear();
         }
 
         return fixtureExecutionResult;
@@ -137,7 +143,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public void registerResource(Object resource) {
         registeredResources.add(resource);
-        FixtureResourceParameterResolverFactory.registerResource(resource);
     }
 
     @Override
@@ -192,12 +197,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event) {
-        try {
-            fixtureExecutionResult.startRecording();
-            handleInSaga(timeCorrectedEventMessage(event));
-        } finally {
-            FixtureResourceParameterResolverFactory.clear();
-        }
+        fixtureExecutionResult.startRecording();
+        handleInSaga(timeCorrectedEventMessage(event));
         return fixtureExecutionResult;
     }
 
@@ -325,11 +326,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         @Override
         public FixtureExecutionResult publishes(Object event) {
-            try {
-                publish(event);
-            } finally {
-                FixtureResourceParameterResolverFactory.clear();
-            }
+            publish(event);
             return fixtureExecutionResult;
         }
 
@@ -362,6 +359,31 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         public void add(FieldFilter fieldFilter) {
             filters.add(fieldFilter);
+        }
+    }
+
+    private class TransienceValidatingResourceInjector extends AutowiredResourceInjector {
+
+        public TransienceValidatingResourceInjector() {
+            super(registeredResources);
+        }
+
+        @Override
+        public void injectResources(Object saga) {
+            super.injectResources(saga);
+            if (transienceCheckEnabled) {
+                StreamSupport.stream(fieldsOf(saga.getClass()).spliterator(), false)
+                        .filter(f -> !Modifier.isTransient(f.getModifiers()))
+                        .filter(f -> registeredResources.contains(ReflectionUtils.getFieldValue(f, saga)))
+                        .findFirst()
+                        .ifPresent(field -> {
+                            throw new AssertionError(format("Field %s.%s is injected with a resource, " +
+                                                                    "but it doesn't have the 'transient' modifier.\n" +
+                                                                    "Mark field as 'transient' or disable this check using:\n" +
+                                                                    "fixture.withTransienceCheckDisabled()",
+                                                            field.getDeclaringClass(), field.getName()));
+                        });
+            }
         }
     }
 }

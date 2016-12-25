@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.axonframework.common.ReflectionUtils.*;
@@ -148,9 +149,9 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
         public String identify(Object command) throws InvocationTargetException, IllegalAccessException {
             if (method != null) {
-                return (String) method.invoke(command);
+                return Objects.toString(method.invoke(command));
             } else if (field != null) {
-                return ReflectionUtils.getFieldValue(field, command);
+                return Objects.toString(ReflectionUtils.getFieldValue(field, command));
             }
             return null;
         }

@@ -17,27 +17,22 @@
 package org.axonframework.test;
 
 import org.axonframework.common.Priority;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.axonframework.common.Priority.LAST;
 
 /**
- * ParameterResolverFactory implementation that is aware of test-specific use cases. It uses a ThreadLocal to keep
- * track of injectable resources.
+ * ParameterResolverFactory implementation for use in test cases that prevent that all declared resources on message
+ * handlers need to be configured. This ParameterResolverFactory will return a parameter resolver for any parameter,
+ * but will fail when that resolver is being used.
  * <p>
- * Although all access to this fixture should be done using the static accessor methods, creation of an instance is
- * still possible to comply with the ServiceLoader specification.
- * <p>
- * Furthermore, this factory creates lazy parameter resolver, which mean that unsupported parameters are only detected
- * when a specific handler is invoked. This ensures that only the resources that are actually used inside a test need
- * to be configured.
+ * Because of this behavior, it is important that any resource resolvers doing actual resolution are executed before
+ * this instance.
  *
  * @author Allard Buijze
  * @since 2.1
@@ -45,64 +40,28 @@ import static org.axonframework.common.Priority.LAST;
 @Priority(LAST)
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
-    private static final ThreadLocal<List<Object>> RESOURCES = new ThreadLocal<>();
-
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        return new LazyParameterResolver(parameters[parameterIndex].getType());
+        return new FailingParameterResolver(parameters[parameterIndex].getType());
     }
 
-    /**
-     * Registers an additional resource for injection
-     *
-     * @param injectableResource the resource to inject into handler methods
-     */
-    public static void registerResource(Object injectableResource) {
-        if (RESOURCES.get() == null) {
-            RESOURCES.set(new ArrayList<>());
-        }
-        if (!RESOURCES.get().contains(injectableResource)) {
-            RESOURCES.get().add(injectableResource);
-        }
-    }
-
-    /**
-     * Clears the injectable resources registered to the current thread.
-     */
-    public static void clear() {
-        RESOURCES.remove();
-    }
-
-    private static class LazyParameterResolver implements ParameterResolver {
+    private static class FailingParameterResolver implements ParameterResolver {
 
         private final Class<?> parameterType;
 
-        public LazyParameterResolver(Class<?> parameterType) {
+        public FailingParameterResolver(Class<?> parameterType) {
             this.parameterType = parameterType;
         }
 
         @Override
         public Object resolveParameterValue(Message message) {
-            // since this ParameterResolver barges in on the payload parameter, we need to check if we should inject
-            // the payload, instead of a resource
-            if (parameterType.isAssignableFrom(message.getPayloadType())) {
-                return message.getPayload();
-            }
-            final List<Object> objects = RESOURCES.get();
-            if (objects != null) {
-                for (Object resource : objects) {
-                    if (parameterType.isInstance(resource)) {
-                        return resource;
-                    }
-                }
-            }
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()
                                                         + "] has been registered. It is required for one of the handlers being executed.");
         }
 
         @Override
         public boolean matches(Message message) {
-            return parameterType.isAssignableFrom(message.getPayloadType()) || RESOURCES.get() != null;
+            return true;
         }
     }
 }

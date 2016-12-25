@@ -17,13 +17,15 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import org.axonframework.messaging.MetaData;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * JsonDeserializer implementation that deserializes MetaData instances.
@@ -31,9 +33,27 @@ import java.util.HashMap;
  * @author Allard Buijze
  * @since 2.4.2
  */
-class MetaDataDeserializer extends JsonDeserializer<MetaData> {
+public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
+
     @Override
-    public MetaData deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-        return MetaData.from(jp.readValueAs(new TypeReference<HashMap<String,Object>>(){}));
+    public Object deserializeWithType(JsonParser jsonParser, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {
+        if (JsonToken.START_ARRAY.equals(jsonParser.getCurrentToken())) {
+            jsonParser.nextToken(); // START_ARRAY
+            jsonParser.nextToken(); // VALUE_STRING (type)
+            MetaData metaData = deserialize(jsonParser, ctxt);
+            jsonParser.nextToken(); // END_ARRAY
+            return metaData;
+        }
+        return deserialize(jsonParser, ctxt);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public MetaData deserialize(JsonParser jp, DeserializationContext ctxt)
+            throws IOException {
+        JsonDeserializer<Object> deserializer = ctxt.findRootValueDeserializer(
+                ctxt.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
+
+        return MetaData.from((Map) deserializer.deserialize(jp, ctxt, new HashMap<>()));
     }
 }

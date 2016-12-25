@@ -31,7 +31,7 @@ import javax.persistence.MappedSuperclass;
 public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements DomainEventData<T> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
     @SuppressWarnings("unused")
     private long globalIndex;
 

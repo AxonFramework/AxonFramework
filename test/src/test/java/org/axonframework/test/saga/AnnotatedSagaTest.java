@@ -29,6 +29,8 @@ import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -72,6 +74,29 @@ public class AnnotatedSagaTest {
                 .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
                 .expectActiveSagas(1)
                 .expectAssociationWith("identifier", "id");
+    }
+
+    @Test
+    public void testFixtureApi_NonTransientResourceInjected() throws Exception {
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.registerResource(new NonTransientResource());
+        fixture.givenNoPriorActivity();
+        try {
+            fixture.whenAggregate("id").publishes(new TriggerSagaStartEvent("id"));
+            fail("Expected error");
+        } catch (AssertionError e) {
+            assertTrue("Got unexpected error: " + e.getMessage(), e.getMessage().contains("StubSaga.nonTransientResource"));
+            assertTrue("Got unexpected error: " + e.getMessage(), e.getMessage().contains("transient"));
+        }
+    }
+
+    @Test
+    public void testFixtureApi_NonTransientResourceInjected_CheckDisabled() throws Exception {
+        FixtureConfiguration fixture = new SagaTestFixture<>(StubSaga.class)
+                .withTransienceCheckDisabled();
+        fixture.registerResource(new NonTransientResource());
+        fixture.givenNoPriorActivity()
+                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"));
     }
 
     @Test // testing issue AXON-279

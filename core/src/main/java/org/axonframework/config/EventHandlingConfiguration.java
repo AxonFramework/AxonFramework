@@ -76,6 +76,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                                                                                   ListenerErrorHandler.class,
                                                                                                                                   LoggingListenerErrorHandler::new)),
                                                                             messageSource.apply(conf),
+                                                                            DirectEventProcessingStrategy.INSTANCE,
                                                                             conf.messageMonitor(SubscribingEventProcessor.class,
                                                                                                                 name));
         processor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));

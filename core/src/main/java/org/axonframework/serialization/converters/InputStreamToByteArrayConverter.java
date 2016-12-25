@@ -16,10 +16,10 @@
 
 package org.axonframework.serialization.converters;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.ContentTypeConverter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -30,7 +30,7 @@ import java.io.InputStream;
  * @author Allard Buijze
  * @since 2.0
  */
-public class InputStreamToByteArrayConverter implements ContentTypeConverter<InputStream,byte[]> {
+public class InputStreamToByteArrayConverter implements ContentTypeConverter<InputStream, byte[]> {
 
     @Override
     public Class<InputStream> expectedSourceType() {
@@ -53,7 +53,7 @@ public class InputStreamToByteArrayConverter implements ContentTypeConverter<Inp
     }
 
     private byte[] bytesFrom(InputStream original) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream(); // NOSONAR - There is no point in closing BAOS
+        ByteArrayOutputStream output = new ByteArrayOutputStream(1024); // NOSONAR - There is no point in closing BAOS
         byte[] buffer = new byte[1024];
         int n;
         while (-1 != (n = original.read(buffer))) {
