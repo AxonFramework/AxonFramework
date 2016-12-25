@@ -119,7 +119,6 @@ public class JacksonSerializer implements Serializer {
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module")
-                    .addSerializer(MetaData.class, new MetaDataSerializer())
                     .addDeserializer(MetaData.class, new MetaDataDeserializer()));
         this.objectMapper.registerModule(new JSR310Module());
         if (converter instanceof ChainingConverter) {
