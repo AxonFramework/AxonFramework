@@ -17,7 +17,6 @@
 package org.axonframework.serialization.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
@@ -37,14 +36,7 @@ public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
 
     @Override
     public Object deserializeWithType(JsonParser jsonParser, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {
-        if (JsonToken.START_ARRAY.equals(jsonParser.getCurrentToken())) {
-            jsonParser.nextToken(); // START_ARRAY
-            jsonParser.nextToken(); // VALUE_STRING (type)
-            MetaData metaData = deserialize(jsonParser, ctxt);
-            jsonParser.nextToken(); // END_ARRAY
-            return metaData;
-        }
-        return deserialize(jsonParser, ctxt);
+        return typeDeserializer.deserializeTypedFromObject(jsonParser, ctxt);
     }
 
     @SuppressWarnings("unchecked")
