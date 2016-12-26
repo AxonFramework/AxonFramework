@@ -9,16 +9,6 @@ public class EventProcessorProperties {
 
     private HashMap<String, ProcessorSettings> processors = new HashMap<>();
 
-    private String otherSetting;
-
-    public String getOtherSetting() {
-        return otherSetting;
-    }
-
-    public void setOtherSetting(String otherSetting) {
-        this.otherSetting = otherSetting;
-    }
-
     public HashMap<String, ProcessorSettings> getProcessors() {
         return processors;
     }

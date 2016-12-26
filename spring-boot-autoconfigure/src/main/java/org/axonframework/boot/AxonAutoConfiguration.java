@@ -15,25 +15,36 @@ import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.Configurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.config.EnableAxon;
 import org.axonframework.spring.config.SpringAxonAutoConfigurer;
+import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.jgroups.stack.GossipRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -68,6 +79,20 @@ public class AxonAutoConfiguration {
     @ConditionalOnMissingBean
     public Serializer serializer() {
         return new XStreamSerializer();
+    }
+
+    @Qualifier("eventStore")
+    @Bean("eventBus")
+    @ConditionalOnMissingBean({EventBus.class, EventStore.class})
+    @ConditionalOnBean(EventStorageEngine.class)
+    public EventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
+        return new EmbeddedEventStore(storageEngine, configuration.messageMonitor(EventStore.class, "eventStore"));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
+    public EventBus eventBus(AxonConfiguration configuration) {
+        return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventStore.class, "eventStore"));
     }
 
     @Autowired(required = false)
