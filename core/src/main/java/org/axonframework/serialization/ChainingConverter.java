@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * from one type to another, for which there is no suitable single converter.
  * <p/>
  * This implementation will also autodetect ContentTypeConverter implementations by scanning
- * {@code /META-INF/services/org.axonframework.serializer.ContentTypeConverter} files on the classpath. These
+ * {@code /META-INF/services/org.axonframework.serialization.ContentTypeConverter} files on the classpath. These
  * files must contain the fully qualified class names of the implementations to use.
  *
  * @author Allard Buijze
@@ -41,7 +41,7 @@ public class ChainingConverter implements Converter {
 
     /**
      * Initialize a new ChainingConverter. Will autodetect all converters mentioned in
-     * {@code /META-INF/services/org.axonframework.serializer.ContentTypeConverter} files on the class path.
+     * {@code /META-INF/services/org.axonframework.serialization.ContentTypeConverter} files on the class path.
      * <p/>
      * Instances of ChainingConverter are safe for use in a multi-threaded environment, with exception of the
      * {@link #registerConverter(ContentTypeConverter)} method.
@@ -107,7 +107,7 @@ public class ChainingConverter implements Converter {
      * will be inspected <em>first</em> when finding a suitable converter for a given input and output type.
      * <p/>
      * An alternative to explicit converter registration (but without the ordering guarantees) is to create a file
-     * called {@code org.axonframework.serializer.ContentTypeConverter} in {@code /META-INF/services/} on the
+     * called {@code org.axonframework.serialization.ContentTypeConverter} in {@code /META-INF/services/} on the
      * class path which contains the fully qualified class names of the converters, separated by newlines. These
      * implementations must have a public no-arg constructor.
      *
@@ -127,7 +127,7 @@ public class ChainingConverter implements Converter {
      * converter for a given input and output type.
      * <p/>
      * An alternative to explicit converter registration (but without the ordering guarantees) is to create a file
-     * called {@code org.axonframework.serializer.ContentTypeConverter} in {@code /META-INF/services/} on the
+     * called {@code org.axonframework.serialization.ContentTypeConverter} in {@code /META-INF/services/} on the
      * class path which contains the fully qualified class names of the converters, separated by newlines. These
      * implementations must have a public no-arg constructor.
      *
