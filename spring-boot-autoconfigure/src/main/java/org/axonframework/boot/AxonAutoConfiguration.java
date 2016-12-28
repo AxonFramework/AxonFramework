@@ -17,11 +17,15 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -61,8 +65,11 @@ import java.util.regex.Pattern;
 @EnableConfigurationProperties(EventProcessorProperties.class)
 public class AxonAutoConfiguration {
 
-    @Autowired
-    private EventProcessorProperties eventProcessorProperties;
+    private final EventProcessorProperties eventProcessorProperties;
+
+    public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties) {
+        this.eventProcessorProperties = eventProcessorProperties;
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -70,15 +77,37 @@ public class AxonAutoConfiguration {
         return new XStreamSerializer();
     }
 
+    @Qualifier("eventStore")
+    @Bean("eventBus")
+    @ConditionalOnMissingBean({EventBus.class, EventStore.class})
+    @ConditionalOnBean(EventStorageEngine.class)
+    public EventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
+        return new EmbeddedEventStore(storageEngine, configuration.messageMonitor(EventStore.class, "eventStore"));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
+    public EventBus eventBus(AxonConfiguration configuration) {
+        return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventStore.class, "eventStore"));
+    }
+
     @Autowired(required = false)
-    // live reload support (spring boot devtools) has trouble starting with this dependency.
+    // required set to false for live reload support (spring boot devtools). It has trouble starting with this dependency.
     public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
-                eventHandlingConfiguration.registerTrackingProcessor(k);
+                if (v.getSource() == null) {
+                    eventHandlingConfiguration.registerTrackingProcessor(k);
+                } else {
+                    eventHandlingConfiguration.registerTrackingProcessor(k, c -> applicationContext.getBean(v.getSource(), StreamableMessageSource.class));
+                }
             } else {
-                eventHandlingConfiguration.registerSubscribingEventProcessor(k, applicationContext.getBean(v.getSource(), SubscribableMessageSource.class));
+                if (v.getSource() == null) {
+                    eventHandlingConfiguration.registerSubscribingEventProcessor(k);
+                } else {
+                    eventHandlingConfiguration.registerSubscribingEventProcessor(k, c -> applicationContext.getBean(v.getSource(), SubscribableMessageSource.class));
+                }
             }
         });
     }
@@ -156,8 +185,11 @@ public class AxonAutoConfiguration {
     @Configuration
     public static class AMQPConfiguration {
 
-        @Autowired
-        private AMQPProperties amqpProperties;
+        private final AMQPProperties amqpProperties;
+
+        public AMQPConfiguration(AMQPProperties amqpProperties) {
+            this.amqpProperties = amqpProperties;
+        }
 
         @ConditionalOnMissingBean
         @Bean
@@ -203,8 +235,11 @@ public class AxonAutoConfiguration {
     public static class JGroupsConfiguration {
 
         private static final Logger logger = LoggerFactory.getLogger(JGroupsConfiguration.class);
-        @Autowired
-        private JGroupsProperties jGroupsProperties;
+        private final JGroupsProperties jGroupsProperties;
+
+        public JGroupsConfiguration(JGroupsProperties jGroupsProperties) {
+            this.jGroupsProperties = jGroupsProperties;
+        }
 
         @ConditionalOnProperty("axon.distributed.jgroups.gossip.autoStart")
         @Bean(destroyMethod = "stop")

@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 
@@ -111,6 +112,11 @@ public class SpringAxonAutoConfigurerTest {
         commandBus.dispatch(asCommandMessage("test"), callback);
         callback.getResult(1, TimeUnit.SECONDS);
 
+        FutureCallback<Object, Object> callback2 = new FutureCallback<>();
+        commandBus.dispatch(asCommandMessage("test"), callback2);
+        commandBus.dispatch(asCommandMessage(1L), callback2);
+        callback.getResult(1, TimeUnit.SECONDS);
+
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
     }
@@ -151,6 +157,16 @@ public class SpringAxonAutoConfigurerTest {
 
             @AggregateIdentifier
             private String id;
+
+            @CommandHandler
+            public void handle(Long command) {
+                apply(command);
+            }
+
+            @EventSourcingHandler
+            public void on(Long event) {
+                this.id = Long.toString(event);
+            }
 
             @EventSourcingHandler
             public void on(String event) {

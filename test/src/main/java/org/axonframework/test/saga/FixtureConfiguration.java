@@ -33,6 +33,17 @@ import java.time.Instant;
 public interface FixtureConfiguration {
 
     /**
+     * Disables the check that injected resources are stored in fields that are marked 'transient'.
+     *
+     * By default, Saga fixtures check for the transient modifier on fields that hold injected resources. These
+     * resources are generally not means to be serialized as part of the Saga.
+     *
+     * When the transience check reports false positives, this method allows this check to be skipped.
+     * @return this instance for fluent interfacing.
+     */
+    FixtureConfiguration withTransienceCheckDisabled();
+
+    /**
      * Registers the given {@code resource}. When a Saga is created, all resources are injected on that instance
      * before any Events are passed onto it.
      * <p/>

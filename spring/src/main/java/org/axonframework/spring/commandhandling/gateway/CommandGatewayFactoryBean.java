@@ -30,7 +30,7 @@ import org.springframework.beans.factory.FactoryBeanNotInitializedException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,8 +49,8 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
 
     private CommandBus commandBus;
     private RetryScheduler retryScheduler;
-    private List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = Collections.emptyList();
-    private List<CommandCallback<?, ?>> commandCallbacks = Collections.emptyList();
+    private List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new ArrayList<>();
+    private List<CommandCallback<?, ?>> commandCallbacks = new ArrayList<>();
     private T gateway;
     private Class<T> gatewayInterface;
 

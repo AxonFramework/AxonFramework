@@ -46,6 +46,9 @@ public class StubSaga {
     private transient EventBus eventBus;
     @Inject
     private transient EventScheduler scheduler;
+    @Inject
+    private NonTransientResource nonTransientResource;
+
     private List<Object> handledEvents = new ArrayList<>();
     private ScheduleToken timer;
 

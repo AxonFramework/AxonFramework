@@ -3,33 +3,41 @@ package org.axonframework.boot;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
+import java.util.Map;
 
-@ConfigurationProperties(prefix = "axon.eventhandling")
+@ConfigurationProperties("axon.eventhandling")
 public class EventProcessorProperties {
 
-    private HashMap<String, ProcessorSettings> processors = new HashMap<>();
+    /**
+     * The configuration of each of the processors. The key is the name of the processor, the value represents the
+     * settings to use for the processor with that name.
+     */
+    private Map<String, ProcessorSettings> processors = new HashMap<>();
 
-    private String otherSetting;
-
-    public String getOtherSetting() {
-        return otherSetting;
-    }
-
-    public void setOtherSetting(String otherSetting) {
-        this.otherSetting = otherSetting;
-    }
-
-    public HashMap<String, ProcessorSettings> getProcessors() {
+    public Map<String, ProcessorSettings> getProcessors() {
         return processors;
     }
 
-    public void setProcessors(HashMap<String, ProcessorSettings> processors) {
-        this.processors = processors;
+//    public void setProcessors(Map<String, ProcessorSettings> processors) {
+//        this.processors = processors;
+//    }
+
+    public enum Mode {
+
+        TRACKING,
+        SUBSCRIBING
     }
 
     public static class ProcessorSettings {
 
+        /**
+         * Sets the source for this processor. Defaults to streaming from/subscribing to the Event Bus
+         */
         private String source;
+
+        /**
+         * Indicates whether this processor should be Tracking, or Subscribing its source
+         */
         private Mode mode = Mode.SUBSCRIBING;
 
         public String getSource() {
@@ -40,7 +48,6 @@ public class EventProcessorProperties {
             this.source = source;
         }
 
-
         public Mode getMode() {
             return mode;
         }
@@ -48,11 +55,5 @@ public class EventProcessorProperties {
         public void setMode(Mode mode) {
             this.mode = mode;
         }
-    }
-
-    public enum Mode {
-
-        TRACKING,
-        SUBSCRIBING
     }
 }
