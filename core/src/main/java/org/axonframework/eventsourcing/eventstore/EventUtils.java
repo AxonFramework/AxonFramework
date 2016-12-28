@@ -75,11 +75,12 @@ public abstract class EventUtils {
      * {@code null} type, aggegrateIdentifier equal to messageIdentifier and sequence number of 0L.
      *
      * @param eventMessage the input event message
+     * @param <T>          The type of payload in the message
      * @return the message converted to a domain event message
      */
-    public static DomainEventMessage<?> asDomainEventMessage(EventMessage<?> eventMessage) {
+    public static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> eventMessage) {
         if (eventMessage instanceof DomainEventMessage<?>) {
-            return (DomainEventMessage<?>) eventMessage;
+            return (DomainEventMessage<T>) eventMessage;
         }
         return new GenericDomainEventMessage<>(null, eventMessage.getIdentifier(), 0L, eventMessage,
                                                eventMessage::getTimestamp);
