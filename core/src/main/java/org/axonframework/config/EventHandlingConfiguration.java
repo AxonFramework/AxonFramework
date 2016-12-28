@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
@@ -73,12 +74,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
                                                                             new SimpleEventHandlerInvoker(eh,
                                                                                                           conf.getComponent(
-                                                                                                                                  ListenerErrorHandler.class,
-                                                                                                                                  LoggingListenerErrorHandler::new)),
+                                                                                                                  ListenerErrorHandler.class,
+                                                                                                                  LoggingListenerErrorHandler::new)),
                                                                             messageSource.apply(conf),
                                                                             DirectEventProcessingStrategy.INSTANCE,
                                                                             conf.messageMonitor(SubscribingEventProcessor.class,
-                                                                                                                name));
+                                                                                                name));
         processor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
         return processor;
     }
@@ -94,27 +95,43 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration usingTrackingProcessors() {
-        return registerEventProcessorFactory(this::buildTrackingEventProcessor);
+        return registerEventProcessorFactory(
+                (conf, name, handlers) -> buildTrackingEventProcessor(conf, name, handlers, Configuration::eventBus));
     }
 
     /**
      * Register a TrackingProcessor using default configuration for the given {@code name}. Unlike
-     * {@link #usingTrackingProcessors()}, this method will not default to tracking, but instead only use tracking for
-     * event handler that have been assigned to the processor with given {@code name}.
+     * {@link #usingTrackingProcessors()}, this method will not default all processors to tracking, but instead only
+     * use tracking for event handler that have been assigned to the processor with given {@code name}.
+     * <p>
+     * Events will be read from the EventBus (or EventStore) registered with the main configuration
      *
      * @param name The name of the processor
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration registerTrackingProcessor(String name) {
-        return registerEventProcessor(name, this::buildTrackingEventProcessor);
+        return registerTrackingProcessor(name, Configuration::eventBus);
     }
 
-    private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers) {
+    /**
+     * Registers a TrackingProcessor using the given {@code source} to read messages from.
+     *
+     * @param name   The name of the TrackingProcessor
+     * @param source The source of messages for this processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
+        return registerEventProcessor(name, (conf, n, handlers) ->
+                buildTrackingEventProcessor(conf, name, handlers, source));
+    }
+
+    private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers,
+                                                       Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
         TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
                                                                                                           conf.getComponent(
                                                                                                                   ListenerErrorHandler.class,
                                                                                                                   LoggingListenerErrorHandler::new)),
-                                                                      conf.eventBus(),
+                                                                      source.apply(conf),
                                                                       conf.getComponent(TokenStore.class,
                                                                                         InMemoryTokenStore::new),
                                                                       conf.getComponent(TransactionManager.class,
@@ -235,7 +252,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     @Override
     public void initialize(Configuration config) {
-        Collections.sort(selectors, comparing(ProcessorSelector::getPriority).reversed());
+        selectors.sort(comparing(ProcessorSelector::getPriority).reversed());
         this.config = config;
 
         Map<String, List<Object>> assignments = new HashMap<>();
@@ -264,7 +281,18 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Register a subscribing processor with given {@code name} that subscribed to the given {@code messageSource}.
+     * Register a subscribing processor with given {@code name} that subscribes to the Event Bus.
+     *
+     * @param name The name of the Event Processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerSubscribingEventProcessor(String name) {
+        return registerEventProcessor(
+                name, (conf, n, eh) -> subscribingEventProcessor(conf, n, eh, Configuration::eventBus));
+    }
+
+    /**
+     * Register a subscribing processor with given {@code name} that subscribes to the given {@code messageSource}.
      * This allows the use of standard Subscribing Processors that listen to another source than the Event Bus.
      *
      * @param name          The name of the Event Processor
@@ -273,10 +301,10 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      */
     public EventHandlingConfiguration registerSubscribingEventProcessor(
             String name,
-            SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+            Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         return registerEventProcessor(
                 name,
-                (configuration, name1, eh) -> subscribingEventProcessor(configuration, name1, eh, c -> messageSource));
+                (c, n, eh) -> subscribingEventProcessor(c, n, eh, messageSource));
     }
 
     /**
