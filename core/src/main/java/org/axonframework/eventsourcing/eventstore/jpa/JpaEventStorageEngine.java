@@ -16,7 +16,6 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -26,6 +25,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.*;
@@ -131,46 +131,44 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () -> String
                 .format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
                         GapAwareTrackingToken.class.getSimpleName()));
-        GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
+        final GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
         Collection<Long> gaps = previousToken == null ? Collections.emptySet() : previousToken.getGaps();
-        List<Object[]> entries;
-        Transaction tx = transactionManager.startTransaction();
-        try {
+        List<Object[]> entries = transactionManager.fetchInTransaction(() -> {
+            TypedQuery<Object[]> query;
             if (previousToken == null || gaps.isEmpty()) {
-                entries = entityManager().createQuery(
+                query = entityManager().createQuery(
                         "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                 "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
                                 "FROM " + domainEventEntryEntityName() + " e " +
-                                "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class)
-                        .setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
-                        .setMaxResults(batchSize).getResultList();
+                                "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class);
             } else {
-                entries = entityManager().createQuery(
+                query = entityManager().createQuery(
                         "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                 "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
                                 "FROM " + domainEventEntryEntityName() + " e " +
                                 "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
-                        Object[].class).setParameter("token", previousToken.getIndex())
-                        .setParameter("gaps", previousToken.getGaps()).setMaxResults(batchSize).getResultList();
+                        Object[].class)
+                        .setParameter("gaps", previousToken.getGaps());
             }
-        } finally {
-            tx.commit();
-        }
+            return query
+                    .setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
+                    .setMaxResults(batchSize)
+                    .getResultList();
+        });
         List<TrackedEventData<?>> result = new ArrayList<>();
+        GapAwareTrackingToken token = previousToken;
         for (Object[] entry : entries) {
             long globalSequence = (Long) entry[0];
-            GapAwareTrackingToken trackingToken;
-            if (previousToken == null) {
-                trackingToken = GapAwareTrackingToken.newInstance(globalSequence, LongStream
+            if (token == null) {
+                token = GapAwareTrackingToken.newInstance(globalSequence, LongStream
                         .range(Math.min(lowestGlobalSequence, globalSequence), globalSequence).mapToObj(Long::valueOf)
                         .collect(toSet()));
             } else {
-                trackingToken = previousToken.advanceTo(globalSequence, maxGapOffset);
+                token = token.advanceTo(globalSequence, maxGapOffset);
             }
-            result.add(new GenericTrackedDomainEventEntry<>(trackingToken, (String) entry[1], (String) entry[2],
+            result.add(new GenericTrackedDomainEventEntry<>(token, (String) entry[1], (String) entry[2],
                                                             (Long) entry[3], (String) entry[4], entry[5],
                                                             (String) entry[6], (String) entry[7], entry[8], entry[9]));
-            previousToken = trackingToken;
         }
         return result;
     }
@@ -179,36 +177,36 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @SuppressWarnings("unchecked")
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        Transaction tx = transactionManager.startTransaction();
-        try {
-            return entityManager().createQuery(
-                    "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
-                            "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                            "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                            "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
-                            "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
-                            "ORDER BY e.sequenceNumber ASC").setParameter("id", aggregateIdentifier)
-                    .setParameter("seq", firstSequenceNumber).setMaxResults(batchSize).getResultList();
-        } finally {
-            tx.commit();
-        }
+        return transactionManager.fetchInTransaction(
+                () -> entityManager().createQuery(
+                        "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
+                                "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                "e.eventIdentifier, e.timeStamp, e.payloadType, " +
+                                "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
+                                "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
+                                "ORDER BY e.sequenceNumber ASC")
+                        .setParameter("id", aggregateIdentifier)
+                        .setParameter("seq", firstSequenceNumber)
+                        .setMaxResults(batchSize)
+                        .getResultList());
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        Transaction tx = transactionManager.startTransaction();
-        try {
-            return entityManager().createQuery(
-                    "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                            "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
-                            "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
-                            snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
-                            "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier).setMaxResults(1)
-                    .getResultList().stream().findFirst();
-        } finally {
-            tx.commit();
-        }
+        return transactionManager.fetchInTransaction(
+                () -> entityManager().createQuery(
+                        "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                                "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
+                                "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
+                                snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
+                                "ORDER BY e.sequenceNumber DESC")
+                        .setParameter("id", aggregateIdentifier)
+                        .setMaxResults(1)
+                        .getResultList()
+                        .stream()
+                        .findFirst()
+        );
     }
 
     @Override
