@@ -7,22 +7,20 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @ContextConfiguration(classes = {DataSourceAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
@@ -48,6 +46,6 @@ public class AxonAutoConfigurationWithHibernateTest {
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
 
-        assertEquals(3, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+        assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 }

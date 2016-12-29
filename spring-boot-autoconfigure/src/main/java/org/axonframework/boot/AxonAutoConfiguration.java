@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
@@ -116,7 +117,9 @@ public class AxonAutoConfiguration {
     @Qualifier("localSegment")
     @Bean
     public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
-        return new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
+        SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
+        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
+        return commandBus;
     }
 
     @AutoConfigureAfter(TransactionConfiguration.class)
@@ -157,7 +160,8 @@ public class AxonAutoConfiguration {
 
     @ConditionalOnBean(EntityManagerFactory.class)
     @RegisterDefaultEntities(packages = {"org.axonframework.eventsourcing.eventstore.jpa",
-            "org.axonframework.eventhandling.tokenstore"})
+            "org.axonframework.eventhandling.tokenstore",
+            "org.axonframework.eventhandling.saga.repository.jpa"})
     @Configuration
     public static class JpaConfiguration {
 
