@@ -74,7 +74,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler}, a {@link
+     * The EventProcessor is initialized with a batch size of 1, a {@link PropagatingErrorHandler}, a {@link
      * RollbackConfigurationType#ANY_THROWABLE} and a {@link NoOpMessageMonitor}.
      *
      * @param name                The name of the event processor
@@ -93,7 +93,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler}, a {@link
+     * The EventProcessor is initialized with a batch size of 1, a {@link PropagatingErrorHandler}, a {@link
      * RollbackConfigurationType#ANY_THROWABLE} and a {@link NoOpMessageMonitor}.
      *
      * @param name                The name of the event processor
@@ -106,7 +106,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize) {
-        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE,
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
              messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
@@ -114,7 +114,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler} and a {@link
+     * The EventProcessor is initialized with a batch size of 1, a {@link PropagatingErrorHandler} and a {@link
      * RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
@@ -128,7 +128,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE,
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
              messageSource, tokenStore, transactionManager, 1, messageMonitor);
     }
 
@@ -210,16 +210,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     protected void processingLoop() {
         MessageStream<TrackedEventMessage<?>> eventStream = null;
+        long errorWaitTime = 1;
         try {
             while (state != State.SHUT_DOWN) {
                 eventStream = ensureEventStreamOpened(eventStream);
                 try {
                     processBatch(eventStream);
+                    errorWaitTime = 1;
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have cause an illegal state
+                    if (errorWaitTime == 1) {
+                        logger.warn("Error occurred. Starting retry mode.", e);
+                    }
+                    logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
                     releaseToken();
                     closeQuietly(eventStream);
                     eventStream = null;
+                    try {
+                        Thread.sleep(errorWaitTime * 1000);
+                    } catch (InterruptedException e1) {
+                        Thread.currentThread().interrupt();
+                        logger.warn("Thread interrupted. Preparing to shut down event processor");
+                        shutDown();
+                    }
+                    errorWaitTime = Math.min(errorWaitTime * 2, 60);
                 }
             }
         } finally {
@@ -236,7 +250,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private void processBatch(MessageStream<TrackedEventMessage<?>> eventStream) {
+    private void processBatch(MessageStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {

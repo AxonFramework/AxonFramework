@@ -13,8 +13,6 @@
 
 package org.axonframework.eventhandling;
 
-import java.util.List;
-
 /**
  * Interface of the error handler that will be invoked if event processing fails. The error handler is generally invoked
  * by an EventProcessor when the UnitOfWork created to coordinate the event processing was rolled back.
@@ -36,12 +34,9 @@ public interface ErrorHandler {
      * error handler is invoked, the processing of one or more of the failedEvents may in fact have caused other side
      * effects which could not be reverted.
      *
-     * @param eventProcessor The name of the event processor that failed to process the given events
-     * @param error          The error that was raised during processing
-     * @param failedEvents   The list of events that triggered the error
-     * @param retryMethod    Task that can be run or scheduled to retry event processing
+     * @param errorContext Contextual information describing the error
+     * @throws Exception if the handler decides to propagate the error
      */
-    void handleError(String eventProcessor, Throwable error, List<? extends EventMessage<?>> failedEvents,
-                     Runnable retryMethod);
+    void handleError(ErrorContext errorContext) throws Exception;
 
 }

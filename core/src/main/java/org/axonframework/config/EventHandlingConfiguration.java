@@ -74,10 +74,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
                                                                             new SimpleEventHandlerInvoker(eh,
                                                                                                           conf.getComponent(
-                                                                                                                  ListenerErrorHandler.class,
-                                                                                                                  LoggingListenerErrorHandler::new)),
+                                                                                                                  ListenerInvocationErrorHandler.class,
+                                                                                                                  LoggingErrorHandler::new)),
                                                                             messageSource.apply(conf),
                                                                             DirectEventProcessingStrategy.INSTANCE,
+                                                                            PropagatingErrorHandler.INSTANCE,
                                                                             conf.messageMonitor(SubscribingEventProcessor.class,
                                                                                                 name));
         processor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
@@ -129,8 +130,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                        Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
         TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
                                                                                                           conf.getComponent(
-                                                                                                                  ListenerErrorHandler.class,
-                                                                                                                  LoggingListenerErrorHandler::new)),
+                                                                                                                  ListenerInvocationErrorHandler.class,
+                                                                                                                  LoggingErrorHandler::new)),
                                                                       source.apply(conf),
                                                                       conf.getComponent(TokenStore.class,
                                                                                         InMemoryTokenStore::new),

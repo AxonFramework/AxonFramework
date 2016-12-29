@@ -24,6 +24,8 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -51,6 +53,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public abstract class AbstractEventProcessor implements EventProcessor {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
@@ -66,7 +69,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param eventHandlerInvoker   The component that handles the individual events
      * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
      * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing. If {@code null} a {@link
-     *                              NoOpErrorHandler} is used.
+     *                              PropagatingErrorHandler} is used.
      * @param messageMonitor        Monitor to be invoked before and after event processing. If {@code null} a {@link
      *                              NoOpMessageMonitor} is used.
      */
@@ -76,7 +79,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         this.name = requireNonNull(name);
         this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
-        this.errorHandler = getOrDefault(errorHandler, () -> NoOpErrorHandler.INSTANCE);
+        this.errorHandler = getOrDefault(errorHandler, () -> PropagatingErrorHandler.INSTANCE);
         this.messageMonitor = getOrDefault(messageMonitor,
                                            (Supplier<MessageMonitor<? super EventMessage<?>>>) NoOpMessageMonitor::instance);
     }
@@ -103,17 +106,15 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * interceptors}.
      *
      * @param eventMessages The batch of messages that is to be processed
+     * @throws Exception when an exception occurred during processing of the batch
      */
-    protected void process(List<? extends EventMessage<?>> eventMessages) {
+    protected void process(List<? extends EventMessage<?>> eventMessages) throws Exception {
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
         try {
             unitOfWork.executeWithResult(() -> {
                 unitOfWork.resources().put("messageMonitor", monitorCallbacks.get(unitOfWork.getMessage()));
-                unitOfWork.onRollback(uow -> errorHandler
-                        .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
-                                     () -> process(eventMessages)));
                 unitOfWork.onCleanup(uow -> {
                     MessageMonitor.MonitorCallback callback = uow.getResource("messageMonitor");
                     if (uow.isRolledBack()) {
@@ -125,9 +126,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 return new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed();
             }, rollbackConfiguration);
         } catch (Exception e) {
-            throw new EventProcessingException(
-                    String.format("An exception occurred while processing events in EventProcessor [%s].%s", getName(),
-                                  unitOfWork.isRolledBack() ? " Unit of Work has been rolled back." : ""), e);
+            if (unitOfWork.isRolledBack()) {
+                errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
+            } else {
+                logger.info("Exception occurred while processing a message, but unit of work was committed. {}", e.getClass().getName());
+            }
         }
     }
 }

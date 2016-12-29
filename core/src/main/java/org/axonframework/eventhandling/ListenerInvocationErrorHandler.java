@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
  *
  * @author Rene de Waele
  */
-public interface ListenerErrorHandler {
+public interface ListenerInvocationErrorHandler {
 
     /**
      * Invoked after given {@code eventListener} failed to handle given {@code event}. Implementations have a

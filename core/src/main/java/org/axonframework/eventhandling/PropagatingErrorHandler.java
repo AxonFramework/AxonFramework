@@ -13,22 +13,33 @@
 
 package org.axonframework.eventhandling;
 
-import java.util.List;
-
 /**
  * Singleton ErrorHandler implementation that does not do anything.
  *
  * @author Rene de Waele
  */
-public enum NoOpErrorHandler implements ErrorHandler {
+public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
 
     /**
-     * Singleton instance of a {@link NoOpErrorHandler}.
+     * Singleton instance of a {@link PropagatingErrorHandler}.
      */
     INSTANCE;
 
+    /**
+     * Singleton instance of a {@link PropagatingErrorHandler}.
+     * @return the singleton instance of {@link PropagatingErrorHandler}
+     */
+    public static PropagatingErrorHandler instance() {
+        return INSTANCE;
+    }
+
     @Override
-    public void handleError(String eventProcessor, Throwable error, List<? extends EventMessage<?>> failedEvents,
-                            Runnable retryMethod) {
+    public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception {
+        throw exception;
+    }
+
+    @Override
+    public void handleError(ErrorContext errorContext) throws Exception {
+        throw errorContext.error();
     }
 }

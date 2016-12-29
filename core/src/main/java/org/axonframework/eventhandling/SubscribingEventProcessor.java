@@ -24,6 +24,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -46,7 +47,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and a
+     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link PropagatingErrorHandler} and a
      * {@link RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
@@ -55,14 +56,16 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<EventMessage<?>> messageSource) {
-        this(name, eventHandlerInvoker, messageSource, DirectEventProcessingStrategy.INSTANCE);
+        this(name, eventHandlerInvoker, messageSource,
+             DirectEventProcessingStrategy.INSTANCE,
+             PropagatingErrorHandler.INSTANCE);
     }
 
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and a
+     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link PropagatingErrorHandler} and a
      * {@link RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
@@ -72,15 +75,16 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<EventMessage<?>> messageSource,
-                                     EventProcessingStrategy processingStrategy) {
-        this(name, eventHandlerInvoker, messageSource, processingStrategy, NoOpMessageMonitor.INSTANCE);
+                                     EventProcessingStrategy processingStrategy,
+                                     ErrorHandler errorHandler) {
+        this(name, eventHandlerInvoker, messageSource, processingStrategy, errorHandler, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
-     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link NoOpErrorHandler} and a
+     * The EventProcessor is initialized with a {@link DirectEventProcessingStrategy}, a {@link PropagatingErrorHandler} and a
      * {@link RollbackConfigurationType#ANY_THROWABLE}.
      *
      * @param name                The name of the event processor
@@ -92,9 +96,10 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<? extends EventMessage<?>> messageSource,
                                      EventProcessingStrategy processingStrategy,
+                                     ErrorHandler errorHandler,
                                      MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, messageSource, processingStrategy,
-             NoOpErrorHandler.INSTANCE, messageMonitor);
+             errorHandler, messageMonitor);
     }
 
     /**
@@ -128,6 +133,17 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
         if (eventBusRegistration == null) {
             eventBusRegistration =
                     messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+        }
+    }
+
+    @Override
+    protected void process(List<? extends EventMessage<?>> eventMessages) {
+        try {
+            super.process(eventMessages);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new EventProcessingException("Exception occurred while processing events", e);
         }
     }
 

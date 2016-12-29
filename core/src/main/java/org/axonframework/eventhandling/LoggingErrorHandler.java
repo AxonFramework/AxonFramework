@@ -17,19 +17,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implementation of a {@link ListenerErrorHandler} that logs exceptions as errors but otherwise does nothing to
+ * Implementation of a {@link ListenerInvocationErrorHandler} that logs exceptions as errors but otherwise does nothing to
  * prevent event handling from continuing.
  *
  * @author Rene de Waele
  */
-public class LoggingListenerErrorHandler implements ListenerErrorHandler {
+public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(LoggingListenerErrorHandler.class);
+    private final Logger logger;
+
+    /**
+     * Initialize the LoggingErrorHandler using the logger for "org.axonframework.eventhandling.LoggingErrorHandler".
+     */
+    public LoggingErrorHandler() {
+        this(LoggerFactory.getLogger(LoggingErrorHandler.class));
+    }
+
+    /**
+     * Initialize the LoggingErrorHandler to use the given {@code logger} to log errors
+     *
+     * @param logger the logger to log errors with
+     */
+    public LoggingErrorHandler(Logger logger) {
+        this.logger = logger;
+    }
 
     @Override
     public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
+        Class<?> eventListenerType = eventListener instanceof EventListenerProxy ? ((EventListenerProxy) eventListener).getTargetType() : eventListener.getClass();
         logger.error(String.format("EventListener [%s] failed to handle an event of type [%s]. " +
-                                           "Continuing processing with next listener", eventListener,
+                                           "Continuing processing with next listener",
+                                   eventListenerType.getSimpleName(),
                                    event.getPayloadType().getName()), exception);
     }
 }

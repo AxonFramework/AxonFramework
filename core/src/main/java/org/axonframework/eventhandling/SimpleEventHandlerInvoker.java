@@ -31,7 +31,7 @@ import static java.util.stream.Collectors.toList;
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventListener> eventListeners;
-    private final ListenerErrorHandler listenerErrorHandler;
+    private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     /**
      * Initializes a {@link SimpleEventHandlerInvoker} containing one or more {@code eventListeners}. If an event
@@ -39,13 +39,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * {@link AnnotationEventListenerAdapter}.
      * <p>
      * Events handled by the invoker will be passed to all the given {@code eventListeners}. If an exception is
-     * triggered during event handling it will be logged using a {@link LoggingListenerErrorHandler} but otherwise
+     * triggered during event handling it will be logged using a {@link LoggingErrorHandler} but otherwise
      * ignored.
      *
      * @param eventListeners one or more event listeners to register with this invoker
      */
     public SimpleEventHandlerInvoker(Object... eventListeners) {
-        this(detectList(eventListeners), new LoggingListenerErrorHandler());
+        this(detectList(eventListeners), new LoggingErrorHandler());
     }
 
     /**
@@ -57,15 +57,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
      *
      * @param eventListeners list of event listeners to register with this invoker
-     * @param listenerErrorHandler error handler that handles exceptions during processing
+     * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
      */
-    public SimpleEventHandlerInvoker(List<?> eventListeners, ListenerErrorHandler listenerErrorHandler) {
+    public SimpleEventHandlerInvoker(List<?> eventListeners, ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         this.eventListeners = new ArrayList<>(eventListeners.stream()
                                                       .map(listener -> listener instanceof EventListener ?
                                                               (EventListener) listener :
                                                               new AnnotationEventListenerAdapter(listener))
                                                       .collect(toList()));
-        this.listenerErrorHandler = listenerErrorHandler;
+        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
     /**
@@ -85,7 +85,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
             try {
                 listener.handle(message);
             } catch (Exception e) {
-                listenerErrorHandler.onError(e, message, listener);
+                listenerInvocationErrorHandler.onError(e, message, listener);
             }
         }
         return null;
