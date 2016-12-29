@@ -72,6 +72,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
      *
      * @param connectionProvider The provider of connections to the underlying database
+     * @param transactionManager The instance managing transactions around fetching event data. Required by certain
+     *                           databases for reading blob data.
      */
     public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
         this(null, null, null, null, connectionProvider, transactionManager, byte[].class, new EventSchema(), null, null);
@@ -89,6 +91,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
      * @param connectionProvider           The provider of connections to the underlying database
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by certain
+     *                                     databases for reading blob data.
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver,
@@ -109,6 +113,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *                                     sure to choose snapshot trigger and batch size such that a single batch will
      *                                     generally retrieve all events required to rebuild an aggregate's state.
      * @param connectionProvider           The provider of connections to the underlying database
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by certain
+     *                                     databases for reading blob data.
      * @param dataType                     The data type for serialized event payload and metadata
      * @param schema                       Object that describes the database schema of event entries
      * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
