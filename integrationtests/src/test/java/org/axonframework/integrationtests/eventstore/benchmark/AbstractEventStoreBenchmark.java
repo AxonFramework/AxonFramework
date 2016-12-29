@@ -8,7 +8,6 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -32,7 +31,7 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  */
 public abstract class AbstractEventStoreBenchmark {
 
-    private static final int DEFAULT_THREAD_COUNT = 100, DEFAULT_BATCH_SIZE = 5, DEFAULT_BATCH_COUNT = 50;
+    private static final int DEFAULT_THREAD_COUNT = 10, DEFAULT_BATCH_SIZE = 5, DEFAULT_BATCH_COUNT = 5000;
     private static final DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -42,7 +41,7 @@ public abstract class AbstractEventStoreBenchmark {
     private final int threadCount, batchSize, batchCount;
     private final ExecutorService executorService;
     private final CountDownLatch remainingEvents;
-    private final GapDetector gapDetector;
+    private final Set<String> readEvents = new HashSet<>();
 
     protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine) {
         this(storageEngine, DEFAULT_THREAD_COUNT, DEFAULT_BATCH_SIZE, DEFAULT_BATCH_COUNT);
@@ -55,10 +54,15 @@ public abstract class AbstractEventStoreBenchmark {
         this.batchSize = batchSize;
         this.batchCount = batchCount;
         this.remainingEvents = new CountDownLatch(getTotalEventCount());
-        this.gapDetector = new GapDetector();
-        this.eventProcessor =
-                new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(gapDetector), eventStore,
-                                           new InMemoryTokenStore(), NoTransactionManager.INSTANCE, batchSize);
+        this.eventProcessor = new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(
+                (EventListener) (e) -> {
+                    if (readEvents.add(e.getIdentifier())) {
+                        remainingEvents.countDown();
+                    } else {
+                        throw new IllegalStateException("Double event!");
+                    }
+                }), eventStore, new InMemoryTokenStore(),
+                                                         NoTransactionManager.INSTANCE, batchSize);
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 
@@ -80,6 +84,7 @@ public abstract class AbstractEventStoreBenchmark {
         logger.info("Stored {} events in {} seconds. That's about {} events/sec", getTotalEventCount(),
                     decimalFormat.format(stopWatch.getTotalTimeSeconds()),
                     (int) (getTotalEventCount() / stopWatch.getTotalTimeSeconds()));
+
         stopWatch.start("Waiting for event processor to catch up");
         try {
             remainingEvents.await(1, TimeUnit.MINUTES);
@@ -87,12 +92,9 @@ public abstract class AbstractEventStoreBenchmark {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
         stopWatch.stop();
-        logger.info(
-                "Read {} events in {} seconds. That's about {} events/sec. {} tracking tokens had one or more gaps. " +
-                        "Largest gap was {}.", getTotalEventCount(),
-                decimalFormat.format(stopWatch.getTotalTimeSeconds()),
-                (int) (getTotalEventCount() / stopWatch.getTotalTimeSeconds()), gapDetector.getTokensWithGaps(),
-                gapDetector.getLargestGap());
+        logger.info("Read {} events in {} seconds. That's about {} events/sec.", getTotalEventCount(),
+                    decimalFormat.format(stopWatch.getTotalTimeSeconds()),
+                    (int) (getTotalEventCount() / stopWatch.getTotalTimeSeconds()));
         logger.info("Cleaning up");
         cleanUpAfterBenchmark();
     }
@@ -119,12 +121,10 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected List<Callable<Object>> createStorageJobs(String aggregateId, int batchSize, int batchCount) {
-        return IntStream.range(0, batchCount).mapToObj(i -> {
+        return IntStream.range(0, batchCount).mapToObj(i -> (Callable<Object>) () -> {
             EventMessage<?>[] events = createEvents(aggregateId, i * batchSize, batchSize);
-            return (Callable<Object>) () -> {
-                executeStorageJob(events);
-                return i;
-            };
+            executeStorageJob(events);
+            return i;
         }).collect(Collectors.toList());
     }
 
@@ -162,30 +162,4 @@ public abstract class AbstractEventStoreBenchmark {
         return storageEngine;
     }
 
-    private class GapDetector implements EventListener {
-
-        private final NavigableSet<GapAwareTrackingToken> trackingTokensWithGap = new TreeSet<>();
-
-        @Override
-        public void handle(EventMessage event) throws Exception {
-            remainingEvents.countDown();
-            TrackedEventMessage<?> trackedEvent = (TrackedEventMessage<?>) event;
-            if (trackedEvent.trackingToken() instanceof GapAwareTrackingToken) {
-                GapAwareTrackingToken trackingToken = (GapAwareTrackingToken) trackedEvent.trackingToken();
-                if (trackingToken.hasGaps()) {
-                    trackingTokensWithGap.add(trackingToken);
-                }
-            }
-        }
-
-        private int getTokensWithGaps() {
-            return trackingTokensWithGap.size();
-        }
-
-        private int getLargestGap() {
-            return trackingTokensWithGap.stream()
-                    .reduce((t1, t2) -> t1.getGaps().size() > t2.getGaps().size() ? t1 : t2)
-                    .map(GapAwareTrackingToken::getGaps).map(Collection::size).orElse(0);
-        }
-    }
 }

@@ -78,7 +78,7 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
      */
     public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration, Duration lookBackTime) {
         this.eventConfiguration = getOrDefault(eventConfiguration, EventEntryConfiguration.getDefault());
-        this.lookBackTime = getOrDefault(lookBackTime, Duration.ofSeconds(0L));
+        this.lookBackTime = getOrDefault(lookBackTime, Duration.ofMillis(1000L));
     }
 
     @Override
@@ -160,7 +160,7 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         }
         cursor = cursor.sort(new BasicDBObject(eventConfiguration().timestampProperty(), ORDER_ASC)
                                      .append(eventConfiguration().sequenceNumberProperty(), ORDER_ASC));
-        cursor = cursor.batchSize(batchSize);
+        cursor = cursor.limit(batchSize);
         AtomicReference<MongoTrackingToken> previousToken = new AtomicReference<>((MongoTrackingToken) lastToken);
         List<TrackedEventData<?>> results = new ArrayList<>();
         for (Document document : cursor) {

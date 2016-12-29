@@ -109,7 +109,7 @@ public class MongoTrackingToken implements TrackingToken {
      *
      * @return all known event identifiers
      */
-    public Iterable<String> getKnownEventIds() {
+    public Set<String> getKnownEventIds() {
         return unmodifiableSet(trackedEvents.keySet());
     }
 

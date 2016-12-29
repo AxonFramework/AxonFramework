@@ -28,6 +28,7 @@
 
     <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine">
         <constructor-arg name="entityManagerProvider" ref="entityManagerProvider"/>
+        <constructor-arg name="transactionManager" ref="axonTransactionManager"/>
     </bean>
 
     <!-- Infrastructure configuration -->
