@@ -26,17 +26,18 @@ import javax.persistence.*;
  * @author Allard Buijze
  * @since 0.7
  */
+@Table(indexes = @Index(columnList = "sagaId,associationKey", unique = false))
 @Entity
 public class AssociationValueEntry {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
     private Long id;
 
-    @Basic
+    @Basic(optional = false)
     private String sagaId;
 
-    @Basic
+    @Basic(optional = false)
     private String associationKey;
 
     @Basic
