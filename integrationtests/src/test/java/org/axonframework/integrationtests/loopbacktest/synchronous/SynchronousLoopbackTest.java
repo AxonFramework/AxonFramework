@@ -83,7 +83,7 @@ public class SynchronousLoopbackTest {
 
             @Override
             public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                assertEquals("Mock exception", cause.getCause().getMessage());
+                assertEquals("Mock exception", cause.getMessage());
             }
         };
     }
