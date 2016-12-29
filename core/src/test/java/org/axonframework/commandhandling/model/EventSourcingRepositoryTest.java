@@ -110,17 +110,17 @@ public class EventSourcingRepositoryTest {
     @AggregateRoot
     public static class StubAggregate {
 
+        private final List<DomainEventMessage<String>> messages = new ArrayList<>();
         @AggregateIdentifier
         private String id;
-
-        private final List<DomainEventMessage<String>> messages = new ArrayList<>();
 
         public StubAggregate() {
         }
 
         public StubAggregate(String id, String message) {
             this.id = id;
-            AggregateLifecycle.apply(message).andThenApply(() -> "Got messages: " + messages.size());
+            AggregateLifecycle.apply(message)
+                    .andThen(() -> AggregateLifecycle.apply("Got messages: " + messages.size()));
         }
 
         @CommandHandler

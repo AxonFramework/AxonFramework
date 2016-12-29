@@ -47,4 +47,16 @@ public interface ApplyMore {
      * @return an instance of ApplyMore to apply any subsequent events
      */
     ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier);
+
+    /**
+     * Execute the given {@code runnable} after applying the previous event. This {@code runnable} is guaranteed to be
+     * invoked when the previous event has been fully applied to the aggregate.
+     * <p>
+     * The given {@code runnable} must not directly alter any state of the aggregate. Instead, it should only decide
+     * if more events should be applied based on the state of the aggregate after the previous event
+     *
+     * @param runnable the code to execute when the previous event was applied
+     * @return an instance of ApplyMore to apply any subsequent events
+     */
+    ApplyMore andThen(Runnable runnable);
 }

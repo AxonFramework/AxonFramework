@@ -238,6 +238,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         public ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier) {
             return this;
         }
+
+        @Override
+        public ApplyMore andThen(Runnable runnable) {
+            return this;
+        }
     }
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {

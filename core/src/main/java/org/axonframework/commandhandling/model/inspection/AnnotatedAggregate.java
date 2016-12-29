@@ -267,10 +267,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     @Override
     public ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier) {
+        return andThen(() -> applyMessageOrPayload(payloadOrMessageSupplier.get()));
+    }
+
+    @Override
+    public ApplyMore andThen(Runnable runnable) {
         if (applying || aggregateRoot == null) {
-            delayedTasks.add(() -> applyMessageOrPayload(payloadOrMessageSupplier.get()));
+            delayedTasks.add(runnable);
         } else {
-            applyMessageOrPayload(payloadOrMessageSupplier.get());
+            runnable.run();
         }
         return this;
     }

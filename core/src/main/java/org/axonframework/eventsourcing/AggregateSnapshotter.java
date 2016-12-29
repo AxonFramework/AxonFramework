@@ -169,6 +169,11 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
+        public ApplyMore andThen(Runnable runnable) {
+            return this;
+        }
+
+        @Override
         public ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier) {
             return this;
         }
