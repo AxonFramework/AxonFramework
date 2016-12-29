@@ -62,7 +62,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
-        return EventUtils.upcastAndDeserializeTrackedEvents(input, serializer, upcasterChain, false);
+        return EventUtils.upcastAndDeserializeTrackedEvents(input, serializer, upcasterChain, true);
     }
 
     @Override
