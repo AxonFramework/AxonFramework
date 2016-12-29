@@ -18,12 +18,13 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -42,7 +43,10 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -150,17 +154,6 @@ public class AxonAutoConfiguration {
         }
     }
 
-    @ConditionalOnMissingClass("javax.persistence.EntityManager")
-    @Configuration
-    public static class InMemoryConfiguration {
-
-        @Bean
-        @ConditionalOnMissingBean
-        public EventStorageEngine eventStorageEngine() {
-            return new InMemoryEventStorageEngine();
-        }
-    }
-
     @ConditionalOnBean(EntityManagerFactory.class)
     @RegisterDefaultEntities(packages = {"org.axonframework.eventsourcing.eventstore.jpa",
             "org.axonframework.eventhandling.tokenstore",
@@ -185,6 +178,12 @@ public class AxonAutoConfiguration {
         @Bean
         public TokenStore tokenStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
             return new JpaTokenStore(entityManagerProvider, serializer);
+        }
+
+        @ConditionalOnMissingBean(SagaStore.class)
+        @Bean
+        public JpaSagaStore sagaStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
+            return new JpaSagaStore(serializer, entityManagerProvider);
         }
     }
 
