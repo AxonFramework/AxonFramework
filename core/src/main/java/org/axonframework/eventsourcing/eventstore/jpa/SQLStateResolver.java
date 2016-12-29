@@ -2,13 +2,15 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import java.sql.SQLException;
 
+import static org.axonframework.common.ExceptionUtils.findException;
+
 /**
- * SQLStateResolver is an implementation of PersistenceExceptionResolver used to resolve sql state values to see if
- * it violates a unique key constraint.
+ * SQLStateResolver is an implementation of PersistenceExceptionResolver used to resolve sql state values to see if it
+ * violates a unique key constraint.
  * <p/>
  * SQL state codes are standardized - the leading two characters identifying the category. Integrity constraint
- * violations are in category 23. Some database systems further specify these state codes, e.g. postgres uses 23505 for a
- * unique key violation.
+ * violations are in category 23. Some database systems further specify these state codes, e.g. postgres uses 23505 for
+ * a unique key violation.
  *
  * @author Jochen Munz
  */
@@ -36,27 +38,9 @@ public class SQLStateResolver implements org.axonframework.common.jdbc.Persisten
     }
 
     @Override
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public boolean isDuplicateKeyViolation(Exception exception) {
-        boolean isDuplicateKey = false;
-        SQLException sqlException = findSQLException(exception);
-        if (sqlException != null && sqlException.getSQLState() != null) {
-            if (sqlException.getSQLState().startsWith(checkCode)) {
-                isDuplicateKey = true;
-            }
-        }
-        return isDuplicateKey;
+        return findException(exception, SQLException.class).filter(e -> e.getSQLState() != null)
+                .map(e -> e.getSQLState().startsWith(checkCode)).orElse(false);
     }
 
-    private SQLException findSQLException(Throwable exception) {
-        SQLException sqlException = null;
-        while (sqlException == null && exception != null) {
-            if (exception instanceof SQLException) {
-                sqlException = (SQLException) exception;
-            } else {
-                exception = exception.getCause();
-            }
-        }
-        return sqlException;
-    }
 }

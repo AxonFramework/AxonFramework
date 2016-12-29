@@ -102,11 +102,11 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private void processPublication(CommandHandlingEntry entry, DisruptorUnitOfWork unitOfWork,
                                     String aggregateIdentifier) {
         invokeInterceptorChain(entry);
-        Throwable exceptionResult = entry.getExceptionResult();
-        if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
-            exceptionResult = performRollback(unitOfWork, aggregateIdentifier, exceptionResult);
+        Throwable exceptionResult;
+        if (entry.getExceptionResult() != null && rollbackConfiguration.rollBackOn(entry.getExceptionResult())) {
+            exceptionResult = performRollback(unitOfWork, aggregateIdentifier, entry.getExceptionResult());
         } else {
-            exceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
+            exceptionResult = performCommit(unitOfWork, entry.getExceptionResult(), aggregateIdentifier);
         }
         if (exceptionResult != null || entry.getCallback().hasDelegate()) {
             executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(),
@@ -126,7 +126,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                                       Throwable exceptionResult) {
         unitOfWork.rollback(exceptionResult);
         if (aggregateIdentifier != null) {
-            exceptionResult = notifyBlacklisted(unitOfWork, aggregateIdentifier, exceptionResult);
+            return notifyBlacklisted(unitOfWork, aggregateIdentifier, exceptionResult);
         }
         return exceptionResult;
     }
@@ -151,9 +151,9 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 unitOfWork.rollback(e);
             }
             if (aggregateIdentifier != null) {
-                exceptionResult = notifyBlacklisted(unitOfWork, aggregateIdentifier, e);
+                return notifyBlacklisted(unitOfWork, aggregateIdentifier, e);
             } else {
-                exceptionResult = e;
+                return e;
             }
         }
         return exceptionResult;
@@ -161,9 +161,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, String aggregateIdentifier,
                                         Throwable cause) {
-        Throwable exceptionResult;
         blackListedAggregates.add(aggregateIdentifier);
-        exceptionResult = new AggregateBlacklistedException(
+        Throwable exceptionResult = new AggregateBlacklistedException(
                 aggregateIdentifier,
                 format("Aggregate %s state corrupted. "
                                + "Blacklisting the aggregate until a reset message has been received",

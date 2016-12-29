@@ -103,7 +103,6 @@ import static java.lang.String.format;
 public class DisruptorCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
-    private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> commandHandlers = new ConcurrentHashMap<>();
     private final Disruptor<CommandHandlingEntry> disruptor;
@@ -145,7 +144,7 @@ public class DisruptorCommandBus implements CommandBus {
         Assert.notNull(configuration, () -> "configuration may not be null");
         Executor executor = configuration.getExecutor();
         if (executor == null) {
-            executorService = Executors.newCachedThreadPool(new AxonThreadFactory(DISRUPTOR_THREAD_GROUP));
+            executorService = Executors.newCachedThreadPool(new AxonThreadFactory("DisruptorCommandBus"));
             executor = executorService;
         } else {
             executorService = null;
@@ -218,7 +217,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param callback The callback to notify when command handling is completed
      * @param <R>      The expected return type of the command
      */
-    <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    private <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
@@ -245,7 +244,7 @@ public class DisruptorCommandBus implements CommandBus {
         try {
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.reset(command, commandHandler, invokerSegment, publisherSegment,
-                        new BlacklistDetectingCallback<>(callback, disruptor.getRingBuffer(), this,
+                        new BlacklistDetectingCallback<>(callback, disruptor.getRingBuffer(), this::doDispatch,
                                                          rescheduleOnCorruptState), invokerInterceptors,
                         publisherInterceptors);
         } finally {

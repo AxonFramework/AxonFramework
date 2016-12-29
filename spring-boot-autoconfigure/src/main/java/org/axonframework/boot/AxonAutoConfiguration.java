@@ -93,7 +93,8 @@ public class AxonAutoConfiguration {
     }
 
     @Autowired(required = false)
-    // required set to false for live reload support (spring boot devtools). It has trouble starting with this dependency.
+    // required set to false for live reload support (spring boot devtools). It has trouble starting with this
+    // dependency.
     public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
@@ -101,13 +102,15 @@ public class AxonAutoConfiguration {
                 if (v.getSource() == null) {
                     eventHandlingConfiguration.registerTrackingProcessor(k);
                 } else {
-                    eventHandlingConfiguration.registerTrackingProcessor(k, c -> applicationContext.getBean(v.getSource(), StreamableMessageSource.class));
+                    eventHandlingConfiguration.registerTrackingProcessor(k, c -> applicationContext
+                            .getBean(v.getSource(), StreamableMessageSource.class));
                 }
             } else {
                 if (v.getSource() == null) {
                     eventHandlingConfiguration.registerSubscribingEventProcessor(k);
                 } else {
-                    eventHandlingConfiguration.registerSubscribingEventProcessor(k, c -> applicationContext.getBean(v.getSource(), SubscribableMessageSource.class));
+                    eventHandlingConfiguration.registerSubscribingEventProcessor(k, c -> applicationContext
+                            .getBean(v.getSource(), SubscribableMessageSource.class));
                 }
             }
         });
@@ -167,7 +170,8 @@ public class AxonAutoConfiguration {
 
         @ConditionalOnMissingBean
         @Bean
-        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider,
+                                                     TransactionManager transactionManager) {
             return new JpaEventStorageEngine(entityManagerProvider, transactionManager);
         }
 
@@ -225,13 +229,14 @@ public class AxonAutoConfiguration {
                     break;
                 case NONE:
                     break;
+                default:
+                    throw new IllegalStateException("Unknown transaction mode: " + amqpProperties.getTransactionMode());
             }
             return publisher;
         }
     }
 
-    @ConditionalOnClass(name = {"org.axonframework.jgroups.commandhandling.JGroupsConnector",
-            "org.jgroups.JChannel"})
+    @ConditionalOnClass(name = {"org.axonframework.jgroups.commandhandling.JGroupsConnector", "org.jgroups.JChannel"})
     @EnableConfigurationProperties(JGroupsConfiguration.JGroupsProperties.class)
     @ConditionalOnProperty("axon.distributed.jgroups.enabled")
     @AutoConfigureAfter(JpaConfiguration.class)
@@ -248,11 +253,11 @@ public class AxonAutoConfiguration {
         @ConditionalOnProperty("axon.distributed.jgroups.gossip.autoStart")
         @Bean(destroyMethod = "stop")
         public GossipRouter gossipRouter() {
-            Matcher matcher = Pattern.compile("([^[\\[]]*)\\[(\\d*)\\]").matcher(jGroupsProperties.getGossip().getHosts());
+            Matcher matcher =
+                    Pattern.compile("([^[\\[]]*)\\[(\\d*)\\]").matcher(jGroupsProperties.getGossip().getHosts());
             if (matcher.find()) {
 
-                GossipRouter gossipRouter = new GossipRouter(matcher.group(1),
-                                                             Integer.parseInt(matcher.group(2)));
+                GossipRouter gossipRouter = new GossipRouter(matcher.group(1), Integer.parseInt(matcher.group(2)));
                 try {
                     gossipRouter.start();
                 } catch (Exception e) {
@@ -260,7 +265,8 @@ public class AxonAutoConfiguration {
                 }
                 return gossipRouter;
             } else {
-                logger.error("Wrong hosts pattern, cannot start embedded Gossip Router: " + jGroupsProperties.getGossip().getHosts());
+                logger.error("Wrong hosts pattern, cannot start embedded Gossip Router: " +
+                                     jGroupsProperties.getGossip().getHosts());
             }
             return null;
         }
@@ -277,8 +283,8 @@ public class AxonAutoConfiguration {
         @ConditionalOnMissingBean({CommandRouter.class, CommandBusConnector.class})
         @Bean
         public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
-                                                                       @Qualifier("localSegment")
-                                                                               CommandBus localSegment) {
+                                                                       @Qualifier("localSegment") CommandBus
+                                                                               localSegment) {
 
             System.setProperty("jgroups.tunnel.gossip_router_hosts", jGroupsProperties.getGossip().getHosts());
             System.setProperty("jgroups.bind_addr", String.valueOf(jGroupsProperties.getBindAddr()));
@@ -318,14 +324,14 @@ public class AxonAutoConfiguration {
             private String bindAddr = "GLOBAL";
 
             /**
-             * Sets the initial port to bind the JGroups connection to. If this port is taken, JGroups will find the next
-             * available port.
+             * Sets the initial port to bind the JGroups connection to. If this port is taken, JGroups will find the
+             * next available port.
              */
             private String bindPort = "7800";
 
             /**
-             * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will receive
-             * compared to other nodes in the cluster. Defaults to 100.
+             * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will
+             * receive compared to other nodes in the cluster. Defaults to 100.
              */
             private int loadFactor = 100;
 
@@ -388,8 +394,8 @@ public class AxonAutoConfiguration {
             public static class Gossip {
 
                 /**
-                 * Whether to automatically attempt to start a Gossip Routers. The host and port of the Gossip server are
-                 * taken from the first define host in 'hosts'.
+                 * Whether to automatically attempt to start a Gossip Routers. The host and port of the Gossip server
+                 * are taken from the first define host in 'hosts'.
                  */
                 private boolean autoStart = false;
 

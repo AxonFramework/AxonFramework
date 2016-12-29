@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import static org.axonframework.common.ExceptionUtils.findException;
+
 /**
  * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
  * it is an duplicate key constraint violation.
@@ -139,36 +141,15 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
         duplicateKeyCodes = loadKeyViolationCodes(databaseProductName, properties);
     }
 
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public boolean isDuplicateKeyViolation(Exception exception) {
-        if (causeIsEntityExistsException(exception)) {
-            return true;
-        }
-        SQLException sqlException = findSQLException(exception);
-        boolean isDuplicateKey = false;
-        if (sqlException != null) {
-            isDuplicateKey = duplicateKeyCodes.contains(sqlException.getErrorCode());
-        }
-        return isDuplicateKey;
+        return causeIsEntityExistsException(exception) || findException(exception, SQLException.class)
+                .map(sqlException -> duplicateKeyCodes.contains(sqlException.getErrorCode())).orElse(false);
     }
 
     private boolean causeIsEntityExistsException(Throwable exception) {
-        return exception instanceof EntityExistsException
-                || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
-    }
-
-    private SQLException findSQLException(Throwable exception) {
-        SQLException sqlException = null;
-        while (sqlException == null && exception != null) {
-            if (exception instanceof SQLException) {
-                sqlException = (SQLException) exception;
-            } else {
-                exception = exception.getCause();
-            }
-        }
-
-        return sqlException;
+        return exception instanceof EntityExistsException ||
+                (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
     }
 
     private String getDatabaseProductNameFromDataSource(DataSource dataSource) throws SQLException {

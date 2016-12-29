@@ -60,13 +60,12 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
-    private static final ThreadGroup threadGroup = new ThreadGroup(TrackingEventProcessor.class.getSimpleName());
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final int batchSize;
-    private final ExecutorService executorService = newSingleThreadExecutor(new AxonThreadFactory(threadGroup));
+    private final ExecutorService executorService;
     private volatile TrackingToken lastToken;
     private volatile State state = State.NOT_STARTED;
 
@@ -156,6 +155,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.messageSource = requireNonNull(messageSource);
         this.tokenStore = requireNonNull(tokenStore);
         this.transactionManager = transactionManager;
+        this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.batchSize = batchSize;

@@ -16,12 +16,13 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import com.lmax.disruptor.RingBuffer;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lmax.disruptor.RingBuffer;
+import java.util.function.BiConsumer;
 
 /**
  * Wrapper for command handler Callbacks that detects blacklisted aggregates and starts a cleanup process when an
@@ -38,7 +39,7 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
 
     private final CommandCallback<? super C, R> delegate;
     private final RingBuffer<CommandHandlingEntry> ringBuffer;
-    private final DisruptorCommandBus commandBus;
+    private final BiConsumer<CommandMessage<? extends C>, CommandCallback<? super C, R>> retryMethod;
     private final boolean rescheduleOnCorruptState;
 
     /**
@@ -46,21 +47,20 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
      * {@code ringBuffer} if it failed due to a corrupt state.
      *
      * @param delegate                 The callback to invoke when an exception occurred
-     * @param ringBuffer               The RingBuffer on which an Aggregate Cleanup should be scheduled when a
-     *                                 corrupted
+     * @param ringBuffer               The RingBuffer on which an Aggregate Cleanup should be scheduled when a corrupted
      *                                 aggregate state was detected
-     * @param commandBus               The CommandBus on which the command should be rescheduled if it was executed on
-     *                                 a
-     *                                 corrupt aggregate
+     * @param retryMethod              The method to reschedule a command if it was executed on a corrupt aggregate
      * @param rescheduleOnCorruptState Whether the command should be retried if it has been executed against corrupt
      *                                 state
      */
     public BlacklistDetectingCallback(CommandCallback<? super C, R> delegate,
                                       RingBuffer<CommandHandlingEntry> ringBuffer,
-                                      DisruptorCommandBus commandBus, boolean rescheduleOnCorruptState) {
+                                      BiConsumer<CommandMessage<? extends C>, CommandCallback<? super C, R>>
+                                              retryMethod,
+                                      boolean rescheduleOnCorruptState) {
         this.delegate = delegate;
         this.ringBuffer = ringBuffer;
-        this.commandBus = commandBus;
+        this.retryMethod = retryMethod;
         this.rescheduleOnCorruptState = rescheduleOnCorruptState;
     }
 
@@ -82,7 +82,7 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
                 delegate.onFailure(command, cause.getCause());
             }
         } else if (rescheduleOnCorruptState && cause instanceof AggregateStateCorruptedException) {
-            commandBus.doDispatch(command, delegate);
+            retryMethod.accept(command, delegate);
         } else if (delegate != null) {
             delegate.onFailure(command, cause);
         } else {

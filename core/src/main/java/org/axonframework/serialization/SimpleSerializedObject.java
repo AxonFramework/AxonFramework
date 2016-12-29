@@ -18,6 +18,8 @@ package org.axonframework.serialization;
 
 import org.axonframework.common.Assert;
 
+import java.util.Objects;
+
 import static java.lang.String.format;
 
 /**
@@ -76,7 +78,6 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
         return type;
     }
 
-    @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -85,28 +86,14 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        SimpleSerializedObject that = (SimpleSerializedObject) o;
-
-        if (data != null ? !data.equals(that.data) : that.data != null) {
-            return false;
-        }
-        if (dataType != null ? !dataType.equals(that.dataType) : that.dataType != null) {
-            return false;
-        }
-        if (type != null ? !type.equals(that.type) : that.type != null) {
-            return false;
-        }
-
-        return true;
+        SimpleSerializedObject<?> that = (SimpleSerializedObject<?>) o;
+        return Objects.equals(data, that.data) && Objects.equals(type, that.type) &&
+                Objects.equals(dataType, that.dataType);
     }
 
     @Override
     public int hashCode() {
-        int result = data != null ? data.hashCode() : 0;
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + (dataType != null ? dataType.hashCode() : 0);
-        return result;
+        return Objects.hash(data, type, dataType);
     }
 
     @Override

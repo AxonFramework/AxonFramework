@@ -210,10 +210,7 @@ public class CommandGatewayFactory {
     }
 
     private Timeout resolveTimeout(Method gatewayMethod, Timeout timeout) {
-        if (timeout == null) {
-            timeout = gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class);
-        }
-        return timeout;
+        return timeout == null ? gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class) : timeout;
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {

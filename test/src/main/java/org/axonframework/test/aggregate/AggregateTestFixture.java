@@ -387,7 +387,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             this.eventSourceObject = eventSourceObject;
         }
 
-        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -396,24 +395,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-
             ComparationEntry that = (ComparationEntry) o;
-
-            if (!eventSourceObject.equals(that.eventSourceObject)) {
-                return false;
-            }
-            if (!workingObject.equals(that.workingObject)) {
-                return false;
-            }
-
-            return true;
+            return Objects.equals(workingObject, that.workingObject) &&
+                    Objects.equals(eventSourceObject, that.eventSourceObject);
         }
 
         @Override
         public int hashCode() {
-            int result = workingObject.hashCode();
-            result = 31 * result + eventSourceObject.hashCode();
-            return result;
+            return Objects.hash(workingObject, eventSourceObject);
         }
     }
 

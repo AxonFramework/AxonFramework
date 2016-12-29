@@ -18,6 +18,8 @@ package org.axonframework.serialization;
 
 import org.axonframework.messaging.MetaData;
 
+import java.util.Objects;
+
 /**
  * Represents the serialized form of a {@link MetaData} instance.
  *
@@ -71,7 +73,6 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
         return delegate.getType();
     }
 
-    @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -80,18 +81,12 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        SerializedMetaData that = (SerializedMetaData) o;
-
-        if (!delegate.equals(that.delegate)) {
-            return false;
-        }
-
-        return true;
+        SerializedMetaData<?> that = (SerializedMetaData<?>) o;
+        return Objects.equals(delegate, that.delegate);
     }
 
     @Override
     public int hashCode() {
-        return delegate.hashCode();
+        return Objects.hash(delegate);
     }
 }

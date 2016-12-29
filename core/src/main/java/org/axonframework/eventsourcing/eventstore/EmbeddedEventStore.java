@@ -252,7 +252,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
                     logger.error("Failed to read events from the underlying event storage", e);
                 }
             }
-            return newest != currentNewest;
+            return !Objects.equals(newest, currentNewest);
         }
 
         private TrackingToken lastToken() {

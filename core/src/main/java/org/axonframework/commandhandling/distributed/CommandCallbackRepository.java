@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <A> The type of the endpoint identifier.
  */
 public class CommandCallbackRepository<A> {
-    final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
+    private final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
 
     /**
      * Removes all callbacks for a given channel. Registered callbacks will receive a failure response containing a
@@ -62,5 +62,14 @@ public class CommandCallbackRepository<A> {
             previous.fail(new CommandBusConnectorCommunicationException(
                     "Command-callback cancelled, a new command with the same ID is entered into the command bus"));
         }
+    }
+
+    /**
+     * Returns the callbacks mapped by callback identifier.
+     *
+     * @return the command callbacks by id
+     */
+    protected Map<String, CommandCallbackWrapper> callbacks() {
+        return callbacks;
     }
 }

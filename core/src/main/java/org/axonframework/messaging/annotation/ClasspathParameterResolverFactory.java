@@ -39,13 +39,13 @@ public final class ClasspathParameterResolverFactory {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathParameterResolverFactory.class);
     private static final Object monitor = new Object();
-    private static final Map<ClassLoader, WeakReference<ParameterResolverFactory>> FACTORIES =
-            new WeakHashMap<>();
+    private static final Map<ClassLoader, WeakReference<ParameterResolverFactory>> FACTORIES = new WeakHashMap<>();
 
     /**
      * Private default constructor
      */
-    private ClasspathParameterResolverFactory() {}
+    private ClasspathParameterResolverFactory() {
+    }
 
     /**
      * Creates an instance for the given {@code clazz}. Effectively, the class loader of the given class is used
@@ -83,10 +83,8 @@ public final class ClasspathParameterResolverFactory {
     }
 
     private static List<ParameterResolverFactory> findDelegates(ClassLoader classLoader) {
-        if (classLoader == null) {
-            classLoader = Thread.currentThread().getContextClassLoader();
-        }
-        Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class, classLoader).iterator();
+        Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class, classLoader == null ?
+                Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
         final List<ParameterResolverFactory> factories = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -94,10 +92,12 @@ public final class ClasspathParameterResolverFactory {
                 ParameterResolverFactory factory = iterator.next();
                 factories.add(factory);
             } catch (ServiceConfigurationError e) {
-                logger.info("ParameterResolverFactory instance ignored, as one of the required classes is not available"
-                                    + "on the classpath: {}", e.getMessage());
+                logger.info(
+                        "ParameterResolverFactory instance ignored, as one of the required classes is not available" +
+                                "on the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
-                logger.info("ParameterResolverFactory instance ignored. It relies on a class that cannot be found: {}", e.getMessage());
+                logger.info("ParameterResolverFactory instance ignored. It relies on a class that cannot be found: {}",
+                            e.getMessage());
             }
         }
         return factories;

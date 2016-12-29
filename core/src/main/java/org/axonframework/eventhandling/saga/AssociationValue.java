@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.common.Assert;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * A combination of key and value by which a Saga can be found. Sagas are triggered by events that have a property that
@@ -70,7 +71,6 @@ public class AssociationValue implements Serializable {
         return propertyValue;
     }
 
-    @SuppressWarnings({"RedundantIfStatement"})
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -79,23 +79,12 @@ public class AssociationValue implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         AssociationValue that = (AssociationValue) o;
-
-        if (!propertyKey.equals(that.propertyKey)) {
-            return false;
-        }
-        if (!propertyValue.equals(that.propertyValue)) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(propertyKey, that.propertyKey) && Objects.equals(propertyValue, that.propertyValue);
     }
 
     @Override
     public int hashCode() {
-        int result = propertyKey.hashCode();
-        result = 31 * result + propertyValue.hashCode();
-        return result;
+        return Objects.hash(propertyKey, propertyValue);
     }
 }
