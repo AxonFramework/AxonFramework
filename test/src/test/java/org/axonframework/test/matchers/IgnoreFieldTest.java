@@ -17,7 +17,7 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.test.FixtureExecutionException;
-import org.junit.*;
+import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

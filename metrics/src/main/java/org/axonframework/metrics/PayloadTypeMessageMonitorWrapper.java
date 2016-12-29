@@ -6,7 +6,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;

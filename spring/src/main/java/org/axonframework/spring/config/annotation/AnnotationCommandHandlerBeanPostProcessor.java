@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.spring.config.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 

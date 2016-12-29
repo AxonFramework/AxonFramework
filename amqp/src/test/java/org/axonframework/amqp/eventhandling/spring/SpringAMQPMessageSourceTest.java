@@ -17,9 +17,9 @@
 package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.Channel;
+import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.io.EventMessageWriter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;

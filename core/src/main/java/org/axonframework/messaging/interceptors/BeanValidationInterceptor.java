@@ -22,13 +22,13 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiFunction;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming messages. When validation on a message fails, a

@@ -21,7 +21,6 @@ import org.hamcrest.Description;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Matches any empty collection.

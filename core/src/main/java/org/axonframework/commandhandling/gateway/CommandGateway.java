@@ -16,12 +16,12 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.Message;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interface towards the Command Handling components of an application. This interface provides a friendlier API toward

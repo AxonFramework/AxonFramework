@@ -1,6 +1,7 @@
 package org.axonframework.common.jdbc;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.SQLException;

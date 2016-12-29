@@ -17,7 +17,6 @@
 package org.axonframework.mongo.eventsourcing.eventstore;
 
 import com.mongodb.MongoClientOptions;
-import org.axonframework.mongo.eventsourcing.eventstore.MongoOptionsFactory;
 import org.junit.Before;
 import org.junit.Test;
 

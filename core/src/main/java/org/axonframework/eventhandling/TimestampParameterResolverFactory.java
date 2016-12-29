@@ -14,9 +14,9 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Priority;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.time.Instant;

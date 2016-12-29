@@ -17,7 +17,6 @@
 package org.axonframework.test.matchers;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;

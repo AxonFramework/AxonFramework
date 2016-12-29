@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.junit.*;
+import org.junit.Test;
 
 /**
  * @author Allard Buijze

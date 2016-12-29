@@ -16,10 +16,11 @@
 
 package org.axonframework.test.matchers;
 
-import org.junit.*;
+import org.junit.Test;
 
 import static org.axonframework.test.matchers.Matchers.nothing;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze

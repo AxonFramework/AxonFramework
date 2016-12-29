@@ -16,12 +16,6 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import static java.util.Arrays.asList;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -30,6 +24,12 @@ import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.Arrays.asList;
 
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and

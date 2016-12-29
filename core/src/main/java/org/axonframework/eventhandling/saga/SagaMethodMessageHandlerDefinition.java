@@ -14,10 +14,10 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.lang.reflect.Executable;
 import java.util.Map;

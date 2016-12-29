@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.junit.*;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;

@@ -17,7 +17,6 @@
 package org.axonframework.mongo.eventsourcing.eventstore;
 
 import com.mongodb.Mongo;
-import org.axonframework.mongo.eventsourcing.eventstore.MongoFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;

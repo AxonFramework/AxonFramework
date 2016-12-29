@@ -1,17 +1,15 @@
 package org.axonframework.messaging.annotation;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.lang.reflect.Method;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.lang.reflect.Method;
+
+import static org.junit.Assert.*;
 
 public class MessageIdentifierParameterResolverFactoryTest {
 

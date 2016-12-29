@@ -18,7 +18,6 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
-import org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate;
 import org.junit.Before;
 import org.junit.Test;
 

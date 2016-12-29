@@ -18,7 +18,6 @@ package org.axonframework.mongo.serialization;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import org.axonframework.mongo.serialization.BSONNode;
 import org.junit.Test;
 
 import java.util.Map;

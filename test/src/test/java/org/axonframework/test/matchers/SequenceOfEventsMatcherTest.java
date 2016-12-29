@@ -16,7 +16,6 @@
 
 package org.axonframework.test.matchers;
 
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

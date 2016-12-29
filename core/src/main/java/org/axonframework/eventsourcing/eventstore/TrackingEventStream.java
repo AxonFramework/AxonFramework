@@ -18,9 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.StreamUtils;
-
-import java.util.stream.Stream;
 
 /**
  * Describes a stream of {@link TrackedEventMessage TrackedEventMessages}.
