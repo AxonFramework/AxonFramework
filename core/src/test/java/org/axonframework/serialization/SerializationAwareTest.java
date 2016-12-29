@@ -53,7 +53,7 @@ public class SerializationAwareTest {
     @Test
     public void testSerializePayloadTwice() {
         Serializer serializer = mock(Serializer.class);
-        Converter converter = new ChainingConverter(getClass().getClassLoader());
+        Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
@@ -69,7 +69,7 @@ public class SerializationAwareTest {
     @Test
     public void testSerializePayloadTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
-        Converter converter = new ChainingConverter(getClass().getClassLoader());
+        Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
@@ -87,7 +87,7 @@ public class SerializationAwareTest {
     @Test
     public void testSerializeMetaDataTwice() {
         Serializer serializer = mock(Serializer.class);
-        Converter converter = new ChainingConverter(getClass().getClassLoader());
+        Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
@@ -102,7 +102,7 @@ public class SerializationAwareTest {
     @Test
     public void testSerializeMetaDataTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
-        Converter converter = new ChainingConverter(getClass().getClassLoader());
+        Converter converter = new ChainingConverter();
         when(serializer.getConverter()).thenReturn(converter);
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");

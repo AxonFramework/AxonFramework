@@ -95,7 +95,7 @@ public class JacksonSerializerTest {
     public void testCustomObjectMapperRevisionResolverAndConverter() {
         ObjectMapper objectMapper = spy(new ObjectMapper());
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
-        ChainingConverter converter = spy(new ChainingConverter(Thread.currentThread().getContextClassLoader()));
+        ChainingConverter converter = spy(new ChainingConverter());
 
         testSubject = new JacksonSerializer(objectMapper, revisionResolver, converter);
 

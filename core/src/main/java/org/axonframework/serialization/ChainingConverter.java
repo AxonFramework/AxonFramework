@@ -40,6 +40,18 @@ public class ChainingConverter implements Converter {
     private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<>();
 
     /**
+     * Initialize a new ChainingConverter with the context ClassLoader for this thread. Will autodetect all converters
+     * mentioned in {@code /META-INF/services/org.axonframework.serialization.ContentTypeConverter} files on the class
+     * path.
+     * <p/>
+     * Instances of ChainingConverter are safe for use in a multi-threaded environment, with exception of the {@link
+     * #registerConverter(ContentTypeConverter)} method.
+     */
+    public ChainingConverter() {
+        this(Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
      * Initialize a new ChainingConverter. Will autodetect all converters mentioned in
      * {@code /META-INF/services/org.axonframework.serialization.ContentTypeConverter} files on the class path.
      * <p/>

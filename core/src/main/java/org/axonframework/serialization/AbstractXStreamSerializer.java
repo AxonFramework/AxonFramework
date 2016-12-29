@@ -68,7 +68,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance  is used to perform
+     * Initialize a generic serializer using the UTF-8 character set. The provided XStream instance is used to perform
      * the serialization.
      *
      * @param xStream          XStream instance to use
@@ -88,7 +88,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param xStream The XStream instance to use
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream) {
-        this(charset, xStream, new AnnotationRevisionResolver(), new ChainingConverter(xStream.getClassLoader()));
+        this(charset, xStream, new AnnotationRevisionResolver(), new ChainingConverter());
     }
 
     /**
@@ -100,7 +100,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * @param revisionResolver The strategy to use to resolve the revision of an object
      */
     protected AbstractXStreamSerializer(Charset charset, XStream xStream, RevisionResolver revisionResolver) {
-        this(charset, xStream, revisionResolver, new ChainingConverter(xStream.getClassLoader()));
+        this(charset, xStream, revisionResolver, new ChainingConverter());
     }
 
     /**
