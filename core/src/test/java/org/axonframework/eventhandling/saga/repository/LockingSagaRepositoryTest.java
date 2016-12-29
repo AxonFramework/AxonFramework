@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**

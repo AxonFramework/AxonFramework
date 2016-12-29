@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**

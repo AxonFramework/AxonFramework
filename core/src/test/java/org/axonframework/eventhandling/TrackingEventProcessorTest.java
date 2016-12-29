@@ -42,7 +42,6 @@ import static junit.framework.TestCase.*;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
