@@ -146,6 +146,8 @@ public class EventEntry implements DomainEventData<Object> {
         Class<?> representationType = String.class;
         if (serializedPayload instanceof DBObject) {
             representationType = DBObject.class;
+        } else if (serializedPayload instanceof Document) {
+            representationType = Document.class;
         }
         return representationType;
     }

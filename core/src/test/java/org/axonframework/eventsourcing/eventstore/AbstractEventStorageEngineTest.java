@@ -40,6 +40,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     private AbstractEventStorageEngine testSubject;
 
+    @DirtiesContext
     @Test(expected = ConcurrencyException.class)
     public void testUniqueKeyConstraintOnEventIdentifier() {
         testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0));
@@ -70,6 +71,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
         }
     }
 
+    @DirtiesContext
     @Test(expected = ConcurrencyException.class)
     public void testStoreDuplicateEventWithExceptionTranslator() {
         testSubject.appendEvents(createEvent(0), createEvent(0));

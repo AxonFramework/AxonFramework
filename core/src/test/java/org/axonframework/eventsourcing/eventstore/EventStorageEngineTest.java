@@ -91,9 +91,12 @@ public abstract class EventStorageEngineTest {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testLoadTrackedEvents() {
+    public void testLoadTrackedEvents() throws InterruptedException {
         testSubject.appendEvents(createEvents(4));
         assertEquals(4, testSubject.readEvents(null, false).count());
+
+        // give the clock some time to make sure the last message is really last
+        Thread.sleep(10);
 
         DomainEventMessage<?> eventMessage = createEvent("otherAggregate", 0);
         testSubject.appendEvents(eventMessage);

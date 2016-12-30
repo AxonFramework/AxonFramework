@@ -22,11 +22,15 @@
 
     <!-- Axon Event store -->
     <bean id="eventStore" class="org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine" lazy-init="true">
+        <constructor-arg ref="serializer" />
+        <constructor-arg><null/></constructor-arg>
         <constructor-arg ref="template"/>
-        <property name="serializer">
-            <bean class="org.axonframework.mongo.serialization.DBObjectXStreamSerializer"/>
-        </property>
+        <constructor-arg>
+            <bean class="org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy"/>
+        </constructor-arg>
     </bean>
+
+    <bean id="serializer" class="org.axonframework.mongo.serialization.DBObjectXStreamSerializer"/>
 
     <!-- Infrastructure Mongo -->
     <bean id="template" class="org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate">

@@ -76,17 +76,18 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends BatchingE
 
     @Before
     public void setUp() {
+        MongoClient mongoClient = null;
         try {
-            MongoClient mongoClient = context.getBean(MongoClient.class);
-            testSubject = context.getBean(MongoEventStorageEngine.class);
-            mongoTemplate = new DefaultMongoTemplate(mongoClient);
-            mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
-            mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
-            setTestSubject(testSubject);
+            mongoClient = context.getBean(MongoClient.class);
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
+        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
+        mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
+        testSubject = context.getBean(MongoEventStorageEngine.class);
+        setTestSubject(testSubject);
     }
 
     @Test

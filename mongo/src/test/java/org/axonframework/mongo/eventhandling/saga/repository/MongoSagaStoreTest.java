@@ -17,6 +17,7 @@
 package org.axonframework.mongo.eventhandling.saga.repository;
 
 import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
@@ -24,7 +25,7 @@ import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.AssociationValuesImpl;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
+import org.axonframework.mongo.eventsourcing.eventstore.*;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.bson.Document;
@@ -74,6 +75,12 @@ public class MongoSagaStoreTest {
     public static void start() throws IOException {
         mongoExe = MongoLauncher.prepareExecutable();
         mongod = mongoExe.start();
+        if (mongod == null) {
+            // we're using an existing mongo instance. Make sure it's clean
+            org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate template = new org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate(new MongoClient());
+            template.eventCollection().drop();
+            template.snapshotCollection().drop();
+        }
     }
 
     @AfterClass

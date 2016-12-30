@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -45,6 +46,7 @@ import java.io.IOException;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
+@DirtiesContext
 public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest {
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStorageEngineTest.class);
 
@@ -52,6 +54,9 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
     private static MongodProcess mongod;
 
     private MongoEventStorageEngine testSubject;
+    @Autowired
+    private ApplicationContext context;
+    private DefaultMongoTemplate mongoTemplate;
 
     @BeforeClass
     public static void start() throws IOException {
@@ -69,24 +74,20 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
         }
     }
 
-    @Autowired
-    private ApplicationContext context;
-
-    private DefaultMongoTemplate mongoTemplate;
-
     @Before
     public void setUp() {
+        MongoClient mongoClient = null;
         try {
-            MongoClient mongoClient = context.getBean(MongoClient.class);
-            testSubject = context.getBean(MongoEventStorageEngine.class);
-            mongoTemplate = new DefaultMongoTemplate(mongoClient);
-            mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
-            mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
-            setTestSubject(testSubject);
+            mongoClient = context.getBean(MongoClient.class);
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
+        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
+        mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
+        testSubject = context.getBean(MongoEventStorageEngine.class);
+        setTestSubject(testSubject);
     }
 
     @Test

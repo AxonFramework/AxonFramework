@@ -164,9 +164,12 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         AtomicReference<MongoTrackingToken> previousToken = new AtomicReference<>((MongoTrackingToken) lastToken);
         List<TrackedEventData<?>> results = new ArrayList<>();
         for (Document document : cursor) {
-            extractEvents(document).map(event -> new TrackedMongoEventEntry<>(event, previousToken.updateAndGet(
-                    token -> token == null ? MongoTrackingToken.of(event.getTimestamp(), event.getEventIdentifier()) :
-                            token.advanceTo(event.getTimestamp(), event.getEventIdentifier(), lookBackTime))))
+            extractEvents(document)
+                    .filter(ed -> previousToken.get() == null || !previousToken.get().getKnownEventIds().contains(ed.getEventIdentifier()))
+                    .map(event -> new TrackedMongoEventEntry<>(event, previousToken.updateAndGet(
+                    token -> token == null
+                            ? MongoTrackingToken.of(event.getTimestamp(), event.getEventIdentifier())
+                            : token.advanceTo(event.getTimestamp(), event.getEventIdentifier(), lookBackTime))))
                     .forEach(results::add);
         }
         return results;
@@ -192,6 +195,9 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     @Override
     public void ensureIndexes(MongoCollection<Document> eventsCollection,
                               MongoCollection<Document> snapshotsCollection) {
+        if (eventsCollection.count() > 0) {
+            System.out.println("BLAHHHHHHHH");
+        }
         eventsCollection.createIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
                                              .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                      new IndexOptions().unique(true).name("uniqueAggregateIndex"));

@@ -125,6 +125,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     @Override
     protected void registerConverters(ChainingConverter converter) {
         converter.registerConverter(new DBObjectToStringContentTypeConverter());
+        converter.registerConverter(new DocumentToStringContentTypeConverter());
         converter.registerConverter(new StringToDBObjectContentTypeConverter());
     }
 
