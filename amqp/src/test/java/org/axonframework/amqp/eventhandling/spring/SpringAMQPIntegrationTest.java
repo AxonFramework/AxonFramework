@@ -130,7 +130,7 @@ public class SpringAMQPIntegrationTest {
     private EventMessage readMessage(Channel channel) throws IOException {
         GetResponse message = channel.basicGet("testQueue", true);
         assertNotNull("Expected message on the queue", message);
-        return messageConverter.readAMQPMessage(message.getBody(), message.getProps().getHeaders());
+        return messageConverter.readAMQPMessage(message.getBody(), message.getProps().getHeaders()).orElse(null);
     }
 
     @Configuration

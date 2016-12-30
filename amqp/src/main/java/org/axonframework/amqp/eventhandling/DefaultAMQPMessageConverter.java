@@ -19,24 +19,24 @@ package org.axonframework.amqp.eventhandling;
 import com.rabbitmq.client.AMQP;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.io.EventMessageReader;
-import org.axonframework.eventhandling.io.EventMessageWriter;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.*;
 
-import java.io.*;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 
 /**
- * Default implementation of the AMQPMessageConverter interface. This implementation will suffice in most cases, unless
- * very specific requirements exist about the content of an AMQP Message's body. For example with using the Message
- * Broker to interact with non-Axon based applications.
+ * Default implementation of the AMQPMessageConverter interface. This implementation will suffice in most cases. It
+ * passes all meta-data entries as headers (with 'axon-metadata-' prefix) to the message. Other message-specific
+ * attributes are also added as meta data. The message payload is serialized using the configured serializer and passed
+ * as the message body.
  *
  * @author Allard Buijze
- * @since 2.0
  */
 public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
-
-    private static final AMQP.BasicProperties DURABLE = new AMQP.BasicProperties.Builder().deliveryMode(2).build();
 
     private final Serializer serializer;
     private final RoutingKeyResolver routingKeyResolver;
@@ -46,7 +46,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
      * Initializes the AMQPMessageConverter with the given {@code serializer}, using a {@link
      * PackageRoutingKeyResolver} and requesting durable dispatching.
      *
-     * @param serializer The serializer to serialize the Event Message's payload and Meta Data with
+     * @param serializer The serializer to serialize the Event Message's payload with
      */
     public DefaultAMQPMessageConverter(Serializer serializer) {
         this(serializer, new PackageRoutingKeyResolver(), true);
@@ -69,36 +69,54 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     }
 
     @Override
-    public AMQPMessage createAMQPMessage(EventMessage eventMessage) {
-        byte[] body = asByteArray(eventMessage);
+    public AMQPMessage createAMQPMessage(EventMessage<?> eventMessage) {
+        SerializedObject<byte[]> serializedObject = serializer.serialize(eventMessage.getPayload(), byte[].class);
         String routingKey = routingKeyResolver.resolveRoutingKey(eventMessage);
-        if (durable) {
-            return new AMQPMessage(body, routingKey, DURABLE, false, false);
+        AMQP.BasicProperties.Builder properties = new AMQP.BasicProperties.Builder();
+        Map<String, Object> headers = new HashMap<>();
+        eventMessage.getMetaData().forEach((k, v) -> headers.put("axon-metadata-" + k, v));
+        headers.put("axon-message-id", eventMessage.getIdentifier());
+        headers.put("axon-message-type", serializedObject.getType().getName());
+        headers.put("axon-message-revision", serializedObject.getType().getRevision());
+        headers.put("axon-message-timestamp", eventMessage.getTimestamp().toString());
+        if (eventMessage instanceof DomainEventMessage) {
+            headers.put("axon-message-aggregate-id", ((DomainEventMessage) eventMessage).getAggregateIdentifier());
+            headers.put("axon-message-aggregate-seq", ((DomainEventMessage) eventMessage).getSequenceNumber());
+            headers.put("axon-message-aggregate-type", ((DomainEventMessage) eventMessage).getType());
         }
-        return new AMQPMessage(body, routingKey);
+        properties.headers(headers);
+        if (durable) {
+            properties.deliveryMode(2);
+        }
+        return new AMQPMessage(serializedObject.getData(), routingKey, properties.build(), false, false);
     }
 
     @Override
-    public EventMessage readAMQPMessage(byte[] messageBody, Map<String, Object> headers) {
-        try {
-            EventMessageReader in = new EventMessageReader(new DataInputStream(new ByteArrayInputStream(messageBody)),
-                                                           serializer);
-            return in.readEventMessage();
-        } catch (IOException e) {
-            // ByteArrayInputStream doesn't throw IOException... anyway...
-            throw new EventPublicationFailedException("Failed to deserialize an EventMessage", e);
+    public Optional<EventMessage<?>> readAMQPMessage(byte[] messageBody, Map<String, Object> headers) {
+        if (!headers.keySet().containsAll(Arrays.asList("axon-message-id", "axon-message-type"))) {
+            return Optional.empty();
+        }
+        Map<String, Object> metaData = new HashMap<>();
+        headers.forEach((k, v) -> {
+            if (k.startsWith("axon-metadata-")) {
+                metaData.put(k.substring("axon-metadata-".length()), v);
+            }
+        });
+        SimpleSerializedObject<byte[]> serializedMessage = new SimpleSerializedObject<>(messageBody, byte[].class,
+                                                                                        Objects.toString(headers.get("axon-message-type")),
+                                                                                        Objects.toString(headers.get("axon-message-revision"), null));
+        SerializedMessage<?> message = new SerializedMessage<>(Objects.toString(headers.get("axon-message-id")),
+                                                               new LazyDeserializingObject<>(serializedMessage, serializer),
+                                                               new LazyDeserializingObject<>(MetaData.from(metaData)));
+        String timestamp = Objects.toString(headers.get("axon-message-timestamp"));
+        if (headers.containsKey("axon-message-aggregate-id")) {
+            return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get("axon-message-aggregate-type")),
+                                                   Objects.toString(headers.get("axon-message-aggregate-id")),
+                                                   (Long) headers.get("axon-message-aggregate-seq"),
+                                                   message, () -> Instant.parse(timestamp)));
+        } else {
+            return Optional.of(new GenericEventMessage<>(message, () -> Instant.parse(timestamp)));
         }
     }
 
-    private byte[] asByteArray(EventMessage event) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-            outputStream.writeEventMessage(event);
-            return baos.toByteArray();
-        } catch (IOException e) {
-            // ByteArrayOutputStream doesn't throw IOException... anyway...
-            throw new EventPublicationFailedException("Failed to serialize an EventMessage", e);
-        }
-    }
 }

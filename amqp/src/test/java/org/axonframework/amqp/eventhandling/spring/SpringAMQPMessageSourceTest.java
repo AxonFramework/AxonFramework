@@ -17,10 +17,10 @@
 package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.Channel;
+import org.axonframework.amqp.eventhandling.AMQPMessage;
 import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.io.EventMessageWriter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hamcrest.Description;
@@ -29,9 +29,6 @@ import org.junit.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -47,17 +44,20 @@ public class SpringAMQPMessageSourceTest {
     public void testMessageListenerInvokesAllEventProcessors() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(serializer);
+        DefaultAMQPMessageConverter messageConverter = new DefaultAMQPMessageConverter(serializer);
+        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
         testSubject.subscribe(eventProcessor);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
-        testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()), mock(Channel.class));
+
+        AMQPMessage message = messageConverter.createAMQPMessage(GenericEventMessage.asEventMessage("test"));
+
+        MessageProperties messageProperties = new MessageProperties();
+        message.getProperties().getHeaders().forEach(messageProperties::setHeader);
+        testSubject.onMessage(new Message(message.getBody(), messageProperties), mock(Channel.class));
 
         verify(eventProcessor).accept(argThat(new TypeSafeMatcher<List<? extends EventMessage<?>>>() {
             @Override
             public boolean matchesSafely(List<? extends EventMessage<?>> item) {
-                return item.size() == 1 && item.get(0).getPayload().equals("Event");
+                return item.size() == 1 && item.get(0).getPayload().equals("test");
             }
 
             @Override
@@ -72,15 +72,17 @@ public class SpringAMQPMessageSourceTest {
     public void testMessageListenerIgnoredOnDeserializationFailure() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(new DefaultAMQPMessageConverter(serializer));
+        DefaultAMQPMessageConverter messageConverter = new DefaultAMQPMessageConverter(serializer);
+        SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
         testSubject.subscribe(eventProcessor);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
-        byte[] body = baos.toByteArray();
-        body = new String(body, Charset.forName("UTF-8")).replace("string", "strong")
-                                                         .getBytes(Charset.forName("UTF-8"));
-        testSubject.onMessage(new Message(body, new MessageProperties()), mock(Channel.class));
+
+        AMQPMessage message = messageConverter.createAMQPMessage(GenericEventMessage.asEventMessage("test"));
+
+        MessageProperties messageProperties = new MessageProperties();
+        message.getProperties().getHeaders().forEach(messageProperties::setHeader);
+        // we make the message unreadable
+        messageProperties.setHeader("axon-message-type", "strong");
+        testSubject.onMessage(new Message(message.getBody(), messageProperties), mock(Channel.class));
 
         verify(eventProcessor, never()).accept(any(List.class));
     }

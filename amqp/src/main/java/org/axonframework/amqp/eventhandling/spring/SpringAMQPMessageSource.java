@@ -85,7 +85,7 @@ public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
         if (!eventProcessors.isEmpty()) {
             try {
                 EventMessage<?> event = messageConverter
-                        .readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders());
+                        .readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders()).orElse(null);
                 if (event != null) {
                     eventProcessors.forEach(ep -> ep.accept(Collections.singletonList(event)));
                 }
