@@ -10,4 +10,6 @@ To read the reference guide, visit: [https://docs.axonframework.org](https://doc
 
 Build status: [![Build Status](https://travis-ci.org/AxonFramework/AxonFramework.svg?branch=master)](https://travis-ci.org/AxonFramework/AxonFramework)
 
-If you're looking for the issue tracker, visit [http://issues.axonframework.org](http://issues.axonframework.org).
+Issues are managed in the [GitHub issue tracker](https://github.com/AxonFramework/AxonFramework/issues)
+
+If you're looking for the old issue tracker, visit [axonframework.myjetbrains.com](https://axonframework.myjetbrains.com/).
