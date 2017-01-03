@@ -38,7 +38,7 @@ public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager
     private final SagaFactory sagaFactory;
     private final Class<? extends Saga>[] sagaTypes;
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
-    private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
+    private final Map<String, Saga> sagasInMemory = new ConcurrentHashMap<String, Saga>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
     private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
@@ -104,10 +104,10 @@ public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager
         for (AssociationValue associationValue : associationValues) {
             sagas.addAll(sagaRepository.find(sagaType, associationValue));
         }
-        for (Saga sagaInCreation : sagasInCreation.values()) {
-            if (sagaType.isInstance(sagaInCreation)
-                    && containsAny(sagaInCreation.getAssociationValues(), associationValues)) {
-                sagas.add(sagaInCreation.getSagaIdentifier());
+        for (Saga sagaInMemory : sagasInMemory.values()) {
+            if (sagaType.isInstance(sagaInMemory)
+                    && containsAny(sagaInMemory.getAssociationValues(), associationValues)) {
+                sagas.add(sagaInMemory.getSagaIdentifier());
             }
         }
         boolean sagaOfTypeInvoked = false;
@@ -143,7 +143,7 @@ public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager
         Saga newSaga = sagaFactory.createSaga(sagaType);
         newSaga.getAssociationValues().add(associationValue);
         preProcessSaga(newSaga);
-        sagasInCreation.put(newSaga.getSagaIdentifier(), newSaga);
+        sagasInMemory.put(newSaga.getSagaIdentifier(), newSaga);
         try {
             if (synchronizeSagaAccess) {
                 lock.obtainLock(newSaga.getSagaIdentifier());
@@ -164,7 +164,7 @@ public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager
                 }
             }
         } finally {
-            removeEntry(newSaga.getSagaIdentifier(), sagasInCreation);
+            removeEntry(newSaga.getSagaIdentifier(), sagasInMemory);
         }
     }
 
@@ -219,21 +219,32 @@ public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager
                                                                       EventMessage event);
 
     private Saga loadAndInvoke(EventMessage event, String sagaId, Collection<AssociationValue> associations) {
-        Saga saga = sagasInCreation.get(sagaId);
+        boolean loaded = false;
+
+        Saga saga = sagasInMemory.get(sagaId);
         if (saga == null) {
             saga = sagaRepository.load(sagaId);
+            loaded = true;
+            sagasInMemory.put(sagaId, saga);
         }
 
-        if (saga == null || !saga.isActive() || !containsAny(saga.getAssociationValues(), associations)) {
-            return null;
-        }
-        preProcessSaga(saga);
         try {
-            doInvokeSaga(event, saga);
+            if (saga == null || !saga.isActive() ||
+                    !containsAny(saga.getAssociationValues(), associations)) {
+                return null;
+            }
+            preProcessSaga(saga);
+            try {
+                doInvokeSaga(event, saga);
+            } finally {
+                commit(saga);
+            }
+            return saga;
         } finally {
-            commit(saga);
+            if (loaded) {
+                removeEntry(sagaId, sagasInMemory);
+            }
         }
-        return saga;
     }
 
     /**

@@ -20,6 +20,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -143,5 +145,20 @@ public class SimpleSagaManagerTest {
         verify(eventBus).subscribe(testSubject);
         testSubject.unsubscribe();
         verify(eventBus).unsubscribe(testSubject);
+    }
+
+    @Test
+    public void testSagaInstanceIsReusedInUnitOfWork() {
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet();
+        try {
+            activate(saga1);
+            testSubject.handle(event);
+            testSubject.handle(event);
+
+            verify(repository).load("saga1");
+            verify(saga1, times(2)).handle(event);
+        } finally {
+            unitOfWork.commit();
+        }
     }
 }
