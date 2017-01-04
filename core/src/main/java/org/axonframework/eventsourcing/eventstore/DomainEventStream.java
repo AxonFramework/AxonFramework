@@ -241,7 +241,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
 
             @Override
             public Long getLastSequenceNumber() {
-                return b.getLastSequenceNumber();
+                return b.getLastSequenceNumber() == null ? a.getLastSequenceNumber() : b.getLastSequenceNumber();
             }
         };
     }
