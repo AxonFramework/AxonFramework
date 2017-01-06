@@ -183,6 +183,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public TestExecutor andGiven(Object... domainEvents) {
+        return andGiven(Arrays.asList(domainEvents));
+    }
+
+    @Override
     public TestExecutor givenNoPriorActivity() {
         return given(Collections.emptyList());
     }
@@ -191,6 +196,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public TestExecutor given(List<?> domainEvents) {
         ensureRepositoryConfiguration();
         clearGivenWhenState();
+        return andGiven(domainEvents);
+    }
+
+    @Override
+    public TestExecutor andGiven(List<?> domainEvents) {
         for (Object event : domainEvents) {
             Object payload = event;
             MetaData metaData = null;
@@ -199,7 +209,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 metaData = ((Message) event).getMetaData();
             }
             this.givenEvents.add(new GenericDomainEventMessage<>(aggregateType.getSimpleName(), aggregateIdentifier,
-                                                                 sequenceNumber++, payload, metaData));
+                    sequenceNumber++, payload, metaData));
         }
         return this;
     }
@@ -210,9 +220,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public TestExecutor andGivenCommands(Object... commands) {
+        return andGivenCommands(Arrays.asList(commands));
+    }
+
+    @Override
     public TestExecutor givenCommands(List<?> commands) {
-        finalizeConfiguration();
         clearGivenWhenState();
+        return andGivenCommands(commands);
+    }
+
+    @Override
+    public TestExecutor andGivenCommands(List<?> commands) {
+        finalizeConfiguration();
         for (Object command : commands) {
             ExecutionExceptionAwareCallback callback = new ExecutionExceptionAwareCallback();
             commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), callback);

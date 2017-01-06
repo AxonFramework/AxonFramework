@@ -162,6 +162,32 @@ public class FixtureTest_Annotated {
         }
     }
 
+    @Test
+    public void testAndGiven() {
+        fixture.registerInjectableResource(new HardToCreateResource());
+        fixture.givenCommands(new CreateAggregateCommand("aggregateId"))
+                .andGiven(new MyEvent("aggregateId", 1))
+                .when(new TestCommand("aggregateId"))
+                .expectEvents(new MyEvent("aggregateId", 2));
+    }
+
+    @Test
+    public void testAndGivenCommands() {
+        fixture.given(new MyEvent("aggregateId", 1))
+                .andGivenCommands(new TestCommand("aggregateId"))
+                .when(new TestCommand("aggregateId"))
+                .expectEvents(new MyEvent("aggregateId", 3));
+    }
+
+    @Test
+    public void testMultipleAndGivenCommands() {
+        fixture.given(new MyEvent("aggregateId", 1))
+                .andGivenCommands(new TestCommand("aggregateId"))
+                .andGivenCommands(new TestCommand("aggregateId"))
+                .when(new TestCommand("aggregateId"))
+                .expectEvents(new MyEvent("aggregateId", 4));
+    }
+
     private class StubDomainEvent {
 
         public StubDomainEvent() {
