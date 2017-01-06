@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.saga.SagaLifecycle;
 import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.inject.Inject;
 import java.time.Duration;
@@ -40,7 +41,7 @@ import java.util.List;
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
-    @Inject
+    @Autowired
     private transient StubGateway stubGateway;
     @Inject
     private transient EventScheduler scheduler;

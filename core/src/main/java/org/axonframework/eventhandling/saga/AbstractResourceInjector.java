@@ -25,6 +25,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.fieldsOf;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
@@ -39,7 +40,10 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractResourceInjector.class);
 
-    private static final String FULLY_QUALIFIED_CLASS_NAME_INJECT = "javax.inject.Inject";
+    private static final String[] DEFAULT_INJECT_ANNOTATIONS = {
+            "javax.inject.Inject",
+            "org.springframework.beans.factory.annotation.Autowired"
+    };
 
     @Override
     public void injectResources(Object saga) {
@@ -49,11 +53,13 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
 
     private void injectFieldResources(Object saga) {
         fieldsOf(saga.getClass()).forEach(
-                field -> Optional.ofNullable(AnnotationUtils.findAnnotation(field, FULLY_QUALIFIED_CLASS_NAME_INJECT))
-                        .ifPresent(annotatedFields -> {
-                            Class<?> requiredType = field.getType();
-                            findResource(requiredType).ifPresent(resource -> injectFieldResource(saga, field, resource));
-                        }));
+                field -> Stream.of(injectorAnnotationNames())
+                        .forEach(a -> Optional.ofNullable(AnnotationUtils.findAnnotation(field, a))
+                                .ifPresent(annotatedFields -> {
+                                    Class<?> requiredType = field.getType();
+                                    findResource(requiredType).ifPresent(resource -> injectFieldResource(saga, field, resource));
+                                }))
+        );
     }
 
     /**
@@ -61,7 +67,7 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
      * injector.
      *
      * @param requiredType the class of the resource to find
-     * @param <R> the resource type
+     * @param <R>          the resource type
      * @return an Optional that contains the resource if it was found
      */
     protected abstract <R> Optional<R> findResource(Class<R> requiredType);
@@ -77,11 +83,12 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
 
     private void injectMethodResources(Object saga) {
         methodsOf(saga.getClass()).forEach(
-                method -> Optional.ofNullable(AnnotationUtils.findAnnotation(method, FULLY_QUALIFIED_CLASS_NAME_INJECT))
-                        .ifPresent(annotatedMethods -> {
-                            Class<?> requiredType = method.getParameterTypes()[0];
-                            findResource(requiredType).ifPresent(resource -> injectMethodResource(saga, method, resource));
-                        }));
+                method -> Stream.of(injectorAnnotationNames())
+                        .forEach(a -> Optional.ofNullable(AnnotationUtils.findAnnotation(method, a))
+                                .ifPresent(annotatedMethods -> {
+                                    Class<?> requiredType = method.getParameterTypes()[0];
+                                    findResource(requiredType).ifPresent(resource -> injectMethodResource(saga, method, resource));
+                                })));
     }
 
     private void injectMethodResource(Object saga, Method injectMethod, Object resource) {
@@ -95,4 +102,16 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
         }
     }
 
+    /**
+     * Provides an array with fully qualified class names of the annotation that indicate an injection point for a
+     * resource. By default, these are: <ul>
+     * <li>{@code javax.inject.Inject}, and </li>
+     * <li>{@code org.springframework.beans.factory.annotation.Autowired}</li>
+     * </ul>
+     *
+     * @return an array with fully qualified class names of annotations
+     */
+    protected String[] injectorAnnotationNames() {
+        return DEFAULT_INJECT_ANNOTATIONS;
+    }
 }
