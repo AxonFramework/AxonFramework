@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,14 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     private final SagaModel<T> sagaMetaModel;
 
+    private static <T> T newInstance(Class<T> type) {
+        try {
+            return type.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new SagaInstantiationException("Exception while trying to instantiate a new Saga", e);
+        }
+    }
+
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
      * manager uses {@link #newInstance(Class)}. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
@@ -45,6 +54,19 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository) {
         this(sagaType, sagaRepository, () -> newInstance(sagaType));
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
+     * manager uses {@link #newInstance(Class)}. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
+     *
+     * @param sagaType                 the saga target type
+     * @param sagaRepository           The repository providing access to the Saga instances
+     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
+     *                                 handlers with
+     */
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, ParameterResolverFactory parameterResolverFactory) {
+        this(sagaType, sagaRepository, () -> newInstance(sagaType), new DefaultSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType));
     }
 
     /**
@@ -63,10 +85,10 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas, the {@code sagaFactory} to
      * create new sagas and the {@code sagaMetaModel} to delegate messages to the saga instances.
      *
-     * @param sagaType the saga target type
+     * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaFactory the factory for new saga instances of type {@code T}
-     * @param sagaMetaModel the meta model to delegate messages to a saga instance
+     * @param sagaFactory    the factory for new saga instances of type {@code T}
+     * @param sagaMetaModel  the meta model to delegate messages to a saga instance
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
                                 SagaModel<T> sagaMetaModel) {
@@ -91,14 +113,6 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
         List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
         return handlers.stream().map(handler -> handler.getAssociationValue(event)).collect(Collectors.toSet());
-    }
-
-    private static <T> T newInstance(Class<T> type) {
-        try {
-            return type.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new SagaInstantiationException("Exception while trying to instantiate a new Saga", e);
-        }
     }
 
     @Override

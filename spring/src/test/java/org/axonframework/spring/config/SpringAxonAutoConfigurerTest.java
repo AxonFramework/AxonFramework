@@ -159,12 +159,14 @@ public class SpringAxonAutoConfigurerTest {
             private String id;
 
             @CommandHandler
-            public void handle(Long command) {
+            public void handle(Long command, MyEventHandler beanInjection) {
+                assertNotNull(beanInjection);
                 apply(command);
             }
 
             @EventSourcingHandler
-            public void on(Long event) {
+            public void on(Long event, MyEventHandler beanInjection) {
+                assertNotNull(beanInjection);
                 this.id = Long.toString(event);
             }
 
@@ -197,7 +199,8 @@ public class SpringAxonAutoConfigurerTest {
 
             @StartSaga
             @SagaEventHandler(associationProperty = "id")
-            public void handle(SomeEvent event) {
+            public void handle(SomeEvent event, MyEventHandler beanInjection) {
+                assertNotNull(beanInjection);
                 events.add(event.getId());
             }
         }
@@ -205,9 +208,8 @@ public class SpringAxonAutoConfigurerTest {
         @Component
         public static class MyEventHandler {
 
-            private EventBus eventBus;
-
             public List<String> received = new ArrayList<>();
+            private EventBus eventBus;
 
             @Autowired
             public MyEventHandler(EventBus eventBus) {
@@ -215,8 +217,9 @@ public class SpringAxonAutoConfigurerTest {
             }
 
             @EventHandler
-            public void handle(String event) {
+            public void handle(String event, MyOtherEventHandler beanInjectionCheck) {
                 assertNotNull(eventBus);
+                assertNotNull(beanInjectionCheck);
                 received.add(event);
             }
         }
@@ -227,7 +230,8 @@ public class SpringAxonAutoConfigurerTest {
             public List<String> received = new ArrayList<>();
 
             @EventHandler
-            public void handle(String event) {
+            public void handle(String event, MyEventHandler beanInjection) {
+                assertNotNull(beanInjection);
                 received.add(event);
             }
         }

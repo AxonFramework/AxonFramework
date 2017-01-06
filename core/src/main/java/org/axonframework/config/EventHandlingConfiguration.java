@@ -73,6 +73,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
                                                                             new SimpleEventHandlerInvoker(eh,
+                                                                                                          conf.parameterResolverFactory(),
                                                                                                           conf.getComponent(
                                                                                                                   ListenerInvocationErrorHandler.class,
                                                                                                                   LoggingErrorHandler::new)),
@@ -129,6 +130,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers,
                                                        Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
         TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
+                                                                                                          conf.parameterResolverFactory(),
                                                                                                           conf.getComponent(
                                                                                                                   ListenerInvocationErrorHandler.class,
                                                                                                                   LoggingErrorHandler::new)),

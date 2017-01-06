@@ -43,8 +43,6 @@ public class StubSaga {
     @Inject
     private transient StubGateway stubGateway;
     @Inject
-    private transient EventBus eventBus;
-    @Inject
     private transient EventScheduler scheduler;
     @Inject
     private NonTransientResource nonTransientResource;
@@ -69,7 +67,7 @@ public class StubSaga {
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleEvent(TriggerExistingSagaEvent event) {
+    public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
         eventBus.publish(new GenericEventMessage<>(new SagaWasTriggeredEvent(this)));
     }
@@ -101,10 +99,6 @@ public class StubSaga {
         scheduler.cancelSchedule(timer);
         timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
-    }
-
-    public EventBus getEventBus() {
-        return eventBus;
     }
 
     public EventScheduler getScheduler() {
