@@ -136,7 +136,6 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        storageStrategy.deleteSnapshots(template.snapshotCollection(), snapshot.getAggregateIdentifier());
         try {
             storageStrategy.appendSnapshot(template.snapshotCollection(), snapshot, serializer);
         } catch (Exception e) {
