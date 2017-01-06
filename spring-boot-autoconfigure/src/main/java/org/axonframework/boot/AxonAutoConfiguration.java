@@ -70,11 +70,8 @@ import java.util.regex.Pattern;
 @EnableConfigurationProperties(EventProcessorProperties.class)
 public class AxonAutoConfiguration {
 
-    private final EventProcessorProperties eventProcessorProperties;
-
-    public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties) {
-        this.eventProcessorProperties = eventProcessorProperties;
-    }
+    @Autowired
+    private EventProcessorProperties eventProcessorProperties;
 
     @Bean
     @ConditionalOnMissingBean
@@ -83,7 +80,7 @@ public class AxonAutoConfiguration {
     }
 
     @Qualifier("eventStore")
-    @Bean("eventBus")
+    @Bean(name = "eventBus")
     @ConditionalOnMissingBean({EventBus.class, EventStore.class})
     @ConditionalOnBean(EventStorageEngine.class)
     public EventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
@@ -192,11 +189,8 @@ public class AxonAutoConfiguration {
     @Configuration
     public static class AMQPConfiguration {
 
-        private final AMQPProperties amqpProperties;
-
-        public AMQPConfiguration(AMQPProperties amqpProperties) {
-            this.amqpProperties = amqpProperties;
-        }
+        @Autowired
+        private AMQPProperties amqpProperties;
 
         @ConditionalOnMissingBean
         @Bean
@@ -243,11 +237,8 @@ public class AxonAutoConfiguration {
     public static class JGroupsConfiguration {
 
         private static final Logger logger = LoggerFactory.getLogger(JGroupsConfiguration.class);
-        private final JGroupsProperties jGroupsProperties;
-
-        public JGroupsConfiguration(JGroupsProperties jGroupsProperties) {
-            this.jGroupsProperties = jGroupsProperties;
-        }
+        @Autowired
+        private JGroupsProperties jGroupsProperties;
 
         @ConditionalOnProperty("axon.distributed.jgroups.gossip.autoStart")
         @Bean(destroyMethod = "stop")

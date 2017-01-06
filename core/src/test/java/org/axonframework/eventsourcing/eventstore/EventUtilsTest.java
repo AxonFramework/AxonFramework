@@ -77,6 +77,13 @@ public class EventUtilsTest {
         assertEquals(Long.valueOf(1L), eventStream.getLastSequenceNumber());
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testDomainEventStream_nullPointerExceptionOnEmptyEventStream() {
+        DomainEventStream eventStream = EventUtils.upcastAndDeserializeDomainEvents(Stream.empty(),
+            serializer, NoOpEventUpcaster.INSTANCE, false);
+        long lastSequenceNumber = eventStream.getLastSequenceNumber();
+    }
+
     private static DomainEventData<?> createEntry(long sequenceNumber) {
         return new GenericDomainEventEntry<>("type", "testAggregate", sequenceNumber,
                                              IdentifierFactory.getInstance().generateIdentifier(), Instant.now(),
