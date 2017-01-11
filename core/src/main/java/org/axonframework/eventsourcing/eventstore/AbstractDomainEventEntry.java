@@ -28,7 +28,7 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> implements DomainEventData<T> {
 
-    @Basic(optional = false)
+    @Basic
     private String type;
     @Basic(optional = false)
     private String aggregateIdentifier;
