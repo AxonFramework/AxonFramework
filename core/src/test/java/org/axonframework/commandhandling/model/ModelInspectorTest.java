@@ -29,8 +29,8 @@ import org.junit.Test;
 import javax.persistence.Id;
 import java.lang.annotation.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,6 +38,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class ModelInspectorTest {
 
@@ -62,65 +63,78 @@ public class ModelInspectorTest {
 
     @Test
     public void testDetectAllAnnotatedHandlersInRecursiveHierarchy() throws Exception {
-        AggregateModel<SomeRecursiveRoot> inspector = ModelInspector.inspectAggregate(SomeRecursiveRoot.class);
-
-        SomeRecursiveRoot target = new SomeRecursiveRoot();
+        // Note that if the model does not support recursive entities this will throw an StackOverflowError.
+        AggregateModel<SomeRecursiveEntity> inspector = ModelInspector.inspectAggregate(SomeRecursiveEntity.class);
 
         // Create a hierarchy of id's that we will use in this test.
         // The resulting hierarchy will look as follows:
         // root 
-        //      child0
-        //              child1
-        //                      child2
-        //                      child3
-        //              child4
-        String childId0 = SomeRecursiveEntity.childId(target.rootId, 1);
-        String childId1 = SomeRecursiveEntity.childId(childId0, 1);
-        String childId2 = SomeRecursiveEntity.childId(childId1, 1);
-        String childId3 = SomeRecursiveEntity.childId(childId1, 2);
-        String childId4 = SomeRecursiveEntity.childId(childId0, 2);
+        //      child1
+        //              child2
+        //              child3
+        //                      child4
+        String rootId = "root";
+        String childId1 = "child1";
+        String childId2 = "child2";
+        String childId3 = "child3";
+        String childId4 = "child4";
 
-        // Assert child0: the id should match and it should not have any children (yet)
-        SomeRecursiveEntity child0 = target.entity;
-        assertEquals(childId0, child0.entityId);
-        assertEquals(0, child0.children.size());
+        SomeRecursiveEntity root = new SomeRecursiveEntity(null, "root");
 
-        // Publish an event that is picked up by child0. It should have 1 child afterwards.
-        inspector.publish(asEventMessage(childId0), target);
-        assertEquals(1, child0.children.size());
+        // Assert root: it should not have any children (yet)
+        assertEquals(0, root.children.size());
 
-        // Assert child1: the id should match and it should not have any children (yet)
-        SomeRecursiveEntity child1 = child0.children.get(0);
+        // Publish an event that is picked up by root. It should have 1 child afterwards.
+        inspector.publish(asEventMessage(new CreateChild(rootId, childId1)), root);
+        assertEquals(1, root.children.size());
+
+        // Assert child1: it should not have any children (yet)
+        SomeRecursiveEntity child1 = root.children.get(childId1);
         assertNotNull(child1);
-        assertEquals(childId1, child1.entityId);
         assertEquals(0, child1.children.size());
 
         // Publish 2 events that are picked up by child1. It should have 2 children afterwards.
-        inspector.publish(asEventMessage(childId1), target);
-        inspector.publish(asEventMessage(childId1), target);
+        inspector.publish(asEventMessage(new CreateChild(childId1, childId2)), root);
+        inspector.publish(asEventMessage(new CreateChild(childId1, childId3)), root);
         assertEquals(2, child1.children.size());
 
-        // Assert child2: the id should match and it should not have any children
-        SomeRecursiveEntity child2 = child1.children.get(0);
+        // Assert child2: it should not have any children
+        SomeRecursiveEntity child2 = child1.children.get(childId2);
         assertNotNull(child2);
-        assertEquals(childId2, child2.entityId);
         assertEquals(0, child2.children.size());
 
-        // Assert child3: the id should match and it should not have any children
-        SomeRecursiveEntity child3 = child1.children.get(1);
+        // Assert child3: it should not have any children
+        SomeRecursiveEntity child3 = child1.children.get(childId3);
         assertNotNull(child3);
-        assertEquals(childId3, child3.entityId);
         assertEquals(0, child3.children.size());
 
-        // Publish an event that is picked up by child0. It should have 2 children afterwards.
-        inspector.publish(asEventMessage(childId0), target);
-        assertEquals(2, child0.children.size());
+        // Publish an event that is picked up by child3. It should have 1 child afterwards.
+        inspector.publish(asEventMessage(new CreateChild(childId3, childId4)), root);
+        assertEquals(1, child3.children.size());
 
-        // Assert child4: the id should match and it should not have any children
-        SomeRecursiveEntity child4 = child0.children.get(1);
+        // Assert child4: it should not have any children
+        SomeRecursiveEntity child4 = child3.children.get(childId4);
         assertNotNull(child4);
-        assertEquals(childId4, child4.entityId);
         assertEquals(0, child4.children.size());
+
+        // Now move child4 up one level so it is a child of root.
+        // The resulting hierarchy will look as follows:
+        // root 
+        //      child1
+        //              child2
+        //              child3
+        //              child4
+        
+        // Publish an event that is picked up by child3. 
+        // It should have 0 children afterwards and child1 should have 3 children afterwards.
+        // Note that if the model does not use copy-iterators this will throw an ConcurrentModificationException.
+        inspector.publish(asEventMessage(new MoveChildUp(childId3, childId4)), root);
+        assertEquals(0, child3.children.size());
+        assertEquals(3, child1.children.size());
+        
+        // Assert that child4 is no longer part of child3 but of child1 
+        assertNull(child3.children.get(childId4));
+        assertNotNull(child1.children.get(childId4));
     }
 
     @Test
@@ -238,34 +252,52 @@ public class ModelInspectorTest {
             value.incrementAndGet();
         }
     }
+    
+    private static class CreateChild {
+        private final String parentId;
+        private final String childId;
 
-    private static class SomeRecursiveRoot {
+        public CreateChild(String parentId, String childId) {
+            this.parentId = parentId;
+            this.childId = childId;
+        }
+    }
 
-        private String rootId = "root";
+    private static class MoveChildUp {
+        private final String parentId;
+        private final String childId;
 
-        @AggregateMember
-        private SomeRecursiveEntity entity = new SomeRecursiveEntity(SomeRecursiveEntity.childId(rootId, 1));
+        private MoveChildUp(String parentId, String childId) {
+            this.parentId = parentId;
+            this.childId = childId;
+        }
     }
 
     private static class SomeRecursiveEntity {
 
+        private final SomeRecursiveEntity parent;
         private final String entityId;
 
         @AggregateMember
-        private List<SomeRecursiveEntity> children = new ArrayList<>();
+        private Map<String, SomeRecursiveEntity> children = new HashMap<>();
 
-        public SomeRecursiveEntity(String entityId) {
+        public SomeRecursiveEntity(SomeRecursiveEntity parent, String entityId) {
+            this.parent = parent;
             this.entityId = entityId;
         }
 
-        public static String childId(String parent, int number) {
-            return String.format("child #%d of %s", number, parent);
+        @EventHandler
+        public void handle(CreateChild event) {
+            if (Objects.equals(this.entityId, event.parentId)) {
+                children.put(event.childId, new SomeRecursiveEntity(this, event.childId));
+            }
         }
 
         @EventHandler
-        public void handle(String targetEntityId) {
-            if (Objects.equals(entityId, targetEntityId)) {
-                children.add(new SomeRecursiveEntity(childId(this.entityId, children.size() + 1)));
+        public void handle(MoveChildUp event) {
+            if (Objects.equals(this.entityId, event.parentId)) {
+                SomeRecursiveEntity child = this.children.remove(event.childId);
+                parent.children.put(child.entityId, child);
             }
         }
     }
