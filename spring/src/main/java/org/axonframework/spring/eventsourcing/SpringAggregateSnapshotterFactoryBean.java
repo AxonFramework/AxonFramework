@@ -47,11 +47,11 @@ import java.util.concurrent.Executor;
  */
 public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
+    private final Executor executor = DirectExecutor.INSTANCE;
     private PlatformTransactionManager transactionManager;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     private EventStore eventStore;
-    private final Executor executor = DirectExecutor.INSTANCE;
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
@@ -77,7 +77,10 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        return new SpringAggregateSnapshotter(SpringAggregateSnapshotterFactoryBean.this.eventStore, SpringAggregateSnapshotterFactoryBean.this.parameterResolverFactory, SpringAggregateSnapshotterFactoryBean.this.executor, txManager);
+        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore, parameterResolverFactory,
+                                                                                executor, txManager);
+        snapshotter.setApplicationContext(applicationContext);
+        return snapshotter;
     }
 
     @Override
