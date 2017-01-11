@@ -92,19 +92,22 @@ public class ModelInspector<T> implements AggregateModel<T> {
     private static <T> ModelInspector<T> createInspector(Class<? extends T> inspectedType,
                                                          AnnotatedHandlerInspector<T> handlerInspector,
                                                          Map<Class<?>, ModelInspector> registry) {
+        if(!registry.containsKey(inspectedType)) {
+            ModelInspector<T> inspector = new ModelInspector<>(inspectedType, registry, handlerInspector);
+            // Add the newly created inspector to the registry first to prevent a StackOverflowError:
+            // another call to createInspector with the same inspectedType will return this instance of the inspector.
+            // Note that calling inspector.initialize() will cause this method to be recursively called.
+            registry.put(inspectedType, inspector);
+            inspector.initialize();
+        }
         //noinspection unchecked
-        return registry.computeIfAbsent(inspectedType,
-                                        k -> ModelInspector.initialize(inspectedType, handlerInspector, registry));
+        return registry.get(inspectedType);
     }
 
-    private static <T> ModelInspector<T> initialize(Class<? extends T> inspectedType,
-                                                    AnnotatedHandlerInspector<T> handlerInspector,
-                                                    Map<Class<?>, ModelInspector> registry) {
-        ModelInspector<T> inspector = new ModelInspector<>(inspectedType, registry, handlerInspector);
-        inspector.inspectAggregateType();
-        inspector.inspectFields();
-        inspector.prepareHandlers();
-        return inspector;
+    private void initialize() {
+        inspectAggregateType();
+        inspectFields();
+        prepareHandlers();
     }
 
     @SuppressWarnings("unchecked")
