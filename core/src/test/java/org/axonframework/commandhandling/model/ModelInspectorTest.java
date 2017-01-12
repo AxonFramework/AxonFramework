@@ -29,16 +29,14 @@ import org.junit.Test;
 import javax.persistence.Id;
 import java.lang.annotation.*;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class ModelInspectorTest {
 
@@ -279,7 +277,7 @@ public class ModelInspectorTest {
         private final String entityId;
 
         @AggregateMember
-        private Map<String, SomeRecursiveEntity> children = new HashMap<>();
+        private Map<String, SomeRecursiveEntity> children = new ConcurrentHashMap<>();
 
         public SomeRecursiveEntity(SomeRecursiveEntity parent, String entityId) {
             this.parent = parent;

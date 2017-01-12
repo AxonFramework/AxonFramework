@@ -20,8 +20,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -73,9 +71,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         if (forwardEvents) {
             Iterable<C> targets = eventTargetResolver.apply(msg, declaringInstance);
             if (targets != null) {
-                Collection<C> copy = new ArrayList<>();
-                targets.forEach(copy::add);
-                copy.forEach(target -> this.entityModel.publish(msg, target));
+                targets.forEach(target -> this.entityModel.publish(msg, target));
             }
         }
     }
