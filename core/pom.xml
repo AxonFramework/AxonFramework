@@ -270,10 +270,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>cn.easyproject</groupId>
+            <groupId>com.oracle</groupId>
             <artifactId>ojdbc7</artifactId>
-            <version>12.1.0.2.0</version>
-            <scope>test</scope>
+            <version>12.1.0.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/test/binary/ojdbc7.jar</systemPath>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>net.sf.ehcache</groupId>
