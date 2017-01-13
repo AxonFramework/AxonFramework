@@ -20,9 +20,15 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
  * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
@@ -71,7 +77,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         if (forwardEvents) {
             Iterable<C> targets = eventTargetResolver.apply(msg, declaringInstance);
             if (targets != null) {
-                targets.forEach(target -> this.entityModel.publish(msg, target));
+                safeForEach(targets, target -> this.entityModel.publish(msg, target));
             }
         }
     }
@@ -80,6 +86,29 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @Override
     public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
+    }
+    
+    private void safeForEach(Iterable<C> targets, Consumer<C> action) {
+        Spliterator<C> spliterator = targets.spliterator();
+        // if the spliterator is IMMUTABLE or CONCURRENT it is safe to use directly
+        if (spliterator.hasCharacteristics(Spliterator.IMMUTABLE) || spliterator.hasCharacteristics(Spliterator.CONCURRENT)) {
+            spliterator.forEachRemaining(action);
+        } else {
+            // possibly unsafe collection with a fail-fast iterator, create a copy and iterate over that instead
+            copy(targets).forEach(action);
+        }
+    }
+    
+    private Iterable<C> copy(Iterable<C> original) {
+        if(original instanceof Collection) {
+            // use ArrayList because the size is known in advance
+            return new ArrayList<>((Collection<C>) original);
+        } else {
+            // use LinkedList because the size is not known in advance; growing an ArrayList is expensive
+            List<C> list = new LinkedList<>();
+            original.forEach(list::add);
+            return list;
+        }
     }
 
 }
