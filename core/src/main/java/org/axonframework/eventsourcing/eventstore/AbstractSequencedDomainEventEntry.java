@@ -13,13 +13,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.serialization.Serializer;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.SequenceGenerator;
-
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serialization.Serializer;
 
 /**
  * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event

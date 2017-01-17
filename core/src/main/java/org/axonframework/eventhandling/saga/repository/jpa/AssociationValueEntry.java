@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.saga.repository.jpa;
 
+import org.axonframework.eventhandling.saga.AssociationValue;
+
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -23,8 +25,6 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import org.axonframework.eventhandling.saga.AssociationValue;
 
 /**
  * JPA wrapper around an Association Value. This entity is used to store relevant Association Values for Sagas.
