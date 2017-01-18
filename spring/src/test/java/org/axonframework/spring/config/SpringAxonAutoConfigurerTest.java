@@ -6,8 +6,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
@@ -72,6 +71,9 @@ public class SpringAxonAutoConfigurerTest {
     private Context.MyOtherEventHandler myOtherEventHandler;
 
     @Autowired
+    private Context.MyListenerInvocationErrorHandler myListenerInvocationErrorHandler;
+
+    @Autowired
     private ApplicationContext applicationContext;
 
     @Test
@@ -119,6 +121,14 @@ public class SpringAxonAutoConfigurerTest {
 
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
+    }
+
+    @Test
+    public void testListenerInvocationErrorHandler(){
+        eventBus.publish(asEventMessage("Testing 123"));
+
+        assertNotNull("Expected EventBus to be wired", myEventHandler.eventBus);
+        assertFalse(myListenerInvocationErrorHandler.received.isEmpty());
     }
 
     @EnableAxon
@@ -232,6 +242,26 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
+        @Component
+        public static class FailingEventHandler{
+
+            @EventHandler
+            public void handle(String event) {
+                throw new RuntimeException();
+            }
+
+        }
+
+        @Component
+        public static class MyListenerInvocationErrorHandler implements ListenerInvocationErrorHandler{
+
+            public List<Exception> received = new ArrayList<>();
+
+            @Override
+            public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception {
+                received.add(exception);
+            }
+        }
     }
 
     public static class SomeEvent {
