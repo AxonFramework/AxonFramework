@@ -198,9 +198,6 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     @Override
     public void ensureIndexes(MongoCollection<Document> eventsCollection,
                               MongoCollection<Document> snapshotsCollection) {
-        if (eventsCollection.count() > 0) {
-            System.out.println("BLAHHHHHHHH");
-        }
         eventsCollection.createIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
                                              .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                      new IndexOptions().unique(true).name("uniqueAggregateIndex"));
