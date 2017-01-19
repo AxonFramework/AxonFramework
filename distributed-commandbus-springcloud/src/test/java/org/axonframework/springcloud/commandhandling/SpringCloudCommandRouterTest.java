@@ -9,10 +9,7 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,58 +34,50 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SpringCloudCommandRouterTest {
 
+    private static final String LOAD_FACTOR_KEY = "loadFactor";
+    private static final String SERIALIZED_COMMAND_FILTER_KEY = "serializedCommandFilter";
+    private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY = "serializedCommandFilterClassName";
+
     private static final int LOAD_FACTOR = 1;
     private static final CommandMessage<Object> TEST_COMMAND = GenericCommandMessage.asCommandMessage("testCommand");
     private static final String ROUTING_KEY = "routingKey";
     private static final String SERVICE_INSTANCE_ID = "SERVICEID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
     private static final CommandNameFilter COMMAND_NAME_FILTER = new CommandNameFilter(String.class.getName());
-    private static final String SERIALIZED_COMMAND_FILTER = "dummyCommandFilterData";
-    private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = String.class.getName();
 
     @InjectMocks
     private SpringCloudCommandRouter testSubject;
+
     @Mock
     private DiscoveryClient discoveryClient;
     @Mock
     private RoutingStrategy routingStrategy;
-    @Mock
-    private Serializer serializer;
-
     private Field atomicConsistentHashField;
-    @Mock
-    private SerializedObject<String> serializedObject;
+
+    private String serializedCommandFilterData;
+    private String serializedCommandFilterClassName;
     private HashMap<String, String> serviceInstanceMetadata;
     @Mock
     private ServiceInstance serviceInstance;
-    private SimpleSerializedObject<String> expectedSerializedObject;
 
     @Before
     public void setUp() throws Exception {
+        serializedCommandFilterData = new XStreamSerializer().serialize(COMMAND_NAME_FILTER, String.class).getData();
+        serializedCommandFilterClassName = COMMAND_NAME_FILTER.getClass().getName();
+
         String atomicConsistentHashFieldName = "atomicConsistentHash";
         atomicConsistentHashField = SpringCloudCommandRouter.class.getDeclaredField(atomicConsistentHashFieldName);
-
-        SerializedType serializedType = mock(SerializedType.class);
-        when(serializedType.getName()).thenReturn(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
-        when(serializedObject.getType()).thenReturn(serializedType);
-        when(serializedObject.getData()).thenReturn(SERIALIZED_COMMAND_FILTER);
 
         serviceInstanceMetadata = new HashMap<>();
         when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
         when(serviceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
 
-        expectedSerializedObject = new SimpleSerializedObject<>(
-                SERIALIZED_COMMAND_FILTER, String.class, SERIALIZED_COMMAND_FILTER_CLASS_NAME, null);
-
         when(discoveryClient.getLocalServiceInstance()).thenReturn(serviceInstance);
         when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
-
-        when(serializer.serialize(COMMAND_NAME_FILTER, String.class)).thenReturn(serializedObject);
-        when(serializer.deserialize(serializedObject)).thenReturn(COMMAND_NAME_FILTER);
     }
 
     @Test
@@ -120,13 +109,11 @@ public class SpringCloudCommandRouterTest {
     public void testUpdateMembershipUpdatesLocalServiceInstance() throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
-        assertEquals(serviceInstanceMetadata.get("loadFactor"), Integer.toString(LOAD_FACTOR));
-        assertEquals(serviceInstanceMetadata.get("serializedCommandFilter"), SERIALIZED_COMMAND_FILTER);
-        assertEquals(serviceInstanceMetadata.get("serializedCommandFilterClassName"), SERIALIZED_COMMAND_FILTER_CLASS_NAME);
+        assertEquals(Integer.toString(LOAD_FACTOR), serviceInstanceMetadata.get(LOAD_FACTOR_KEY));
+        assertEquals(serializedCommandFilterData, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_KEY));
+        assertEquals(serializedCommandFilterClassName, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
         verify(discoveryClient).getLocalServiceInstance();
-        verify(serializer).serialize(COMMAND_NAME_FILTER, String.class);
-        verify(serializer).deserialize(expectedSerializedObject);
     }
 
     @Test
@@ -142,15 +129,13 @@ public class SpringCloudCommandRouterTest {
         assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
 
         verify(discoveryClient).getLocalServiceInstance();
-        verify(serializer).serialize(COMMAND_NAME_FILTER, String.class);
-        verify(serializer).deserialize(expectedSerializedObject);
     }
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventUpdatesConsistentHash() throws Exception {
-        serviceInstanceMetadata.put("loadFactor", Integer.toString(LOAD_FACTOR));
-        serviceInstanceMetadata.put("serializedCommandFilter", SERIALIZED_COMMAND_FILTER);
-        serviceInstanceMetadata.put("serializedCommandFilterClassName", SERIALIZED_COMMAND_FILTER_CLASS_NAME);
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -164,7 +149,6 @@ public class SpringCloudCommandRouterTest {
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
-        verify(serializer).deserialize(expectedSerializedObject);
     }
 
     @Test
@@ -172,9 +156,9 @@ public class SpringCloudCommandRouterTest {
         int expectedMemberSetSize = 1;
         String expectedServiceInstanceId = "nonCommandRouterServiceInstance";
 
-        serviceInstanceMetadata.put("loadFactor", Integer.toString(LOAD_FACTOR));
-        serviceInstanceMetadata.put("serializedCommandFilter", SERIALIZED_COMMAND_FILTER);
-        serviceInstanceMetadata.put("serializedCommandFilterClassName", SERIALIZED_COMMAND_FILTER_CLASS_NAME);
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
 
         ServiceInstance nonCommandRouterServiceInstance = mock(ServiceInstance.class);
         when(nonCommandRouterServiceInstance.getServiceId()).thenReturn(expectedServiceInstanceId);
@@ -195,7 +179,6 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
         verify(discoveryClient).getInstances(expectedServiceInstanceId);
-        verify(serializer).deserialize(expectedSerializedObject);
     }
 
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
