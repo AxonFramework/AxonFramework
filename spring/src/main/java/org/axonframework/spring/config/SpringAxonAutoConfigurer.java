@@ -7,6 +7,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -110,6 +111,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
         findComponent(SagaStore.class)
                 .ifPresent(sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
+        findComponent(ListenerInvocationErrorHandler.class)
+                .ifPresent(handler -> configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c)));
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)
