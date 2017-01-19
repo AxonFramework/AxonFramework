@@ -174,7 +174,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 unitOfWork.onPrepareCommit(uow -> {
                     EventMessage<?> event = uow.getMessage();
                     if (event instanceof TrackedEventMessage<?> &&
-                            ((TrackedEventMessage) event).trackingToken().equals(lastToken)) {
+                            lastToken != null &&
+                            lastToken.equals(((TrackedEventMessage) event).trackingToken())) {
                         tokenStore.storeToken(lastToken, getName(), 0);
                     }
                 });
@@ -264,10 +265,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 return;
             }
 
-            //make sure all subsequent events with the same token as the last are added as well. These are the
-            // result of upcasting and should always be processed in the same batch.
+            // make sure all subsequent events with the same token (if non-null) as the last are added as well.
+            // These are the result of upcasting and should always be processed in the same batch.
             lastToken = batch.get(batch.size() - 1).trackingToken();
-            while (eventStream.peek().filter(event -> event.trackingToken().equals(lastToken)).isPresent()) {
+            while (lastToken != null && eventStream.peek().filter(event -> lastToken.equals(event.trackingToken())).isPresent()) {
                 batch.add(eventStream.nextAvailable());
             }
 
