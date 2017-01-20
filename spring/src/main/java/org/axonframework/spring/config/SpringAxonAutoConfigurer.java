@@ -4,7 +4,13 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -15,6 +21,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
@@ -83,7 +90,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         registry.registerBeanDefinition("commandHandlerSubscriber",
-                                        genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
+                genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
@@ -101,6 +108,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
         findComponent(TokenStore.class)
                 .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
+
+        findComponent(CorrelationDataProvider.class)
+                .ifPresent(provider -> configurer.registerComponent(CorrelationDataProvider.class, c -> getBean(provider, c)));
         try {
             findComponent(PlatformTransactionManager.class).ifPresent(
                     ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
@@ -115,8 +125,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(handler -> configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c)));
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
-                                                () -> genericBeanDefinition(SpringResourceInjector.class)
-                                                        .getBeanDefinition());
+                () -> genericBeanDefinition(SpringResourceInjector.class)
+                        .getBeanDefinition());
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
         registerAggregateBeanDefinitions(configurer, registry);
@@ -201,9 +211,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 } else {
                     if (!registry.isBeanNameInUse(factoryName)) {
                         registry.registerBeanDefinition(factoryName,
-                                                        genericBeanDefinition(SpringPrototypeAggregateFactory.class)
-                                                                .addPropertyValue("prototypeBeanName", aggregate)
-                                                                .getBeanDefinition());
+                                genericBeanDefinition(SpringPrototypeAggregateFactory.class)
+                                        .addPropertyValue("prototypeBeanName", aggregate)
+                                        .getBeanDefinition());
                     }
                     aggregateConf
                             .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
@@ -239,7 +249,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 }
             }
             logger.warn("Multiple beans of type {} found in application context: {}. Chose {}",
-                        componentType.getSimpleName(), beans, beans[0]);
+                    componentType.getSimpleName(), beans, beans[0]);
             return Optional.of(beans[0]);
         }
         return Optional.empty();
