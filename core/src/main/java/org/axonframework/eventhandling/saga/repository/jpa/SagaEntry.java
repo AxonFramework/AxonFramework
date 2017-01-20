@@ -19,10 +19,7 @@ package org.axonframework.eventhandling.saga.repository.jpa;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-import javax.persistence.Basic;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Lob;
+import javax.persistence.*;
 
 /**
  * Java Persistence Entity allowing sagas to be stored in a relational database.
@@ -42,6 +39,7 @@ public class SagaEntry<T> {
     @Basic
     private String revision;
     @Lob
+    @Column(length = 10000)
     private byte[] serializedSaga;
 
     /**

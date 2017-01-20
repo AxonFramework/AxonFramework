@@ -45,9 +45,11 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     private String payloadRevision;
     @Basic(optional = false)
     @Lob
+    @Column(length = 10000)
     private T payload;
     @Basic
     @Lob
+    @Column(length = 10000)
     private T metaData;
 
     /**
