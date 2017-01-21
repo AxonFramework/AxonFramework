@@ -19,6 +19,7 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.*;
 
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
 import java.time.Clock;
@@ -41,6 +42,7 @@ public abstract class AbstractTokenEntry<T> {
     public static Clock clock = Clock.systemUTC();
 
     @Lob
+    @Column(length = 10000)
     private T token;
     @Basic
     private String tokenType;
