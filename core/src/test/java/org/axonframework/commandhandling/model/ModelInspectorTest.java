@@ -180,7 +180,6 @@ public class ModelInspectorTest {
     public void testEventIsPublishedThroughoutHierarchy() throws Exception {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
-        CommandMessage<?> message = asCommandMessage("sub");
         AtomicLong payload = new AtomicLong();
 
         inspector.publish(new GenericEventMessage<>(payload), new SomeSubclass());
@@ -195,13 +194,6 @@ public class ModelInspectorTest {
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = inspector.commandHandler(message.getCommandName());
         assertEquals("1", handler.handle(message, target));
-
-        long startTime = System.currentTimeMillis();
-        for (int i = 0; i < 1_000_000; i++) {
-            inspector.commandHandler(message.getCommandName()).handle(message, target);
-        }
-        long endTime = System.currentTimeMillis();
-        System.out.println("Time taken: " + (endTime - startTime) + "ms");
     }
 
     @Test

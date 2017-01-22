@@ -55,7 +55,20 @@ public final class HandlerComparator {
         } else if (o2.isAssignableFrom(o1)) {
             return -1;
         }
-        return 0;
+        return Integer.compare(depthOf(o2), depthOf(o1));
+    }
+
+    private static int depthOf(Class<?> o1) {
+        int depth = 0;
+        Class<?> type = o1;
+        while (type != null && !Object.class.equals(type)) {
+            depth++;
+            type = type.getSuperclass();
+        }
+        if (o1.isAnnotation()) {
+            depth += 1000;
+        }
+        return depth;
     }
 
 }
