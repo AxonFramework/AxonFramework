@@ -115,7 +115,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
             resolveConflicts(aggregate, eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier,
                                                               expectedVersion + 1, aggregate.getVersion()));
         } else if (aggregate.isDeleted()) {
-            throw new AggregateDeletedException(aggregateIdentifier);
+            throw new AggregateDeletedException(getAggregateType(), aggregateIdentifier);
         }
         CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
         return aggregate;

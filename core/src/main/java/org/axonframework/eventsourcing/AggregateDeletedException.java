@@ -30,6 +30,18 @@ public class AggregateDeletedException extends AggregateNotFoundException {
     private static final long serialVersionUID = 6814686444144567614L;
 
     /**
+     * Initialize a AggregateDeletedException for an aggregate identifier given by <code>aggregateType</code> and <code>aggregateIdentifier</code>
+     * and given <code>message</code>.
+     *
+     * @param aggregateType       The type of the aggregate that has been deleted
+     * @param aggregateIdentifier The identifier of the aggregate that has been deleted
+     * @param message             The message describing the cause of the exception
+     */
+    public AggregateDeletedException(Class<?> aggregateType, Object aggregateIdentifier, String message) {
+        super(aggregateType, aggregateIdentifier, message);
+    }
+
+    /**
      * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
      * given <code>message</code>.
      *
@@ -44,10 +56,21 @@ public class AggregateDeletedException extends AggregateNotFoundException {
      * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
      * a default <code>message</code>.
      *
+     * @param aggregateType       The type of the aggregate that has been deleted
+     * @param aggregateIdentifier The identifier of the aggregate that has been deleted
+     */
+    public AggregateDeletedException(Class<?> aggregateType, Object aggregateIdentifier) {
+        this(aggregateType, aggregateIdentifier,
+             String.format("Aggregate with identifier [%s] not found. It has been deleted.", aggregateIdentifier));
+    }
+
+    /**
+     * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
+     * a default <code>message</code>.
+     *
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      */
     public AggregateDeletedException(Object aggregateIdentifier) {
-        this(aggregateIdentifier,
-             String.format("Aggregate with identifier [%s] not found. It has been deleted.", aggregateIdentifier));
+        this((Class<?>) null, aggregateIdentifier);
     }
 }

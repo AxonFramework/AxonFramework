@@ -165,7 +165,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             try {
                 events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
             } catch (EventStreamNotFoundException e) {
-                throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
+                throw new AggregateNotFoundException(getAggregateType(), aggregateIdentifier, "The aggregate was not found", e);
             }
             originalStream = events;
             for (EventStreamDecorator decorator : eventStreamDecorators) {
@@ -176,7 +176,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
             aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
             if (aggregate.isDeleted()) {
-                throw new AggregateDeletedException(aggregateIdentifier);
+                throw new AggregateDeletedException(getAggregateType(), aggregateIdentifier);
             }
             CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
 
