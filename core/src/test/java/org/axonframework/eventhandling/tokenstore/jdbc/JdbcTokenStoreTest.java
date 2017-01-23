@@ -93,6 +93,14 @@ public class JdbcTokenStoreTest {
     }
 
     @Test
+    public void testClaimAndUpdateTokenWithoutTransaction() throws Exception {
+        assertNull(tokenStore.fetchToken("test", 0));
+        TrackingToken token = new GlobalSequenceTrackingToken(1L);
+        tokenStore.storeToken(token, "test", 0);
+        assertEquals(token, tokenStore.fetchToken("test", 0));
+    }
+
+    @Test
     public void testClaimTokenConcurrently() {
         transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("concurrent", 0)));
         try {
