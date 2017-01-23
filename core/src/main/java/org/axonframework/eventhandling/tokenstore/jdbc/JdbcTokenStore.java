@@ -321,7 +321,9 @@ public class JdbcTokenStore implements TokenStore {
      */
     protected Connection getConnection() {
         try {
-            return connectionProvider.getConnection();
+            Connection connection = connectionProvider.getConnection();
+            connection.setAutoCommit(false);
+            return connection;
         } catch (SQLException e) {
             throw new JdbcException("Failed to obtain a database connection", e);
         }
