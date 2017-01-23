@@ -57,7 +57,7 @@ public interface EventProcessor {
      * @return a handle to unregister the {@code interceptor}. When unregistered the {@code interceptor} will
      * no longer receive events from this event processor.
      */
-    Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor);
+    Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor);
 
     /**
      * Start processing events.
