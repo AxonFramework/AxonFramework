@@ -122,41 +122,52 @@ public abstract class AbstractEventBus implements EventBus {
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
                                  "committed.");
 
-            unitOfWork.getOrComputeResource(eventsKey, r -> {
-
-                List<EventMessage<?>> eventQueue = new ArrayList<>();
-
-                unitOfWork.onPrepareCommit(u -> {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(PREPARE_COMMIT)) {
-                        u.root().onPrepareCommit(w -> doWithEvents(this::prepareCommit, intercept(eventQueue)));
-                    } else {
-                        doWithEvents(this::prepareCommit, intercept(eventQueue));
-                    }
-                });
-                unitOfWork.onCommit(u -> {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
-                        u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
-                    } else {
-                        doWithEvents(this::commit, eventQueue);
-                    }
-                });
-                unitOfWork.afterCommit(u -> {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
-                        u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
-                    } else {
-                        doWithEvents(this::afterCommit, eventQueue);
-                    }
-                });
-                unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
-                return eventQueue;
-
-            }).addAll(events);
+            eventsQueue(unitOfWork).addAll(events);
 
         } else {
             prepareCommit(intercept(events));
             commit(events);
             afterCommit(events);
         }
+    }
+
+    private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
+        return unitOfWork.getOrComputeResource(eventsKey, r -> {
+
+            List<EventMessage<?>> eventQueue = new ArrayList<>();
+
+            unitOfWork.onPrepareCommit(u -> {
+                if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
+                    eventsQueue(u.parent().get()).addAll(eventQueue);
+                } else {
+                    int processedItems = eventQueue.size();
+                    doWithEvents(this::prepareCommit, intercept(eventQueue));
+                    // make sure events published during publication prepare commit phase are also published
+                    while (processedItems < eventQueue.size()) {
+                        List<? extends EventMessage<?>> newMessages = intercept(eventQueue.subList(processedItems, eventQueue.size()));
+                        processedItems = eventQueue.size();
+                        doWithEvents(this::prepareCommit, newMessages);
+                    }
+                }
+            });
+            unitOfWork.onCommit(u -> {
+                if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
+                    u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
+                } else {
+                    doWithEvents(this::commit, eventQueue);
+                }
+            });
+            unitOfWork.afterCommit(u -> {
+                if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
+                    u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
+                } else {
+                    doWithEvents(this::afterCommit, eventQueue);
+                }
+            });
+            unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
+            return eventQueue;
+
+        });
     }
 
     /**

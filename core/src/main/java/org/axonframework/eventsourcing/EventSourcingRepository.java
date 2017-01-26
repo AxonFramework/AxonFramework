@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.conflictresolution.ConflictResolution;
 import org.axonframework.commandhandling.conflictresolution.DefaultConflictResolver;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.LockFactory;
@@ -196,6 +197,11 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         } else {
             super.validateOnLoad(aggregate, expectedVersion);
         }
+    }
+
+    @Override
+    protected void reportIllegalState(LockAwareAggregate<T, EventSourcedAggregate<T>> aggregate) {
+        // event sourcing repositories are able to reconstruct the current state
     }
 
     @Override
