@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 import java.util.Map;
 
 /**
- * Object defining the the data from a Message that should be attached as correlation data to messages generated as
+ * Object defining the data from a Message that should be attached as correlation data to messages generated as
  * result of the processing of that message.
  *
  * @author Allard Buijze

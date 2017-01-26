@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.saga.SagaLifecycle;
 import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.inject.Inject;
 import java.time.Duration;
@@ -40,10 +41,8 @@ import java.util.List;
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
-    @Inject
+    @Autowired
     private transient StubGateway stubGateway;
-    @Inject
-    private transient EventBus eventBus;
     @Inject
     private transient EventScheduler scheduler;
     @Inject
@@ -69,7 +68,7 @@ public class StubSaga {
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleEvent(TriggerExistingSagaEvent event) {
+    public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
         eventBus.publish(new GenericEventMessage<>(new SagaWasTriggeredEvent(this)));
     }
@@ -101,10 +100,6 @@ public class StubSaga {
         scheduler.cancelSchedule(timer);
         timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
-    }
-
-    public EventBus getEventBus() {
-        return eventBus;
     }
 
     public EventScheduler getScheduler() {

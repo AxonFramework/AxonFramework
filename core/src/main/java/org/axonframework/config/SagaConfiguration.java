@@ -67,8 +67,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         String repositoryName = sagaType.getSimpleName() + "Repository";
         sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
         sagaRepository = new Component<>(() -> config, repositoryName,
-                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector()));
-        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get()));
+                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
+                                                                            c.parameterResolverFactory()));
+        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
+                                                                                                 c.parameterResolverFactory()));
         processor = new Component<>(() -> config, processorName,
                                     c -> new SubscribingEventProcessor(managerName, sagaManager.get(), c.eventBus()));
     }

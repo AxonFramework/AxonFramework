@@ -112,7 +112,9 @@ public class AbstractEventBusTest {
         verify(testSubject, times(6)).commit(any());
         verify(testSubject, times(6)).afterCommit(any());
 
-        verify(unitOfWork, times(6)).onPrepareCommit(any());
+        // each UoW will register onPrepareCommit on the parent
+        verify(unitOfWork, times(1)).onPrepareCommit(any());
+        // each UoW will register onCommit with the root
         verify(unitOfWork, times(6)).onCommit(any());
     }
 
@@ -248,6 +250,11 @@ public class AbstractEventBusTest {
         @Override
         public int hashCode() {
             return Objects.hash(getPayload());
+        }
+
+        @Override
+        public String toString() {
+            return "StubNumberedEvent{"+ getPayload() +"}";
         }
     }
 }

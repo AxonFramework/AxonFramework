@@ -19,10 +19,14 @@ package org.axonframework.config;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 public class EventHandlingConfigurationTest {
 
@@ -38,7 +41,7 @@ public class EventHandlingConfigurationTest {
 
     @Before
     public void setUp() throws Exception {
-        configuration = mock(Configuration.class);
+        configuration = DefaultConfigurer.defaultConfiguration().buildConfiguration();
     }
 
     @Test
@@ -92,14 +95,43 @@ public class EventHandlingConfigurationTest {
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
+        assertTrue(processors.get("java.util.concurrent2").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
+        assertTrue(processors.get("java.util.concurrent").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
+        assertTrue(processors.get("java.lang").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
+    }
+
+    @Test
+    public void testAssignInterceptors() {
+        Map<String, StubEventProcessor> processors = new HashMap<>();
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
+                .usingTrackingProcessors()
+                .registerEventProcessor("default", (config, name, handlers) -> {
+                    StubEventProcessor processor = new StubEventProcessor(name, handlers);
+                    processors.put(name, processor);
+                    return processor;
+                });
+        module.byDefaultAssignTo("default");
+        module.assignHandlersMatching("concurrent", 1, "concurrent"::equals);
+        module.registerEventHandler(c -> new Object()); // --> java.lang
+        module.registerEventHandler(c -> "concurrent"); // --> java.util.concurrent2
+
+        StubInterceptor interceptor1 = new StubInterceptor();
+        StubInterceptor interceptor2 = new StubInterceptor();
+        module.registerHandlerInterceptor("default", c -> interceptor1);
+        module.registerHandlerInterceptor((c, n) -> interceptor2);
+        module.initialize(configuration);
+
+        // CorrelationDataInterceptor is automatically configured
+        assertEquals(3, processors.get("default").getInterceptors().size());
     }
 
     private static class StubEventProcessor implements EventProcessor {
 
         private final String name;
         private final List<?> eventHandlers;
+        private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
 
         public StubEventProcessor(String name, List<?> eventHandlers) {
             this.name = name;
@@ -116,8 +148,9 @@ public class EventHandlingConfigurationTest {
         }
 
         @Override
-        public Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor) {
-            return () -> true;
+        public Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+            interceptors.add(interceptor);
+            return () -> interceptors.remove(interceptor);
         }
 
         @Override
@@ -129,6 +162,10 @@ public class EventHandlingConfigurationTest {
         public void shutDown() {
 
         }
+
+        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {
+            return interceptors;
+        }
     }
 
     @ProcessingGroup("processingGroup")
@@ -137,5 +174,12 @@ public class EventHandlingConfigurationTest {
 
     public static class AnnotatedBeanSubclass extends AnnotatedBean {
 
+    }
+
+    private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+        @Override
+        public Object handle(UnitOfWork<? extends EventMessage<?>> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+            return interceptorChain.proceed();
+        }
     }
 }

@@ -130,7 +130,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * given {@code eventBus}. This aggregate is not assigned a root instance yet.
      *
      * @param model           The model describing the aggregate structure
-     * @param eventBus      The event store to store generated events in
+     * @param eventBus        The event store to store generated events in
      * @param snapshotTrigger The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
@@ -206,14 +206,16 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param eventStream The Event Stream containing the events to be used to reconstruct this Aggregate's state.
      */
     public void initializeState(DomainEventStream eventStream) {
-        this.initializing = true;
-        try {
-            eventStream.forEachRemaining(this::publish);
-            lastEventSequenceNumber = eventStream.getLastSequenceNumber();
-        } finally {
-            this.initializing = false;
-            snapshotTrigger.initializationFinished();
-        }
+        execute(r -> {
+            this.initializing = true;
+            try {
+                eventStream.forEachRemaining(this::publish);
+                lastEventSequenceNumber = eventStream.getLastSequenceNumber();
+            } finally {
+                this.initializing = false;
+                snapshotTrigger.initializationFinished();
+            }
+        });
     }
 
     @Override

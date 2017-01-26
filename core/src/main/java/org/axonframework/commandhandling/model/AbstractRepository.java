@@ -22,6 +22,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +43,7 @@ import java.util.concurrent.Callable;
  */
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final String aggregatesKey = this + "_AGGREGATES";
     private final Class<T> aggregateType;
     private final AggregateModel<T> aggregateModel;
@@ -61,8 +64,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
      * repository must be {@code instanceOf} this aggregate type.
      *
-     * @param aggregateType The type of aggregate stored in this repository
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
      */
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
         Assert.notNull(aggregateType, () -> "aggregateType may not be null");
@@ -77,7 +80,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         aggregate.execute(root -> Assert.isTrue(aggregateType.isInstance(root),
                                                 () -> "Unsuitable aggregate for this repository: wrong type"));
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
-        Map<String, Aggregate<T>> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
+        Map<String, A> aggregates = managedAggregates(uow);
         Assert.isTrue(aggregates.putIfAbsent(aggregate.identifierAsString(), aggregate) == null,
                       () -> "The Unit of Work already has an Aggregate with the same identifier");
         uow.onRollback(u -> aggregates.remove(aggregate.identifierAsString()));
@@ -103,7 +106,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @Override
     public A load(String aggregateIdentifier, Long expectedVersion) {
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
-        Map<String, A> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
+        Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                  s -> doLoad(aggregateIdentifier, expectedVersion));
         uow.onRollback(u -> aggregates.remove(aggregateIdentifier));
@@ -111,6 +114,20 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         prepareForCommit(aggregate);
 
         return aggregate;
+    }
+
+    /**
+     * Returns the map of aggregates currently managed by this repository under the given unit of work. Note that the
+     * repository keeps the managed aggregates in the root unit of work, to guarantee each Unit of Work works with the
+     * state left by the parent unit of work.
+     * <p>
+     * The returns map is mutable and reflects any changes made during processing.
+     *
+     * @param uow The unit of work to find the managed aggregates for
+     * @return a map with the aggregates managed by this repository in the given unit of work
+     */
+    protected Map<String, A> managedAggregates(UnitOfWork<?> uow) {
+        return uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
     }
 
     @Override
@@ -128,9 +145,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      *
      * @param aggregate       The loaded aggregate
      * @param expectedVersion The expected version of the aggregate
-     * @throws ConflictingModificationException when conflicting changes have been detected
+     * @throws ConflictingModificationException     when conflicting changes have been detected
      * @throws ConflictingAggregateVersionException the expected version is not {@code null}
-     * and the version number of the aggregate does not match the expected version
+     *                                              and the version number of the aggregate does not match the expected version
      */
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.version() != null &&
@@ -149,17 +166,41 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     protected void prepareForCommit(A aggregate) {
         CurrentUnitOfWork.get().onPrepareCommit(u -> {
-            if (aggregate.isDeleted()) {
-                doDelete(aggregate);
+            // if the aggregate isn't "managed" anymore, it means its state was invalidated by a rollback
+            if (managedAggregates(CurrentUnitOfWork.get()).containsValue(aggregate)) {
+                if (aggregate.isDeleted()) {
+                    doDelete(aggregate);
+                } else {
+                    doSave(aggregate);
+                }
+                if (aggregate.isDeleted()) {
+                    postDelete(aggregate);
+                } else {
+                    postSave(aggregate);
+                }
             } else {
-                doSave(aggregate);
-            }
-            if (aggregate.isDeleted()) {
-                postDelete(aggregate);
-            } else {
-                postSave(aggregate);
+                reportIllegalState(aggregate);
             }
         });
+    }
+
+    /**
+     * Invoked when an the given {@code aggregate} instance has been detected that has been part of a rolled back Unit
+     * of Work. This typically means that the state of the Aggregate instance has been compromised and cannot be
+     * guaranteed to be correct.
+     * <p>
+     * This implementation throws an exception, effectively causing the unit of work to be rolled back. Subclasses that
+     * can guarantee correct storage, even when specific instances are compromised, may override this method to suppress
+     * this exception.
+     * <p>
+     * When this method is invoked, the {@link #doSave(Aggregate)}, {@link #doDelete(Aggregate)},
+     * {@link #postSave(Aggregate)} and {@link #postDelete(Aggregate)} are not invoked. Implementations may choose to
+     * invoke these methods.
+     *
+     * @param aggregate The aggregate instance with illegal state
+     */
+    protected void reportIllegalState(A aggregate) {
+        throw new AggregateRolledBackException(aggregate.identifierAsString());
     }
 
     /**

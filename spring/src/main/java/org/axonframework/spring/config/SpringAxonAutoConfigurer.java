@@ -15,6 +15,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
@@ -39,10 +40,12 @@ import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
@@ -76,6 +79,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
      * Name of the {@link AxonConfiguration} bean.
      */
     public static final String AXON_CONFIGURATION_BEAN = "org.axonframework.spring.config.AxonConfiguration";
+
+    /**
+     * Name of the {@link Configurer} bean.
+     */
+    public static final String AXON_CONFIGURER_BEAN = "org.axonframework.config.Configurer";
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
     private ConfigurableListableBeanFactory beanFactory;
@@ -119,6 +127,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                         .getBeanDefinition());
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
+        registerCorrelationDataProviders(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer);
         registerModules(configurer);
@@ -129,9 +138,20 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             registry.registerBeanDefinition(ehConfigBeanName, genericBeanDefinition(EventHandlingConfiguration.class)
                     .getBeanDefinition());
         }
+
+        beanFactory.registerSingleton(AXON_CONFIGURER_BEAN, configurer);
         registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN, genericBeanDefinition(AxonConfiguration.class)
-                .addConstructorArgValue(configurer).getBeanDefinition());
+                .addConstructorArgReference(AXON_CONFIGURER_BEAN).getBeanDefinition());
         registerEventHandlerRegistrar(ehConfigBeanName, registry);
+    }
+
+    private void registerCorrelationDataProviders(Configurer configurer) {
+        configurer.configureCorrelationDataProviders(
+                c -> {
+                    String[] correlationDataProviderBeans = beanFactory.getBeanNamesForType(CorrelationDataProvider.class);
+                    return Arrays.stream(correlationDataProviderBeans)
+                            .map(n -> (CorrelationDataProvider) getBean(n, c)).collect(Collectors.toList());
+                });
     }
 
     @SuppressWarnings("unchecked")

@@ -23,6 +23,7 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
     private final AxonConfiguration axonConfiguration;
     private final EventHandlingConfiguration delegate;
     private volatile boolean running = false;
+    private volatile boolean initialized;
 
     /**
      * Initialize the registrar to register beans discovered with the given {@code eventHandlingConfiguration}.
@@ -62,6 +63,10 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
     @Override
     public void start() {
+        if (!initialized) {
+            initialized = true;
+            delegate.initialize(axonConfiguration);
+        }
         delegate.start();
         running = true;
     }
@@ -84,6 +89,5 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        delegate.initialize(axonConfiguration);
     }
 }

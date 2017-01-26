@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +34,17 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventListener> eventListeners;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
+
+    /**
+     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     *
+     * @param eventListeners The event listeners to check for a list
+     * @return a list of events listeners
+     */
+    private static List<?> detectList(Object[] eventListeners) {
+        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] :
+                Arrays.asList(eventListeners);
+    }
 
     /**
      * Initializes a {@link SimpleEventHandlerInvoker} containing one or more {@code eventListeners}. If an event
@@ -56,7 +69,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * Events handled by the invoker will be passed to all the given {@code eventListeners}. If an exception is
      * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
      *
-     * @param eventListeners list of event listeners to register with this invoker
+     * @param eventListeners                 list of event listeners to register with this invoker
      * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
      */
     public SimpleEventHandlerInvoker(List<?> eventListeners, ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
@@ -68,15 +81,28 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
+
     /**
-     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     * Initializes a {@link SimpleEventHandlerInvoker} containing the given list of {@code eventListeners}. If an event
+     * listener is assignable to {@link EventListener} it will registered as is. If not, it will be wrapped by a new
+     * {@link AnnotationEventListenerAdapter}.
+     * <p>
+     * Events handled by the invoker will be passed to all the given {@code eventListeners}. If an exception is
+     * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
      *
-     * @param eventListeners The event listeners to check for a list
-     * @return a list of events listeners
+     * @param eventListeners                 list of event listeners to register with this invoker
+     * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler methods with
+     * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
      */
-    private static List<?> detectList(Object[] eventListeners) {
-        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] :
-                Arrays.asList(eventListeners);
+    public SimpleEventHandlerInvoker(List<?> eventListeners,
+                                     ParameterResolverFactory parameterResolverFactory,
+                                     ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        this.eventListeners = new ArrayList<>(eventListeners.stream()
+                                                      .map(listener -> listener instanceof EventListener ?
+                                                              (EventListener) listener :
+                                                              new AnnotationEventListenerAdapter(listener, parameterResolverFactory))
+                                                      .collect(toList()));
+        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
     @Override

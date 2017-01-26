@@ -19,6 +19,7 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.IndexOptions;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
@@ -102,7 +103,9 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     @Override
     public void appendSnapshot(MongoCollection<Document> snapshotCollection, DomainEventMessage<?> snapshot,
                                Serializer serializer) {
-        snapshotCollection.insertOne(createSnapshotDocument(snapshot, serializer));
+        snapshotCollection.findOneAndReplace(new BsonDocument(eventConfiguration.aggregateIdentifierProperty(), new BsonString(snapshot.getAggregateIdentifier())),
+                createSnapshotDocument(snapshot, serializer),
+                new FindOneAndReplaceOptions().upsert(true));
     }
 
     /**
@@ -195,9 +198,6 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     @Override
     public void ensureIndexes(MongoCollection<Document> eventsCollection,
                               MongoCollection<Document> snapshotsCollection) {
-        if (eventsCollection.count() > 0) {
-            System.out.println("BLAHHHHHHHH");
-        }
         eventsCollection.createIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
                                              .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                      new IndexOptions().unique(true).name("uniqueAggregateIndex"));

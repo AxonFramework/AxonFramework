@@ -16,7 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.StubAggregate;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
@@ -83,5 +85,37 @@ public class AggregateSnapshotterTest {
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());
 
         verify(mockAggregateFactory).createAggregateRoot(any(), any(DomainEventMessage.class));
+    }
+
+    public static class StubAggregate {
+
+        @AggregateIdentifier
+        private Object identifier;
+
+        public StubAggregate() {
+            identifier = UUID.randomUUID();
+        }
+
+        public StubAggregate(Object identifier) {
+            this.identifier = identifier;
+        }
+
+        public void doSomething() {
+            apply(new StubDomainEvent());
+        }
+
+        public String getIdentifier() {
+            return identifier.toString();
+        }
+
+        @EventSourcingHandler
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
+            // See Issue #
+            if ("Mock contents".equals(event.getPayload().toString())) {
+                    apply("Another");
+            }
+        }
+
     }
 }

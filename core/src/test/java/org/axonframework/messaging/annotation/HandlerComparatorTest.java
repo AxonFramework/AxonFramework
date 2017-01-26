@@ -21,18 +21,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.annotation.Annotation;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
 public class HandlerComparatorTest {
 
-    private MessageHandlingMember stringHandler;
-    private MessageHandlingMember objectHandler;
-    private MessageHandlingMember longHandler;
-    private MessageHandlingMember numberHandler;
+    private MessageHandlingMember<?> stringHandler;
+    private MessageHandlingMember<?> objectHandler;
+    private MessageHandlingMember<?> longHandler;
+    private MessageHandlingMember<?> numberHandler;
 
     private Comparator<MessageHandlingMember<?>> testSubject;
 
@@ -73,6 +71,15 @@ public class HandlerComparatorTest {
         assertNotEquals(0, testSubject.compare(numberHandler, stringHandler));
         assertNotEquals(0, testSubject.compare(objectHandler, longHandler));
         assertNotEquals(0, testSubject.compare(objectHandler, numberHandler));
+    }
+
+    @Test
+    public void testHandlersSortedCorrectly() {
+        List<MessageHandlingMember<?>> members = new ArrayList<>(Arrays.asList(objectHandler, numberHandler, stringHandler, longHandler));
+
+        members.sort(this.testSubject);
+        assertTrue(members.indexOf(longHandler) < members.indexOf(numberHandler));
+        assertEquals(3, members.indexOf(objectHandler));
     }
 
     @Test

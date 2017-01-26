@@ -54,7 +54,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
+    private final Set<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
@@ -90,7 +90,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     @Override
-    public Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor) {
+    public Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }

@@ -28,6 +28,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -77,6 +79,12 @@ public class AxonAutoConfiguration {
     @ConditionalOnMissingBean
     public Serializer serializer() {
         return new XStreamSerializer();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public CorrelationDataProvider messageOriginProvider() {
+        return new MessageOriginProvider();
     }
 
     @Qualifier("eventStore")

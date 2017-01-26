@@ -31,7 +31,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.globalIndexColumn() + " " + idColumnType() + " NOT NULL,\n" +
                 schema.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +
-                schema.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.typeColumn() + " VARCHAR(255),\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.metaDataColumn() + " " + payloadType() + ",\n" +
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +

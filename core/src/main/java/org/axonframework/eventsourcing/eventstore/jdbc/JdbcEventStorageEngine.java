@@ -42,6 +42,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
+import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
@@ -170,7 +171,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                             PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
                             for (EventMessage<?> eventMessage : events) {
-                                DomainEventMessage<?> event = (DomainEventMessage<?>) eventMessage;
+                                DomainEventMessage<?> event = asDomainEventMessage(eventMessage);
                                 SerializedObject<?> payload = serializePayload(event, serializer, dataType);
                                 SerializedObject<?> metaData = serializeMetaData(event, serializer, dataType);
                                 preparedStatement.setString(1, event.getIdentifier());

@@ -28,6 +28,9 @@ import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
@@ -50,6 +53,7 @@ import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.fieldsOf;
+import static org.axonframework.messaging.annotation.MultiParameterResolverFactory.ordered;
 
 /**
  * Fixture for testing Annotated Sagas based on events and time passing. This fixture allows resources to be configured
@@ -61,14 +65,14 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
 public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
     private final StubEventScheduler eventScheduler;
-    private final AnnotatedSagaManager<T> sagaManager;
     private final List<Object> registeredResources = new LinkedList<>();
-
     private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
-
+    private final Class<T> sagaType;
+    private final InMemorySagaStore sagaStore;
+    private AnnotatedSagaManager<T> sagaManager;
     private boolean transienceCheckEnabled = true;
 
     /**
@@ -78,14 +82,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     @SuppressWarnings({"unchecked"})
     public SagaTestFixture(Class<T> sagaType) {
+        this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         EventBus eventBus = new SimpleEventBus();
-        InMemorySagaStore sagaStore = new InMemorySagaStore();
-        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(
-                sagaType, sagaStore, new TransienceValidatingResourceInjector());
-        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository);
-        sagaManager.setSuppressExceptions(false);
-
+        sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
@@ -102,10 +102,27 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      * @param event The event message to handle
      */
     protected void handleInSaga(EventMessage<?> event) {
+        ensureSagaManagerInitialized();
         try {
             DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> sagaManager.handle(event));
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
+        }
+    }
+
+    /**
+     * Initializes the SagaManager if it hasn't already done so. If once the SagaManager is initialized, this method
+     * does nothing.
+     */
+    protected void ensureSagaManagerInitialized() {
+        if (sagaManager == null) {
+            ParameterResolverFactory parameterResolverFactory = ordered(new SimpleResourceParameterResolverFactory(registeredResources),
+                                                                        ClasspathParameterResolverFactory.forClass(sagaType));
+            SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
+                                                                             new TransienceValidatingResourceInjector(),
+                                                                             parameterResolverFactory);
+            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory);
+            sagaManager.setSuppressExceptions(false);
         }
     }
 

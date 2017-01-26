@@ -163,9 +163,11 @@ public class SimpleCommandBus implements CommandBus {
      * registered interceptors at the given order before the command is passed to the handler for processing.
      *
      * @param handlerInterceptor The interceptor to invoke when commands are handled
+     * @return handle to unregister the interceptor
      */
-    public void registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
-        this.handlerInterceptors.add(handlerInterceptor);
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        handlerInterceptors.add(handlerInterceptor);
+        return () -> handlerInterceptors.remove(handlerInterceptor);
     }
 
     /**
@@ -173,9 +175,11 @@ public class SimpleCommandBus implements CommandBus {
      * the interceptors at the given order before the command is dispatched toward the command handler.
      *
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
+     * @return handle to unregister the interceptor
      */
-    public void registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
-        this.dispatchInterceptors.add(dispatchInterceptor);
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     /**

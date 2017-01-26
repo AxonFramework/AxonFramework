@@ -14,7 +14,9 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.MetaData;
 import org.junit.Test;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +50,15 @@ public abstract class EventStorageEngineTest {
     public void testStoreAndLoadEventsArray() {
         testSubject.appendEvents(createEvent(0), createEvent(1));
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    @Test
+    public void testStoreAndLoadApplicationEvent() {
+        testSubject.appendEvents(new GenericEventMessage<>("application event", MetaData.with("key", "value")));
+        assertEquals(1, testSubject.readEvents(null, false).count());
+        EventMessage<?> message = testSubject.readEvents(null, false).findFirst().get();
+        assertEquals("application event", message.getPayload());
+        assertEquals(MetaData.with("key", "value"), message.getMetaData());
     }
 
     @Test

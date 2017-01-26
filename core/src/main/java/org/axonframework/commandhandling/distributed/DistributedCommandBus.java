@@ -30,7 +30,6 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,10 +57,10 @@ public class DistributedCommandBus implements CommandBus {
 
     private final CommandRouter commandRouter;
     private final CommandBusConnector connector;
-    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-    private volatile int loadFactor = INITIAL_LOAD_FACTOR;
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+    private volatile int loadFactor = INITIAL_LOAD_FACTOR;
 
     /**
      * Initializes the command bus with the given {@code commandRouter} and {@code connector}. The
@@ -135,10 +134,10 @@ public class DistributedCommandBus implements CommandBus {
     @SuppressWarnings("unchecked")
     private <C> CommandMessage<? extends C> intercept(CommandMessage<C> command) {
         CommandMessage<? extends C> interceptedCommand = command;
-        for (MessageDispatchInterceptor<CommandMessage<?>> interceptor : dispatchInterceptors) {
+        for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             interceptedCommand = (CommandMessage<? extends C>) interceptor.handle(interceptedCommand);
         }
-        return command;
+        return interceptedCommand;
     }
 
     /**
@@ -184,16 +183,14 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     /**
-     * Sets the interceptors that intercept commands just prior to dispatching them.
-     * <p/>
-     * This operation is only guaranteed to be thread safe if no commands are dispatched during the invocation of this
-     * method. Doing so may result in commands not being intercepted at all while replacing the interceptors. Once this
-     * operation returns, all commands are guaranteed to be processed by the given interceptors.
+     * Registers the given list of dispatch interceptors to the command bus. All incoming commands will pass through
+     * the interceptors at the given order before the command is dispatched toward the command handler.
      *
-     * @param newDispatchInterceptors The interceptors to intercepts commands with
+     * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
+     * @return handle to unregister the interceptor
      */
-    public void setCommandDispatchInterceptors(Collection<MessageDispatchInterceptor<CommandMessage<?>>> newDispatchInterceptors) {
-        this.dispatchInterceptors.clear();
-        this.dispatchInterceptors.addAll(newDispatchInterceptors);
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 }

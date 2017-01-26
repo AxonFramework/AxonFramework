@@ -18,7 +18,7 @@ public class Oracle11EventTableFactory extends AbstractEventTableFactory {
                 schema.globalIndexColumn() + " NUMBER(19) NOT NULL,\n" +
                 schema.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.sequenceNumberColumn() + " NUMBER(19) NOT NULL,\n" +
-                schema.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.typeColumn() + " VARCHAR(255),\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.metaDataColumn() + " " + payloadType() + ",\n" +
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +

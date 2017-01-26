@@ -22,11 +22,13 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -40,6 +42,8 @@ import static java.util.Comparator.comparing;
 public class EventHandlingConfiguration implements ModuleConfiguration {
 
     private final List<Component<Object>> eventHandlers = new ArrayList<>();
+    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptors = new HashMap<>();
     private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
@@ -71,18 +75,42 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     private SubscribingEventProcessor subscribingEventProcessor(Configuration conf, String name, List<?> eh,
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
-        SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
-                                                                            new SimpleEventHandlerInvoker(eh,
-                                                                                                          conf.getComponent(
-                                                                                                                  ListenerInvocationErrorHandler.class,
-                                                                                                                  LoggingErrorHandler::new)),
-                                                                            messageSource.apply(conf),
-                                                                            DirectEventProcessingStrategy.INSTANCE,
-                                                                            PropagatingErrorHandler.INSTANCE,
-                                                                            conf.messageMonitor(SubscribingEventProcessor.class,
-                                                                                                name));
-        processor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
-        return processor;
+        return new SubscribingEventProcessor(name,
+                                             new SimpleEventHandlerInvoker(eh,
+                                                                           conf.parameterResolverFactory(),
+                                                                           conf.getComponent(
+                                                                                   ListenerInvocationErrorHandler.class,
+                                                                                   LoggingErrorHandler::new)),
+                                             messageSource.apply(conf),
+                                             DirectEventProcessingStrategy.INSTANCE,
+                                             PropagatingErrorHandler.INSTANCE,
+                                             conf.messageMonitor(SubscribingEventProcessor.class,
+                                                                 name));
+    }
+
+    /**
+     * Returns the list of Message Handler Interceptors registered for the given {@code processorName}.
+     *
+     * @param configuration The main configuration
+     * @param processorName The name of the processor to retrieve interceptors for
+     * @return a list of Interceptors
+     * @see EventHandlingConfiguration#registerHandlerInterceptor(BiFunction)
+     * @see EventHandlingConfiguration#registerHandlerInterceptor(String, Function)
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(Configuration configuration,
+                                                                                    String processorName) {
+        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+        defaultHandlerInterceptors.stream()
+                .map(f -> f.apply(configuration, processorName))
+                .filter(Objects::nonNull)
+                .forEach(interceptors::add);
+        handlerInterceptors.getOrDefault(processorName, Collections.emptyList())
+                .stream()
+                .map(f -> f.apply(configuration))
+                .filter(Objects::nonNull)
+                .forEach(interceptors::add);
+        interceptors.add(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
+        return interceptors;
     }
 
     /**
@@ -128,20 +156,15 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers,
                                                        Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
-                                                                                                          conf.getComponent(
-                                                                                                                  ListenerInvocationErrorHandler.class,
-                                                                                                                  LoggingErrorHandler::new)),
-                                                                      source.apply(conf),
-                                                                      conf.getComponent(TokenStore.class,
-                                                                                        InMemoryTokenStore::new),
-                                                                      conf.getComponent(TransactionManager.class,
-                                                                                        NoTransactionManager::instance),
-                                                                      conf.messageMonitor(EventProcessor.class,
-                                                                                          name));
-        CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>(conf.correlationDataProviders());
-        processor.registerInterceptor(interceptor);
-        return processor;
+        return new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
+                                                                              conf.parameterResolverFactory(),
+                                                                              conf.getComponent(
+                                                                                      ListenerInvocationErrorHandler.class,
+                                                                                      LoggingErrorHandler::new)),
+                                          source.apply(conf),
+                                          conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                                          conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
+                                          conf.messageMonitor(EventProcessor.class, name));
     }
 
     /**
@@ -190,6 +213,45 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      */
     public EventHandlingConfiguration byDefaultAssignTo(String name) {
         defaultSelector = new ProcessorSelector(name, Integer.MIN_VALUE, r -> true);
+        return this;
+    }
+
+    /**
+     * Register the given {@code interceptorBuilder} to build an Message Handling Interceptor for the Event Processor
+     * with given {@code processorName}.
+     * <p>
+     * The {@code interceptorBuilder} may return {@code null}, in which case the return value is ignored.
+     * <p>
+     * Note that a CorrelationDataInterceptor is registered by default. To change correlation data attached to messages,
+     * see {@link Configurer#configureCorrelationDataProviders(Function)}.
+     *
+     * @param processorName      The name of the processor to register the interceptor on
+     * @param interceptorBuilder The function providing the interceptor to register, or {@code null}
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerHandlerInterceptor(String processorName,
+                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+        handlerInterceptors
+                .computeIfAbsent(processorName, k -> new ArrayList<>())
+                .add(interceptorBuilder);
+        return this;
+    }
+
+    /**
+     * Register the given {@code interceptorBuilder} to build an Message Handling Interceptor for Event Processors
+     * created in this configuration.
+     * <p>
+     * The {@code interceptorBuilder} is invoked once for each processor created, and may return {@code null}, in which
+     * case the return value is ignored.
+     * <p>
+     * Note that a CorrelationDataInterceptor is registered by default. To change correlation data attached to messages,
+     * see {@link Configurer#configureCorrelationDataProviders(Function)}.
+     *
+     * @param interceptorBuilder The builder function that provides an interceptor for each available processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerHandlerInterceptor(BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+        defaultHandlerInterceptors.add(interceptorBuilder);
         return this;
     }
 
@@ -266,9 +328,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
             assignments.computeIfAbsent(processor, k -> new ArrayList<>()).add(handler);
         });
 
-        assignments.forEach((name, handlers) -> initializedProcessors
-                .add(eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
-                             .createEventProcessor(config, name, handlers)));
+        assignments.forEach((name, handlers) -> {
+            EventProcessor eventProcessor = eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
+                    .createEventProcessor(config, name, handlers);
+            interceptorsFor(config, name).forEach(eventProcessor::registerInterceptor);
+            initializedProcessors.add(eventProcessor);
+        });
     }
 
     @Override
