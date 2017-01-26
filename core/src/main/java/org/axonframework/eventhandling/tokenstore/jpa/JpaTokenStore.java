@@ -81,10 +81,16 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public void releaseClaim(String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        TokenEntry entry = entityManager.find(TokenEntry.class, new TokenEntry.PK(processorName, segment));
-        if (!entry.releaseClaim(nodeId)) {
-            logger.warn("Releasing claim of token {}/{} failed. It was owned by {}", processorName, segment,
-                        entry.getOwner());
+        int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.owner = null " +
+                                                        "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                                                        "AND te.segment = :segment")
+                .setParameter("processorName", processorName)
+                .setParameter("segment", segment)
+                .setParameter("owner", nodeId)
+                .executeUpdate();
+        if (updates == 0) {
+            logger.warn("Releasing claim of token {}/{} failed. It was not owned by {}", processorName, segment,
+                        nodeId);
         }
     }
 
@@ -94,16 +100,33 @@ public class JpaTokenStore implements TokenStore {
         return loadOrCreateToken(processorName, segment, entityManager).getToken(serializer);
     }
 
+    @Override
+    public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
+                                                        "WHERE te.processorName = :processorName AND te.segment = :segment")
+                .setParameter("processorName", processorName)
+                .setParameter("segment", segment)
+                .setParameter("timestamp", TokenEntry.clock.instant().toString())
+                .executeUpdate();
+
+        if (updates == 0) {
+            throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
+                                                          processorName + "[" + segment + "]'. It is either claimed " +
+                                                          "by another process, or there is no such token.");
+        }
+    }
+
     /**
      * Loads an existing {@link TokenEntry} or creates a new one using the given {@code entityManager} for given {@code
      * processorName} and {@code segment}.
      *
      * @param processorName the name of the event processor
-     * @param segment the segment of the event processor
+     * @param segment       the segment of the event processor
      * @param entityManager the entity manager instance to use for the query
      * @return the token entry for the given processor name and segment
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
-     * it is claimed by another process.
+     *                                     it is claimed by another process.
      */
     protected TokenEntry loadOrCreateToken(String processorName, int segment, EntityManager entityManager) {
         TokenEntry token = entityManager
