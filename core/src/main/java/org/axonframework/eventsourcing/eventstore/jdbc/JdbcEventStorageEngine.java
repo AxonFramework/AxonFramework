@@ -413,7 +413,17 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @throws SQLException when an exception occurs while creating the event data
      */
     protected DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
-        return (DomainEventData<?>) getTrackedEventData(resultSet, null);
+        long globalSequence = resultSet.getLong(schema.globalIndexColumn());
+        TrackingToken trackingToken = new GlobalSequenceTrackingToken(globalSequence);
+        return new GenericTrackedDomainEventEntry<>(trackingToken, resultSet.getString(schema.typeColumn()),
+                resultSet.getString(schema.aggregateIdentifierColumn()),
+                resultSet.getLong(schema.sequenceNumberColumn()),
+                resultSet.getString(schema.eventIdentifierColumn()),
+                readTimeStamp(resultSet, schema.timestampColumn()),
+                resultSet.getString(schema.payloadTypeColumn()),
+                resultSet.getString(schema.payloadRevisionColumn()),
+                readPayload(resultSet, schema.payloadColumn()),
+                readPayload(resultSet, schema.metaDataColumn()));
     }
 
     /**
