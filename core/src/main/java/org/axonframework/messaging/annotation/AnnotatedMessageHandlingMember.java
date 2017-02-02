@@ -61,7 +61,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
             parameterResolvers[i] = parameterResolverFactory.createInstance(executable, parameters, i);
             if (parameterResolvers[i] == null) {
                 throw new UnsupportedHandlerException(
-                        "Unable to resolver parameter " + i + " (" + parameters[i].getType().getSimpleName() +
+                        "Unable to resolve parameter " + i + " (" + parameters[i].getType().getSimpleName() +
                                 ") in handler " + executable.toGenericString() + ".", executable);
             }
             if (supportedPayloadType.isAssignableFrom(parameterResolvers[i].supportedPayloadType())) {
