@@ -122,7 +122,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         try {
             if (channel.isConnected()) {
                 Address localAddress = channel.getAddress();
-                channel.send(null, new JoinMessage(localAddress, loadFactor, commandFilter));
+                Message joinMessage = new Message(null, new JoinMessage(localAddress, loadFactor, commandFilter));
+                joinMessage.setFlag(Message.Flag.OOB);
+                channel.send(joinMessage);
             }
         } catch (Exception e) {
             throw new ServiceRegistryException("Could not broadcast local membership details to the cluster", e);
@@ -188,7 +190,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             stream(joined).filter(member -> !member.equals(channel.getAddress())).forEach(member -> {
                 logger.info("New member detected: [{}]. Sending it my configuration.", member);
                 try {
-                    channel.send(member, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
+                    Message joinMessage = new Message(member, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
+                    joinMessage.setFlag(Message.Flag.OOB);
+                    channel.send(joinMessage);
                 } catch (Exception e) {
                     throw new MembershipUpdateFailedException("Failed to notify my existence to " + member);
                 }
