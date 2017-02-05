@@ -29,8 +29,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -106,6 +105,21 @@ public class CachingSagaStoreTest {
         verify(sagaCache).put(eq("id"), any());
         verify(associationsCache, never()).put(any(), any());
     }
+
+    @Test
+    public void testSagaNotAddedToCacheWhenLoadReturnsNull() throws Exception {
+
+        ehCache.removeAll();
+        reset(sagaCache, associationsCache);
+
+        SagaStore.Entry<StubSaga> actual = testSubject.loadSaga(StubSaga.class, "id");
+        assertNull(actual);
+
+        verify(sagaCache).get("id");
+        verify(sagaCache, never()).put(eq("id"), any());
+        verify(associationsCache, never()).put(any(), any());
+    }
+
 
     @Test
     public void testCommitDelegatedAfterAddingToCache() throws Exception {
