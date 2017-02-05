@@ -25,7 +25,8 @@ import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 public class StubSaga extends AbstractAnnotatedSaga {
 
     private static final long serialVersionUID = -1562911263884220240L;
-    private int counter = 0;
+
+    public StubSaga(){ }
 
     public StubSaga(String identifier) {
         super(identifier);
