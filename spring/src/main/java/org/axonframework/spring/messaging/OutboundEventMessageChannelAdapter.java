@@ -16,15 +16,15 @@
 
 package org.axonframework.spring.messaging;
 
+import java.util.List;
+import java.util.function.Predicate;
+
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
-
-import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Adapter class that sends Events from an event bus to a Spring Messaging Message Channel. All events are wrapped in
@@ -40,6 +40,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
     private final MessageChannel channel;
     private final Predicate<? super EventMessage<?>> filter;
     private final SubscribableMessageSource<EventMessage<?>> messageSource;
+    private final EventMessageConverter eventMessageConverter;
 
     /**
      * Initialize an adapter to forward messages from the given {@code messageSource} to the given {@code channel}.
@@ -50,9 +51,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      */
     public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
                                               MessageChannel channel) {
-        this.messageSource = messageSource;
-        this.channel = channel;
-        this.filter = m -> true;
+        this(messageSource, channel, m -> true);
     }
 
     /**
@@ -65,9 +64,25 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      */
     public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
                                               MessageChannel channel, Predicate<? super EventMessage<?>> filter) {
+        this(messageSource, channel, filter, new DefaultEventMessageConverter());
+    }
+
+    /**
+     * Initialize an adapter to forward messages from the given {@code messageSource} to the given {@code channel}.
+     * Messages are filtered using the given {@code filter}.
+     *
+     * @param messageSource The source of messages to subscribe to.
+     * @param channel       The channel to send event messages to.
+     * @param filter        The filter that indicates which messages to forward.
+     * @param eventMessageConverter The converter to use to convert event message into Spring message
+     */
+    public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
+                                              MessageChannel channel, Predicate<? super EventMessage<?>> filter,
+                                              EventMessageConverter eventMessageConverter) {
         this.channel = channel;
         this.messageSource = messageSource;
         this.filter = filter;
+        this.eventMessageConverter = eventMessageConverter;
     }
 
     /**
@@ -98,6 +113,6 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @return The Spring Messaging Message representing the Event Message
      */
     protected Message<?> transform(EventMessage<?> event) {
-        return new GenericMessage<>(event.getPayload(), event.getMetaData());
+        return eventMessageConverter.convertToOutboundMessage(event);
     }
 }
