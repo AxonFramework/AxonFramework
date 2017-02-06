@@ -66,7 +66,7 @@ public interface ResultValidator {
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEventsMatching(Matcher<List<EventMessage<?>>> matcher);
+    ResultValidator expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
     /**
      * Expect the command handler to return the given {@code expectedReturnValue} after execution. The actual and

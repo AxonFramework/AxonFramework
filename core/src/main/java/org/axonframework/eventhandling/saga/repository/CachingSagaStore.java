@@ -78,7 +78,9 @@ public class CachingSagaStore<T> implements SagaStore<T> {
         Entry<S> saga = sagaCache.get(sagaIdentifier);
         if (saga == null) {
             saga = delegate.loadSaga(sagaType, sagaIdentifier);
-            sagaCache.put(sagaIdentifier, new CacheEntry<T>(saga));
+            if (saga != null) {
+                sagaCache.put(sagaIdentifier, new CacheEntry<T>(saga));
+            }
         }
         return saga;
     }

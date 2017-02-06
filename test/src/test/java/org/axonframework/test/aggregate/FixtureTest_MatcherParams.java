@@ -30,8 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.axonframework.test.matchers.Matchers.matches;
-import static org.axonframework.test.matchers.Matchers.sequenceOf;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -57,6 +56,33 @@ public class FixtureTest_MatcherParams {
                 .when(new TestCommand("aggregateId"))
                 .expectReturnValueMatching(new DoesMatch())
                 .expectEventsMatching(sequenceOf(matches(i -> true)));
+    }
+
+    @Test
+    public void testPayloadsMatch() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
+                .given(new MyEvent("aggregateId", 1))
+                .when(new TestCommand("aggregateId"))
+                .expectReturnValueMatching(new DoesMatch())
+                .expectEventsMatching(payloadsMatching(sequenceOf(matches(i -> true))));
+    }
+
+    @Test
+    public void testPayloadsMatchExact() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
+                .given(new MyEvent("aggregateId", 1))
+                .when(new TestCommand("aggregateId"))
+                .expectReturnValueMatching(new DoesMatch())
+                .expectEventsMatching(payloadsMatching(exactSequenceOf(matches(i -> true))));
+    }
+
+    @Test
+    public void testPayloadsMatchPredicate() {
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
+                .given(new MyEvent("aggregateId", 1))
+                .when(new TestCommand("aggregateId"))
+                .expectReturnValueMatching(new DoesMatch())
+                .expectEventsMatching(payloadsMatching(predicate(ml -> !ml.isEmpty())));
     }
 
     @Test

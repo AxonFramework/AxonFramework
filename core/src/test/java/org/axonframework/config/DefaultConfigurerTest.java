@@ -16,6 +16,8 @@
 
 package org.axonframework.config;
 
+import org.axonframework.commandhandling.AsynchronousCommandBus;
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
@@ -23,8 +25,10 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,6 +39,7 @@ import java.util.Map;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class DefaultConfigurerTest {
 
@@ -42,6 +47,7 @@ public class DefaultConfigurerTest {
     public void defaultConfigurationWithEventSourcing() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .configureCommandBus(c -> new AsynchronousCommandBus())
                 .configureAggregate(StubAggregate.class)
                 .buildConfiguration();
         config.start();
@@ -75,9 +81,15 @@ public class DefaultConfigurerTest {
                         }
                     };
                 })
+                .configureCommandBus(c -> {
+                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
+                    return commandBus;
+                })
                 .configureAggregate(
                         defaultConfiguration(StubAggregate.class)
-                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em), StubAggregate.class, c.eventBus())))
+                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
+                                                                                     StubAggregate.class, c.eventBus(), c.parameterResolverFactory())))
                 .buildConfiguration();
 
         config.start();
@@ -98,7 +110,8 @@ public class DefaultConfigurerTest {
         }
 
         @CommandHandler
-        public StubAggregate(String command) {
+        public StubAggregate(String command, CommandBus commandBus) {
+            assertTrue(commandBus instanceof AsynchronousCommandBus);
             apply(command);
         }
 

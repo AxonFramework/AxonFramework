@@ -22,6 +22,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import javax.persistence.EntityManager;
 import java.util.concurrent.Callable;
@@ -63,6 +64,20 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     }
 
     /**
+     * Initialize a repository for storing aggregates of the given {@code aggregateType}. No additional locking
+     * will be used.
+     *
+     * @param entityManagerProvider    The EntityManagerProvider providing the EntityManager instance for this EventStore
+     * @param aggregateType            the aggregate type this repository manages
+     * @param eventBus                 the event bus to which new events are published
+     * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
+     */
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
+                                EventBus eventBus, ParameterResolverFactory parameterResolverFactory) {
+        this(entityManagerProvider, aggregateType, eventBus, NullLockFactory.INSTANCE, parameterResolverFactory);
+    }
+
+    /**
      * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
      * LockFactory}.
      *
@@ -74,6 +89,24 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
                                 LockFactory lockFactory) {
         super(aggregateType, lockFactory);
+        Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
+        this.entityManagerProvider = entityManagerProvider;
+        this.eventBus = eventBus;
+    }
+
+    /**
+     * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
+     * LockFactory}.
+     *
+     * @param entityManagerProvider    The EntityManagerProvider providing the EntityManager instance for this repository
+     * @param aggregateType            the aggregate type this repository manages
+     * @param eventBus                 the event bus to which new events are published
+     * @param lockFactory              the additional locking strategy for this repository
+     * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
+     */
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory) {
+        super(aggregateType, lockFactory, parameterResolverFactory);
         Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
         this.eventBus = eventBus;

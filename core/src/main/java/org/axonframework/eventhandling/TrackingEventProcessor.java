@@ -261,7 +261,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
             if (batch.isEmpty()) {
                 // refresh claim on token
-                transactionManager.executeInTransaction(() -> tokenStore.fetchToken(getName(), 0));
+                transactionManager.executeInTransaction(() -> tokenStore.extendClaim(getName(), 0));
                 return;
             }
 

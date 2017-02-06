@@ -33,9 +33,6 @@ import java.util.function.Predicate;
  */
 public abstract class Matchers {
 
-    private Matchers() {
-    }
-
     /**
      * Matches a list of Messages if a list containing their respective payloads matches the given
      * {@code matcher}.
@@ -121,12 +118,27 @@ public abstract class Matchers {
 
     /**
      * Returns a Matcher that matches with values defined by the given {@code predicate}.
+     * <p>
+     * This method is a synonym for {@link #predicate(Predicate)} to allow for better readability
      *
      * @param predicate The predicate defining matching values
-     * @param <T> The type of value matched against
+     * @param <T>       The type of value matched against
      * @return A Matcher that matches against values defined by the predicate
      */
     public static <T> Matcher<T> matches(Predicate<T> predicate) {
+        return predicate(predicate);
+    }
+
+    /**
+     * Returns a Matcher that matches with values defined by the given {@code predicate}.
+     * <p>
+     * This method is a synonym for {@link #matches(Predicate)} to allow for better readability
+     *
+     * @param predicate The predicate defining matching values
+     * @param <T>       The type of value matched against
+     * @return A Matcher that matches against values defined by the predicate
+     */
+    public static <T> Matcher<T> predicate(Predicate<T> predicate) {
         return new PredicateMatcher<>(predicate);
     }
 
@@ -201,5 +213,8 @@ public abstract class Matchers {
     @Factory
     public static Matcher<Message<?>> nothing() {
         return new NullOrVoidMatcher<>();
+    }
+
+    private Matchers() {
     }
 }

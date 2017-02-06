@@ -80,6 +80,9 @@ public class JpaTokenStoreTest {
         assertNotNull(tokens.get(0).getOwner());
         jpaTokenStore.releaseClaim("test", 0);
 
+        entityManager.flush();
+        entityManager.clear();
+
         TokenEntry token = entityManager.find(TokenEntry.class, new TokenEntry.PK("test", 0));
         assertNull(token.getOwner());
     }
