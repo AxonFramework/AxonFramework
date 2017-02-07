@@ -68,7 +68,7 @@ public class AxonThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(Runnable r) {
-        Thread thread = new Thread(groupName, r);
+        Thread thread = new Thread(groupName, r, groupName.getName());
         thread.setPriority(priority);
         return thread;
     }
