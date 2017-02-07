@@ -74,7 +74,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectEventsMatching(Matcher<List<EventMessage<?>>> matcher) {
+    public ResultValidator expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
         }

@@ -38,6 +38,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
@@ -149,7 +150,8 @@ public class DefaultConfigurer implements Configurer {
      * @return the default ParameterResolverFactory to use
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
-        return ClasspathParameterResolverFactory.forClass(getClass());
+        return MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
+                                                     new ConfigurationParameterResolverFactory(config));
     }
 
     /**
