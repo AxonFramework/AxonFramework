@@ -16,11 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.io.IOUtils;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.axonframework.common.ExceptionUtils.*;
 
 import javax.persistence.EntityExistsException;
 import javax.sql.DataSource;
@@ -33,7 +29,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import static org.axonframework.common.ExceptionUtils.findException;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
@@ -144,7 +144,11 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     @Override
     public boolean isDuplicateKeyViolation(Exception exception) {
         return causeIsEntityExistsException(exception) || findException(exception, SQLException.class)
-                .map(sqlException -> duplicateKeyCodes.contains(sqlException.getErrorCode())).orElse(false);
+                .map(sqlException -> isDuplicateKeyViolation(duplicateKeyCodes, sqlException)).orElse(false);
+    }
+
+    protected boolean isDuplicateKeyViolation(List<Integer> duplicateKeyCodes, SQLException sqlException) {
+        return duplicateKeyCodes.contains(sqlException.getErrorCode());
     }
 
     private boolean causeIsEntityExistsException(Throwable exception) {
