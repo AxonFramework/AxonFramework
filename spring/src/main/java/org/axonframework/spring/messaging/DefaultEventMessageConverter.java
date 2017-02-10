@@ -7,6 +7,7 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.NumberUtils;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -63,7 +64,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         if (headers.containsKey(AGGREGATE_ID)) {
             return new GenericDomainEventMessage<>(Objects.toString(headers.get(AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(AGGREGATE_ID)),
-                                                   (Long) headers.get(AGGREGATE_SEQ),
+                                                   NumberUtils.convertNumberToTargetClass(headers.get(AGGREGATE_SEQ, Number.class), Long.class),
                                                    genericMessage, () -> Instant.ofEpochMilli(timestamp));
         } else {
             return new GenericEventMessage<>(genericMessage, () -> Instant.ofEpochMilli(timestamp));
