@@ -116,6 +116,57 @@ public class SQLErrorCodesResolverTest {
         new SQLErrorCodesResolver(dataSource);
     }
 
+    @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingSqlState() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
+
+        String databaseProductName = "MyCustom Database Engine";
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(props, databaseProductName);
+
+        SQLException sqlException = new SQLException("test", "-104");
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
+
+        assertTrue(isDuplicateKey);
+    }
+
+    @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingNonIntSqlState() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
+
+        String databaseProductName = "MyCustom Database Engine";
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(props, databaseProductName);
+
+        SQLException sqlException = new SQLException("test", "thisIsNotAnInt");
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
+
+        assertFalse(isDuplicateKey);
+    }
+
+    @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingNonNullSqlState() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
+
+        String databaseProductName = "MyCustom Database Engine";
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(props, databaseProductName);
+
+        SQLException sqlException = new SQLException("test", (String) null);
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                                                                                                        sqlException));
+
+        assertFalse(isDuplicateKey);
+    }
+
     private DataSource createMockDataSource(String databaseProductName) throws SQLException {
         DataSource dataSource = Mockito.mock(DataSource.class);
         Connection connection = Mockito.mock(Connection.class);
