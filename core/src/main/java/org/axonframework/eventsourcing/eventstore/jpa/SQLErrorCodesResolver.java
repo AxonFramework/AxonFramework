@@ -52,6 +52,9 @@ import static org.axonframework.common.ExceptionUtils.findException;
  * <li>PostgreSQL</li>
  * <li>Sybase</li>
  * </ul>
+ * <p>
+ * This implementation will attempt to locate these error codes in the {@link SQLException#getErrorCode()} and
+ * {@link SQLException#getSQLState()}, respectively.
  *
  * @author Martin Tilma
  * @author Allard Buijze
@@ -144,7 +147,26 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     @Override
     public boolean isDuplicateKeyViolation(Exception exception) {
         return causeIsEntityExistsException(exception) || findException(exception, SQLException.class)
-                .map(sqlException -> duplicateKeyCodes.contains(sqlException.getErrorCode())).orElse(false);
+                .map(sqlException -> isDuplicateKeyCode(sqlException, duplicateKeyCodes)).orElse(false);
+    }
+
+    /**
+     * @param sqlException The exception to locate the error code in
+     * @param errorCodes   The error codes indicating duplicate key violations
+     * @return {@code true} if the error code of the {@code sqlException} is in the given list of {@code errorCodes}, otherwise
+     * {@code false}
+     */
+    protected boolean isDuplicateKeyCode(SQLException sqlException, List<Integer> errorCodes) {
+        if (errorCodes.contains(sqlException.getErrorCode())) {
+            return true;
+        } else if (sqlException.getSQLState() != null) {
+            try {
+                return errorCodes.contains(Integer.parseInt(sqlException.getSQLState()));
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private boolean causeIsEntityExistsException(Throwable exception) {
