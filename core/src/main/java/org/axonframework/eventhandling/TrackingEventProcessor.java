@@ -299,7 +299,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     Thread.currentThread().interrupt();
                 }
             } catch (Exception e) {
-                logger.warn("Unexpected exception while attemting to retrieve token and open stream. " +
+                logger.warn("Unexpected exception while attempting to retrieve token and open stream. " +
                                     "Retrying in 5 seconds.", e);
                 tx.rollback();
             }
