@@ -78,6 +78,21 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingAS400DataSource() throws Exception {
+        String databaseProductName = "DB2 UDB for AS/400";
+        DataSource dataSource = createMockDataSource(databaseProductName);
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(dataSource);
+
+        SQLException sqlException = new SQLException("test", "error", -803);
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                sqlException));
+
+        assertTrue(isDuplicateKey);
+    }
+
+    @Test
     public void testIsDuplicateKey_isDuplicateKey_usingProductName() throws Exception {
         String databaseProductName = "HSQL Database Engine";
 
