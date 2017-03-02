@@ -69,7 +69,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (optionalEndpoint.isPresent()) {
             URI endpointUri = optionalEndpoint.get();
             URI destinationUri = buildURIForPath(endpointUri.getScheme(), endpointUri.getUserInfo(),
-                    endpointUri.getHost(), endpointUri.getPort());
+                    endpointUri.getHost(), endpointUri.getPort(), endpointUri.getPath());
 
             SpringHttpDispatchMessage<C> dispatchMessage =
                     new SpringHttpDispatchMessage<>(commandMessage, serializer, expectReply);
@@ -83,9 +83,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         }
     }
 
-    private URI buildURIForPath(String scheme, String userInfo, String host, int port) {
+    private URI buildURIForPath(String scheme, String userInfo, String host, int port, String path) {
         try {
-            return new URI(scheme, userInfo, host, port, COMMAND_BUS_CONNECTOR_PATH, null, null);
+            return new URI(scheme, userInfo, host, port, path + COMMAND_BUS_CONNECTOR_PATH, null, null);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to build URI for [{}{}{}], with user info [{}] and path [{}]",
                     scheme, host, port, userInfo, COMMAND_BUS_CONNECTOR_PATH, e);
