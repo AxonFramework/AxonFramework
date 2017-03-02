@@ -302,6 +302,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 logger.warn("Unexpected exception while attempting to retrieve token and open stream. " +
                                     "Retrying in 5 seconds.", e);
                 tx.rollback();
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException interrupt) {
+                    logger.info("Thread interrupted while waiting for new attempt to claim token");
+                    Thread.currentThread().interrupt();
+                }
             }
         }
         return eventStream;
