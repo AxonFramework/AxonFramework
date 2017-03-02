@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,12 +37,12 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private static final String COMMAND_BUS_CONNECTOR_PATH = "/spring-command-bus-connector/command";
 
     private final CommandBus localCommandBus;
-    private final RestTemplate restTemplate;
+    private final RestOperations restOperations;
     private final Serializer serializer;
 
-    public SpringHttpCommandBusConnector(CommandBus localCommandBus, RestTemplate restTemplate, Serializer serializer) {
+    public SpringHttpCommandBusConnector(CommandBus localCommandBus, RestOperations restOperations, Serializer serializer) {
         this.localCommandBus = localCommandBus;
-        this.restTemplate = restTemplate;
+        this.restOperations = restOperations;
         this.serializer = serializer;
     }
 
@@ -73,7 +73,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
             SpringHttpDispatchMessage<C> dispatchMessage =
                     new SpringHttpDispatchMessage<>(commandMessage, serializer, expectReply);
-            return restTemplate.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
+            return restOperations.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
                     new ParameterizedTypeReference<SpringHttpReplyMessage<R>>(){});
         } else {
             String errorMessage = String.format("No Connection Endpoint found in Member [%s] for protocol [%s] " +
