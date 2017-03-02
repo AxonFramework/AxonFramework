@@ -55,6 +55,46 @@ public class TrackingEventProcessorTest {
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
 
+    private static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
+        return new TrackingEventStream() {
+            private boolean hasPeeked;
+            private TrackedEventMessage<?> peekEvent;
+
+            @Override
+            public Optional<TrackedEventMessage<?>> peek() {
+                if (!hasPeeked) {
+                    if (!hasNextAvailable()) {
+                        return Optional.empty();
+                    }
+                    peekEvent = iterator.next();
+                    hasPeeked = true;
+                }
+                return Optional.of(peekEvent);
+            }
+
+            @Override
+            public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+                return hasPeeked || iterator.hasNext();
+            }
+
+            @Override
+            public TrackedEventMessage nextAvailable() {
+                if (!hasPeeked) {
+                    return iterator.next();
+                }
+                TrackedEventMessage<?> result = peekEvent;
+                peekEvent = null;
+                hasPeeked = false;
+                return result;
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
+    }
+
     @Before
     public void setUp() throws Exception {
         tokenStore = spy(new InMemoryTokenStore());
@@ -198,44 +238,20 @@ public class TrackingEventProcessorTest {
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
-    private static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
-        return new TrackingEventStream() {
-            private boolean hasPeeked;
-            private TrackedEventMessage<?> peekEvent;
+    @Test
+    public void testEventProcessorIsReEntrant() throws Exception {
+        assertTrue("TrackingEventProcessor is not started", testSubject.getState() == TrackingEventProcessor.State.STARTED);
+        testSubject.shutDown();
 
-            @Override
-            public Optional<TrackedEventMessage<?>> peek() {
-                if (!hasPeeked) {
-                    if (!hasNextAvailable()) {
-                        return Optional.empty();
-                    }
-                    peekEvent = iterator.next();
-                    hasPeeked = true;
-                }
-                return Optional.of(peekEvent);
-            }
+        testSubject.start();
+        CountDownLatch countDownLatch2 = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            countDownLatch2.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
 
-            @Override
-            public boolean hasNextAvailable(int timeout, TimeUnit unit) {
-                return hasPeeked || iterator.hasNext();
-            }
-
-            @Override
-            public TrackedEventMessage nextAvailable() {
-                if (!hasPeeked) {
-                    return iterator.next();
-                }
-                TrackedEventMessage<?> result = peekEvent;
-                peekEvent = null;
-                hasPeeked = false;
-                return result;
-            }
-
-            @Override
-            public void close() {
-
-            }
-        };
     }
 
 }
