@@ -249,12 +249,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                                                    int batchSize) {
         Transaction tx = transactionManager.startTransaction();
         try {
-            return executeQuery(getConnection(), connection -> {
-                PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
-                statement.setMaxRows(batchSize);
-                return statement;
-            }, listResults(this::getDomainEventData), e -> new EventStoreException(
-                    format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
+            return executeQuery(getConnection(),
+                    connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
+                    listResults(this::getDomainEventData), e -> new EventStoreException(
+                            format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
         } finally {
             tx.commit();
         }
@@ -264,20 +262,18 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Transaction tx = transactionManager.startTransaction();
         try {
-            return executeQuery(getConnection(), connection -> {
-                PreparedStatement statement = readEventData(connection, lastToken);
-                statement.setMaxRows(batchSize);
-                return statement;
-            }, resultSet -> {
-                TrackingToken previousToken = lastToken;
-                List<TrackedEventData<?>> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
-                    results.add(next);
-                    previousToken = next.trackingToken();
-                }
-                return results;
-            }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
+            return executeQuery(getConnection(),
+                    connection -> readEventData(connection, lastToken, batchSize),
+                    resultSet -> {
+                        TrackingToken previousToken = lastToken;
+                        List<TrackedEventData<?>> results = new ArrayList<>();
+                        while (resultSet.next()) {
+                            TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
+                            results.add(next);
+                            previousToken = next.trackingToken();
+                        }
+                        return results;
+                    }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
         } finally {
             tx.commit();
         }
@@ -309,15 +305,16 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
 
     protected PreparedStatement readEventData(Connection connection, String identifier,
-                                              long firstSequenceNumber) throws SQLException {
+                                              long firstSequenceNumber, int batchSize) throws SQLException {
         Transaction tx = transactionManager.startTransaction();
         try {
             final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
-                    schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? ORDER BY " +
-                    schema.sequenceNumberColumn() + " ASC";
+                    schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? AND " +
+                    schema.sequenceNumberColumn() + " < ? ORDER BY " + schema.sequenceNumberColumn() + " ASC";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, identifier);
             preparedStatement.setLong(2, firstSequenceNumber);
+            preparedStatement.setLong(3, firstSequenceNumber + batchSize);
             return preparedStatement;
         } finally {
             tx.commit();
@@ -334,12 +331,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
+    protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken, 
+                                              int batchSize) throws SQLException {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       () -> format("Token [%s] is of the wrong type", lastToken));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
-        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
-                schema.globalIndexColumn() + " > ? ";
+        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + 
+                " WHERE (" + schema.globalIndexColumn() + " > ? AND " + schema.globalIndexColumn() + " <= ?) ";
         List<Long> gaps;
         if (previousToken != null) {
             gaps = previousToken.getGaps().stream().collect(Collectors.toList());
@@ -352,9 +350,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
         sql += "ORDER BY " + schema.globalIndexColumn() + " ASC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        preparedStatement.setLong(1, previousToken == null ? -1 : previousToken.getIndex());
+        long globalIndex = previousToken == null ? -1 : previousToken.getIndex();
+        preparedStatement.setLong(1, globalIndex);
+        preparedStatement.setLong(2, globalIndex + batchSize);
         for (int i = 0; i < gaps.size(); i++) {
-            preparedStatement.setLong(i + 2, gaps.get(i));
+            preparedStatement.setLong(i + 3, gaps.get(i));
         }
         return preparedStatement;
     }
