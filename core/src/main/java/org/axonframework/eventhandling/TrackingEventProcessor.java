@@ -65,7 +65,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final TokenStore tokenStore;
     private final TransactionManager transactionManager;
     private final int batchSize;
-    private final ExecutorService executorService;
+    private final String name;
+    private ExecutorService executorService;
     private volatile TrackingToken lastToken;
     private volatile State state = State.NOT_STARTED;
 
@@ -106,7 +107,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-             messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
+                messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
@@ -128,7 +129,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-             messageSource, tokenStore, transactionManager, 1, messageMonitor);
+                messageSource, tokenStore, transactionManager, 1, messageMonitor);
     }
 
     /**
@@ -155,7 +156,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.messageSource = requireNonNull(messageSource);
         this.tokenStore = requireNonNull(tokenStore);
         this.transactionManager = transactionManager;
-        this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
+        this.name = name;
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.batchSize = batchSize;
@@ -168,7 +169,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     @Override
     public void start() {
-        if (state == State.NOT_STARTED) {
+        this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
+        if (state == State.NOT_STARTED || state == State.SHUT_DOWN) {
             state = State.STARTED;
             registerInterceptor((unitOfWork, interceptorChain) -> {
                 unitOfWork.onPrepareCommit(uow -> {
@@ -300,7 +302,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 }
             } catch (Exception e) {
                 logger.warn("Unexpected exception while attempting to retrieve token and open stream. " +
-                                    "Retrying in 5 seconds.", e);
+                        "Retrying in 5 seconds.", e);
                 tx.rollback();
                 try {
                     Thread.sleep(5000);
@@ -323,7 +325,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         return state;
     }
 
-    private enum State {
+    protected enum State {
         NOT_STARTED, STARTED, SHUT_DOWN
     }
 }
