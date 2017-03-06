@@ -111,7 +111,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
             SimpleMember<URI> simpleMember = new SimpleMember<>(
                     serviceId.toUpperCase(),
-                    serviceInstance.getUri(),
+                    serviceUri,
                     local,
                     member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
             );
