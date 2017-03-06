@@ -29,17 +29,19 @@ public class SimpleMember<E> implements Member {
     private final Consumer<SimpleMember<E>> suspectHandler;
     private final String name;
     private final E endpoint;
+    private final boolean local;
 
     /**
      * Create the service member
-     *
      * @param name           the member name
      * @param endpoint       The object describing the endpoint
+     * @param local          True if the member is local. False if the member is remote or if this information is unknown.
      * @param suspectHandler The operation to execute when this member is marked as a suspect
      */
-    public SimpleMember(String name, E endpoint, Consumer<SimpleMember<E>> suspectHandler) {
+    public SimpleMember(String name, E endpoint, boolean local, Consumer<SimpleMember<E>> suspectHandler) {
         this.name = name;
         this.endpoint = endpoint;
+        this.local = local;
         this.suspectHandler = suspectHandler;
     }
 
@@ -71,6 +73,11 @@ public class SimpleMember<E> implements Member {
      */
     public E endpoint() {
         return endpoint;
+    }
+
+    @Override
+    public boolean local() {
+        return local;
     }
 
     @Override

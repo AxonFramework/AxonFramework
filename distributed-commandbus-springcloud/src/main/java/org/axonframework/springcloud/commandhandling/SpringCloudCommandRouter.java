@@ -100,10 +100,19 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     private void updateMemberships(Set<ServiceInstance> serviceInstances) {
+        ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
+        String localServiceId = localServiceInstance.getServiceId();
+        URI localServiceUri = localServiceInstance.getUri();
+
         serviceInstances.forEach(serviceInstance -> {
+            URI serviceUri = serviceInstance.getUri();
+            String serviceId = serviceInstance.getServiceId();
+            boolean local = localServiceId.equals(serviceId) && localServiceUri.equals(serviceUri);
+
             SimpleMember<URI> simpleMember = new SimpleMember<>(
-                    serviceInstance.getServiceId().toUpperCase(),
+                    serviceId.toUpperCase(),
                     serviceInstance.getUri(),
+                    local,
                     member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
             );
 

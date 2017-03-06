@@ -151,7 +151,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
         Address localAddress = channel.getAddress();
         String localName = channel.getName(localAddress);
-        SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, null);
+        SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, true, null);
         members.put(localAddress, localMember);
         consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
     }
@@ -305,7 +305,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         if (joinedMember != null) {
             int loadFactor = joinMessage.getLoadFactor();
             Predicate<CommandMessage<?>> commandFilter = joinMessage.messageFilter();
-            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), null);
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), false, null);
             members.put(member.endpoint(), member);
             consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
             if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
