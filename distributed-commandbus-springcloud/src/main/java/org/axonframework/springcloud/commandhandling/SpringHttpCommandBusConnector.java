@@ -1,5 +1,11 @@
 package org.axonframework.springcloud.commandhandling;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -19,12 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/spring-command-bus-connector")
@@ -48,23 +48,40 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     @Override
     public <C> void send(Member destination, CommandMessage<? extends C> commandMessage) throws Exception {
-        doSend(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+        if (destination.local()) {
+            localCommandBus.dispatch(commandMessage);
+        } else {
+            sendRemotely(destination, commandMessage, DO_NOT_EXPECT_REPLY);
+        }
     }
 
     @Override
     public <C, R> void send(Member destination, CommandMessage<C> commandMessage,
                             CommandCallback<? super C, R> callback) throws Exception {
-        SpringHttpReplyMessage<R> replyMessage = this.<C, R>doSend(destination, commandMessage, EXPECT_REPLY).getBody();
-        if (replyMessage.isSuccess()) {
-            callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
+        if (destination.local()) {
+            localCommandBus.dispatch(commandMessage, callback);
         } else {
-            callback.onFailure(commandMessage, replyMessage.getError(serializer));
+            SpringHttpReplyMessage<R> replyMessage = this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
+            if (replyMessage.isSuccess()) {
+                callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
+            } else {
+                callback.onFailure(commandMessage, replyMessage.getError(serializer));
+            }
         }
     }
 
-    private <C, R> ResponseEntity<SpringHttpReplyMessage<R>> doSend(Member destination,
-                                                                    CommandMessage<? extends C> commandMessage,
-                                                                    boolean expectReply) {
+    /**
+     * Send the command message to a remote member
+     * @param destination The member of the network to send the message to
+     * @param commandMessage     The command to send to the (remote) member
+     * @param expectReply True if a reply is expected
+     * @param <C>         The type of object expected as command
+     * @param <R>         The type of object expected as result of the command
+     * @return The reply
+     */
+    private <C, R> ResponseEntity<SpringHttpReplyMessage<R>> sendRemotely(Member destination,
+                                                                          CommandMessage<? extends C> commandMessage,
+                                                                          boolean expectReply) {
         Optional<URI> optionalEndpoint = destination.getConnectionEndpoint(URI.class);
         if (optionalEndpoint.isPresent()) {
             URI endpointUri = optionalEndpoint.get();

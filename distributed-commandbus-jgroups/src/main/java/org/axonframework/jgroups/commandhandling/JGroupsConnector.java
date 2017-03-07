@@ -53,6 +53,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConnector {
     private static final Logger logger = LoggerFactory.getLogger(JGroupsConnector.class);
 
+    private static final boolean LOCAL_MEMBER = true;
+    private static final boolean NON_LOCAL_MEMBER = false;
+
     private final CommandBus localSegment;
     private final CommandCallbackRepository<Address> callbackRepository = new CommandCallbackRepository<>();
     private final Serializer serializer;
@@ -151,7 +154,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
         Address localAddress = channel.getAddress();
         String localName = channel.getName(localAddress);
-        SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, null);
+        SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
         members.put(localAddress, localMember);
         consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
     }
@@ -305,7 +308,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         if (joinedMember != null) {
             int loadFactor = joinMessage.getLoadFactor();
             Predicate<CommandMessage<?>> commandFilter = joinMessage.messageFilter();
-            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), null);
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, null);
             members.put(member.endpoint(), member);
             consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
             if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
