@@ -152,6 +152,73 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
+    public void testUpdateMembershipAfterHeartbeatEventKeepDoNotOverwriteMembers(){
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        String remoteServiceId = SERVICE_INSTANCE_ID + "-1";
+        ServiceInstance remoteServiceInstance = mock(ServiceInstance.class);
+        when(remoteServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+        when(remoteServiceInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteServiceInstance.getServiceId()).thenReturn(remoteServiceId);
+
+        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of(remoteServiceInstance));
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, remoteServiceId));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(2, resultMemberSet.size());
+
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+        AtomicReference<ConsistentHash> resultAtomicConsistentHashAfterLocalUpdate =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSetAfterLocalUpdate = resultAtomicConsistentHashAfterLocalUpdate.get().getMembers();
+        assertEquals(2, resultMemberSetAfterLocalUpdate.size());
+    }
+
+    @Test
+    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() throws Exception{
+        // Update router memberships with local and remote service instance
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+
+        String remoteServiceId = SERVICE_INSTANCE_ID + "-1";
+        ServiceInstance remoteServiceInstance = mock(ServiceInstance.class);
+        when(remoteServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+        when(remoteServiceInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteServiceInstance.getServiceId()).thenReturn(remoteServiceId);
+
+        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of(remoteServiceInstance));
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, remoteServiceId));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(2, resultMemberSet.size());
+
+        // Evict remote service instance from discovery client and update router memberships
+        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of());
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        AtomicReference<ConsistentHash> resultAtomicConsistentHashAfterVanish =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
+        assertEquals(1, resultMemberSetAfterVanish.size());
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSetAfterVanish.iterator().next());
+    }
+
+    @Test
     public void testUpdateMembershipsOnHeartbeatEventFiltersInstancesWithoutCommandRouterSpecificMetadata() throws Exception {
         int expectedMemberSetSize = 1;
         String expectedServiceInstanceId = "nonCommandRouterServiceInstance";
