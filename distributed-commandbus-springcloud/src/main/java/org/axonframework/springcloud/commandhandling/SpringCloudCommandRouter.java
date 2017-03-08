@@ -102,7 +102,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private void updateMemberships(Set<ServiceInstance> serviceInstances) {
         serviceInstances.forEach(serviceInstance -> {
             SimpleMember<URI> simpleMember = new SimpleMember<>(
-                    serviceInstance.getServiceId().toUpperCase(),
+                    serviceInstance.getServiceId().toUpperCase() + "[" + serviceInstance.getUri() + "]",
                     serviceInstance.getUri(),
                     member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
             );
