@@ -1,5 +1,11 @@
 package org.axonframework.springcloud.commandhandling;
 
+import java.net.URI;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
@@ -12,12 +18,6 @@ import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.context.event.EventListener;
 
-import java.net.URI;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Clouds
  * {@link org.springframework.cloud.client.discovery.DiscoveryClient}s to discover and notify other nodes for routing
@@ -28,6 +28,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private static final String LOAD_FACTOR = "loadFactor";
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
+
+    private static final boolean OVERWRITE_MEMBERS = true;
+    private static final boolean DO_NOT_OVERWRITE_MEMBERS = false;
 
     private final DiscoveryClient discoveryClient;
     private final RoutingStrategy routingStrategy;
@@ -83,7 +86,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
         localServiceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER, serializedCommandFilter.getData());
         localServiceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME, serializedCommandFilter.getType().getName());
 
-        updateMemberships(Collections.singleton(localServiceInstance));
+        updateMemberships(Collections.singleton(localServiceInstance), DO_NOT_OVERWRITE_MEMBERS);
     }
 
     @EventListener
@@ -96,11 +99,24 @@ public class SpringCloudCommandRouter implements CommandRouter {
                         serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER) &&
                         serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME))
                 .collect(Collectors.toSet());
-        updateMemberships(allServiceInstances);
+        updateMemberships(allServiceInstances, OVERWRITE_MEMBERS);
     }
 
-    private void updateMemberships(Set<ServiceInstance> serviceInstances) {
-        serviceInstances.forEach(serviceInstance -> {
+    /**
+     * Update the router memberships.
+     * @param serviceInstances Services instances to add
+     * @param overwrite True to evict members absent from serviceInstances
+     */
+    private void updateMemberships(Set<ServiceInstance> serviceInstances, boolean overwrite) {
+        AtomicReference<ConsistentHash> updatedConsistentHash;
+        if (overwrite) {
+            updatedConsistentHash = new AtomicReference<>(new ConsistentHash());
+        } else {
+            updatedConsistentHash = atomicConsistentHash;
+        }
+
+        serviceInstances
+                .forEach(serviceInstance -> {
             SimpleMember<URI> simpleMember = new SimpleMember<>(
                     serviceInstance.getServiceId().toUpperCase() + "[" + serviceInstance.getUri() + "]",
                     serviceInstance.getUri(),
@@ -115,10 +131,12 @@ public class SpringCloudCommandRouter implements CommandRouter {
                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
             CommandNameFilter commandNameFilter = serializer.deserialize(serializedObject);
 
-            atomicConsistentHash.updateAndGet(
+            updatedConsistentHash.updateAndGet(
                     consistentHash -> consistentHash.with(simpleMember, loadFactor, commandNameFilter)
             );
         });
+
+        atomicConsistentHash.set(updatedConsistentHash.get());
     }
 
 }
