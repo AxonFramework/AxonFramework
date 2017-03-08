@@ -90,7 +90,7 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testFindDestinationReturnsMemberForCommandMessage() throws Exception {
-        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, null);
+        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, null);
         AtomicReference<ConsistentHash> testAtomicConsistentHash =
                 new AtomicReference<>(new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true));
         ReflectionUtils.setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
@@ -181,10 +181,35 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient).getInstances(expectedServiceInstanceId);
     }
 
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventTwoInstancesOnSameServiceIdUpdatesConsistentHash(){
+        int expectedMemberSetSize = 2;
+
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        ServiceInstance remoteInstance = mock(ServiceInstance.class);
+        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(remoteInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(expectedMemberSetSize, resultMemberSet.size());
+    }
+
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        assertEquals(result.name(), expectedMemberName);
+        assertEquals(result.name(), expectedMemberName + "[" + expectedEndpoint + "]");
         assertEquals(result.segmentCount(), LOAD_FACTOR);
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
