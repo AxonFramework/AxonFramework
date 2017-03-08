@@ -20,6 +20,7 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.collections.MapConverter;
+import com.thoughtworks.xstream.core.util.CompositeClassLoader;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
@@ -145,6 +146,16 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
         xStream.alias("meta-data", MetaData.class);
         xStream.registerConverter(new MetaDataConverter(xStream.getMapper()));
+
+        // Make sure ClassLoader of this instance is registered - required by spring devtools RestartClassLoader
+        if (CompositeClassLoader.class.isAssignableFrom(xStream.getClassLoader().getClass())) {
+            ((CompositeClassLoader)xStream.getClassLoader()).add(this.getClass().getClassLoader());
+        } else {
+            final CompositeClassLoader compositeClassLoader = new CompositeClassLoader();
+            compositeClassLoader.add(this.getClass().getClassLoader());
+            xStream.setClassLoader(compositeClassLoader);
+        }
+
     }
 
     /**
