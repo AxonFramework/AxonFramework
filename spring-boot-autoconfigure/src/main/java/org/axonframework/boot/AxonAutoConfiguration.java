@@ -169,8 +169,8 @@ public class AxonAutoConfiguration {
         @ConditionalOnMissingBean
         @Bean
         public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider,
-                                                     TransactionManager transactionManager) {
-            return new JpaEventStorageEngine(entityManagerProvider, transactionManager);
+                                                     TransactionManager transactionManager, Serializer serializer) {
+            return new JpaEventStorageEngine(serializer, null, null, null, entityManagerProvider, transactionManager, null, null, true);
         }
 
         @ConditionalOnMissingBean
