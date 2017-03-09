@@ -48,4 +48,12 @@ public class AxonAutoConfigurationWithHibernateTest {
 
         assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
+
+    @Test
+    public void testEventStorageEngingeUsesSerializerBean() {
+        final Serializer serializer = applicationContext.getBean(Serializer.class);
+        final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
+
+        assertEquals(serializer, engine.getSerializer());
+    }
 }
