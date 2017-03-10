@@ -70,7 +70,7 @@ public class SpringHttpCommandBusConnectorTest {
     @Before
     public void setUp() throws Exception {
         expectedUri = new URI(ENDPOINT.getScheme(), ENDPOINT.getUserInfo(), ENDPOINT.getHost(),
-                ENDPOINT.getPort(), "/spring-command-bus-connector/command", null, null);
+                ENDPOINT.getPort(), ENDPOINT.getPath() + "/spring-command-bus-connector/command", null, null);
 
         when(serializedMetaData.getContentType()).thenReturn(byte[].class);
         when(serializedMetaData.getData()).thenReturn(SERIALIZED_COMMAND_METADATA);

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 
 @RestController
 @RequestMapping("/spring-command-bus-connector")
@@ -37,12 +37,12 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     private static final String COMMAND_BUS_CONNECTOR_PATH = "/spring-command-bus-connector/command";
 
     private final CommandBus localCommandBus;
-    private final RestTemplate restTemplate;
+    private final RestOperations restOperations;
     private final Serializer serializer;
 
-    public SpringHttpCommandBusConnector(CommandBus localCommandBus, RestTemplate restTemplate, Serializer serializer) {
+    public SpringHttpCommandBusConnector(CommandBus localCommandBus, RestOperations restOperations, Serializer serializer) {
         this.localCommandBus = localCommandBus;
-        this.restTemplate = restTemplate;
+        this.restOperations = restOperations;
         this.serializer = serializer;
     }
 
@@ -86,11 +86,11 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         if (optionalEndpoint.isPresent()) {
             URI endpointUri = optionalEndpoint.get();
             URI destinationUri = buildURIForPath(endpointUri.getScheme(), endpointUri.getUserInfo(),
-                    endpointUri.getHost(), endpointUri.getPort());
+                    endpointUri.getHost(), endpointUri.getPort(), endpointUri.getPath());
 
             SpringHttpDispatchMessage<C> dispatchMessage =
                     new SpringHttpDispatchMessage<>(commandMessage, serializer, expectReply);
-            return restTemplate.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
+            return restOperations.exchange(destinationUri, HttpMethod.POST, new HttpEntity<>(dispatchMessage),
                     new ParameterizedTypeReference<SpringHttpReplyMessage<R>>(){});
         } else {
             String errorMessage = String.format("No Connection Endpoint found in Member [%s] for protocol [%s] " +
@@ -100,9 +100,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         }
     }
 
-    private URI buildURIForPath(String scheme, String userInfo, String host, int port) {
+    private URI buildURIForPath(String scheme, String userInfo, String host, int port, String path) {
         try {
-            return new URI(scheme, userInfo, host, port, COMMAND_BUS_CONNECTOR_PATH, null, null);
+            return new URI(scheme, userInfo, host, port, path + COMMAND_BUS_CONNECTOR_PATH, null, null);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to build URI for [{}{}{}], with user info [{}] and path [{}]",
                     scheme, host, port, userInfo, COMMAND_BUS_CONNECTOR_PATH, e);
