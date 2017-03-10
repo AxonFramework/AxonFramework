@@ -11,6 +11,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -25,13 +26,16 @@ import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -42,6 +46,7 @@ import org.jgroups.stack.GossipRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -58,6 +63,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,15 +77,19 @@ import java.util.regex.Pattern;
 @Configuration
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration")
 @EnableConfigurationProperties(EventProcessorProperties.class)
-public class AxonAutoConfiguration {
+public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Autowired
     private EventProcessorProperties eventProcessorProperties;
 
+    private ClassLoader beanClassLoader;
+
     @Bean
     @ConditionalOnMissingBean
     public Serializer serializer() {
-        return new XStreamSerializer();
+        XStreamSerializer xStreamSerializer = new XStreamSerializer();
+        xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
+        return xStreamSerializer;
     }
 
     @Bean
@@ -101,9 +112,7 @@ public class AxonAutoConfiguration {
         return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventStore.class, "eventStore"));
     }
 
-    @Autowired(required = false)
-    // required set to false for live reload support (spring boot devtools). It has trouble starting with this
-    // dependency.
+    @Autowired
     public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
@@ -132,6 +141,11 @@ public class AxonAutoConfiguration {
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
         return commandBus;
+    }
+
+    @Override
+    public void setBeanClassLoader(ClassLoader classLoader) {
+        this.beanClassLoader = classLoader;
     }
 
     @AutoConfigureAfter(TransactionConfiguration.class)
@@ -168,9 +182,27 @@ public class AxonAutoConfiguration {
 
         @ConditionalOnMissingBean
         @Bean
-        public EventStorageEngine eventStorageEngine(EntityManagerProvider entityManagerProvider,
-                                                     TransactionManager transactionManager, Serializer serializer) {
-            return new JpaEventStorageEngine(serializer, null, null, null, entityManagerProvider, transactionManager, null, null, true);
+        public EventStorageEngine eventStorageEngine(Serializer serializer,
+                                                     PersistenceExceptionResolver persistenceExceptionResolver,
+                                                     AxonConfiguration configuration,
+                                                     EntityManagerProvider entityManagerProvider,
+                                                     TransactionManager transactionManager) {
+            return new JpaEventStorageEngine(serializer, configuration.getComponent(EventUpcaster.class),
+                                             persistenceExceptionResolver, null, entityManagerProvider,
+                                             transactionManager, null, null, true);
+        }
+
+        @ConditionalOnMissingBean
+        @ConditionalOnBean(DataSource.class)
+        @Bean
+        public PersistenceExceptionResolver dataSourcePersistenceExceptionResolver(DataSource dataSource) throws SQLException {
+            return new SQLErrorCodesResolver(dataSource);
+        }
+
+        @ConditionalOnMissingBean({DataSource.class, PersistenceExceptionResolver.class})
+        @Bean
+        public PersistenceExceptionResolver jdbcSQLErrorCodesResolver() {
+            return new JdbcSQLErrorCodesResolver();
         }
 
         @ConditionalOnMissingBean
@@ -192,7 +224,8 @@ public class AxonAutoConfiguration {
         }
     }
 
-    @ConditionalOnClass({SpringAMQPPublisher.class, ConnectionFactory.class})
+    @ConditionalOnClass(SpringAMQPPublisher.class)
+    @ConditionalOnBean(ConnectionFactory.class)
     @EnableConfigurationProperties(AMQPProperties.class)
     @Configuration
     public static class AMQPConfiguration {
