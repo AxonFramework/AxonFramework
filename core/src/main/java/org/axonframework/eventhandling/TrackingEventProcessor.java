@@ -66,7 +66,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final String name;
-    private ExecutorService executorService;
+    private volatile ExecutorService executorService;
     private volatile TrackingToken lastToken;
     private volatile State state = State.NOT_STARTED;
 
@@ -169,8 +169,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     @Override
     public void start() {
-        this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
         if (state == State.NOT_STARTED || state == State.SHUT_DOWN) {
+            if (this.executorService == null || this.executorService.isShutdown()) {
+                this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
+            }
             state = State.STARTED;
             registerInterceptor((unitOfWork, interceptorChain) -> {
                 unitOfWork.onPrepareCommit(uow -> {
