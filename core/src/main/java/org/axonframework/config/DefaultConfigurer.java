@@ -48,6 +48,8 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.*;
@@ -55,6 +57,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
@@ -82,6 +86,11 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
+    private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
+    private final Component<EventUpcasterChain> upcasterChain = new Component<>(
+            config, "eventUpcasterChain",
+            c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList())));
+
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
@@ -110,11 +119,16 @@ public class DefaultConfigurer implements Configurer {
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
         return new DefaultConfigurer().registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
+                        c.serializer(),
+                        c.upcasterChain(),
+                        null, null,
                         c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider),
-                        c.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE)))
+                        c.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE),
+                        null, null, true))
                 .registerComponent(TokenStore.class, c -> new JpaTokenStore(
                         c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider), c.serializer()))
                 .registerComponent(SagaStore.class, c -> new JpaSagaStore(
+                        c.serializer(),
                         c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider)));
     }
 
@@ -197,6 +211,12 @@ public class DefaultConfigurer implements Configurer {
      */
     protected Serializer defaultSerializer(Configuration config) {
         return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
+    }
+
+    @Override
+    public Configurer registerEventUpcaster(Function<Configuration, EventUpcaster> upcasterBuilder) {
+        upcasters.add(new Component<>(config, "upcaster", upcasterBuilder));
+        return this;
     }
 
     @Override
@@ -366,6 +386,11 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public void onShutdown(Runnable shutdownHandler) {
             shutdownHandlers.add(shutdownHandler);
+        }
+
+        @Override
+        public EventUpcasterChain upcasterChain() {
+            return upcasterChain.get();
         }
 
         @Override

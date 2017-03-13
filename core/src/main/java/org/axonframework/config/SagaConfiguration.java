@@ -2,6 +2,7 @@ package org.axonframework.config;
 
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
@@ -12,7 +13,11 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -25,6 +30,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<AnnotatedSagaManager<S>> sagaManager;
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
+    private final List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>> handlerInterceptors = new ArrayList<>();
     private Configuration config;
 
     /**
@@ -51,12 +57,16 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      */
     public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType) {
         SagaConfiguration<S> configuration = new SagaConfiguration<>(sagaType);
-        configuration.processor.update(c -> new TrackingEventProcessor(
-                sagaType.getSimpleName() + "Processor",
-                configuration.sagaManager.get(),
-                c.eventBus(),
-                c.getComponent(TokenStore.class, InMemoryTokenStore::new),
-                c.getComponent(TransactionManager.class, NoTransactionManager::instance)));
+        configuration.processor.update(c -> {
+            TrackingEventProcessor processor = new TrackingEventProcessor(
+                    sagaType.getSimpleName() + "Processor",
+                    configuration.sagaManager.get(),
+                    c.eventBus(),
+                    c.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                    c.getComponent(TransactionManager.class, NoTransactionManager::instance));
+            processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
+            return processor;
+        });
         return configuration;
     }
 
@@ -72,7 +82,11 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
                                                                                                  c.parameterResolverFactory()));
         processor = new Component<>(() -> config, processorName,
-                                    c -> new SubscribingEventProcessor(managerName, sagaManager.get(), c.eventBus()));
+                                    c -> {
+                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(managerName, sagaManager.get(), c.eventBus());
+                                        processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
+                                        return processor;
+                                    });
     }
 
     /**
@@ -89,9 +103,21 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         return this;
     }
 
+    public SagaConfiguration<S> registerHandlerInterceptor(Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptor) {
+        if (config != null) {
+            processor.get().registerInterceptor(handlerInterceptor.apply(config));
+        } else {
+            handlerInterceptors.add(handlerInterceptor);
+        }
+        return this;
+    }
+
     @Override
     public void initialize(Configuration config) {
         this.config = config;
+        for (Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptor : handlerInterceptors) {
+            processor.get().registerInterceptor(handlerInterceptor.apply(config));
+        }
     }
 
     @Override

@@ -195,8 +195,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
+            Class<?> sagaType = beanFactory.getType(saga);
             SagaConfiguration<?> sagaConfiguration =
-                    SagaConfiguration.subscribingSagaManager(beanFactory.getType(saga));
+                    SagaConfiguration.subscribingSagaManager(sagaType);
+
+            String configName = lcFirst(sagaType.getSimpleName()) + "Configuration";
+            if (!beanFactory.containsBean(configName)) {
+                beanFactory.registerSingleton(configName, sagaConfiguration);
+            }
 
             if (!"".equals(sagaAnnotation.sagaStore())) {
                 sagaConfiguration
@@ -213,7 +219,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             AggregateConfigurer<?> aggregateConf =
                     AggregateConfigurer.defaultConfiguration(beanFactory.getType(aggregate));
             if ("".equals(aggregateAnnotation.repository())) {
-                String repositoryName = aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "Repository";
+                String repositoryName = lcFirst(aggregate) + "Repository";
                 String factoryName =
                         aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "AggregateFactory";
                 if (beanFactory.containsBean(repositoryName)) {
@@ -235,6 +241,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
             configurer.configureAggregate(aggregateConf);
         }
+    }
+
+    /**
+     * Return the given {@code string}, with its first character lowercase
+     *
+     * @param string The input string
+     * @return The input string, with first character lowercase
+     */
+    private String lcFirst(String string) {
+        return string.substring(0, 1).toLowerCase() + string.substring(1);
     }
 
     private <T> String findComponent(Class<T> componentType, BeanDefinitionRegistry registry,

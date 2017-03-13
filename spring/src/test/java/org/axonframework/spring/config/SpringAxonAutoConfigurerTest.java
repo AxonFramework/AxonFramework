@@ -6,6 +6,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -34,6 +35,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -76,6 +78,9 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired
     private ApplicationContext applicationContext;
 
+    @Autowired
+    private SagaConfiguration<Context.MySaga> mySagaConfiguration;
+
     @Test
     public void contextWiresMainComponents() throws Exception {
         assertNotNull(axonConfig);
@@ -83,6 +88,7 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventBus);
         assertNotNull(eventStore);
         assertNotNull(commandBus);
+        assertNotNull(mySagaConfiguration);
         assertTrue("Expected Axon to have configured an EventStore", eventBus instanceof EventStore);
 
         assertTrue("Expected provided commandbus implementation", commandBus instanceof AsynchronousCommandBus);
@@ -100,12 +106,18 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    public void testSagaManagerIsRegistered() {
+    public void testSagaIsConfigured() {
+        AtomicInteger counter = new AtomicInteger();
+        mySagaConfiguration.registerHandlerInterceptor(config -> (uow, chain) -> {
+            counter.incrementAndGet();
+            return chain.proceed();
+        });
         eventBus.publish(asEventMessage(new SomeEvent("id")));
 
         assertTrue(Context.MySaga.events.contains("id"));
         assertEquals(1, customSagaStore.findSagas(Context.MySaga.class, new AssociationValue("id", "id")).size());
         assertEquals(0, sagaStore.findSagas(Context.MySaga.class, new AssociationValue("id", "id")).size());
+        assertEquals(1, counter.get());
     }
 
     @Test
@@ -124,7 +136,7 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    public void testListenerInvocationErrorHandler(){
+    public void testListenerInvocationErrorHandler() {
         eventBus.publish(asEventMessage("Testing 123"));
 
         assertNotNull("Expected EventBus to be wired", myEventHandler.eventBus);
@@ -247,7 +259,7 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         @Component
-        public static class FailingEventHandler{
+        public static class FailingEventHandler {
 
             @EventHandler
             public void handle(String event) {
@@ -257,7 +269,7 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         @Component
-        public static class MyListenerInvocationErrorHandler implements ListenerInvocationErrorHandler{
+        public static class MyListenerInvocationErrorHandler implements ListenerInvocationErrorHandler {
 
             public List<Exception> received = new ArrayList<>();
 

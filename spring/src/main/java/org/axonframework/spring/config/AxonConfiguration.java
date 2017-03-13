@@ -11,6 +11,7 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -28,8 +29,8 @@ import java.util.function.Supplier;
 @org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
-    private Configuration config;
     private final Configurer configurer;
+    private Configuration config;
     private volatile boolean running = false;
 
     /**
@@ -89,6 +90,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public List<CorrelationDataProvider> correlationDataProviders() {
         return config.correlationDataProviders();
+    }
+
+    @Override
+    public EventUpcasterChain upcasterChain() {
+        return config.upcasterChain();
     }
 
     @Override

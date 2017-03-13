@@ -183,6 +183,11 @@ public class ConsistentHash {
         }
 
         @Override
+        public boolean local() {
+            return member.local();
+        }
+
+        @Override
         public void suspect() {
             member.suspect();
         }

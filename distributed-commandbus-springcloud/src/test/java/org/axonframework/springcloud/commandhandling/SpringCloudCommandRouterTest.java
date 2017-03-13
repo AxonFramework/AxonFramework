@@ -90,7 +90,7 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testFindDestinationReturnsMemberForCommandMessage() throws Exception {
-        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, null);
+        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, false, null);
         AtomicReference<ConsistentHash> testAtomicConsistentHash =
                 new AtomicReference<>(new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true));
         ReflectionUtils.setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
@@ -113,7 +113,7 @@ public class SpringCloudCommandRouterTest {
         assertEquals(serializedCommandFilterData, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_KEY));
         assertEquals(serializedCommandFilterClassName, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
-        verify(discoveryClient).getLocalServiceInstance();
+        verify(discoveryClient, times(2)).getLocalServiceInstance();
     }
 
     @Test
@@ -128,7 +128,7 @@ public class SpringCloudCommandRouterTest {
 
         assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
 
-        verify(discoveryClient).getLocalServiceInstance();
+        verify(discoveryClient, times(2)).getLocalServiceInstance();
     }
 
     @Test
@@ -149,6 +149,73 @@ public class SpringCloudCommandRouterTest {
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
+    }
+
+    @Test
+    public void testUpdateMembershipAfterHeartbeatEventKeepDoNotOverwriteMembers(){
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        String remoteServiceId = SERVICE_INSTANCE_ID + "-1";
+        ServiceInstance remoteServiceInstance = mock(ServiceInstance.class);
+        when(remoteServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+        when(remoteServiceInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteServiceInstance.getServiceId()).thenReturn(remoteServiceId);
+
+        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of(remoteServiceInstance));
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, remoteServiceId));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(2, resultMemberSet.size());
+
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+        AtomicReference<ConsistentHash> resultAtomicConsistentHashAfterLocalUpdate =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSetAfterLocalUpdate = resultAtomicConsistentHashAfterLocalUpdate.get().getMembers();
+        assertEquals(2, resultMemberSetAfterLocalUpdate.size());
+    }
+
+    @Test
+    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() throws Exception{
+        // Update router memberships with local and remote service instance
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+
+        String remoteServiceId = SERVICE_INSTANCE_ID + "-1";
+        ServiceInstance remoteServiceInstance = mock(ServiceInstance.class);
+        when(remoteServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+        when(remoteServiceInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteServiceInstance.getServiceId()).thenReturn(remoteServiceId);
+
+        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of(remoteServiceInstance));
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, remoteServiceId));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(2, resultMemberSet.size());
+
+        // Evict remote service instance from discovery client and update router memberships
+        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of());
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        AtomicReference<ConsistentHash> resultAtomicConsistentHashAfterVanish =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
+        assertEquals(1, resultMemberSetAfterVanish.size());
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSetAfterVanish.iterator().next());
     }
 
     @Test
@@ -181,11 +248,36 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient).getInstances(expectedServiceInstanceId);
     }
 
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventTwoInstancesOnSameServiceIdUpdatesConsistentHash(){
+        int expectedMemberSetSize = 2;
+
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        ServiceInstance remoteInstance = mock(ServiceInstance.class);
+        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(remoteInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(expectedMemberSetSize, resultMemberSet.size());
+    }
+
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        assertEquals(result.name(), expectedMemberName);
-        assertEquals(result.segmentCount(), LOAD_FACTOR);
+        assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
+        assertEquals(LOAD_FACTOR, result.segmentCount());
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
         assertTrue(connectionEndpointOptional.isPresent());
