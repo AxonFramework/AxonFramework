@@ -28,6 +28,9 @@ import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Updates.set;
 import static java.lang.String.format;
 
+/**
+ * An implementation of TokenStore that allows you store and retrieve tracking tokens with MongoDB.
+ */
 public class MongoTokenStore implements TokenStore {
 
     private final MongoTemplate mongoTemplate;
@@ -39,6 +42,13 @@ public class MongoTokenStore implements TokenStore {
     private final static Clock clock = Clock.systemUTC();
     private final static Logger logger = LoggerFactory.getLogger(MongoTokenStore.class);
 
+    /**
+     * Creates a MongoTokenStore with a default claim timeout of 10 seconds, a default owner identifier and a default
+     * content type.
+     *
+     * @param mongoTemplate used to access the collection in which tracking tokens are stored
+     * @param serializer    serializer used to serialize tracking tokens
+     */
     public MongoTokenStore(MongoTemplate mongoTemplate, Serializer serializer) {
         this(mongoTemplate,
              serializer,
@@ -47,6 +57,15 @@ public class MongoTokenStore implements TokenStore {
              byte[].class);
     }
 
+    /**
+     * Creates a MongoTokenStore by using the given values.
+     *
+     * @param mongoTemplate used to access the collection in which tracking tokens are stored
+     * @param serializer    serializer used to serialize TrackingToken
+     * @param claimTimeout  the amount of time after which a claim is automatically released
+     * @param nodeId        the owner identifier that this token store uses
+     * @param contentType   the data type of the serialized tracking token
+     */
     public MongoTokenStore(MongoTemplate mongoTemplate, Serializer serializer, TemporalAmount claimTimeout,
                            String nodeId, Class<?> contentType) {
         this.mongoTemplate = mongoTemplate;
@@ -61,12 +80,18 @@ public class MongoTokenStore implements TokenStore {
         updateOrInsertTokenEntry(token, processorName, segment);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TrackingToken fetchToken(String processorName, int segment) throws UnableToClaimTokenException {
         AbstractTokenEntry<?> tokenEntry = loadOrInsertTokenEntry(processorName, segment);
         return tokenEntry.getToken(serializer);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void releaseClaim(String processorName, int segment) {
         UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
@@ -81,6 +106,13 @@ public class MongoTokenStore implements TokenStore {
         }
     }
 
+    /**
+     * Creates a filter that allows you to retrieve a claimable token entry with a given processor name and segment.
+     *
+     * @param processorName the processor name of the token entry
+     * @param segment       the segment of the token entry
+     * @return the filter
+     */
     private Bson claimableTokenEntryFilter(String processorName, int segment) {
         return and(
                 eq("processorName", processorName),
