@@ -153,6 +153,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         } else {
             final CompositeClassLoader compositeClassLoader = new CompositeClassLoader();
             compositeClassLoader.add(this.getClass().getClassLoader());
+            compositeClassLoader.add(xStream.getClassLoader());
+            
             xStream.setClassLoader(compositeClassLoader);
         }
 
