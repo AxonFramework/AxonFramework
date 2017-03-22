@@ -31,7 +31,7 @@ public class NullRepository<T> extends AbstractRepository<T, AnnotatedAggregate<
 
     @Override
     protected AnnotatedAggregate<T> doLoad(String aggregateIdentifier, Long expectedVersion) {
-        throw new RuntimeException("This repository is unable to load any aggregate");
+        throw new UnableToLoadAggregateException();
     }
 
     @Override
