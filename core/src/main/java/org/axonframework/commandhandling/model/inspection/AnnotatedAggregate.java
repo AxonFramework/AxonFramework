@@ -130,9 +130,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     protected void registerRoot(Callable<T> aggregateFactory) throws Exception {
         this.aggregateRoot = executeWithResult(aggregateFactory);
         execute(() -> {
+            applying = true;
             while (!delayedTasks.isEmpty()) {
                 delayedTasks.poll().run();
             }
+            applying = false;
         });
     }
 
