@@ -56,5 +56,19 @@ public abstract class ObjectUtils {
         }
         return instance;
     }
+    /**
+     * Returns the given instance, if not {@code null} or of zero length, or otherwise the given {@code defaultValue}.
+     *
+     * @param instance        The value to return, if not {@code null}
+     * @param defaultValue The value, when {@code instance} is {@code null}
+     * @param <T>             The type of value to return
+     * @return {@code instance} if not {@code null}, otherwise {@code defaultValue}
+     */
+    public static <T extends CharSequence> T getNonEmptyOrDefault(T instance, T defaultValue) {
+        if (instance == null || instance.length() == 0) {
+            return defaultValue;
+        }
+        return instance;
+    }
 
 }
