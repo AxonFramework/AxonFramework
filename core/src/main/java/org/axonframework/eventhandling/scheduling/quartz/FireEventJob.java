@@ -85,7 +85,7 @@ public class FireEventJob implements Job {
                              eventMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
-            logger.warn("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription());
+            logger.error("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription(), e);
             throw new JobExecutionException(e);
         }
     }
