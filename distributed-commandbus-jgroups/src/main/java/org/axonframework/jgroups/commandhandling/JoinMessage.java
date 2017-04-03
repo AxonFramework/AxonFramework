@@ -37,7 +37,7 @@ import java.util.function.Predicate;
 public class JoinMessage implements Externalizable {
 
     private static final long serialVersionUID = 5829153340455127795L;
-    private Predicate<CommandMessage<?>> messageFilter;
+    private Predicate<? super CommandMessage<?>> messageFilter;
     private Address address;
     private int loadFactor;
 
@@ -57,7 +57,7 @@ public class JoinMessage implements Externalizable {
      * @param loadFactor    The loadFactor the member wishes to join with
      * @param messageFilter A predicate the will filter command messages this node will accept.
      */
-    public JoinMessage(Address address, int loadFactor, Predicate<CommandMessage<?>> messageFilter) {
+    public JoinMessage(Address address, int loadFactor, Predicate<? super CommandMessage<?>> messageFilter) {
         this.address = address;
         this.loadFactor = loadFactor;
         this.messageFilter = messageFilter;
@@ -92,7 +92,7 @@ public class JoinMessage implements Externalizable {
      *
      * @return the member's message filter
      */
-    public Predicate<CommandMessage<?>> messageFilter() {
+    public Predicate<? super CommandMessage<?>> messageFilter() {
         return messageFilter;
     }
 }

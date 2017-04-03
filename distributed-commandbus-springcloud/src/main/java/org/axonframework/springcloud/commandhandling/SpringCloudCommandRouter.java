@@ -1,14 +1,7 @@
 package org.axonframework.springcloud.commandhandling;
 
-import java.net.URI;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.*;
-import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -17,6 +10,12 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.context.event.EventListener;
+
+import java.net.URI;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Clouds
@@ -78,7 +77,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     @Override
-    public void updateMembership(int loadFactor, Predicate<CommandMessage<?>> commandFilter) {
+    public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
         ServiceInstance localServiceInstance = this.discoveryClient.getLocalServiceInstance();
         Map<String, String> localServiceInstanceMetadata = localServiceInstance.getMetadata();
         localServiceInstanceMetadata.put(LOAD_FACTOR, Integer.toString(loadFactor));
@@ -104,8 +103,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     /**
      * Update the router memberships.
+     *
      * @param serviceInstances Services instances to add
-     * @param overwrite True to evict members absent from serviceInstances
+     * @param overwrite        True to evict members absent from serviceInstances
      */
     private void updateMemberships(Set<ServiceInstance> serviceInstances, boolean overwrite) {
         AtomicReference<ConsistentHash> updatedConsistentHash;
@@ -115,8 +115,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
             updatedConsistentHash = atomicConsistentHash;
         }
 
-        serviceInstances
-                .forEach(serviceInstance -> {
+        serviceInstances.forEach(serviceInstance -> {
             SimpleMember<URI> simpleMember = new SimpleMember<>(
                     serviceInstance.getServiceId().toUpperCase() + "[" + serviceInstance.getUri() + "]",
                     serviceInstance.getUri(),
@@ -129,7 +128,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
             SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
-            CommandNameFilter commandNameFilter = serializer.deserialize(serializedObject);
+            Predicate<? super CommandMessage<?>> commandNameFilter = serializer.deserialize(serializedObject);
 
             updatedConsistentHash.updateAndGet(
                     consistentHash -> consistentHash.with(simpleMember, loadFactor, commandNameFilter)
