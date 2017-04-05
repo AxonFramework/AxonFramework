@@ -18,10 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -37,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -68,7 +67,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String name;
     private volatile ExecutorService executorService;
     private volatile TrackingToken lastToken;
-    private volatile State state = State.NOT_STARTED;
+    private AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
 
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
@@ -107,7 +106,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
+             messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
@@ -129,7 +128,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, transactionManager, 1, messageMonitor);
+             messageSource, tokenStore, transactionManager, 1, messageMonitor);
     }
 
     /**
@@ -153,13 +152,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TransactionManager transactionManager, int batchSize,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
+        Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.messageSource = requireNonNull(messageSource);
         this.tokenStore = requireNonNull(tokenStore);
         this.transactionManager = transactionManager;
         this.name = name;
-        registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
-        Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.batchSize = batchSize;
+        registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
+        registerInterceptor((unitOfWork, interceptorChain) -> {
+            unitOfWork.onPrepareCommit(uow -> {
+                EventMessage<?> event = uow.getMessage();
+                if (event instanceof TrackedEventMessage<?> &&
+                        lastToken != null &&
+                        lastToken.equals(((TrackedEventMessage) event).trackingToken())) {
+                    tokenStore.storeToken(lastToken, getName(), 0);
+                }
+            });
+            return interceptorChain.proceed();
+        });
     }
 
     /**
@@ -169,40 +179,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     @Override
     public void start() {
-        if (state == State.NOT_STARTED || state == State.SHUT_DOWN) {
-            if (this.executorService == null || this.executorService.isShutdown()) {
-                this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
-            }
-            state = State.STARTED;
-            registerInterceptor((unitOfWork, interceptorChain) -> {
-                unitOfWork.onPrepareCommit(uow -> {
-                    EventMessage<?> event = uow.getMessage();
-                    if (event instanceof TrackedEventMessage<?> &&
-                            lastToken != null &&
-                            lastToken.equals(((TrackedEventMessage) event).trackingToken())) {
-                        tokenStore.storeToken(lastToken, getName(), 0);
-                    }
-                });
-                return interceptorChain.proceed();
-            });
+        State previousState = state.getAndSet(State.STARTED);
+        if (!previousState.isRunning()) {
+            ensureRunningExecutor();
             executorService.submit(() -> {
                 try {
                     this.processingLoop();
                 } catch (Throwable e) {
-                    logger.error("Processing loop ended due to uncaught exception. Processor stopping.", e);
+                    logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
+                    state.set(State.PAUSED_ERROR);
                 }
             });
         }
     }
 
-    /**
-     * Shut down the processor.
-     */
-    @Override
-    public void shutDown() {
-        if (state != State.SHUT_DOWN) {
-            state = State.SHUT_DOWN;
-            executorService.shutdown();
+    private void ensureRunningExecutor() {
+        if (this.executorService == null || this.executorService.isShutdown()) {
+            this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
         }
     }
 
@@ -217,9 +210,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         MessageStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
-            while (state != State.SHUT_DOWN) {
-                eventStream = ensureEventStreamOpened(eventStream);
+            while (state.get().isRunning()) {
                 try {
+                    eventStream = ensureEventStreamOpened(eventStream);
                     processBatch(eventStream);
                     errorWaitTime = 1;
                 } catch (Exception e) {
@@ -288,33 +281,50 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private MessageStream<TrackedEventMessage<?>> ensureEventStreamOpened(
             MessageStream<TrackedEventMessage<?>> eventStreamIn) {
         MessageStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
-        while (eventStream == null && state == State.STARTED) {
-            Transaction tx = transactionManager.startTransaction();
-            try {
-                TrackingToken startToken = tokenStore.fetchToken(getName(), 0);
-                eventStream = messageSource.openStream(startToken);
-                tx.commit();
-            } catch (UnableToClaimTokenException e) {
-                tx.rollback();
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException interrupt) {
-                    logger.info("Thread interrupted while waiting for new attempt to claim token");
-                    Thread.currentThread().interrupt();
-                }
-            } catch (Exception e) {
-                logger.warn("Unexpected exception while attempting to retrieve token and open stream. " +
-                        "Retrying in 5 seconds.", e);
-                tx.rollback();
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException interrupt) {
-                    logger.info("Thread interrupted while waiting for new attempt to claim token");
-                    Thread.currentThread().interrupt();
-                }
-            }
+        if (eventStream == null && state.get().isRunning()) {
+            eventStream = transactionManager.fetchInTransaction(
+                    () -> messageSource.openStream(tokenStore.fetchToken(getName(), 0)));
         }
         return eventStream;
+    }
+
+    /**
+     * Stops processing if it currently running, but doesn't stop free up the processing thread. If the processor is
+     * not running, the state isn't changed.
+     */
+    public void pause() {
+        this.state.updateAndGet(s -> s.isRunning() ? State.PAUSED : s);
+    }
+
+    /**
+     * Indicates whether this processor is currently running (i.e. consuming events from a stream).
+     *
+     * @return {@code true} when running, otherwise {@code false}
+     */
+    public boolean isRunning() {
+        return state.get().isRunning();
+    }
+
+    /**
+     * Indicates whether the processor has been paused due to an error. In such case, the processor has forcefully
+     * paused, as it wasn't able to automatically recover.
+     * <p>
+     * Note that this method also returns {@code false} when the processor was paused using {@link #pause()}.
+     *
+     * @return {@code true} when paused due to an error, otherwise {@code false}
+     */
+    public boolean isError() {
+        return state.get() == State.PAUSED_ERROR;
+    }
+
+    /**
+     * Shut down the processor.
+     */
+    @Override
+    public void shutDown() {
+        if (state.getAndUpdate(s -> State.SHUT_DOWN) != State.SHUT_DOWN) {
+            executorService.shutdown();
+        }
     }
 
     /**
@@ -324,10 +334,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @return the processor state
      */
     protected State getState() {
-        return state;
+        return state.get();
     }
 
     protected enum State {
-        NOT_STARTED, STARTED, SHUT_DOWN
+
+        NOT_STARTED(false), STARTED(true), PAUSED(false), SHUT_DOWN(false), PAUSED_ERROR(false);
+
+        private final boolean allowProcessing;
+
+        State(boolean allowProcessing) {
+            this.allowProcessing = allowProcessing;
+        }
+
+        boolean isRunning() {
+            return allowProcessing;
+        }
     }
 }

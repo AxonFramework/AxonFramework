@@ -179,6 +179,68 @@ public class TrackingEventProcessorTest {
         assertEquals(9, ackedEvents.size());
     }
 
+
+    @Test
+    @DirtiesContext
+    public void testContinueAfterPause() throws Exception {
+        eventBus.publish(createEvents(2));
+
+        List<EventMessage<?>> ackedEvents = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertEquals(2, ackedEvents.size());
+
+        testSubject.pause();
+
+        eventBus.publish(createEvents(2));
+
+        CountDownLatch countDownLatch2 = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch2.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+
+        testSubject.start();
+        assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
+        assertEquals(4, ackedEvents.size());
+
+        // batch size = 1
+        verify(tokenStore, times(4)).storeToken(any(), anyString(), anyInt());
+    }
+
+    @Test
+    @DirtiesContext
+    public void testProcessorGoesToRetryModeWhenOpenStreamFails() throws Exception {
+        testSubject.shutDown();
+        eventBus = spy(eventBus);
+
+        tokenStore = new InMemoryTokenStore();
+        eventBus.publish(createEvents(5));
+        when(eventBus.openStream(any())).thenThrow(new MockException()).thenCallRealMethod();
+
+        List<EventMessage<?>> ackedEvents = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(5);
+        doAnswer(invocation -> {
+            ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
+        testSubject.start();
+        assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(5, ackedEvents.size());
+        verify(eventBus, times(2)).openStream(any());
+    }
+
     @Test
     public void testFirstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
