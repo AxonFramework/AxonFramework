@@ -35,6 +35,8 @@ public class AxonThreadFactoryTest {
         Thread t2 = testSubject.newThread(new NoOpRunnable());
 
         assertEquals("test", t1.getThreadGroup().getName());
+        assertEquals("test-0", t1.getName());
+        assertEquals("test-1", t2.getName());
         assertSame("Expected only a single ThreadGroup", t1.getThreadGroup(), t2.getThreadGroup());
     }
 
@@ -46,6 +48,7 @@ public class AxonThreadFactoryTest {
         Thread t2 = testSubject.newThread(new NoOpRunnable());
 
         assertEquals("test", t1.getThreadGroup().getName());
+        assertEquals("test-0", t1.getName());
         assertSame("Expected only a single ThreadGroup", threadGroup, t1.getThreadGroup());
         assertSame("Expected only a single ThreadGroup", threadGroup, t2.getThreadGroup());
     }
