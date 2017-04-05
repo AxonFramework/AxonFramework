@@ -17,6 +17,7 @@
 package org.axonframework.common;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Thread factory that created threads in a given group.
@@ -27,7 +28,8 @@ import java.util.concurrent.ThreadFactory;
 public class AxonThreadFactory implements ThreadFactory {
 
     private final int priority;
-    private final ThreadGroup groupName;
+    private final ThreadGroup threadGroup;
+    private final AtomicInteger threadNumber = new AtomicInteger();
 
     /**
      * Initializes a ThreadFactory instance that creates each thread in a group with given {@code groupName} with
@@ -63,13 +65,17 @@ public class AxonThreadFactory implements ThreadFactory {
         Assert.isTrue(priority <= Thread.MAX_PRIORITY && priority >= Thread.MIN_PRIORITY,
                       () -> "Given priority is invalid");
         this.priority = priority;
-        this.groupName = group;
+        this.threadGroup = group;
     }
 
     @Override
     public Thread newThread(Runnable r) {
-        Thread thread = new Thread(groupName, r);
+        Thread thread = new Thread(threadGroup, r, threadGroup.getName() + "-" + nextThreadNumber());
         thread.setPriority(priority);
         return thread;
+    }
+
+    private int nextThreadNumber() {
+        return threadNumber.getAndIncrement();
     }
 }
