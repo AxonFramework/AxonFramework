@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -168,6 +169,23 @@ public abstract class AbstractEventBus implements EventBus {
             return eventQueue;
 
         });
+    }
+
+    /**
+     * Returns a list of all the events staged for publication in this Unit of Work. Changing this list will
+     * not affect the publication of events.
+     *
+     * @return a list of all the events staged for publication
+     */
+    protected List<EventMessage<?>> queuedMessages() {
+        if (!CurrentUnitOfWork.isStarted()) {
+            return Collections.emptyList();
+        }
+        List<EventMessage<?>> messages = new ArrayList<>();
+        for (UnitOfWork<?> uow = CurrentUnitOfWork.get(); uow != null; uow = uow.parent().orElse(null)) {
+            messages.addAll(uow.getOrDefaultResource(eventsKey, Collections.emptyList()));
+        }
+        return messages;
     }
 
     /**

@@ -243,6 +243,21 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
+     * Returns the resource attached under given {@code name}. If there is no resource mapped to the given key,
+     * the {@code defaultValue} is returned.
+     *
+     * @param key          The name under which the resource was attached
+     * @param defaultValue The value to return if no mapping is available
+     * @param <R>          The type of resource
+     * @return The resource mapped to the given {@code key}, or the resource returned by the
+     * {@code mappingFunction} if no resource was found.
+     */
+    @SuppressWarnings("unchecked")
+    default <R> R getOrDefaultResource(String key, R defaultValue) {
+        return (R) resources().getOrDefault(key, defaultValue);
+    }
+
+    /**
      * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
