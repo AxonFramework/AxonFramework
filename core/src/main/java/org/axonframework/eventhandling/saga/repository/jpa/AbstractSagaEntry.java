@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,6 +39,15 @@ public abstract class AbstractSagaEntry<T> {
     protected T serializedSaga;
 
 
+    /**
+     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
+     * saga is not modified by this operation.
+     *
+     * @param saga           The saga to store
+     * @param sagaIdentifier The saga identifier
+     * @param serializer     The serialization mechanism to convert the Saga to a byte stream
+     * @param contentType    The saga content type to serialize to
+     */
     public AbstractSagaEntry(Object saga, String sagaIdentifier, Serializer serializer, Class<T> contentType) {
         this.sagaId = sagaIdentifier;
         SerializedObject<T> serialized = serializer.serialize(saga, contentType);
