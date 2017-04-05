@@ -276,7 +276,6 @@ public class JpaSagaStore implements SagaStore<Object> {
             storeAssociationValue(entityManager, sagaType, sagaIdentifier, associationValue);
         }
         if (logger.isDebugEnabled()) {
-            // TODO SOLUTION, CAN'T DESERIALIZE TO STRING BY DEFAULT..
             logger.debug("Storing saga id {} as {}", sagaIdentifier,
                     entry instanceof SagaEntry ?
                             new String((byte[]) entry.getSerializedSaga(), Charset.forName("UTF-8")) : "[Custom serializtion format (not visible)]");
@@ -294,31 +293,6 @@ public class JpaSagaStore implements SagaStore<Object> {
      */
     public void setUseExplicitFlush(boolean useExplicitFlush) {
         this.useExplicitFlush = useExplicitFlush;
-    }
-
-    private static class EntryImpl<S> implements Entry<S> {
-        private final Set<AssociationValue> associationValues;
-        private final S loadedSaga;
-
-        public EntryImpl(Set<AssociationValue> associationValues, S loadedSaga) {
-            this.associationValues = associationValues;
-            this.loadedSaga = loadedSaga;
-        }
-
-        @Override
-        public TrackingToken trackingToken() {
-            return null;
-        }
-
-        @Override
-        public Set<AssociationValue> associationValues() {
-            return associationValues;
-        }
-
-        @Override
-        public S saga() {
-            return loadedSaga;
-        }
     }
 
     /**
@@ -348,5 +322,30 @@ public class JpaSagaStore implements SagaStore<Object> {
      */
     protected Class<? extends SimpleSerializedObject<?>> serializedObjectType(){
         return SerializedSaga.class;
+    }
+
+    private static class EntryImpl<S> implements Entry<S> {
+        private final Set<AssociationValue> associationValues;
+        private final S loadedSaga;
+
+        public EntryImpl(Set<AssociationValue> associationValues, S loadedSaga) {
+            this.associationValues = associationValues;
+            this.loadedSaga = loadedSaga;
+        }
+
+        @Override
+        public TrackingToken trackingToken() {
+            return null;
+        }
+
+        @Override
+        public Set<AssociationValue> associationValues() {
+            return associationValues;
+        }
+
+        @Override
+        public S saga() {
+            return loadedSaga;
+        }
     }
 }
