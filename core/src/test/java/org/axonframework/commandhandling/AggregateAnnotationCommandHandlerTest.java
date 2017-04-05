@@ -668,14 +668,14 @@ public class AggregateAnnotationCommandHandlerTest {
 
     private static class StubCommandAnnotatedCollectionEntity {
 
-        @EntityId(routingKey = "entityId")
+        @EntityId
         private String id;
 
         private StubCommandAnnotatedCollectionEntity(String id) {
             this.id = id;
         }
 
-        @CommandHandler
+        @CommandHandler(routingKey = "entityId")
         public String handle(UpdateEntityFromCollectionStateCommand command) {
             return "handled by " + getId();
         }

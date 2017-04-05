@@ -39,11 +39,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static java.lang.String.format;
 
 /**
- * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific type of
- * command. Interceptors may be configured to add processing to commands regardless of their type, for example logging,
+ * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
+ * Interceptors may be configured to add processing to commands regardless of their type or name, for example logging,
  * security (authorization), sla monitoring, etc.
- * <p/>
- * This class can be monitored as the implementation of the {@code StatisticsProvider} interface indicates.
  *
  * @author Allard Buijze
  * @author Martin Tilma
@@ -59,13 +57,13 @@ public class SimpleCommandBus implements CommandBus {
             = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
             = new CopyOnWriteArrayList<>();
-    private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
-
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private final TransactionManager transactionManager;
+    private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
     /**
-     * Initializes the SimpleCommandBus.
+     * Initializes the SimpleCommandBus. This instance shall not manage any transactions or expose any monitoring
+     * information.
      */
     public SimpleCommandBus() {
         this(NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE);
@@ -75,7 +73,7 @@ public class SimpleCommandBus implements CommandBus {
      * Initializes the SimpleCommandBus with the given {@code transactionManager} and {@code messageMonitor}
      *
      * @param transactionManager The transactionManager to manage transaction with
-     * @param messageMonitor the message monitor to monitor the command bus
+     * @param messageMonitor     the message monitor to monitor the command bus
      */
     public SimpleCommandBus(TransactionManager transactionManager,
                             MessageMonitor<? super CommandMessage<?>> messageMonitor) {
@@ -146,11 +144,8 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Subscribe the given {@code handler} to commands of type {@code commandType}. If a subscription already
-     * exists for the given type, then the new handler takes over the subscription.
-     *
-     * @param commandName The type of command to subscribe the handler to
-     * @param handler     The handler instance that handles the given type of command
+     * Subscribe the given {@code handler} to commands with given {@code commandName}. If a subscription already
+     * exists for the given name, then the new handler takes over the subscription.
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {

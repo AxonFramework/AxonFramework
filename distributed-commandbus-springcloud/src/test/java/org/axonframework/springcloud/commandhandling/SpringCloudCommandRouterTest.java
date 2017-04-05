@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -43,7 +44,7 @@ public class SpringCloudCommandRouterTest {
     private static final String ROUTING_KEY = "routingKey";
     private static final String SERVICE_INSTANCE_ID = "SERVICEID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final CommandNameFilter COMMAND_NAME_FILTER = new CommandNameFilter(String.class.getName());
+    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
 
     @InjectMocks
     private SpringCloudCommandRouter testSubject;
@@ -107,11 +108,13 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipUpdatesLocalServiceInstance() throws Exception {
-        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+        Predicate<? super CommandMessage<?>> commandNameFilter = new CommandNameFilter(String.class.getName());
+        String commandFilterData = new XStreamSerializer().serialize(commandNameFilter, String.class).getData();
+        testSubject.updateMembership(LOAD_FACTOR, commandNameFilter);
 
         assertEquals(Integer.toString(LOAD_FACTOR), serviceInstanceMetadata.get(LOAD_FACTOR_KEY));
-        assertEquals(serializedCommandFilterData, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_KEY));
-        assertEquals(serializedCommandFilterClassName, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
+        assertEquals(commandFilterData, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_KEY));
+        assertEquals(CommandNameFilter.class.getName(), serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
         verify(discoveryClient).getLocalServiceInstance();
     }

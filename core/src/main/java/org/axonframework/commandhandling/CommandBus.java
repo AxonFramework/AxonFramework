@@ -22,8 +22,8 @@ import org.axonframework.messaging.MessageHandler;
 
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
- * unsubscribe to specific types of commands on the command bus. Only a single handler may be subscribed for a single
- * type of command at any time.
+ * unsubscribe to specific commands (identified by their {@link CommandMessage#getCommandName() name}) on the command
+ * bus. Only a single handler may be subscribed for a single command name at any time.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -31,14 +31,13 @@ import org.axonframework.messaging.MessageHandler;
 public interface CommandBus {
 
     /**
-     * Dispatch the given {@code command} to the CommandHandler subscribed to that type of {@code command}.
-     * No
-     * feedback is given about the status of the dispatching process. Implementations may return immediately after
+     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
+     * No feedback is given about the status of the dispatching process. Implementations may return immediately after
      * asserting a valid handler is registered for the given command.
      *
-     * @param <C>     The type of command to dispatch
+     * @param <C>     The payload type of the command to dispatch
      * @param command The Command to dispatch
-     * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}.
+     * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}'s name.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
     default <C> void dispatch(CommandMessage<C> command) {
@@ -46,10 +45,10 @@ public interface CommandBus {
     }
 
     /**
-     * Dispatch the given {@code command} to the CommandHandler subscribed to that type of {@code command}.
-     * When the command is processed, on of the callback methods is called, depending on the result of the processing.
+     * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.
+     * When the command is processed, one of the callback's methods is called, depending on the result of the processing.
      * <p/>
-     * When the method returns, the only guarantee provided by the CommandBus implementation, is that the command has
+     * When the method returns, the only guarantee provided by the CommandBus implementation is that the command has
      * been successfully received. Implementations are highly recommended to perform basic validation of the command
      * before returning from this method call.
      * <p/>
@@ -58,7 +57,7 @@ public interface CommandBus {
      *
      * @param command  The Command to dispatch
      * @param callback The callback to invoke when command processing is complete
-     * @param <C>      The type of command to dispatch
+     * @param <C>      The payload type of the command to dispatch
      * @param <R>      The type of the expected result
      * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}.
      * @see GenericCommandMessage#asCommandMessage(Object)
@@ -66,9 +65,9 @@ public interface CommandBus {
     <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback);
 
     /**
-     * Subscribe the given {@code handler} to commands of type {@code commandType}.
+     * Subscribe the given {@code handler} to commands with the given {@code commandName}.
      * <p/>
-     * If a subscription already exists for the given type, the behavior is undefined. Implementations may throw an
+     * If a subscription already exists for the given name, the behavior is undefined. Implementations may throw an
      * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
      * {@code handler} gets the subscription.
      *

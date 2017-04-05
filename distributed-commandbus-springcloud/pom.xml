@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
-            <version>4.3.4.RELEASE</version>
+            <version>${spring.version}</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>

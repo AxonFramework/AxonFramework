@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation indication that a parameter on an Event Handler method should be injected with the SequenceNumber of
+ * Annotation indicating that a parameter on an Event Handler method should be injected with the SequenceNumber of
  * a DomainEventMessage. The parameter type must be assignable from {@link java.lang.Long}.
  *
  * @author Mark Ingram
