@@ -1,6 +1,5 @@
 package org.axonframework.boot;
 
-
 import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
 import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
@@ -55,9 +54,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.ApplicationContext;
@@ -81,7 +80,10 @@ import java.util.regex.Pattern;
 @ConditionalOnClass(SpringAxonAutoConfigurer.class)
 @Configuration
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration")
-@EnableConfigurationProperties(EventProcessorProperties.class)
+@EnableConfigurationProperties(value = {
+        EventProcessorProperties.class,
+        DistributedCommandBusProperties.class
+})
 public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Autowired
@@ -145,6 +147,19 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
+        return commandBus;
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("${axon.distributed.enabled:false} || ${axon.distributed.jgroups.enabled:false}")
+    //@ConditionalOnExpression can be replaced for @ConditionalOnProperty once the deprecated jgroups.enabled is removed
+    public DistributedCommandBus distributedCommandBus(CommandRouter router,
+                                                       CommandBusConnector connector,
+                                                       DistributedCommandBusProperties distributedCommandBusProperties) {
+        DistributedCommandBus commandBus = new DistributedCommandBus(router, connector);
+        commandBus.updateLoadFactor(distributedCommandBusProperties.getLoadFactor());
         return commandBus;
     }
 
@@ -275,90 +290,44 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         }
     }
 
-    @ConfigurationProperties(prefix = "axon.distributed")
-    public static class DistributedCommandBusProperties {
-
-        /**
-         * Enables DistributedCommandBus configuration for this application
-         */
-        private boolean enabled = false;
-
-        /**
-         * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will
-         * receive compared to other nodes in the cluster. Defaults to 100.
-         */
-        private int loadFactor = 100;
-
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-
-        public int getLoadFactor() {
-            return loadFactor;
-        }
-
-        public void setLoadFactor(int loadFactor) {
-            this.loadFactor = loadFactor;
-        }
-
-    }
-
-    @ConditionalOnBean(value = { DiscoveryClient.class, RestTemplate.class })
-    @EnableConfigurationProperties(DistributedCommandBusProperties.class)
-    @ConditionalOnProperty("axon.distributed.enabled")
-    @AutoConfigureAfter(JpaConfiguration.class)
     @Configuration
+    @AutoConfigureAfter(JpaConfiguration.class)
+    @ConditionalOnProperty("axon.distributed.enabled")
+    @ConditionalOnBean(value = { DiscoveryClient.class, RestTemplate.class })
     public static class SpringCloudConfiguration {
 
-        @Autowired
-        private DistributedCommandBusProperties distributedCommandBusProperties;
-
+        @Bean
         @ConditionalOnMissingBean
-        @Primary
-        @Bean
-        public DistributedCommandBus distributedCommandBus(CommandRouter router, CommandBusConnector connector) {
-            DistributedCommandBus commandBus = new DistributedCommandBus(router, connector);
-            commandBus.updateLoadFactor(distributedCommandBusProperties.getLoadFactor());
-            return commandBus;
-        }
-
-        @ConditionalOnMissingBean(CommandRouter.class)
-        @Bean
-        public SpringCloudCommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient) {
+        public CommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient) {
             return new SpringCloudCommandRouter(discoveryClient, new AnnotationRoutingStrategy());
         }
 
-        @ConditionalOnMissingBean(CommandBusConnector.class)
         @Bean
-        public SpringHttpCommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
-                                                                           RestTemplate restTemplate,
-                                                                           Serializer serializer) {
+        @ConditionalOnMissingBean
+        public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
+                                                                 RestTemplate restTemplate,
+                                                                 Serializer serializer) {
             return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
         }
 
     }
 
     @ConditionalOnClass(name = { "org.axonframework.jgroups.commandhandling.JGroupsConnector", "org.jgroups.JChannel" })
-    @EnableConfigurationProperties(JGroupsConfiguration.JGroupsProperties.class)
     @ConditionalOnProperty("axon.distributed.jgroups.enabled")
     @AutoConfigureAfter(SpringCloudConfiguration.class)
     @Configuration
     public static class JGroupsConfiguration {
 
         private static final Logger logger = LoggerFactory.getLogger(JGroupsConfiguration.class);
+
         @Autowired
-        private JGroupsProperties jGroupsProperties;
+        private DistributedCommandBusProperties properties;
 
         @ConditionalOnProperty("axon.distributed.jgroups.gossip.autoStart")
         @Bean(destroyMethod = "stop")
         public GossipRouter gossipRouter() {
             Matcher matcher =
-                    Pattern.compile("([^[\\[]]*)\\[(\\d*)\\]").matcher(jGroupsProperties.getGossip().getHosts());
+                    Pattern.compile("([^[\\[]]*)\\[(\\d*)\\]").matcher(properties.getJgroups().getGossip().getHosts());
             if (matcher.find()) {
 
                 GossipRouter gossipRouter = new GossipRouter(matcher.group(1), Integer.parseInt(matcher.group(2)));
@@ -370,165 +339,27 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 return gossipRouter;
             } else {
                 logger.error("Wrong hosts pattern, cannot start embedded Gossip Router: " +
-                                     jGroupsProperties.getGossip().getHosts());
+                                     properties.getJgroups().getGossip().getHosts());
             }
             return null;
         }
 
-        @ConditionalOnMissingBean
-        @Primary
-        @Bean
-        public DistributedCommandBus distributedCommandBus(CommandRouter router, CommandBusConnector connector) {
-            DistributedCommandBus commandBus = new DistributedCommandBus(router, connector);
-            commandBus.updateLoadFactor(jGroupsProperties.getLoadFactor());
-            return commandBus;
-        }
 
         @ConditionalOnMissingBean({CommandRouter.class, CommandBusConnector.class})
         @Bean
         public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
                                                                        @Qualifier("localSegment") CommandBus
                                                                                localSegment) {
-
-            System.setProperty("jgroups.tunnel.gossip_router_hosts", jGroupsProperties.getGossip().getHosts());
-            System.setProperty("jgroups.bind_addr", String.valueOf(jGroupsProperties.getBindAddr()));
-            System.setProperty("jgroups.bind_port", String.valueOf(jGroupsProperties.getBindPort()));
+            System.setProperty("jgroups.tunnel.gossip_router_hosts", properties.getJgroups().getGossip().getHosts());
+            System.setProperty("jgroups.bind_addr", String.valueOf(properties.getJgroups().getBindAddr()));
+            System.setProperty("jgroups.bind_port", String.valueOf(properties.getJgroups().getBindPort()));
 
             JGroupsConnectorFactoryBean jGroupsConnectorFactoryBean = new JGroupsConnectorFactoryBean();
-            jGroupsConnectorFactoryBean.setClusterName(jGroupsProperties.getClusterName());
+            jGroupsConnectorFactoryBean.setClusterName(properties.getJgroups().getClusterName());
             jGroupsConnectorFactoryBean.setLocalSegment(localSegment);
             jGroupsConnectorFactoryBean.setSerializer(serializer);
-            jGroupsConnectorFactoryBean.setConfiguration(jGroupsProperties.getConfigurationFile());
+            jGroupsConnectorFactoryBean.setConfiguration(properties.getJgroups().getConfigurationFile());
             return jGroupsConnectorFactoryBean;
-        }
-
-        @ConfigurationProperties(prefix = "axon.distributed.jgroups")
-        public static class JGroupsProperties {
-
-            private Gossip gossip;
-
-            /**
-             * Enables JGroups configuration for this application
-             */
-            private boolean enabled = false;
-
-            /**
-             * The name of the JGroups cluster to connect to. Defaults to "Axon".
-             */
-            private String clusterName = "Axon";
-
-            /**
-             * The JGroups configuration file to use. Defaults to a TCP Gossip based configuration
-             */
-            private String configurationFile = "default_tcp_gossip.xml";
-
-            /**
-             * The address of the network interface to bind JGroups to. Defaults to a global IP address of this node.
-             */
-            private String bindAddr = "GLOBAL";
-
-            /**
-             * Sets the initial port to bind the JGroups connection to. If this port is taken, JGroups will find the
-             * next available port.
-             */
-            private String bindPort = "7800";
-
-            /**
-             * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will
-             * receive compared to other nodes in the cluster. Defaults to 100.
-             */
-            private int loadFactor = 100;
-
-            public Gossip getGossip() {
-                return gossip;
-            }
-
-            public void setGossip(Gossip gossip) {
-                this.gossip = gossip;
-            }
-
-            public boolean isEnabled() {
-                return enabled;
-            }
-
-            public void setEnabled(boolean enabled) {
-                this.enabled = enabled;
-            }
-
-            public String getClusterName() {
-                return clusterName;
-            }
-
-            public void setClusterName(String clusterName) {
-                this.clusterName = clusterName;
-            }
-
-            public String getConfigurationFile() {
-                return configurationFile;
-            }
-
-            public void setConfigurationFile(String configurationFile) {
-                this.configurationFile = configurationFile;
-            }
-
-            public String getBindAddr() {
-                return bindAddr;
-            }
-
-            public void setBindAddr(String bindAddr) {
-                this.bindAddr = bindAddr;
-            }
-
-            public String getBindPort() {
-                return bindPort;
-            }
-
-            public void setBindPort(String bindPort) {
-                this.bindPort = bindPort;
-            }
-
-            public int getLoadFactor() {
-                return loadFactor;
-            }
-
-            public void setLoadFactor(int loadFactor) {
-                this.loadFactor = loadFactor;
-            }
-
-            public static class Gossip {
-
-                /**
-                 * Whether to automatically attempt to start a Gossip Routers. The host and port of the Gossip server
-                 * are taken from the first define host in 'hosts'.
-                 */
-                private boolean autoStart = false;
-
-                /**
-                 * Defines the hosts of the Gossip Routers to connect to, in the form of host[port],...
-                 * <p>
-                 * If autoStart is set to {@code true}, the first host and port are used as bind address and bind port
-                 * of the Gossip server to start.
-                 * <p>
-                 * Defaults to localhost[12001].
-                 */
-                private String hosts = "localhost[12001]";
-
-                public boolean isAutoStart() {
-                    return autoStart;
-                }
-
-                public void setAutoStart(boolean autoStart) {
-                    this.autoStart = autoStart;
-                }
-
-                public String getHosts() {
-                    return hosts;
-                }
-
-                public void setHosts(String hosts) {
-                    this.hosts = hosts;
-                }
-            }
         }
 
     }
