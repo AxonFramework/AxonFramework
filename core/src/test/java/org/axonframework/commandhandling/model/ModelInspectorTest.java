@@ -20,19 +20,19 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.persistence.Id;
 import java.lang.annotation.*;
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,6 +40,8 @@ import java.util.function.Supplier;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.*;
 
 public class ModelInspectorTest {
@@ -62,6 +64,19 @@ public class ModelInspectorTest {
         assertEquals(true, inspector.commandHandler(message.getCommandName()).handle(message, target));
         assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(asCommandMessage("ok"), target));
     }
+
+    @Test
+    public void testDetectFactoryMethodHandler() throws Exception {
+        AggregateModel<SomeAnnotatedFactoryMethodClass> inspector = ModelInspector.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
+        CommandMessage<?> message = asCommandMessage("string");
+        final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember = inspector.commandHandler(message.getCommandName());
+        final Optional<CommandMessageHandlingMember> unwrap = messageHandlingMember.unwrap(CommandMessageHandlingMember.class);
+        assertThat(unwrap, notNullValue());
+        assertThat(unwrap.isPresent(), is(true));
+        final CommandMessageHandlingMember commandMessageHandlingMember = unwrap.get();
+        assertThat(commandMessageHandlingMember.isFactoryHandler(), is(true));
+    }
+
 
     @Test
     public void testEventIsPublishedThroughoutRecursiveHierarchy() throws Exception {
@@ -362,4 +377,5 @@ public class ModelInspectorTest {
     public @interface MyCustomCommandHandler {
 
     }
+
 }
