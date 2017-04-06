@@ -18,36 +18,26 @@ package org.axonframework.eventhandling.saga.repository.jpa;
 
 import org.axonframework.serialization.Serializer;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
 
 /**
- * Java Persistence Entity allowing sagas to be stored in a relational database.
+ * A custom {@link SagaEntry} to declare a different serializartion type.
  *
- * @author Allard Buijze
- * @since 0.7
+ * @author Christophe Bouhier
  */
 @Entity
-public class SagaEntry<T> extends AbstractSagaEntry<byte[]> {
+public class CustomSagaEntry extends AbstractSagaEntry<String> {
 
-    /**
-     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
-     * saga is not modified by this operation.
-     *
-     * @param saga           The saga to store
-     * @param sagaIdentifier The saga identifier
-     * @param serializer     The serialization mechanism to convert the Saga to a byte stream
-     */
-    public SagaEntry(T saga, String sagaIdentifier, Serializer serializer) {
-        super(saga, sagaIdentifier, serializer, byte[].class);
+    public CustomSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
+        super(saga, sagaIdentifier, serializer, String.class);
     }
 
     /**
      * Constructor required by JPA. Do not use.
      *
-     * @see #SagaEntry(Object, String, Serializer)
+     * @see #CustomSagaEntry(Object, String, Serializer)
      */
-    protected SagaEntry() {
+    protected CustomSagaEntry() {
         // required by JPA
     }
-
 }
