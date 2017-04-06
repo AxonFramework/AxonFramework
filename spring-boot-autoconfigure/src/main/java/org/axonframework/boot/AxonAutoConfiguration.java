@@ -52,6 +52,7 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -153,8 +154,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     @Primary
     @ConditionalOnMissingBean
-    @ConditionalOnExpression("${axon.distributed.enabled:false} || ${axon.distributed.jgroups.enabled:false}")
-    //@ConditionalOnExpression can be replaced for @ConditionalOnProperty once the deprecated jgroups.enabled is removed
+    @ConditionalOnBean({CommandRouter.class, CommandBusConnector.class})
     public DistributedCommandBus distributedCommandBus(CommandRouter router,
                                                        CommandBusConnector connector,
                                                        DistributedCommandBusProperties distributedCommandBusProperties) {
@@ -291,34 +291,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Configuration
-    @AutoConfigureAfter(JpaConfiguration.class)
-    @ConditionalOnProperty("axon.distributed.enabled")
-    @ConditionalOnBean(value = { DiscoveryClient.class, RestTemplate.class })
-    public static class SpringCloudConfiguration {
-
-        @Bean
-        @ConditionalOnMissingBean
-        public CommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient) {
-            return new SpringCloudCommandRouter(discoveryClient, new AnnotationRoutingStrategy());
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
-                                                                 RestTemplate restTemplate,
-                                                                 Serializer serializer) {
-            return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
-        }
-
-    }
-
+    @AutoConfigureAfter(SpringCloudAutoConfiguration.class)
+    @ConditionalOnExpression("${axon.distributed.enabled:false} || ${axon.distributed.jgroups.enabled:false}")
+    //@ConditionalOnExpression can be replaced for @ConditionalOnProperty once the deprecated jgroups.enabled is removed
     @ConditionalOnClass(name = { "org.axonframework.jgroups.commandhandling.JGroupsConnector", "org.jgroups.JChannel" })
-    @ConditionalOnProperty("axon.distributed.jgroups.enabled")
-    @AutoConfigureAfter(SpringCloudConfiguration.class)
-    @Configuration
-    public static class JGroupsConfiguration {
+    public static class JGroupsAutoConfiguration {
 
-        private static final Logger logger = LoggerFactory.getLogger(JGroupsConfiguration.class);
+        private static final Logger logger = LoggerFactory.getLogger(JGroupsAutoConfiguration.class);
 
         @Autowired
         private DistributedCommandBusProperties properties;
@@ -344,7 +323,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             return null;
         }
 
-
         @ConditionalOnMissingBean({CommandRouter.class, CommandBusConnector.class})
         @Bean
         public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
@@ -360,6 +338,36 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
             jGroupsConnectorFactoryBean.setSerializer(serializer);
             jGroupsConnectorFactoryBean.setConfiguration(properties.getJgroups().getConfigurationFile());
             return jGroupsConnectorFactoryBean;
+        }
+
+    }
+
+    @Configuration
+    @AutoConfigureAfter(JpaConfiguration.class)
+    @AutoConfigureBefore(JGroupsAutoConfiguration.class)
+    @ConditionalOnProperty("axon.distributed.enabled")
+    @ConditionalOnClass(name = {
+            "org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter",
+            "org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector",
+            "org.springframework.cloud.client.discovery.DiscoveryClient",
+            "org.springframework.web.client.RestTemplate"
+    })
+    public static class SpringCloudAutoConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean
+        @ConditionalOnBean(DiscoveryClient.class)
+        public CommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient) {
+            return new SpringCloudCommandRouter(discoveryClient, new AnnotationRoutingStrategy());
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        @ConditionalOnBean(RestTemplate.class)
+        public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
+                                                                 RestTemplate restTemplate,
+                                                                 Serializer serializer) {
+            return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
         }
 
     }
