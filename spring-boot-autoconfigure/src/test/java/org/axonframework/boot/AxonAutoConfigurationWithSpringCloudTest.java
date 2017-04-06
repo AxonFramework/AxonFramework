@@ -1,5 +1,6 @@
 package org.axonframework.boot;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -7,6 +8,10 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.AbstractCommandGateway;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -30,8 +35,8 @@ import org.springframework.web.client.RestTemplate;
 
 @ContextConfiguration(classes = {
         AxonAutoConfigurationWithSpringCloudTest.TestContext.class,
-        AxonAutoConfiguration.class,
-        NoopDiscoveryClientAutoConfiguration.class
+        NoopDiscoveryClientAutoConfiguration.class,
+        AxonAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.springcloud.application.properties")
 @RunWith(SpringRunner.class)
@@ -47,23 +52,35 @@ public class AxonAutoConfigurationWithSpringCloudTest {
     @Autowired
     private CommandBus commandBus;
 
+    @Autowired
+    private CommandRouter commandRouter;
+    @Autowired
+    private CommandBusConnector commandBusConnector;
+
     @Test
     public void testContextInitialization() throws Exception {
         assertNotNull(applicationContext);
 
+        assertNotNull(applicationContext.getBean(SpringCloudCommandRouter.class));
+        assertEquals(SpringCloudCommandRouter.class, commandRouter.getClass());
+
+        assertNotNull(applicationContext.getBean(SpringHttpCommandBusConnector.class));
+        assertEquals(SpringHttpCommandBusConnector.class, commandBusConnector.getClass());
+
         assertNotNull(commandBus);
+        assertEquals(DistributedCommandBus.class, commandBus.getClass());
+
         assertNotNull(localSegment);
+        assertEquals(SimpleCommandBus.class, localSegment.getClass());
+
         assertNotSame(commandBus, localSegment);
+
         assertNotNull(applicationContext.getBean(EventBus.class));
         CommandGateway gateway = applicationContext.getBean(CommandGateway.class);
         assertTrue(gateway instanceof DefaultCommandGateway);
         assertSame(((AbstractCommandGateway) gateway).getCommandBus(), commandBus);
         assertNotNull(gateway);
         assertNotNull(applicationContext.getBean(Serializer.class));
-        assertNotNull(applicationContext.getBean(AxonAutoConfiguration.DistributedCommandBusProperties.class));
-
-        assertNotNull(applicationContext.getBean(SpringCloudCommandRouter.class));
-        assertNotNull(applicationContext.getBean(SpringHttpCommandBusConnector.class));
     }
 
     @Configuration
