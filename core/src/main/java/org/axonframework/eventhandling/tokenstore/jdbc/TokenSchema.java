@@ -144,7 +144,7 @@ public class TokenSchema {
          * @return the modified Builder instance
          */
         public Builder setProcessorNameColumn(String columnName) {
-            this.processorNameColumn = processorNameColumn;
+            this.processorNameColumn = columnName;
             return this;
         }
 
