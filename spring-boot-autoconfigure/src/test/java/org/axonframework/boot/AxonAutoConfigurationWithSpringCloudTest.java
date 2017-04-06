@@ -23,21 +23,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.client.discovery.noop.NoopDiscoveryClientAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.client.DefaultServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.noop.NoopDiscoveryClient;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
 
-@ContextConfiguration(classes = {
-        AxonAutoConfigurationWithSpringCloudTest.TestContext.class,
-        NoopDiscoveryClientAutoConfiguration.class,
-        AxonAutoConfiguration.class
-})
+@SpringBootTest(classes = AxonAutoConfigurationWithSpringCloudTest.TestContext.class)
+@EnableAutoConfiguration(exclude = {WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @TestPropertySource("classpath:test.springcloud.application.properties")
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithSpringCloudTest {
@@ -89,6 +91,11 @@ public class AxonAutoConfigurationWithSpringCloudTest {
         @Bean
         public RestTemplate restTemplate() {
             return mock(RestTemplate.class);
+        }
+
+        @Bean
+        public DiscoveryClient discoveryClient() {
+            return new NoopDiscoveryClient(new DefaultServiceInstance("TestServiceId", "localhost", 12345, true));
         }
 
     }
