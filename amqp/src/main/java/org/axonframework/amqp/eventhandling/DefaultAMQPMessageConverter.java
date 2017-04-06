@@ -28,6 +28,8 @@ import org.axonframework.serialization.*;
 import java.time.Instant;
 import java.util.*;
 
+import static org.axonframework.serialization.MessageSerializer.serializePayload;
+
 /**
  * Default implementation of the AMQPMessageConverter interface. This implementation will suffice in most cases. It
  * passes all meta-data entries as headers (with 'axon-metadata-' prefix) to the message. Other message-specific
@@ -70,7 +72,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
 
     @Override
     public AMQPMessage createAMQPMessage(EventMessage<?> eventMessage) {
-        SerializedObject<byte[]> serializedObject = serializer.serialize(eventMessage.getPayload(), byte[].class);
+        SerializedObject<byte[]> serializedObject = serializePayload(eventMessage, serializer, byte[].class);
         String routingKey = routingKeyResolver.resolveRoutingKey(eventMessage);
         AMQP.BasicProperties.Builder properties = new AMQP.BasicProperties.Builder();
         Map<String, Object> headers = new HashMap<>();
