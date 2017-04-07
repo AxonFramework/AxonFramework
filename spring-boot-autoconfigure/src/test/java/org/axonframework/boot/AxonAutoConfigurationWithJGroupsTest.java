@@ -15,6 +15,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -22,7 +26,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
 
-@ContextConfiguration(classes = AxonAutoConfiguration.class)
+@ContextConfiguration
+@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @TestPropertySource("classpath:test.jgroups.application.properties")
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithJGroupsTest {
@@ -55,11 +60,11 @@ public class AxonAutoConfigurationWithJGroupsTest {
 
         assertSame(commandRouter, commandBusConnector);
 
-        assertNotNull(commandBus);
-        assertEquals(DistributedCommandBus.class, commandBus.getClass());
-
         assertNotNull(localSegment);
         assertEquals(SimpleCommandBus.class, localSegment.getClass());
+
+        assertNotNull(commandBus);
+        assertEquals(DistributedCommandBus.class, commandBus.getClass());
 
         assertNotSame(commandBus, localSegment);
 

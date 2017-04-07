@@ -19,7 +19,10 @@ import org.axonframework.spring.stereotype.Saga;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,10 +33,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@ContextConfiguration(classes = {
-        AxonAutoConfigurationTest.Context.class,
-        DataSourceAutoConfiguration.class,
-        AxonAutoConfiguration.class})
+@ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
+@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationTest {
 

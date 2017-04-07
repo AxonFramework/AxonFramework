@@ -1,8 +1,9 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.boot.AxonAutoConfiguration,\
-  org.axonframework.boot.AxonAutoConfiguration.SpringCloudAutoConfiguration,\
-  org.axonframework.boot.AxonAutoConfiguration.JGroupsAutoConfiguration,\
-  org.axonframework.boot.AxonAutoConfiguration.AMQPConfiguration,\
-  org.axonframework.boot.AxonAutoConfiguration.JpaConfiguration,\
-  org.axonframework.boot.AxonAutoConfiguration.TransactionConfiguration,\
-  org.axonframework.boot.AxonAutoConfiguration.DefaultTransactionConfiguration
+  org.axonframework.boot.autoconfig.SpringCloudAutoConfiguration,\
+  org.axonframework.boot.autoconfig.JGroupsAutoConfiguration,\
+  org.axonframework.boot.autoconfig.AMQPAutoConfiguration,\
+  org.axonframework.boot.autoconfig.JpaAutoConfiguration,\
+  org.axonframework.boot.autoconfig.TransactionAutoConfiguration,\
+  org.axonframework.boot.autoconfig.NoOpTransactionAutoConfiguration,\
+  org.axonframework.boot.autoconfig.DistributedAutoConfiguration
