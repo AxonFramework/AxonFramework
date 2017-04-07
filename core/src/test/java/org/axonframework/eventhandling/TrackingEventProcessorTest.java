@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -180,7 +179,7 @@ public class TrackingEventProcessorTest {
         assertEquals(9, ackedEvents.size());
     }
 
-    @Test
+    @Test(timeout = 10000)
     @DirtiesContext
     public void testContinueAfterPause() throws Exception {
         List<EventMessage<?>> ackedEvents = new ArrayList<>();
@@ -198,8 +197,11 @@ public class TrackingEventProcessorTest {
         assertEquals(2, ackedEvents.size());
 
         testSubject.pause();
-
-        eventBus.publish(createEvents(2));
+        // The thread may block for 1 second waiting for a next event to pop up
+        while (testSubject.activeProcessorThreads() > 0) {
+            Thread.sleep(1);
+            // wait...
+        }
 
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
         doAnswer(invocation -> {
@@ -207,6 +209,10 @@ public class TrackingEventProcessorTest {
             countDownLatch2.countDown();
             return null;
         }).when(mockListener).handle(any());
+
+        eventBus.publish(createEvents(2));
+
+        assertEquals(2, countDownLatch2.getCount());
 
         testSubject.start();
         assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));

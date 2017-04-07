@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,12 +32,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -65,7 +64,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final String name;
-    private volatile ExecutorService executorService;
+    private volatile ThreadPoolExecutor executorService;
     private volatile TrackingToken lastToken;
     private AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
 
@@ -195,7 +194,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private void ensureRunningExecutor() {
         if (this.executorService == null || this.executorService.isShutdown()) {
-            this.executorService = newSingleThreadExecutor(new AxonThreadFactory("TrackingEventProcessor - " + name));
+            this.executorService = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                                                          new AxonThreadFactory("TrackingEventProcessor - " + name));
         }
     }
 
@@ -325,6 +325,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         if (state.getAndUpdate(s -> State.SHUT_DOWN) != State.SHUT_DOWN) {
             executorService.shutdown();
         }
+    }
+
+    /**
+     * Returns an approximation of the number of threads currently processing events.
+     *
+     * @return an approximation of the number of threads currently processing events
+     */
+    public int activeProcessorThreads() {
+        ThreadPoolExecutor currentService = this.executorService;
+        return currentService == null ? 0 : currentService.getActiveCount();
     }
 
     /**
