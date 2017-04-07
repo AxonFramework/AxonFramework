@@ -38,7 +38,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnClass(SpringAMQPPublisher.class)
 @EnableConfigurationProperties(AMQPProperties.class)
-@AutoConfigureAfter(RabbitAutoConfiguration.class)
+@AutoConfigureAfter({RabbitAutoConfiguration.class, AxonAutoConfiguration.class})
 public class AMQPAutoConfiguration {
 
     @Autowired

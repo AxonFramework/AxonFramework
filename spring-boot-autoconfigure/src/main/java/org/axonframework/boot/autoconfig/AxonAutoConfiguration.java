@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.boot;
+package org.axonframework.boot.autoconfig;
 
+import org.axonframework.boot.DistributedCommandBusProperties;
+import org.axonframework.boot.EventProcessorProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
@@ -54,7 +56,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableAxon
 @ConditionalOnClass(SpringAxonAutoConfigurer.class)
 @Configuration
-@AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration")
+@AutoConfigureAfter(name = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.axonframework.boot.autoconfig.JpaAutoConfiguration"})
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
         DistributedCommandBusProperties.class
@@ -70,8 +73,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public Serializer serializer() {
+    @ConditionalOnMissingBean(Serializer.class)
+    public XStreamSerializer serializer() {
         XStreamSerializer xStreamSerializer = new XStreamSerializer();
         xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
         return xStreamSerializer;
@@ -85,15 +88,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Qualifier("eventStore")
     @Bean(name = "eventBus")
-    @ConditionalOnMissingBean({EventBus.class, EventStore.class})
+    @ConditionalOnMissingBean(EventBus.class)
     @ConditionalOnBean(EventStorageEngine.class)
-    public EventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
+    public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
         return new EmbeddedEventStore(storageEngine, configuration.messageMonitor(EventStore.class, "eventStore"));
     }
 
     @Bean
-    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
-    public EventBus eventBus(AxonConfiguration configuration) {
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
+    public SimpleEventBus eventBus(AxonConfiguration configuration) {
         return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventStore.class, "eventStore"));
     }
 
@@ -122,7 +125,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class})
     @Qualifier("localSegment")
     @Bean
-    public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
+    public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
         return commandBus;
