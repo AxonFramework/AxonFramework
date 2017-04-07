@@ -63,8 +63,8 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
             } else {
                 commandName = (String) annotationAttributes.get("commandName");
             }
-            final boolean factoryMethod = (executable instanceof Method) && Modifier.isStatic(executable.getModifiers());
-            isFactoryHandler = (executable instanceof Constructor) || factoryMethod;
+            final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
+            isFactoryHandler = executable instanceof Constructor || factoryMethod;
         }
 
         @Override
