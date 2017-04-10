@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -102,8 +101,6 @@ public class TrackingEventProcessorTest {
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
-
-        testSubject.start();
     }
 
     @After
@@ -119,17 +116,20 @@ public class TrackingEventProcessorTest {
             countDownLatch.countDown();
             return null;
         }).when(mockListener).handle(any());
+        testSubject.start();
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
     public void testTokenIsStoredWhenEventIsRead() throws Exception {
+
         CountDownLatch countDownLatch = new CountDownLatch(1);
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
+        testSubject.start();
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore).storeToken(any(), any(), anyInt());
@@ -149,6 +149,7 @@ public class TrackingEventProcessorTest {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
+        testSubject.start();
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
@@ -157,7 +158,6 @@ public class TrackingEventProcessorTest {
     @Test
     @DirtiesContext
     public void testContinueFromPreviousToken() throws Exception {
-        testSubject.shutDown();
 
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));
@@ -179,6 +179,73 @@ public class TrackingEventProcessorTest {
         assertEquals(9, ackedEvents.size());
     }
 
+    @Test(timeout = 10000)
+    @DirtiesContext
+    public void testContinueAfterPause() throws Exception {
+        List<EventMessage<?>> ackedEvents = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+        testSubject.start();
+
+        eventBus.publish(createEvents(2));
+
+        assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertEquals(2, ackedEvents.size());
+
+        testSubject.pause();
+        // The thread may block for 1 second waiting for a next event to pop up
+        while (testSubject.activeProcessorThreads() > 0) {
+            Thread.sleep(1);
+            // wait...
+        }
+
+        CountDownLatch countDownLatch2 = new CountDownLatch(2);
+        doAnswer(invocation -> {
+            ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch2.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        eventBus.publish(createEvents(2));
+
+        assertEquals(2, countDownLatch2.getCount());
+
+        testSubject.start();
+        assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
+        assertEquals(4, ackedEvents.size());
+
+        // batch size = 1
+        verify(tokenStore, times(4)).storeToken(any(), anyString(), anyInt());
+    }
+
+    @Test
+    @DirtiesContext
+    public void testProcessorGoesToRetryModeWhenOpenStreamFails() throws Exception {
+        eventBus = spy(eventBus);
+
+        tokenStore = new InMemoryTokenStore();
+        eventBus.publish(createEvents(5));
+        when(eventBus.openStream(any())).thenThrow(new MockException()).thenCallRealMethod();
+
+        List<EventMessage<?>> ackedEvents = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(5);
+        doAnswer(invocation -> {
+            ackedEvents.add((EventMessage<?>) invocation.getArguments()[0]);
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
+        testSubject.start();
+        assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(5, ackedEvents.size());
+        verify(eventBus, times(2)).openStream(any());
+    }
+
     @Test
     public void testFirstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
@@ -195,6 +262,7 @@ public class TrackingEventProcessorTest {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
+        testSubject.start();
         eventBus.publish(events);
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
@@ -205,7 +273,6 @@ public class TrackingEventProcessorTest {
     @DirtiesContext
     @SuppressWarnings("unchecked")
     public void testEventsWithTheSameTokenAreProcessedInTheSameBatch() throws Exception {
-        testSubject.shutDown();
         eventBus.shutDown();
 
         eventBus = mock(EmbeddedEventStore.class);
@@ -240,8 +307,6 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testEventProcessorIsReEntrant() throws Exception {
-        assertTrue("TrackingEventProcessor is not started", testSubject.getState() == TrackingEventProcessor.State.STARTED);
-        testSubject.shutDown();
 
         testSubject.start();
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
@@ -249,6 +314,7 @@ public class TrackingEventProcessorTest {
             countDownLatch2.countDown();
             return null;
         }).when(mockListener).handle(any());
+
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
 

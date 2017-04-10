@@ -64,7 +64,8 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(SQLErrorCodesResolver.class);
     private static final String SQL_ERROR_CODES_PROPERTIES = "SQLErrorCode.properties";
-    private static final String PROPERTY_NAME_SUFFIX = ".duplicateKeyCodes";
+    private static final String KEY_CODE_SUFFIX = ".duplicateKeyCodes";
+    private static final String PATTERN_SUFFIX = ".pattern";
     private static final String LIST_SEPARATOR = ",";
 
     private List<Integer> duplicateKeyCodes = Collections.emptyList();
@@ -192,15 +193,25 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) {
-        String key = databaseProductName.replaceAll(" ", "_") + PROPERTY_NAME_SUFFIX;
+        String key = databaseProductName.replaceAll(" ", "_") + KEY_CODE_SUFFIX;
         String property = properties.getProperty(key);
 
         List<Integer> keyCodes = new ArrayList<>();
 
         if (property == null) {
-            throw new AxonConfigurationException(String.format(
-                    "The database product name '%s' is unknown. No SQLCode configuration is known for that database.",
-                    databaseProductName));
+            for (String k : properties.stringPropertyNames()) {
+                if (k.endsWith(PATTERN_SUFFIX)) {
+                    String pattern = properties.getProperty(k);
+                    if (databaseProductName.matches(pattern)) {
+                        property = properties.getProperty(k.substring(0, k.length() - PATTERN_SUFFIX.length()) + KEY_CODE_SUFFIX);
+                    }
+                }
+            }
+            if (property == null) {
+                throw new AxonConfigurationException(String.format(
+                        "The database product name '%s' is unknown. No SQLCode configuration is known for that database.",
+                        databaseProductName));
+            }
         }
         String[] codes = property.split(LIST_SEPARATOR);
         for (String code : codes) {

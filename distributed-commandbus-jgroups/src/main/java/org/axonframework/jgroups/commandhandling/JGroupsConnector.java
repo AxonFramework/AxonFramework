@@ -67,7 +67,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private final AtomicReference<ConsistentHash> consistentHash = new AtomicReference<>(new ConsistentHash());
     private volatile View currentView;
     private volatile int loadFactor = 0;
-    private volatile Predicate<CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
+    private volatile Predicate<? super CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
 
     /**
      * Initialize the connector using the given {@code localSegment} to handle commands on the local node, and the given
@@ -109,7 +109,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void updateMembership(int loadFactor, Predicate<CommandMessage<?>> commandFilter) {
+    public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
         this.loadFactor = loadFactor;
         this.commandFilter = commandFilter;
         broadCastMembership();
@@ -307,8 +307,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         String joinedMember = channel.getName(message.getSrc());
         if (joinedMember != null) {
             int loadFactor = joinMessage.getLoadFactor();
-            Predicate<CommandMessage<?>> commandFilter = joinMessage.messageFilter();
-            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, null);
+            Predicate<? super CommandMessage<?>> commandFilter = joinMessage.messageFilter();
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(),NON_LOCAL_MEMBER, null);
             members.put(member.endpoint(), member);
             consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
             if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {

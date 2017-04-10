@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.Objects;
 
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
@@ -156,6 +157,65 @@ public class JacksonSerializerTest {
         assertNotNull(actual);
         assertEquals("test", actual.get("test"));
         assertEquals(1, actual.size());
+    }
+
+    @Test
+    public void testSerializeMetaDataWithComplexObjects() throws Exception {
+        // typing must be enabled for this (which we expect end-users to do
+        testSubject.getObjectMapper().enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
+
+        MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
+        SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
+        System.out.println(new String(serialized.getData()));
+        MetaData actual = testSubject.deserialize(serialized);
+
+        assertEquals(metaData, actual);
+    }
+
+    public static class ComplexObject {
+        private final String value1;
+        private final String value2;
+        private final int value3;
+
+        @JsonCreator
+        public ComplexObject(@JsonProperty("value1") String value1,
+                             @JsonProperty("value2") String value2,
+                             @JsonProperty("value3") int value3) {
+            this.value1 = value1;
+            this.value2 = value2;
+            this.value3 = value3;
+        }
+
+        public String getValue1() {
+            return value1;
+        }
+
+        public String getValue2() {
+            return value2;
+        }
+
+        public int getValue3() {
+            return value3;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ComplexObject that = (ComplexObject) o;
+            return value3 == that.value3 &&
+                    Objects.equals(value1, that.value1) &&
+                    Objects.equals(value2, that.value2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value1, value2, value3);
+        }
     }
 
     public static class SimpleSerializableType {

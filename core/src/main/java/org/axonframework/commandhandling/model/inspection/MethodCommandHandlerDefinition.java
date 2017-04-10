@@ -57,7 +57,7 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
                     "The @CommandHandler annotation must be put on an Executable (either directly or as Meta " +
                             "Annotation)"));
             if ("".equals(annotationAttributes.get("commandName"))) {
-                commandName = executable.getParameters()[0].getType().getName();
+                commandName = delegate.payloadType().getName();
             } else {
                 commandName = (String) annotationAttributes.get("commandName");
             }

@@ -1,8 +1,22 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.springcloud.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.*;
-import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -78,7 +92,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     @Override
-    public void updateMembership(int loadFactor, Predicate<CommandMessage<?>> commandFilter) {
+    public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
         ServiceInstance localServiceInstance = this.discoveryClient.getLocalServiceInstance();
         Map<String, String> localServiceInstanceMetadata = localServiceInstance.getMetadata();
         localServiceInstanceMetadata.put(LOAD_FACTOR, Integer.toString(loadFactor));
@@ -120,11 +134,10 @@ public class SpringCloudCommandRouter implements CommandRouter {
         String localServiceId = localServiceInstance.getServiceId();
         URI localServiceUri = localServiceInstance.getUri();
 
-        serviceInstances.forEach(serviceInstance -> {
-            URI serviceUri = serviceInstance.getUri();
+        serviceInstances
+                .forEach(serviceInstance -> {URI serviceUri = serviceInstance.getUri();
             String serviceId = serviceInstance.getServiceId();
             boolean local = localServiceId.equals(serviceId) && localServiceUri.equals(serviceUri);
-
             SimpleMember<URI> simpleMember = new SimpleMember<>(
                     serviceId.toUpperCase() + "[" + serviceUri + "]",
                     serviceUri,
@@ -138,7 +151,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
             SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
-            CommandNameFilter commandNameFilter = serializer.deserialize(serializedObject);
+            Predicate<? super CommandMessage<?>> commandNameFilter = serializer.deserialize(serializedObject);
 
             updatedConsistentHash.updateAndGet(
                     consistentHash -> consistentHash.with(simpleMember, loadFactor, commandNameFilter)

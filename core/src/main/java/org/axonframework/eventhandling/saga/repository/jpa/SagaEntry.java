@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.saga.repository.jpa;
 
-import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.*;
@@ -28,19 +27,7 @@ import javax.persistence.*;
  * @since 0.7
  */
 @Entity
-public class SagaEntry<T> {
-
-    @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
-    @Id
-    private String sagaId; // NOSONAR
-
-    @Basic
-    private String sagaType;
-    @Basic
-    private String revision;
-    @Lob
-    @Column(length = 10000)
-    private byte[] serializedSaga;
+public class SagaEntry<T> extends AbstractSagaEntry<byte[]> {
 
     /**
      * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
@@ -51,11 +38,7 @@ public class SagaEntry<T> {
      * @param serializer     The serialization mechanism to convert the Saga to a byte stream
      */
     public SagaEntry(T saga, String sagaIdentifier, Serializer serializer) {
-        this.sagaId = sagaIdentifier;
-        SerializedObject<byte[]> serialized = serializer.serialize(saga, byte[].class);
-        this.serializedSaga = serialized.getData();
-        this.sagaType = serialized.getType().getName();
-        this.revision = serialized.getType().getRevision();
+        super(saga, sagaIdentifier, serializer, byte[].class);
     }
 
     /**
@@ -67,39 +50,4 @@ public class SagaEntry<T> {
         // required by JPA
     }
 
-    /**
-     * Returns the serialized form of the Saga.
-     *
-     * @return the serialized form of the Saga
-     */
-    public byte[] getSerializedSaga() {
-        return serializedSaga; //NOSONAR
-    }
-
-    /**
-     * Returns the identifier of the saga contained in this entry
-     *
-     * @return the identifier of the saga contained in this entry
-     */
-    public String getSagaId() {
-        return sagaId;
-    }
-
-    /**
-     * Returns the revision of the serialized saga
-     *
-     * @return the revision of the serialized saga
-     */
-    public String getRevision() {
-        return revision;
-    }
-
-    /**
-     * Returns the type identifier of the serialized saga
-     *
-     * @return the type identifier of the serialized saga
-     */
-    public String getSagaType() {
-        return sagaType;
-    }
 }

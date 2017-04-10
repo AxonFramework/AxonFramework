@@ -13,8 +13,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.LongStream;
 
@@ -30,7 +33,7 @@ import java.util.stream.LongStream;
  *
  * @author Rene de Waele
  */
-public class GapAwareTrackingToken implements TrackingToken {
+public class GapAwareTrackingToken implements TrackingToken, Serializable {
 
     private final long index;
     private final SortedSet<Long> gaps;
@@ -45,7 +48,9 @@ public class GapAwareTrackingToken implements TrackingToken {
      *              events get committed to the store or may never be filled in if those events never get committed.
      * @return a new tracking token from given index and gaps
      */
-    public static GapAwareTrackingToken newInstance(long index, Collection<Long> gaps) {
+    @JsonCreator
+    public static GapAwareTrackingToken newInstance(@JsonProperty("index") long index,
+                                                    @JsonProperty("gaps") Collection<Long> gaps) {
         if (gaps.isEmpty()) {
             return new GapAwareTrackingToken(index, Collections.emptySortedSet());
         }
@@ -64,11 +69,11 @@ public class GapAwareTrackingToken implements TrackingToken {
      * Returns a new {@link GapAwareTrackingToken} instance based on this token but which has advanced to given {@code
      * index}. Gaps that have fallen behind the index by more than the {@code maxGapOffset} will not be included in the
      * new token.
-     *
+     * <p>
      * Note that the given {@code index} should be one of the current token's gaps or be higher than the current token's
      * index.
      *
-     * @param index the global sequence number of the next event
+     * @param index        the global sequence number of the next event
      * @param maxGapOffset the maximum distance between a gap and the token's index
      * @return the new token that has advanced from the current token
      */

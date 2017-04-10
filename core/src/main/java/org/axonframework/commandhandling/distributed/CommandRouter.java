@@ -43,5 +43,5 @@ public interface CommandRouter {
      * @param loadFactor    the new load factor of the member for this endpoint
      * @param commandFilter the new capabilities of the member for this endpoint
      */
-    void updateMembership(int loadFactor, Predicate<CommandMessage<?>> commandFilter);
+    void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter);
 }

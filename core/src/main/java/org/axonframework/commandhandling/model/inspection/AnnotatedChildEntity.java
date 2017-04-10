@@ -20,13 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -47,11 +41,11 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
      * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command
      * and event handling to an annotated child entity.
      *
-     * @param entityModel model describing the entity
-     * @param forwardCommands flag indicating whether commands should be forwarded to the entity
-     * @param forwardEvents flag indicating whether events should be forwarded to the entity
+     * @param entityModel           model describing the entity
+     * @param forwardCommands       flag indicating whether commands should be forwarded to the entity
+     * @param forwardEvents         flag indicating whether events should be forwarded to the entity
      * @param commandTargetResolver resolver for command handler methods on the target
-     * @param eventTargetResolver resolver for event handler methods on the target
+     * @param eventTargetResolver   resolver for event handler methods on the target
      */
     @SuppressWarnings("unchecked")
     public AnnotatedChildEntity(EntityModel<C> entityModel, boolean forwardCommands, boolean forwardEvents,
@@ -62,12 +56,10 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
-            entityModel.commandHandlers().forEach((commandType, childHandler) -> commandHandlers.put(commandType,
-                                                                                                     new ChildForwardingCommandMessageHandlingMember<>(
-                                                                                                             entityModel
-                                                                                                                     .routingKey(),
-                                                                                                             childHandler,
-                                                                                                             commandTargetResolver)));
+            entityModel.commandHandlers()
+                    .forEach((commandType, childHandler) -> commandHandlers.put(
+                            commandType,
+                            new ChildForwardingCommandMessageHandlingMember<>(childHandler, commandTargetResolver)));
         }
     }
 
@@ -87,7 +79,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
     }
-    
+
     private void safeForEach(Iterable<C> targets, Consumer<C> action) {
         Spliterator<C> spliterator = targets.spliterator();
         // if the spliterator is IMMUTABLE or CONCURRENT it is safe to use directly
@@ -98,9 +90,9 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
             copy(targets).forEach(action);
         }
     }
-    
+
     private Iterable<C> copy(Iterable<C> original) {
-        if(original instanceof Collection) {
+        if (original instanceof Collection) {
             // use ArrayList because the size is known in advance
             return new ArrayList<>((Collection<C>) original);
         } else {

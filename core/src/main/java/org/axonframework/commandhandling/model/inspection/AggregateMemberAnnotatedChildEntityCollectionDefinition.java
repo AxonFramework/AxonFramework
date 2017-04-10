@@ -22,6 +22,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.property.Property;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.ObjectUtils.getNonEmptyOrDefault;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
@@ -39,6 +40,18 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  * ChildEntity} is created that delegates to the entities in the annotated collection.
  */
 public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements ChildEntityDefinition {
+
+    private static Class<?> resolveType(Map<String, Object> attributes, Field field) {
+        Class<?> entityType = (Class<?>) attributes.get("type");
+        if (Void.class.equals(entityType)) {
+            entityType = ReflectionUtils.resolveGenericType(field, 0).orElseThrow(() -> new AxonConfigurationException(
+                    format("Unable to resolve entity type of field [%s]. " +
+                                   "Please provide type explicitly in @AggregateMember annotation.",
+                           field.toGenericString())));
+        }
+
+        return entityType;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -51,11 +64,20 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
 
         EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
         Map<String, Property<Object>> routingKeyProperties = childEntityModel.commandHandlers().values().stream()
-                .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null)).filter(h -> h != null).collect(
-                        Collectors.toConcurrentMap(CommandMessageHandlingMember::commandName,
-                                                   h -> getProperty(h.payloadType(),
-                                                                    getOrDefault(childEntityModel.routingKey(),
-                                                                                 h.routingKey()))));
+                .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toConcurrentMap(
+                        CommandMessageHandlingMember::commandName, h -> {
+                            String routingKey = getNonEmptyOrDefault(h.routingKey(), childEntityModel.routingKey());
+                            Property property = getProperty(h.payloadType(), routingKey);
+                            if (property == null) {
+                                throw new AxonConfigurationException(String.format("Declared routing key %s (on %s) not found on %s",
+                                                                                   routingKey,
+                                                                                   h.unwrap(Executable.class).map(e -> ((Executable) e).getDeclaringClass().getSimpleName()).orElse(h.toString()),
+                                                                                   h.payloadType().getSimpleName()));
+                            }
+                            return property;
+                        }));
         //noinspection unchecked
         return Optional.of(new AnnotatedChildEntity<>(childEntityModel, (Boolean) attributes.get("forwardCommands"),
                                                       (Boolean) attributes.get("forwardEvents"), (msg, parent) -> {
@@ -65,18 +87,6 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
                     .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i))).findFirst()
                     .orElse(null);
         }, (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)));
-    }
-
-    private static Class<?> resolveType(Map<String, Object> attributes, Field field) {
-        Class<?> entityType = (Class<?>) attributes.get("type");
-        if (Void.class.equals(entityType)) {
-            entityType = ReflectionUtils.resolveGenericType(field, 0).orElseThrow(() -> new AxonConfigurationException(
-                    format("Unable to resolve entity type of field [%s]. " +
-                                   "Please provide type explicitly in @AggregateMember annotation.",
-                           field.toGenericString())));
-        }
-
-        return entityType;
     }
 
 }
