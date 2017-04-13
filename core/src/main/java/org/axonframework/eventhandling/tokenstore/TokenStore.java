@@ -81,4 +81,16 @@ public interface TokenStore {
      * @param segment       the segment for which a token was obtained
      */
     void releaseClaim(String processorName, int segment);
+
+
+    /**
+     * Returns an array of known {@code segments} for a given {@code processorName}.
+     * <p>
+     * The segments returned are segments for which a token has been stored previously. When the {@link TokenStore} is
+     * empty, an empty array is returned.
+     *
+     * @param processorName The process name for which to fetch the segmennts
+     * @return an array of segment identifiers.
+     */
+    int[] fetchSegments(String processorName);
 }

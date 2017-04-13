@@ -117,6 +117,11 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
+    @Override
+    public int[] fetchSegments(String processorName) {
+        throw new UnsupportedOperationException("TODO Implement");
+    }
+
     /**
      * Loads an existing {@link TokenEntry} or creates a new one using the given {@code entityManager} for given {@code
      * processorName} and {@code segment}.

@@ -17,14 +17,18 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a {@link TokenStore} that stores tracking tokens in memory. This implementation is thread-safe.
  *
  * @author Rene de Waele
+ * @author Christophe Bouhier
  */
 public class InMemoryTokenStore implements TokenStore {
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
@@ -48,13 +52,27 @@ public class InMemoryTokenStore implements TokenStore {
         // no-op, the in-memory implementation isn't accessible by multiple processes
     }
 
+    @Override
+    public int[] fetchSegments(String processorName) {
+        return tokens.keySet().stream()
+                .filter(ps -> ps.processorName.equals(processorName))
+                .map(ProcessAndSegment::getSegment)
+                .distinct().mapToInt(Number::intValue).toArray();
+    }
+
     private static class ProcessAndSegment {
+
         private final String processorName;
+
         private final int segment;
 
         public ProcessAndSegment(String processorName, int segment) {
             this.processorName = processorName;
             this.segment = segment;
+        }
+
+        public int getSegment() {
+            return segment;
         }
 
         @Override

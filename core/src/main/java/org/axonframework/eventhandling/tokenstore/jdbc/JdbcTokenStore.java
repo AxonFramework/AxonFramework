@@ -167,6 +167,11 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Override
+    public int[] fetchSegments(String processorName) {
+        throw new UnsupportedOperationException("TODO Implement");
+    }
+
     /**
      * Returns a {@link PreparedStatement} to select a token entry from the underlying storage. The {@link ResultSet}
      * that is returned when this statement is executed should be updatable.
