@@ -103,5 +103,11 @@
             <version>${spring.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.3.6</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
