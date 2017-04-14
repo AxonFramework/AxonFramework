@@ -34,7 +34,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     private static final String MEMBER_NAME = "memberName";
     private static final URI ENDPOINT = URI.create("endpoint");
-    private static final Member DESTINATION = new SimpleMember<>(MEMBER_NAME, ENDPOINT, null);
+    private static final Member DESTINATION = new SimpleMember<>(MEMBER_NAME, ENDPOINT, false, null);
     private static final CommandMessage<String> COMMAND_MESSAGE = GenericCommandMessage.asCommandMessage("command");
 
     private static final byte[] SERIALIZED_COMMAND_METADATA = {};
@@ -119,7 +119,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testSendWithoutCallbackThrowsExceptionForMissingDestinationURI() throws Exception {
-        SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, null);
+        SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE);
     }
 
@@ -173,7 +173,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void tesSendWithCallbackThrowsExceptionForMissingDestinationURI() throws Exception {
-        SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, null);
+        SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE, new NoOpCallback());
     }
 
@@ -265,6 +265,25 @@ public class SpringHttpCommandBusConnectorTest {
 
         verify(localCommandBus).dispatch(any());
     }
+
+    @Test
+    public void tesSendWithCallbackToLocalMember() throws Exception {
+        SimpleMember<String> localDestination = new SimpleMember<>(MEMBER_NAME, null, true, null);
+        testSubject.send(localDestination, COMMAND_MESSAGE, new NoOpCallback());
+
+        verifyNoMoreInteractions(restTemplate);
+        verify(localCommandBus).dispatch(any(), any());
+    }
+
+    @Test
+    public void tesSendWithoutCallbackToLocalMember() throws Exception {
+        SimpleMember<String> localDestination = new SimpleMember<>(MEMBER_NAME, null, true, null);
+        testSubject.send(localDestination, COMMAND_MESSAGE);
+
+        verifyNoMoreInteractions(restTemplate);
+        verify(localCommandBus).dispatch(any());
+    }
+
 
     private <C> SpringHttpDispatchMessage<C> buildDispatchMessage(boolean expectReply) {
         return new SpringHttpDispatchMessage<>(COMMAND_MESSAGE, serializer, expectReply);

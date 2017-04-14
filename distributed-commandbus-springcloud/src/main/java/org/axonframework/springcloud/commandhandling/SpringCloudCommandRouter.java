@@ -130,10 +130,18 @@ public class SpringCloudCommandRouter implements CommandRouter {
             updatedConsistentHash = atomicConsistentHash;
         }
 
+        ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
+        URI localServiceUri = localServiceInstance.getUri();
+
         serviceInstances.forEach(serviceInstance -> {
+            URI serviceUri = serviceInstance.getUri();
+            String serviceId = serviceInstance.getServiceId();
+            boolean local = localServiceUri.equals(serviceUri);
+
             SimpleMember<URI> simpleMember = new SimpleMember<>(
-                    serviceInstance.getServiceId().toUpperCase() + "[" + serviceInstance.getUri() + "]",
+                    serviceId.toUpperCase() + "[" + serviceInstance.getUri() + "]",
                     serviceInstance.getUri(),
+                    local,
                     member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
             );
 

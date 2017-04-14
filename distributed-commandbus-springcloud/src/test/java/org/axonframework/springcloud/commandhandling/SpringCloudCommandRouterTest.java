@@ -91,7 +91,7 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testFindDestinationReturnsMemberForCommandMessage() throws Exception {
-        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, null);
+        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, false, null);
         AtomicReference<ConsistentHash> testAtomicConsistentHash =
                 new AtomicReference<>(new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true));
         ReflectionUtils.setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
@@ -116,7 +116,7 @@ public class SpringCloudCommandRouterTest {
         assertEquals(commandFilterData, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_KEY));
         assertEquals(CommandNameFilter.class.getName(), serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
-        verify(discoveryClient).getLocalServiceInstance();
+        verify(discoveryClient, times(2)).getLocalServiceInstance();
     }
 
     @Test
@@ -131,7 +131,7 @@ public class SpringCloudCommandRouterTest {
 
         assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
 
-        verify(discoveryClient).getLocalServiceInstance();
+        verify(discoveryClient, times(2)).getLocalServiceInstance();
     }
 
     @Test
