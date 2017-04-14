@@ -107,12 +107,10 @@ public class EventHandlingConfigurationTest {
 
     @Test
     public void testAssignInterceptors() {
-        Map<String, StubEventProcessor> processors = new HashMap<>();
         EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .usingTrackingProcessors()
                 .registerEventProcessor("default", (config, name, handlers) -> {
                     StubEventProcessor processor = new StubEventProcessor(name, handlers);
-                    processors.put(name, processor);
                     return processor;
                 });
         module.byDefaultAssignTo("default");
@@ -128,7 +126,7 @@ public class EventHandlingConfigurationTest {
         Configuration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
-        assertEquals(3, processors.get("default").getInterceptors().size());
+        assertEquals(3, ((StubEventProcessor)module.getProcessor("default").get()).getInterceptors().size());
         assertEquals(1, config.getModules().size());
     }
 

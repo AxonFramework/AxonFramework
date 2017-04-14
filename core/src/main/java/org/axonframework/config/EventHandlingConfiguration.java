@@ -382,6 +382,19 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         return Collections.unmodifiableList(initializedProcessors);
     }
 
+
+    /**
+     * Returns the Event Processor with the given {@code name}, if present. This method also returns an unresolved
+     * optional if the Processor was configured, but it hasn't been assigned any Event Handlers.
+     *
+     * @param name The name of the processor to return
+     * @return an Optional referencing the processor, if present.
+     */
+    public <T extends EventProcessor> Optional<T> getProcessor(String name) {
+        //noinspection unchecked
+        return (Optional<T>) initializedProcessors.stream().filter(p -> name.equals(p.getName())).findAny();
+    }
+
     /**
      * Interface describing a Builder function for Event Processors.
      *
