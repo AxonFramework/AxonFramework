@@ -122,7 +122,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         });
     }
 
-    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class})
+    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class}, value = CommandBus.class)
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
