@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -218,4 +217,16 @@ public interface Configurer {
      * @return the fully initialized Configuration
      */
     Configuration buildConfiguration();
+
+    /**
+     * Builds the configuration and starts it immediately. It is not recommended to change any configuration on this
+     * Configurer once this method is called.
+     *
+     * @return The started configuration
+     */
+    default Configuration start() {
+        Configuration configuration = buildConfiguration();
+        configuration.start();
+        return configuration;
+    }
 }

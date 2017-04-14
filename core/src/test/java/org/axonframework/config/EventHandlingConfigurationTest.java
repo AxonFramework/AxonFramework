@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,11 +36,11 @@ import static org.junit.Assert.assertTrue;
 
 public class EventHandlingConfigurationTest {
 
-    private Configuration configuration;
+    private Configurer configurer;
 
     @Before
     public void setUp() throws Exception {
-        configuration = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+        configurer = DefaultConfigurer.defaultConfiguration();
     }
 
     @Test
@@ -64,7 +63,8 @@ public class EventHandlingConfigurationTest {
         module.registerEventHandler(c -> map); // --> java.util.concurrent
         module.registerEventHandler(c -> annotatedBean);
         module.registerEventHandler(c -> annotatedBeanSubclass);
-        module.initialize(configuration);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
@@ -72,6 +72,7 @@ public class EventHandlingConfigurationTest {
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
+        assertEquals(1, config.getModules().size());
     }
 
     @Test
@@ -91,7 +92,8 @@ public class EventHandlingConfigurationTest {
         module.registerEventHandler(c -> ""); // --> java.lang
         module.registerEventHandler(c -> "concurrent"); // --> java.util.concurrent2
         module.registerEventHandler(c -> map); // --> java.util.concurrent
-        module.initialize(configuration);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
@@ -100,6 +102,7 @@ public class EventHandlingConfigurationTest {
         assertTrue(processors.get("java.util.concurrent").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("java.lang").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
+        assertEquals(1, config.getModules().size());
     }
 
     @Test
@@ -121,10 +124,12 @@ public class EventHandlingConfigurationTest {
         StubInterceptor interceptor2 = new StubInterceptor();
         module.registerHandlerInterceptor("default", c -> interceptor1);
         module.registerHandlerInterceptor((c, n) -> interceptor2);
-        module.initialize(configuration);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
         assertEquals(3, processors.get("default").getInterceptors().size());
+        assertEquals(1, config.getModules().size());
     }
 
     private static class StubEventProcessor implements EventProcessor {

@@ -315,7 +315,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    private class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
+    private static class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
 
         private final Supplier<ModuleConfiguration> delegateSupplier;
         private ModuleConfiguration delegate;

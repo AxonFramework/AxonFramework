@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -371,6 +370,16 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         return registerEventProcessor(
                 name,
                 (c, n, eh) -> subscribingEventProcessor(c, n, eh, messageSource));
+    }
+
+    /**
+     * Returns a list of Event Processors that have been initialized. Note that an empty list may be returned if this
+     * configuration hasn't been {@link #initialize(Configuration) initialized} yet.
+     *
+     * @return a read-only list of processors initialized in this configuration.
+     */
+    public List<EventProcessor> getProcessors() {
+        return Collections.unmodifiableList(initializedProcessors);
     }
 
     /**

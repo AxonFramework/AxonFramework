@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +28,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
-import org.junit.Assert;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 import javax.persistence.*;
@@ -38,8 +37,7 @@ import java.util.Map;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class DefaultConfigurerTest {
 
@@ -54,8 +52,9 @@ public class DefaultConfigurerTest {
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        Assert.assertEquals("test", callback.get());
+        assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
+        assertEquals(1, config.getModules().size());
     }
 
     @Test
@@ -95,8 +94,21 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        Assert.assertEquals("test", callback.get());
+        assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
+        assertEquals(1, config.getModules().size());
+    }
+
+    @Test
+    public void testRegisterSeveralModules() {
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                .registerModule(new EventHandlingConfiguration().usingTrackingProcessors())
+                .registerModule(new EventHandlingConfiguration())
+                .configureAggregate(StubAggregate.class)
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .start();
+
+        assertThat(config.getModules().size(), CoreMatchers.is(3));
     }
 
     @Entity(name = "StubAggregate")
