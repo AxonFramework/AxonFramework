@@ -19,6 +19,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -215,6 +216,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     eventStream = ensureEventStreamOpened(eventStream);
                     processBatch(eventStream);
                     errorWaitTime = 1;
+                } catch (UnableToClaimTokenException e) {
+                    if (errorWaitTime == 1) {
+                        logger.info("Token is owned by another node. Waiting for it to become available...");
+                    }
+                    errorWaitTime = 5;
+                    waitFor(errorWaitTime);
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have cause an illegal state
                     if (errorWaitTime == 1) {
@@ -224,19 +231,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     releaseToken();
                     closeQuietly(eventStream);
                     eventStream = null;
-                    try {
-                        Thread.sleep(errorWaitTime * 1000);
-                    } catch (InterruptedException e1) {
-                        Thread.currentThread().interrupt();
-                        logger.warn("Thread interrupted. Preparing to shut down event processor");
-                        shutDown();
-                    }
+                    waitFor(errorWaitTime);
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
                 }
             }
         } finally {
             closeQuietly(eventStream);
             releaseToken();
+        }
+    }
+
+    private void waitFor(long errorWaitTime) {
+        try {
+            Thread.sleep(errorWaitTime * 1000);
+        } catch (InterruptedException e1) {
+            Thread.currentThread().interrupt();
+            logger.warn("Thread interrupted. Preparing to shut down event processor");
+            shutDown();
         }
     }
 
