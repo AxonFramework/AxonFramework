@@ -18,8 +18,11 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
@@ -32,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -61,12 +65,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
+    private final SequencingPolicy<? super EventMessage<?>> sequentialPolicy;
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final String name;
+    private final AsyncTrackingEventProcessingStrategy processingStrategy;
     private volatile ThreadPoolExecutor executorService;
-    private volatile TrackingToken lastToken;
     private AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
+
+    private int corePoolSize = 1;
+    private int maxPoolSize = 1;
 
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
@@ -105,7 +113,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
+                messageSource, tokenStore, new SegmentingPerAggregatePolicy(), transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
@@ -127,7 +135,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, transactionManager, 1, messageMonitor);
+                messageSource, tokenStore, new SegmentingPerAggregatePolicy(), transactionManager, 1, messageMonitor);
     }
 
     /**
@@ -141,6 +149,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param messageSource         The message source (e.g. Event Bus) which this event processor will track
      * @param tokenStore            Used to store and fetch event tokens that enable the processor to track its
      *                              progress
+     * @param sequentialPolicy
      * @param transactionManager    The transaction manager used when processing messages
      * @param batchSize             The maximum number of events to process in a single batch
      * @param messageMonitor        Monitor to be invoked before and after event processing
@@ -148,27 +157,19 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                   RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
-                                  TransactionManager transactionManager, int batchSize,
+                                  SequencingPolicy<? super EventMessage<?>> sequentialPolicy, TransactionManager transactionManager, int batchSize,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.messageSource = requireNonNull(messageSource);
         this.tokenStore = requireNonNull(tokenStore);
+        this.sequentialPolicy = requireNonNull(sequentialPolicy);
         this.transactionManager = transactionManager;
         this.name = name;
         this.batchSize = batchSize;
+        this.processingStrategy = new AsyncTrackingEventProcessingStrategy();
+
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
-        registerInterceptor((unitOfWork, interceptorChain) -> {
-            unitOfWork.onPrepareCommit(uow -> {
-                EventMessage<?> event = uow.getMessage();
-                if (event instanceof TrackedEventMessage<?> &&
-                        lastToken != null &&
-                        lastToken.equals(((TrackedEventMessage) event).trackingToken())) {
-                    tokenStore.storeToken(lastToken, getName(), 0);
-                }
-            });
-            return interceptorChain.proceed();
-        });
     }
 
     /**
@@ -181,21 +182,24 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         State previousState = state.getAndSet(State.STARTED);
         if (!previousState.isRunning()) {
             ensureRunningExecutor();
-            executorService.submit(() -> {
-                try {
-                    this.processingLoop();
-                } catch (Throwable e) {
-                    logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
-                    state.set(State.PAUSED_ERROR);
-                }
-            });
+            processingStrategy.startSegmentWorkers();
+            // Delegate to strategy to dispatch workers.
+
+//            executorService.submit(() -> {
+//                try {
+//                    this.processingLoop();
+//                } catch (Throwable e) {
+//                    logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
+//                    state.set(State.PAUSED_ERROR);
+//                }
+//            });
         }
     }
 
     private void ensureRunningExecutor() {
         if (this.executorService == null || this.executorService.isShutdown()) {
-            this.executorService = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, new SynchronousQueue<>(),
-                                                          new AxonThreadFactory("TrackingEventProcessor - " + name));
+            this.executorService = new ThreadPoolExecutor(corePoolSize, maxPoolSize, 60, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                    new AxonThreadFactory("TrackingEventProcessor - " + name));
         }
     }
 
@@ -205,15 +209,27 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * <p>
      * Events with the same tracking token (which is possible as result of upcasting) should always be processed in
      * the same batch. In those cases the batch size may be larger than the one configured.
+     *
+     * @param segmentWorker
      */
-    protected void processingLoop() {
+    protected void processingLoop(TrackingSegmentWorker segmentWorker) {
         MessageStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
             while (state.get().isRunning()) {
+
+                try{
+                    if(segmentWorker.isDispatcher()){
+                        processingStrategy.optimizeWorkers();
+                    }
+                }catch(Exception e){
+
+                }
+
+
                 try {
                     eventStream = ensureEventStreamOpened(eventStream);
-                    processBatch(eventStream);
+                    processBatch(segmentWorker, eventStream);
                     errorWaitTime = 1;
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have cause an illegal state
@@ -221,7 +237,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         logger.warn("Error occurred. Starting retry mode.", e);
                     }
                     logger.warn("Releasing claim on token and preparing for retry in {}s", errorWaitTime);
-                    releaseToken();
+                    releaseToken(segmentWorker.getSegment());
                     closeQuietly(eventStream);
                     eventStream = null;
                     try {
@@ -229,6 +245,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     } catch (InterruptedException e1) {
                         Thread.currentThread().interrupt();
                         logger.warn("Thread interrupted. Preparing to shut down event processor");
+                        // TODO, when in a worker thread, we can't shutdown the whole processing...
                         shutDown();
                     }
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
@@ -236,36 +253,47 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
         } finally {
             closeQuietly(eventStream);
-            releaseToken();
+            releaseToken(segmentWorker.getSegment());
         }
     }
 
-    private void releaseToken() {
+    private void releaseToken(Segment segment) {
         try {
-            transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), 0));
+            transactionManager.executeInTransaction(() -> tokenStore.releaseClaim(getName(), segment.getSegmentId()));
         } catch (Exception e) {
             // whatever.
         }
     }
 
-    private void processBatch(MessageStream<TrackedEventMessage<?>> eventStream) throws Exception {
+    private void processBatch(TrackingSegmentWorker segmentWorker, MessageStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
                 while (batch.size() < batchSize && eventStream.hasNextAvailable()) {
-                    batch.add(eventStream.nextAvailable());
+
+                    final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+
+                    if (sequentialPolicy instanceof SegmentingPerAggregatePolicy) {
+                        if (((SegmentingPerAggregatePolicy) sequentialPolicy).matches(segmentWorker.getSegment(), trackedEventMessage)) {
+                            batch.add(trackedEventMessage);
+                        }
+                    } else {
+                        batch.add(trackedEventMessage);
+                    }
                 }
             }
             if (batch.isEmpty()) {
                 // refresh claim on token
-                transactionManager.executeInTransaction(() -> tokenStore.extendClaim(getName(), 0));
+                transactionManager.executeInTransaction(() -> tokenStore.extendClaim(getName(), segmentWorker.getSegment().getSegmentId()));
                 return;
             }
 
             // make sure all subsequent events with the same token (if non-null) as the last are added as well.
             // These are the result of upcasting and should always be processed in the same batch.
-            lastToken = batch.get(batch.size() - 1).trackingToken();
+            segmentWorker.setLastToken(batch.get(batch.size() - 1).trackingToken());
+            final TrackingToken lastToken = segmentWorker.getLastToken();
             while (lastToken != null && eventStream.peek().filter(event -> lastToken.equals(event.trackingToken())).isPresent()) {
+                // TODO, support sequential policy here as well.
                 batch.add(eventStream.nextAvailable());
             }
 
@@ -274,6 +302,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             Thread.currentThread().interrupt();
+            // TODO, when in a worker thread, we can't shutdown the whole processing...
             this.shutDown();
         }
     }
@@ -347,6 +376,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         return state.get();
     }
 
+    public void tweakThreadPool(int corePoolSize, int maxPoolSize) {
+        this.corePoolSize = corePoolSize;
+        this.maxPoolSize = maxPoolSize;
+        // Note will be consumed, when calling optimize on strategy....
+    }
+
     protected enum State {
 
         NOT_STARTED(false), STARTED(true), PAUSED(false), SHUT_DOWN(false), PAUSED_ERROR(false);
@@ -359,6 +394,116 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         boolean isRunning() {
             return allowProcessing;
+        }
+    }
+
+    public class TrackingSegmentWorker implements Runnable {
+
+        private Segment segment;
+
+        private volatile TrackingToken lastToken;
+
+        // Tracks if this worker is also responsible for segmentation strategy.
+        private boolean isDispachter;
+
+        public TrackingSegmentWorker(Segment segment) {
+            this.segment = segment;
+        }
+
+        public Segment getSegment() {
+            return segment;
+        }
+
+        public TrackingToken getLastToken() {
+            return lastToken;
+        }
+
+        public void setLastToken(TrackingToken lastToken) {
+            this.lastToken = lastToken;
+        }
+
+        @Override
+        public void run() {
+            try {
+                processingLoop(this);
+//                System.out.println("processing loop done");
+            } catch (Throwable e) {
+                // TODO state change on a single worker...
+                logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
+                state.set(State.PAUSED_ERROR);
+            }
+        }
+
+        private MessageHandlerInterceptor<EventMessage<?>> getEventMessageMessageHandlerInterceptor() {
+            return (unitOfWork, interceptorChain) -> {
+                unitOfWork.onPrepareCommit(uow -> {
+                    EventMessage<?> event = uow.getMessage();
+                    if (event instanceof TrackedEventMessage<?> &&
+                            Objects.nonNull(lastToken) && lastToken.equals(((TrackedEventMessage) event).trackingToken())) {
+                        tokenStore.storeToken(lastToken, getName(), segment.getSegmentId());
+                    }
+                });
+                return interceptorChain.proceed();
+            };
+        }
+
+        public boolean isDispatcher() {
+            return isDispachter;
+        }
+    }
+
+    public class AsyncTrackingEventProcessingStrategy {
+
+        int[] storedSegments;
+
+        public void startSegmentWorkers() {
+
+            // Dispatches SegmentWorkers.
+            executorService.submit(() -> {
+
+                // TODO, algo to determine the segmentation, We have 3 possible cases.
+                // 1. segment == thread max pool size => One thread per segment.
+                // 2. segment > thread max pool size => handle multiple identifiers..
+                // 3. segment < thread max pool size => Start splitting segments, accross number of available threads.
+                // Note, when the SequentialPolicy is not capable to distinguish messages, there is no point in segmenting the stream of messages!
+                // Currently these two constructs are not synched.
+
+                executorService.getCorePoolSize();
+
+                storedSegments = tokenStore.fetchSegments(getName());
+                Segment[] segments = Segment.computeSegments(storedSegments);
+
+                if(segments.length == 1 && (threadsRemaining() + 1) > segments.length){
+                    // Split our segment according to the thread count.
+                    segments = segments[0].split();
+                }
+
+                for (Segment s : segments) {
+                    final TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(s);
+                    registerInterceptor(trackingSegmentWorker.getEventMessageMessageHandlerInterceptor());
+                    if (threadsRemaining() > 0) {
+                        executorService.submit(trackingSegmentWorker);
+                    } else {
+                        // Our dispatcher becomes a worker....no more dispatching....
+                        trackingSegmentWorker.run();
+                    }
+                }
+            });
+        }
+
+        public int threadsRemaining(){
+            return executorService.getMaximumPoolSize() - executorService.getActiveCount();
+        }
+
+        public void optimizeWorkers(){
+
+            final int activeCount = executorService.getActiveCount();
+            if( storedSegments.length < activeCount){
+                // stop our execution, and re-init with the new executor settings. (core and max pool size).
+                executorService.shutdown();;
+                ensureRunningExecutor();
+                // do this stuff later.
+            }
         }
     }
 }

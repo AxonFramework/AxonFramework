@@ -15,7 +15,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
@@ -32,30 +31,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.eventhandling.TrackingEventStrategy.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-/**
- * @author Christophe Bouhier
- */
-public class TrackingEventStrategyTest {
+public class SegmentTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TrackingEventStrategyTest.class);
-
-    SequentialPerAggregatePolicy sequentialPerAggregatePolicy = new SequentialPerAggregatePolicy();
+    private static final Logger LOG = LoggerFactory.getLogger(SegmentTest.class);
 
     private List<DomainEventMessage> domainEventMessages;
+    private SegmentingPerAggregatePolicy sequentialPolicy;
 
     @Before
     public void before() {
         domainEventMessages = produceEvents();
+
+        sequentialPolicy = new SegmentingPerAggregatePolicy();
     }
 
     @Test
     public void testSegmentSplitAddsUp() {
 
-        final List<Long> identifiers = domainEventMessages.stream().map(de -> toLong(de.getAggregateIdentifier())).collect(Collectors.toList());
+        final List<Long> identifiers = domainEventMessages.stream().map(de -> sequentialPolicy.toLong(de.getAggregateIdentifier())).collect(Collectors.toList());
 
         // segment 0, mask 0;
         final long count = identifiers.stream().filter(Segment.ROOT_SEGMENT::matches).count();

@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createUUIDEvents;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 import static org.mockito.Mockito.*;
 
@@ -174,6 +176,7 @@ public class TrackingEventProcessorTest {
         }).when(mockListener).handle(any());
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
+        // Upgrade our thread pool, so the dispatcher is not used as worker.
         testSubject.start();
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
@@ -319,5 +322,43 @@ public class TrackingEventProcessorTest {
         assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
 
     }
+
+
+
+    // Multicore tests...
+
+    @Test
+    @DirtiesContext
+    public void testTwoThreadsContinueFromPreviousToken() throws Exception {
+
+        tokenStore = spy(new InMemoryTokenStore());
+        eventBus.publish(createUUIDEvents(10));
+        TrackedEventMessage<?> firstEvent = eventBus.openStream(null).nextAvailable();
+        tokenStore.storeToken(firstEvent.trackingToken(), testSubject.getName(), 0);
+        assertEquals(firstEvent.trackingToken(), tokenStore.fetchToken(testSubject.getName(), 0));
+
+        List<EventMessage<?>> ackedEventsThread0 = new ArrayList<>();
+        List<EventMessage<?>> ackedEventsThread1 = new ArrayList<>();
+        CountDownLatch countDownLatch = new CountDownLatch(9);
+        doAnswer(invocation -> {
+            final EventMessage<?> eventMessage = (EventMessage<?>) invocation.getArguments()[0];
+            final Thread thread = Thread.currentThread();
+            if(thread.getName().equals("TrackingEventProcessor - test-0")){
+                ackedEventsThread0.add(eventMessage);
+            }else if(thread.getName().equals("TrackingEventProcessor - test-1")){
+                ackedEventsThread1.add(eventMessage);
+            }
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
+        // Upgrade our thread pool, so we auto-split in two segments.
+        testSubject.tweakThreadPool(2,2);
+        testSubject.start();
+        assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(9, ackedEventsThread0.size() + ackedEventsThread1.size());
+    }
+
 
 }
