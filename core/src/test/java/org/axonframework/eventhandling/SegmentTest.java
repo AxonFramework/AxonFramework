@@ -39,19 +39,19 @@ public class SegmentTest {
     private static final Logger LOG = LoggerFactory.getLogger(SegmentTest.class);
 
     private List<DomainEventMessage> domainEventMessages;
-    private SegmentingPerAggregatePolicy sequentialPolicy;
 
     @Before
     public void before() {
         domainEventMessages = produceEvents();
-
-        sequentialPolicy = new SegmentingPerAggregatePolicy();
     }
 
     @Test
     public void testSegmentSplitAddsUp() {
 
-        final List<Long> identifiers = domainEventMessages.stream().map(de -> sequentialPolicy.toLong(de.getAggregateIdentifier())).collect(Collectors.toList());
+        final List<Long> identifiers = domainEventMessages.stream().map(de -> {
+            final String aggregateIdentifier = de.getAggregateIdentifier();
+            return UUID.fromString(aggregateIdentifier).getLeastSignificantBits();
+        }).collect(Collectors.toList());
 
         // segment 0, mask 0;
         final long count = identifiers.stream().filter(Segment.ROOT_SEGMENT::matches).count();

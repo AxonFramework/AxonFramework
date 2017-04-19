@@ -40,6 +40,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
@@ -113,7 +114,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, new SegmentingPerAggregatePolicy(), transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
+                messageSource, tokenStore, new SequentialPerAggregatePolicy(), transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
@@ -135,7 +136,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, new SegmentingPerAggregatePolicy(), transactionManager, 1, messageMonitor);
+                messageSource, tokenStore, new SequentialPerAggregatePolicy(), transactionManager, 1, messageMonitor);
     }
 
     /**
@@ -149,7 +150,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param messageSource         The message source (e.g. Event Bus) which this event processor will track
      * @param tokenStore            Used to store and fetch event tokens that enable the processor to track its
      *                              progress
-     * @param sequentialPolicy
+     * @param sequentialPolicy      The policy which will determine the segmentation identifier.
      * @param transactionManager    The transaction manager used when processing messages
      * @param batchSize             The maximum number of events to process in a single batch
      * @param messageMonitor        Monitor to be invoked before and after event processing
@@ -183,16 +184,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         if (!previousState.isRunning()) {
             ensureRunningExecutor();
             processingStrategy.startSegmentWorkers();
-            // Delegate to strategy to dispatch workers.
-
-//            executorService.submit(() -> {
-//                try {
-//                    this.processingLoop();
-//                } catch (Throwable e) {
-//                    logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
-//                    state.set(State.PAUSED_ERROR);
-//                }
-//            });
         }
     }
 
@@ -217,16 +208,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         long errorWaitTime = 1;
         try {
             while (state.get().isRunning()) {
-
-                try{
-                    if(segmentWorker.isDispatcher()){
-                        processingStrategy.optimizeWorkers();
-                    }
-                }catch(Exception e){
-
-                }
-
-
                 try {
                     eventStream = ensureEventStreamOpened(eventStream);
                     processBatch(segmentWorker, eventStream);
@@ -245,7 +226,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     } catch (InterruptedException e1) {
                         Thread.currentThread().interrupt();
                         logger.warn("Thread interrupted. Preparing to shut down event processor");
-                        // TODO, when in a worker thread, we can't shutdown the whole processing...
                         shutDown();
                     }
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
@@ -266,18 +246,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private void processBatch(TrackingSegmentWorker segmentWorker, MessageStream<TrackedEventMessage<?>> eventStream) throws Exception {
+
+        final Predicate<TrackedEventMessage<?>> trackedEventMessagePredicate = matchesSegmentPredicate(segmentWorker.getSegment());
+
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
                 while (batch.size() < batchSize && eventStream.hasNextAvailable()) {
-
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
-
-                    if (sequentialPolicy instanceof SegmentingPerAggregatePolicy) {
-                        if (((SegmentingPerAggregatePolicy) sequentialPolicy).matches(segmentWorker.getSegment(), trackedEventMessage)) {
-                            batch.add(trackedEventMessage);
-                        }
-                    } else {
+                    if (trackedEventMessagePredicate.test(trackedEventMessage)) {
                         batch.add(trackedEventMessage);
                     }
                 }
@@ -293,8 +270,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             segmentWorker.setLastToken(batch.get(batch.size() - 1).trackingToken());
             final TrackingToken lastToken = segmentWorker.getLastToken();
             while (lastToken != null && eventStream.peek().filter(event -> lastToken.equals(event.trackingToken())).isPresent()) {
-                // TODO, support sequential policy here as well.
-                batch.add(eventStream.nextAvailable());
+                final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
+                if (trackedEventMessagePredicate.test(trackedEventMessage)) {
+                    batch.add(trackedEventMessage);
+                }
             }
 
             process(batch);
@@ -302,9 +281,35 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             Thread.currentThread().interrupt();
-            // TODO, when in a worker thread, we can't shutdown the whole processing...
             this.shutDown();
         }
+    }
+
+    /**
+     * When tested this {@link Predicate} returns <code>true</code> when the tested {@link TrackedEventMessage} matches with the given {@link Segment}.
+     * <br/>
+     * Implementation note:
+     * This policy matches sequence identifier of the message with the segment.
+     * <br/>
+     *
+     * @param segment The {@link Segment#matches(long)} method is called.
+     * @return
+     */
+    protected Predicate<TrackedEventMessage<?>> matchesSegmentPredicate(Segment segment) {
+
+        return message -> {
+            final Object sequenceIdentifierFor = sequentialPolicy.getSequenceIdentifierFor(message);
+            if (Objects.nonNull(sequenceIdentifierFor)) {
+                final Long numericIdentifier = (long) Objects.hashCode(sequenceIdentifierFor);
+                final boolean matches = segment.matches(numericIdentifier);
+                logger.info("{} policy for segment: {}, with identifier (binary): {}", matches ? "Matching" : "Not Matching",
+                        segment.getSegmentId(), Integer.toBinaryString(numericIdentifier.intValue()));
+                return matches;
+            }
+            // when null, or when not matching the provided segment.
+            // Review: When segment ID is 0, consider returning true?
+            return false;
+        };
     }
 
     private MessageStream<TrackedEventMessage<?>> ensureEventStreamOpened(
@@ -426,9 +431,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         public void run() {
             try {
                 processingLoop(this);
-//                System.out.println("processing loop done");
             } catch (Throwable e) {
-                // TODO state change on a single worker...
                 logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
                 state.set(State.PAUSED_ERROR);
             }
@@ -455,6 +458,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public class AsyncTrackingEventProcessingStrategy {
 
         int[] storedSegments;
+        boolean threadPoolChanged = false;
+
 
         public void startSegmentWorkers() {
 
@@ -464,45 +469,74 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 // TODO, algo to determine the segmentation, We have 3 possible cases.
                 // 1. segment == thread max pool size => One thread per segment.
                 // 2. segment > thread max pool size => handle multiple identifiers..
-                // 3. segment < thread max pool size => Start splitting segments, accross number of available threads.
+                // 3. segment < thread max pool size => Start splitting segments, across number of available threads.
                 // Note, when the SequentialPolicy is not capable to distinguish messages, there is no point in segmenting the stream of messages!
                 // Currently these two constructs are not synched.
-
-                executorService.getCorePoolSize();
 
                 storedSegments = tokenStore.fetchSegments(getName());
                 Segment[] segments = Segment.computeSegments(storedSegments);
 
-                if(segments.length == 1 && (threadsRemaining() + 1) > segments.length){
-                    // Split our segment according to the thread count.
+                // Split the root segment in at least two segments.
+                if (segments.length == 1 && (threadsRemaining() + 1) > segments.length) {
                     segments = segments[0].split();
                 }
 
+                // Optimize the segments, for the number of threads.
+                // Note this could be done when running...
+                if (segments.length > threadsRemaining()) {
+                    // TODO wait for functionality to compare token 'distance'.
+                    // when two tokens are 'adjacent' within the boundaries of the Segment mask, these would be mergeable.
+                    // The worker handling the most recent token, would wait until a candidate merge worker is 'adjacent'.
+
+                    // See which segments are mergeable.
+//                    final List<TrackingToken> sortedByIndexTokens = Stream.of(segments)
+//                            .map(segment -> tokenStore.fetchToken(getName(), segment.getSegmentId()))
+//                            .map(trackingToken -> {
+//                                long index = 0;
+//                                if (trackingToken instanceof GlobalSequenceTrackingToken) {
+//                                    index = ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
+//                                }else if(trackingToken instanceof GapAwareTrackingToken){
+//                                    index = ((GapAwareTrackingToken) trackingToken).getIndex();
+//                                }
+//                                return index;
+//                            })
+//                            .sorted()
+//                            .collect(Collectors.toList());
+                }
+                TrackingSegmentWorker workingInCurrentThread = null;
                 for (Segment s : segments) {
-                    final TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(s);
+                    TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(s);
+                    // TODO Do we de-register properly....
                     registerInterceptor(trackingSegmentWorker.getEventMessageMessageHandlerInterceptor());
                     if (threadsRemaining() > 0) {
                         executorService.submit(trackingSegmentWorker);
                     } else {
-                        // Our dispatcher becomes a worker....no more dispatching....
-                        trackingSegmentWorker.run();
+                        workingInCurrentThread = trackingSegmentWorker;
+                        break;
+                        // Our dispatcher becomes a worker....no more dispatching....which lead to segments not being dispatched, segment > threads.
                     }
                 }
+                if(Objects.nonNull(workingInCurrentThread)){
+                    workingInCurrentThread.run();
+                }
+                logger.info("Exiting dispatching thread");
             });
         }
 
-        public int threadsRemaining(){
+        public int threadsRemaining() {
             return executorService.getMaximumPoolSize() - executorService.getActiveCount();
         }
 
-        public void optimizeWorkers(){
-
-            final int activeCount = executorService.getActiveCount();
-            if( storedSegments.length < activeCount){
-                // stop our execution, and re-init with the new executor settings. (core and max pool size).
-                executorService.shutdown();;
-                ensureRunningExecutor();
-                // do this stuff later.
+        public void optimizeWorkers() {
+            if (threadPoolChanged) {
+                // Any reason... why we should optimize, anything changed to our thread pool?
+                final int activeCount = executorService.getActiveCount();
+                if (storedSegments.length < activeCount) {
+                    // stop our execution, and re-init with the new executor settings. (core and max pool size).
+                    executorService.shutdown();
+                    ensureRunningExecutor();
+                    // do this stuff later.
+                }
             }
         }
     }
