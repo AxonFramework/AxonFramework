@@ -131,13 +131,13 @@ public class SpringCloudCommandRouter implements CommandRouter {
         }
 
         ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
-        String localServiceId = localServiceInstance.getServiceId();
         URI localServiceUri = localServiceInstance.getUri();
 
-        serviceInstances
-                .forEach(serviceInstance -> {URI serviceUri = serviceInstance.getUri();
+        serviceInstances.forEach(serviceInstance -> {
+            URI serviceUri = serviceInstance.getUri();
             String serviceId = serviceInstance.getServiceId();
-            boolean local = localServiceId.equals(serviceId) && localServiceUri.equals(serviceUri);
+            boolean local = localServiceUri.equals(serviceUri);
+
             SimpleMember<URI> simpleMember = new SimpleMember<>(
                     serviceId.toUpperCase() + "[" + serviceUri + "]",
                     serviceUri,

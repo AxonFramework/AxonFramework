@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -174,6 +173,13 @@ public interface Configuration {
     default ParameterResolverFactory parameterResolverFactory() {
         return getComponent(ParameterResolverFactory.class);
     }
+
+    /**
+     * Returns all modules that have been registered with this Configuration.
+     *
+     * @return all modules that have been registered with this Configuration
+     */
+    List<ModuleConfiguration> getModules();
 
     /**
      * Registers a handler to be executed when this Configuration is started.

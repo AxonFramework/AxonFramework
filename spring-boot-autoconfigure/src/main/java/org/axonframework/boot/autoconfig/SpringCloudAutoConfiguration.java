@@ -55,11 +55,15 @@ public class SpringCloudAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(RestTemplate.class)
     public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
                                                              RestTemplate restTemplate,
                                                              Serializer serializer) {
         return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 }

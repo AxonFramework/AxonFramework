@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -96,6 +95,7 @@ public class DefaultConfigurer implements Configurer {
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private final List<Runnable> startHandlers = new ArrayList<>();
     private final List<Runnable> shutdownHandlers = new ArrayList<>();
+    private List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
 
@@ -241,6 +241,7 @@ public class DefaultConfigurer implements Configurer {
         } else {
             initHandlers.add(module::initialize);
         }
+        this.modules.add(module);
         startHandlers.add(module::start);
         shutdownHandlers.add(module::shutdown);
         return this;
@@ -279,6 +280,7 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
+        this.modules.add(aggregateConfiguration);
         this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
         this.initHandlers.add(aggregateConfiguration::initialize);
         this.startHandlers.add(aggregateConfiguration::start);
@@ -381,6 +383,11 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public List<CorrelationDataProvider> correlationDataProviders() {
             return correlationProviders.get();
+        }
+
+        @Override
+        public List<ModuleConfiguration> getModules() {
+            return modules;
         }
 
         @Override

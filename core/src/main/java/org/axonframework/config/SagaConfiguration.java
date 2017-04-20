@@ -15,12 +15,10 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -29,6 +27,8 @@ import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStor
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
 import java.util.ArrayList;
@@ -57,9 +57,23 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @return a SagaConfiguration instance, ready for further configuration
      */
     public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType) {
-        return new SagaConfiguration<>(sagaType);
+        return subscribingSagaManager(sagaType, Configuration::eventBus);
     }
 
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor to process
+     * incoming Events from the message source provided by given {@code messageSourceBuilder}
+     *
+     * @param sagaType             The type of Saga to handle events with
+     * @param messageSourceBuilder The function providing the message source based on the configuration
+     * @param <S>                  The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> subscribingSagaManager(
+            Class<S> sagaType,
+            Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder) {
+        return new SagaConfiguration<>(sagaType, messageSourceBuilder);
+    }
 
     /**
      * Initialize a configuration for a Saga of given {@code sagaType}, using a Tracking Event Processor to process
@@ -71,12 +85,29 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @return a SagaConfiguration instance, ready for further configuration
      */
     public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType) {
-        SagaConfiguration<S> configuration = new SagaConfiguration<>(sagaType);
+        return trackingSagaManager(sagaType, Configuration::eventBus);
+    }
+
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Tracking Event Processor to process
+     * incoming Events from a Message Source provided by given {@code messageSourceBuilder}. Note that a Token Store
+     * should be configured in the global configuration, or the Saga Manager will default to an in-memory token store,
+     * which is not recommended for production environments.
+     *
+     * @param sagaType             The type of Saga to handle events with
+     * @param messageSourceBuilder The function providing the message source based on the configuration
+     * @param <S>                  The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> trackingSagaManager(
+            Class<S> sagaType,
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
+        SagaConfiguration<S> configuration = new SagaConfiguration<>(sagaType, c -> null);
         configuration.processor.update(c -> {
             TrackingEventProcessor processor = new TrackingEventProcessor(
                     sagaType.getSimpleName() + "Processor",
                     configuration.sagaManager.get(),
-                    c.eventBus(),
+                    messageSourceBuilder.apply(configuration.config),
                     c.getComponent(TokenStore.class, InMemoryTokenStore::new),
                     c.getComponent(TransactionManager.class, NoTransactionManager::instance));
             processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
@@ -86,7 +117,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     @SuppressWarnings("unchecked")
-    private SagaConfiguration(Class<S> sagaType) {
+    private SagaConfiguration(Class<S> sagaType, Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder) {
         String managerName = sagaType.getSimpleName() + "Manager";
         String processorName = sagaType.getSimpleName() + "Processor";
         String repositoryName = sagaType.getSimpleName() + "Repository";
@@ -98,7 +129,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                                                  c.parameterResolverFactory()));
         processor = new Component<>(() -> config, processorName,
                                     c -> {
-                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(managerName, sagaManager.get(), c.eventBus());
+                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(managerName, sagaManager.get(),
+                                                                                                            messageSourceBuilder.apply(c));
                                         processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
                                         return processor;
                                     });
@@ -118,11 +150,18 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         return this;
     }
 
-    public SagaConfiguration<S> registerHandlerInterceptor(Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptor) {
+    /**
+     * Registers the handler interceptor provided by the given {@code handlerInterceptorBuilder} function with
+     * the processor defined in this configuration.
+     *
+     * @param handlerInterceptorBuilder The function to create the interceptor based on the current configuration
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> registerHandlerInterceptor(Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptorBuilder) {
         if (config != null) {
-            processor.get().registerInterceptor(handlerInterceptor.apply(config));
+            processor.get().registerInterceptor(handlerInterceptorBuilder.apply(config));
         } else {
-            handlerInterceptors.add(handlerInterceptor);
+            handlerInterceptors.add(handlerInterceptorBuilder);
         }
         return this;
     }
@@ -138,6 +177,52 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     @Override
     public void start() {
         processor.get().start();
+    }
+
+    /**
+     * Returns the processor that processed events for the Saga in this Configuration.
+     *
+     * @return The EventProcessor defined in this Configuration
+     * @throws IllegalStateException when this configuration hasn't been initialized yet
+     */
+    public EventProcessor getProcessor() {
+        Assert.state(config != null, () -> "Configuration is not initialized yet");
+        return processor.get();
+    }
+
+    /**
+     * Returns the Saga Store used by the Saga defined in this Configuration. If none has been explicitly defined,
+     * it will return the Saga Store of the main Configuration.
+     *
+     * @return The Saga Store defined in this Configuration
+     * @throws IllegalStateException when this configuration hasn't been initialized yet
+     */
+    public SagaStore<? super S> getSagaStore() {
+        Assert.state(config != null, () -> "Configuration is not initialized yet");
+        return sagaStore.get();
+    }
+
+    /**
+     * Returns the SagaRepository instance used to load Saga instances in this Configuration.
+     *
+     * @return the SagaRepository defined in this Configuration
+     * @throws IllegalStateException when this configuration hasn't been initialized yet
+     */
+    public SagaRepository<S> getSagaRepository() {
+        Assert.state(config != null, () -> "Configuration is not initialized yet");
+        return sagaRepository.get();
+    }
+
+    /**
+     * Returns the SagaManager responsible for managing the lifecycle and invocation of Saga instances of the type
+     * defined in this Configuration
+     *
+     * @return The SagaManager defined in this configuration
+     * @throws IllegalStateException when this configuration hasn't been initialized yet
+     */
+    public AnnotatedSagaManager<S> getSagaManager() {
+        Assert.state(config != null, () -> "Configuration is not initialized yet");
+        return sagaManager.get();
     }
 
     @Override
