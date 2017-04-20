@@ -21,6 +21,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -60,6 +61,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * take care when renaming a TrackingEventProcessor.
  *
  * @author Rene de Waele
+ * @author Christophe Bouhier
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
@@ -209,7 +211,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         try {
             while (state.get().isRunning()) {
                 try {
-                    eventStream = ensureEventStreamOpened(eventStream);
+                    eventStream = ensureEventStreamOpened(eventStream, segmentWorker.getSegment());
                     processBatch(segmentWorker, eventStream);
                     errorWaitTime = 1;
                 } catch (Exception e) {
@@ -271,9 +273,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             final TrackingToken lastToken = segmentWorker.getLastToken();
             while (lastToken != null && eventStream.peek().filter(event -> lastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
-                if (trackedEventMessagePredicate.test(trackedEventMessage)) {
-                    batch.add(trackedEventMessage);
-                }
+                // We don't match agains our policy in this case, as the token is leading.
+                logger.info("Adding to batch event with seq nr: {} ", ((GenericTrackedDomainEventMessage)trackedEventMessage).getSequenceNumber());
+                batch.add(trackedEventMessage);
             }
 
             process(batch);
@@ -313,11 +315,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private MessageStream<TrackedEventMessage<?>> ensureEventStreamOpened(
-            MessageStream<TrackedEventMessage<?>> eventStreamIn) {
+            MessageStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
         MessageStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
+            final TrackingToken trackingToken = tokenStore.fetchToken(getName(), segment.getSegmentId());
+            logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
             eventStream = transactionManager.fetchInTransaction(
-                    () -> messageSource.openStream(tokenStore.fetchToken(getName(), 0)));
+                    () -> messageSource.openStream(trackingToken));
         }
         return eventStream;
     }
@@ -406,10 +410,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         private Segment segment;
 
-        private volatile TrackingToken lastToken;
-
-        // Tracks if this worker is also responsible for segmentation strategy.
-        private boolean isDispachter;
+        private TrackingToken lastToken;
 
         public TrackingSegmentWorker(Segment segment) {
             this.segment = segment;
@@ -449,95 +450,41 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 return interceptorChain.proceed();
             };
         }
-
-        public boolean isDispatcher() {
-            return isDispachter;
-        }
     }
 
     public class AsyncTrackingEventProcessingStrategy {
-
-        int[] storedSegments;
-        boolean threadPoolChanged = false;
-
-
         public void startSegmentWorkers() {
 
             // Dispatches SegmentWorkers.
             executorService.submit(() -> {
+                logger.info("Entering dispatching thread");
+                Segment[] segments = Segment.computeSegments(tokenStore.fetchSegments(getName()));
 
-                // TODO, algo to determine the segmentation, We have 3 possible cases.
-                // 1. segment == thread max pool size => One thread per segment.
-                // 2. segment > thread max pool size => handle multiple identifiers..
-                // 3. segment < thread max pool size => Start splitting segments, across number of available threads.
-                // Note, when the SequentialPolicy is not capable to distinguish messages, there is no point in segmenting the stream of messages!
-                // Currently these two constructs are not synched.
 
-                storedSegments = tokenStore.fetchSegments(getName());
-                Segment[] segments = Segment.computeSegments(storedSegments);
-
+                // TODO, set the number of segments.
                 // Split the root segment in at least two segments.
-                if (segments.length == 1 && (threadsRemaining() + 1) > segments.length) {
+                if (segments.length == 1 && segments.length < corePoolSize) {
                     segments = segments[0].split();
                 }
-
-                // Optimize the segments, for the number of threads.
-                // Note this could be done when running...
-                if (segments.length > threadsRemaining()) {
-                    // TODO wait for functionality to compare token 'distance'.
-                    // when two tokens are 'adjacent' within the boundaries of the Segment mask, these would be mergeable.
-                    // The worker handling the most recent token, would wait until a candidate merge worker is 'adjacent'.
-
-                    // See which segments are mergeable.
-//                    final List<TrackingToken> sortedByIndexTokens = Stream.of(segments)
-//                            .map(segment -> tokenStore.fetchToken(getName(), segment.getSegmentId()))
-//                            .map(trackingToken -> {
-//                                long index = 0;
-//                                if (trackingToken instanceof GlobalSequenceTrackingToken) {
-//                                    index = ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex();
-//                                }else if(trackingToken instanceof GapAwareTrackingToken){
-//                                    index = ((GapAwareTrackingToken) trackingToken).getIndex();
-//                                }
-//                                return index;
-//                            })
-//                            .sorted()
-//                            .collect(Collectors.toList());
-                }
+                // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
+                // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                for (Segment s : segments) {
-                    TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(s);
-                    // TODO Do we de-register properly....
+                for (int i = 0; i < corePoolSize; i++) {
+                    final Segment segment = segments[i];
+                    TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(segment);
                     registerInterceptor(trackingSegmentWorker.getEventMessageMessageHandlerInterceptor());
-                    if (threadsRemaining() > 0) {
+                    if (i != corePoolSize - 1) {
                         executorService.submit(trackingSegmentWorker);
-                    } else {
+                    }else{
                         workingInCurrentThread = trackingSegmentWorker;
-                        break;
-                        // Our dispatcher becomes a worker....no more dispatching....which lead to segments not being dispatched, segment > threads.
                     }
                 }
+                // One of the Segments which are not processed yet, is handled by the dispatching thread.
                 if(Objects.nonNull(workingInCurrentThread)){
                     workingInCurrentThread.run();
                 }
                 logger.info("Exiting dispatching thread");
             });
-        }
-
-        public int threadsRemaining() {
-            return executorService.getMaximumPoolSize() - executorService.getActiveCount();
-        }
-
-        public void optimizeWorkers() {
-            if (threadPoolChanged) {
-                // Any reason... why we should optimize, anything changed to our thread pool?
-                final int activeCount = executorService.getActiveCount();
-                if (storedSegments.length < activeCount) {
-                    // stop our execution, and re-init with the new executor settings. (core and max pool size).
-                    executorService.shutdown();
-                    ensureRunningExecutor();
-                    // do this stuff later.
-                }
-            }
         }
     }
 }
