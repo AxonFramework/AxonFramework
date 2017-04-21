@@ -1,6 +1,5 @@
 package org.axonframework.eventhandling;
 
-import com.sun.istack.internal.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -200,7 +199,6 @@ public class Segment implements Comparable<Segment> {
      * @param segments The segments to merge.
      * @return the merged segmentId or <code>null</code> if not a {@link Segment#MERGEABLE_SEGMENT}.
      */
-    @Nullable
     public static Segment merge(Segment[] segments) {
         if (!MERGEABLE_SEGMENT.test(segments)) return null;
         final Segment segment0 = segments[0];

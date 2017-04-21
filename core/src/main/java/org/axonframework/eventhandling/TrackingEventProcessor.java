@@ -15,7 +15,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.async.SequencingPolicy;
@@ -44,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.Assert.isTrue;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -72,7 +72,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final String name;
-    private final AsyncTrackingEventProcessingStrategy processingStrategy;
+    private final int segmentsSize;
     private volatile ThreadPoolExecutor executorService;
     private AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
 
@@ -116,7 +116,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
                                   TransactionManager transactionManager, int batchSize) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, new SequentialPerAggregatePolicy(), transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
+                messageSource, tokenStore, new SequentialPerAggregatePolicy(), 1, transactionManager, batchSize, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
@@ -138,7 +138,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TransactionManager transactionManager,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                messageSource, tokenStore, new SequentialPerAggregatePolicy(), transactionManager, 1, messageMonitor);
+                messageSource, tokenStore, new SequentialPerAggregatePolicy(), 1, transactionManager, 1, messageMonitor);
     }
 
     /**
@@ -153,6 +153,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param tokenStore            Used to store and fetch event tokens that enable the processor to track its
      *                              progress
      * @param sequentialPolicy      The policy which will determine the segmentation identifier.
+     * @param segmentsSize          The number of segments requested for handling asynchronous processing of events.
      * @param transactionManager    The transaction manager used when processing messages
      * @param batchSize             The maximum number of events to process in a single batch
      * @param messageMonitor        Monitor to be invoked before and after event processing
@@ -160,17 +161,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                   RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
                                   StreamableMessageSource<TrackedEventMessage<?>> messageSource, TokenStore tokenStore,
-                                  SequencingPolicy<? super EventMessage<?>> sequentialPolicy, TransactionManager transactionManager, int batchSize,
+                                  SequencingPolicy<? super EventMessage<?>> sequentialPolicy, int segmentsSize, TransactionManager transactionManager, int batchSize,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
-        Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
+        isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.messageSource = requireNonNull(messageSource);
         this.tokenStore = requireNonNull(tokenStore);
         this.sequentialPolicy = requireNonNull(sequentialPolicy);
+        isTrue(segmentsSize > 0 && segmentsSize <= 32, () -> "segmentsSize needs to be between 1 and 8 (default = 1)");
+        this.segmentsSize = segmentsSize;
         this.transactionManager = transactionManager;
         this.name = name;
         this.batchSize = batchSize;
-        this.processingStrategy = new AsyncTrackingEventProcessingStrategy();
 
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
     }
@@ -185,7 +187,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         State previousState = state.getAndSet(State.STARTED);
         if (!previousState.isRunning()) {
             ensureRunningExecutor();
-            processingStrategy.startSegmentWorkers();
+            startSegmentWorkers();
         }
     }
 
@@ -274,7 +276,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             while (lastToken != null && eventStream.peek().filter(event -> lastToken.equals(event.trackingToken())).isPresent()) {
                 final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                 // We don't match agains our policy in this case, as the token is leading.
-                logger.info("Adding to batch event with seq nr: {} ", ((GenericTrackedDomainEventMessage)trackedEventMessage).getSequenceNumber());
+                logger.info("Segment {}, adding to batch event with seq nr: {} ", segmentWorker.segment.getSegmentId(), ((GenericTrackedDomainEventMessage) trackedEventMessage).getSequenceNumber());
                 batch.add(trackedEventMessage);
             }
 
@@ -391,6 +393,45 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         // Note will be consumed, when calling optimize on strategy....
     }
 
+    /**
+     * A strategy
+     */
+    protected void startSegmentWorkers() {
+
+        // Dispatches SegmentWorkers.
+        executorService.submit(() -> {
+            logger.info("Entering dispatching thread");
+
+            final int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(getName());
+            Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
+
+            // When in an initial stage, split segments to the requested number.
+            if (tokenStoreCurrentSegments.length == 0 && segments.length == 1 && segments.length < segmentsSize) {
+                segments = Segment.splitBalanced(segments[0], segmentsSize - 1).toArray(new Segment[segmentsSize]);
+            }
+
+            // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
+            // Keep track of the last processed segments...
+            TrackingSegmentWorker workingInCurrentThread = null;
+            for (int i = 0; i < corePoolSize; i++) {
+                final Segment segment = segments[i];
+                tokenStore.extendClaim(getName(), segment.getSegmentId());
+                TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(segment);
+                registerInterceptor(trackingSegmentWorker.getEventMessageMessageHandlerInterceptor());
+                if (i != corePoolSize - 1) {
+                    executorService.submit(trackingSegmentWorker);
+                } else {
+                    workingInCurrentThread = trackingSegmentWorker;
+                }
+            }
+            // One of the Segments which are not processed yet, is handled by the dispatching thread.
+            if (Objects.nonNull(workingInCurrentThread)) {
+                workingInCurrentThread.run();
+            }
+            logger.info("Exiting dispatching thread");
+        });
+    }
+
     protected enum State {
 
         NOT_STARTED(false), STARTED(true), PAUSED(false), SHUT_DOWN(false), PAUSED_ERROR(false);
@@ -449,42 +490,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 });
                 return interceptorChain.proceed();
             };
-        }
-    }
-
-    public class AsyncTrackingEventProcessingStrategy {
-        public void startSegmentWorkers() {
-
-            // Dispatches SegmentWorkers.
-            executorService.submit(() -> {
-                logger.info("Entering dispatching thread");
-                Segment[] segments = Segment.computeSegments(tokenStore.fetchSegments(getName()));
-
-
-                // TODO, set the number of segments.
-                // Split the root segment in at least two segments.
-                if (segments.length == 1 && segments.length < corePoolSize) {
-                    segments = segments[0].split();
-                }
-                // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
-                // Keep track of the last processed segments...
-                TrackingSegmentWorker workingInCurrentThread = null;
-                for (int i = 0; i < corePoolSize; i++) {
-                    final Segment segment = segments[i];
-                    TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(segment);
-                    registerInterceptor(trackingSegmentWorker.getEventMessageMessageHandlerInterceptor());
-                    if (i != corePoolSize - 1) {
-                        executorService.submit(trackingSegmentWorker);
-                    }else{
-                        workingInCurrentThread = trackingSegmentWorker;
-                    }
-                }
-                // One of the Segments which are not processed yet, is handled by the dispatching thread.
-                if(Objects.nonNull(workingInCurrentThread)){
-                    workingInCurrentThread.run();
-                }
-                logger.info("Exiting dispatching thread");
-            });
         }
     }
 }
