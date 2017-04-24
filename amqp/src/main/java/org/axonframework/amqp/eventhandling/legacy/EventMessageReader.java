@@ -16,6 +16,7 @@
 
 package org.axonframework.amqp.eventhandling.legacy;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
@@ -26,7 +27,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.time.Instant;
 
 /**
  * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been written
@@ -99,11 +99,11 @@ public class EventMessageReader {
             return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
                                                    new SerializedMessage<>(identifier, serializedPayload,
                                                                            serializedMetaData, serializer),
-                                                   () -> Instant.parse(timestamp));
+                                                   () -> DateTimeUtils.parseInstant(timestamp));
         } else {
             return new GenericEventMessage<>(
                     new SerializedMessage<>(identifier, serializedPayload, serializedMetaData, serializer),
-                    () -> Instant.parse(timestamp));
+                    () -> DateTimeUtils.parseInstant(timestamp));
         }
     }
 }

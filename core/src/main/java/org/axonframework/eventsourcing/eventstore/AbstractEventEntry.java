@@ -13,6 +13,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.*;
 
@@ -111,7 +112,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     public Instant getTimestamp() {
-        return Instant.parse(timeStamp);
+        return DateTimeUtils.parseInstant(timeStamp);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 
 import com.mongodb.DBObject;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.serialization.SerializedMetaData;
@@ -127,7 +128,7 @@ public class EventEntry implements DomainEventData<Object> {
 
     @Override
     public Instant getTimestamp() {
-        return Instant.parse(timestamp);
+        return DateTimeUtils.parseInstant(timestamp);
     }
 
     @Override
