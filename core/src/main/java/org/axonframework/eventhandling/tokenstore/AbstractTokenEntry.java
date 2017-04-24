@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +15,7 @@
 
 package org.axonframework.eventhandling.tokenstore;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.*;
 
@@ -129,7 +130,7 @@ public abstract class AbstractTokenEntry<T> {
      * @return The storage timestamp
      */
     public Instant timestamp() {
-        return Instant.parse(timestamp);
+        return DateTimeUtils.parseInstant(timestamp);
     }
 
     /**

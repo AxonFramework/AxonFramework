@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +17,7 @@ package org.axonframework.amqp.eventhandling;
 
 import com.rabbitmq.client.AMQP;
 import org.axonframework.common.Assert;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -25,7 +25,6 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.*;
 
-import java.time.Instant;
 import java.util.*;
 
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
@@ -115,9 +114,9 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
             return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get("axon-message-aggregate-type")),
                                                    Objects.toString(headers.get("axon-message-aggregate-id")),
                                                    (Long) headers.get("axon-message-aggregate-seq"),
-                                                   message, () -> Instant.parse(timestamp)));
+                                                   message, () -> DateTimeUtils.parseInstant(timestamp)));
         } else {
-            return Optional.of(new GenericEventMessage<>(message, () -> Instant.parse(timestamp)));
+            return Optional.of(new GenericEventMessage<>(message, () -> DateTimeUtils.parseInstant(timestamp)));
         }
     }
 

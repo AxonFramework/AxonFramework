@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +16,7 @@
 package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 
 import com.mongodb.DBObject;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.serialization.SerializedMetaData;
@@ -127,7 +127,7 @@ public class EventEntry implements DomainEventData<Object> {
 
     @Override
     public Instant getTimestamp() {
-        return Instant.parse(timestamp);
+        return DateTimeUtils.parseInstant(timestamp);
     }
 
     @Override
