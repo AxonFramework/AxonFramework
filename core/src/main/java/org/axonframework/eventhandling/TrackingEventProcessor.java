@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -216,6 +217,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     eventStream = ensureEventStreamOpened(eventStream, segmentWorker.getSegment());
                     processBatch(segmentWorker, eventStream);
                     errorWaitTime = 1;
+                } catch (UnableToClaimTokenException e) {
+                    if (errorWaitTime == 1) {
+                        logger.info("Token is owned by another node. Waiting for it to become available...");
+                    }
+                    errorWaitTime = 5;
+                    waitFor(errorWaitTime);
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have cause an illegal state
                     if (errorWaitTime == 1) {
@@ -225,19 +232,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     releaseToken(segmentWorker.getSegment());
                     closeQuietly(eventStream);
                     eventStream = null;
-                    try {
-                        Thread.sleep(errorWaitTime * 1000);
-                    } catch (InterruptedException e1) {
-                        Thread.currentThread().interrupt();
-                        logger.warn("Thread interrupted. Preparing to shut down event processor");
-                        shutDown();
-                    }
+                    waitFor(errorWaitTime);
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
                 }
             }
         } finally {
             closeQuietly(eventStream);
             releaseToken(segmentWorker.getSegment());
+        }
+    }
+
+    private void waitFor(long errorWaitTime) {
+        try {
+            Thread.sleep(errorWaitTime * 1000);
+        } catch (InterruptedException e1) {
+            Thread.currentThread().interrupt();
+            logger.warn("Thread interrupted. Preparing to shut down event processor");
+            shutDown();
         }
     }
 

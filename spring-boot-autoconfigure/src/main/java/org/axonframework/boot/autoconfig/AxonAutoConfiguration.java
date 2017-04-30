@@ -35,14 +35,11 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.axonframework.spring.config.EnableAxon;
-import org.axonframework.spring.config.SpringAxonAutoConfigurer;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -53,8 +50,6 @@ import org.springframework.context.annotation.Configuration;
  * @author Allard Buijze
  * @author Josh Long
  */
-@EnableAxon
-@ConditionalOnClass(SpringAxonAutoConfigurer.class)
 @Configuration
 @AutoConfigureAfter(name = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "org.axonframework.boot.autoconfig.JpaAutoConfiguration"})
@@ -122,7 +117,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         });
     }
 
-    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class})
+    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class}, value = CommandBus.class)
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {

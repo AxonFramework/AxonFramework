@@ -211,19 +211,21 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
             Class<?> sagaType = beanFactory.getType(saga);
-            SagaConfiguration<?> sagaConfiguration =
-                    SagaConfiguration.subscribingSagaManager(sagaType);
 
             String configName = lcFirst(sagaType.getSimpleName()) + "Configuration";
-            if (!beanFactory.containsBean(configName)) {
+            if (beanFactory.containsBean(configName)) {
+                configurer.registerModule(new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(configName, ModuleConfiguration.class)));
+            } else {
+                SagaConfiguration<?> sagaConfiguration =
+                        SagaConfiguration.subscribingSagaManager(sagaType);
                 beanFactory.registerSingleton(configName, sagaConfiguration);
-            }
 
-            if (!"".equals(sagaAnnotation.sagaStore())) {
-                sagaConfiguration
-                        .configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                if (!"".equals(sagaAnnotation.sagaStore())) {
+                    sagaConfiguration
+                            .configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                }
+                configurer.registerModule(sagaConfiguration);
             }
-            configurer.registerModule(sagaConfiguration);
         }
     }
 
@@ -313,7 +315,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    private class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
+    private static class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
 
         private final Supplier<ModuleConfiguration> delegateSupplier;
         private ModuleConfiguration delegate;

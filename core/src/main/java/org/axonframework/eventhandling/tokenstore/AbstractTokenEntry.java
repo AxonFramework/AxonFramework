@@ -15,6 +15,7 @@
 
 package org.axonframework.eventhandling.tokenstore;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.*;
 
@@ -129,7 +130,7 @@ public abstract class AbstractTokenEntry<T> {
      * @return The storage timestamp
      */
     public Instant timestamp() {
-        return Instant.parse(timestamp);
+        return DateTimeUtils.parseInstant(timestamp);
     }
 
     /**

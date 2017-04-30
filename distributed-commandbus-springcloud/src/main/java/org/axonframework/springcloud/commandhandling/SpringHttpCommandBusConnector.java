@@ -87,11 +87,12 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     /**
      * Send the command message to a remote member
-     * @param destination The member of the network to send the message to
-     * @param commandMessage     The command to send to the (remote) member
-     * @param expectReply True if a reply is expected
-     * @param <C>         The type of object expected as command
-     * @param <R>         The type of object expected as result of the command
+     *
+     * @param destination    The member of the network to send the message to
+     * @param commandMessage The command to send to the (remote) member
+     * @param expectReply    True if a reply is expected
+     * @param <C>            The type of object expected as command
+     * @param <R>            The type of object expected as result of the command
      * @return The reply
      */
     private <C, R> ResponseEntity<SpringHttpReplyMessage<R>> sendRemotely(Member destination,
@@ -163,7 +164,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         }
     }
 
-    public class SpringHttpReplyFutureCallback<C, R>  extends CompletableFuture<SpringHttpReplyMessage>
+    public class SpringHttpReplyFutureCallback<C, R> extends CompletableFuture<SpringHttpReplyMessage>
             implements CommandCallback<C, R> {
 
         @Override

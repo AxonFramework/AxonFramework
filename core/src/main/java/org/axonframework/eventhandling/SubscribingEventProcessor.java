@@ -153,5 +153,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     @Override
     public void shutDown() {
         IOUtils.closeQuietly(eventBusRegistration);
+        eventBusRegistration = null;
     }
 }
