@@ -116,7 +116,7 @@ public class Segment implements Comparable<Segment> {
             while (!segmentGroup.isEmpty()) {
                 List<Segment> pair = new ArrayList<Segment>();
 
-                Segment segment = null;
+                Segment segment;
                 do {
                     segment = segmentGroup.pollFirst();
                 } while (track.contains(segment));

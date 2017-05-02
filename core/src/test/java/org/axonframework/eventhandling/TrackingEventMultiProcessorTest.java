@@ -18,11 +18,11 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -30,16 +30,16 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.theories.Theories;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
@@ -47,8 +47,12 @@ import static org.axonframework.eventhandling.TrackingEventProcessorTest.trackin
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -61,6 +65,7 @@ public class TrackingEventMultiProcessorTest {
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
+    private TrackingEventProcessorConfiguration trackingEventProcessorConfiguration;
 
     @Before
     public void setUp() throws Exception {
@@ -69,10 +74,16 @@ public class TrackingEventMultiProcessorTest {
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
-        // A processor, with a policy which guarantees segmenting with
+        // A processor config, with a policy which guarantees segmenting by using the sequence number.
+
+        trackingEventProcessorConfiguration = new TrackingEventProcessorConfiguration()
+                .setSequentialPolicy(new MessageSequenceNumberSequentialPolicy())
+                .setSegmentsSize(2)
+                .setCorePoolSize(2)
+                .setMaxPoolSize(2);
+
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                eventBus, tokenStore, new MessageSequenceNumberSequentialPolicy(), 2, NoTransactionManager.INSTANCE, 1, NoOpMessageMonitor.INSTANCE);
-        testSubject.tweakThreadPool(2,2);
+                eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, trackingEventProcessorConfiguration);
     }
 
     @After
@@ -103,6 +114,30 @@ public class TrackingEventMultiProcessorTest {
         assertThat(testSubject.activeProcessorThreads(), is(2));
     }
 
+    /**
+     * This processor won't be able to handle any segments, as claiming a segment will fail.
+     *
+     * @throws InterruptedException
+     */
+    @Test
+    @DirtiesContext
+    public void testProcessorWorkerCountWithMultipleSegmentsClaimFails() throws InterruptedException {
+
+
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+
+        // Will skip segments.
+        doThrow(new UnableToClaimTokenException("Failed")).when(tokenStore).extendClaim("test", 0);
+        doThrow(new UnableToClaimTokenException("Failed")).when(tokenStore).extendClaim("test", 1);
+
+        testSubject.start();
+        // give it some time to split segments from the store and submit to executor service.
+        Thread.sleep(200);
+        assertThat(testSubject.activeProcessorThreads(), is(0));
+    }
+
+
     @Test
     @DirtiesContext
     public void testProcessorWorkerCountWithMultipleSegmentsWithOneThread() throws InterruptedException {
@@ -110,27 +145,34 @@ public class TrackingEventMultiProcessorTest {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
 
+        trackingEventProcessorConfiguration.setCorePoolSize(1).setMaxPoolSize(1);
+
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                eventBus, tokenStore, new MessageSequenceNumberSequentialPolicy(), 1, NoTransactionManager.INSTANCE, 1, NoOpMessageMonitor.INSTANCE);
+                eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, trackingEventProcessorConfiguration);
         testSubject.start();
 
         // give it some time to split segments from the store and submit to executor service.
         Thread.sleep(200);
         assertThat(testSubject.activeProcessorThreads(), is(1));
+
+        // Reset our thread pool.
+        trackingEventProcessorConfiguration.setCorePoolSize(2).setMaxPoolSize(2);
     }
 
     @Test
     @DirtiesContext
     public void testMultiThreadSegmentsExceedsWorkerCount() throws Exception {
 
+        trackingEventProcessorConfiguration.setSegmentsSize(3);
+
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                eventBus, tokenStore, new MessageSequenceNumberSequentialPolicy(), 3, NoTransactionManager.INSTANCE, 1, NoOpMessageMonitor.INSTANCE);
-        testSubject.tweakThreadPool(2,2);
+                eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, trackingEventProcessorConfiguration);
+
         CountDownLatch countDownLatch = new CountDownLatch(2);
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
 
         doAnswer(invocation -> {
-            acknowledgeByThread.addMessage(Thread.currentThread(),(EventMessage<?>) invocation.getArguments()[0]);
+            acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
         }).when(mockListener).handle(any());
@@ -140,6 +182,8 @@ public class TrackingEventMultiProcessorTest {
 
         assertTrue("Expected listener to have received (only) 2 out of 3 published events", countDownLatch.await(5, TimeUnit.SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(2);
+
+        trackingEventProcessorConfiguration.setSegmentsSize(2);
     }
 
     @Test
@@ -148,7 +192,7 @@ public class TrackingEventMultiProcessorTest {
         CountDownLatch countDownLatch = new CountDownLatch(2);
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
         doAnswer(invocation -> {
-            acknowledgeByThread.addMessage(Thread.currentThread(),(EventMessage<?>) invocation.getArguments()[0]);
+            acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
         }).when(mockListener).handle(any());
@@ -211,14 +255,13 @@ public class TrackingEventMultiProcessorTest {
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
         CountDownLatch countDownLatch = new CountDownLatch(9);
         doAnswer(invocation -> {
-            acknowledgeByThread.addMessage(Thread.currentThread(),(EventMessage<?>) invocation.getArguments()[0]);
+            acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
         }).when(mockListener).handle(any());
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                eventBus, tokenStore, new MessageSequenceNumberSequentialPolicy(),2,  NoTransactionManager.INSTANCE, 1, NoOpMessageMonitor.INSTANCE);
-        testSubject.tweakThreadPool(2,2);
+                eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, trackingEventProcessorConfiguration);
         testSubject.start();
 
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(60, TimeUnit.SECONDS));
@@ -243,7 +286,7 @@ public class TrackingEventMultiProcessorTest {
         }).when(mockListener).handle(any());
         testSubject.start();
 
-        eventBus.publish(events.subList(0,2));
+        eventBus.publish(events.subList(0, 2));
 
         assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         acknowledgeByThread.assertEventsAddUpTo(2);
@@ -259,12 +302,12 @@ public class TrackingEventMultiProcessorTest {
 
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
         doAnswer(invocation -> {
-            acknowledgeByThread.addMessage(Thread.currentThread(),(EventMessage<?>) invocation.getArguments()[0]);
+            acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch2.countDown();
             return null;
         }).when(mockListener).handle(any());
 
-        eventBus.publish(events.subList(2,4));
+        eventBus.publish(events.subList(2, 4));
 
         assertEquals(2, countDownLatch2.getCount());
 
@@ -288,7 +331,7 @@ public class TrackingEventMultiProcessorTest {
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
         CountDownLatch countDownLatch = new CountDownLatch(5);
         doAnswer(invocation -> {
-            acknowledgeByThread.addMessage(Thread.currentThread(),(EventMessage<?>) invocation.getArguments()[0]);
+            acknowledgeByThread.addMessage(Thread.currentThread(), (EventMessage<?>) invocation.getArguments()[0]);
             countDownLatch.countDown();
             return null;
         }).when(mockListener).handle(any());
@@ -343,8 +386,7 @@ public class TrackingEventMultiProcessorTest {
         when(eventBus.openStream(null)).then(i -> trackingEventStreamOf(events.iterator()));
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                eventBus, tokenStore, new MessageSequenceNumberSequentialPolicy(), 2, NoTransactionManager.INSTANCE, 1, NoOpMessageMonitor.INSTANCE);
-        testSubject.tweakThreadPool(2,2);
+                eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, trackingEventProcessorConfiguration);
 
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {

@@ -26,6 +26,8 @@ import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
+import java.util.List;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 
@@ -119,7 +121,14 @@ public class JpaTokenStore implements TokenStore {
 
     @Override
     public int[] fetchSegments(String processorName) {
-        throw new UnsupportedOperationException("TODO Implement");
+
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        final List<Integer> resultList = entityManager.createQuery("SELECT te.segment FROM TokenEntry te " +
+                        "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                Integer.class)
+                .setParameter("processorName", processorName)
+                .getResultList();
+        return resultList.stream().mapToInt(i -> i).toArray();
     }
 
     /**
