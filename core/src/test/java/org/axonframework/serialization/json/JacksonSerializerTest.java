@@ -105,7 +105,7 @@ public class JacksonSerializerTest {
         SimpleSerializableType actual = testSubject.deserialize(serialized);
 
         assertNotNull(actual);
-        verify(objectMapper).reader(SimpleSerializableType.class);
+        verify(objectMapper).readerFor(SimpleSerializableType.class);
         verify(objectMapper).writer();
         verify(revisionResolver).revisionOf(SimpleSerializableType.class);
         verify(converter, times(2)).registerConverter(isA(ContentTypeConverter.class));
@@ -125,7 +125,7 @@ public class JacksonSerializerTest {
 
         assertNotNull(actual);
         assertTrue(testSubject.getConverter() instanceof ChainingConverter);
-        verify(objectMapper).reader(SimpleSerializableType.class);
+        verify(objectMapper).readerFor(SimpleSerializableType.class);
         verify(objectMapper).writer();
         verify(revisionResolver).revisionOf(SimpleSerializableType.class);
     }
@@ -142,7 +142,7 @@ public class JacksonSerializerTest {
 
         assertNotNull(actual);
         assertTrue(testSubject.getConverter() instanceof ChainingConverter);
-        verify(objectMapper).reader(SimpleSerializableType.class);
+        verify(objectMapper).readerFor(SimpleSerializableType.class);
         verify(objectMapper).writer();
     }
 

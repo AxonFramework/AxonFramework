@@ -182,7 +182,7 @@ public class JacksonSerializer implements Serializer {
      * @return The writer to serialize objects with
      */
     protected ObjectReader getReader(Class<?> type) {
-        return objectMapper.reader(type);
+        return objectMapper.readerFor(type);
     }
 
     @Override
