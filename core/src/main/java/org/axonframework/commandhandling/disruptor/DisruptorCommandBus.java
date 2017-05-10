@@ -217,7 +217,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param callback The callback to notify when command handling is completed
      * @param <R>      The expected return type of the command
      */
-    private <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    private <C, R> void doDispatch(CommandMessage<? extends C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
@@ -244,8 +244,9 @@ public class DisruptorCommandBus implements CommandBus {
         try {
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.reset(command, commandHandler, invokerSegment, publisherSegment,
-                        new BlacklistDetectingCallback<>(callback, disruptor.getRingBuffer(), this::doDispatch,
-                                                         rescheduleOnCorruptState), invokerInterceptors,
+                        new BlacklistDetectingCallback<C, R>(callback, disruptor.getRingBuffer(), this::doDispatch,
+                                                             rescheduleOnCorruptState),
+                        invokerInterceptors,
                         publisherInterceptors);
         } finally {
             ringBuffer.publish(sequence);
@@ -277,9 +278,9 @@ public class DisruptorCommandBus implements CommandBus {
      * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
      * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
-     * @param aggregateFactory   The factory creating uninitialized instances of the Aggregate
+     * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for creating snapshots
-     * @param <T>                The type of aggregate to create the repository for
+     * @param <T>                       The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory, SnapshotTriggerDefinition snapshotTriggerDefinition) {
@@ -310,11 +311,11 @@ public class DisruptorCommandBus implements CommandBus {
      * {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
      * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
      *
-     * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
-     * @param snapshotTriggerDefinition       The trigger definition for snapshots
-     * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
-     *                                 with
-     * @param <T>                      The type of aggregate managed by this repository
+     * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
+     * @param snapshotTriggerDefinition The trigger definition for snapshots
+     * @param parameterResolverFactory  The ParameterResolverFactory to resolve parameter values of annotated handler
+     *                                  with
+     * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
