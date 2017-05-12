@@ -28,6 +28,7 @@ import java.sql.SQLException;
  * @since 2.4
  */
 public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
+    private boolean exclusive;
 
     public PostgresSagaSqlSchema() {
     }
@@ -60,5 +61,27 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
                 "    );");
     }
 
+    @Override
+    public PreparedStatement sql_loadSaga(Connection conn, String sagaId) throws SQLException {
+        if (exclusive) {
+            final String sql = "SELECT serializedSaga, sagaType, revision" +
+                " FROM " + schemaConfiguration.sagaEntryTable() +
+                " WHERE sagaId = ?" +
+                " FOR UPDATE";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, sagaId);
+            return preparedStatement;
+        } else {
+            return super.sql_loadSaga(conn, sagaId);
+        }
+    }
 
+    /**
+     * Sets whether to acquire a row lock when loading sagas from the database. If true, only one
+     * instance of the application may load a saga at a time. This may be used to serialize event
+     * handling in sagas in multi-node configurations.
+     */
+    public void setExclusive(boolean exclusive) {
+        this.exclusive = exclusive;
+    }
 }
