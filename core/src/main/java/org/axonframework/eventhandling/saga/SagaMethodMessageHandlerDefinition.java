@@ -14,12 +14,11 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.property.Property;
-import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,10 +29,18 @@ import static java.lang.String.format;
  * Handlers.
  *
  * @author Allard Buijze
+ * @author Sofia Guy Ang
  * @since 0.7
  */
 public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
+    private Map<Class<? extends AssociationResolver>, AssociationResolver> associationResolverMap;
+
+    public SagaMethodMessageHandlerDefinition() {
+        this.associationResolverMap = new HashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<Map<String, Object>> annotationAttributes = original.annotationAttributes(SagaEventHandler.class);
@@ -41,31 +48,40 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
                 .map(attr -> ((boolean)attr.getOrDefault("forceNew", false)) ? SagaCreationPolicy.ALWAYS : SagaCreationPolicy.IF_NONE_FOUND).orElse(SagaCreationPolicy.NONE);
 
         return annotationAttributes
-                .map(attr -> doWrapHandler(original, creationPolicy, (String) attr.get("keyName"), (String) attr.get("associationProperty")))
+                .map(attr -> doWrapHandler(original, creationPolicy, (String) attr.get("keyName"),
+                                           (String) attr.get("associationProperty"),
+                                           (Class<? extends AssociationResolver>) attr.get("associationResolver")))
                 .orElse(original);
     }
 
-    private <T> MessageHandlingMember<T> doWrapHandler(MessageHandlingMember<T> original, SagaCreationPolicy creationPolicy,
-                                                       String associationKeyName, String associationPropertyName) {
+    private <T> MessageHandlingMember<T> doWrapHandler(MessageHandlingMember<T> original,
+                                                       SagaCreationPolicy creationPolicy,
+                                                       String associationKeyName, String associationPropertyName,
+                                                       Class<? extends AssociationResolver> associationResolverClass) {
         String associationKey = associationKey(associationKeyName, associationPropertyName);
-        Property<?> associationProperty = PropertyAccessStrategy.getProperty(original.payloadType(),
-                                                                             associationPropertyName);
+        AssociationResolver associationResolver = findAssociationResolver(associationResolverClass);
+        associationResolver.validate(associationPropertyName, original);
         boolean endingHandler = original.hasAnnotation(EndSaga.class);
-        if (associationProperty == null) {
-            String handler = original.unwrap(Executable.class).map(Executable::toGenericString).orElse("unknown");
-            throw new AxonConfigurationException(format("SagaEventHandler %s defines a property %s that is not "
-                                                                + "defined on the Event it declares to handle (%s)",
-                                                        handler, associationPropertyName,
-                                                        original.payloadType().getName()
-            ));
-        }
-
-        return new SagaMethodMessageHandlingMember<>(original, creationPolicy,
-                                                     associationKey, associationProperty, endingHandler);
+        return new SagaMethodMessageHandlingMember<>(original, creationPolicy, associationKey, associationPropertyName,
+                                                     associationResolver, endingHandler);
     }
 
     private String associationKey(String keyName, String associationProperty) {
-        return "".equals(keyName) ?  associationProperty : keyName;
+        return "".equals(keyName) ? associationProperty : keyName;
     }
 
+    private AssociationResolver findAssociationResolver(Class<? extends AssociationResolver> associationResolverClass) {
+        return this.associationResolverMap.computeIfAbsent(associationResolverClass, this::instantiateAssociationResolver);
+    }
+
+    private AssociationResolver instantiateAssociationResolver(
+            Class<? extends AssociationResolver> associationResolverClass) {
+        try {
+            return associationResolverClass.getConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        throw new AxonConfigurationException(format("`AssociationResolver` %s must define a no-args constructor.",
+                                                    associationResolverClass.getName()));
+    }
 }

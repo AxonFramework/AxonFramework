@@ -13,7 +13,6 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -23,6 +22,7 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
  *
  * @author Allard Buijze
+ * @author Sofia Guy Ang
  * @since 2.0
  */
 public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> {
@@ -30,25 +30,29 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     private final MessageHandlingMember<T> delegate;
     private final SagaCreationPolicy creationPolicy;
     private final String associationKey;
-    private final Property associationProperty;
+    private final String associationPropertyName;
+    private final AssociationResolver associationResolver;
     private final boolean endingHandler;
 
     /**
      * Creates a SagaMethodMessageHandler.
      *
-     * @param creationPolicy      The creation policy for the handlerMethod
-     * @param delegate            The message handler for the event
-     * @param associationKey      The association key configured for this handler
-     * @param associationProperty The association property configured for this handler
-     * @param endingHandler       Flag to indicate if an invocation of the given handler should end the saga
+     * @param creationPolicy          The creation policy for the handlerMethod
+     * @param delegate                The message handler for the event
+     * @param associationKey          The association key configured for this handler
+     * @param associationPropertyName The association property name to look up in the message
+     * @param associationResolver     The association resolver configured for this handler
+     * @param endingHandler           Flag to indicate if an invocation of the given handler should end the saga
      */
     public SagaMethodMessageHandlingMember(MessageHandlingMember<T> delegate, SagaCreationPolicy creationPolicy,
-                                           String associationKey, Property associationProperty, boolean endingHandler) {
+                                           String associationKey, String associationPropertyName,
+                                           AssociationResolver associationResolver, boolean endingHandler) {
         super(delegate);
         this.delegate = delegate;
         this.creationPolicy = creationPolicy;
         this.associationKey = associationKey;
-        this.associationProperty = associationProperty;
+        this.associationPropertyName = associationPropertyName;
+        this.associationResolver = associationResolver;
         this.endingHandler = endingHandler;
     }
 
@@ -61,11 +65,10 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
      */
     @SuppressWarnings("unchecked")
     public AssociationValue getAssociationValue(EventMessage<?> eventMessage) {
-        if (associationProperty == null) {
+        if (associationResolver == null) {
             return null;
         }
-
-        Object associationValue = associationProperty.getValue(eventMessage.getPayload());
+        Object associationValue = associationResolver.resolve(associationPropertyName, eventMessage, this);
         return associationValue == null ? null : new AssociationValue(associationKey, associationValue.toString());
     }
 
