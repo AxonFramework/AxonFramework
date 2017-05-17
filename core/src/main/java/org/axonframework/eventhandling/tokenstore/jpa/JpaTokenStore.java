@@ -27,7 +27,6 @@ import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
-import java.util.function.Function;
 
 import static java.lang.String.format;
 
@@ -84,15 +83,15 @@ public class JpaTokenStore implements TokenStore {
     public void releaseClaim(String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.owner = null " +
-                                                        "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                                        "AND te.segment = :segment")
+                "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                "AND te.segment = :segment")
                 .setParameter("processorName", processorName)
                 .setParameter("segment", segment)
                 .setParameter("owner", nodeId)
                 .executeUpdate();
         if (updates == 0) {
             logger.warn("Releasing claim of token {}/{} failed. It was not owned by {}", processorName, segment,
-                        nodeId);
+                    nodeId);
         }
     }
 
@@ -106,7 +105,7 @@ public class JpaTokenStore implements TokenStore {
     public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                                                        "WHERE te.processorName = :processorName AND te.segment = :segment")
+                "WHERE te.processorName = :processorName AND te.segment = :segment")
                 .setParameter("processorName", processorName)
                 .setParameter("segment", segment)
                 .setParameter("timestamp", TokenEntry.clock.instant().toString())
@@ -114,8 +113,8 @@ public class JpaTokenStore implements TokenStore {
 
         if (updates == 0) {
             throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
-                                                          processorName + "[" + segment + "]'. It is either claimed " +
-                                                          "by another process, or there is no such token.");
+                    processorName + "[" + segment + "]'. It is either claimed " +
+                    "by another process, or there is no such token.");
         }
     }
 
@@ -155,7 +154,7 @@ public class JpaTokenStore implements TokenStore {
         } else if (!token.claim(nodeId, claimTimeout)) {
             throw new UnableToClaimTokenException(
                     format("Unable to claim token '%s[%s]'. It is owned by '%s'", token.getProcessorName(),
-                           token.getSegment(), token.getOwner()));
+                            token.getSegment(), token.getOwner()));
         }
         return token;
     }

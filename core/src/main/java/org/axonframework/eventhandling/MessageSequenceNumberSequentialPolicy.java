@@ -1,11 +1,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventsourcing.DomainEventMessage;
-
-import java.util.Objects;
-import java.util.UUID;
 
 /**
  * A policy which guarantees a unique Identifier.

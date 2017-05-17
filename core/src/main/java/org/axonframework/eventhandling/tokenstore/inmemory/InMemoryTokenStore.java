@@ -17,12 +17,9 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of a {@link TokenStore} that stores tracking tokens in memory. This implementation is thread-safe.

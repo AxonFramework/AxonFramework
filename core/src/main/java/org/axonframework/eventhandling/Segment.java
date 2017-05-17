@@ -13,7 +13,7 @@ import static java.util.stream.Collectors.toList;
  * <br/><br/>
  * <i><u>Definition</u></i>
  * <br/><br/>
- * <p>
+ * <p/>
  * A {@link Segment} is a fraction of the total population of events.
  * The 'mask' is a bitmask to be applied to an identifier, resulting in the segmentId of the {@link Segment}.
  * The following capabilities are supported.
@@ -33,10 +33,12 @@ public class Segment implements Comparable<Segment> {
 
     public static final Segment ROOT_SEGMENT = new Segment(0, ZERO_MASK);
 
-    public static Predicate<Segment[]> MERGEABLE_SEGMENT = segmentPair -> {
+    public static Predicate<Segment[]> mergeableSegmentPredicate = segmentPair -> {
         boolean mustBeTwo = segmentPair.length == 2;
 
-        if (!mustBeTwo) return false;
+        if (!mustBeTwo) {
+            return false;
+        }
 
         final Segment segment0 = segmentPair[0];
         final Segment segment1 = segmentPair[1];
@@ -81,26 +83,24 @@ public class Segment implements Comparable<Segment> {
     private static List<Segment[]> analyse(List<Segment> segments) {
 
         // Sort our segments in natural segmentId order.
-        segments = segments.stream().sorted().collect(toList());
+        final List<Segment> sortedSegments = segments.stream().sorted().collect(toList());
 
         final List<Segment[]> preAnalysis = new ArrayList<>();
 
         // Special handling for 0,1 segment case. (The First split case), REVIEW: Consider using static Segments for this special case.
-        if (segments.size() == 2 && segments.contains(new Segment(0, 0x1)) && segments.contains(new Segment(1, 0x1))) {
-            preAnalysis.add(segments.toArray(new Segment[2]));
+        if (sortedSegments.size() == 2 && sortedSegments.contains(new Segment(0, 0x1)) && sortedSegments.contains(new Segment(1, 0x1))) {
+            preAnalysis.add(sortedSegments.toArray(new Segment[2]));
             return preAnalysis;
         }
 
         // Double group by odd/even and then the mask, unwrap the pairs into an array.
-        segments.stream().
+        sortedSegments.stream().
                 collect(Collectors.groupingBy(sm -> sm.getSegmentId() % 2, Collectors.groupingBy(Segment::getMask)))
                 .values()
                 .forEach(
                         grouped -> {
                             grouped.values().forEach(
-                                    pairedSegments -> {
-                                        preAnalysis.add(pairedSegments.toArray(new Segment[pairedSegments.size()]));
-                                    }
+                                    pairedSegments -> preAnalysis.add(pairedSegments.toArray(new Segment[pairedSegments.size()]))
                             );
                         }
                 );
@@ -114,7 +114,7 @@ public class Segment implements Comparable<Segment> {
             // track processed...
             List<Segment> track = new ArrayList<>();
             while (!segmentGroup.isEmpty()) {
-                List<Segment> pair = new ArrayList<Segment>();
+                List<Segment> pair = new ArrayList<>();
 
                 Segment segment;
                 do {
@@ -141,6 +141,7 @@ public class Segment implements Comparable<Segment> {
     /**
      * Compute the {@link Segment}'s from a given list of segmentId's
      * <br/>
+     *
      * @param segments The segment id's for which to compute Segments.
      * @return an array of computed {@link Segment}
      */
@@ -177,7 +178,7 @@ public class Segment implements Comparable<Segment> {
 
             // Merge the mergeables.
             final List<Segment> merged = analyse.stream()
-                    .filter(MERGEABLE_SEGMENT)
+                    .filter(mergeableSegmentPredicate)
                     .map(Segment::merge)
                     .filter(Objects::nonNull)
                     .collect(toList());
@@ -196,19 +197,22 @@ public class Segment implements Comparable<Segment> {
      * Merge two {@code Segment segements} into one.
      * Conditions apply, see: {@link #analyse}
      * <br/>
+     *
      * @param segments The segments to merge.
-     * @return the merged segmentId or <code>null</code> if not a {@link Segment#MERGEABLE_SEGMENT}.
+     * @return the merged segmentId or <code>null</code> if not a {@link Segment#mergeableSegmentPredicate}.
      */
     public static Segment merge(Segment[] segments) {
-        if (!MERGEABLE_SEGMENT.test(segments)) return null;
+        if (!mergeableSegmentPredicate.test(segments)) {
+            return null;
+        }
         final Segment segment0 = segments[0];
-        final Segment segment1 = segments[1];
         return new Segment(segment0.getSegmentId(), segment0.getMask() >>> 1);
     }
 
     /**
      * Split a given (root) {@link Segment} n-times in round robin fashion.
      * <br/>
+     *
      * @param segment       The root {@link Segment} to split.
      * @param numberOfTimes The number of times to split it.
      * @return a collection of {@link Segment}'s.
@@ -217,11 +221,11 @@ public class Segment implements Comparable<Segment> {
 
         final Deque<Segment> toBeSplit = new LinkedList<>();
         toBeSplit.add(segment);
-
-        while (numberOfTimes != 0) {
+        int i = numberOfTimes;
+        while (i != 0) {
             final Segment workingSegment = toBeSplit.pollFirst();
             toBeSplit.addAll(Arrays.asList(workingSegment.split()));
-            numberOfTimes--;
+            i--;
         }
         return (List<Segment>) toBeSplit;
     }
@@ -230,11 +234,39 @@ public class Segment implements Comparable<Segment> {
      * Groups segments in mergeable pairs. Segments which don't have another segment to merge with, are contained
      * in an array of size 1.
      * <br/>
+     *
      * @param segments An array of {@link Segment}'s.
      * @return paired mergeable segments.
      */
     public static List<Segment[]> analyse(Segment[] segments) {
         return analyse(Arrays.asList(segments));
+    }
+
+    /**
+     * Getter for the segment identifier.
+     *
+     * @return the Segment identifier.
+     */
+    public int getSegmentId() {
+        return segmentId;
+    }
+
+    /**
+     * Getter for the segment mask.
+     *
+     * @return the Segment mask.
+     */
+    public int getMask() {
+        return mask;
+    }
+
+    /**
+     * Returns {@code true} when the mask applied to the given value, matches the segment id.
+     * @param value The value to be tested.
+     * @return {@code true} when matching this segment.
+     */
+    public boolean matches(long value) {
+        return (mask & value) == segmentId;
     }
 
     /**
@@ -250,7 +282,7 @@ public class Segment implements Comparable<Segment> {
      *
      * @return an array of two {@link Segment}'s.
      */
-    Segment[] split() {
+    private Segment[] split() {
 
         if (!canSplit(this)) {
             throw new IllegalArgumentException("Unable to split the given segmentId, as the mask exceeds the max mask size.");
@@ -266,25 +298,9 @@ public class Segment implements Comparable<Segment> {
         return segments;
     }
 
-    boolean matches(long value) {
-        return apply(value) == segmentId;
-    }
-
-    private int apply(long value) {
-        return Long.valueOf(mask & value).intValue();
-    }
-
     private boolean canSplit(Segment segment) {
         final int shiftedMask = segment.mask << 1;
         return shiftedMask >= 0;
-    }
-
-    int getSegmentId() {
-        return segmentId;
-    }
-
-    int getMask() {
-        return mask;
     }
 
     @Override
@@ -298,7 +314,7 @@ public class Segment implements Comparable<Segment> {
 
     @Override
     public String toString() {
-        return String.format("Segment[id,mask]: [ %d, %s]", getSegmentId() , Integer.toBinaryString(getMask()));
+        return String.format("Segment[id,mask]: [ %d, %s]", getSegmentId(), Integer.toBinaryString(getMask()));
     }
 
     @Override

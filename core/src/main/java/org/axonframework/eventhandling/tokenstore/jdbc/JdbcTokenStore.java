@@ -17,7 +17,6 @@ package org.axonframework.eventhandling.tokenstore.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.GenericTokenEntry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -174,7 +173,7 @@ public class JdbcTokenStore implements TokenStore {
         Connection connection = getConnection();
         try {
             List<Integer> integers = executeQuery(connection, c -> selectForSegments(c, processorName),
-                    JdbcUtils.listResults(rs -> rs.getInt(schema.segmentColumn())), e -> new JdbcException(
+                    listResults(rs -> rs.getInt(schema.segmentColumn())), e -> new JdbcException(
                             format("Could not load segments for processor [%s]", processorName), e));
             return integers.stream().mapToInt(i -> i).toArray();
         } finally {
