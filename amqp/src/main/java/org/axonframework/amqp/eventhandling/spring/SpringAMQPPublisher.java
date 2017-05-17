@@ -91,6 +91,7 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     public void shutDown() {
         if (eventBusRegistration != null) {
             eventBusRegistration.cancel();
+            eventBusRegistration = null;
         }
     }
 
