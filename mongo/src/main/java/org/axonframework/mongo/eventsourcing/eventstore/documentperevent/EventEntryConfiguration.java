@@ -143,7 +143,7 @@ public class EventEntryConfiguration {
         return metaDataProperty;
     }
 
-    private static class Builder {
+    public static class Builder {
 
         private String timestampProperty = "timestamp", eventIdentifierProperty = "eventIdentifier",
                 aggregateIdentifierProperty = "aggregateIdentifier", sequenceNumberProperty = "sequenceNumber",
