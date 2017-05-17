@@ -262,6 +262,7 @@ public class Segment implements Comparable<Segment> {
 
     /**
      * Returns {@code true} when the mask applied to the given value, matches the segment id.
+     *
      * @param value The value to be tested.
      * @return {@code true} when matching this segment.
      */
@@ -282,7 +283,7 @@ public class Segment implements Comparable<Segment> {
      *
      * @return an array of two {@link Segment}'s.
      */
-    private Segment[] split() {
+    public Segment[] split() {
 
         if (!canSplit(this)) {
             throw new IllegalArgumentException("Unable to split the given segmentId, as the mask exceeds the max mask size.");
