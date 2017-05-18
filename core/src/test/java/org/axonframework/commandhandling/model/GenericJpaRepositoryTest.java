@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
+import javax.persistence.LockModeType;
 import javax.persistence.Version;
 import java.util.UUID;
 import java.util.function.Function;
@@ -50,7 +51,7 @@ public class GenericJpaRepositoryTest {
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
-        when(mockEntityManager.find(StubJpaAggregate.class, "123")).thenReturn(aggregate);
+        when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class))).thenReturn(aggregate);
     }
 
     @After

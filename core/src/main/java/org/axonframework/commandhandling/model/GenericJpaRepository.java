@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import java.util.concurrent.Callable;
 
 import static java.lang.String.format;
@@ -114,7 +115,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
 
     @Override
     protected AnnotatedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
-        T aggregateRoot = entityManagerProvider.getEntityManager().find(getAggregateType(), aggregateIdentifier);
+        T aggregateRoot = entityManagerProvider.getEntityManager().find(getAggregateType(), aggregateIdentifier,
+                                                                        LockModeType.PESSIMISTIC_WRITE);
         if (aggregateRoot == null) {
             throw new AggregateNotFoundException(aggregateIdentifier,
                                                  format("Aggregate [%s] with identifier [%s] not found",
