@@ -260,13 +260,19 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     /**
      * Returns a MetaData instance containing a subset of the {@code keys} in this instance.
-     * Keys for which there is no assigned value are ignored.<
+     * Keys for which there is no assigned value are ignored.
      *
      * @param keys The keys of the entries to remove
      * @return a MetaData instance containing the given {@code keys} if these were already present
      */
     public MetaData subset(String... keys) {
-        return MetaData.from(Stream.of(keys).filter(this::containsKey).collect(Collectors.toMap(Function.identity(), this::get)));
+        Map<String, Object> subMetaData = new LinkedHashMap<>(keys.length);
+        for(String k: keys) {
+            if(values.containsKey(k)) {
+                subMetaData.put(k, values.get(k));
+            }
+        }
+        return MetaData.from(subMetaData);
     }
 
     /**

@@ -191,14 +191,18 @@ public class MetaDataValueTest {
     @Test
     public void testMetaDataSubsetReturnsSubsetOfMetaDataInstance() throws Exception {
         MetaData testMetaData = MetaData.with("firstKey", "firstValue")
-                .and("secondKey", "secondValue")
-                .and("thirdKey", "thirdValue")
-                .and("fourthKey", "fourthValue");
+                                        .and("secondKey", "secondValue")
+                                        .and("thirdKey", "thirdValue")
+                                        .and("fourthKey", "fourthValue")
+                                        .and("fifthKey", null);
 
         MetaData result = testMetaData.subset("secondKey", "fourthKey", "fifthKey");
 
         assertEquals("secondValue", result.get("secondKey"));
         assertEquals("fourthValue", result.get("fourthKey"));
-        assertNull(result.get("fifthKey"));
+        assertTrue(result.containsKey("fifthKey"));
+        assertEquals(null, result.get("fifthKey"));
+        assertFalse(result.containsKey("sixthKey"));
+        assertNull(result.get("sixthKey"));
     }
 }
