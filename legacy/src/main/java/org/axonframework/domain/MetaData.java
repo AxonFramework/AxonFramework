@@ -20,7 +20,11 @@ import java.util.Map;
 
 /**
  * Class copied from Axon 2 to be able to restore Axon 2 Quartz triggers from Axon 3.
+ *
+ * @deprecated this class is available for backward compatibility with instances that were serialized with Axon 2. Use
+ * {@link org.axonframework.messaging.MetaData} instead.
  */
+@Deprecated
 public class MetaData implements Serializable {
     private static final long serialVersionUID = -7892913866303912970L;
 
@@ -28,6 +32,7 @@ public class MetaData implements Serializable {
 
     /**
      * Get this metadata's mappings.
+     *
      * @return the metadata mappings.
      */
     public Map<String, Object> getValues() {

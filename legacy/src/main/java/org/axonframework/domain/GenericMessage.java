@@ -19,8 +19,12 @@ import java.io.Serializable;
 
 /**
  * Class copied from Axon 2 to be able to restore Axon 2 Quartz triggers from Axon 3.
+ *
  * @param <T> payload type
+ * @deprecated this class is available for backward compatibility with instances that were serialized with Axon 2. Use
+ * {@link org.axonframework.messaging.GenericMessage} instead.
  */
+@Deprecated
 public class GenericMessage<T> implements Serializable {
 
     private static final long serialVersionUID = 4672240170797058482L;
@@ -32,6 +36,7 @@ public class GenericMessage<T> implements Serializable {
 
     /**
      * Get the message's identifier.
+     *
      * @return the message identifier
      */
     public String getIdentifier() {
@@ -40,6 +45,7 @@ public class GenericMessage<T> implements Serializable {
 
     /**
      * Get the message's metadata.
+     *
      * @return the message metadata
      */
     public MetaData getMetaData() {
@@ -48,6 +54,7 @@ public class GenericMessage<T> implements Serializable {
 
     /**
      * Get the type of payload of this message.
+     *
      * @return the message payload type
      */
     public Class getPayloadType() {
@@ -56,9 +63,14 @@ public class GenericMessage<T> implements Serializable {
 
     /**
      * Get the payload of this message.
+     *
      * @return the message payload
      */
     public T getPayload() {
         return payload;
+    }
+
+    private Object readResolve() {
+        return new org.axonframework.messaging.GenericMessage<T>(identifier, payload, metaData.getValues());
     }
 }

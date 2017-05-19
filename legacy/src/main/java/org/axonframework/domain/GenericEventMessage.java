@@ -15,25 +15,26 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.messaging.MetaData;
 import org.joda.time.DateTime;
 
 import java.io.Serializable;
+import java.time.Instant;
 
 /**
  * Class copied from Axon 2 to be able to restore Axon 2 Quartz triggers from Axon 3.
  * @param <T> payload type
+ * @deprecated this class is available for backward compatibility with instances that were serialized with Axon 2. Use
+ * {@link org.axonframework.eventhandling.GenericEventMessage} instead.
  */
+@Deprecated
 public class GenericEventMessage<T> extends GenericMessage<T> implements Serializable {
 
     private static final long serialVersionUID = -8370948891267874107L;
 
     private DateTime timestamp;
 
-    /**
-     * Get this event's publication timestamp.
-     * @return the event timestamp.
-     */
-    public DateTime getTimestamp() {
-        return timestamp;
+    private Object readResolve() {
+        return new org.axonframework.eventhandling.GenericEventMessage<>(getIdentifier(), getPayload(), MetaData.from(getMetaData().getValues()), Instant.ofEpochMilli(timestamp.getMillis()));
     }
 }
