@@ -18,9 +18,11 @@ package org.axonframework.messaging;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 /**
@@ -37,21 +39,6 @@ public class MetaData implements Map<String, Object>, Serializable {
     private static final String UNSUPPORTED_MUTATION_MSG = "Metadata is immutable.";
 
     private final Map<String, Object> values;
-
-    private MetaData() {
-        values = Collections.emptyMap();
-    }
-
-    /**
-     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied
-     * into the MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa.
-     * Modifications in the items themselves <em>are</em> reflected in the MetaData.
-     *
-     * @param items the items to populate the MetaData with
-     */
-    public MetaData(Map<String, ?> items) {
-        values = Collections.unmodifiableMap(new HashMap<>(items));
-    }
 
     /**
      * Returns an empty MetaData instance.
@@ -89,6 +76,21 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     public static MetaData with(String key, Object value) {
         return MetaData.from(Collections.singletonMap(key, value));
+    }
+
+    private MetaData() {
+        values = Collections.emptyMap();
+    }
+
+    /**
+     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied
+     * into the MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa.
+     * Modifications in the items themselves <em>are</em> reflected in the MetaData.
+     *
+     * @param items the items to populate the MetaData with
+     */
+    public MetaData(Map<String, ?> items) {
+        values = Collections.unmodifiableMap(new HashMap<>(items));
     }
 
     /**
@@ -266,7 +268,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @return a MetaData instance containing the given {@code keys} if these were already present
      */
     public MetaData subset(String... keys) {
-        return MetaData.from(Stream.of(keys).filter(this::containsKey).collect(Collectors.toMap(Function.identity(), this::get)));
+        return MetaData.from(Stream.of(keys).filter(this::containsKey).collect(new MetaDataCollector(this::get)));
     }
 
     /**
@@ -280,5 +282,47 @@ public class MetaData implements Map<String, Object>, Serializable {
             return MetaData.emptyInstance();
         }
         return this;
+    }
+
+    /**
+     * Collector implementation that, unlike {@link java.util.stream.Collectors#toMap(Function, Function)} allows
+     * {@code null} values.
+     */
+    private static class MetaDataCollector implements Collector<String, Map<String, Object>, MetaData> {
+
+        private final Function<String, Object> valueProvider;
+
+        private MetaDataCollector(Function<String, Object> valueProvider) {
+            this.valueProvider = valueProvider;
+        }
+
+        @Override
+        public Supplier<Map<String, Object>> supplier() {
+            return HashMap::new;
+        }
+
+        @Override
+        public BiConsumer<Map<String, Object>, String> accumulator() {
+            return (map, key) -> map.put(key, valueProvider.apply(key));
+        }
+
+        @Override
+        public BinaryOperator<Map<String, Object>> combiner() {
+            return (m1, m2) -> {
+                Map<String, Object> result = new HashMap<>(m1);
+                result.putAll(m2);
+                return result;
+            };
+        }
+
+        @Override
+        public Function<Map<String, Object>, MetaData> finisher() {
+            return MetaData::from;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
     }
 }
