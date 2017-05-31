@@ -75,11 +75,9 @@ public class EventMessageReader {
         EventMessageType messageType = EventMessageType.fromTypeByte((byte) firstByte);
         String identifier = in.readUTF();
         String timestamp = in.readUTF();
-        String type = null;
         String aggregateIdentifier = null;
         long sequenceNumber = 0;
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            type = in.readUTF();
             aggregateIdentifier = in.readUTF();
             sequenceNumber = in.readLong();
         }
@@ -95,7 +93,7 @@ public class EventMessageReader {
         SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(metaData, byte[].class);
 
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
+            return new GenericDomainEventMessage<>(null, aggregateIdentifier, sequenceNumber,
                                                    new SerializedMessage<>(identifier, serializedPayload,
                                                                            serializedMetaData, serializer),
                                                    () -> DateTimeUtils.parseInstant(timestamp));

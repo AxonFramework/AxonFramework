@@ -35,6 +35,7 @@ import java.util.List;
  */
 public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
+    private static final int EARLY_PHASE = Integer.MIN_VALUE + 1000;
     private final AxonConfiguration axonConfiguration;
     private final EventHandlingConfiguration delegate;
     private volatile boolean running = false;
@@ -99,7 +100,7 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
     @Override
     public int getPhase() {
-        return Integer.MIN_VALUE;
+        return EARLY_PHASE;
     }
 
     @Override
