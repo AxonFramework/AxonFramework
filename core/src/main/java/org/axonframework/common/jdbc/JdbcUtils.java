@@ -90,6 +90,7 @@ public class JdbcUtils {
                 PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
                 try {
                     result[i] = preparedStatement.executeUpdate();
+                    connection.commit();
                 } catch (SQLException e) {
                     errorHandler.accept(e);
                 } finally {
@@ -116,7 +117,9 @@ public class JdbcUtils {
         try {
             PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
             try {
-                return preparedStatement.executeBatch();
+                int[] result = preparedStatement.executeBatch();
+                connection.commit();
+                return result;
             } catch (SQLException e) {
                 errorHandler.accept(e);
             } finally {

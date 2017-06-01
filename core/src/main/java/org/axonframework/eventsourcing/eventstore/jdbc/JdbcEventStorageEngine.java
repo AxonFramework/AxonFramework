@@ -522,7 +522,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected Connection getConnection() {
         try {
-            return connectionProvider.getConnection();
+            Connection connection = connectionProvider.getConnection();
+            connection.setAutoCommit(false);
+            return connection;
         } catch (SQLException e) {
             throw new EventStoreException("Failed to obtain a database connection", e);
         }
