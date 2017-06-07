@@ -103,6 +103,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.messageMonitor(componentType, componentName);
     }
 
+    @Bean
     @Override
     public List<CorrelationDataProvider> correlationDataProviders() {
         return config.correlationDataProviders();
@@ -131,7 +132,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public void start() {
         config.start();
-        this.running = true;
+        running = true;
     }
 
     @Override
@@ -142,7 +143,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public void stop() {
         shutdown();
-        this.running = false;
+        running = false;
     }
 
     @Override
