@@ -2,6 +2,8 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +19,9 @@ public class ConfigurationResourceInjectorTest {
 
     @Before
     public void setUp() throws Exception {
-        configuration = DefaultConfigurer.defaultConfiguration().buildConfiguration();
+        configuration = DefaultConfigurer.defaultConfiguration()
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .buildConfiguration();
         testSubject = new ConfigurationResourceInjector(configuration);
     }
 
@@ -28,6 +32,7 @@ public class ConfigurationResourceInjectorTest {
 
         assertSame(configuration.commandBus(), saga.commandBus);
         assertSame(configuration.commandGateway(), saga.commandGateway);
+        assertSame(configuration.eventStore(), saga.eventStore);
         assertNull(saga.inexistent);
     }
 
@@ -40,10 +45,16 @@ public class ConfigurationResourceInjectorTest {
         private String inexistent;
 
         private CommandGateway commandGateway;
+        private EventStore eventStore;
 
         @Inject
         public void setCommandGateway(CommandGateway commandGateway) {
             this.commandGateway = commandGateway;
+        }
+
+        @Inject
+        public void setEventStore(EventStore eventStore) {
+            this.eventStore = eventStore;
         }
     }
 }
