@@ -9,7 +9,7 @@ import java.util.stream.Stream;
  *
  * @author Steven van Beelen
  */
-public abstract class MultiEntryUpcaster<T> implements Upcaster<T> {
+public abstract class SingleEntryMultiUpcaster<T> implements Upcaster<T> {
 
     @Override
     public Stream<T> upcast(Stream<T> intermediateRepresentations) {
