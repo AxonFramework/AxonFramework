@@ -21,6 +21,13 @@ public class ThirdStubEvent {
     private final Integer number;
     private final List<Boolean> truths;
 
+    // No-arg constructor required for JacksonSerializer
+    private ThirdStubEvent() {
+        name = null;
+        number = null;
+        truths = null;
+    }
+
     public ThirdStubEvent(String name, Integer number, List<Boolean> truths) {
         this.name = name;
         this.number = number;
