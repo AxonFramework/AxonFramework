@@ -245,9 +245,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         try {
             Thread.sleep(errorWaitTime * 1000);
         } catch (InterruptedException e1) {
+            shutDown();
             Thread.currentThread().interrupt();
             logger.warn("Thread interrupted. Preparing to shut down event processor");
-            shutDown();
         }
     }
 
@@ -284,8 +284,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
-            Thread.currentThread().interrupt();
             this.shutDown();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -335,6 +335,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public void shutDown() {
         if (state.getAndUpdate(s -> State.SHUT_DOWN) != State.SHUT_DOWN) {
             executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                    logger.warn("TrackingProcessor '{}' failed to terminate within 5 seconds. Continuing shutdown process...", getName());
+                }
+            } catch (InterruptedException e) {
+                logger.info("Thread was interrupted while waiting for TrackingProcessor '{}' shutdown.", getName());
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
