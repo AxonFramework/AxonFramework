@@ -16,7 +16,6 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
 
 import java.io.*;
@@ -30,10 +29,7 @@ import java.io.*;
  * @author Allard Buijze
  * @since 2.0
  */
-public class JavaSerializer implements Serializer {
-
-    private final Converter converter = new ChainingConverter();
-    private final RevisionResolver revisionResolver;
+public class JavaSerializer extends AbstractJavaSerializer{
 
     /**
      * Initialize the serializer using a SerialVersionUIDRevisionResolver, which uses the SerialVersionUID field of the
@@ -49,70 +45,28 @@ public class JavaSerializer implements Serializer {
      * @param revisionResolver The revision resolver providing the revision numbers for a given class
      */
     public JavaSerializer(RevisionResolver revisionResolver) {
-        Assert.notNull(revisionResolver, () -> "revisionResolver may not be null");
-        this.revisionResolver = revisionResolver;
+        super(revisionResolver);
     }
 
-    @SuppressWarnings({"NonSerializableObjectPassedToObjectStream", "ThrowFromFinallyBlock"})
     @Override
-    public <T> SerializedObject<T> serialize(Object instance, Class<T> expectedType) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    protected void doSerialize(OutputStream outputStream, Object instance) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(outputStream);
         try {
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            try {
-                oos.writeObject(instance);
-            } finally {
-                oos.flush();
-            }
-        } catch (IOException e) {
-            throw new SerializationException("An exception occurred writing serialized data to the output stream", e);
+            oos.writeObject(instance);
+        } finally {
+            oos.flush();
         }
-        T converted = converter.convert(baos.toByteArray(), expectedType);
-        return new SimpleSerializedObject<>(converted, expectedType, instance.getClass().getName(),
-                                            revisionOf(instance.getClass()));
-    }
-
-    @Override
-    public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
-        return converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
-        SerializedObject<InputStream> converted =
-                converter.convert(serializedObject, InputStream.class);
+    protected <T> T doDeserialize(InputStream inputStream) throws ClassNotFoundException, IOException {
         ObjectInputStream ois = null;
         try {
-            ois = new ObjectInputStream(converted.getData());
+            ois = new ObjectInputStream(inputStream);
             return (T) ois.readObject();
-        } catch (ClassNotFoundException | IOException e) {
-            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } finally {
             IOUtils.closeQuietly(ois);
         }
-    }
-
-    @Override
-    public Class classForType(SerializedType type) {
-        try {
-            return Class.forName(type.getName());
-        } catch (ClassNotFoundException e) {
-            throw new UnknownSerializedTypeException(type, e);
-        }
-    }
-
-    @Override
-    public SerializedType typeForClass(Class type) {
-        return new SimpleSerializedType(type.getName(), revisionOf(type));
-    }
-
-    @Override
-    public Converter getConverter() {
-        return converter;
-    }
-
-    private String revisionOf(Class<?> type) {
-        return revisionResolver.revisionOf(type);
     }
 }
