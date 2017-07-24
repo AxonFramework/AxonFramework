@@ -62,12 +62,13 @@ public interface StorageStrategy {
 
     /**
      * Delete all snapshots of the aggregate with given {@code aggregateIdentifier} from the given {@code
-     * snapshotCollection}.
+     * snapshotCollection}, whose sequence number is lower than the given {@code sequenceNumber}.
      *
      * @param snapshotCollection  the document collection that contains aggregate snapshot entries
      * @param aggregateIdentifier the identifier of the aggregate for which to delete all snapshots
+     * @param sequenceNumber The sequenceNumber representing the upper bound (exclusive) of the snapshots to delete
      */
-    void deleteSnapshots(MongoCollection<Document> snapshotCollection, String aggregateIdentifier);
+    void deleteSnapshots(MongoCollection<Document> snapshotCollection, String aggregateIdentifier, long sequenceNumber);
 
     /**
      * Returns a batch of events for an aggregate with given {@code aggregateIdentifier} and a sequence number equal or

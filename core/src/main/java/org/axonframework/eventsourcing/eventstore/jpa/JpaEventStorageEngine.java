@@ -226,9 +226,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        deleteSnapshots(snapshot.getAggregateIdentifier());
         try {
-            entityManager().persist(createSnapshotEntity(snapshot, serializer));
+            entityManager().merge(createSnapshotEntity(snapshot, serializer));
+            deleteSnapshots(snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber());
             if (explicitFlush) {
                 entityManager().flush();
             }
@@ -241,11 +241,15 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * Deletes all snapshots from the underlying storage with given {@code aggregateIdentifier}.
      *
      * @param aggregateIdentifier the identifier of the aggregate to delete snapshots for
+     * @param sequenceNumber The sequence number from which value snapshots should be kept
      */
-    protected void deleteSnapshots(String aggregateIdentifier) {
+    protected void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
         entityManager().createQuery("DELETE FROM " + snapshotEventEntryEntityName() +
-                                            " e WHERE e.aggregateIdentifier = :aggregateIdentifier")
-                .setParameter("aggregateIdentifier", aggregateIdentifier).executeUpdate();
+                                            " e WHERE e.aggregateIdentifier = :aggregateIdentifier" +
+                                            " AND e.sequenceNumber < :sequenceNumber")
+                .setParameter("aggregateIdentifier", aggregateIdentifier)
+                .setParameter("sequenceNumber", sequenceNumber)
+                .executeUpdate();
     }
 
     /**
