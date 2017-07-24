@@ -84,10 +84,14 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
             Assume.assumeNoException(e);
         }
         mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate.eventCollection().dropIndexes();
+        mongoTemplate.snapshotCollection().dropIndexes();
         mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
         mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
         testSubject = context.getBean(MongoEventStorageEngine.class);
         setTestSubject(testSubject);
+
+        testSubject.ensureIndexes();
     }
 
     @Test
