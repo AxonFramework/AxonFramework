@@ -90,8 +90,11 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
         mongoTemplate = new DefaultMongoTemplate(mongoClient);
         mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
         mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
+        mongoTemplate.eventCollection().dropIndexes();
+        mongoTemplate.snapshotCollection().dropIndexes();
         testSubject = context.getBean(MongoEventStorageEngine.class);
         setTestSubject(testSubject);
+        testSubject.ensureIndexes();
     }
 
     @Test

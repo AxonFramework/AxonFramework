@@ -33,7 +33,6 @@ import org.axonframework.serialization.Serializer;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -104,8 +103,8 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     public void appendSnapshot(MongoCollection<Document> snapshotCollection, DomainEventMessage<?> snapshot,
                                Serializer serializer) {
         snapshotCollection.findOneAndReplace(new BsonDocument(eventConfiguration.aggregateIdentifierProperty(), new BsonString(snapshot.getAggregateIdentifier())),
-                createSnapshotDocument(snapshot, serializer),
-                new FindOneAndReplaceOptions().upsert(true));
+                                             createSnapshotDocument(snapshot, serializer),
+                                             new FindOneAndReplaceOptions().upsert(true));
     }
 
     /**
@@ -119,10 +118,10 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     protected abstract Document createSnapshotDocument(DomainEventMessage<?> snapshot, Serializer serializer);
 
     @Override
-    public void deleteSnapshots(MongoCollection<Document> snapshotCollection, String aggregateIdentifier) {
-        Bson mongoEntry =
-                new BsonDocument(eventConfiguration.aggregateIdentifierProperty(), new BsonString(aggregateIdentifier));
-        snapshotCollection.deleteMany(mongoEntry);
+    public void deleteSnapshots(MongoCollection<Document> snapshotCollection, String aggregateIdentifier,
+                                long sequenceNumber) {
+        snapshotCollection.deleteMany(and(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier),
+                                          lt(eventConfiguration.sequenceNumberProperty(), sequenceNumber)));
     }
 
     @Override
@@ -170,9 +169,9 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
             extractEvents(document)
                     .filter(ed -> previousToken.get() == null || !previousToken.get().getKnownEventIds().contains(ed.getEventIdentifier()))
                     .map(event -> new TrackedMongoEventEntry<>(event, previousToken.updateAndGet(
-                    token -> token == null
-                            ? MongoTrackingToken.of(event.getTimestamp(), event.getEventIdentifier())
-                            : token.advanceTo(event.getTimestamp(), event.getEventIdentifier(), lookBackTime))))
+                            token -> token == null
+                                    ? MongoTrackingToken.of(event.getTimestamp(), event.getEventIdentifier())
+                                    : token.advanceTo(event.getTimestamp(), event.getEventIdentifier(), lookBackTime))))
                     .forEach(results::add);
         }
         return results;
