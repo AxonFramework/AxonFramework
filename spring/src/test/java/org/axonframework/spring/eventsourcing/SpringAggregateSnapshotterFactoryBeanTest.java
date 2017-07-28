@@ -32,6 +32,7 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 import static org.mockito.Mockito.*;
 
@@ -45,14 +46,17 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private String aggregateIdentifier;
     private EventStore mockEventStore;
     private ApplicationContext mockApplicationContext;
+    private Executor executor;
 
     @Before
     public void setUp() throws Exception {
         mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(EventStore.class);
+        executor = spy(new MockExecutor());
 
         testSubject = new SpringAggregateSnapshotterFactoryBean();
         testSubject.setApplicationContext(mockApplicationContext);
+        testSubject.setExecutor(executor);
         when(mockApplicationContext.getBeansOfType(AggregateFactory.class)).thenReturn(
                 Collections.singletonMap("myFactory",
                                          new AbstractAggregateFactory<StubAggregate>(StubAggregate.class) {
@@ -80,6 +84,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
         verify(mockEventStore).storeSnapshot(eventSequence(1L));
+        verify(executor).execute(any());
     }
 
     @Test
@@ -165,5 +170,12 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
                 description.appendValue(sequenceNumber);
             }
         });
+    }
+
+    public static class MockExecutor implements Executor {
+        @Override
+        public void execute(Runnable command) {
+            command.run();
+        }
     }
 }

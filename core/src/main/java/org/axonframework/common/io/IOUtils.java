@@ -53,7 +53,7 @@ public final class IOUtils {
     }
 
     /**
-     * Closes any object if that object implements {@link Closeable}, while suppressing any IOExceptions it will
+     * Closes any object if that object implements {@link AutoCloseable}, while suppressing any IOExceptions it will
      * generate. The given {@code closeable} may be {@code null}, in which case nothing happens.
      *
      * @param closeable the object to be closed
