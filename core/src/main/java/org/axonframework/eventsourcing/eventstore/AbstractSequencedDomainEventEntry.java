@@ -17,8 +17,10 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.SequenceGenerator;
 
 /**
  * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
@@ -30,7 +32,8 @@ import javax.persistence.MappedSuperclass;
 public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements DomainEventData<T> {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "axonSequenceGenerator")
+    @SequenceGenerator(name = "axonSequenceGenerator", sequenceName = "axon_sequence")
     @SuppressWarnings("unused")
     private long globalIndex;
 
