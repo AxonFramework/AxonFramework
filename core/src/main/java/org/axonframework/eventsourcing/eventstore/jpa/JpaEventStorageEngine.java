@@ -14,24 +14,31 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
 
@@ -44,14 +51,19 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEven
  * @author Rene de Waele
  */
 public class JpaEventStorageEngine extends BatchingEventStorageEngine {
+
+    private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
+    private static final Logger logger = LoggerFactory.getLogger(JpaEventStorageEngine.class);
+    private static final int DEFAULT_GAP_TIMEOUT = 60000;
     private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
-
     private final EntityManagerProvider entityManagerProvider;
     private final long lowestGlobalSequence;
     private final int maxGapOffset;
     private final TransactionManager transactionManager;
     private final boolean explicitFlush;
+    private int gapTimeout = DEFAULT_GAP_TIMEOUT;
+    private int gapCleaningThreshold = DEFAULT_GAP_CLEANING_THRESHOLD;
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. The payload and metadata of events is
@@ -131,11 +143,13 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () -> String
                 .format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
                         GapAwareTrackingToken.class.getSimpleName()));
-        final GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
-        Collection<Long> gaps = previousToken == null ? Collections.emptySet() : previousToken.getGaps();
+        SortedSet<Long> gaps = lastToken == null ? Collections.emptySortedSet() : ((GapAwareTrackingToken) lastToken).getGaps();
+        GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
+
         List<Object[]> entries = transactionManager.fetchInTransaction(() -> {
+            // if there are many gaps, it worthwhile checking if it is possible to clean them up
             TypedQuery<Object[]> query;
-            if (previousToken == null || gaps.isEmpty()) {
+            if (previousToken == null || previousToken.getGaps().isEmpty()) {
                 query = entityManager().createQuery(
                         "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                 "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
@@ -146,7 +160,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                         "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                 "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
                                 "FROM " + domainEventEntryEntityName() + " e " +
-                                "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
+                                "WHERE e.globalIndex > :token OR e.globalIndex IN (:gaps) ORDER BY e.globalIndex ASC",
                         Object[].class)
                         .setParameter("gaps", previousToken.getGaps());
             }
@@ -159,18 +173,52 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         GapAwareTrackingToken token = previousToken;
         for (Object[] entry : entries) {
             long globalSequence = (Long) entry[0];
+            GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>((String) entry[1], (String) entry[2], (long) entry[3], (String) entry[4], entry[5], (String) entry[6], (String) entry[7], entry[8], entry[9]);
+            // now that we have the event itself, we can calculate the token
+            boolean allowGaps = domainEvent.getTimestamp().isAfter(GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS));
             if (token == null) {
-                token = GapAwareTrackingToken.newInstance(globalSequence, LongStream
-                        .range(Math.min(lowestGlobalSequence, globalSequence), globalSequence).mapToObj(Long::valueOf)
-                        .collect(toSet()));
+                token = GapAwareTrackingToken.newInstance(globalSequence,
+                                                          allowGaps ?
+                                                                  LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
+                                                                          .boxed()
+                                                                          .collect(Collectors.toCollection(TreeSet::new)) :
+                                                                  Collections.emptySortedSet());
             } else {
-                token = token.advanceTo(globalSequence, maxGapOffset);
+                token = token.advanceTo(globalSequence, maxGapOffset, allowGaps);
             }
-            result.add(new GenericTrackedDomainEventEntry<>(token, (String) entry[1], (String) entry[2],
-                                                            (Long) entry[3], (String) entry[4], entry[5],
-                                                            (String) entry[6], (String) entry[7], entry[8], entry[9]));
+            result.add(new TrackedDomainEventData<>(token, domainEvent));
         }
         return result;
+    }
+
+    private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
+        GapAwareTrackingToken previousToken = lastToken;
+        if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
+            List<Object[]> results = transactionManager.fetchInTransaction(() -> entityManager()
+                    .createQuery("SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e WHERE e.globalIndex >= :firstGapOffset AND e.globalIndex <= :maxGlobalIndex", Object[].class)
+                    .setParameter("firstGapOffset", lastToken.getGaps().first())
+                    .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
+                    .getResultList());
+            for (Object[] result : results) {
+                try {
+                    Instant timestamp = DateTimeUtils.parseInstant(result[1].toString());
+                    long sequenceNumber = (long) result[0];
+                    if (previousToken.getGaps().contains(sequenceNumber)
+                            || timestamp.isAfter(GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS))) {
+                        // filled a gap, should not continue cleaning up
+                        break;
+                    }
+                    if (previousToken.getGaps().contains(sequenceNumber - 1)) {
+                        previousToken = previousToken.advanceTo(sequenceNumber - 1, maxGapOffset, false);
+                    }
+                } catch (DateTimeParseException e) {
+                    logger.info("Unable to parse timestamp to clean old gaps", e);
+                    break;
+                }
+
+            }
+        }
+        return previousToken;
     }
 
     @Override
@@ -179,8 +227,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                                                    int batchSize) {
         return transactionManager.fetchInTransaction(
                 () -> entityManager().createQuery(
-                        "SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
-                                "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                        "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                                "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                 "e.eventIdentifier, e.timeStamp, e.payloadType, " +
                                 "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
                                 "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
@@ -226,9 +274,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        deleteSnapshots(snapshot.getAggregateIdentifier());
         try {
-            entityManager().persist(createSnapshotEntity(snapshot, serializer));
+            entityManager().merge(createSnapshotEntity(snapshot, serializer));
+            deleteSnapshots(snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber());
             if (explicitFlush) {
                 entityManager().flush();
             }
@@ -241,11 +289,15 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * Deletes all snapshots from the underlying storage with given {@code aggregateIdentifier}.
      *
      * @param aggregateIdentifier the identifier of the aggregate to delete snapshots for
+     * @param sequenceNumber      The sequence number from which value snapshots should be kept
      */
-    protected void deleteSnapshots(String aggregateIdentifier) {
+    protected void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
         entityManager().createQuery("DELETE FROM " + snapshotEventEntryEntityName() +
-                                            " e WHERE e.aggregateIdentifier = :aggregateIdentifier")
-                .setParameter("aggregateIdentifier", aggregateIdentifier).executeUpdate();
+                                            " e WHERE e.aggregateIdentifier = :aggregateIdentifier" +
+                                            " AND e.sequenceNumber < :sequenceNumber")
+                .setParameter("aggregateIdentifier", aggregateIdentifier)
+                .setParameter("sequenceNumber", sequenceNumber)
+                .executeUpdate();
     }
 
     /**
@@ -297,5 +349,25 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected EntityManager entityManager() {
         return entityManagerProvider.getEntityManager();
+    }
+
+    /**
+     * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will affect
+     * the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
+     * performance of reading events. Defaults to 60000 (1 minute).
+     *
+     * @param gapTimeout The amount of time, in milliseconds until a gap may be considered timed out.
+     */
+    public void setGapTimeout(int gapTimeout) {
+        this.gapTimeout = gapTimeout;
+    }
+
+    /**
+     * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to 250.
+     *
+     * @param gapCleaningThreshold The number of gaps before triggering a cleanup.
+     */
+    public void setGapCleaningThreshold(int gapCleaningThreshold) {
+        this.gapCleaningThreshold = gapCleaningThreshold;
     }
 }
