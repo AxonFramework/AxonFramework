@@ -16,24 +16,19 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertSame;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -45,14 +40,15 @@ import org.axonframework.serialization.upcasting.Upcaster;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static junit.framework.TestCase.*;
+import static org.mockito.Mockito.*;
 
 public class AbstractEventMultiUpcasterTest {
 
@@ -86,7 +82,7 @@ public class AbstractEventMultiUpcasterTest {
                 spy(new InitialEventRepresentation(testEventData, serializer));
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                .collect(toList());
 
         assertEquals(1, result.size());
         IntermediateEventRepresentation resultRepresentation = result.get(0);
@@ -104,13 +100,13 @@ public class AbstractEventMultiUpcasterTest {
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                .collect(toList());
 
         testRepresentation = spy(result.get(0));
         assertEquals(expectedRevisionNumber, testRepresentation.getType().getRevision()); //initial upcast was successful
 
         result = upcaster.upcast(Stream.of(testRepresentation))
-                         .collect(toList());
+                .collect(toList());
 
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation resultRepresentation = result.get(0);
@@ -126,15 +122,16 @@ public class AbstractEventMultiUpcasterTest {
         GlobalSequenceTrackingToken testTrackingToken = new GlobalSequenceTrackingToken(10);
         long testSequenceNumber = 100;
         SerializedObject<String> testPayload = serializer.serialize(new StubEvent("oldName"), String.class);
-        EventData<?> testEventData = new GenericTrackedDomainEventEntry<>(
-                testTrackingToken, testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
-                testPayload.getType().getName(), testPayload.getType().getRevision(), testPayload,
-                serializer.serialize(MetaData.emptyInstance(), String.class)
+        EventData<?> testEventData = new TrackedDomainEventData<>(
+                testTrackingToken,
+                new GenericDomainEventEntry<>(testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
+                                              testPayload.getType().getName(), testPayload.getType().getRevision(), testPayload,
+                                              serializer.serialize(MetaData.emptyInstance(), String.class))
         );
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                .collect(toList());
 
         assertFalse(result.isEmpty());
 
@@ -170,7 +167,7 @@ public class AbstractEventMultiUpcasterTest {
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(testRepresentation))
-                                                               .collect(toList());
+                .collect(toList());
 
         assertFalse(result.isEmpty());
 
@@ -219,7 +216,7 @@ public class AbstractEventMultiUpcasterTest {
         @Override
         protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
             return intermediateRepresentation.getType()
-                                             .equals(targetType);
+                    .equals(targetType);
         }
 
         @Override
