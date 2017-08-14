@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.time.Instant.now;
-
 /**
  * @author Rene de Waele
  */
@@ -65,7 +63,7 @@ public class EventStoreTestUtils {
 
     public static DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId,
                                                          long sequenceNumber, String payload, MetaData metaData) {
-        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber, payload, metaData, eventId, now());
+        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber, payload, metaData, eventId, GenericDomainEventMessage.clock.instant());
     }
 
     private EventStoreTestUtils() {
