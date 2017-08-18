@@ -46,6 +46,9 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.isTrue;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * EventProcessor implementation that tracks events from a {@link StreamableMessageSource}.
  * <p>
@@ -75,7 +78,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final String name;
     private final int segmentsSize;
 
-    private volatile ThreadPoolExecutor executorService;
+    private volatile ExecutorService executorService;
     private AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
 
     private int corePoolSize;
@@ -159,6 +162,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         this.corePoolSize = trackingEventProcessorConfiguration.getCorePoolSize();
         this.maxPoolSize = trackingEventProcessorConfiguration.getMaxPoolSize();
+        this.executorService = Executors.newCachedThreadPool(trackingEventProcessorConfiguration.getThreadFactory());
 
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
     }
@@ -369,8 +373,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @return an approximation of the number of threads currently processing events
      */
     public int activeProcessorThreads() {
-        ThreadPoolExecutor currentService = this.executorService;
+      try {
+        ThreadPoolExecutor currentService = (ThreadPoolExecutor) this.executorService;
         return currentService == null ? 0 : currentService.getActiveCount();
+      } catch(ClassCastException e) {
+        return 0;
+      }
     }
 
     /**

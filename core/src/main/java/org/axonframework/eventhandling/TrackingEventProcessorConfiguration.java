@@ -1,5 +1,8 @@
 package org.axonframework.eventhandling;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 
@@ -23,6 +26,7 @@ public class TrackingEventProcessorConfiguration {
     private SequencingPolicy<? super EventMessage<?>> sequentialPolicy;
     private int corePoolSize;
     private int maxPoolSize;
+    private ThreadFactory threadFactory;
 
     public TrackingEventProcessorConfiguration() {
         this.batchSize = DEFAULT_BATCH_SIZE;
@@ -30,6 +34,7 @@ public class TrackingEventProcessorConfiguration {
         this.sequentialPolicy = new SequentialPerAggregatePolicy();
         this.corePoolSize = DEFAULT_POOL_SIZE;
         this.maxPoolSize = DEFAULT_POOL_SIZE;
+        this.threadFactory = Executors.defaultThreadFactory();
     }
 
     /**
@@ -113,5 +118,9 @@ public class TrackingEventProcessorConfiguration {
         this.maxPoolSize = maxPoolSize;
         return this;
     }
+
+  public ThreadFactory getThreadFactory() {
+    return threadFactory;
+  }
 
 }
