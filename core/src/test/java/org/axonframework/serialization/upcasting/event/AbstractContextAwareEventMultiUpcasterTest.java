@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -55,12 +54,12 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
  */
 public class AbstractContextAwareEventMultiUpcasterTest {
 
+    private Upcaster<IntermediateEventRepresentation> upcaster;
+    private Serializer serializer;
+
     private String expectedNewString;
     private Integer expectedNewInteger;
     private List<Boolean> expectedNewBooleans;
-
-    private Serializer serializer;
-    private Upcaster<IntermediateEventRepresentation> upcaster;
 
     @Before
     public void setUp() throws Exception {
