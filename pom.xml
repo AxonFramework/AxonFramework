@@ -33,6 +33,7 @@
         <module>spring-boot-starter</module>
         <module>spring-boot-starter-jgroups</module>
         <module>legacy</module>
+        <module>redis</module>
     </modules>
     <packaging>pom</packaging>
 
