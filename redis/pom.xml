@@ -36,7 +36,7 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Redis & Jedis dependencies -->
+        <!-- Redis & Jedis implementation dependencies -->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
@@ -52,13 +52,6 @@
             <artifactId>json</artifactId>
             <version>20170516</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
-        </dependency>
-        -->
 
         <!-- Test Dependencies -->
         <dependency>
@@ -73,14 +66,6 @@
             <version>3.8.0</version>
             <scope>test</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-            <scope>test</scope>
-        </dependency>
-        -->
     </dependencies>
 
 </project>
