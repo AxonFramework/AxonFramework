@@ -15,16 +15,18 @@
 
 package org.axonframework.redis.eventhandling.tokenstore;
 
-import org.axonframework.redis.eventhandling.tokenstore.repository.DefaultRedisTokenRepository;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.redis.eventhandling.tokenstore.repository.DefaultRedisTokenRepository;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
-import org.junit.Rule;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.time.Duration;
@@ -36,21 +38,27 @@ import static org.assertj.core.api.Fail.fail;
 
 public class RedisTokenStoreTest {
 
-    @Rule
-    public GenericContainer redis = new GenericContainer("redis:4.0.1")
+    @ClassRule
+    public static GenericContainer REDIS = new GenericContainer("redis:4.0.1")
             .withExposedPorts(6379);
+
+    public static JedisPool JEDISPOOL;
 
     private TokenStore redisTokenStore;
     private TokenStore concurrentRedisTokenStore;
 
     @Before
     public void setup() {
+        try (Jedis jedis = JEDISPOOL.getResource()) {
+            jedis.flushAll();
+        }
+        redisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(JEDISPOOL), new XStreamSerializer(), Duration.ofSeconds(5), "node1");
+        concurrentRedisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(JEDISPOOL), new XStreamSerializer(), Duration.ofSeconds(5), "node2");
+    }
 
-        JedisPool jedisPool = new JedisPool(redis.getContainerIpAddress(), redis.getMappedPort(6379));
-        redisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(jedisPool), new XStreamSerializer(), Duration.ofSeconds(5), "node1");
-
-        JedisPool jedisPool2 = new JedisPool(redis.getContainerIpAddress(), redis.getMappedPort(6379));
-        concurrentRedisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(jedisPool2), new XStreamSerializer(), Duration.ofSeconds(5), "node2");
+    @BeforeClass
+    public static void setupOnce() {
+        JEDISPOOL = new JedisPool(REDIS.getContainerIpAddress(), REDIS.getMappedPort(6379));
     }
 
     @Test
@@ -64,8 +72,9 @@ public class RedisTokenStoreTest {
     public void testConcurrentFetch() {
         redisTokenStore.fetchToken("processor1", 0);
 
-        assertThatThrownBy(() -> concurrentRedisTokenStore.fetchToken("processor1", 0)).isInstanceOf(UnableToClaimTokenException.class);
-    }
+        assertThatThrownBy(() -> concurrentRedisTokenStore.fetchToken("processor1", 0))
+                .isInstanceOf(UnableToClaimTokenException.class)
+                .hasMessage("Unable to claim token 'processor1[0]'. It is owned by 'node1'");    }
 
     @Test
     public void testConcurrentFetchAfterTimeout() {
@@ -106,16 +115,18 @@ public class RedisTokenStoreTest {
         redisTokenStore.fetchToken("processor1", 0);
         redisTokenStore.storeToken(GapAwareTrackingToken.newInstance(1337L, Collections.emptySortedSet()), "processor1", 0);
 
-        assertThatThrownBy(() -> concurrentRedisTokenStore.fetchToken("processor1", 0)).isInstanceOf(UnableToClaimTokenException.class);
-    }
+        assertThatThrownBy(() -> concurrentRedisTokenStore.fetchToken("processor1", 0))
+                .isInstanceOf(UnableToClaimTokenException.class)
+                .hasMessage("Unable to claim token 'processor1[0]'. It is owned by 'node1'");    }
 
     @Test
     public void testClaimConcurrentStoreToken() {
         redisTokenStore.fetchToken("processor1", 0);
         redisTokenStore.storeToken(GapAwareTrackingToken.newInstance(1337L, Collections.emptySortedSet()), "processor1", 0);
 
-        assertThatThrownBy(() -> concurrentRedisTokenStore.storeToken(GapAwareTrackingToken.newInstance(7331L, Collections.emptySortedSet()), "processor1", 0)).isInstanceOf(UnableToClaimTokenException.class);
-    }
+        assertThatThrownBy(() -> concurrentRedisTokenStore.fetchToken("processor1", 0))
+                .isInstanceOf(UnableToClaimTokenException.class)
+                .hasMessage("Unable to claim token 'processor1[0]'. It is owned by 'node1'");    }
 
     @Test
     public void testClaimConcurrentStoreTokenAfterTimeout() {

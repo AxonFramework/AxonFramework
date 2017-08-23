@@ -55,8 +55,10 @@ public class DefaultRedisTokenRepository implements RedisTokenRepository {
     }
 
     @Override
-    public boolean storeTokenEntry(RedisTokenEntry tokenEntry, Instant expirationFromTimestamp) {
-        Long value = (Long) tryEvalSha1(STORE_TOKEN_SCRIPT, STORE_TOKEN_SHA1,
+    public RedisTokenEntry storeTokenEntry(RedisTokenEntry tokenEntry, Instant expirationFromTimestamp) {
+        String redisOutput = (String) tryEvalSha1(
+                STORE_TOKEN_SCRIPT,
+                STORE_TOKEN_SHA1,
                 getHashKeyList(tokenEntry.getProcessorName(), tokenEntry.getSegment()),
                 Arrays.asList(
                         tokenEntry.getProcessorName(),
@@ -67,13 +69,15 @@ public class DefaultRedisTokenRepository implements RedisTokenRepository {
                         Base64.getEncoder().encodeToString(tokenEntry.getSerializedToken().getData()),
                         tokenEntry.getSerializedToken().getType().getName()));
 
-        return Objects.equals(value, TRUE);
+        return mapRedisTokenEntry(redisOutput);
     }
 
     @Override
     public RedisTokenEntry fetchTokenEntry(String processorName, int segment, String owner, Instant currentTimestamp, Instant expirationFromTimestamp) {
 
-        String redisOutput = (String) tryEvalSha1(FETCH_TOKEN_SCRIPT, FETCH_TOKEN_SHA1,
+        String redisOutput = (String) tryEvalSha1(
+                FETCH_TOKEN_SCRIPT,
+                FETCH_TOKEN_SHA1,
                 getHashKeyList(processorName, segment),
                 Arrays.asList(
                         processorName,
@@ -82,6 +86,58 @@ public class DefaultRedisTokenRepository implements RedisTokenRepository {
                         Long.toString(currentTimestamp.toEpochMilli()),
                         Long.toString(expirationFromTimestamp.toEpochMilli())));
 
+        return mapRedisTokenEntry(redisOutput);
+    }
+
+    @Override
+    public boolean releaseClaim(String processorName, int segment, String owner) {
+        Long value = (Long) tryEvalSha1(
+                RELEASE_TOKEN_SCRIPT,
+                RELEASE_TOKEN_SHA1,
+                getHashKeyList(processorName, segment),
+                Arrays.asList(
+                        processorName,
+                        Integer.toString(segment), owner));
+
+        return Objects.equals(value, TRUE);
+    }
+
+    /**
+     * Utility method returning a singleton list containing a String with a colon separated processorName and segment.
+     *
+     * @param processorName The name of the process for which to store the token
+     * @param segment       The index of the segment for which to store the token
+     * @return              Singleton list containing a String with a colon separated processorName and segment
+     */
+    private List<String> getHashKeyList(String processorName, int segment) {
+        return Collections.singletonList(processorName + ":" + segment);
+    }
+
+    /**
+     * First tries to call Redis eval with a sha1 hash and falls back to a regular Redis eval call
+     *
+     * @param script    The script contents
+     * @param sha1      The script sha1 hash
+     * @param keys      List of keys as parameter for the Redis eval call
+     * @param args      List of arguments as parameter for the Redis eval call
+     * @return          The Redis eval return object
+     */
+    private Object tryEvalSha1(String script, String sha1, List<String> keys, List<String> args) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            try {
+                return jedis.evalsha(sha1, keys, args);
+            } catch (JedisNoScriptException e) {
+                return jedis.eval(script, keys, args);
+            }
+        }
+    }
+
+    /**
+     * Convert Redis script output to RedisTokenEntry with nullable fields
+     * @param redisOutput   The output from the Redis eval call
+     * @return              RedisTokenEntry with nullable fields
+     */
+    private RedisTokenEntry mapRedisTokenEntry(String redisOutput) {
         if (redisOutput != null) {
             JSONObject tokenEntry = new JSONObject(redisOutput);
 
@@ -112,50 +168,9 @@ public class DefaultRedisTokenRepository implements RedisTokenRepository {
             }
 
             return new RedisTokenEntry(tokenEntryToken, tokenEntryTokenType, tokenEntryTimestamp,
-                    tokenEntryOwner, tokenEntryProcessorName, tokenEntrySegment);
+                                       tokenEntryOwner, tokenEntryProcessorName, tokenEntrySegment);
         } else {
             return null;
-        }
-    }
-
-    @Override
-    public boolean releaseClaim(String processorName, int segment, String owner) {
-        Long value = (Long) tryEvalSha1(RELEASE_TOKEN_SCRIPT, RELEASE_TOKEN_SHA1,
-                getHashKeyList(processorName, segment),
-                Arrays.asList(
-                        processorName,
-                        Integer.toString(segment), owner));
-
-        return Objects.equals(value, TRUE);
-    }
-
-    /**
-     * Utility method returning a singleton list containing a String with a colon separated processorName and segment.
-     *
-     * @param processorName The name of the process for which to store the token
-     * @param segment       The index of the segment for which to store the token
-     * @return              Singleton list containing a String with a colon separated processorName and segment
-     */
-    private List<String> getHashKeyList(String processorName, int segment) {
-        return Collections.singletonList(processorName + ":" + segment);
-    }
-
-    /**
-     * First tries to call Redis eval with a sha1 hash and falls back to a regular Redis eval call
-     *
-     * @param script The script contents
-     * @param sha1 The script sha1 hash
-     * @param keys List of keys as parameter for the Redis eval call
-     * @param args List of arguments as parameter for the Redis eval call
-     * @return The Redis eval return object
-     */
-    private Object tryEvalSha1(String script, String sha1, List<String> keys, List<String> args) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            try {
-                return jedis.evalsha(sha1, keys, args);
-            } catch (JedisNoScriptException e) {
-                return jedis.eval(script, keys, args);
-            }
         }
     }
 }

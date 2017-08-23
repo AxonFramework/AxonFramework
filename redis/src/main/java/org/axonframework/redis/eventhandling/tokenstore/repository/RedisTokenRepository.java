@@ -31,24 +31,28 @@ public interface RedisTokenRepository {
      * comparison.
      *
      * @param tokenEntry                The token entry that should be stored
-     * @param expirationFromTimestamp   The timestamp from which an existing token entry claim would be regarded as expired.
-     * @return                          If the token was successfully stored, return true, otherwise false.
+     * @param expirationFromTimestamp   The timestamp from which an existing token entry claim would be regarded as
+     *                                  expired.
+     * @return                          RedisTokenEntry representation of the Redis stored token entry.
+     *                                  If no claim is given to caller, returns current token entry with other owner.
      */
-    boolean storeTokenEntry(RedisTokenEntry tokenEntry, Instant expirationFromTimestamp);
+    RedisTokenEntry storeTokenEntry(RedisTokenEntry tokenEntry, Instant expirationFromTimestamp);
 
     /**
-     * Fetches the RedisTokenEntry. If no claim is given to caller, returns null. Supports pure functional expiration
-     * timestamp comparison.
+     * Fetches the RedisTokenEntry. If no claim is given to caller, returns the current token entry. Supports pure
+     * functional expiration timestamp comparison.
      *
      * @param processorName             The name of the process for which to store the token
      * @param segment                   The index of the segment for which to store the token
      * @param owner                     The current nodeId
      * @param timestamp                 The timestamp to be used when storing the token entry
-     * @param expirationFromTimestamp   The timestamp from which an existing token entry claim would be regarded as expired.
+     * @param expirationFromTimestamp   The timestamp from which an existing token entry claim would be regarded as
+     *                                  expired.
      * @return                          RedisTokenEntry representation of the Redis stored token entry.
-     *                                  If no claim is given to caller, returns null.
+     *                                  If no claim is given to caller, returns current token entry with other owner.
      */
-    RedisTokenEntry fetchTokenEntry(String processorName, int segment, String owner, Instant timestamp, Instant expirationFromTimestamp);
+    RedisTokenEntry fetchTokenEntry(String processorName, int segment, String owner, Instant timestamp,
+                                    Instant expirationFromTimestamp);
 
     /**
      * Releases the claim on the token entry when the node is currently holding the claim
