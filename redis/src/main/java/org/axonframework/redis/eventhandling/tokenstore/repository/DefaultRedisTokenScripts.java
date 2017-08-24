@@ -96,7 +96,7 @@ public class DefaultRedisTokenScripts {
 
         public static final String STORE_TOKEN_SHA1 = "eab683f2814c41c0ebdf57ce13fe9ce6b97eba1e";
 
-        public static final String RELEASE_TOKEN_SCRIPT = "" +
+        public static final String RELEASE_TOKEN_SCRIPT =
                 "local processorNameSegment = KEYS[1]\n" +
                 "local processorName = ARGV[1]\n" +
                 "local segment = ARGV[2]\n" +

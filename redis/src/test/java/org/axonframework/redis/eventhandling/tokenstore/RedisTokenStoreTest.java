@@ -39,26 +39,26 @@ import static org.assertj.core.api.Fail.fail;
 public class RedisTokenStoreTest {
 
     @ClassRule
-    public static GenericContainer REDIS = new GenericContainer("redis:4.0.1")
+    public static GenericContainer redis = new GenericContainer("redis:4.0.1")
             .withExposedPorts(6379);
 
-    public static JedisPool JEDISPOOL;
+    public static JedisPool jedisPool;
 
     private TokenStore redisTokenStore;
     private TokenStore concurrentRedisTokenStore;
 
     @Before
-    public void setup() {
-        try (Jedis jedis = JEDISPOOL.getResource()) {
+    public void setUp() {
+        try (Jedis jedis = jedisPool.getResource()) {
             jedis.flushAll();
         }
-        redisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(JEDISPOOL), new XStreamSerializer(), Duration.ofSeconds(5), "node1");
-        concurrentRedisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(JEDISPOOL), new XStreamSerializer(), Duration.ofSeconds(5), "node2");
+        redisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(jedisPool), new XStreamSerializer(), Duration.ofSeconds(5), "node1");
+        concurrentRedisTokenStore = new RedisTokenStore(new DefaultRedisTokenRepository(jedisPool), new XStreamSerializer(), Duration.ofSeconds(5), "node2");
     }
 
     @BeforeClass
-    public static void setupOnce() {
-        JEDISPOOL = new JedisPool(REDIS.getContainerIpAddress(), REDIS.getMappedPort(6379));
+    public static void setUpBeforeClass() {
+        jedisPool = new JedisPool(redis.getContainerIpAddress(), redis.getMappedPort(6379));
     }
 
     @Test
