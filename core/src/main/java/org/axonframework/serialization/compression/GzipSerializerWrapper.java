@@ -10,14 +10,17 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipException;
 
 /**
+ * AbstractSerializerCompressionWrapper implementation that used gzip compression
+ *
  * @author Michael Willemse
  */
-public class GzipSerializer extends ByteArrayCompressionSerializer {
+public class GzipSerializerWrapper extends AbstractSerializerCompressionWrapper {
 
-    public GzipSerializer(Serializer embeddedSerializer) {
+    public GzipSerializerWrapper(Serializer embeddedSerializer) {
         super(embeddedSerializer);
     }
 
+    @Override
     protected byte[] doCompress(byte[] uncompressedData) throws IOException {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream(uncompressedData.length);
              GZIPOutputStream gzipOS = new GZIPOutputStream(bos)) {
@@ -27,6 +30,7 @@ public class GzipSerializer extends ByteArrayCompressionSerializer {
         }
     }
 
+    @Override
     protected byte[] doDecompress(byte[] compressedData) throws IOException {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(compressedData);
              ByteArrayOutputStream bos = new ByteArrayOutputStream();

@@ -16,9 +16,9 @@ import java.util.zip.GZIPInputStream;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-public class GzipSerializerWithXStreamTest {
+public class GzipSerializerWrapperWithXStreamTest {
 
-    private GzipSerializer testSubject;
+    private GzipSerializerWrapper testSubject;
     private XStreamSerializer embeddedSerializer;
     private static final String SPECIAL__CHAR__STRING = "Special chars: '\"&;\n\\<>/\n\t";
     private static final String REGULAR_STRING = "Henk";
@@ -27,7 +27,7 @@ public class GzipSerializerWithXStreamTest {
     @Before
     public void setUp() {
         this.embeddedSerializer = new XStreamSerializer();
-        this.testSubject = new GzipSerializer(embeddedSerializer);
+        this.testSubject = new GzipSerializerWrapper(embeddedSerializer);
         this.testEvent = new TestEvent(REGULAR_STRING);
     }
 
@@ -58,7 +58,8 @@ public class GzipSerializerWithXStreamTest {
 
     @Test
     public void testSerializeAndDeserializeDomainEvent_WithDom4JUpcasters() {
-        SerializedObject<org.dom4j.Document> serializedEvent = testSubject.serialize(testEvent, org.dom4j.Document.class);
+        SerializedObject<org.dom4j.Document> serializedEvent = testSubject.serialize(testEvent,
+                                                                                     org.dom4j.Document.class);
         Object actualResult = testSubject.deserialize(serializedEvent);
         assertEquals(testEvent, actualResult);
     }

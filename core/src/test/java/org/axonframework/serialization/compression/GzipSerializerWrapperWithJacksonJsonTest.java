@@ -22,16 +22,16 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class GzipSerializerWithJacksonJsonTest {
+public class GzipSerializerWrapperWithJacksonJsonTest {
 
-    private GzipSerializer testSubject;
+    private GzipSerializerWrapper testSubject;
     private JacksonSerializer embeddedSerializer;
     private Instant time;
 
     @Before
     public void setUp() throws Exception {
         embeddedSerializer = new JacksonSerializer();
-        testSubject = new GzipSerializer(embeddedSerializer);
+        testSubject = new GzipSerializerWrapper(embeddedSerializer);
         time = Instant.now();
     }
 
@@ -100,7 +100,7 @@ public class GzipSerializerWithJacksonJsonTest {
         ChainingConverter converter = spy(new ChainingConverter());
 
         embeddedSerializer = new JacksonSerializer(objectMapper, revisionResolver, converter);
-        testSubject = new GzipSerializer(embeddedSerializer);
+        testSubject = new GzipSerializerWrapper(embeddedSerializer);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -120,7 +120,7 @@ public class GzipSerializerWithJacksonJsonTest {
         RevisionResolver revisionResolver = spy(new AnnotationRevisionResolver());
 
         embeddedSerializer = new JacksonSerializer(objectMapper, revisionResolver);
-        testSubject = new GzipSerializer(embeddedSerializer);
+        testSubject = new GzipSerializerWrapper(embeddedSerializer);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -138,7 +138,7 @@ public class GzipSerializerWithJacksonJsonTest {
         ObjectMapper objectMapper = spy(new ObjectMapper());
 
         embeddedSerializer = new JacksonSerializer(objectMapper);
-        testSubject = new GzipSerializer(embeddedSerializer);
+        testSubject = new GzipSerializerWrapper(embeddedSerializer);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new SimpleSerializableType("test"),
                                                                     byte[].class);
@@ -153,7 +153,7 @@ public class GzipSerializerWithJacksonJsonTest {
     @Test
     public void testSerializeMetaData() {
         embeddedSerializer = new JacksonSerializer();
-        testSubject = new GzipSerializer(embeddedSerializer);
+        testSubject = new GzipSerializerWrapper(embeddedSerializer);
 
         SerializedObject<byte[]> serialized = testSubject.serialize(MetaData.from(singletonMap("test", "test")),
                                                                     byte[].class);
@@ -167,7 +167,8 @@ public class GzipSerializerWithJacksonJsonTest {
     @Test
     public void testSerializeMetaDataWithComplexObjects() throws Exception {
         // typing must be enabled for this (which we expect end-users to do
-        embeddedSerializer.getObjectMapper().enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
+        embeddedSerializer.getObjectMapper().enableDefaultTypingAsProperty(
+                ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
 
         MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
         SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);

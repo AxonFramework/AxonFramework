@@ -2,13 +2,23 @@ package org.axonframework.serialization.compression;
 
 import org.axonframework.serialization.*;
 
-import java.io.IOException;
-
-public abstract class ByteArrayCompressionSerializer implements Serializer {
+/**
+ * Wrapper around an embedded {@link Serializer} that can serialize to a byte array. Implementations must implement the
+ * {@code doCompress} and {@code doDecompress} methods. When a NotCompressedException occurs the {@code deserialize}
+ * method tries to deserialize using the {@code embeddedSerializer} without decompression.
+ *
+ * @author Michael Willemse
+ */
+public abstract class AbstractSerializerCompressionWrapper implements Serializer {
 
     protected Serializer embeddedSerializer;
 
-    public ByteArrayCompressionSerializer(Serializer embeddedSerializer) {
+    /**
+     * Initializes AbstractByteArrayCompressionSerializer implementation with the embedded serializer as parameter
+     * @param embeddedSerializer serializer that must be able to serialize to a byte array otherwise the constructor
+     *                           throws an IllegalArgumentException.
+     */
+    public AbstractSerializerCompressionWrapper(Serializer embeddedSerializer) {
         if(!embeddedSerializer.canSerializeTo(byte[].class)) {
             throw new IllegalArgumentException("Expecting serializer that serializes to byte array.");
         }
@@ -24,8 +34,8 @@ public abstract class ByteArrayCompressionSerializer implements Serializer {
                         (T) doCompress((byte[]) embeddedSerializedObject.getData()),
                         embeddedSerializedObject.getContentType(),
                         embeddedSerializedObject.getType());
-            } catch (IOException e) {
-                throw new SerializationException("Unhandled IOException while compressing.", e);
+            } catch (Throwable e) {
+                throw new SerializationException("Unhandled Exception while compressing.", e);
             }
         } else {
             return embeddedSerializedObject;
@@ -51,8 +61,8 @@ public abstract class ByteArrayCompressionSerializer implements Serializer {
             } catch (NotCompressedException e) {
                 //Content wasn't compressed or failure based on compression occurred.
                 return embeddedSerializer.deserialize(serializedObject);
-            } catch (IOException e)  {
-                throw new SerializationException("Unhandled IOException while decompressing.", e);
+            } catch (Throwable e)  {
+                throw new SerializationException("Unhandled Exception while decompressing.", e);
             }
 
         } else {
@@ -75,11 +85,32 @@ public abstract class ByteArrayCompressionSerializer implements Serializer {
         return embeddedSerializer.getConverter();
     }
 
+    /**
+     * Returns the embedded serializer used by the AbstractByteArrayCompressionSerializer implementation.
+     *
+     * @return embedded serializer
+     */
     public Serializer getEmbeddedSerializer() {
         return embeddedSerializer;
     }
 
-    protected abstract byte[] doCompress(byte[] uncompressed) throws IOException;
+    /**
+     * Compress the given {@code uncompressedData} and return the compressed data
+     * Throws  Throwable on an non recoverable exception.
+     *
+     * @param uncompressedData uncompressed data
+     * @return compressed data
+     * @throws Throwable
+     */
+    protected abstract byte[] doCompress(byte[] uncompressedData) throws Throwable;
 
-    protected abstract byte[] doDecompress(byte[] compressed) throws IOException;
+    /**
+     * Decompress the given {@code compressedData} and return the decompressed data
+     * Throws {@link NotCompressedException} when data is not compressed and Throwable on an non recoverable exception.
+     *
+     * @param compressedData compressed data
+     * @return decompressed data
+     * @throws Throwable
+     */
+    protected abstract byte[] doDecompress(byte[] compressedData) throws Throwable;
 }
