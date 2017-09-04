@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Processes events by forwarding it to Saga instances "owned" by each processor. This processor uses a consistent
@@ -52,7 +53,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private static final Logger logger = LoggerFactory.getLogger(AsyncSagaEventProcessor.class);
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final SagaRepository sagaRepository;
-    private final Map<String, Saga> processedSagas = new TreeMap<String, Saga>();
+    private final TreeMap<String, Saga> processedSagas = new TreeMap<String, Saga>();
     private final Map<String, Saga> newlyCreatedSagas = new TreeMap<String, Saga>();
     private final ParameterResolverFactory parameterResolverFactory;
     private final int processorCount;
@@ -131,7 +132,16 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
 
     private void doProcessEvent(final AsyncSagaProcessingEvent entry, long sequence, boolean endOfBatch)
             throws Exception {
-        prepareSagas(entry);
+        // Since this method is called multiple times in a single unit of work, it can cause multiple
+        // saga instances to be loaded. If the saga repository locks saga rows at load time, this can
+        // lead to deadlocks if multiple nodes happen to get events for overlapping sets of sagas in
+        // different orders. If this event would cause sagas to be loaded in an order that could
+        // potentially cause deadlocks, first save whatever work has been done so far.
+        if (!prepareSagas(entry)) {
+            persistSagasWithRetry(sequence);
+            prepareSagas(entry);
+        }
+
         boolean sagaInvoked = invokeSagas(entry);
         AssociationValue associationValue;
         switch (entry.getCreationHandler().getCreationPolicy()) {
@@ -152,30 +162,17 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         }
 
         if (endOfBatch) {
-            int attempts = 0;
-            while (!persistProcessedSagas(attempts == 0) && status.isRunning()) {
-                if (attempts == 0) {
-                    logger.warn("Error committing Saga state to the repository. Starting retry procedure...");
-                }
-                attempts++;
-                if (attempts > 1 && attempts < 5) {
-                    logger.info("Waiting 100ms for next attempt");
-                    Thread.sleep(100);
-                } else if (attempts >= 5) {
-                    logger.info("Waiting 2000ms for next attempt");
-                    long timeToStop = System.currentTimeMillis() + 2000;
-                    while (inFuture(timeToStop) && isLastInBacklog(sequence) && status.isRunning()) {
-                        Thread.sleep(100);
-                    }
-                }
-            }
-            if (attempts != 0) {
-                logger.info("Succesfully committed. Moving on...");
-            }
+            persistSagasWithRetry(sequence);
         }
     }
 
-    private void prepareSagas(final AsyncSagaProcessingEvent entry) throws InterruptedException {
+    /**
+     * Loads all the sagas associated with an event.
+     *
+     * @return false if the event is associated with sagas the loading of which could
+     *         potentially cause a deadlock if the saga manager locks rows at load time.
+     */
+    private boolean prepareSagas(final AsyncSagaProcessingEvent entry) throws InterruptedException {
         boolean requiresRetry = false;
         int invocationCount = 0;
         while (invocationCount == 0 || requiresRetry) {
@@ -183,18 +180,26 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             ensureActiveUnitOfWork();
             try {
                 invocationCount++;
-                Set<String> sagaIds = new HashSet<String>();
+                Set<String> sagaIds = new TreeSet<String>();
                 for (AssociationValue associationValue : entry.getAssociationValues()) {
                     sagaIds.addAll(sagaRepository.find(entry.getSagaType(), associationValue));
                 }
                 for (String sagaId : sagaIds) {
                     if (ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId)) {
+                        // Only allow sagas to load in ascending ID order to prevent deadlocks
+                        if (!processedSagas.isEmpty() &&
+                            processedSagas.lastKey().compareTo(sagaId) > 0) {
+                            return false;
+                        }
                         ensureActiveUnitOfWork();
                         final Saga saga = sagaRepository.load(sagaId);
-                        if (parameterResolverFactory != null) {
-                            ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
+                        if (saga != null) {
+                            if (parameterResolverFactory != null) {
+                                ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(
+                                    parameterResolverFactory);
+                            }
+                            processedSagas.put(sagaId, saga);
                         }
-                        processedSagas.put(sagaId, saga);
                     }
                 }
             } catch (Exception e) {
@@ -211,6 +216,8 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                 }
             }
         }
+
+        return true;
     }
 
     private boolean inFuture(long timestamp) {
@@ -255,6 +262,29 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             }
         }
         return false;
+    }
+
+    private void persistSagasWithRetry(long sequence) throws Exception {
+        int attempts = 0;
+        while (!persistProcessedSagas(attempts == 0) && status.isRunning()) {
+            if (attempts == 0) {
+                logger.warn("Error committing Saga state to the repository. Starting retry procedure...");
+            }
+            attempts++;
+            if (attempts > 1 && attempts < 5) {
+                logger.info("Waiting 100ms for next attempt");
+                Thread.sleep(100);
+            } else if (attempts >= 5) {
+                logger.info("Waiting 2000ms for next attempt");
+                long timeToStop = System.currentTimeMillis() + 2000;
+                while (inFuture(timeToStop) && isLastInBacklog(sequence) && status.isRunning()) {
+                    Thread.sleep(100);
+                }
+            }
+        }
+        if (attempts != 0) {
+          logger.info("Succesfully committed. Moving on...");
+        }
     }
 
     @SuppressWarnings("unchecked")
