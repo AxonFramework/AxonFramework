@@ -107,12 +107,19 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
+    public void testNullAssociationValueIsIgnored() throws Exception {
+        handle(new GenericEventMessage<>(new StartingEvent(null)));
+
+        verify(sagaRepository, never()).find(null);
+    }
+
+    @Test
     public void testLifecycle_DestroyedOnEnd() throws Exception {
         handle(new GenericEventMessage<>(new StartingEvent("12")));
         handle(new GenericEventMessage<>(new StartingEvent("23")));
         handle(new GenericEventMessage<>(new MiddleEvent("12")));
-        handle(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA",
-                                                                                     "value")));
+        handle(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA", "value")));
+
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").iterator().next().getSpecificHandlerInvocations());

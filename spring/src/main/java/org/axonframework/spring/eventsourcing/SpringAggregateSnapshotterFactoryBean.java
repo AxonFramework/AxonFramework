@@ -47,7 +47,7 @@ import java.util.concurrent.Executor;
  */
 public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
-    private final Executor executor = DirectExecutor.INSTANCE;
+    private Executor executor = DirectExecutor.INSTANCE;
     private PlatformTransactionManager transactionManager;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
@@ -126,5 +126,15 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    /**
+     * Sets the executor to process the creation (and storage) of each snapshot. Defaults to an executer that runs the
+     * task in the calling thread.
+     *
+     * @param executor The executor to process creation and storage of the snapshots with
+     */
+    public void setExecutor(Executor executor) {
+        this.executor = executor;
     }
 }

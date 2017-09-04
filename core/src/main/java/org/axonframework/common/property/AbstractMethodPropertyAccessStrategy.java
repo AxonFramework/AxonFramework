@@ -45,7 +45,9 @@ public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAcces
                     "Method with name '{}' in '{}' cannot be accepted as a property accessor, as it returns void",
                     methodName, targetClass.getName());
         } catch (NoSuchMethodException e) {
-            logger.debug("No method with name '{}' found in {}", methodName, targetClass.getName(), e);
+            logger.debug("No method with name '{}' found in {} to use as property accessor. " +
+                                 "Attempting to fall back to other strategies.",
+                         methodName, targetClass.getName());
         }
         return null;
     }
