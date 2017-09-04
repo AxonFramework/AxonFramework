@@ -13,6 +13,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -191,10 +192,18 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        transactionManager.executeInTransaction(
-                () -> executeUpdates(getConnection(), e -> handlePersistenceException(e, snapshot),
-                                     connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
-                                     connection -> appendSnapshot(connection, snapshot, serializer)));
+        transactionManager.executeInTransaction(() -> {
+            try {
+                executeUpdates(
+                        getConnection(), e -> handlePersistenceException(e, snapshot),
+                        connection -> appendSnapshot(connection, snapshot, serializer),
+                        connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber())
+
+                );
+            } catch (ConcurrencyException e) {
+                // ignore duplicate key issues in snapshot. It just means a snapshot already exists
+            }
+        });
     }
 
     /**
@@ -237,10 +246,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @return A {@link PreparedStatement} that deletes all the aggregate's snapshots when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    protected PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier) throws SQLException {
+    protected PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier, long sequenceNumber) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(
-                "DELETE FROM " + schema.snapshotTable() + " WHERE " + schema.aggregateIdentifierColumn() + " = ?");
+                "DELETE FROM " + schema.snapshotTable() + " WHERE " + schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " < ?");
         preparedStatement.setString(1, aggregateIdentifier);
+        preparedStatement.setLong(2, sequenceNumber);
         return preparedStatement;
     }
 
@@ -250,8 +260,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         Transaction tx = transactionManager.startTransaction();
         try {
             return executeQuery(getConnection(),
-                    connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
-                    listResults(this::getDomainEventData), e -> new EventStoreException(
+                                connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
+                                listResults(this::getDomainEventData), e -> new EventStoreException(
                             format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
         } finally {
             tx.commit();
@@ -263,17 +273,17 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         Transaction tx = transactionManager.startTransaction();
         try {
             return executeQuery(getConnection(),
-                    connection -> readEventData(connection, lastToken, batchSize),
-                    resultSet -> {
-                        TrackingToken previousToken = lastToken;
-                        List<TrackedEventData<?>> results = new ArrayList<>();
-                        while (resultSet.next()) {
-                            TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
-                            results.add(next);
-                            previousToken = next.trackingToken();
-                        }
-                        return results;
-                    }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
+                                connection -> readEventData(connection, lastToken, batchSize),
+                                resultSet -> {
+                                    TrackingToken previousToken = lastToken;
+                                    List<TrackedEventData<?>> results = new ArrayList<>();
+                                    while (resultSet.next()) {
+                                        TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
+                                        results.add(next);
+                                        previousToken = next.trackingToken();
+                                    }
+                                    return results;
+                                }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
         } finally {
             tx.commit();
         }
@@ -331,12 +341,12 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken, 
+    protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken,
                                               int batchSize) throws SQLException {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       () -> format("Token [%s] is of the wrong type", lastToken));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
-        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + 
+        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
                 " WHERE (" + schema.globalIndexColumn() + " > ? AND " + schema.globalIndexColumn() + " <= ?) ";
         List<Long> gaps;
         if (previousToken != null) {

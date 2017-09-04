@@ -40,6 +40,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.junit.Assert.assertEquals;
+
 
 /**
  * @author Rene de Waele
@@ -84,16 +87,29 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
             Assume.assumeNoException(e);
         }
         mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate.eventCollection().dropIndexes();
+        mongoTemplate.snapshotCollection().dropIndexes();
         mongoTemplate.eventCollection().deleteMany(new BasicDBObject());
         mongoTemplate.snapshotCollection().deleteMany(new BasicDBObject());
         testSubject = context.getBean(MongoEventStorageEngine.class);
         setTestSubject(testSubject);
+
+        testSubject.ensureIndexes();
     }
 
     @Test
     @Override
     public void testUniqueKeyConstraintOnEventIdentifier() {
         logger.info("Unique event identifier is not currently guaranteed in the Mongo Event Storage Engine");
+    }
+
+    @Test
+    public void testOnlySingleSnapshotRemains() {
+        testSubject.storeSnapshot(createEvent(0));
+        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createEvent(2));
+
+        assertEquals(1, mongoTemplate.snapshotCollection().count());
     }
 
     @Override
