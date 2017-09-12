@@ -79,8 +79,8 @@ public class GzipSerializerWrapperTest {
     public void testCanSerializeTo() {
         boolean canSerializeTo = testSubject.canSerializeTo(byte[].class);
 
-        //happens twice due to check in constructor
-        verify(embeddedSerializerMock, times(2)).canSerializeTo(byte[].class);
+        //happens only once due to check in constructor
+        verify(embeddedSerializerMock, times(1)).canSerializeTo(byte[].class);
 
         assertTrue(canSerializeTo);
     }
@@ -145,13 +145,14 @@ public class GzipSerializerWrapperTest {
         assertEquals(expectedString, decompressedString);
     }
 
-    @Test(expected = NotCompressedException.class)
+    @Test
     public void testDoDecompressUncompressedData() throws IOException {
         String expectedString = "<org.java.package.TypeWithSpecialChar>" +
                 "<value>'\"&;\n\\<>/\n\t</value>" +
                 "</org.java.package.TypeWithSpecialChar>";
         byte[] uncompressedData = expectedString.getBytes(StandardCharsets.UTF_8);
 
-        testSubject.doDecompress(uncompressedData);
+        byte[] decompressedData = testSubject.doDecompress(uncompressedData);
+        assertTrue(Arrays.equals(uncompressedData, decompressedData));
     }
 }

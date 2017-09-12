@@ -7,14 +7,21 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.zip.GZIPInputStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class GzipSerializerWrapperWithXStreamTest {
 
@@ -47,21 +54,6 @@ public class GzipSerializerWrapperWithXStreamTest {
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
         assertEquals(testEvent, actualEvent);
-    }
-
-    @Test
-    public void testSerializeAndDeserializeDomainEvent_WithXomUpcasters(){
-        SerializedObject<nu.xom.Document> serializedEvent = testSubject.serialize(testEvent, nu.xom.Document.class);
-        Object actualResult = testSubject.deserialize(serializedEvent);
-        assertEquals(testEvent, actualResult);
-    }
-
-    @Test
-    public void testSerializeAndDeserializeDomainEvent_WithDom4JUpcasters() {
-        SerializedObject<org.dom4j.Document> serializedEvent = testSubject.serialize(testEvent,
-                                                                                     org.dom4j.Document.class);
-        Object actualResult = testSubject.deserialize(serializedEvent);
-        assertEquals(testEvent, actualResult);
     }
 
     @Test

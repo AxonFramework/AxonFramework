@@ -2,10 +2,13 @@ package org.axonframework.serialization.compression;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ContentTypeConverter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,8 +18,10 @@ import java.time.Instant;
 import java.util.Objects;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -40,19 +45,6 @@ public class GzipSerializerWrapperWithJacksonJsonTest {
         assertTrue(testSubject.canSerializeTo(byte[].class));
         assertTrue(testSubject.canSerializeTo(String.class));
         assertTrue(testSubject.canSerializeTo(InputStream.class));
-    }
-
-    @Test
-    public void testSerializeAndDeserializeObject_StringFormat() throws Exception {
-        SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
-                                                                        new SimpleSerializableType("nested"));
-
-        SerializedObject<String> serialized = testSubject.serialize(toSerialize, String.class);
-
-        System.out.println(serialized.getData());
-        SimpleSerializableType actual = testSubject.deserialize(serialized);
-        assertEquals(toSerialize.getValue(), actual.getValue());
-        assertEquals(toSerialize.getNested().getValue(), actual.getNested().getValue());
     }
 
     @Test
@@ -82,11 +74,12 @@ public class GzipSerializerWrapperWithJacksonJsonTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_JsonNodeFormat() throws Exception {
+    public void testDeserializeUncompressedObject_InputStreamFormat() throws Exception {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
-                                                                        new SimpleSerializableType("nested"));
+                new SimpleSerializableType("nested"));
 
-        SerializedObject<JsonNode> serialized = testSubject.serialize(toSerialize, JsonNode.class);
+        SerializedObject<InputStream> serialized = testSubject.serialize(toSerialize, InputStream.class);
+
         SimpleSerializableType actual = testSubject.deserialize(serialized);
 
         assertEquals(toSerialize.getValue(), actual.getValue());
