@@ -103,7 +103,7 @@
         <pax.exam.version>4.10.0</pax.exam.version>
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jgroups.version>4.0.4.Final</jgroups.version>
+        <jgroups.version>4.0.6.Final</jgroups.version>
     </properties>
 
     <dependencies>

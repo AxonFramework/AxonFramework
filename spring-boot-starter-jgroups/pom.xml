@@ -46,7 +46,7 @@
     </issueManagement>
 
     <properties>
-        <jgroups.version>4.0.4.Final</jgroups.version>
+        <jgroups.version>4.0.6.Final</jgroups.version>
     </properties>
 
     <dependencies>
