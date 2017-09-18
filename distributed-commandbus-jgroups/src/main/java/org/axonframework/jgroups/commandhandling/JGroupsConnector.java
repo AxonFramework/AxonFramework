@@ -153,7 +153,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         broadCastMembership();
 
         Address localAddress = channel.getAddress();
-        String localName = channel.getName();
+        String localName = localAddress.toString();
         SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
         members.put(localAddress, localMember);
         consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
@@ -304,7 +304,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private void processJoinMessage(final Message message, final JoinMessage joinMessage) {
-        String joinedMember = channel.getName();
+        String joinedMember = message.getSrc().toString();
         if (joinedMember != null) {
             int loadFactor = joinMessage.getLoadFactor();
             Predicate<? super CommandMessage<?>> commandFilter = joinMessage.messageFilter();
