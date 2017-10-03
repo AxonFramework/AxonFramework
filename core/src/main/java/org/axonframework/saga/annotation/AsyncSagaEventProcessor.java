@@ -153,11 +153,18 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                 break;
             case IF_NONE_FOUND:
                 associationValue = entry.getInitialAssociationValue();
-                boolean shouldCreate = associationValue != null && entry.waitForSagaCreationVote(
-                        sagaInvoked, processorCount, ownedByCurrentProcessor(entry.getNewSaga()
-                                                                                  .getSagaIdentifier()));
-                if (shouldCreate) {
-                    processNewSagaInstance(entry, associationValue);
+                if (associationValue != null) {
+                    // Flush any pending updates before awaiting votes on saga creation; otherwise
+                    // we might be holding a row lock on an existing saga which could cause a
+                    // deadlock if a thread is waiting for the lock and we need its vote.
+                    boolean owned = ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier());
+                    if (owned && !sagaInvoked) {
+                        persistBatch(sequence);
+                    }
+                    boolean shouldCreate = entry.waitForSagaCreationVote(sagaInvoked, processorCount, owned);
+                    if (shouldCreate) {
+                        processNewSagaInstance(entry, associationValue);
+                    }
                 }
         }
 
