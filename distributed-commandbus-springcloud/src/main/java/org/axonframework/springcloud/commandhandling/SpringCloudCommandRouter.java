@@ -41,9 +41,11 @@ import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.context.event.EventListener;
 
 /**
- * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Clouds
- * {@link org.springframework.cloud.client.discovery.DiscoveryClient}s to discover and notify other nodes for routing
+ * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Clouds {@link
+ * org.springframework.cloud.client.discovery.DiscoveryClient}s to discover and notify other nodes for routing
  * Commands.
+ *
+ * @author Steven van Beelen
  */
 public class SpringCloudCommandRouter implements CommandRouter {
 
@@ -56,17 +58,17 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     private final DiscoveryClient discoveryClient;
     private final RoutingStrategy routingStrategy;
-    private final XStreamSerializer serializer = new XStreamSerializer();
+    protected final XStreamSerializer serializer = new XStreamSerializer();
     private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
 
     /**
-     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given
-     * {@link org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a
-     * {@code CommandRouter} and to create it's own awareness of available nodes to send commands to in a
-     * {@link org.axonframework.commandhandling.distributed.ConsistentHash}. The {@code routingStrategy} is used to
-     * define the key based on which Command Messages are routed to their respective handler nodes.
-     * The {@code serializer} is used to serialize this node it's set of Commands it can handle to be added as meta data
-     * to this {@link org.springframework.cloud.client.ServiceInstance}
+     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
+     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.axonframework.commandhandling.distributed.ConsistentHash}. The {@code routingStrategy} is used to define the
+     * key based on which Command Messages are routed to their respective handler nodes. The {@code serializer} is used
+     * to serialize this node it's set of Commands it can handle to be added as meta data to this {@link
+     * org.springframework.cloud.client.ServiceInstance}
      *
      * @param discoveryClient The {@code DiscoveryClient} used to discovery and notify other nodes
      * @param routingStrategy The strategy for routing Commands to a Node
@@ -80,11 +82,11 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     /**
-     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given
-     * {@link org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a
-     * {@code CommandRouter} and to create it's own awareness of available nodes to send commands to in a
-     * {@link org.axonframework.commandhandling.distributed.ConsistentHash}. The {@code routingStrategy} is used to
-     * define the key based on which Command Messages are routed to their respective handler nodes.
+     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
+     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.axonframework.commandhandling.distributed.ConsistentHash}. The {@code routingStrategy} is used to define the
+     * key based on which Command Messages are routed to their respective handler nodes.
      *
      * @param discoveryClient The {@code DiscoveryClient} used to discovery and notify other nodes
      * @param routingStrategy The strategy for routing Commands to a Node
@@ -106,7 +108,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
         localServiceInstanceMetadata.put(LOAD_FACTOR, Integer.toString(loadFactor));
         SerializedObject<String> serializedCommandFilter = serializer.serialize(commandFilter, String.class);
         localServiceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER, serializedCommandFilter.getData());
-        localServiceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME, serializedCommandFilter.getType().getName());
+        localServiceInstanceMetadata.put(
+                SERIALIZED_COMMAND_FILTER_CLASS_NAME, serializedCommandFilter.getType().getName()
+        );
 
         updateMemberships(Collections.singleton(localServiceInstance), DO_NOT_OVERWRITE_MEMBERS);
     }
@@ -114,13 +118,14 @@ public class SpringCloudCommandRouter implements CommandRouter {
     @EventListener
     @SuppressWarnings("UnusedParameters")
     public void updateMemberships(HeartbeatEvent event) {
-        Set<ServiceInstance> allServiceInstances = discoveryClient.getServices().stream()
-                .map(discoveryClient::getInstances)
-                .flatMap(Collection::stream)
-                .filter(serviceInstance -> serviceInstance.getMetadata().containsKey(LOAD_FACTOR) &&
-                        serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER) &&
-                        serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME))
-                .collect(Collectors.toSet());
+        Set<ServiceInstance> allServiceInstances =
+                discoveryClient.getServices().stream()
+                               .map(discoveryClient::getInstances)
+                               .flatMap(Collection::stream)
+                               .filter(serviceInstance -> serviceInstance.getMetadata().containsKey(LOAD_FACTOR) &&
+                                       serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER) &&
+                                       serviceInstance.getMetadata().containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME))
+                               .collect(Collectors.toSet());
         updateMemberships(allServiceInstances, OVERWRITE_MEMBERS);
     }
 
