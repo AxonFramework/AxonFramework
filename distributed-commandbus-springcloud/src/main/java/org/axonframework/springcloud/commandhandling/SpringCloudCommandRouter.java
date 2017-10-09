@@ -134,21 +134,17 @@ public class SpringCloudCommandRouter implements CommandRouter {
         AtomicReference<ConsistentHash> updatedConsistentHash = overwrite ?
                 new AtomicReference<>(new ConsistentHash()) : atomicConsistentHash;
 
-        ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
-        URI localServiceUri = localServiceInstance.getUri();
-
-        serviceInstances.forEach(serviceInstance -> {
-            updateMembershipForServiceInstance(localServiceUri, serviceInstance, updatedConsistentHash);
-        });
+        serviceInstances.forEach(
+                serviceInstance -> updateMembershipForServiceInstance(serviceInstance, updatedConsistentHash)
+        );
 
         atomicConsistentHash.set(updatedConsistentHash.get());
     }
 
-    private void updateMembershipForServiceInstance(URI localServiceUri,
-                                                    ServiceInstance serviceInstance,
+    private void updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                     AtomicReference<ConsistentHash> atomicConsistentHash) {
-        SimpleMember<URI> simpleMember = buildSimpleMember(localServiceUri, serviceInstance);
-        MembershipInformation membershipInformation = getRemoteMembershipInformation(serviceInstance);
+        SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
+        MembershipInformation membershipInformation = getMembershipInformationFrom(serviceInstance);
 
         atomicConsistentHash.updateAndGet(
                 consistentHash -> consistentHash.with(simpleMember,
@@ -157,9 +153,12 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
-    private SimpleMember<URI> buildSimpleMember(URI localServiceUri, ServiceInstance serviceInstance) {
+    SimpleMember<URI> buildSimpleMember(ServiceInstance serviceInstance) {
         URI serviceUri = serviceInstance.getUri();
         String serviceId = serviceInstance.getServiceId();
+
+        ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
+        URI localServiceUri = localServiceInstance.getUri();
         boolean local = localServiceUri.equals(serviceUri);
 
         return new SimpleMember<>(
@@ -170,15 +169,34 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
-    protected MembershipInformation getRemoteMembershipInformation(ServiceInstance serviceInstance) {
+    private MembershipInformation getMembershipInformationFrom(ServiceInstance serviceInstance) {
         Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
 
+        return metadataContainsMembershipInformation(serviceInstanceMetadata) ?
+                membershipInformationFromMetadata(serviceInstanceMetadata) :
+                membershipInformationFromNonMetadataSource(serviceInstance);
+    }
+
+    private boolean metadataContainsMembershipInformation(Map<String, String> serviceInstanceMetadata) {
+        return serviceInstanceMetadata.containsKey(LOAD_FACTOR) ||
+                serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER) ||
+                serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
+    }
+
+    private MembershipInformation membershipInformationFromMetadata(Map<String, String> serviceInstanceMetadata) {
         int loadFactor = Integer.parseInt(serviceInstanceMetadata.get(LOAD_FACTOR));
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
                 serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
 
         return new MembershipInformation(loadFactor, serializedObject);
+    }
+
+    protected MembershipInformation membershipInformationFromNonMetadataSource(ServiceInstance serviceInstance) {
+        throw new UnsupportedOperationException(
+                "The default " + this.getClass().getSimpleName() + " does not support membership information " +
+                        "retrieval from another source than a ServiceInstance its metadata."
+        );
     }
 
 }
