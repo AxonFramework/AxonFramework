@@ -99,11 +99,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * @param routingStrategy The strategy for routing Commands to a Node
      */
     public SpringCloudCommandRouter(DiscoveryClient discoveryClient, RoutingStrategy routingStrategy) {
-        this(
-                discoveryClient,
-                routingStrategy,
-                SpringCloudCommandRouter::serviceInstanceMetadataContainsMembershipInformation
-        );
+        this(discoveryClient,
+             routingStrategy,
+             SpringCloudCommandRouter::serviceInstanceMetadataContainsMembershipInformation);
     }
 
     /**
