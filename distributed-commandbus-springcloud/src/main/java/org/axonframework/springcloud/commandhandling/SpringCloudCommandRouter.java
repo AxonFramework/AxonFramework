@@ -15,8 +15,22 @@
 
 package org.axonframework.springcloud.commandhandling;
 
+import java.net.URI;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -25,12 +39,6 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.context.event.EventListener;
-
-import java.net.URI;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Clouds
@@ -123,42 +131,54 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * @param overwrite        True to evict members absent from serviceInstances
      */
     private void updateMemberships(Set<ServiceInstance> serviceInstances, boolean overwrite) {
-        AtomicReference<ConsistentHash> updatedConsistentHash;
-        if (overwrite) {
-            updatedConsistentHash = new AtomicReference<>(new ConsistentHash());
-        } else {
-            updatedConsistentHash = atomicConsistentHash;
-        }
+        AtomicReference<ConsistentHash> updatedConsistentHash = overwrite ?
+                new AtomicReference<>(new ConsistentHash()) : atomicConsistentHash;
 
         ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
         URI localServiceUri = localServiceInstance.getUri();
 
         serviceInstances.forEach(serviceInstance -> {
-            URI serviceUri = serviceInstance.getUri();
-            String serviceId = serviceInstance.getServiceId();
-            boolean local = localServiceUri.equals(serviceUri);
-
-            SimpleMember<URI> simpleMember = new SimpleMember<>(
-                    serviceId.toUpperCase() + "[" + serviceInstance.getUri() + "]",
-                    serviceInstance.getUri(),
-                    local,
-                    member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
-            );
-
-            Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
-
-            int loadFactor = Integer.parseInt(serviceInstanceMetadata.get(LOAD_FACTOR));
-            SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
-                    serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
-                    serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
-            Predicate<? super CommandMessage<?>> commandNameFilter = serializer.deserialize(serializedObject);
-
-            updatedConsistentHash.updateAndGet(
-                    consistentHash -> consistentHash.with(simpleMember, loadFactor, commandNameFilter)
-            );
+            updateMembershipForServiceInstance(localServiceUri, serviceInstance, updatedConsistentHash);
         });
 
         atomicConsistentHash.set(updatedConsistentHash.get());
+    }
+
+    private void updateMembershipForServiceInstance(URI localServiceUri,
+                                                    ServiceInstance serviceInstance,
+                                                    AtomicReference<ConsistentHash> atomicConsistentHash) {
+        SimpleMember<URI> simpleMember = buildSimpleMember(localServiceUri, serviceInstance);
+        MembershipInformation membershipInformation = getRemoteMembershipInformation(serviceInstance);
+
+        atomicConsistentHash.updateAndGet(
+                consistentHash -> consistentHash.with(simpleMember,
+                                                      membershipInformation.getLoadFactor(),
+                                                      membershipInformation.getCommandFilter(serializer))
+        );
+    }
+
+    private SimpleMember<URI> buildSimpleMember(URI localServiceUri, ServiceInstance serviceInstance) {
+        URI serviceUri = serviceInstance.getUri();
+        String serviceId = serviceInstance.getServiceId();
+        boolean local = localServiceUri.equals(serviceUri);
+
+        return new SimpleMember<>(
+                serviceId.toUpperCase() + "[" + serviceInstance.getUri() + "]",
+                serviceInstance.getUri(),
+                local,
+                member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
+        );
+    }
+
+    protected MembershipInformation getRemoteMembershipInformation(ServiceInstance serviceInstance) {
+        Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
+
+        int loadFactor = Integer.parseInt(serviceInstanceMetadata.get(LOAD_FACTOR));
+        SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
+                serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
+                serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
+
+        return new MembershipInformation(loadFactor, serializedObject);
     }
 
 }
