@@ -1,0 +1,170 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.springcloud.commandhandling;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.function.Predicate;
+
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import com.google.common.collect.ImmutableList;
+
+@RunWith(MockitoJUnitRunner.class)
+public class SpringCloudHttpBackupCommandRouterTest {
+
+    private static final int LOAD_FACTOR = 1;
+    private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
+    private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
+    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+
+    private SpringCloudHttpBackupCommandRouter testSubject;
+
+    @Mock
+    private DiscoveryClient discoveryClient;
+    @Mock
+    private RoutingStrategy routingStrategy;
+    @Mock
+    private RestTemplate restTemplate;
+    @Mock
+    private ServiceInstance serviceInstance;
+
+    private MembershipInformation expectedMembershipInformation;
+    @Captor
+    private ArgumentCaptor<URI> uriArgumentCaptor;
+
+    @SuppressWarnings("unchecked")
+    @Before
+    public void setUp() throws Exception {
+        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
+        when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
+
+        when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
+        when(discoveryClient.getLocalServiceInstance()).thenReturn(serviceInstance);
+
+        expectedMembershipInformation =
+                new MembershipInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
+
+        ResponseEntity<MembershipInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.getBody()).thenReturn(expectedMembershipInformation);
+        when(restTemplate.exchange(any(),eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MembershipInformation.class)))
+                .thenReturn(responseEntity);
+
+        testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient, routingStrategy, restTemplate);
+    }
+
+    @Test
+    public void testGetLocalMembershipInformationReturnsNullIfMembershipIsNeverUpdated() throws Exception {
+        assertNull(testSubject.getLocalMembershipInformation());
+    }
+
+    @Test
+    public void testGetLocalMembershipInformationReturnsMembershipInformation() throws Exception {
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+
+        MembershipInformation result = testSubject.getLocalMembershipInformation();
+
+        assertEquals(expectedMembershipInformation, result);
+    }
+
+    @Test
+    public void testMembershipInformationFromNonMetadataSourceReturnsLocalMembershipInformationIfSimpleMemberIsLocal() throws Exception {
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+
+        MembershipInformation result =
+                testSubject.membershipInformationFromNonMetadataSource(serviceInstance);
+
+        assertEquals(expectedMembershipInformation, result);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMembershipInformationFromNonMetadataSourceThrowsIllegalArgumentExceptionIfEndpointIsMissing() throws Exception {
+        ServiceInstance remoteInstance = mock(ServiceInstance.class);
+        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(remoteInstance.getUri()).thenReturn(null);
+
+        testSubject.membershipInformationFromNonMetadataSource(remoteInstance);
+    }
+
+    @Test
+    public void testMembershipInformationFromNonMetadataSourceRequestMembershipInformation() throws Exception {
+        ServiceInstance remoteInstance = mock(ServiceInstance.class);
+        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(remoteInstance.getUri()).thenReturn(URI.create("http://remote"));
+
+        MembershipInformation result =
+                testSubject.membershipInformationFromNonMetadataSource(remoteInstance);
+
+        assertEquals(expectedMembershipInformation, result);
+
+        verify(restTemplate).exchange(uriArgumentCaptor.capture(),
+                                      eq(HttpMethod.GET),
+                                      eq(HttpEntity.EMPTY),
+                                      eq(MembershipInformation.class));
+
+        URI resultUri = uriArgumentCaptor.getValue();
+        assertEquals(SpringCloudHttpBackupCommandRouter.MEMBERSHIP_INFORMATION_PATH, resultUri.getPath());
+    }
+
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventRequestsMembershipInformationByHttpRequest() throws Exception {
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+
+        ServiceInstance remoteInstance = mock(ServiceInstance.class);
+        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(remoteInstance.getUri()).thenReturn(URI.create("http://remote"));
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        verify(discoveryClient).getServices();
+        verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
+        verify(restTemplate).exchange(uriArgumentCaptor.capture(),
+                                      eq(HttpMethod.GET),
+                                      eq(HttpEntity.EMPTY),
+                                      eq(MembershipInformation.class));
+    }
+}
