@@ -1,6 +1,38 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.springcloud.commandhandling;
 
-import com.google.common.collect.ImmutableList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
@@ -20,17 +52,7 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 
-import java.lang.reflect.Field;
-import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import com.google.common.collect.ImmutableList;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SpringCloudCommandRouterTest {
@@ -91,7 +113,9 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testFindDestinationReturnsMemberForCommandMessage() throws Exception {
-        SimpleMember<URI> testMember = new SimpleMember<>(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, false, null);
+        SimpleMember<URI> testMember = new SimpleMember<>(
+                SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, false, null
+        );
         AtomicReference<ConsistentHash> testAtomicConsistentHash =
                 new AtomicReference<>(new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true));
         ReflectionUtils.setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
@@ -114,7 +138,8 @@ public class SpringCloudCommandRouterTest {
 
         assertEquals(Integer.toString(LOAD_FACTOR), serviceInstanceMetadata.get(LOAD_FACTOR_KEY));
         assertEquals(commandFilterData, serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_KEY));
-        assertEquals(CommandNameFilter.class.getName(), serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
+        assertEquals(CommandNameFilter.class.getName(),
+                     serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
         verify(discoveryClient, times(2)).getLocalServiceInstance();
     }
@@ -155,7 +180,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipAfterHeartbeatEventKeepDoNotOverwriteMembers(){
+    public void testUpdateMembershipAfterHeartbeatEventKeepDoNotOverwriteMembers() {
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
@@ -185,7 +210,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() throws Exception{
+    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() throws Exception {
         // Update router memberships with local and remote service instance
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
@@ -252,7 +277,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventTwoInstancesOnSameServiceIdUpdatesConsistentHash(){
+    public void testUpdateMembershipsOnHeartbeatEventTwoInstancesOnSameServiceIdUpdatesConsistentHash() {
         int expectedMemberSetSize = 2;
 
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
@@ -265,7 +290,8 @@ public class SpringCloudCommandRouterTest {
         when(remoteInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
 
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
-        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -274,6 +300,25 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testUpdateMembershipsOnHeartbeatEventThrowsUnsupportedOperationExceptionForServiceInstanceWithoutMembershipInfoMetadata() throws Exception {
+        Predicate<ServiceInstance> serviceInstanceFilter = serviceInstance -> true;
+        SpringCloudCommandRouter testSubject =
+                new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstanceFilter);
+
+        HashMap<String, String> testMetadataWithoutMembershipInformation = new HashMap<>();
+
+        ServiceInstance remoteInstance = mock(ServiceInstance.class);
+        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(remoteInstance.getUri()).thenReturn(URI.create("remote"));
+        when(remoteInstance.getMetadata()).thenReturn(testMetadataWithoutMembershipInformation);
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(ImmutableList.of(remoteInstance));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
     }
 
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
