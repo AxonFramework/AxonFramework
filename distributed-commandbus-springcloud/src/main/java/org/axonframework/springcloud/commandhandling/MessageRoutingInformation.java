@@ -24,32 +24,35 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 /**
- * Object containing the command routing information required by the
+ * Object containing the message routing information required by the
  * {@link org.axonframework.commandhandling.distributed.CommandRouter} to decide to whom an incoming
- * {@link CommandMessage} should be routed. Holds the {@code loadFactor} and {@code commandFilter}, which respectively
- * denote the desired load and set of CommandMessages a node can(not) handle.
+ * {@link CommandMessage} should be routed.
+ * Holds the {@code loadFactor} and {@code commandFilter}, which respectively denote the desired load and set of
+ * CommandMessages a node can(not) handle.
  *
  * @author Steven van Beelen
  */
-public class MembershipInformation {
+public class MessageRoutingInformation {
 
     private final int loadFactor;
     private final String serializedCommandFilter;
     private final String serializedCommandFilterType;
 
-    public MembershipInformation(int loadFactor, String serializedCommandFilter, String serializedCommandFilterType) {
+    public MessageRoutingInformation(int loadFactor,
+                                     String serializedCommandFilter,
+                                     String serializedCommandFilterType) {
         this.loadFactor = loadFactor;
         this.serializedCommandFilter = serializedCommandFilter;
         this.serializedCommandFilterType = serializedCommandFilterType;
     }
 
-    public MembershipInformation(int loadFactor, SerializedObject<String> serializedCommandFilter) {
+    public MessageRoutingInformation(int loadFactor, SerializedObject<String> serializedCommandFilter) {
         this(loadFactor, serializedCommandFilter.getData(), serializedCommandFilter.getType().getName());
     }
 
-    public MembershipInformation(int loadFactor,
-                                 Predicate<? super CommandMessage<?>> commandFilter,
-                                 Serializer serializer) {
+    public MessageRoutingInformation(int loadFactor,
+                                     Predicate<? super CommandMessage<?>> commandFilter,
+                                     Serializer serializer) {
         this(loadFactor, serializer.serialize(commandFilter, String.class));
     }
 
@@ -78,7 +81,7 @@ public class MembershipInformation {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final MembershipInformation other = (MembershipInformation) obj;
+        final MessageRoutingInformation other = (MessageRoutingInformation) obj;
         return Objects.equals(this.loadFactor, other.loadFactor)
                 && Objects.equals(this.serializedCommandFilter, other.serializedCommandFilter)
                 && Objects.equals(this.serializedCommandFilterType, other.serializedCommandFilterType);

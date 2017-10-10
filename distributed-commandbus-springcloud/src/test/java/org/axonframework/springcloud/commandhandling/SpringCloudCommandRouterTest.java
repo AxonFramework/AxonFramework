@@ -303,7 +303,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testUpdateMembershipsOnHeartbeatEventThrowsUnsupportedOperationExceptionForServiceInstanceWithoutMembershipInfoMetadata() throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventThrowsUnsupportedOperationExceptionForServiceInstanceWithoutCommandRouterSpecificMetadata() throws Exception {
         Predicate<ServiceInstance> serviceInstanceFilter = serviceInstance -> true;
         SpringCloudCommandRouter testSubject =
                 new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstanceFilter);

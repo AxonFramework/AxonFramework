@@ -67,7 +67,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @Mock
     private ServiceInstance serviceInstance;
 
-    private MembershipInformation expectedMembershipInformation;
+    private MessageRoutingInformation expectedMessageRoutingInfo;
     @Captor
     private ArgumentCaptor<URI> uriArgumentCaptor;
 
@@ -82,72 +82,72 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
         when(discoveryClient.getLocalServiceInstance()).thenReturn(serviceInstance);
 
-        expectedMembershipInformation =
-                new MembershipInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
+        expectedMessageRoutingInfo =
+                new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
 
-        ResponseEntity<MembershipInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.getBody()).thenReturn(expectedMembershipInformation);
-        when(restTemplate.exchange(any(),eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MembershipInformation.class)))
+        ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
+        when(restTemplate.exchange(any(),eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)))
                 .thenReturn(responseEntity);
 
         testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient, routingStrategy, restTemplate);
     }
 
     @Test
-    public void testGetLocalMembershipInformationReturnsNullIfMembershipIsNeverUpdated() throws Exception {
-        assertNull(testSubject.getLocalMembershipInformation());
+    public void testGetLocalMessageRoutingInformationReturnsNullIfMembershipIsNeverUpdated() throws Exception {
+        assertNull(testSubject.getLocalMessageRoutingInformation());
     }
 
     @Test
-    public void testGetLocalMembershipInformationReturnsMembershipInformation() throws Exception {
+    public void testGetLocalMessageRoutingInformationReturnsMessageRoutingInformation() throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
-        MembershipInformation result = testSubject.getLocalMembershipInformation();
+        MessageRoutingInformation result = testSubject.getLocalMessageRoutingInformation();
 
-        assertEquals(expectedMembershipInformation, result);
+        assertEquals(expectedMessageRoutingInfo, result);
     }
 
     @Test
-    public void testMembershipInformationFromNonMetadataSourceReturnsLocalMembershipInformationIfSimpleMemberIsLocal() throws Exception {
+    public void testMessageRoutingInformationFromNonMetadataSourceReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal() throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
-        MembershipInformation result =
-                testSubject.membershipInformationFromNonMetadataSource(serviceInstance);
+        MessageRoutingInformation result =
+                testSubject.messageRoutingInformationFromNonMetadataSource(serviceInstance);
 
-        assertEquals(expectedMembershipInformation, result);
+        assertEquals(expectedMessageRoutingInfo, result);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testMembershipInformationFromNonMetadataSourceThrowsIllegalArgumentExceptionIfEndpointIsMissing() throws Exception {
+    public void testMessageRoutingInformationFromNonMetadataSourceThrowsIllegalArgumentExceptionIfEndpointIsMissing() throws Exception {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(null);
 
-        testSubject.membershipInformationFromNonMetadataSource(remoteInstance);
+        testSubject.messageRoutingInformationFromNonMetadataSource(remoteInstance);
     }
 
     @Test
-    public void testMembershipInformationFromNonMetadataSourceRequestMembershipInformation() throws Exception {
+    public void testMessageRoutingInformationFromNonMetadataSourceRequestMessageRoutingInformation() throws Exception {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(URI.create("http://remote"));
 
-        MembershipInformation result =
-                testSubject.membershipInformationFromNonMetadataSource(remoteInstance);
+        MessageRoutingInformation result =
+                testSubject.messageRoutingInformationFromNonMetadataSource(remoteInstance);
 
-        assertEquals(expectedMembershipInformation, result);
+        assertEquals(expectedMessageRoutingInfo, result);
 
         verify(restTemplate).exchange(uriArgumentCaptor.capture(),
                                       eq(HttpMethod.GET),
                                       eq(HttpEntity.EMPTY),
-                                      eq(MembershipInformation.class));
+                                      eq(MessageRoutingInformation.class));
 
         URI resultUri = uriArgumentCaptor.getValue();
-        assertEquals(SpringCloudHttpBackupCommandRouter.MEMBERSHIP_INFORMATION_PATH, resultUri.getPath());
+        assertEquals(SpringCloudHttpBackupCommandRouter.MESSAGE_ROUTING_INFORMATION_PATH, resultUri.getPath());
     }
 
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventRequestsMembershipInformationByHttpRequest() throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventRequestsMessageRoutingInformationByHttpRequest() throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
@@ -165,6 +165,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
         verify(restTemplate).exchange(uriArgumentCaptor.capture(),
                                       eq(HttpMethod.GET),
                                       eq(HttpEntity.EMPTY),
-                                      eq(MembershipInformation.class));
+                                      eq(MessageRoutingInformation.class));
     }
+
 }
