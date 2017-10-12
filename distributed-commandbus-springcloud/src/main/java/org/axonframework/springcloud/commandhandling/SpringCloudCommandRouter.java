@@ -15,16 +15,6 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import java.net.URI;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandRouter;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
@@ -40,8 +30,18 @@ import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.context.event.EventListener;
 
+import java.net.URI;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 /**
- * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Clouds {@link
+ * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's {@link
  * org.springframework.cloud.client.discovery.DiscoveryClient}s to discover and notify other nodes for routing
  * Commands.
  *
@@ -64,21 +64,21 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
-     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
+     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
      * org.axonframework.commandhandling.distributed.ConsistentHash}.
      * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
      * respective handler nodes.
-     * The {@code serializer} is used to serialize this node it's set of Commands it can handle to be added as meta data
+     * The {@code serializer} is used to serialize this node its set of Commands it can handle to be added as meta data
      * to this {@link org.springframework.cloud.client.ServiceInstance}.
      * Uses a default {@code Predicate<ServiceInstance>} filter function to remove any
-     * {@link org.springframework.cloud.client.ServiceInstance}' which miss message routing information key-value pairs
+     * {@link org.springframework.cloud.client.ServiceInstance} which miss message routing information key-value pairs
      * in their metadata. This is thus the
      * {@link #serviceInstanceMetadataContainsMessageRoutingInformation(ServiceInstance serviceInstance)} function.
      *
      * @param discoveryClient The {@code DiscoveryClient} used to discovery and notify other nodes
      * @param routingStrategy The strategy for routing Commands to a Node
-     * @param serializer      The serializer used to serialize this node it's set of Commands it can handle
+     * @param serializer      The serializer used to serialize this node its set of Commands it can handle
      * @deprecated {@code serializer} is no longer customizable
      */
     @Deprecated
@@ -89,13 +89,13 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
-     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
+     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
      * org.axonframework.commandhandling.distributed.ConsistentHash}.
      * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
      * respective handler nodes.
      * Uses a default {@code Predicate<ServiceInstance>} filter function to remove any
-     * {@link org.springframework.cloud.client.ServiceInstance}' which miss message routing information key-value pairs
+     * {@link org.springframework.cloud.client.ServiceInstance} which miss message routing information key-value pairs
      * in their metadata. This is thus the
      * {@link #serviceInstanceMetadataContainsMessageRoutingInformation(ServiceInstance serviceInstance)} function.
      *
@@ -110,8 +110,8 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
-     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
+     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
      * org.axonframework.commandhandling.distributed.ConsistentHash}.
      * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
      * respective handler nodes.
@@ -121,7 +121,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * @param discoveryClient       The {@code DiscoveryClient} used to discovery and notify other nodes
      * @param routingStrategy       The strategy for routing Commands to a Node
      * @param serviceInstanceFilter The {@code Predicate<ServiceInstance>} used to filter {@link
-     *                              org.springframework.cloud.client.ServiceInstance}' from the update membership loop.
+     *                              org.springframework.cloud.client.ServiceInstance} from the update membership loop.
      */
     public SpringCloudCommandRouter(DiscoveryClient discoveryClient,
                                     RoutingStrategy routingStrategy,

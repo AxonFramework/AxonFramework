@@ -15,9 +15,6 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import java.net.URI;
-import java.util.function.Predicate;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.SimpleMember;
@@ -31,9 +28,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.util.function.Predicate;
+
 /**
  * Implementation of the {@link org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter} which has a
- * backup mechanism to requset and provide a member and/or it's {@link MessageRoutingInformation}.
+ * backup mechanism to request and provide a member and/or its {@link MessageRoutingInformation}.
  * It uses {@link org.springframework.web.client.RestTemplate} to request {@code MembershipInformation} and services the
  * purposes of a queryable location to retrieve the local {@code MembershipInformation} from by being a
  * {@link org.springframework.web.bind.annotation.RestController}.
@@ -53,8 +53,8 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
-     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
+     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
      * org.axonframework.commandhandling.distributed.ConsistentHash}.
      * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
      * respective handler nodes.
@@ -76,8 +76,8 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update it's own membership as a {@code
-     * CommandRouter} and to create it's own awareness of available nodes to send commands to in a {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
+     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
      * org.axonframework.commandhandling.distributed.ConsistentHash}.
      * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
      * respective handler nodes.
