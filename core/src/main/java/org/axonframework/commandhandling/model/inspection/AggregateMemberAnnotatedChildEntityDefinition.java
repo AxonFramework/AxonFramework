@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +17,6 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -26,6 +24,7 @@ import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
@@ -36,7 +35,7 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
     @Override
     @SuppressWarnings("unchecked")
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
-        Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
+        Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
         if (attributes == null
                 || Iterable.class.isAssignableFrom(field.getType())
                 || Map.class.isAssignableFrom(field.getType())) {
@@ -44,14 +43,17 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
         }
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
-        return Optional.of(new AnnotatedChildEntity<>(entityModel,
-                                                      (Boolean) attributes.get("forwardCommands"),
-                                                      (Boolean) attributes.get("forwardEvents"),
-                                                      (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
-                                                      (msg, parent) -> {
-                                                          Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
-                                                          return fieldVal == null ? emptyList() : singleton(fieldVal);
-                                                      }));
-    }
 
+        return Optional.of(new AnnotatedChildEntity<>(
+                entityModel,
+                (Boolean) attributes.get("forwardCommands"),
+                (Boolean) attributes.get("forwardEvents"),
+                (Boolean) attributes.get("forwardEntityOriginatingEventsOnly"),
+                (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
+                (msg, parent) -> {
+                    Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
+                    return fieldVal == null ? emptyList() : singleton(fieldVal);
+                }
+        ));
+    }
 }

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +18,6 @@ package org.axonframework.commandhandling.model.inspection;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.property.Property;
 
 import java.lang.reflect.Executable;
@@ -32,6 +30,7 @@ import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getNonEmptyOrDefault;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
@@ -56,37 +55,48 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
-        Map<String, Object> attributes =
-                AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
+        Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
         if (attributes == null || !Iterable.class.isAssignableFrom(field.getType())) {
             return Optional.empty();
         }
-
         EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
-        Map<String, Property<Object>> routingKeyProperties = childEntityModel.commandHandlers().values().stream()
-                .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toConcurrentMap(
-                        CommandMessageHandlingMember::commandName, h -> {
-                            String routingKey = getNonEmptyOrDefault(h.routingKey(), childEntityModel.routingKey());
-                            Property property = getProperty(h.payloadType(), routingKey);
-                            if (property == null) {
-                                throw new AxonConfigurationException(String.format("Declared routing key %s (on %s) not found on %s",
-                                                                                   routingKey,
-                                                                                   h.unwrap(Executable.class).map(e -> ((Executable) e).getDeclaringClass().getSimpleName()).orElse(h.toString()),
-                                                                                   h.payloadType().getSimpleName()));
-                            }
-                            return property;
-                        }));
-        //noinspection unchecked
-        return Optional.of(new AnnotatedChildEntity<>(childEntityModel, (Boolean) attributes.get("forwardCommands"),
-                                                      (Boolean) attributes.get("forwardEvents"), (msg, parent) -> {
-            Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
-            Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
-            return StreamSupport.stream(iterable.spliterator(), false)
-                    .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i))).findFirst()
-                    .orElse(null);
-        }, (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)));
-    }
 
+        Map<String, Property<Object>> routingKeyProperties =
+                childEntityModel.commandHandlers().values().stream()
+                                .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toConcurrentMap(
+                                        CommandMessageHandlingMember::commandName, h -> {
+                                            String routingKey = getNonEmptyOrDefault(h.routingKey(),
+                                                                                     childEntityModel.routingKey());
+                                            Property property = getProperty(h.payloadType(), routingKey);
+                                            if (property == null) {
+                                                throw new AxonConfigurationException(String.format(
+                                                        "Declared routing key %s (on %s) not found on %s",
+                                                        routingKey,
+                                                        h.unwrap(Executable.class)
+                                                         .map(e -> ((Executable) e).getDeclaringClass().getSimpleName())
+                                                         .orElse(h.toString()),
+                                                        h.payloadType().getSimpleName()));
+                                            }
+                                            return property;
+                                        }));
+
+        //noinspection unchecked
+        return Optional.of(new AnnotatedChildEntity<>(
+                childEntityModel,
+                (Boolean) attributes.get("forwardCommands"),
+                (Boolean) attributes.get("forwardEvents"),
+                (Boolean) attributes.get("forwardEntityOriginatingEventsOnly"),
+                (msg, parent) -> {
+                    Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
+                    Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
+                    return StreamSupport.stream(iterable.spliterator(), false)
+                                        .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i)))
+                                        .findFirst()
+                                        .orElse(null);
+                },
+                (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)
+        ));
+    }
 }
