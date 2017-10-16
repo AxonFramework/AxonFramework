@@ -59,7 +59,6 @@ public class SpringCloudCommandRouterTest {
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
     private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
 
-    @InjectMocks
     private SpringCloudCommandRouter testSubject;
 
     @Mock
@@ -92,6 +91,8 @@ public class SpringCloudCommandRouterTest {
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
+
+        testSubject = new SpringCloudCommandRouter(discoveryClient, routingStrategy);
     }
 
     @Test
