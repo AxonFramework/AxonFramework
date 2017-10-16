@@ -191,7 +191,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
-    SimpleMember<URI> buildSimpleMember(ServiceInstance serviceInstance) {
+    protected SimpleMember<URI> buildSimpleMember(ServiceInstance serviceInstance) {
         URI serviceUri = serviceInstance.getUri();
         String serviceId = serviceInstance.getServiceId();
 

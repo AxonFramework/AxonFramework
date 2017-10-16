@@ -44,7 +44,7 @@ import java.util.function.Predicate;
 @RequestMapping(SpringCloudHttpBackupCommandRouter.MESSAGE_ROUTING_INFORMATION_PATH)
 public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter {
 
-    static final String MESSAGE_ROUTING_INFORMATION_PATH = "/message-routing-information";
+    public static final String MESSAGE_ROUTING_INFORMATION_PATH = "/message-routing-information";
     private static final Predicate<ServiceInstance> ACCEPT_ALL_INSTANCES_FILTER = serviceInstance -> true;
 
     private final RestTemplate restTemplate;
