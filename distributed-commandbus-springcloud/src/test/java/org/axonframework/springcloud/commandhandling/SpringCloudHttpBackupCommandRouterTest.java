@@ -15,29 +15,14 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.function.Predicate;
-
+import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -46,7 +31,15 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.collect.ImmutableList;
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.function.Predicate;
+
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SpringCloudHttpBackupCommandRouterTest {
@@ -87,7 +80,8 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
-        when(restTemplate.exchange(any(),eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)))
+        when(restTemplate
+                     .exchange(any(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)))
                 .thenReturn(responseEntity);
 
         testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient, routingStrategy, restTemplate);
@@ -108,7 +102,8 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test
-    public void testMessageRoutingInformationFromNonMetadataSourceReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal() throws Exception {
+    public void testMessageRoutingInformationFromNonMetadataSourceReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal()
+            throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         MessageRoutingInformation result =
@@ -118,7 +113,8 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testMessageRoutingInformationFromNonMetadataSourceThrowsIllegalArgumentExceptionIfEndpointIsMissing() throws Exception {
+    public void testMessageRoutingInformationFromNonMetadataSourceThrowsIllegalArgumentExceptionIfEndpointIsMissing()
+            throws Exception {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(null);
@@ -167,5 +163,4 @@ public class SpringCloudHttpBackupCommandRouterTest {
                                       eq(HttpEntity.EMPTY),
                                       eq(MessageRoutingInformation.class));
     }
-
 }

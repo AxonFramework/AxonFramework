@@ -15,13 +15,13 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import java.util.Objects;
-import java.util.function.Predicate;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+
+import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Object containing the message routing information required by the
@@ -86,5 +86,4 @@ public class MessageRoutingInformation {
                 && Objects.equals(this.serializedCommandFilter, other.serializedCommandFilter)
                 && Objects.equals(this.serializedCommandFilterType, other.serializedCommandFilterType);
     }
-
 }

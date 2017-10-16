@@ -113,7 +113,8 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     }
 
     @Override
-    protected MessageRoutingInformation messageRoutingInformationFromNonMetadataSource(ServiceInstance serviceInstance) {
+    protected MessageRoutingInformation messageRoutingInformationFromNonMetadataSource(
+            ServiceInstance serviceInstance) {
         SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
         if (simpleMember.local()) {
             return getLocalMessageRoutingInformation();
@@ -137,5 +138,4 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                    .build()
                                    .toUri();
     }
-
 }

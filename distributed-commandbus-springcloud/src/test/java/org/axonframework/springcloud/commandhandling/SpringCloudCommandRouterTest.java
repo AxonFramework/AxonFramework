@@ -15,14 +15,23 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.google.common.collect.ImmutableList;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -33,26 +42,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
-import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
-import org.axonframework.common.ReflectionUtils;
-import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
-
-import com.google.common.collect.ImmutableList;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SpringCloudCommandRouterTest {
@@ -247,7 +238,8 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventFiltersInstancesWithoutCommandRouterSpecificMetadata() throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventFiltersInstancesWithoutCommandRouterSpecificMetadata()
+            throws Exception {
         int expectedMemberSetSize = 1;
         String expectedServiceInstanceId = "nonCommandRouterServiceInstance";
 
@@ -303,7 +295,8 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testUpdateMembershipsOnHeartbeatEventThrowsUnsupportedOperationExceptionForServiceInstanceWithoutCommandRouterSpecificMetadata() throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventThrowsUnsupportedOperationExceptionForServiceInstanceWithoutCommandRouterSpecificMetadata()
+            throws Exception {
         Predicate<ServiceInstance> serviceInstanceFilter = serviceInstance -> true;
         SpringCloudCommandRouter testSubject =
                 new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstanceFilter);
@@ -332,5 +325,4 @@ public class SpringCloudCommandRouterTest {
         URI resultEndpoint = connectionEndpointOptional.orElseThrow(IllegalStateException::new);
         assertEquals(resultEndpoint, expectedEndpoint);
     }
-
 }

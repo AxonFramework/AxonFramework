@@ -229,7 +229,8 @@ public class SpringCloudCommandRouter implements CommandRouter {
                 serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
     }
 
-    private MessageRoutingInformation messageRoutingInformationFromMetadata(Map<String, String> serviceInstanceMetadata) {
+    private MessageRoutingInformation messageRoutingInformationFromMetadata(
+            Map<String, String> serviceInstanceMetadata) {
         int loadFactor = Integer.parseInt(serviceInstanceMetadata.get(LOAD_FACTOR));
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
@@ -238,11 +239,11 @@ public class SpringCloudCommandRouter implements CommandRouter {
         return new MessageRoutingInformation(loadFactor, serializedObject);
     }
 
-    protected MessageRoutingInformation messageRoutingInformationFromNonMetadataSource(ServiceInstance serviceInstance) {
+    protected MessageRoutingInformation messageRoutingInformationFromNonMetadataSource(
+            ServiceInstance serviceInstance) {
         throw new UnsupportedOperationException(
                 "The default " + this.getClass().getSimpleName() + " does not support message routing information " +
                         "retrieval from another source than a ServiceInstance its metadata."
         );
     }
-
 }
