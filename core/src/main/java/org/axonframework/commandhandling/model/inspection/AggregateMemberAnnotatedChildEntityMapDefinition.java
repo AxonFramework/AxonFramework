@@ -16,43 +16,29 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static java.lang.String.format;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
-import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
- * Implementation of a {@link ChildEntityDefinition} that is used to detect Maps with entities as values annotated with
- * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entities
- * in the annotated Map.
+ * Implementation of a {@link AbstractChildEntityCollectionDefinition} that is used to detect Maps with entities as
+ * values annotated with {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that
+ * delegates to the entities in the annotated Map.
  */
-public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEntityDefinition {
+public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractChildEntityCollectionDefinition {
 
-    private static Class<?> resolveType(Map<String, Object> attributes, Field field) {
-        Class<?> entityType = (Class<?>) attributes.get("type");
-        if (Void.class.equals(entityType)) {
-            entityType = ReflectionUtils.resolveGenericType(field, 1).orElseThrow(() -> new AxonConfigurationException(
-                    format("Unable to resolve entity type of field [%s]. " +
-                                   "Please provide type explicitly in @AggregateMember annotation.",
-                           field.toGenericString())));
-        }
-
-        return entityType;
+    @Override
+    protected Optional<Class<?>> resolveGenericType(Field field, Integer index) {
+        return ReflectionUtils.resolveGenericType(field, 1);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
         if (attributes == null || !Map.class.isAssignableFrom(field.getType())) {
@@ -60,26 +46,8 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEn
         }
         EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
 
-        Map<String, Property<Object>> routingKeyProperties =
-                childEntityModel.commandHandlers().values().stream()
-                                .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toMap(
-                                        CommandMessageHandlingMember::commandName, h -> {
-                                            String routingKey =
-                                                    getOrDefault(h.routingKey(), childEntityModel.routingKey());
-                                            Property<Object> property = getProperty(h.payloadType(), routingKey);
+        Map<String, Property<Object>> routingKeyProperties = getRoutingKeyProperties(field, childEntityModel);
 
-                                            if (property == null) {
-                                                throw new AxonConfigurationException(format(
-                                                        "Command of type [%s] doesn't have a property matching the routing key [%s] necessary to route through field [%s]",
-                                                        h.payloadType(),
-                                                        routingKey,
-                                                        field.toGenericString())
-                                                );
-                                            }
-                                            return property;
-                                        }));
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
