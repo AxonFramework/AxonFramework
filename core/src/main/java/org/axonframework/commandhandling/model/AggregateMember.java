@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +15,11 @@
 
 package org.axonframework.commandhandling.model;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Marker annotation for a field that references one or more Entities capable of handling Commands or Events. The
@@ -46,6 +49,11 @@ public @interface AggregateMember {
      * Indicates whether events should be forwarded to this AggregateMember. Defaults to {@code true}.
      */
     boolean forwardEvents() default true;
+
+    /**
+     * Indicates whether only events originating from this entity should be forwarded
+     */
+    boolean forwardEntityOriginatingEventsOnly() default false;
 
     /**
      * Provides the member's type. By default the type of member is determined from the field's generic type.
