@@ -32,13 +32,10 @@ import org.springframework.context.event.EventListener;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's {@link
@@ -52,9 +49,6 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private static final String LOAD_FACTOR = "loadFactor";
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
-
-    private static final boolean OVERWRITE_MEMBERS = true;
-    private static final boolean DO_NOT_OVERWRITE_MEMBERS = false;
 
     private final DiscoveryClient discoveryClient;
     private final RoutingStrategy routingStrategy;
@@ -147,34 +141,20 @@ public class SpringCloudCommandRouter implements CommandRouter {
                 SERIALIZED_COMMAND_FILTER_CLASS_NAME, serializedCommandFilter.getType().getName()
         );
 
-        updateMemberships(Collections.singleton(localServiceInstance), DO_NOT_OVERWRITE_MEMBERS);
+        updateMembershipForServiceInstance(localServiceInstance, atomicConsistentHash);
     }
 
     @EventListener
     @SuppressWarnings("UnusedParameters")
     public void updateMemberships(HeartbeatEvent event) {
-        Set<ServiceInstance> allServiceInstances =
-                discoveryClient.getServices().stream()
-                               .map(discoveryClient::getInstances)
-                               .flatMap(Collection::stream)
-                               .filter(serviceInstanceFilter)
-                               .collect(Collectors.toSet());
-        updateMemberships(allServiceInstances, OVERWRITE_MEMBERS);
-    }
+        AtomicReference<ConsistentHash> updatedConsistentHash = new AtomicReference<>(new ConsistentHash());
 
-    /**
-     * Update the memberships of this CommandRouter.
-     *
-     * @param serviceInstances Services instances to add
-     * @param overwrite        True to evict members absent from serviceInstances
-     */
-    private void updateMemberships(Set<ServiceInstance> serviceInstances, boolean overwrite) {
-        AtomicReference<ConsistentHash> updatedConsistentHash = overwrite ?
-                new AtomicReference<>(new ConsistentHash()) : atomicConsistentHash;
-
-        serviceInstances.forEach(
-                serviceInstance -> updateMembershipForServiceInstance(serviceInstance, updatedConsistentHash)
-        );
+        discoveryClient.getServices().stream()
+                       .map(discoveryClient::getInstances)
+                       .flatMap(Collection::stream)
+                       .filter(serviceInstanceFilter)
+                       .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
+                                                                                      updatedConsistentHash));
 
         atomicConsistentHash.set(updatedConsistentHash.get());
     }
