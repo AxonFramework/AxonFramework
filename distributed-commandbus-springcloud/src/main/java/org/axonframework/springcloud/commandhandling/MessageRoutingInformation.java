@@ -20,6 +20,7 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -32,7 +33,7 @@ import java.util.function.Predicate;
  *
  * @author Steven van Beelen
  */
-public class MessageRoutingInformation {
+public class MessageRoutingInformation implements Serializable {
 
     private final int loadFactor;
     private final String serializedCommandFilter;
