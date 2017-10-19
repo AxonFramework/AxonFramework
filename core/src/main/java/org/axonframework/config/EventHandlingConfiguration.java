@@ -35,7 +35,7 @@ import static java.util.Comparator.comparing;
 
 /**
  * Module Configuration implementation that defines an Event Handling component. Typically, such a configuration
- * consists of a number of Event Handlers, which are assigned to one or more Event Processor that define the
+ * consists of a number of Event Handlers, which are assigned to one or more Event Processors that define the
  * transactional semantics of the processing.
  */
 public class EventHandlingConfiguration implements ModuleConfiguration {
