@@ -61,6 +61,14 @@ public class MessageRoutingInformation implements Serializable {
         return loadFactor;
     }
 
+    public String getSerializedCommandFilter() {
+        return serializedCommandFilter;
+    }
+
+    public String getSerializedCommandFilterType() {
+        return serializedCommandFilterType;
+    }
+
     public Predicate<? super CommandMessage<?>> getCommandFilter(Serializer serializer) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 serializedCommandFilter, String.class, serializedCommandFilterType, null
