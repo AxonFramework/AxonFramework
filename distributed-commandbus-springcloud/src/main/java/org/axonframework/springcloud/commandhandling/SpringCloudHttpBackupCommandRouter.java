@@ -49,7 +49,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
     private final RestTemplate restTemplate;
 
-    private MessageRoutingInformation messageRoutingInfo;
+    private volatile MessageRoutingInformation messageRoutingInfo;
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
