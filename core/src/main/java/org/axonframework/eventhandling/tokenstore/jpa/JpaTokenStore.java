@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 
 import static java.lang.String.format;
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
  * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
@@ -107,7 +108,7 @@ public class JpaTokenStore implements TokenStore {
                                                         "WHERE te.processorName = :processorName AND te.segment = :segment")
                 .setParameter("processorName", processorName)
                 .setParameter("segment", segment)
-                .setParameter("timestamp", TokenEntry.clock.instant().toString())
+                .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
                 .executeUpdate();
 
         if (updates == 0) {

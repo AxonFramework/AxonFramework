@@ -58,13 +58,22 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
     }
 
     @Override
-    public void handle(EventMessage event) throws Exception {
+    public void handle(EventMessage<?> event) throws Exception {
         for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
             if (handler.canHandle(event)) {
                 handler.handle(event, annotatedEventListener);
                 break;
             }
         }
+    }
+
+    public boolean canHandle(EventMessage<?> message) {
+        for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
+            if (handler.canHandle(message)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -36,6 +36,7 @@ import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 
 import static java.lang.String.format;
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
@@ -321,7 +322,7 @@ public class JdbcTokenStore implements TokenStore {
                         " = ? AND " + schema.ownerColum() + " = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, null);
-        preparedStatement.setString(2, AbstractTokenEntry.clock.instant().toString());
+        preparedStatement.setString(2, formatInstant(AbstractTokenEntry.clock.instant()));
         preparedStatement.setString(3, processorName);
         preparedStatement.setInt(4, segment);
         preparedStatement.setString(5, nodeId);
