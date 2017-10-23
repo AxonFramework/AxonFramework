@@ -15,6 +15,7 @@
 
 package org.axonframework.boot.autoconfig;
 
+import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
@@ -23,8 +24,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter;
 import org.axonframework.springcloud.commandhandling.SpringCloudHttpBackupCommandRouter;
 import org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -50,18 +51,20 @@ import org.springframework.web.client.RestTemplate;
 })
 public class SpringCloudAutoConfiguration {
 
+    @Autowired
+    private DistributedCommandBusProperties properties;
+
     @Bean
     @Primary
     @ConditionalOnMissingBean
     @ConditionalOnBean(DiscoveryClient.class)
     @ConditionalOnProperty("axon.distributed.spring-cloud.fallback-to-http-get")
     public CommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
-                                                            RestTemplate restTemplate,
-                                                            @Value("${axon.distributed.spring-cloud.fallback-url}") String messageRoutingInformationEndpoint) {
+                                                            RestTemplate restTemplate) {
         return new SpringCloudHttpBackupCommandRouter(discoveryClient,
                                                       new AnnotationRoutingStrategy(),
                                                       restTemplate,
-                                                      messageRoutingInformationEndpoint);
+                                                      properties.getSpringCloud().getFallbackUrl());
     }
 
     @Bean
