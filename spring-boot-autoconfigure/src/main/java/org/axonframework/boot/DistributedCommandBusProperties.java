@@ -33,6 +33,8 @@ public class DistributedCommandBusProperties {
      */
     private int loadFactor = 100;
 
+    private SpringCloudProperties springCloud = new SpringCloudProperties();
+
     public boolean isEnabled() {
         return enabled || jgroups.isEnabled();
     }
@@ -190,9 +192,37 @@ public class DistributedCommandBusProperties {
             public void setHosts(String hosts) {
                 this.hosts = hosts;
             }
-
         }
-
     }
 
+    public static class SpringCloudProperties {
+
+        /**
+         * Enable a HTTP GET fallback strategy for retrieving the message routing information from other nodes in a
+         * distributed Axon set up. Defaults to "true".
+         */
+        private boolean fallbackToHttpGet = true;
+
+        /**
+         * The URL used to perform HTTP GET requests on for retrieving another nodes message routing information in a
+         * distributed Axon set up. Defaults to "/message-routing-information".
+         */
+        private String fallbackUrl = "/message-routing-information";
+
+        public boolean isFallbackToHttpGet() {
+            return fallbackToHttpGet;
+        }
+
+        public void setFallbackToHttpGet(boolean fallbackToHttpGet) {
+            this.fallbackToHttpGet = fallbackToHttpGet;
+        }
+
+        public String getFallbackUrl() {
+            return fallbackUrl;
+        }
+
+        public void setFallbackUrl(String fallbackUrl) {
+            this.fallbackUrl = fallbackUrl;
+        }
+    }
 }
