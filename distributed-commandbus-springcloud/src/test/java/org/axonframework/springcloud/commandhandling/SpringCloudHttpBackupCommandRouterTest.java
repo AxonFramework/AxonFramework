@@ -57,6 +57,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     private RoutingStrategy routingStrategy;
     @Mock
     private RestTemplate restTemplate;
+    private String messageRoutingInformationEndpoint = "/message-routing-information";
     @Mock
     private ServiceInstance serviceInstance;
 
@@ -80,11 +81,14 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
-        when(restTemplate
-                     .exchange(any(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)))
-                .thenReturn(responseEntity);
+        when(restTemplate.exchange(
+                any(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
+        )).thenReturn(responseEntity);
 
-        testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient, routingStrategy, restTemplate);
+        testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient,
+                                                             routingStrategy,
+                                                             restTemplate,
+                                                             messageRoutingInformationEndpoint);
     }
 
     @Test
@@ -139,7 +143,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
                                       eq(MessageRoutingInformation.class));
 
         URI resultUri = uriArgumentCaptor.getValue();
-        assertEquals(SpringCloudHttpBackupCommandRouter.MESSAGE_ROUTING_INFORMATION_PATH, resultUri.getPath());
+        assertEquals(messageRoutingInformationEndpoint, resultUri.getPath());
     }
 
     @Test

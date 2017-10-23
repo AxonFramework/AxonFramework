@@ -18,6 +18,7 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.http.HttpEntity;
@@ -37,17 +38,19 @@ import java.util.function.Predicate;
  * It uses {@link org.springframework.web.client.RestTemplate} to request {@code MembershipInformation} and services the
  * purposes of a queryable location to retrieve the local {@code MembershipInformation} from by being a
  * {@link org.springframework.web.bind.annotation.RestController}.
+ * The default endpoint for this set up is "/message-routing-information".
+ * To configure this, the "axon.distributed.spring-cloud.fallback-url" application property needs to be set.
  *
  * @author Steven van Beelen
  */
 @RestController
-@RequestMapping(SpringCloudHttpBackupCommandRouter.MESSAGE_ROUTING_INFORMATION_PATH)
+@RequestMapping("${axon.distributed.spring-cloud.fallback-url:/message-routing-information}")
 public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter {
 
-    public static final String MESSAGE_ROUTING_INFORMATION_PATH = "/message-routing-information";
     private static final Predicate<ServiceInstance> ACCEPT_ALL_INSTANCES_FILTER = serviceInstance -> true;
 
     private final RestTemplate restTemplate;
+    private final String messageRoutingInformationEndpoint;
 
     private volatile MessageRoutingInformation messageRoutingInfo;
 
@@ -63,15 +66,23 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
      * Uses a default {@code Predicate<ServiceInstance>} filter function which allows any
      * {@link org.springframework.cloud.client.ServiceInstance} through the update membership process.
      *
-     * @param discoveryClient The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param routingStrategy The strategy for routing Commands to a Node
-     * @param restTemplate    The {@code RestTemplate} used to request another member's {@link
-     *                        org.axonframework.springcloud.commandhandling.MessageRoutingInformation} with.
+     * @param discoveryClient                   The {@code DiscoveryClient} used to discovery and notify other nodes
+     * @param routingStrategy                   The strategy for routing Commands to a Node
+     * @param restTemplate                      The {@code RestTemplate} used to request another member's {@link
+     *                                          org.axonframework.springcloud.commandhandling.MessageRoutingInformation}
+     *                                          with.
+     * @param messageRoutingInformationEndpoint The endpoint where to retrieve the another nodes message routing
+     *                                          information from
      */
     public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
                                               RoutingStrategy routingStrategy,
-                                              RestTemplate restTemplate) {
-        this(discoveryClient, routingStrategy, ACCEPT_ALL_INSTANCES_FILTER, restTemplate);
+                                              RestTemplate restTemplate,
+                                              @Value("${axon.distributed.spring-cloud.fallback-url}:/message-routing-information") String messageRoutingInformationEndpoint) {
+        this(discoveryClient,
+             routingStrategy,
+             ACCEPT_ALL_INSTANCES_FILTER,
+             restTemplate,
+             messageRoutingInformationEndpoint);
     }
 
     /**
@@ -86,18 +97,24 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
      * The {@link org.springframework.web.client.RestTemplate} is used as a backup mechanism to request another member's
      * {@link org.axonframework.springcloud.commandhandling.MessageRoutingInformation} with.
      *
-     * @param discoveryClient       The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param routingStrategy       The strategy for routing Commands to a Node
-     * @param serviceInstanceFilter The {@code Predicate<ServiceInstance>} used to filter
-     * @param restTemplate          The {@code RestTemplate} used to request another member's {@link
-     *                              org.axonframework.springcloud.commandhandling.MessageRoutingInformation} with.
+     * @param discoveryClient                   The {@code DiscoveryClient} used to discovery and notify other nodes
+     * @param routingStrategy                   The strategy for routing Commands to a Node
+     * @param serviceInstanceFilter             The {@code Predicate<ServiceInstance>} used to filter
+     * @param restTemplate                      The {@code RestTemplate} used to request another member's {@link
+     *                                          org.axonframework.springcloud.commandhandling.MessageRoutingInformation}
+     *                                          with.
+     * @param messageRoutingInformationEndpoint The endpoint where to retrieve the
+     *                                          another nodes message routing
+     *                                          information from
      */
     public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
                                               RoutingStrategy routingStrategy,
                                               Predicate<ServiceInstance> serviceInstanceFilter,
-                                              RestTemplate restTemplate) {
+                                              RestTemplate restTemplate,
+                                              @Value("${axon.distributed.spring-cloud.fallback-url}:/message-routing-information") String messageRoutingInformationEndpoint) {
         super(discoveryClient, routingStrategy, serviceInstanceFilter);
         this.restTemplate = restTemplate;
+        this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
         this.messageRoutingInfo = null;
     }
 
@@ -126,7 +143,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                                    "%s request to", simpleMember,
                                            URI.class, MessageRoutingInformation.class.getSimpleName()
                                    )));
-        URI destinationUri = buildURIForPath(endpoint, MESSAGE_ROUTING_INFORMATION_PATH);
+        URI destinationUri = buildURIForPath(endpoint, messageRoutingInformationEndpoint);
 
         return restTemplate.exchange(destinationUri, HttpMethod.GET, HttpEntity.EMPTY, MessageRoutingInformation.class)
                            .getBody();
