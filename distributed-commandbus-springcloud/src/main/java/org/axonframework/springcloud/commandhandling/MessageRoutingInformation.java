@@ -95,4 +95,13 @@ public class MessageRoutingInformation implements Serializable {
                 && Objects.equals(this.serializedCommandFilter, other.serializedCommandFilter)
                 && Objects.equals(this.serializedCommandFilterType, other.serializedCommandFilterType);
     }
+
+    @Override
+    public String toString() {
+        return "MessageRoutingInformation{" +
+                "loadFactor=" + loadFactor +
+                ", serializedCommandFilter='" + serializedCommandFilter + '\'' +
+                ", serializedCommandFilterType='" + serializedCommandFilterType + '\'' +
+                '}';
+    }
 }
