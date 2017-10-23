@@ -21,8 +21,10 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter;
+import org.axonframework.springcloud.commandhandling.SpringCloudHttpBackupCommandRouter;
 import org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -32,6 +34,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
@@ -40,11 +43,26 @@ import org.springframework.web.client.RestTemplate;
 @ConditionalOnProperty("axon.distributed.enabled")
 @ConditionalOnClass(name = {
         "org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter",
+        "org.axonframework.springcloud.commandhandling.SpringCloudHttpBackupCommandRouter",
         "org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector",
         "org.springframework.cloud.client.discovery.DiscoveryClient",
         "org.springframework.web.client.RestTemplate"
 })
 public class SpringCloudAutoConfiguration {
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(DiscoveryClient.class)
+    @ConditionalOnProperty("axon.distributed.spring-cloud.fallback-to-http-get")
+    public CommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
+                                                            RestTemplate restTemplate,
+                                                            @Value("${axon.distributed.spring-cloud.fallback-url}") String messageRoutingInformationEndpoint) {
+        return new SpringCloudHttpBackupCommandRouter(discoveryClient,
+                                                      new AnnotationRoutingStrategy(),
+                                                      restTemplate,
+                                                      messageRoutingInformationEndpoint);
+    }
 
     @Bean
     @ConditionalOnMissingBean
