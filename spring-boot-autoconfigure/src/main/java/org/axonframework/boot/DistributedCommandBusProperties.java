@@ -25,13 +25,13 @@ public class DistributedCommandBusProperties {
      */
     private boolean enabled = false;
 
-    private JGroupsProperties jgroups = new JGroupsProperties();
-
     /**
      * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will
      * receive compared to other nodes in the cluster. Defaults to 100.
      */
     private int loadFactor = 100;
+
+    private JGroupsProperties jgroups = new JGroupsProperties();
 
     private SpringCloudProperties springCloud = new SpringCloudProperties();
 
@@ -57,6 +57,14 @@ public class DistributedCommandBusProperties {
 
     public void setJgroups(JGroupsProperties jgroups) {
         this.jgroups = jgroups;
+    }
+
+    public SpringCloudProperties getSpringCloud() {
+        return springCloud;
+    }
+
+    public void setSpringCloud(SpringCloudProperties springCloud) {
+        this.springCloud = springCloud;
     }
 
     public static class JGroupsProperties {
