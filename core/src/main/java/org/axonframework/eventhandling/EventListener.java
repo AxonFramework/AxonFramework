@@ -38,4 +38,14 @@ public interface EventListener {
      * @throws Exception when an exception is raised during event handling
      */
     void handle(EventMessage<?> event) throws Exception;
+
+    /**
+     * Indicates whether this listener can handle the given event message
+     *
+     * @param event The event message to verify
+     * @return {@code true} if this listener can handle the event, otherwise {@code false}
+     */
+    default boolean canHandle(EventMessage<?> event) {
+        return true;
+    }
 }

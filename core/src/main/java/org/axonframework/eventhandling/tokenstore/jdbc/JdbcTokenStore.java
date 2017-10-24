@@ -34,6 +34,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
+import java.util.List;
 
 import static java.lang.String.format;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
@@ -64,7 +65,7 @@ public class JdbcTokenStore implements TokenStore {
      */
     public JdbcTokenStore(ConnectionProvider connectionProvider, Serializer serializer) {
         this(connectionProvider, serializer, new TokenSchema(), Duration.ofSeconds(10),
-             ManagementFactory.getRuntimeMXBean().getName(), byte[].class);
+                ManagementFactory.getRuntimeMXBean().getName(), byte[].class);
     }
 
     /**
@@ -110,16 +111,16 @@ public class JdbcTokenStore implements TokenStore {
         Connection connection = getConnection();
         try {
             executeQuery(connection,
-                         c -> selectForUpdate(c, processorName, segment),
-                         resultSet -> {
-                             insertOrUpdateToken(resultSet, token, processorName, segment);
-                             if (!connection.getAutoCommit()) {
-                                 connection.commit();
-                             }
-                             return null;
-                         },
-                         e -> new JdbcException(format("Could not store token [%s] for processor [%s] and segment [%d]",
-                                                       token, processorName, segment), e));
+                    c -> selectForUpdate(c, processorName, segment),
+                    resultSet -> {
+                        insertOrUpdateToken(resultSet, token, processorName, segment);
+                        if (!connection.getAutoCommit()) {
+                            connection.commit();
+                        }
+                        return null;
+                    },
+                    e -> new JdbcException(format("Could not store token [%s] for processor [%s] and segment [%d]",
+                            token, processorName, segment), e));
         } finally {
             closeQuietly(connection);
         }
@@ -147,11 +148,11 @@ public class JdbcTokenStore implements TokenStore {
         Connection connection = getConnection();
         try {
             int[] result = executeUpdates(connection, e -> {
-                                              throw new JdbcException(
-                                                      format("Could not load token for processor [%s] and segment " + "[%d]",
-                                                             processorName, segment), e);
-                                          },
-                                          c -> releaseClaim(c, processorName, segment));
+                        throw new JdbcException(
+                                format("Could not load token for processor [%s] and segment " + "[%d]",
+                                        processorName, segment), e);
+                    },
+                    c -> releaseClaim(c, processorName, segment));
             try {
                 if (!connection.isClosed() && !connection.getAutoCommit()) {
                     connection.commit();
@@ -165,6 +166,36 @@ public class JdbcTokenStore implements TokenStore {
         } finally {
             closeQuietly(connection);
         }
+    }
+
+    @Override
+    public int[] fetchSegments(String processorName) {
+        Connection connection = getConnection();
+        try {
+            List<Integer> integers = executeQuery(connection, c -> selectForSegments(c, processorName),
+                    listResults(rs -> rs.getInt(schema.segmentColumn())), e -> new JdbcException(
+                            format("Could not load segments for processor [%s]", processorName), e));
+            return integers.stream().mapToInt(i -> i).toArray();
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    /**
+     * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying storage.
+     *
+     * @param connection    the connection to the underlying database
+     * @param processorName the name of the processor to fetch the segments for
+     * @return a {@link PreparedStatement} that will fetch segments when executed
+     * @throws SQLException when an exception occurs while creating the prepared statement
+     */
+    protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
+        final String sql = "SELECT " + schema.segmentColumn() + " FROM " +
+                schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? ORDER BY " + schema.segmentColumn() + " ASC";
+        PreparedStatement preparedStatement =
+                connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        preparedStatement.setString(1, processorName);
+        return preparedStatement;
     }
 
     /**
@@ -181,7 +212,7 @@ public class JdbcTokenStore implements TokenStore {
                                                 int segment) throws SQLException {
         final String sql = "SELECT " +
                 String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.tokenColumn(),
-                            schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColum()) + " FROM " +
+                        schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColum()) + " FROM " +
                 schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
                 " = ? FOR UPDATE";
         PreparedStatement preparedStatement =
@@ -230,7 +261,7 @@ public class JdbcTokenStore implements TokenStore {
         if (!entry.claim(nodeId, claimTimeout)) {
             throw new UnableToClaimTokenException(
                     format("Unable to claim token '%s[%s]'. It is owned by '%s'", entry.getProcessorName(),
-                           entry.getSegment(), entry.getOwner()));
+                            entry.getSegment(), entry.getOwner()));
         }
         resultSet.updateString(schema.ownerColum(), entry.getOwner());
         resultSet.updateString(schema.timestampColumn(), entry.timestampAsString());
@@ -278,7 +309,7 @@ public class JdbcTokenStore implements TokenStore {
         resultSet.moveToInsertRow();
         resultSet.updateObject(schema.tokenColumn(), token == null ? null : entry.getSerializedToken().getData());
         resultSet.updateString(schema.tokenTypeColumn(),
-                               token == null ? null : entry.getSerializedToken().getType().getName());
+                token == null ? null : entry.getSerializedToken().getType().getName());
         resultSet.updateString(schema.timestampColumn(), entry.timestampAsString());
         resultSet.updateString(schema.ownerColum(), entry.getOwner());
         resultSet.updateString(schema.processorNameColumn(), processorName);
@@ -296,11 +327,11 @@ public class JdbcTokenStore implements TokenStore {
      */
     protected AbstractTokenEntry<?> readTokenEntry(ResultSet resultSet) throws SQLException {
         return new GenericTokenEntry<>(readSerializedData(resultSet, schema.tokenColumn()),
-                                       resultSet.getString(schema.tokenTypeColumn()),
-                                       resultSet.getString(schema.timestampColumn()),
-                                       resultSet.getString(schema.ownerColum()),
-                                       resultSet.getString(schema.processorNameColumn()),
-                                       resultSet.getInt(schema.segmentColumn()), contentType);
+                resultSet.getString(schema.tokenTypeColumn()),
+                resultSet.getString(schema.timestampColumn()),
+                resultSet.getString(schema.ownerColum()),
+                resultSet.getString(schema.processorNameColumn()),
+                resultSet.getInt(schema.segmentColumn()), contentType);
     }
 
     /**

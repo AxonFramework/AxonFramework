@@ -54,7 +54,7 @@ public class TrackingEventProcessorTest {
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
 
-    private static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
+    static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
         return new TrackingEventStream() {
             private boolean hasPeeked;
             private TrackedEventMessage<?> peekEvent;
@@ -98,6 +98,7 @@ public class TrackingEventProcessorTest {
     public void setUp() throws Exception {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
+        when(mockListener.canHandle(any())).thenReturn(true);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
@@ -217,9 +218,6 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
         assertEquals(4, ackedEvents.size());
-
-        // batch size = 1
-        verify(tokenStore, times(4)).storeToken(any(), anyString(), anyInt());
     }
 
     @Test
@@ -307,6 +305,9 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testEventProcessorIsReEntrant() throws Exception {
+        testSubject.start();
+        assertTrue("TrackingEventProcessor is not started", testSubject.getState() == TrackingEventProcessor.State.STARTED);
+        testSubject.shutDown();
 
         testSubject.start();
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
@@ -314,10 +315,8 @@ public class TrackingEventProcessorTest {
             countDownLatch2.countDown();
             return null;
         }).when(mockListener).handle(any());
-
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
-
     }
 
 }

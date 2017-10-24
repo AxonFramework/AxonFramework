@@ -104,7 +104,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaManagerInitialized();
         try {
-            DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> sagaManager.handle(event));
+            DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
+                sagaManager.handle(event);
+                return null;
+            });
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while handling an event", e);
         }

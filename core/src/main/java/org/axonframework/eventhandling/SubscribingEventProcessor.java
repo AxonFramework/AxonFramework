@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
@@ -72,6 +73,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * @param eventHandlerInvoker The component that handles the individual events
      * @param messageSource       The EventBus to which this event processor will subscribe
      * @param processingStrategy  Strategy that determines whether events are processed directly or asynchronously
+     * @param errorHandler        The handler to invoke when an error occurs in the processor
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      SubscribableMessageSource<EventMessage<?>> messageSource,
@@ -91,6 +93,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * @param eventHandlerInvoker The component that handles the individual events
      * @param messageSource       The EventBus to which this event processor will subscribe
      * @param processingStrategy  Strategy that determines whether events are processed directly or asynchronously
+     * @param errorHandler        The handler to invoke when an error occurs in the processor
      * @param messageMonitor      Monitor to be invoked before and after event processing
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
@@ -127,19 +130,27 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     /**
      * Start this processor. This will register the processor with the {@link EventBus}.
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void start() {
         // prevent double registration
         if (eventBusRegistration == null) {
             eventBusRegistration =
-                    messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+                    messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages,
+                                                                                       this::process));
         }
     }
 
-    @Override
+    /**
+     * Process the given messages. A Unit of Work must be created for this processing.
+     * <p>
+     * This implementation creates a Batching unit of work for the given batch of {@code eventMessages}.
+     *
+     * @param eventMessages The messages to process
+     */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            super.process(eventMessages);
+            processInUnitOfWork(eventMessages, new BatchingUnitOfWork<>(eventMessages), Segment.ROOT_SEGMENT);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

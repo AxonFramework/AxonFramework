@@ -11,6 +11,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +36,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 @ContextConfiguration
@@ -72,8 +74,8 @@ public class JpaTokenStoreTest {
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
 
         List<TokenEntry> tokens = entityManager.createQuery("SELECT t FROM TokenEntry t " +
-                                                                    "WHERE t.processorName = :processorName",
-                                                            TokenEntry.class)
+                        "WHERE t.processorName = :processorName",
+                TokenEntry.class)
                 .setParameter("processorName", "test")
                 .getResultList();
         assertEquals(1, tokens.size());
@@ -85,6 +87,34 @@ public class JpaTokenStoreTest {
 
         TokenEntry token = entityManager.find(TokenEntry.class, new TokenEntry.PK("test", 0));
         assertNull(token.getOwner());
+    }
+
+    @Transactional
+    @Test
+    public void testQuerySegments() throws Exception {
+        assertNull(jpaTokenStore.fetchToken("test", 0));
+
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
+        jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1);
+
+        {
+            final int[] segments = jpaTokenStore.fetchSegments("proc1");
+            Assert.assertThat(segments.length, is(2));
+        }
+        {
+            final int[] segments = jpaTokenStore.fetchSegments("proc2");
+            Assert.assertThat(segments.length, is(1));
+        }
+
+        {
+            final int[] segments = jpaTokenStore.fetchSegments("proc3");
+            Assert.assertThat(segments.length, is(0));
+        }
+
+
+        entityManager.flush();
+        entityManager.clear();
     }
 
     @Transactional
@@ -179,13 +209,13 @@ public class JpaTokenStoreTest {
         @Bean
         public JpaTokenStore concurrentJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(2),
-                                     "concurrent");
+                    "concurrent");
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(-1),
-                                     "stealing");
+                    "stealing");
         }
 
         @Bean

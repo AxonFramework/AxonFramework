@@ -102,8 +102,8 @@ public class AnnotatedSagaManagerTest {
 
         handle(new GenericEventMessage<>(new MiddleEvent("12")));
         handle(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA", "value")));
-        assertEquals(0, (int) repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
-        assertEquals(1, (int) repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
+        assertEquals(0, repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
+        assertEquals(1, repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
     }
 
     @Test
@@ -152,7 +152,10 @@ public class AnnotatedSagaManagerTest {
     }
     
     private void handle(EventMessage<?> event) throws Exception {
-        DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> manager.handle(event));
+        DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
+            manager.handle(event);
+            return null;
+        });
     }
 
     private Collection<MyTestSaga> repositoryContents(String lookupValue) {

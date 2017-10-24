@@ -14,6 +14,7 @@
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -25,14 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * Implementation of a {@link TokenStore} that stores tracking tokens in memory. This implementation is thread-safe.
  *
  * @author Rene de Waele
+ * @author Christophe Bouhier
  */
 public class InMemoryTokenStore implements TokenStore {
+
+    private static final GlobalSequenceTrackingToken NULL_TOKEN = new GlobalSequenceTrackingToken(-1);
+
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
 
     @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment), token));
+            CurrentUnitOfWork.get().afterCommit(uow -> {
+                tokens.put(new ProcessAndSegment(processorName, segment), token);
+            });
         } else {
             tokens.put(new ProcessAndSegment(processorName, segment), token);
         }
@@ -40,7 +47,12 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Override
     public TrackingToken fetchToken(String processorName, int segment) {
-        return tokens.get(new ProcessAndSegment(processorName, segment));
+        TrackingToken trackingToken = tokens.computeIfAbsent(new ProcessAndSegment(processorName, segment),
+                                                             k -> NULL_TOKEN);
+        if (NULL_TOKEN == trackingToken) {
+            return null;
+        }
+        return trackingToken;
     }
 
     @Override
@@ -48,13 +60,27 @@ public class InMemoryTokenStore implements TokenStore {
         // no-op, the in-memory implementation isn't accessible by multiple processes
     }
 
+    @Override
+    public int[] fetchSegments(String processorName) {
+        return tokens.keySet().stream()
+                     .filter(ps -> ps.processorName.equals(processorName))
+                     .map(ProcessAndSegment::getSegment)
+                     .distinct().mapToInt(Number::intValue).toArray();
+    }
+
     private static class ProcessAndSegment {
+
         private final String processorName;
+
         private final int segment;
 
         public ProcessAndSegment(String processorName, int segment) {
             this.processorName = processorName;
             this.segment = segment;
+        }
+
+        public int getSegment() {
+            return segment;
         }
 
         @Override
