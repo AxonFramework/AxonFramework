@@ -17,6 +17,10 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -54,6 +58,21 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * @param executor The executor that processes Command dispatching threads
      */
     public AsynchronousCommandBus(Executor executor) {
+        this(executor, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE);
+    }
+
+    /**
+     * Initialize the AsynchronousCommandBus using the given {@code executor}, {@code transactionManager} and
+     * {@code messageMonitor}.
+     *
+     * @param executor           The executor that processes Command dispatching threads
+     * @param transactionManager The transactionManager to manage transaction with
+     * @param messageMonitor     The message monitor to monitor the command bus
+     */
+    public AsynchronousCommandBus(Executor executor,
+                                  TransactionManager transactionManager,
+                                  MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        super(transactionManager, messageMonitor);
         Assert.notNull(executor, () -> "executor may not be null");
         this.executor = executor;
     }
