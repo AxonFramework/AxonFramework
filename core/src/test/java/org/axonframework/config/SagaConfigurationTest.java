@@ -18,6 +18,7 @@ package org.axonframework.config;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
 
 import java.util.concurrent.TimeUnit;
@@ -35,9 +36,12 @@ public class SagaConfigurationTest {
         subscribing.configureMessageMonitor(subscribingMonitor);
         SagaConfiguration<TestSaga> tracking = SagaConfiguration.trackingSagaManager(TestSaga.class);
         tracking.configureMessageMonitor(trackingMonitor);
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
-        configurer.registerModule(subscribing);
-        configurer.registerModule(tracking);
+
+        // Use InMemoryEventStorageEngine so tracking processors don't miss events
+        Configurer configurer = DefaultConfigurer.defaultConfiguration()
+                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                 .registerModule(subscribing)
+                                                 .registerModule(tracking);
         Configuration config = configurer.start();
 
         try {

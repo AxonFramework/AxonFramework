@@ -19,6 +19,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -134,6 +135,9 @@ public class EventHandlingConfigurationTest {
     public void testConfigureMonitor() throws Exception {
         MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
+
+        // Use InMemoryEventStorageEngine so tracking processors don't miss events
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
 
         EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .registerSubscribingEventProcessor("subscribing")
