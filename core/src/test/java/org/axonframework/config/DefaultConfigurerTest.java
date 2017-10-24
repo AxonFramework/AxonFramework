@@ -15,7 +15,11 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AsynchronousCommandBus;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
@@ -29,12 +33,17 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.hamcrest.CoreMatchers;
-import org.junit.Test;
+import org.junit.*;
 
-import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
@@ -103,6 +112,26 @@ public class DefaultConfigurerTest {
         assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(1, config.getModules().size());
+    }
+
+    @Test
+    public void defaultConfigurationWithMonitors() throws Exception {
+        MessageCollectingMonitor defaultMonitor = new MessageCollectingMonitor();
+        MessageCollectingMonitor commandBusMonitor = new MessageCollectingMonitor();
+
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureAggregate(StubAggregate.class)
+                                                .configureMessageMonitor(c -> (t, n) -> defaultMonitor)
+                                                .configureMessageMonitor(CommandBus.class, "commandBus", commandBusMonitor)
+                                                .buildConfiguration();
+        config.start();
+
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        assertEquals("test", callback.get());
+        assertEquals(1, defaultMonitor.getMessages().size());
+        assertEquals(1, commandBusMonitor.getMessages().size());
     }
 
     @Test

@@ -18,7 +18,13 @@ package org.axonframework.config;
 import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DirectEventProcessingStrategy;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -26,10 +32,12 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +54,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
     private final List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>> handlerInterceptors = new ArrayList<>();
+    private MessageMonitorFactory messageMonitorFactory = null;
     private Configuration config;
 
     /**
@@ -102,18 +111,19 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public static <S> SagaConfiguration<S> trackingSagaManager(
             Class<S> sagaType,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
-        SagaConfiguration<S> configuration = new SagaConfiguration<>(sagaType, c -> null);
-        configuration.processor.update(c -> {
+        SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, c -> null);
+        sagaConfiguration.processor.update(configuration -> {
             TrackingEventProcessor processor = new TrackingEventProcessor(
                     sagaType.getSimpleName() + "Processor",
-                    configuration.sagaManager.get(),
-                    messageSourceBuilder.apply(configuration.config),
-                    c.getComponent(TokenStore.class, InMemoryTokenStore::new),
-                    c.getComponent(TransactionManager.class, NoTransactionManager::instance));
-            processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
+                    sagaConfiguration.sagaManager.get(),
+                    messageSourceBuilder.apply(sagaConfiguration.config),
+                    configuration.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                    configuration.getComponent(TransactionManager.class, NoTransactionManager::instance),
+                    sagaConfiguration.getMessageMonitor(configuration, sagaType));
+            processor.registerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
             return processor;
         });
-        return configuration;
+        return sagaConfiguration;
     }
 
     @SuppressWarnings("unchecked")
@@ -127,13 +137,27 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                             c.parameterResolverFactory()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
                                                                                                  c.parameterResolverFactory()));
-        processor = new Component<>(() -> config, processorName,
+        processor = new Component<>(() -> config,
+                                    processorName,
                                     c -> {
-                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(managerName, sagaManager.get(),
-                                                                                                            messageSourceBuilder.apply(c));
+                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(
+                                                managerName,
+                                                sagaManager.get(),
+                                                messageSourceBuilder.apply(c),
+                                                DirectEventProcessingStrategy.INSTANCE,
+                                                PropagatingErrorHandler.INSTANCE,
+                                                getMessageMonitor(c, sagaType));
                                         processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
                                         return processor;
                                     });
+    }
+
+    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration, Class<?> sagaType) {
+        if (messageMonitorFactory != null) {
+            return messageMonitorFactory.create(configuration, sagaType, sagaType.getSimpleName());
+        } else {
+            return configuration.messageMonitor(sagaType, sagaType.getSimpleName());
+        }
     }
 
     /**
@@ -141,7 +165,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * Saga Store configured in the global Configuration. This method can be used to override the store for specific
      * Sagas.
      *
-     * @param sagaStoreBuilder The builder that returnes a fully initialized Saga Store instance based on the global
+     * @param sagaStoreBuilder The builder that returns a fully initialized Saga Store instance based on the global
      *                         Configuration
      * @return this SagaConfiguration instance, ready for further configuration
      */
@@ -163,6 +187,29 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         } else {
             handlerInterceptors.add(handlerInterceptorBuilder);
         }
+        return this;
+    }
+
+    /**
+     * Configures the Message Monitor to use for this configuration. This overrides any message monitor configured
+     * through {@link Configurer}.
+     *
+     * @param messageMonitor The MessageMonitor to use
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureMessageMonitor(MessageMonitor<Message<?>>  messageMonitor) {
+        return configureMessageMonitor((configuration, componentType, componentName) -> messageMonitor);
+    }
+
+    /**
+     * Configures the factory to create the Message Monitor for this configuration. This overrides any message monitor
+     * configured through {@link Configurer}.
+     *
+     * @param messageMonitorFactory The factory to use
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureMessageMonitor(MessageMonitorFactory messageMonitorFactory) {
+        this.messageMonitorFactory = messageMonitorFactory;
         return this;
     }
 
