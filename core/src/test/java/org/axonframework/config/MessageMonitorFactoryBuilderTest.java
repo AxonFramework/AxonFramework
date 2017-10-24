@@ -104,7 +104,7 @@ public class MessageMonitorFactoryBuilderTest {
 
         // For a class that extends a base class and implements an interface, the choice is deterministic, but not
         // user controllable
-        assertEquals(mMonitor, factory.apply(N.class, "any"));
+        assertEquals(iMonitor, factory.apply(N.class, "any"));
     }
 
     @Test

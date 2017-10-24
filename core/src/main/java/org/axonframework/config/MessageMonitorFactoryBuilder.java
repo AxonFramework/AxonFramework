@@ -33,17 +33,14 @@ import java.util.function.BiFunction;
  */
 class MessageMonitorFactoryBuilder {
 
-    // Simple comparator to ensure the keys are processed in a stable order in #getFactoryForType and the order is
-    // not dependent on insertion order
-    private class ClassComparator implements Comparator<Class<?>> {
-        @Override
-        public int compare(Class<?> o1, Class<?> o2) {
-            return Integer.compare(o1.hashCode(), o2.hashCode());
-        }
-    }
+    // Comparator to ensure the keys are processed in a reasonably stable order in #getFactoryForType
+    // Added comparing on the class' classloader as a class can be loaded multiple times by different classloaders
+    private Comparator<Class<?>> classComparator =
+            Comparator.comparing((Class<?> c) -> c.getName())
+                      .thenComparingInt((Class<?> c) -> c.getClassLoader().hashCode());
 
     private Map<String, SortedMap<Class<?>, MessageMonitorFactory>> forNameFactories = new HashMap<>();
-    private SortedMap<Class<?>, MessageMonitorFactory> forTypeFactories = new TreeMap<>(new ClassComparator());
+    private SortedMap<Class<?>, MessageMonitorFactory> forTypeFactories = new TreeMap<>(classComparator);
     private MessageMonitorFactory defaultFactory = (configuration, type, name) -> NoOpMessageMonitor.instance();
     private boolean built = false;
 
@@ -53,7 +50,7 @@ class MessageMonitorFactoryBuilder {
         Assert.notNull(componentName, () -> "componentName may not be null");
         Assert.notNull(messageMonitorFactory, () -> "messageMonitorFactory may not be null");
         Map<Class<?>, MessageMonitorFactory> mapByType =
-                forNameFactories.computeIfAbsent(componentName, (name) -> new TreeMap<>(new ClassComparator()));
+                forNameFactories.computeIfAbsent(componentName, (name) -> new TreeMap<>(classComparator));
         mapByType.put(componentType, messageMonitorFactory);
         return this;
     }
