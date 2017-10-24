@@ -145,9 +145,14 @@ public class EventHandlingConfigurationTest {
         configurer.registerModule(module);
         Configuration config = configurer.start();
 
-        config.eventBus().publish(new GenericEventMessage<Object>("test"));
-        assertEquals(1, subscribingMonitor.getMessages().size());
-        assertTrue(trackingMonitor.await(1, TimeUnit.SECONDS));
+        try {
+            config.eventBus().publish(new GenericEventMessage<Object>("test"));
+            
+            assertEquals(1, subscribingMonitor.getMessages().size());
+            assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
     }
 
     private static class StubEventProcessor implements EventProcessor {

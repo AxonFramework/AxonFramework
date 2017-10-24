@@ -25,8 +25,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
-    private List<Message<?>> messages = new ArrayList<>();
-    private CountDownLatch latch;
+    private final List<Message<?>> messages = new ArrayList<>();
+    private final CountDownLatch latch;
 
     public MessageCollectingMonitor() {
         latch = null;
