@@ -193,7 +193,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     errorWaitTime = 5;
                     waitFor(errorWaitTime);
                 } catch (Exception e) {
-                    // make sure to start with a clean event stream. The exception may have cause an illegal state
+                    // make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
                         logger.warn("Error occurred. Starting retry mode.", e);
                     }
