@@ -98,6 +98,7 @@ public class TrackingEventProcessorTest {
     public void setUp() throws Exception {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
+        when(mockListener.canHandle(any())).thenReturn(true);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
@@ -217,9 +218,6 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
         assertEquals(4, ackedEvents.size());
-
-        // batch size = 1
-        verify(tokenStore, times(4)).storeToken(any(), anyString(), anyInt());
     }
 
     @Test

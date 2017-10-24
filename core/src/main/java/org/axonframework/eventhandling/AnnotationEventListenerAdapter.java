@@ -53,7 +53,7 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
                                           ParameterResolverFactory parameterResolverFactory) {
         this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
-        this.inspector = AnnotatedHandlerInspector.inspectType((Class<Object>)annotatedEventListener.getClass(),
+        this.inspector = AnnotatedHandlerInspector.inspectType((Class<Object>) annotatedEventListener.getClass(),
                                                                parameterResolverFactory);
     }
 
@@ -65,6 +65,16 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
                 break;
             }
         }
+    }
+
+    @Override
+    public boolean canHandle(EventMessage<?> event) {
+        for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
+            if (handler.canHandle(event)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

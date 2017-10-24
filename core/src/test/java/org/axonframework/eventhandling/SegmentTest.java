@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -28,11 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 public class SegmentTest {
 
@@ -55,14 +52,14 @@ public class SegmentTest {
 
         // segment 0, mask 0;
         final long count = identifiers.stream().filter(Segment.ROOT_SEGMENT::matches).count();
-        assertThat(count, is(Long.valueOf(identifiers.size())));
+        assertThat(count, is((long)identifiers.size()));
 
         final Segment[] splitSegment = Segment.ROOT_SEGMENT.split();
 
         final long splitCount1 = identifiers.stream().filter(splitSegment[0]::matches).count();
         final long splitCount2 = identifiers.stream().filter(splitSegment[1]::matches).count();
 
-        assertThat(splitCount1 + splitCount2, is(Long.valueOf(identifiers.size())));
+        assertThat(splitCount1 + splitCount2, is((long) identifiers.size()));
     }
 
     @Test
@@ -127,18 +124,49 @@ public class SegmentTest {
     }
 
     @Test
-    public void testSegmentSplitNTimesAndMergeBackToOriginal() {
+    public void testSegmentSplitNTimes() {
 
         final List<Segment> splits = Segment.splitBalanced(Segment.ROOT_SEGMENT, 10);
 
         assertThat(splits.size(), is(11));
-        splits.forEach(s -> LOG.info(s.toString()));
+    }
 
-        final List<Segment> merged = Segment.mergeToMinimum(splits);
+    @Test
+    public void testMergeable() {
+        Segment[] segments = Segment.ROOT_SEGMENT.split();
+        assertFalse(segments[0].isMergeableWith(segments[0]));
+        assertFalse(segments[1].isMergeableWith(segments[1]));
 
-        assertThat(merged.size(), is(1));
-        merged.forEach(s -> LOG.info(s.toString()));
+        assertTrue(segments[0].isMergeableWith(segments[1]));
+        assertTrue(segments[1].isMergeableWith(segments[0]));
 
+        // these masks differ
+        Segment[] segments2 = segments[0].split();
+        assertFalse(segments[0].isMergeableWith(segments2[0]));
+        assertFalse(segments[0].isMergeableWith(segments2[1]));
+        assertFalse(segments[1].isMergeableWith(segments2[0]));
+
+        // this should still work
+        assertTrue(segments2[0].isMergeableWith(segments2[1]));
+    }
+
+    @Test
+    public void testMergeableSegment() {
+        Segment[] segments = Segment.ROOT_SEGMENT.split();
+        assertEquals(segments[1].getSegmentId(), segments[0].mergeableSegmentId());
+        assertEquals(segments[0].getSegmentId(), segments[1].mergeableSegmentId());
+        assertEquals(0, Segment.ROOT_SEGMENT.mergeableSegmentId());
+    }
+
+    @Test
+    public void testMergeSegments() {
+        Segment[] segments = Segment.ROOT_SEGMENT.split();
+        Segment[] segments2 = segments[0].split();
+
+        assertEquals(segments[0], segments2[0].mergedWith(segments2[1]));
+        assertEquals(segments[0], segments2[1].mergedWith(segments2[0]));
+        assertEquals(Segment.ROOT_SEGMENT, segments[1].mergedWith(segments[0]));
+        assertEquals(Segment.ROOT_SEGMENT, Segment.ROOT_SEGMENT.mergedWith(Segment.ROOT_SEGMENT));
     }
 
     @Test
@@ -147,7 +175,7 @@ public class SegmentTest {
             final int[] segments = {0};
             final Segment[] segmentMasks = Segment.computeSegments(segments);
             assertThat(segmentMasks.length, is(1));
-            assertThat(segmentMasks[0].getMask(), is(Segment.ZERO_MASK));
+            assertThat(segmentMasks[0].getMask(), is(Segment.ROOT_SEGMENT.getMask()));
         }
 
         {
@@ -215,175 +243,6 @@ public class SegmentTest {
             assertThat(segmentMasks[4].getMask(), is(0x7));
         }
     }
-
-    @Test
-    public void testSegmentAnalyseAndMergePair() {
-
-        {
-            final Segment[] segments = new Segment[]{
-                    Segment.ROOT_SEGMENT,
-            };
-            final List<Segment[]> analyse = Segment.analyse(segments);
-            assertThat(analyse.size(), is(1));
-            final Segment[] segmentMasks1 = analyse.get(0);
-            assertThat(segmentMasks1.length, is(1));
-            assertThat(segmentMasks1[0], is(segments[0]));
-        }
-
-        {
-            // Special case... when segment 0 and 1 are analyzed.
-            final Segment[] segments = new Segment[]{
-                    new Segment(0, 0x1),
-                    new Segment(1, 0x1),
-            };
-
-            final List<Segment[]> analyse = Segment.analyse(segments);
-            assertThat(analyse.size(), is(1));
-            final Segment[] segmentMasks1 = analyse.get(0);
-            assertThat(segmentMasks1.length, is(2));
-            assertThat(segmentMasks1[0], is(segments[0]));
-            assertThat(segmentMasks1[1], is(segments[1]));
-        }
-
-        {
-            final Segment[] segments = new Segment[]{
-                    new Segment(0, 0x3),
-                    new Segment(1, 0x1),
-                    new Segment(2, 0x3),
-            };
-
-            final List<Segment[]> analyse = Segment.analyse(segments);
-            assertThat(analyse.size(), is(2));
-            final Segment[] segmentMasks1 = analyse.get(0);
-            assertThat(segmentMasks1.length, is(2));
-            assertThat(segmentMasks1[0], is(segments[0]));
-            assertThat(segmentMasks1[1], is(segments[2]));
-        }
-
-        {
-            final Segment[] segments = new Segment[]{
-                    new Segment(0, 0x3),
-                    new Segment(1, 0x3),
-                    new Segment(2, 0x3),
-                    new Segment(3, 0x3)
-            };
-            final List<Segment[]> analyse = Segment.analyse(segments);
-            assertThat(analyse.size(), is(2));
-        }
-
-        {
-            final Segment[] segments = new Segment[]{
-                    new Segment(0, 0x1),
-                    new Segment(1, 0x3),
-                    new Segment(3, 0x7),
-                    new Segment(7, 0x7)
-            };
-            final List<Segment[]> analyse = Segment.analyse(segments);
-            assertThat(analyse.size(), is(3));
-
-            final Segment[] segments4 = analyse.get(2);
-            assertThat(segments4.length, is(2));
-            assertThat(segments4[0], is(segments[2]));
-            assertThat(segments4[1], is(segments[3]));
-
-            // Merge
-            final Segment merge = Segment.merge(segments4);
-            assertThat(merge.getSegmentId(), is(3));
-            assertThat(merge.getMask(), is(0x3));
-
-            // Analyse the original set, with the merged pair again.
-            analyse.remove(segments4);
-
-            // Flatten the analysed result, to run through analysis again.
-            final List<Segment> collect = analyse.stream().flatMap(Stream::of).collect(Collectors.toList());
-            collect.add(merge);
-            final Segment[] segments1 = collect.toArray(new Segment[collect.size()]);
-            final List<Segment[]> analyse1 = Segment.analyse(segments1);
-
-            // We should now be reduced to 3 (partially filled) pairs of segments.
-            assertThat(analyse1.size(), is(2));
-        }
-    }
-
-
-    @Test
-    public void testSegmentMergeInvalidPair() {
-
-        {
-            // different masks..
-            final Segment[] segment = new Segment[]{
-                    new Segment(0, 0x1),
-                    new Segment(1, 0x3),
-            };
-            final Segment merge = Segment.merge(segment);
-            assertThat(merge, CoreMatchers.nullValue());
-        }
-
-        {
-            // same masks, non matching odd/even.
-            final Segment[] segment = new Segment[]{
-                    new Segment(0, 0x3),
-                    new Segment(3, 0x3),
-            };
-
-            final Segment merge = Segment.merge(segment);
-            assertThat(merge, CoreMatchers.nullValue());
-        }
-
-        {
-            // wrong array size.
-            final Segment[] segment = new Segment[]{
-                    new Segment(0, 0x1),
-                    new Segment(1, 0x3),
-                    new Segment(3, 0x3),
-            };
-
-            final Segment merge = Segment.merge(segment);
-            assertThat(merge, CoreMatchers.nullValue());
-        }
-        {
-            // wrong order
-            final Segment[] segment = new Segment[]{
-                    new Segment(1, 0x1),
-                    new Segment(0, 0x1),
-            };
-
-            final Segment merge = Segment.merge(segment);
-            assertThat(merge, CoreMatchers.nullValue());
-        }
-
-    }
-
-
-    @Test
-    public void testSegmentMergeAll() {
-
-        {
-            final List<Segment> merge = Segment.mergeToMinimum(asList(Segment.ROOT_SEGMENT));
-            assertThat(merge.size(), is(1));
-        }
-        {
-            List<Segment> segments = new ArrayList<Segment>() {
-                {
-                    add(new Segment(0, 0x1));
-                    add(new Segment(1, 0x3));
-                    add(new Segment(3, 0x3));
-                }
-            };
-
-            final List<Segment> merge = Segment.mergeToMinimum(segments);
-            assertThat(merge.size(), is(1));
-        }
-
-        // Now go wild:
-        final List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, 20);
-        LOG.info("Split ROOT segment into: {}", segments.size());
-        final List<Segment> mergeAll = Segment.mergeToMinimum(segments);
-        assertThat(mergeAll.size(), is(1));
-        assertThat(mergeAll.get(0), is(Segment.ROOT_SEGMENT));
-
-    }
-
 
     @Test(expected = IllegalArgumentException.class)
     public void testSegmentSplitBeyondBoundary() {

@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
@@ -80,7 +81,10 @@ public class SagaManagerTest {
     public void testSagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
-        unitOfWork.executeWithResult(() -> testSubject.handle(event));
+        unitOfWork.executeWithResult(() -> {
+            testSubject.handle(event, Segment.ROOT_SEGMENT);
+            return null;
+        });
         verify(mockSagaRepository).find(associationValue);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
@@ -94,7 +98,10 @@ public class SagaManagerTest {
         doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
             UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
-            unitOfWork.executeWithResult(() -> testSubject.handle(event));
+            unitOfWork.executeWithResult(() -> {
+                testSubject.handle(event, Segment.ROOT_SEGMENT);
+                return null;
+            });
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -108,7 +115,7 @@ public class SagaManagerTest {
         testSubject.setSuppressExceptions(true);
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
-        testSubject.handle(event);
+        testSubject.handle(event, Segment.ROOT_SEGMENT);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
         verify(mockSaga3, never()).handle(event);
@@ -116,7 +123,7 @@ public class SagaManagerTest {
 
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
-        return new CopyOnWriteArraySet<T>(Arrays.asList(items));
+        return new CopyOnWriteArraySet<>(Arrays.asList(items));
     }
 
     private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
@@ -126,7 +133,7 @@ public class SagaManagerTest {
         }
 
         @Override
-        public boolean hasHandler(EventMessage<?> event) {
+        public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
             return true;
         }
 

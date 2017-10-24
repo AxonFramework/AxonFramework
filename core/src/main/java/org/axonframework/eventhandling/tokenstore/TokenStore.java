@@ -89,7 +89,7 @@ public interface TokenStore {
      * The segments returned are segments for which a token has been stored previously. When the {@link TokenStore} is
      * empty, an empty array is returned.
      *
-     * @param processorName The process name for which to fetch the segmennts
+     * @param processorName The process name for which to fetch the segments
      * @return an array of segment identifiers.
      */
     int[] fetchSegments(String processorName);

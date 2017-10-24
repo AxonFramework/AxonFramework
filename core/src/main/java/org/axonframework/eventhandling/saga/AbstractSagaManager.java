@@ -20,10 +20,12 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -61,12 +63,12 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     }
 
     @Override
-    public Object handle(EventMessage<?> event) throws Exception {
+    public void handle(EventMessage<?> event, Segment segment) throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
         Set<Saga<T>> sagas =
                 associationValues.stream().flatMap(associationValue -> sagaRepository.find(associationValue).stream())
-                        .map(sagaRepository::load).filter(s -> s != null).filter(Saga::isActive)
-                        .collect(Collectors.toCollection(HashSet<Saga<T>>::new));
+                                 .map(sagaRepository::load).filter(Objects::nonNull).filter(Saga::isActive)
+                                 .collect(Collectors.toCollection(HashSet::new));
         boolean sagaOfTypeInvoked = false;
         for (Saga<T> saga : sagas) {
             if (doInvokeSaga(event, saga)) {
@@ -78,7 +80,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
                 (!sagaOfTypeInvoked && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)) {
             startNewSaga(event, initializationPolicy.getInitialAssociationValue());
         }
-        return null;
     }
 
     private void startNewSaga(EventMessage event, AssociationValue associationValue) {

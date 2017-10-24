@@ -14,6 +14,7 @@
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -28,6 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Christophe Bouhier
  */
 public class InMemoryTokenStore implements TokenStore {
+
+    private static final GlobalSequenceTrackingToken NULL_TOKEN = new GlobalSequenceTrackingToken(-1);
+
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
 
     @Override
@@ -43,7 +47,12 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Override
     public TrackingToken fetchToken(String processorName, int segment) {
-        return tokens.get(new ProcessAndSegment(processorName, segment));
+        TrackingToken trackingToken = tokens.computeIfAbsent(new ProcessAndSegment(processorName, segment),
+                                                             k -> NULL_TOKEN);
+        if (NULL_TOKEN == trackingToken) {
+            return null;
+        }
+        return trackingToken;
     }
 
     @Override
@@ -54,9 +63,9 @@ public class InMemoryTokenStore implements TokenStore {
     @Override
     public int[] fetchSegments(String processorName) {
         return tokens.keySet().stream()
-                .filter(ps -> ps.processorName.equals(processorName))
-                .map(ProcessAndSegment::getSegment)
-                .distinct().mapToInt(Number::intValue).toArray();
+                     .filter(ps -> ps.processorName.equals(processorName))
+                     .map(ProcessAndSegment::getSegment)
+                     .distinct().mapToInt(Number::intValue).toArray();
     }
 
     private static class ProcessAndSegment {

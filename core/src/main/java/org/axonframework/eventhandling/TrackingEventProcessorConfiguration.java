@@ -1,40 +1,87 @@
 package org.axonframework.eventhandling;
 
-import java.util.concurrent.Executors;
+import org.axonframework.common.Assert;
+import org.axonframework.common.AxonThreadFactory;
+
 import java.util.concurrent.ThreadFactory;
-
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Function;
 
 /**
  * Configuration object for the {@link TrackingEventProcessor}. The TrackingEventProcessorConfiguration provides access to the options to tweak
  * various settings. Instances are not thread-safe and should not be altered after they have been used to initialize
  * a TrackingEventProcessor.
-
+ *
  * @author Christophe Bouhier
+ * @author Allard Buijze
  */
 public class TrackingEventProcessorConfiguration {
 
     private static final int DEFAULT_BATCH_SIZE = 1;
-    private static final int DEFAULT_SEGMENTS_SIZE = 1;
-    public static final int DEFAULT_POOL_SIZE = 1;
+    private static final int DEFAULT_THREAD_COUNT = 1;
 
+    private final int maxThreadCount;
     private int batchSize;
-    private int segmentsSize;
-    private SequencingPolicy<? super EventMessage<?>> sequentialPolicy;
-    private int corePoolSize;
-    private int maxPoolSize;
-    private ThreadFactory threadFactory;
+    private int initialSegmentCount;
+    private Function<String, ThreadFactory> threadFactory;
 
-    public TrackingEventProcessorConfiguration() {
+    private TrackingEventProcessorConfiguration(int numberOfSegments) {
         this.batchSize = DEFAULT_BATCH_SIZE;
-        this.segmentsSize = DEFAULT_SEGMENTS_SIZE;
-        this.sequentialPolicy = new SequentialPerAggregatePolicy();
-        this.corePoolSize = DEFAULT_POOL_SIZE;
-        this.maxPoolSize = DEFAULT_POOL_SIZE;
-        this.threadFactory = Executors.defaultThreadFactory();
+        this.initialSegmentCount = numberOfSegments;
+        this.maxThreadCount = numberOfSegments;
+        this.threadFactory = pn -> new AxonThreadFactory("EventProcessor[" + pn + "]");
+    }
+
+    /**
+     * Initialize a configuration with single threaded processing.
+     *
+     * @return a Configuration prepared for single threaded processing
+     */
+    public static TrackingEventProcessorConfiguration forSingleThreadedProcessing() {
+        return new TrackingEventProcessorConfiguration(DEFAULT_THREAD_COUNT);
+    }
+
+    /**
+     * Initialize a configuration instance with the given {@code threadCount}. This is both the number of threads
+     * that a processor will start for processing, as well as the initial number of segments that will be created when
+     * the processor is first started.
+     *
+     * @param threadCount the number of segments to process in parallel
+     * @return a newly created configuration
+     */
+    public static TrackingEventProcessorConfiguration forParallelProcessing(int threadCount) {
+        return new TrackingEventProcessorConfiguration(threadCount);
+    }
+
+    /**
+     * @param batchSize The maximum number of events to process in a single batch.
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andBatchSize(int batchSize) {
+        Assert.isTrue(batchSize > 0, () -> "Batch size must be greater or equal to 1");
+        this.batchSize = batchSize;
+        return this;
+    }
+
+    /**
+     * @param segmentsSize The number of segments requested for handling asynchronous processing of events.
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andInitialSegmentsCount(int segmentsSize) {
+        this.initialSegmentCount = segmentsSize;
+        return this;
+    }
+
+    /**
+     * Sets the ThreadFactory to use to create the threads to process events on. Each Segment will be processed by a
+     * separate thread.
+     *
+     * @param threadFactory The factory to create threads with
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andThreadFactory(Function<String, ThreadFactory> threadFactory) {
+        this.threadFactory = threadFactory;
+        return this;
     }
 
     /**
@@ -45,82 +92,26 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
-     * @param batchSize The maximum number of events to process in a single batch.
-     * @return {@code this} for method chaining
-     */
-    public TrackingEventProcessorConfiguration setBatchSize(int batchSize) {
-        this.batchSize = batchSize;
-        return this;
-    }
-
-    /**
      * @return the number of segments requested for handling asynchronous processing of events.
      */
-    public int getSegmentsSize() {
-        return segmentsSize;
+    public int getInitialSegmentsCount() {
+        return initialSegmentCount;
     }
-
-    /**
-     * @param segmentsSize The number of segments requested for handling asynchronous processing of events.
-     * @return {@code this} for method chaining
-     */
-    public TrackingEventProcessorConfiguration setSegmentsSize(int segmentsSize) {
-        this.segmentsSize = segmentsSize;
-        return this;
-    }
-
-    /**
-     * @return the policy which will determine the segmentation identifier.
-     */
-    public SequencingPolicy<? super EventMessage<?>> getSequentialPolicy() {
-        return sequentialPolicy;
-    }
-
-    /**
-     * @param sequentialPolicy The policy which will determine the segmentation identifier.
-     * @return {@code this} for method chaining
-     */
-    public TrackingEventProcessorConfiguration setSequentialPolicy(SequencingPolicy<? super EventMessage<?>> sequentialPolicy) {
-        this.sequentialPolicy = sequentialPolicy;
-        return this;
-    }
-
 
     /**
      * @return the pool size of core threads as per {@link ThreadPoolExecutor#getCorePoolSize()}
      */
-    public int getCorePoolSize() {
-        return corePoolSize;
+    public int getMaxThreadCount() {
+        return maxThreadCount;
     }
 
     /**
-     * @param corePoolSize the pool size of core threads as per {@link ThreadPoolExecutor#setCorePoolSize(int)}
-     * @return {@code this} for method chaining
+     * Provides the ThreadFactory to use to construct Threads for the processor with given {@code processorName}
+     *
+     * @param processorName The name of the processor for which to return the ThreadFactory
+     * @return the thread factory configured
      */
-    public TrackingEventProcessorConfiguration setCorePoolSize(int corePoolSize) {
-        this.corePoolSize = corePoolSize;
-        return this;
+    public ThreadFactory getThreadFactory(String processorName) {
+        return threadFactory.apply(processorName);
     }
-
-    /**
-     * @return the maximum pool size as per {@link ThreadPoolExecutor#getMaximumPoolSize()}
-     */
-    public int getMaxPoolSize() {
-        return maxPoolSize;
-    }
-
-
-    /**
-     * @param maxPoolSize the maximum pool size as per {@link ThreadPoolExecutor#setMaximumPoolSize(int)}
-     * @return {@code this} for method chaining
-     */
-    public TrackingEventProcessorConfiguration setMaxPoolSize(int maxPoolSize) {
-        this.maxPoolSize = maxPoolSize;
-        return this;
-    }
-
-  public ThreadFactory getThreadFactory() {
-    return threadFactory;
-  }
-
 }
