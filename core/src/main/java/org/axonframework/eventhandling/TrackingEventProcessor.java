@@ -267,8 +267,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             unitOfWork.onPrepareCommit(uow -> {
                 EventMessage<?> event = uow.getMessage();
                 if (event instanceof TrackedEventMessage<?>
-                        && nonNull(finalLastToken)
-                        && finalLastToken.equals(((TrackedEventMessage) event).trackingToken())) {
+                    && nonNull(finalLastToken)
+                    && finalLastToken.equals(((TrackedEventMessage) event).trackingToken())) {
                     tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
                 }
             });
@@ -451,9 +451,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public String toString() {
             return "TrackingSegmentWorker{" +
-                    "processor=" + getName() +
-                    ", segment=" + segment +
-                    '}';
+                   "processor=" + getName() +
+                   ", segment=" + segment +
+                   '}';
         }
     }
 
@@ -472,18 +472,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
+                boolean attemptImmediateRetry = false;
                 for (int i = 0; i < segments.length
-                        && activeSegments.size() < maxThreadCount; i++) {
+                                && activeSegments.size() < maxThreadCount; i++) {
                     Segment segment = segments[i];
 
                     if (activeSegments.add(segment.getSegmentId())) {
                         try {
                             transactionManager.executeInTransaction(() -> tokenStore.fetchToken(TrackingEventProcessor.this.getName(), segment.getSegmentId()));
-
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
+                            continue;
+                        } catch (Exception e) {
+                            logger.info("An error occurred while attempting to claim a token for segment: {}. Will retry later...", segment.getSegmentId());
+                            activeSegments.remove(segment.getSegmentId());
+                            attemptImmediateRetry = true;
                             continue;
                         }
 
@@ -507,7 +512,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
                 try {
                     long deadline = System.currentTimeMillis() + 5000;
-                    while (getState().isRunning() && System.currentTimeMillis() < deadline) {
+                    while (!attemptImmediateRetry && getState().isRunning() && System.currentTimeMillis() < deadline) {
                         Thread.sleep(100);
                     }
                 } catch (InterruptedException e) {

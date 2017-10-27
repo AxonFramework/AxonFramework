@@ -24,14 +24,15 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -108,6 +109,46 @@ public class SagaManagerTest {
             assertEquals("Mock", e.getMessage());
         }
         verify(mockSaga1, times(1)).handle(event);
+    }
+
+    @Test
+    public void testSagaIsCreatedInRootSegment() throws Exception {
+        this.sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
+        this.associationValue = new AssociationValue("someKey", "someValue");
+
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
+        when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
+
+        testSubject.handle(event, Segment.ROOT_SEGMENT);
+        verify(mockSagaRepository).createInstance(any(), any());
+    }
+
+    @Test
+    public void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
+        this.sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
+        this.associationValue = new AssociationValue("someKey", "someValue");
+        Segment[] segments = Segment.ROOT_SEGMENT.split();
+        Segment matchingSegment = segments[0].matches("someValue") ? segments[0] : segments[1];
+        Segment otherSegment = segments[0].matches("someValue") ? segments[1] : segments[0];
+
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        ArgumentCaptor<String> createdSaga = ArgumentCaptor.forClass(String.class);
+        when(mockSagaRepository.createInstance(createdSaga.capture(), any())).thenReturn(mockSaga1);
+        when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
+
+        testSubject.handle(event, otherSegment);
+        verify(mockSagaRepository, never()).createInstance(any(), any());
+
+        testSubject.handle(event, matchingSegment);
+        verify(mockSagaRepository).createInstance(any(), any());
+
+        createdSaga.getAllValues()
+                   .forEach(sagaId -> assertTrue("Saga ID doesn't match segment that should have created it: " + sagaId,
+                                                 matchingSegment.matches(sagaId)));
+        createdSaga.getAllValues()
+                   .forEach(sagaId -> assertFalse("Saga ID matched against the wrong segment: " + sagaId,
+                                                 otherSegment.matches(sagaId)));
     }
 
     @Test

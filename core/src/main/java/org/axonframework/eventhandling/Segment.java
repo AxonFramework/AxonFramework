@@ -21,6 +21,9 @@ public class Segment implements Comparable<Segment> {
 
     private static final int ZERO_MASK = 0x0;
 
+    /**
+     * Represents the Segment that matches against all input, but can be split to start processing elements in parallel.
+     */
     public static final Segment ROOT_SEGMENT = new Segment(0, ZERO_MASK);
 
     private final int segmentId;
@@ -207,6 +210,6 @@ public class Segment implements Comparable<Segment> {
 
     @Override
     public int compareTo(Segment that) {
-        return this.segmentId - that.segmentId;
+        return Integer.compare(this.segmentId, that.segmentId);
     }
 }

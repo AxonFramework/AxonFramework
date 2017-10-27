@@ -15,6 +15,7 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
@@ -153,7 +154,7 @@ public class AnnotatedSagaManagerTest {
     
     private void handle(EventMessage<?> event) throws Exception {
         DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-            manager.handle(event);
+            manager.handle(event, Segment.ROOT_SEGMENT);
             return null;
         });
     }

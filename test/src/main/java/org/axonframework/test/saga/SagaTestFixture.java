@@ -19,10 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -105,7 +102,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         ensureSagaManagerInitialized();
         try {
             DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
-                sagaManager.handle(event);
+                sagaManager.handle(event, Segment.ROOT_SEGMENT);
                 return null;
             });
         } catch (Exception e) {

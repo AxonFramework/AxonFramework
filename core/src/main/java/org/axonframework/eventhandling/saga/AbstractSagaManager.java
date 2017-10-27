@@ -45,15 +45,15 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
 
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
-    private volatile boolean suppressExceptions = true;
     private final Supplier<T> sagaFactory;
+    private volatile boolean suppressExceptions = true;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
      *
-     * @param sagaType              The type of Saga Managed by this instance
-     * @param sagaRepository        The repository providing the saga instances.
-     * @param sagaFactory           The factory responsible for creating new Saga instances
+     * @param sagaType       The type of Saga Managed by this instance
+     * @param sagaRepository The repository providing the saga instances.
+     * @param sagaFactory    The factory responsible for creating new Saga instances
      */
     protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
         this.sagaType = sagaType;
@@ -66,8 +66,12 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     public void handle(EventMessage<?> event, Segment segment) throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
         Set<Saga<T>> sagas =
-                associationValues.stream().flatMap(associationValue -> sagaRepository.find(associationValue).stream())
-                                 .map(sagaRepository::load).filter(Objects::nonNull).filter(Saga::isActive)
+                associationValues.stream()
+                                 .flatMap(associationValue -> sagaRepository.find(associationValue).stream())
+                                 .filter(sagaId -> matchesSegment(segment, sagaId))
+                                 .map(sagaRepository::load)
+                                 .filter(Objects::nonNull)
+                                 .filter(Saga::isActive)
                                  .collect(Collectors.toCollection(HashSet::new));
         boolean sagaOfTypeInvoked = false;
         for (Saga<T> saga : sagas) {
@@ -76,16 +80,53 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
             }
         }
         SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
-        if (initializationPolicy.getCreationPolicy() == SagaCreationPolicy.ALWAYS ||
-                (!sagaOfTypeInvoked && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)) {
-            startNewSaga(event, initializationPolicy.getInitialAssociationValue());
+        if (shouldCreateSaga(segment, sagaOfTypeInvoked, initializationPolicy)) {
+            startNewSaga(event, initializationPolicy.getInitialAssociationValue(), segment);
         }
     }
 
-    private void startNewSaga(EventMessage event, AssociationValue associationValue) {
-        Saga<T> newSaga = sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), sagaFactory);
+    private boolean shouldCreateSaga(Segment segment, boolean sagaInvoked, SagaInitializationPolicy initializationPolicy) {
+        return ((initializationPolicy.getCreationPolicy() == SagaCreationPolicy.ALWAYS
+                 || (!sagaInvoked && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)))
+               && segment.matches(initializationPolicy.getInitialAssociationValue());
+    }
+
+    private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) {
+        Saga<T> newSaga = sagaRepository.createInstance(createSagaIdentifier(segment), sagaFactory);
         newSaga.getAssociationValues().add(associationValue);
         doInvokeSaga(event, newSaga);
+    }
+
+    /**
+     * Creates a Saga identifier that will cause a Saga instance to be considered part of the given {@code segment}.
+     *
+     * @param segment The segment the identifier must match with
+     * @return an identifier for a newly created Saga
+     * @implSpec This implementation will repeatedly generate identifier using the {@link IdentifierFactory}, until
+     * one is returned that matches the given segment. See {@link #matchesSegment(Segment, String)}.
+     */
+    protected String createSagaIdentifier(Segment segment) {
+        String identifier;
+
+        do {
+            identifier = IdentifierFactory.getInstance().generateIdentifier();
+        } while (!matchesSegment(segment, identifier));
+        return identifier;
+    }
+
+    /**
+     * Checks whether the given {@code sagaId} matches with the given {@code segment}.
+     * <p>
+     * For any complete set of segments, exactly one segment matches with any value.
+     * <p>
+     *
+     * @param segment The segment to validate the identifier for
+     * @param sagaId  The identifier to test
+     * @return {@code true} if the identifier matches the segment, otherwise {@code false}
+     * @implSpec This implementation uses the {@link Segment#matches(Object)} to match against the Saga identifier
+     */
+    protected boolean matchesSegment(Segment segment, String sagaId) {
+        return segment.matches(sagaId);
     }
 
     /**

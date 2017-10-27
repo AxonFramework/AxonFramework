@@ -39,7 +39,9 @@ public interface EventHandlerInvoker {
      *
      * @param message The message to handle
      * @throws Exception when an exception occurs while handling the message
+     * @deprecated Callers should use {@link #handle(EventMessage, Segment)} instead
      */
+    @Deprecated
     default void handle(EventMessage<?> message) throws Exception {
         handle(message, Segment.ROOT_SEGMENT);
     }

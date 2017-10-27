@@ -185,6 +185,22 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * Registers a TrackingProcessor with the given {@code name}, reading from the Event Bus (or Store) from the main
+     * configuration and using the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines
+     * the policy for events that need to be executed sequentially.
+     *
+     * @param name                   The name of the Tracking Processor
+     * @param processorConfiguration The configuration for the processor
+     * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTrackingProcessor(String name,
+                                                                Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration,
+                                                                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
+        return registerTrackingProcessor(name, Configuration::eventBus, processorConfiguration, sequencingPolicy);
+    }
+
+    /**
      * Registers a TrackingProcessor with the given {@code name}, reading from the given {@code source} and using the
      * given {@code processorConfiguration}. The given {@code sequencingPolicy} defines the policy for events that need
      * to be executed sequentially.
@@ -215,7 +231,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           source.apply(conf),
                                           conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
-                                          conf.messageMonitor(EventProcessor.class, name),
+                                          conf.messageMonitor(TrackingEventProcessor.class, name),
                                           RollbackConfigurationType.ANY_THROWABLE,
                                           PropagatingErrorHandler.instance(),
                                           config.apply(conf));
