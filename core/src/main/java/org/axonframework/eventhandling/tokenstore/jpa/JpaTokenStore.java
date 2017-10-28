@@ -1,9 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,6 +28,7 @@ import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
+import java.util.Collections;
 
 import static java.lang.String.format;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
@@ -105,9 +108,12 @@ public class JpaTokenStore implements TokenStore {
     public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                                                        "WHERE te.processorName = :processorName AND te.segment = :segment")
+                                                        "WHERE te.processorName = :processorName " +
+                                                        "AND te.segment = :segment " +
+                                                        "AND te.owner = :owner")
                 .setParameter("processorName", processorName)
                 .setParameter("segment", segment)
+                .setParameter("owner", nodeId)
                 .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
                 .executeUpdate();
 
@@ -131,7 +137,8 @@ public class JpaTokenStore implements TokenStore {
      */
     protected TokenEntry loadOrCreateToken(String processorName, int segment, EntityManager entityManager) {
         TokenEntry token = entityManager
-                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), LockModeType.PESSIMISTIC_WRITE);
+                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), LockModeType.PESSIMISTIC_WRITE,
+                      Collections.singletonMap("javax.persistence.query.timeout", 1));
 
         if (token == null) {
             token = new TokenEntry(processorName, segment, null, serializer);

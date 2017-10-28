@@ -24,9 +24,12 @@ import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -123,7 +126,6 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testTokenIsStoredWhenEventIsRead() throws Exception {
-
         CountDownLatch countDownLatch = new CountDownLatch(1);
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
@@ -132,7 +134,29 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
+        verify(tokenStore).extendClaim(eq(testSubject.getName()), anyInt());
         verify(tokenStore).storeToken(any(), any(), anyInt());
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
+    }
+
+    @Test
+    public void testTokenIsStoredOncePerEventBatch() throws Exception {
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE,
+                                                 PropagatingErrorHandler.INSTANCE, eventBus, tokenStore,
+                                                 NoTransactionManager.instance(), 5, NoOpMessageMonitor.INSTANCE);
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        testSubject.start();
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
+                   countDownLatch.await(5, TimeUnit.SECONDS));
+        InOrder inOrder = inOrder(tokenStore);
+        inOrder.verify(tokenStore, times(1)).extendClaim(eq(testSubject.getName()), anyInt());
+        inOrder.verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
+
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 

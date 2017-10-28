@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling.tokenstore.jpa;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
@@ -23,6 +38,7 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -34,6 +50,7 @@ import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
@@ -116,6 +133,61 @@ public class JpaTokenStoreTest {
         stealingJpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1), "stealing", 0);
     }
 
+    @Transactional
+    @Test
+    public void testExtendingLostClaimFails() throws Exception {
+        jpaTokenStore.fetchToken("processor", 0);
+
+        try {
+            stealingJpaTokenStore.extendClaim("processor", 0);
+            fail("Expected claim extension to fail");
+        } catch (UnableToClaimTokenException e) {
+            // expected
+        }
+    }
+
+    @Transactional
+    @Test
+    public void testStealingFromOtherThreadFailsWithRowLock() throws Exception {
+        ExecutorService executor1 = Executors.newSingleThreadExecutor();
+        CountDownLatch cdl = new CountDownLatch(1);
+        try {
+            jpaTokenStore.fetchToken("processor", 0);
+            Future<?> result = executor1.submit(() -> {
+
+                DefaultTransactionDefinition txDef = new DefaultTransactionDefinition();
+                txDef.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                TransactionStatus tx = transactionManager.getTransaction(txDef);
+                cdl.countDown();
+                try {
+                    stealingJpaTokenStore.fetchToken("processor", 0);
+                } finally {
+                    transactionManager.rollback(tx);
+                }
+            });
+            cdl.await();
+            try {
+                result.get(250, TimeUnit.MILLISECONDS);
+                fail("Expected task to time out on the write lock");
+            } catch (TimeoutException e) {
+                // we expect this;
+            }
+            assertFalse(result.isDone());
+
+            // we cancel the task
+            result.cancel(true);
+
+            // and make sure the token is still owned
+            TokenEntry tokenEntry = entityManager.find(TokenEntry.class, new TokenEntry.PK("processor", 0));
+            assertEquals("local", tokenEntry.getOwner());
+
+        } finally {
+            executor1.shutdown();
+        }
+
+
+    }
+
     @Test
     public void testStoreAndLoadAcrossTransactions() {
         txTemplate.execute(status -> {
@@ -162,6 +234,7 @@ public class JpaTokenStoreTest {
             sessionFactory.setPackagesToScan(TokenEntry.class.getPackage().getName());
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.dialect", new HSQLDialect()));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.hbm2ddl.auto", "create-drop"));
+            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.show_sql", "true"));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.connection.url", "jdbc:hsqldb:mem:testdb"));
             return sessionFactory;
         }
@@ -173,7 +246,7 @@ public class JpaTokenStoreTest {
 
         @Bean
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return new JpaTokenStore(entityManagerProvider, new XStreamSerializer());
+            return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(10), "local");
         }
 
         @Bean

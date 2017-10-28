@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
@@ -160,14 +161,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.batchSize = batchSize;
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         registerInterceptor((unitOfWork, interceptorChain) -> {
-            unitOfWork.onPrepareCommit(uow -> {
-                EventMessage<?> event = uow.getMessage();
-                if (event instanceof TrackedEventMessage<?> &&
-                        lastToken != null &&
-                        lastToken.equals(((TrackedEventMessage) event).trackingToken())) {
+            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
+                tokenStore.extendClaim(getName(), 0);
+            }
+            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isLastMessage()) {
+                unitOfWork.onPrepareCommit(uow -> {
                     tokenStore.storeToken(lastToken, getName(), 0);
-                }
-            });
+                });
+            }
             return interceptorChain.proceed();
         });
     }
