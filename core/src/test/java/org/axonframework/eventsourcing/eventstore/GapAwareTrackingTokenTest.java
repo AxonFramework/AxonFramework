@@ -16,7 +16,7 @@ public class GapAwareTrackingTokenTest {
     @Test
     public void testAdvanceToWithoutGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(0L, Collections.emptyList());
-        subject = subject.advanceTo(1L, 10);
+        subject = subject.advanceTo(1L, 10, true);
         assertEquals(1L, subject.getIndex());
         assertEquals(emptySortedSet(), subject.getGaps());
     }
@@ -24,7 +24,7 @@ public class GapAwareTrackingTokenTest {
     @Test
     public void testAdvanceToWithInitialGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(10L, Arrays.asList(1L, 5L, 6L));
-        subject = subject.advanceTo(5L, 10);
+        subject = subject.advanceTo(5L, 10, true);
         assertEquals(10L, subject.getIndex());
         assertEquals(Stream.of(1L, 6L).collect(Collectors.toCollection(TreeSet::new)), subject.getGaps());
     }
@@ -32,7 +32,7 @@ public class GapAwareTrackingTokenTest {
     @Test
     public void testAdvanceToWithNewGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(10L, Collections.emptyList());
-        subject = subject.advanceTo(13L, 10);
+        subject = subject.advanceTo(13L, 10, true);
         assertEquals(13L, subject.getIndex());
         assertEquals(Stream.of(11L, 12L).collect(Collectors.toCollection(TreeSet::new)), subject.getGaps());
     }
@@ -40,7 +40,7 @@ public class GapAwareTrackingTokenTest {
     @Test
     public void testAdvanceToGapClearsOldGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, Arrays.asList(1L, 5L, 12L));
-        subject = subject.advanceTo(12L, 10);
+        subject = subject.advanceTo(12L, 10, true);
         assertEquals(15L, subject.getIndex());
         assertEquals(Stream.of(5L).collect(Collectors.toCollection(TreeSet::new)), subject.getGaps());
     }
@@ -48,7 +48,7 @@ public class GapAwareTrackingTokenTest {
     @Test
     public void testAdvanceToHigherSequenceClearsOldGaps() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, Arrays.asList(1L, 5L, 12L));
-        subject = subject.advanceTo(16L, 10);
+        subject = subject.advanceTo(16L, 10, true);
         assertEquals(16L, subject.getIndex());
         assertEquals(Stream.of(12L).collect(Collectors.toCollection(TreeSet::new)), subject.getGaps());
     }
@@ -56,7 +56,7 @@ public class GapAwareTrackingTokenTest {
     @Test(expected = Exception.class)
     public void testAdvanceToLowerSequenceThatIsNotAGapNotAllowed() {
         GapAwareTrackingToken subject = GapAwareTrackingToken.newInstance(15L, Arrays.asList(1L, 5L, 12L));
-        subject.advanceTo(4L, 10);
+        subject.advanceTo(4L, 10, true);
     }
 
     @Test(expected = Exception.class)

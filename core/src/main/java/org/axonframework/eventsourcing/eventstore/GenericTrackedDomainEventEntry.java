@@ -18,7 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
  * {@link EventStorageEngine} to reconstruct an event from the underlying storage.
  *
  * @author Rene de Waele
+ * @deprecated Use {@link TrackedDomainEventData} instead, as it uses composition (instead of inheritance)
  */
+@Deprecated
 public class GenericTrackedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements TrackedEventData<T> {
 
     private final TrackingToken trackingToken;

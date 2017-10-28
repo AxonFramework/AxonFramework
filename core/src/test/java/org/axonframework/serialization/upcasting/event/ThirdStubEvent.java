@@ -13,15 +13,37 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-public class StubEvent {
+import java.util.List;
+
+public class ThirdStubEvent {
 
     private final String name;
+    private final Integer number;
+    private final List<Boolean> truths;
 
-    public StubEvent(String name) {
+    // No-arg constructor required for JacksonSerializer
+    private ThirdStubEvent() {
+        name = null;
+        number = null;
+        truths = null;
+    }
+
+    public ThirdStubEvent(String name, Integer number, List<Boolean> truths) {
         this.name = name;
+        this.number = number;
+        this.truths = truths;
     }
 
     public String getName() {
         return name;
     }
+
+    public Integer getNumber() {
+        return number;
+    }
+
+    public List<Boolean> getTruths() {
+        return truths;
+    }
+
 }

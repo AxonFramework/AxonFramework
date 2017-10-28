@@ -13,15 +13,28 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-public class StubEvent {
+public class SecondStubEvent {
 
     private final String name;
+    private final Integer number;
 
-    public StubEvent(String name) {
+    // No-arg constructor required for JacksonSerializer
+    private SecondStubEvent() {
+        name = null;
+        number = null;
+    }
+
+    public SecondStubEvent(String name, Integer number) {
         this.name = name;
+        this.number = number;
     }
 
     public String getName() {
         return name;
     }
+
+    public Integer getNumber() {
+        return number;
+    }
+
 }

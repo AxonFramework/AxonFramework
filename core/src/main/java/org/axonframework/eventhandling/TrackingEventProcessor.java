@@ -75,6 +75,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
     private final CopyOnWriteArraySet<Integer> activeSegments = new CopyOnWriteArraySet<>();
     private final int maxThreadCount;
+    private final String segmentIdResourceKey;
+    private final String lastTokenResourceKey;
 
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
@@ -151,8 +153,21 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
         this.maxThreadCount = config.getMaxThreadCount();
         this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(name));
+        this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
+        this.lastTokenResourceKey = "Processor[" + name + "]/Token";
 
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
+        registerInterceptor((unitOfWork, interceptorChain) -> {
+            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
+                tokenStore.extendClaim(getName(), 0);
+            }
+            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isLastMessage()) {
+                unitOfWork.onPrepareCommit(uow -> tokenStore.storeToken(unitOfWork.getResource(lastTokenResourceKey),
+                                                                        name,
+                                                                        unitOfWork.getResource(segmentIdResourceKey)));
+            }
+            return interceptorChain.proceed();
+        });
     }
 
     /**
@@ -215,9 +230,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         try {
             Thread.sleep(errorWaitTime * 1000);
         } catch (InterruptedException e1) {
+            shutDown();
             Thread.currentThread().interrupt();
             logger.warn("Thread interrupted. Preparing to shut down event processor");
-            shutDown();
         }
     }
 
@@ -263,21 +278,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
 
             UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
-            unitOfWork.resources().put(Segment.class.getName(), segment);
-            unitOfWork.onPrepareCommit(uow -> {
-                EventMessage<?> event = uow.getMessage();
-                if (event instanceof TrackedEventMessage<?>
-                    && nonNull(finalLastToken)
-                    && finalLastToken.equals(((TrackedEventMessage) event).trackingToken())) {
-                    tokenStore.storeToken(finalLastToken, getName(), segment.getSegmentId());
-                }
-            });
+            unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
+            unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, segment);
 
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
-            Thread.currentThread().interrupt();
             this.shutDown();
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -328,12 +336,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     @Override
     public void shutDown() {
         if (state.getAndUpdate(s -> State.SHUT_DOWN) != State.SHUT_DOWN) {
+            logger.info("Shutdown state set for Processor '{}'. Awaiting termination...", getName());
             try {
                 while (threadFactory.activeThreads() > 0) {
                     Thread.sleep(1);
                 }
             } catch (InterruptedException e) {
-                // fine, we stop polling
+                logger.info("Thread was interrupted while waiting for TrackingProcessor '{}' shutdown.", getName());
+                Thread.currentThread().interrupt();
             }
         }
     }

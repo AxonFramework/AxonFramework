@@ -58,7 +58,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     private final String LOAD_SAGA_QUERY =
             "SELECT new "+ serializedObjectType().getName() + "(" +
                     "se.serializedSaga, se.sagaType, se.revision) " + "FROM " + sagaEntryEntityName() + " se " +
-                    "WHERE se.sagaId = :sagaId " + "AND se.sagaType = :sagaType";
+                    "WHERE se.sagaId = :sagaId AND se.sagaType = :sagaType";
 
 
     private final String DELETE_SAGA_QUERY = "DELETE FROM " + sagaEntryEntityName() + " se WHERE se.sagaId = :id";
@@ -69,16 +69,16 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     // Association Queries
     private static final String DELETE_ASSOCIATION_QUERY =
-            "DELETE FROM AssociationValueEntry ae " + "WHERE ae.associationKey = :associationKey " +
-                    "AND ae.associationValue = :associationValue " + "AND ae.sagaType = :sagaType " +
+            "DELETE FROM AssociationValueEntry ae WHERE ae.associationKey = :associationKey " +
+                    "AND ae.associationValue = :associationValue AND ae.sagaType = :sagaType " +
                     "AND ae.sagaId = :sagaId";
 
     private static final String FIND_ASSOCIATION_IDS_QUERY =
-            "SELECT ae.sagaId FROM AssociationValueEntry ae " + "WHERE ae.associationKey = :associationKey " +
-                    "AND ae.associationValue = :associationValue " + "AND ae.sagaType = :sagaType";
+            "SELECT ae.sagaId FROM AssociationValueEntry ae WHERE ae.associationKey = :associationKey " +
+                    "AND ae.associationValue = :associationValue AND ae.sagaType = :sagaType";
 
     private static final String FIND_ASSOCIATIONS_QUERY =
-            "SELECT ae FROM AssociationValueEntry ae " + "WHERE ae.sagaType = :sagaType " + "AND ae.sagaId = :sagaId";
+            "SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaType = :sagaType AND ae.sagaId = :sagaId";
 
     private static final String DELETE_ASSOCIATIONS_QUERY =
             "DELETE FROM AssociationValueEntry ae WHERE ae.sagaId = :sagaId";

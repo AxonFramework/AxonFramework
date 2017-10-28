@@ -76,8 +76,30 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * @param index        the global sequence number of the next event
      * @param maxGapOffset the maximum distance between a gap and the token's index
      * @return the new token that has advanced from the current token
+     * @deprecated Use {@link #advanceTo(long, int, boolean)} instead
      */
+    @Deprecated
     public GapAwareTrackingToken advanceTo(long index, int maxGapOffset) {
+        return advanceTo(index, maxGapOffset, true);
+    }
+
+    /**
+     * Returns a new {@link GapAwareTrackingToken} instance based on this token but which has advanced to given {@code
+     * index}. Gaps that have fallen behind the index by more than the {@code maxGapOffset} will not be included in the
+     * new token.
+     * <p>
+     * Note that the given {@code index} should be one of the current token's gaps or be higher than the current token's
+     * index.
+     * <p>
+     * If {@code allowGaps} is set to {@code false}, any gaps that occur before the given {@code index} are removed
+     * from the returned token.
+     *
+     * @param index        the global sequence number of the next event
+     * @param maxGapOffset the maximum distance between a gap and the token's index
+     * @param allowGaps    whether advancing to the given index should take into account that gaps may have appeared
+     * @return the new token that has advanced from the current token
+     */
+    public GapAwareTrackingToken advanceTo(long index, int maxGapOffset, boolean allowGaps) {
         long newIndex;
         SortedSet<Long> gaps = new TreeSet<>(this.gaps);
         if (gaps.remove(index)) {
@@ -90,7 +112,8 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
                     "The given index [%d] should be larger than the token index [%d] or be one of the token's gaps [%s]",
                     index, this.index, gaps));
         }
-        gaps = gaps.tailSet(newIndex - maxGapOffset);
+        long smalledAllowedGap = allowGaps ? (newIndex - maxGapOffset) : Math.max(index, newIndex - maxGapOffset);
+        gaps = gaps.tailSet(smalledAllowedGap);
         return new GapAwareTrackingToken(newIndex, gaps);
     }
 
