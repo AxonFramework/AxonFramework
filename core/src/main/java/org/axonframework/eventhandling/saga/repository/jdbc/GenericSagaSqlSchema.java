@@ -178,7 +178,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
         final String sql = "create table " + sagaSchema.associationValueEntryTable() + " (\n" +
-                "        id int not null AUTO_GENERATED,\n" +
+                "        id int not null AUTO_INCREMENT,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +
                 "        sagaId varchar(255),\n" +
