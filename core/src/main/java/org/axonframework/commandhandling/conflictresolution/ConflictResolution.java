@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,6 +49,26 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
         CurrentUnitOfWork.get().getOrComputeResource(CONFLICT_RESOLUTION_KEY, key -> conflictResolver);
     }
 
+    /**
+     * Returns the ConflictResolver instance that can be used to resolve conflicts of an Aggregate that has been
+     * <em>previously loaded in this Unit of Work</em>. Note that, when multiple aggregates are loaded, the
+     * {@link ConflictResolver} that was registered last, is returned.
+     * <p>
+     * Any conflicts must be resolved (by invoking one of the methods on {@link ConflictResolver}) before the Unit of
+     * Work is committed.
+     * <p>
+     * If no Aggregate was loaded, or no conflicts are present, this method will return a {@link NoConflictResolver},
+     * instance.
+     *
+     * @return The ConflictResolver for the last loaded Aggregate.
+     */
+    public static ConflictResolver getConflictResolver() {
+        return CurrentUnitOfWork.map(uow -> {
+            ConflictResolver conflictResolver = uow.getResource(CONFLICT_RESOLUTION_KEY);
+            return conflictResolver == null ? NoConflictResolver.INSTANCE : conflictResolver;
+        }).orElse(NoConflictResolver.INSTANCE);
+    }
+
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (ConflictResolver.class.equals(parameters[parameterIndex].getType())) {
@@ -59,10 +79,7 @@ public class ConflictResolution implements ParameterResolverFactory, ParameterRe
 
     @Override
     public ConflictResolver resolveParameterValue(Message<?> message) {
-        return CurrentUnitOfWork.map(uow -> {
-            ConflictResolver conflictResolver = uow.getResource(CONFLICT_RESOLUTION_KEY);
-            return conflictResolver == null ? NoConflictResolver.INSTANCE : conflictResolver;
-        }).orElse(NoConflictResolver.INSTANCE);
+        return getConflictResolver();
     }
 
     @Override
