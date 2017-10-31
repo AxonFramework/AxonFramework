@@ -117,11 +117,10 @@ public abstract class AbstractEventBus implements EventBus {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
                          () -> "It is not allowed to publish events when the current Unit of Work has already been " +
-                                 "committed. " +
-                                 "Please start a new Unit of Work before publishing events.");
+                               "committed. Please start a new Unit of Work before publishing events.");
             Assert.state(!unitOfWork.root().phase().isAfter(PREPARE_COMMIT),
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
-                                 "committed.");
+                               "committed.");
 
             eventsQueue(unitOfWork).addAll(events);
 
