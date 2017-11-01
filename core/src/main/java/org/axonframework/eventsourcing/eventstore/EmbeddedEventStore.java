@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -64,9 +63,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private final long cleanupDelayMillis;
     private final ThreadFactory threadFactory;
     private final ScheduledExecutorService cleanupService;
-
-    private volatile Node oldest;
     private final AtomicBoolean producerStarted = new AtomicBoolean();
+    private volatile Node oldest;
 
     /**
      * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and default settings.
@@ -331,13 +329,16 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
+            boolean allowSwitchToTailingConsumer = true;
             if (tailingConsumers.contains(this)) {
                 if (!behindGlobalCache()) {
                     return peekGlobalStream(timeout, timeUnit);
                 }
                 stopTailingGlobalStream();
+                // we want to prevent switching back immediately, as it may produce a StackOverflowException
+                allowSwitchToTailingConsumer = false;
             }
-            return peekPrivateStream(timeout, timeUnit);
+            return peekPrivateStream(allowSwitchToTailingConsumer, timeout, timeUnit);
         }
 
         private boolean behindGlobalCache() {
@@ -371,7 +372,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
             }
         }
 
-        private TrackedEventMessage<?> peekPrivateStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
+        private TrackedEventMessage<?> peekPrivateStream(boolean allowSwitchToTailingConsumer, int timeout, TimeUnit timeUnit) throws InterruptedException {
             if (privateIterator == null) {
                 privateStream = storageEngine().readEvents(lastToken, false);
                 privateIterator = privateStream.iterator();
@@ -380,12 +381,23 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 TrackedEventMessage<?> nextEvent = privateIterator.next();
                 lastToken = nextEvent.trackingToken();
                 return nextEvent;
-            } else {
+            } else if (allowSwitchToTailingConsumer) {
                 closePrivateStream();
                 lastNode = findNode(lastToken);
                 tailingConsumers.add(this);
                 ensureProducerStarted();
                 return timeout > 0 ? peek(timeout, timeUnit) : null;
+            } else {
+                consumerLock.lock();
+                try {
+                    consumableEventsCondition.await(timeout, timeUnit);
+                    if (privateIterator.hasNext()) {
+                        return privateIterator.next();
+                    }
+                    return null;
+                } finally {
+                    consumerLock.unlock();
+                }
             }
         }
 
