@@ -20,6 +20,8 @@ import org.axonframework.boot.EventProcessorProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
@@ -87,6 +89,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnBean(EventStorageEngine.class)
     public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
         return new EmbeddedEventStore(storageEngine, configuration.messageMonitor(EventStore.class, "eventStore"));
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public CommandGateway commandGateway(CommandBus commandBus) {
+        return new DefaultCommandGateway(commandBus);
     }
 
     @Bean

@@ -44,8 +44,8 @@ import java.util.function.Supplier;
 @org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
-    private Configuration config;
     private final Configurer configurer;
+    private Configuration config;
     private volatile boolean running = false;
 
     /**
@@ -57,17 +57,26 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         this.configurer = configurer;
     }
 
-    @NoBeanOfType(CommandBus.class)
-    @Bean
+    @Override
     public CommandBus commandBus() {
         return config.commandBus();
     }
 
-    @NoBeanOfType(EventBus.class)
-    @Bean
     @Override
     public EventBus eventBus() {
         return config.eventBus();
+    }
+
+    @NoBeanOfType(CommandBus.class)
+    @Bean("commandBus")
+    public CommandBus defaultCommandBus() {
+        return commandBus();
+    }
+
+    @NoBeanOfType(EventBus.class)
+    @Bean("eventBus")
+    public EventBus defaultEventBus() {
+        return eventBus();
     }
 
     @Override

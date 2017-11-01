@@ -19,12 +19,18 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configurer;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.serialization.Serializer;
@@ -46,6 +52,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -79,10 +91,20 @@ public class AxonAutoConfigurationTest {
         assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
 
         assertEquals(2, configuration.correlationDataProviders().size());
+
+        Context.SomeComponent someComponent = applicationContext.getBean(Context.SomeComponent.class);
+        assertEquals(0, someComponent.invocations.size());
+        applicationContext.getBean(EventBus.class).publish(asEventMessage("testing"));
+        assertEquals(1, someComponent.invocations.size());
     }
 
     @Configuration
     public static class Context {
+
+        @Bean
+        public EventStore eventStore() {
+            return new EmbeddedEventStore(storageEngine());
+        }
 
         @Bean
         public EventStorageEngine storageEngine() {
@@ -122,12 +144,38 @@ public class AxonAutoConfigurationTest {
 
         }
 
+        @Bean
+        public SagaConfiguration<MySaga> mySagaConfiguration() {
+            return SagaConfiguration.subscribingSagaManager(MySaga.class);
+        }
+
+        @Component
+        public static class CustomParameterResolverFactory implements ParameterResolverFactory {
+
+            private final EventBus eventBus;
+
+            @Autowired
+            public CustomParameterResolverFactory(EventBus eventBus) {
+                this.eventBus = eventBus;
+            }
+
+            @Override
+            public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+                if (Integer.class.isAssignableFrom(parameters[parameterIndex].getType())) {
+                    return new FixedValueParameterResolver<>(1);
+                }
+                return null;
+            }
+        }
+
         @Component
         public static class SomeComponent {
 
-            @EventHandler
-            public void handle(String event, SomeOtherComponent test) {
+            private List<String> invocations = new ArrayList<>();
 
+            @EventHandler
+            public void handle(String event, SomeOtherComponent test, Integer testing) {
+                invocations.add(event);
             }
 
         }
