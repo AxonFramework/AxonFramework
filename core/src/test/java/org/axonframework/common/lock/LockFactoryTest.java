@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -72,7 +71,6 @@ public class LockFactoryTest {
             }
         }
         Assert.assertEquals("Failed LockUnlock count", 0, failedAttempts);
-        System.out.println("Completed in " + (System.currentTimeMillis() - startTime) + "ms");
     }
 
 
