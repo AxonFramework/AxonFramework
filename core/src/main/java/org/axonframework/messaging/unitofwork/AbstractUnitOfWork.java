@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -95,15 +94,23 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     private void commitAsNested() {
-        UnitOfWork<?> root = root();
         try {
             changePhase(Phase.PREPARE_COMMIT, Phase.COMMIT);
-            root.afterCommit(u -> changePhase(Phase.AFTER_COMMIT));
-            root.onRollback(u -> changePhase(Phase.ROLLBACK));
+            delegateAfterCommitToParent(this);
+            parentUnitOfWork.onRollback(u -> changePhase(Phase.ROLLBACK));
         } catch (Exception e) {
             setRollbackCause(e);
             changePhase(Phase.ROLLBACK);
             throw e;
+        }
+    }
+
+    private void delegateAfterCommitToParent(UnitOfWork<?> uow) {
+        Optional<UnitOfWork<?>> parent = uow.parent();
+        if (parent.isPresent()) {
+            parent.get().afterCommit(this::delegateAfterCommitToParent);
+        } else {
+            changePhase(Phase.AFTER_COMMIT);
         }
     }
 

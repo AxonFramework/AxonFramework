@@ -15,60 +15,101 @@
 
 package org.axonframework.config;
 
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.saga.SagaEventHandler;
-import org.axonframework.eventhandling.saga.StartSaga;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.*;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public class SagaConfigurationTest {
 
+    private Configuration configuration;
+
+    @Before
+    public void setUp() throws Exception {
+        configuration = spy(DefaultConfigurer.defaultConfiguration().start());
+    }
+
     @Test
-    public void testConfigureMonitor() throws Exception {
-        MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
-        MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
-
-        SagaConfiguration<Object> subscribing = SagaConfiguration.subscribingSagaManager(Object.class);
-        subscribing.configureMessageMonitor(c -> subscribingMonitor);
-        SagaConfiguration<TestSaga> tracking = SagaConfiguration.trackingSagaManager(TestSaga.class);
-        tracking.configureMessageMonitor(c -> trackingMonitor);
-
-        // Use InMemoryEventStorageEngine so tracking processors don't miss events
-        Configurer configurer = DefaultConfigurer.defaultConfiguration()
-                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                 .registerModule(subscribing)
-                                                 .registerModule(tracking);
-        Configuration config = configurer.start();
-
-        try {
-            config.eventBus().publish(new GenericEventMessage<>("test"));
-
-            assertEquals(1, subscribingMonitor.getMessages().size());
-            assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
+    public void testCreateTrackingSagaManager() throws Exception {
+        SagaConfiguration<Object> config = SagaConfiguration.trackingSagaManager(Object.class);
+        config.initialize(configuration);
+        EventProcessor actual = config.getProcessor();
+        assertEquals(TrackingEventProcessor.class, actual.getClass());
+        assertEquals("ObjectProcessor", actual.getName());
+        // make sure the event bus was used as message source
+        verify(configuration).eventBus();
+        verify(configuration).messageMonitor(EventProcessor.class, actual.getName());
+        verify(configuration).getComponent(eq(RollbackConfiguration.class), any());
+        verify(configuration).getComponent(eq(TokenStore.class), any());
+        verify(configuration).getComponent(eq(TransactionManager.class), any());
+        verify(configuration).getComponent(eq(ErrorHandler.class), any());
+        verify(configuration).getComponent(eq(TrackingEventProcessorConfiguration.class), any());
+        verify(configuration).getComponent(eq(SagaStore.class), any());
     }
 
-    public static class TestSagaEvent {
-        private String id;
-        TestSagaEvent(String id) {
-            this.id = id;
-        }
-        public String getId() {
-            return id;
-        }
+    @Test
+    public void testCreateSubscribingProcessor() {
+        SagaConfiguration<Object> config = SagaConfiguration.subscribingSagaManager(Object.class);
+        config.initialize(configuration);
+        EventProcessor actual = config.getProcessor();
+        assertEquals(SubscribingEventProcessor.class, actual.getClass());
+        assertEquals("ObjectProcessor", actual.getName());
+        // make sure the event bus was used as message source
+        verify(configuration).eventBus();
+        verify(configuration).messageMonitor(EventProcessor.class, actual.getName());
+        verify(configuration).getComponent(eq(RollbackConfiguration.class), any());
+        verify(configuration).getComponent(eq(ErrorHandler.class), any());
+        verify(configuration).getComponent(eq(SagaStore.class), any());
+
+        verify(configuration, never()).getComponent(eq(TransactionManager.class), any());
+        verify(configuration, never()).getComponent(eq(TokenStore.class), any());
+        verify(configuration, never()).getComponent(eq(TrackingEventProcessorConfiguration.class), any());
     }
 
-    public static class TestSaga {
-        @StartSaga
-        @SagaEventHandler(associationProperty = "id")
-        public void handleEvent(TestSagaEvent event) {
-            System.out.println("yo " + event.getId());
-        }
+    @Test
+    public void testCreateTrackingProcessorWithCustomSettings() {
+        InMemorySagaStore sagaStore = new InMemorySagaStore();
+        SagaConfiguration<Object> config = SagaConfiguration.trackingSagaManager(Object.class, configuration -> new SimpleEventBus())
+                .configureTrackingProcessor(c ->  TrackingEventProcessorConfiguration.forSingleThreadedProcessing())
+                .configureSagaStore(c -> sagaStore)
+                .configureMessageMonitor(c -> NoOpMessageMonitor.instance())
+                .configureRollbackConfiguration(c -> RollbackConfigurationType.ANY_THROWABLE)
+                .configureErrorHandler(c -> PropagatingErrorHandler.INSTANCE)
+                .configureTransactionManager(c -> NoTransactionManager.instance())
+                .configureTokenStore(c -> new InMemoryTokenStore());
+        config.initialize(configuration);
+        EventProcessor actual = config.getProcessor();
+        assertEquals(TrackingEventProcessor.class, actual.getClass());
+        assertEquals("ObjectProcessor", actual.getName());
+
+        verify(configuration, never()).messageMonitor(EventProcessor.class, actual.getName());
+        verify(configuration, never()).getComponent(eq(RollbackConfiguration.class), any());
+        verify(configuration, never()).getComponent(eq(TokenStore.class), any());
+        verify(configuration, never()).getComponent(eq(TransactionManager.class), any());
+        verify(configuration, never()).messageMonitor(any(), any());
+        verify(configuration, never()).getComponent(eq(ErrorHandler.class), any());
+
+        verify(configuration, never()).getComponent(eq(SagaStore.class), any());
+        verify(configuration, never()).eventBus();
+        verify(configuration, never()).getComponent(eq(TrackingEventProcessorConfiguration.class), any());
+
+        assertEquals(sagaStore, config.getSagaStore());
+        assertEquals(AnnotatedSagaRepository.class, config.getSagaRepository().getClass());
+        assertEquals(AnnotatedSagaManager.class, config.getSagaManager().getClass());
     }
 }

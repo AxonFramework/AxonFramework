@@ -15,8 +15,11 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -28,8 +31,16 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Rene de Waele
@@ -69,6 +80,53 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                       }
                                                   }));
         testStoreAndLoadEvents();
+    }
+
+    @Test
+    public void testGapsForVeryOldEventsAreNotIncluded() throws SQLException {
+        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-1), createEvent(0));
+        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-2), createEvent(1));
+        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-3), createEvent(2));
+        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-4), createEvent(3));
+
+        try(Connection conn = dataSource.getConnection()) {
+            conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
+        }
+
+        testSubject.fetchTrackedEvents(null, 100).stream()
+                .map(i -> (GapAwareTrackingToken) i.trackingToken())
+                .forEach(i -> {
+                    assertTrue(i.getGaps().size() <= 2);
+                });
+    }
+
+    @DirtiesContext
+    @Test
+    public void testOldGapsAreRemovedFromProvidedTrackingToken() throws SQLException {
+        testSubject.setGapTimeout(50001);
+        testSubject.setGapCleaningThreshold(50);
+        Instant now = Clock.systemUTC().instant();
+        GenericEventMessage.clock = Clock.fixed(now.minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-1), createEvent(0)); // index 0 and 1
+        GenericEventMessage.clock = Clock.fixed(now.minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-2), createEvent(1)); // index 2 and 3
+        GenericEventMessage.clock = Clock.fixed(now.minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-3), createEvent(2)); // index 4 and 5
+        GenericEventMessage.clock = Clock.fixed(now, Clock.systemUTC().getZone());
+        testSubject.appendEvents(createEvent(-4), createEvent(3)); // index 6 and 7
+
+        try(Connection conn = dataSource.getConnection()) {
+            conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
+        }
+
+        List<Long> gaps = LongStream.range(-50, 6).filter(i -> i != 1L && i != 3L && i != 5).boxed().collect(Collectors.toList());
+        List<? extends TrackedEventData<?>> events = testSubject.fetchTrackedEvents(GapAwareTrackingToken.newInstance(6, gaps), 100);
+        assertEquals(1, events.size());
+        assertEquals(4L, (long)((GapAwareTrackingToken)events.get(0).trackingToken()).getGaps().first());
     }
 
     @Override

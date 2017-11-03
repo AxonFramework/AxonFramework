@@ -129,7 +129,8 @@ public interface Configurer {
      * @param messageMonitorBuilder The builder function to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureMessageMonitor(Class<?> componentType, String componentName, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+    default Configurer configureMessageMonitor(Class<?> componentType, String componentName,
+                                               Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
                                        componentName,
                                        (configuration, type, name) -> messageMonitorBuilder.apply(configuration));

@@ -84,7 +84,7 @@ public class DefaultConfigurer implements Configurer {
 
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
-            new Component<>(config, "monitorFactory", (c) -> messageMonitorFactoryBuilder.build(c));
+            new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
 
     private final Component<List<CorrelationDataProvider>> correlationProviders =
             new Component<>(config, "correlationProviders",
@@ -148,7 +148,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
-        components.put(CommandGateway.class, new Component<>(config, "resourceInjector", this::defaultCommandGateway));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
     }

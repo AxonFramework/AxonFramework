@@ -18,13 +18,7 @@ package org.axonframework.config;
 import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DirectEventProcessingStrategy;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -32,11 +26,12 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.ArrayList;
@@ -50,12 +45,56 @@ import java.util.function.Function;
 public class SagaConfiguration<S> implements ModuleConfiguration {
 
     private final Component<EventProcessor> processor;
+    private final Component<TrackingEventProcessorConfiguration> trackingEventProcessorConfiguration;
     private final Component<AnnotatedSagaManager<S>> sagaManager;
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
+    private final Component<RollbackConfiguration> rollbackConfiguration;
+    private final Component<ErrorHandler> errorHandler;
+    private final Component<TokenStore> tokenStore;
+    private final Component<TransactionManager> transactionManager;
+    private final Component<MessageMonitor<? super EventMessage<?>>> messageMonitor;
     private final List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>> handlerInterceptors = new ArrayList<>();
-    private MessageMonitorFactory messageMonitorFactory = null;
     private Configuration config;
+
+    @SuppressWarnings("unchecked")
+    private SagaConfiguration(Class<S> sagaType, Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder) {
+        String managerName = sagaType.getSimpleName() + "Manager";
+        String processorName = sagaType.getSimpleName() + "Processor";
+        String repositoryName = sagaType.getSimpleName() + "Repository";
+        transactionManager = new Component<>(() -> config, "transactionManager",
+                                             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance));
+        messageMonitor = new Component<>(() -> config, "messageMonitor",
+                                         c -> c.messageMonitor(EventProcessor.class, processorName));
+        tokenStore = new Component<>(() -> config, "messageMonitor",
+                                     c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
+        errorHandler = new Component<>(() -> config, "errorHandler",
+                                       c -> c.getComponent(ErrorHandler.class,
+                                                           () -> PropagatingErrorHandler.INSTANCE));
+        rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
+                                                c -> c.getComponent(RollbackConfiguration.class,
+                                                                    () -> RollbackConfigurationType.ANY_THROWABLE));
+        sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
+        sagaRepository = new Component<>(() -> config, repositoryName,
+                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
+                                                                            c.parameterResolverFactory()));
+        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
+                                                                                                 c.parameterResolverFactory()));
+        trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
+                                                              c -> c.getComponent(TrackingEventProcessorConfiguration.class,
+                                                                                  TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
+        processor = new Component<>(() -> config, processorName,
+                                    c -> {
+                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(processorName, sagaManager.get(),
+                                                                                                            rollbackConfiguration.get(),
+                                                                                                            messageSourceBuilder.apply(c),
+                                                                                                            DirectEventProcessingStrategy.INSTANCE,
+                                                                                                            errorHandler.get(),
+                                                                                                            messageMonitor.get());
+                                        processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
+                                        return processor;
+                                    });
+    }
 
     /**
      * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor to process
@@ -112,52 +151,22 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             Class<S> sagaType,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
         SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, c -> null);
+        String processorName = sagaType.getSimpleName() + "Processor";
         sagaConfiguration.processor.update(configuration -> {
             TrackingEventProcessor processor = new TrackingEventProcessor(
-                    sagaType.getSimpleName() + "Processor",
+                    processorName,
                     sagaConfiguration.sagaManager.get(),
                     messageSourceBuilder.apply(sagaConfiguration.config),
-                    configuration.getComponent(TokenStore.class, InMemoryTokenStore::new),
-                    configuration.getComponent(TransactionManager.class, NoTransactionManager::instance),
-                    sagaConfiguration.getMessageMonitor(configuration, sagaType));
+                    sagaConfiguration.tokenStore.get(),
+                    sagaConfiguration.transactionManager.get(),
+                    sagaConfiguration.messageMonitor.get(),
+                    sagaConfiguration.rollbackConfiguration.get(),
+                    sagaConfiguration.errorHandler.get(),
+                    sagaConfiguration.trackingEventProcessorConfiguration.get());
             processor.registerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
             return processor;
         });
         return sagaConfiguration;
-    }
-
-    @SuppressWarnings("unchecked")
-    private SagaConfiguration(Class<S> sagaType, Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder) {
-        String managerName = sagaType.getSimpleName() + "Manager";
-        String processorName = sagaType.getSimpleName() + "Processor";
-        String repositoryName = sagaType.getSimpleName() + "Repository";
-        sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
-        sagaRepository = new Component<>(() -> config, repositoryName,
-                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
-                                                                            c.parameterResolverFactory()));
-        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
-                                                                                                 c.parameterResolverFactory()));
-        processor = new Component<>(() -> config,
-                                    processorName,
-                                    c -> {
-                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(
-                                                managerName,
-                                                sagaManager.get(),
-                                                messageSourceBuilder.apply(c),
-                                                DirectEventProcessingStrategy.INSTANCE,
-                                                PropagatingErrorHandler.INSTANCE,
-                                                getMessageMonitor(c, sagaType));
-                                        processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
-                                        return processor;
-                                    });
-    }
-
-    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration, Class<?> sagaType) {
-        if (messageMonitorFactory != null) {
-            return messageMonitorFactory.create(configuration, sagaType, sagaType.getSimpleName());
-        } else {
-            return configuration.messageMonitor(sagaType, sagaType.getSimpleName());
-        }
     }
 
     /**
@@ -191,25 +200,78 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     /**
-     * Configures the builder function to create the Message Monitor for this configuration. This overrides any Message
-     * Monitor configured through {@link Configurer}.
+     * Registers the {@link TrackingEventProcessorConfiguration} to use when building the processor for this Saga type.
+     * <p>
+     * Note that the provided configuration is ignored when a subscribing processor is being used.
      *
-     * @param messageMonitorBuilder The builder function to use
+     * @param trackingEventProcessorConfiguration The function to create the configuration instance
      * @return this SagaConfiguration instance, ready for further configuration
      */
-    public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
-        return configureMessageMonitor((configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
+    public SagaConfiguration<S> configureTrackingProcessor(Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfiguration) {
+        this.trackingEventProcessorConfiguration.update(trackingEventProcessorConfiguration);
+        return this;
     }
 
     /**
-     * Configures the factory to create the Message Monitor for this configuration. This overrides any Message Monitor
-     * configured through {@link Configurer}.
+     * Registers the given {@code tokenStore} for use by a TrackingProcessor for the Saga being configured. The
+     * TokenStore is ignored when a Subscribing Processor has been configured.
      *
-     * @param messageMonitorFactory The factory to use
+     * @param tokenStore The function returning a TokenStore based on the given Configuration
      * @return this SagaConfiguration instance, ready for further configuration
      */
-    public SagaConfiguration<S> configureMessageMonitor(MessageMonitorFactory messageMonitorFactory) {
-        this.messageMonitorFactory = messageMonitorFactory;
+    public SagaConfiguration<S> configureTokenStore(Function<Configuration, TokenStore> tokenStore) {
+        this.tokenStore.update(tokenStore);
+        return this;
+    }
+
+    /**
+     * Configures the ErrorHandler to use when an error occurs processing an Event.
+     * <p>
+     * The default is to propagate errors, causing the processors to release their token and go into a retry loop.
+     *
+     * @param errorHandler The function to create the ErrorHandler
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureErrorHandler(Function<Configuration, ErrorHandler> errorHandler) {
+        this.errorHandler.update(errorHandler);
+        return this;
+    }
+
+    /**
+     * Defines the policy to roll back or commit a Unit of Work in case exceptions occur.
+     * <p>
+     * Defaults to roll back on all exceptions.
+     *
+     * @param rollbackConfiguration The function providing the RollbackConfiguration to use
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureRollbackConfiguration(Function<Configuration, RollbackConfiguration> rollbackConfiguration) {
+        this.rollbackConfiguration.update(rollbackConfiguration);
+        return this;
+    }
+
+    /**
+     * Defines the Transaction Manager to use when processing Events for this Saga. Typically, this transaction manager
+     * will manage the transaction around storing of the tokens and Saga instances.
+     * <p>
+     * Defaults to the Transaction Manager defined in the main Configuration.
+     *
+     * @param transactionManager The function providing the TransactionManager to use
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureTransactionManager(Function<Configuration, TransactionManager> transactionManager) {
+        this.transactionManager.update(transactionManager);
+        return this;
+    }
+
+    /**
+     * Configures a MessageMonitor to be used to monitor Events processed on by the Saga being configured.
+     *
+     * @param messageMonitor The function to create the MessageMonitor
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
+        this.messageMonitor.update(messageMonitor);
         return this;
     }
 
@@ -276,5 +338,4 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public void shutdown() {
         processor.get().shutDown();
     }
-
 }

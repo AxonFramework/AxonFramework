@@ -27,6 +27,7 @@ import org.bson.Document;
 
 import java.time.Instant;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
@@ -66,7 +67,7 @@ public class EventEntry implements DomainEventData<Object> {
         payloadType = serializedPayloadObject.getType().getName();
         payloadRevision = serializedPayloadObject.getType().getRevision();
         serializedMetaData = serializedMetaDataObject.getData();
-        timestamp = event.getTimestamp().toString();
+        timestamp = formatInstant(event.getTimestamp());
     }
 
     /**
