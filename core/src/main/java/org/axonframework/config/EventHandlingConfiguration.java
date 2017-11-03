@@ -422,20 +422,21 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures the Message Monitor to use for the {@link EventProcessor} of the given name. This overrides any
-     * message monitor configured through {@link Configurer}.
+     * Configures the builder function to create the Message Monitor for the {@link EventProcessor} of the given name.
+     * This overrides any Message Monitor configured through {@link Configurer}.
      *
-     * @param name           The name of the event processor
-     * @param messageMonitor The MessageMonitor to use
+     * @param name                  The name of the event processor
+     * @param messageMonitorBuilder The builder function to use
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration configureMessageMonitor(String name, MessageMonitor<Message<?>>  messageMonitor) {
-        return configureMessageMonitor(name, (configuration, componentType, componentName) -> messageMonitor);
+    public EventHandlingConfiguration configureMessageMonitor(String name, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+        return configureMessageMonitor(name,
+                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
     }
 
     /**
      * Configures the factory to create the Message Monitor for the {@link EventProcessor} of the given name. This
-     * overrides any message monitor configured through {@link Configurer}.
+     * overrides any Message Monitor configured through {@link Configurer}.
      *
      * @param name                  The name of the event processor
      * @param messageMonitorFactory The factory to use

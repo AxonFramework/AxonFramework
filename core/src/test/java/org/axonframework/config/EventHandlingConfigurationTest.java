@@ -142,8 +142,8 @@ public class EventHandlingConfigurationTest {
         EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .registerSubscribingEventProcessor("subscribing")
                 .registerTrackingProcessor("tracking")
-                .configureMessageMonitor("subscribing", subscribingMonitor)
-                .configureMessageMonitor("tracking", trackingMonitor)
+                .configureMessageMonitor("subscribing", c -> subscribingMonitor)
+                .configureMessageMonitor("tracking", c -> trackingMonitor)
                 .registerEventHandler(c -> new SubscribingEventHandler())
                 .registerEventHandler(c -> new TrackingEventHandler());
         configurer.registerModule(module);

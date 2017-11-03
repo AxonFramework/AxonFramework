@@ -33,9 +33,9 @@ public class SagaConfigurationTest {
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
 
         SagaConfiguration<Object> subscribing = SagaConfiguration.subscribingSagaManager(Object.class);
-        subscribing.configureMessageMonitor(subscribingMonitor);
+        subscribing.configureMessageMonitor(c -> subscribingMonitor);
         SagaConfiguration<TestSaga> tracking = SagaConfiguration.trackingSagaManager(TestSaga.class);
-        tracking.configureMessageMonitor(trackingMonitor);
+        tracking.configureMessageMonitor(c -> trackingMonitor);
 
         // Use InMemoryEventStorageEngine so tracking processors don't miss events
         Configurer configurer = DefaultConfigurer.defaultConfiguration()

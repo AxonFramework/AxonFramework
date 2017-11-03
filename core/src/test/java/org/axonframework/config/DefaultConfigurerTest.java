@@ -123,7 +123,7 @@ public class DefaultConfigurerTest {
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureMessageMonitor(c -> (t, n) -> defaultMonitor)
-                                                .configureMessageMonitor(CommandBus.class, "commandBus", commandBusMonitor)
+                                                .configureMessageMonitor(CommandBus.class, "commandBus", c -> commandBusMonitor)
                                                 .buildConfiguration();
         config.start();
 

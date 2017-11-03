@@ -191,18 +191,18 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     /**
-     * Configures the Message Monitor to use for this configuration. This overrides any message monitor configured
-     * through {@link Configurer}.
+     * Configures the builder function to create the Message Monitor for this configuration. This overrides any Message
+     * Monitor configured through {@link Configurer}.
      *
-     * @param messageMonitor The MessageMonitor to use
+     * @param messageMonitorBuilder The builder function to use
      * @return this SagaConfiguration instance, ready for further configuration
      */
-    public SagaConfiguration<S> configureMessageMonitor(MessageMonitor<Message<?>>  messageMonitor) {
-        return configureMessageMonitor((configuration, componentType, componentName) -> messageMonitor);
+    public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+        return configureMessageMonitor((configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
     }
 
     /**
-     * Configures the factory to create the Message Monitor for this configuration. This overrides any message monitor
+     * Configures the factory to create the Message Monitor for this configuration. This overrides any Message Monitor
      * configured through {@link Configurer}.
      *
      * @param messageMonitorFactory The factory to use
