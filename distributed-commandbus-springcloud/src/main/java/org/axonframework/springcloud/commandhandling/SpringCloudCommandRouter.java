@@ -162,7 +162,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private void updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                     AtomicReference<ConsistentHash> atomicConsistentHash) {
         SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
-        MessageRoutingInformation messageRoutingInfo = getMessageRoutingInformationFrom(serviceInstance);
+        Optional<MessageRoutingInformation> optionalMessageRoutingInfo =
+                getMessageRoutingInformation(serviceInstance);
+        MessageRoutingInformation messageRoutingInfo = optionalMessageRoutingInfo.get();
 
         atomicConsistentHash.updateAndGet(
                 consistentHash -> consistentHash.with(simpleMember,
@@ -187,10 +189,19 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
-    private MessageRoutingInformation getMessageRoutingInformationFrom(ServiceInstance serviceInstance) {
-        return serviceInstanceMetadataContainsMessageRoutingInformation(serviceInstance) ?
-                messageRoutingInformationFromMetadata(serviceInstance.getMetadata()) :
-                messageRoutingInformationFromNonMetadataSource(serviceInstance);
+    protected Optional<MessageRoutingInformation> getMessageRoutingInformation(ServiceInstance serviceInstance) {
+        if (serviceInstanceMetadataContainsMessageRoutingInformation(serviceInstance)) {
+            return Optional.empty();
+        }
+
+        Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
+
+        int loadFactor = Integer.parseInt(serviceInstanceMetadata.get(LOAD_FACTOR));
+        SimpleSerializedObject<String> serializedCommandFilter = new SimpleSerializedObject<>(
+                serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
+                serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null
+        );
+        return Optional.of(new MessageRoutingInformation(loadFactor, serializedCommandFilter));
     }
 
     /**
@@ -207,23 +218,5 @@ public class SpringCloudCommandRouter implements CommandRouter {
         return serviceInstanceMetadata.containsKey(LOAD_FACTOR) &&
                 serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER) &&
                 serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
-    }
-
-    private MessageRoutingInformation messageRoutingInformationFromMetadata(
-            Map<String, String> serviceInstanceMetadata) {
-        int loadFactor = Integer.parseInt(serviceInstanceMetadata.get(LOAD_FACTOR));
-        SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
-                serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER), String.class,
-                serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null);
-
-        return new MessageRoutingInformation(loadFactor, serializedObject);
-    }
-
-    protected MessageRoutingInformation messageRoutingInformationFromNonMetadataSource(
-            ServiceInstance serviceInstance) {
-        throw new UnsupportedOperationException(
-                "The default " + this.getClass().getSimpleName() + " does not support message routing information " +
-                        "retrieval from another source than a ServiceInstance its metadata."
-        );
     }
 }

@@ -23,6 +23,7 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +31,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
@@ -130,11 +132,17 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     }
 
     @Override
-    protected MessageRoutingInformation messageRoutingInformationFromNonMetadataSource(
-            ServiceInstance serviceInstance) {
+    protected Optional<MessageRoutingInformation> getMessageRoutingInformation(ServiceInstance serviceInstance) {
+        Optional<MessageRoutingInformation> defaultMessageRoutingInfo =
+                super.getMessageRoutingInformation(serviceInstance);
+        return defaultMessageRoutingInfo.isPresent() ?
+                defaultMessageRoutingInfo : requestMessageRoutingInformation(serviceInstance);
+    }
+
+    private Optional<MessageRoutingInformation> requestMessageRoutingInformation(ServiceInstance serviceInstance) {
         SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
         if (simpleMember.local()) {
-            return getLocalMessageRoutingInformation();
+            return Optional.of(getLocalMessageRoutingInformation());
         }
 
         URI endpoint = simpleMember.getConnectionEndpoint(URI.class)
@@ -145,8 +153,12 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                    )));
         URI destinationUri = buildURIForPath(endpoint, messageRoutingInformationEndpoint);
 
-        return restTemplate.exchange(destinationUri, HttpMethod.GET, HttpEntity.EMPTY, MessageRoutingInformation.class)
-                           .getBody();
+        ResponseEntity<MessageRoutingInformation> responseEntity = restTemplate.exchange(destinationUri,
+                                                                                         HttpMethod.GET,
+                                                                                         HttpEntity.EMPTY,
+                                                                                         MessageRoutingInformation.class);
+
+        return responseEntity.hasBody() ? Optional.of(responseEntity.getBody()) : Optional.empty();
     }
 
     private static URI buildURIForPath(URI uri, String appendToPath) {
