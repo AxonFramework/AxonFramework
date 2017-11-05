@@ -153,7 +153,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         broadCastMembership();
 
         Address localAddress = channel.getAddress();
-        String localName = channel.getName(localAddress);
+        String localName = localAddress.toString();
         SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
         members.put(localAddress, localMember);
         consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
@@ -189,6 +189,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             Address[][] diff = View.diff(currentView, view);
             Address[] joined = diff[0];
             Address[] left = diff[1];
+            currentView = view;
 
             stream(joined).filter(member -> !member.equals(channel.getAddress())).forEach(member -> {
                 logger.info("New member detected: [{}]. Sending it my configuration.", member);
@@ -304,11 +305,11 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private void processJoinMessage(final Message message, final JoinMessage joinMessage) {
-        String joinedMember = channel.getName(message.getSrc());
-        if (joinedMember != null) {
+        String joinedMember = message.getSrc().toString();
+        if (channel.getView() == null || channel.getView().containsMember(message.getSrc())) {
             int loadFactor = joinMessage.getLoadFactor();
             Predicate<? super CommandMessage<?>> commandFilter = joinMessage.messageFilter();
-            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(),NON_LOCAL_MEMBER, null);
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(),NON_LOCAL_MEMBER, s -> {});
             members.put(member.endpoint(), member);
             consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
             if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
