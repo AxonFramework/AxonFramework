@@ -19,6 +19,9 @@ package org.axonframework.jgroups.commandhandling;
 import org.axonframework.commandhandling.CommandMessage;
 import org.jgroups.Address;
 import org.jgroups.util.Streamable;
+import org.jgroups.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -40,6 +43,8 @@ public class JoinMessage implements Externalizable {
     private Predicate<? super CommandMessage<?>> messageFilter;
     private Address address;
     private int loadFactor;
+
+    private static final Logger logger = LoggerFactory.getLogger(JoinMessage.class);
 
     /**
      * Default constructor required by the {@link Streamable} and {@link Externalizable} interfaces. Do not use
@@ -74,7 +79,12 @@ public class JoinMessage implements Externalizable {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(address);
+
+        try {
+            Util.writeAddress(address, out);
+        } catch (Exception e) {
+            logger.error("Serialize exception: {}", e);
+        }
         out.writeInt(loadFactor);
         out.writeObject(messageFilter);
     }
@@ -82,7 +92,11 @@ public class JoinMessage implements Externalizable {
     @SuppressWarnings("unchecked")
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        address = (Address) in.readObject();
+        try {
+            address = Util.readAddress(in);
+        } catch (Exception e) {
+            logger.error("Serialize exception: {}", e);
+        }
         loadFactor = in.readInt();
         messageFilter = (Predicate<CommandMessage<?>>) in.readObject();
     }
