@@ -28,10 +28,10 @@ public class DateTimeUtilsTest {
     @Test
     public void testFormattedDateAlwaysContainsMillis() throws Exception {
         Instant now = Instant.now();
-        Instant nowAtZeroMillis = now.minusMillis(now.get(ChronoField.MILLI_OF_SECOND));
+        Instant nowAtZeroMillis = now.minusNanos(now.get(ChronoField.NANO_OF_SECOND));
 
         String formatted = DateTimeUtils.formatInstant(nowAtZeroMillis);
-        assertTrue("Time doesn't seem to contain explicit millis: " + formatted, formatted.endsWith(".000Z"));
+        assertTrue("Time doesn't seem to contain explicit millis: " + formatted, formatted.matches(".*\\.0{3,}Z"));
 
         assertEquals(nowAtZeroMillis, DateTimeUtils.parseInstant(formatted));
     }

@@ -75,9 +75,11 @@ public class AnnotatedHandlerInspector<T> {
     private static <T> AnnotatedHandlerInspector<T> createInspector(Class<? extends T> inspectedType,
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     Map<Class<?>, AnnotatedHandlerInspector> registry) {
+        if (!registry.containsKey(inspectedType)) {
+            registry.put(inspectedType, AnnotatedHandlerInspector.initialize(inspectedType, parameterResolverFactory, registry));
+        }
         //noinspection unchecked
-        return registry.computeIfAbsent(inspectedType, k -> AnnotatedHandlerInspector
-                .initialize(inspectedType, parameterResolverFactory, registry));
+        return registry.get(inspectedType);
     }
 
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
