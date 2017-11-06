@@ -99,12 +99,12 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         // now, they should detect eachother and start syncing their state
-        int t = 0;
-        while (!connector1.getConsistentHash().getMembers().equals(connector2.getConsistentHash().getMembers())) {
+        long deadline = System.currentTimeMillis() + 60000;
+        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
-            if (t++ > 600) {
-                fail("Connectors did not manage to synchronize consistent hash ring within " + 60
-                             + " seconds...");
+            if (System.currentTimeMillis() > deadline) {
+                assertEquals("Connectors did not manage to synchronize consistent hash ring within " + 60
+                             + " seconds...", connector1.getConsistentHash(), connector2.getConsistentHash());
             }
             Thread.sleep(100);
         }
