@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -98,6 +99,12 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         this.sagaMetaModel = sagaMetaModel;
     }
 
+    @Override
+    public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+        // The segment is used to filter Saga instances, so all events match when there's a handler
+        return sagaMetaModel.hasHandlerMethod(eventMessage);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
@@ -117,10 +124,5 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         return handlers.stream().map(handler -> handler.getAssociationValue(event))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-    }
-
-    @Override
-    public boolean hasHandler(EventMessage<?> event) {
-        return !sagaMetaModel.findHandlerMethods(event).isEmpty();
     }
 }

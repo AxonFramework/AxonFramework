@@ -19,12 +19,15 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -35,7 +38,7 @@ import static java.util.Comparator.comparing;
 
 /**
  * Module Configuration implementation that defines an Event Handling component. Typically, such a configuration
- * consists of a number of Event Handlers, which are assigned to one or more Event Processor that define the
+ * consists of a number of Event Handlers, which are assigned to one or more Event Processors that define the
  * transactional semantics of the processing.
  */
 public class EventHandlingConfiguration implements ModuleConfiguration {
@@ -100,14 +103,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                                     String processorName) {
         List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
         defaultHandlerInterceptors.stream()
-                .map(f -> f.apply(configuration, processorName))
-                .filter(Objects::nonNull)
-                .forEach(interceptors::add);
+                                  .map(f -> f.apply(configuration, processorName))
+                                  .filter(Objects::nonNull)
+                                  .forEach(interceptors::add);
         handlerInterceptors.getOrDefault(processorName, Collections.emptyList())
-                .stream()
-                .map(f -> f.apply(configuration))
-                .filter(Objects::nonNull)
-                .forEach(interceptors::add);
+                           .stream()
+                           .map(f -> f.apply(configuration))
+                           .filter(Objects::nonNull)
+                           .forEach(interceptors::add);
         interceptors.add(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
         return interceptors;
     }
@@ -119,12 +122,37 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * The processor will use the {@link TokenStore} implementation provided in the global Configuration, and will
      * default to an {@link InMemoryTokenStore} when no Token Store was defined. Note that it is not recommended to use
      * the in-memory TokenStore in a production environment.
+     * <p>
+     * The processors will use the a {@link TrackingEventProcessorConfiguration} registered with the configuration, or
+     * otherwise to a single threaded configuration (which means the processor will run in a single Thread and a batch
+     * size of 1).
      *
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration usingTrackingProcessors() {
+        return usingTrackingProcessors(c -> c.getComponent(TrackingEventProcessorConfiguration.class,
+                                                           TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
+                                       c -> new SequentialPerAggregatePolicy());
+    }
+
+    /**
+     * Configure the use of Tracking Event Processors, instead of the default Subscribing ones. Tracking processors
+     * work in their own thread(s), making processing asynchronous from the publication process.
+     * <p>
+     * The processor will use the {@link TokenStore} implementation provided in the global Configuration, and will
+     * default to an {@link InMemoryTokenStore} when no Token Store was defined. Note that it is not recommended to use
+     * the in-memory TokenStore in a production environment.
+     *
+     * @param config           The configuration for the processors to use
+     * @param sequencingPolicy The policy for processing events sequentially
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration usingTrackingProcessors(Function<Configuration, TrackingEventProcessorConfiguration> config,
+                                                              Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return registerEventProcessorFactory(
-                (conf, name, handlers) -> buildTrackingEventProcessor(conf, name, handlers, Configuration::eventBus));
+                (conf, name, handlers) -> buildTrackingEventProcessor(conf, name, handlers, config,
+                                                                      Configuration::eventBus,
+                                                                      sequencingPolicy));
     }
 
     /**
@@ -137,6 +165,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name The name of the processor
      * @return this EventHandlingConfiguration instance for further configuration
      */
+    @SuppressWarnings("UnusedReturnValue")
     public EventHandlingConfiguration registerTrackingProcessor(String name) {
         return registerTrackingProcessor(name, Configuration::eventBus);
     }
@@ -148,22 +177,64 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param source The source of messages for this processor
      * @return this EventHandlingConfiguration instance for further configuration
      */
+    @SuppressWarnings("unchecked")
     public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
+        return registerTrackingProcessor(name, source,
+                                         c -> c.getComponent(TrackingEventProcessorConfiguration.class, TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
+                                         c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new));
+    }
+
+    /**
+     * Registers a TrackingProcessor with the given {@code name}, reading from the Event Bus (or Store) from the main
+     * configuration and using the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines
+     * the policy for events that need to be executed sequentially.
+     *
+     * @param name                   The name of the Tracking Processor
+     * @param processorConfiguration The configuration for the processor
+     * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTrackingProcessor(String name,
+                                                                Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration,
+                                                                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
+        return registerTrackingProcessor(name, Configuration::eventBus, processorConfiguration, sequencingPolicy);
+    }
+
+    /**
+     * Registers a TrackingProcessor with the given {@code name}, reading from the given {@code source} and using the
+     * given {@code processorConfiguration}. The given {@code sequencingPolicy} defines the policy for events that need
+     * to be executed sequentially.
+     *
+     * @param name                   The name of the Tracking Processor
+     * @param source                 The source to read Events from
+     * @param processorConfiguration The configuration for the processor
+     * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
+                                                                Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration,
+                                                                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return registerEventProcessor(name, (conf, n, handlers) ->
-                buildTrackingEventProcessor(conf, name, handlers, source));
+                buildTrackingEventProcessor(conf, name, handlers, processorConfiguration, source, sequencingPolicy));
     }
 
     private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers,
-                                                       Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
+                                                       Function<Configuration, TrackingEventProcessorConfiguration> config,
+                                                       Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
+                                                       Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
                                                                               conf.parameterResolverFactory(),
                                                                               conf.getComponent(
                                                                                       ListenerInvocationErrorHandler.class,
-                                                                                      LoggingErrorHandler::new)),
+                                                                                      LoggingErrorHandler::new),
+                                                                              sequencingPolicy.apply(conf)),
                                           source.apply(conf),
                                           conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
-                                          conf.messageMonitor(EventProcessor.class, name));
+                                          conf.messageMonitor(TrackingEventProcessor.class, name),
+                                          RollbackConfigurationType.ANY_THROWABLE,
+                                          PropagatingErrorHandler.instance(),
+                                          config.apply(conf));
     }
 
     /**
@@ -261,6 +332,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param assignmentFunction The function that returns a Processor Name for each Event Handler bean
      * @return this EventHandlingConfiguration instance for further configuration
      */
+    @SuppressWarnings("UnusedReturnValue")
     public EventHandlingConfiguration byDefaultAssignTo(Function<Object, String> assignmentFunction) {
         defaultSelector = new ProcessorSelector(Integer.MIN_VALUE, assignmentFunction.andThen(Optional::of));
         return this;
@@ -277,6 +349,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param criteria The criteria for Event Handler to match
      * @return this EventHandlingConfiguration instance for further configuration
      */
+    @SuppressWarnings("UnusedReturnValue")
     public EventHandlingConfiguration assignHandlersMatching(String name, Predicate<Object> criteria) {
         return assignHandlersMatching(name, 0, criteria);
     }
@@ -322,14 +395,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         eventHandlers.stream().map(Component::get).forEach(handler -> {
             String processor =
                     selectors.stream().map(s -> s.select(handler)).filter(Optional::isPresent).map(Optional::get)
-                            .findFirst()
-                            .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
+                             .findFirst()
+                             .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
             assignments.computeIfAbsent(processor, k -> new ArrayList<>()).add(handler);
         });
 
         assignments.forEach((name, handlers) -> {
             EventProcessor eventProcessor = eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
-                    .createEventProcessor(config, name, handlers);
+                                                           .createEventProcessor(config, name, handlers);
             interceptorsFor(config, name).forEach(eventProcessor::registerInterceptor);
             initializedProcessors.add(eventProcessor);
         });
@@ -351,6 +424,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name The name of the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
      */
+    @SuppressWarnings("UnusedReturnValue")
     public EventHandlingConfiguration registerSubscribingEventProcessor(String name) {
         return registerEventProcessor(
                 name, (conf, n, eh) -> subscribingEventProcessor(conf, n, eh, Configuration::eventBus));
@@ -364,6 +438,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param messageSource The source the processor should read from
      * @return this EventHandlingConfiguration instance for further configuration
      */
+    @SuppressWarnings("UnusedReturnValue")
     public EventHandlingConfiguration registerSubscribingEventProcessor(
             String name,
             Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {

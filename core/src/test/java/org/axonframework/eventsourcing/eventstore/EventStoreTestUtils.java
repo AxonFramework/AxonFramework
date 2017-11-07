@@ -22,6 +22,7 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -37,6 +38,13 @@ public class EventStoreTestUtils {
         return IntStream.range(0, numberOfEvents).mapToObj(
                 sequenceNumber -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), AGGREGATE,
                                               sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
+                .collect(Collectors.toList());
+    }
+
+    public static List<DomainEventMessage<?>> createUUIDEvents(int numberOfEvents) {
+        return IntStream.range(0, numberOfEvents).mapToObj(
+                sequenceNumber -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), UUID.randomUUID().toString(),
+                        sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
                 .collect(Collectors.toList());
     }
 

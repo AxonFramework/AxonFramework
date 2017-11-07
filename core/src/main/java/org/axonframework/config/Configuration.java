@@ -28,6 +28,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -201,4 +202,11 @@ public interface Configuration {
      * @see #onStart(Runnable)
      */
     void onShutdown(Runnable shutdownHandler);
+
+    /**
+     * Returns the EventUpcasterChain with all registered upcasters.
+     *
+     * @return the EventUpcasterChain with all registered upcasters
+     */
+    EventUpcasterChain upcasterChain();
 }

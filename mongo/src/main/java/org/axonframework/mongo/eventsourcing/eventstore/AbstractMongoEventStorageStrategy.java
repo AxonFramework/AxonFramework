@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.*;
 import static java.util.stream.StreamSupport.stream;
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -156,7 +157,7 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
                           () -> String.format("Token %s is of the wrong type", lastToken));
             MongoTrackingToken trackingToken = (MongoTrackingToken) lastToken;
             cursor = eventCollection.find(and(gte(eventConfiguration.timestampProperty(),
-                                                  trackingToken.getTimestamp().minus(lookBackTime).toString()),
+                                                  formatInstant(trackingToken.getTimestamp().minus(lookBackTime))),
                                               nin(eventConfiguration.eventIdentifierProperty(),
                                                   trackingToken.getKnownEventIds())));
         }

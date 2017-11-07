@@ -18,14 +18,14 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starters</artifactId>
-        <version>1.5.2.RELEASE</version>
+        <version>1.5.7.RELEASE</version>
         <relativePath />
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon-spring-boot-starter</artifactId>
-    <version>3.0.6-SNAPSHOT</version>
+    <version>3.1-SNAPSHOT</version>
 
     <name>Spring Boot Starter module for Axon Framework</name>
 

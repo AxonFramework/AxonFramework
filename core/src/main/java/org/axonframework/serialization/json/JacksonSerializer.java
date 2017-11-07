@@ -22,9 +22,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.UnknownSerializedTypeException;
 
 import java.io.IOException;
 
@@ -119,7 +129,7 @@ public class JacksonSerializer implements Serializer {
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer()));
-        this.objectMapper.registerModule(new JSR310Module());
+        this.objectMapper.registerModule(new JavaTimeModule());
         if (converter instanceof ChainingConverter) {
             registerConverters((ChainingConverter) converter);
         }
@@ -182,7 +192,7 @@ public class JacksonSerializer implements Serializer {
      * @return The writer to serialize objects with
      */
     protected ObjectReader getReader(Class<?> type) {
-        return objectMapper.reader(type);
+        return objectMapper.readerFor(type);
     }
 
     @Override

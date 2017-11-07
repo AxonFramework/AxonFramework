@@ -221,8 +221,10 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
 
         // secretly insert an illegal message
-        channel1.getReceiver().receive(new Message(channel1.getAddress(), new IpAddress(12345),
-                                                   new JoinMessage(new IpAddress(12345), 10, DenyAll.INSTANCE)));
+        Message message = new Message(channel1.getAddress(),
+                                      new JoinMessage(10, DenyAll.INSTANCE, true));
+        message.setSrc(new IpAddress(12345));
+        channel1.getReceiver().receive(message);
 
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()

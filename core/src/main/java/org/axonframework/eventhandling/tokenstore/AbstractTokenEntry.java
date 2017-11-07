@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Objects;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+
 /**
  * Abstract base class of a JPA entry containing a serialized tracking token belonging to a given process.
  *
@@ -63,7 +65,7 @@ public abstract class AbstractTokenEntry<T> {
      * @param contentType The content type after serialization
      */
     protected AbstractTokenEntry(TrackingToken token, Serializer serializer, Class<T> contentType) {
-        this.timestamp = clock.instant().toString();
+        this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             SerializedObject<T> serializedToken = serializer.serialize(token, contentType);
             this.token = serializedToken.getData();
@@ -179,7 +181,7 @@ public abstract class AbstractTokenEntry<T> {
         if (!mayClaim(owner, claimTimeout)) {
             return false;
         }
-        this.timestamp = clock.instant().toString();
+        this.timestamp = formatInstant(clock.instant());
         this.owner = owner;
         return true;
     }
@@ -210,7 +212,7 @@ public abstract class AbstractTokenEntry<T> {
     public boolean releaseClaim(String owner) {
         if (Objects.equals(this.owner, owner)) {
             this.owner = null;
-            this.timestamp = clock.instant().toString();
+            this.timestamp = formatInstant(clock.instant());
         }
         return this.owner == null;
     }
@@ -237,6 +239,6 @@ public abstract class AbstractTokenEntry<T> {
         SerializedObject<T> serializedToken = serializer.serialize(token, contentType);
         this.token = serializedToken.getData();
         this.tokenType = serializedToken.getType().getName();
-        this.timestamp = clock.instant().toString();
+        this.timestamp = formatInstant(clock.instant());
     }
 }

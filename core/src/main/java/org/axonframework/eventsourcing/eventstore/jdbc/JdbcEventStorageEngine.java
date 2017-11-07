@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static java.lang.String.format;
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
@@ -538,7 +539,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
                                   Instant timestamp) throws SQLException {
-        preparedStatement.setString(position, timestamp.toString());
+        preparedStatement.setString(position, formatInstant(timestamp));
     }
 
     /**

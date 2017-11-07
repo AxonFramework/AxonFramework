@@ -54,6 +54,7 @@ public abstract class AbstractEventStoreBenchmark {
         this.batchSize = batchSize;
         this.batchCount = batchCount;
         this.remainingEvents = new CountDownLatch(getTotalEventCount());
+
         this.eventProcessor = new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(
                 (EventListener) (e) -> {
                     if (readEvents.add(e.getIdentifier())) {
@@ -62,7 +63,7 @@ public abstract class AbstractEventStoreBenchmark {
                         throw new IllegalStateException("Double event!");
                     }
                 }), eventStore, new InMemoryTokenStore(),
-                                                         NoTransactionManager.INSTANCE, batchSize);
+                                                         NoTransactionManager.INSTANCE);
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 
