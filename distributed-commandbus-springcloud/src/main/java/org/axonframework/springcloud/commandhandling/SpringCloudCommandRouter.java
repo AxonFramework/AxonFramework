@@ -173,6 +173,14 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
+    /**
+     * Instantiate a {@link SimpleMember} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
+     * This SimpleMember is later used to send, for example, Command messages to.
+     *
+     * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to build a {@link SimpleMember}
+     *                        for.
+     * @return A {@link SimpleMember} based on the contents of the provided {@code serviceInstance}.
+     */
     protected SimpleMember<URI> buildSimpleMember(ServiceInstance serviceInstance) {
         URI serviceUri = serviceInstance.getUri();
         String serviceId = serviceInstance.getServiceId();
@@ -189,6 +197,16 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
+    /**
+     * Retrieve the {@link MessageRoutingInformation} of the provided {@code serviceInstance}. If the
+     * MessageRoutingInformation could not be found, an {@code Optional.empty()} will be returned. Otherwise the
+     * MessageRoutingInformation will be contained in the Optional.
+     *
+     * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to retrieve {@link
+     *                        MessageRoutingInformation} from.
+     * @return an {@link Optional} of type {@link MessageRoutingInformation}, containing the corresponding
+     * MessageRoutingInformation for the given {@code serviceInstance} if it could be retrieved.
+     */
     protected Optional<MessageRoutingInformation> getMessageRoutingInformation(ServiceInstance serviceInstance) {
         if (serviceInstanceMetadataContainsMessageRoutingInformation(serviceInstance)) {
             return Optional.empty();
