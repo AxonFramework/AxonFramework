@@ -15,18 +15,23 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.AsynchronousCommandBus;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
@@ -34,8 +39,11 @@ import org.junit.Test;
 import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.junit.Assert.*;
 
@@ -44,10 +52,10 @@ public class DefaultConfigurerTest {
     @Test
     public void defaultConfigurationWithEventSourcing() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                .configureCommandBus(c -> new AsynchronousCommandBus())
-                .configureAggregate(StubAggregate.class)
-                .buildConfiguration();
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureCommandBus(c -> new AsynchronousCommandBus())
+                                                .configureAggregate(StubAggregate.class)
+                                                .buildConfiguration();
         config.start();
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
@@ -58,38 +66,85 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void defaultConfigurationWithJpaRepository() throws Exception {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
-        properties.put("hibernate.hbm2ddl.auto", "create-drop");
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
-        EntityManager em = emf.createEntityManager();
+    public void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                .configureTransactionManager(c -> () -> {
-                    EntityTransaction tx = em.getTransaction();
-                    tx.begin();
-                    return new Transaction() {
-                        @Override
-                        public void commit() {
-                            tx.commit();
-                        }
+                                                .registerComponent(TrackingEventProcessorConfiguration.class,
+                                                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .registerModule(
+                                                        new EventHandlingConfiguration()
+                                                                .usingTrackingProcessors()
+                                                                .registerEventHandler(c -> (EventListener) event -> {
+                                                                })
+                                                )
+                                                .start();
+        try {
+            TrackingEventProcessor processor = (TrackingEventProcessor) ((EventHandlingConfiguration) config.getModules().get(0)).getProcessor(getClass().getPackage().getName()).orElseThrow(RuntimeException::new);
+            assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
+        } finally {
+            config.shutdown();
+        }
+    }
 
-                        @Override
-                        public void rollback() {
-                            tx.rollback();
-                        }
-                    };
-                })
-                .configureCommandBus(c -> {
-                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
-                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
-                    return commandBus;
-                })
-                .configureAggregate(
-                        defaultConfiguration(StubAggregate.class)
-                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
-                                                                                     StubAggregate.class, c.eventBus(), c.parameterResolverFactory())))
-                .buildConfiguration();
+    @Test
+    public void defaultConfigurationWithTrackingProcessorExplicitlyConfigured() throws Exception {
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .registerModule(
+                                                        new EventHandlingConfiguration()
+                                                                .usingTrackingProcessors(
+                                                                        c -> TrackingEventProcessorConfiguration.forParallelProcessing(2),
+                                                                        c -> new FullConcurrencyPolicy())
+                                                                .registerEventHandler(c -> (EventListener) event -> {
+                                                                })
+                                                )
+                                                .start();
+        try {
+            TrackingEventProcessor processor = (TrackingEventProcessor) ((EventHandlingConfiguration) config.getModules().get(0)).getProcessor(getClass().getPackage().getName()).orElseThrow(RuntimeException::new);
+            assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    public void defaultConfigurationWithUpcaster() throws Exception {
+        EntityManager em = createEntityManager();
+        AtomicInteger counter = new AtomicInteger();
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.serializer(), c.upcasterChain(), c.getComponent(PersistenceExceptionResolver.class), () -> em, c.getComponent(TransactionManager.class)))
+                                                .configureAggregate(defaultConfiguration(StubAggregate.class)
+                                                                            .configureCommandTargetResolver(c -> command -> new VersionedAggregateIdentifier(command.getPayload().toString(), null)))
+                                                .registerEventUpcaster(c -> events -> {
+                                                    counter.incrementAndGet();
+                                                    return events;
+                                                })
+                                                .configureTransactionManager(c -> new EntityManagerTransactionManager(em))
+                                                .buildConfiguration();
+        config.start();
+
+        config.commandGateway().sendAndWait(GenericCommandMessage.asCommandMessage("test"));
+        config.commandGateway().sendAndWait(new GenericCommandMessage<>(new GenericMessage<>("test"), "update"));
+        assertEquals(1, counter.get());
+        assertNotNull(config.repository(StubAggregate.class));
+    }
+
+    @Test
+    public void defaultConfigurationWithJpaRepository() throws Exception {
+        EntityManager em = createEntityManager();
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                                                .configureTransactionManager(c -> new EntityManagerTransactionManager(em))
+                                                .configureCommandBus(c -> {
+                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                                                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
+                                                    return commandBus;
+                                                })
+                                                .configureAggregate(
+                                                        defaultConfiguration(StubAggregate.class)
+                                                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
+                                                                                                                     StubAggregate.class, c.eventBus(),
+                                                                                                                     c.parameterResolverFactory())))
+                                                .buildConfiguration();
 
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
@@ -102,13 +157,21 @@ public class DefaultConfigurerTest {
     @Test
     public void testRegisterSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                .registerModule(new EventHandlingConfiguration().usingTrackingProcessors())
-                .registerModule(new EventHandlingConfiguration())
-                .configureAggregate(StubAggregate.class)
-                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                .start();
+                                                .registerModule(new EventHandlingConfiguration().usingTrackingProcessors())
+                                                .registerModule(new EventHandlingConfiguration())
+                                                .configureAggregate(StubAggregate.class)
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .start();
 
         assertThat(config.getModules().size(), CoreMatchers.is(3));
+    }
+
+    private EntityManager createEntityManager() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
+        properties.put("hibernate.hbm2ddl.auto", "create-drop");
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
+        return emf.createEntityManager();
     }
 
     @Entity(name = "StubAggregate")
@@ -123,7 +186,6 @@ public class DefaultConfigurerTest {
 
         @CommandHandler
         public StubAggregate(String command, CommandBus commandBus) {
-            assertTrue(commandBus instanceof AsynchronousCommandBus);
             apply(command);
         }
 
@@ -135,6 +197,42 @@ public class DefaultConfigurerTest {
         @EventSourcingHandler
         protected void on(String event) {
             this.id = event;
+        }
+    }
+
+    private static class EntityManagerTransactionManager implements TransactionManager {
+        private final EntityManager em;
+
+        public EntityManagerTransactionManager(EntityManager em) {
+            this.em = em;
+        }
+
+        @Override
+        public Transaction startTransaction() {
+            EntityTransaction tx = em.getTransaction();
+            if (tx.isActive()) {
+                return new Transaction() {
+                    @Override
+                    public void commit() {
+                    }
+
+                    @Override
+                    public void rollback() {
+                    }
+                };
+            }
+            tx.begin();
+            return new Transaction() {
+                @Override
+                public void commit() {
+                    tx.commit();
+                }
+
+                @Override
+                public void rollback() {
+                    tx.rollback();
+                }
+            };
         }
     }
 }

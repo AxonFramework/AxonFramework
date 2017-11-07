@@ -26,6 +26,7 @@ import javax.persistence.MappedSuperclass;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
@@ -74,7 +75,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
         this.metaData = metaData.getData();
-        this.timeStamp = eventMessage.getTimestamp().toString();
+        this.timeStamp = formatInstant(eventMessage.getTimestamp());
     }
 
     /**
@@ -91,7 +92,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
                               T payload, T metaData) {
         this.eventIdentifier = eventIdentifier;
         if (timestamp instanceof TemporalAccessor) {
-            this.timeStamp = Instant.from((TemporalAccessor) timestamp).toString();
+            this.timeStamp = formatInstant((TemporalAccessor) timestamp);
         } else {
             this.timeStamp = timestamp.toString();
         }

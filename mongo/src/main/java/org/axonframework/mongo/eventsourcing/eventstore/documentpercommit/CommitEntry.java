@@ -26,6 +26,8 @@ import org.bson.conversions.Bson;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+
 /**
  * Mongo event storage entry containing an array of {@link EventEntry event entries} that are part of the same
  * UnitOfWork commit.
@@ -52,8 +54,8 @@ public class CommitEntry {
         DomainEventMessage firstEvent = events.get(0);
         DomainEventMessage lastEvent = events.get(events.size() - 1);
         firstSequenceNumber = firstEvent.getSequenceNumber();
-        firstTimestamp = firstEvent.getTimestamp().toString();
-        lastTimestamp = lastEvent.getTimestamp().toString();
+        firstTimestamp = formatInstant(firstEvent.getTimestamp());
+        lastTimestamp = formatInstant(lastEvent.getTimestamp());
         lastSequenceNumber = lastEvent.getSequenceNumber();
         aggregateIdentifier = lastEvent.getAggregateIdentifier();
         aggregateType = lastEvent.getType();

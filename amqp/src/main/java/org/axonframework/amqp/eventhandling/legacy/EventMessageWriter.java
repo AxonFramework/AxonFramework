@@ -26,6 +26,8 @@ import org.axonframework.serialization.Serializer;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+
 /**
  * Writer that writes Event Messages onto a an OutputStream. The format of the message makes them suitable to be read
  * back in using a {@link EventMessageReader}. This writer distinguishes between DomainEventMessage and plain
@@ -64,7 +66,7 @@ public class EventMessageWriter {
             out.writeByte(EventMessageType.EVENT_MESSAGE.getTypeByte());
         }
         out.writeUTF(eventMessage.getIdentifier());
-        out.writeUTF(eventMessage.getTimestamp().toString());
+        out.writeUTF(formatInstant(eventMessage.getTimestamp()));
         if (eventMessage instanceof DomainEventMessage) {
             DomainEventMessage domainEventMessage = (DomainEventMessage) eventMessage;
             out.writeUTF(domainEventMessage.getAggregateIdentifier());

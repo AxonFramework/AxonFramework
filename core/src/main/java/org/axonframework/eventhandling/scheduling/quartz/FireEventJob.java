@@ -50,6 +50,7 @@ public class FireEventJob implements Job {
      * The key used to locate the Event Bus in the scheduler context.
      */
     public static final String EVENT_BUS_KEY = EventBus.class.getName();
+
     /**
      * The key used to locate the optional TransactionManager in the scheduler context.
      */

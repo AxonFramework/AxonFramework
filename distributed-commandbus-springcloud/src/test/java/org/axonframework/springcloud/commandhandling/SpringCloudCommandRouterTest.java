@@ -318,8 +318,8 @@ public class SpringCloudCommandRouterTest {
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        assertEquals(result.name(), expectedMemberName + "[" + expectedEndpoint + "]");
-        assertEquals(result.segmentCount(), LOAD_FACTOR);
+        assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
+        assertEquals(LOAD_FACTOR, result.segmentCount());
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
         assertTrue(connectionEndpointOptional.isPresent());

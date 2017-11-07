@@ -93,7 +93,25 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      */
     public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, DataSource dataSource,
                                  EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) throws SQLException {
-        this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), null, entityManagerProvider, transactionManager,
+        this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), entityManagerProvider, transactionManager);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JPA to store and load events. Events are fetched in batches of 100.
+     *
+     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     *                                     that represent concurrent access failures for most database types.
+     * @param entityManagerProvider        Provider for the {@link EntityManager} used by this EventStorageEngine.
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain databases for reading blob data.
+     */
+    public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
+                                 PersistenceExceptionResolver persistenceExceptionResolver,
+                                 EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+        this(serializer, upcasterChain, persistenceExceptionResolver, null, entityManagerProvider, transactionManager,
              null, null, true);
     }
 

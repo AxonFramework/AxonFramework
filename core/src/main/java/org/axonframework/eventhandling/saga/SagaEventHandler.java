@@ -77,4 +77,10 @@ public @interface SagaEventHandler {
      * of supported event.
      */
     Class<?> payloadType() default Object.class;
+
+    /**
+     * The type of AssociationResolver that will resolve the association property value. Defaults to finding the
+     * association property in the payload.
+     */
+    Class<? extends AssociationResolver> associationResolver() default PayloadAssociationResolver.class;
 }

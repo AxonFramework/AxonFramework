@@ -25,6 +25,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -43,6 +44,14 @@ import java.util.function.Function;
  * @see DefaultConfigurer
  */
 public interface Configurer {
+
+    /**
+     * Registers an upcaster to be used to upcast Events to a newer version
+     *
+     * @param upcasterBuilder The function that returns an EventUpcaster based on the configuration
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerEventUpcaster(Function<Configuration, EventUpcaster> upcasterBuilder);
 
     /**
      * Configure the Message Monitor to use for the Message processing components in this configuration. The builder

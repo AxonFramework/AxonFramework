@@ -35,7 +35,7 @@ public class SimpleEventHandlerInvokerTest {
         SimpleEventHandlerInvoker subject = new SimpleEventHandlerInvoker("test", mockListener1, mockListener2);
 
         EventMessage<?> event = createEvent();
-        subject.handle(event);
+        subject.handle(event, Segment.ROOT_SEGMENT);
         InOrder inOrder = inOrder(mockListener1, mockListener2);
         inOrder.verify(mockListener1).handle(event);
         inOrder.verify(mockListener2).handle(event);
@@ -50,7 +50,7 @@ public class SimpleEventHandlerInvokerTest {
 
         List<? extends EventMessage<?>> events = createEvents(2);
         for (EventMessage<?> event : events) {
-            subject.handle(event);
+            subject.handle(event, Segment.ROOT_SEGMENT);
         }
         InOrder inOrder = inOrder(mockListener1, mockListener2);
         inOrder.verify(mockListener1).handle(events.get(0));
