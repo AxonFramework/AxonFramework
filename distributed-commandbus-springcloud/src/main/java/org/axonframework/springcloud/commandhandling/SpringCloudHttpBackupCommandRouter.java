@@ -36,12 +36,19 @@ import java.util.function.Predicate;
 
 /**
  * Implementation of the {@link org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter} which has a
- * backup mechanism to request and provide a member and/or its {@link MessageRoutingInformation}.
- * It uses {@link org.springframework.web.client.RestTemplate} to request {@code MembershipInformation} and services the
- * purposes of a queryable location to retrieve the local {@code MembershipInformation} from by being a
- * {@link org.springframework.web.bind.annotation.RestController}.
- * The default endpoint for this set up is "/message-routing-information".
- * To configure this, the "axon.distributed.spring-cloud.fallback-url" application property needs to be set.
+ * backup mechanism to provide Message Routing Information for other nodes and to retrieve Message Routing Information
+ * from other Axon nodes.
+ * <p>
+ * It is annotated with the {@link org.springframework.web.bind.annotation.RestController} and contains the
+ * {@link org.springframework.web.bind.annotation.GetMapping} annotated
+ * {@link SpringCloudHttpBackupCommandRouter#getLocalMessageRoutingInformation()} function to have a queryable place to
+ * retrieve this node its Message Routing Information.
+ * The default endpoint for this is {@code "/message-routing-information"}.
+ * To configure this endpoint the "axon.distributed.spring-cloud.fallback-url" application property should be adjusted.
+ * <p>
+ * For retrieving the Message Routing Information from other Axon nodes, it uses a
+ * {@link org.springframework.web.client.RestTemplate} to request Message Routing Information through an override of the
+ * {@link SpringCloudHttpBackupCommandRouter#getMessageRoutingInformation(ServiceInstance)} function.
  *
  * @author Steven van Beelen
  */
@@ -126,6 +133,13 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         super.updateMembership(loadFactor, commandFilter);
     }
 
+    /**
+     * Get the local {@link MessageRoutingInformation}, thus the MessageRoutingInformation of the node this
+     * CommandRouter is a part of. Can either be called directly or through a GET operation on the specified
+     * {@code messageRoutingInformationEndpoint} of this node.
+     *
+     * @return The {@link MessageRoutingInformation} if the node this CommandRouter implementation is part of.
+     */
     @GetMapping
     public MessageRoutingInformation getLocalMessageRoutingInformation() {
         return messageRoutingInfo;

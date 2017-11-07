@@ -42,9 +42,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 /**
- * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's {@link
- * org.springframework.cloud.client.discovery.DiscoveryClient}s to discover and notify other nodes for routing
- * Commands.
+ * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's
+ * {@link org.springframework.cloud.client.discovery.DiscoveryClient}s to propagate its CommandMessage Routing
+ * Information, and to discover other Axon nodes and retrieve their Message Routing Information.
+ * It does so by utilizing the metadata contained in a {@link org.springframework.cloud.client.ServiceInstance} for
+ * storing the Message Routing Information in.
+ * Other nodes discovered through the DiscoveryClient system which do not contain any of the required Message Routing
+ * Information fields will be black listed, so not to perform any unneeded additional checks on that node.
  *
  * @author Steven van Beelen
  */
