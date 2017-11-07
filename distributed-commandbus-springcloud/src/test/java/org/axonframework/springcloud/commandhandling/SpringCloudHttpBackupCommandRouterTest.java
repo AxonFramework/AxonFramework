@@ -38,7 +38,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +61,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @Mock
     private ServiceInstance serviceInstance;
 
+    private URI testRemoteUri = URI.create("http://remote");
     private MessageRoutingInformation expectedMessageRoutingInfo;
     @Captor
     private ArgumentCaptor<URI> uriArgumentCaptor;
@@ -83,8 +83,9 @@ public class SpringCloudHttpBackupCommandRouterTest {
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
         when(responseEntity.hasBody()).thenReturn(true);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
+        URI expectedRemoteUri = URI.create("http://remote/message-routing-information");
         when(restTemplate.exchange(
-                any(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
+                eq(expectedRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
         )).thenReturn(responseEntity);
 
         testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient,
@@ -110,8 +111,13 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @Test
     public void testGetMessageRoutingInformationReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal()
             throws Exception {
+        ServiceInstance serviceInstance = mock(ServiceInstance.class);
+        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
+        when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
+
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
-        //TODO Still needs a fix
+
         Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(serviceInstance);
 
         assertTrue(result.isPresent());
@@ -131,12 +137,40 @@ public class SpringCloudHttpBackupCommandRouterTest {
     public void testGetMessageRoutingInformationRequestsMessageRoutingInformation() throws Exception {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(remoteInstance.getUri()).thenReturn(URI.create("http://remote"));
+        when(remoteInstance.getUri()).thenReturn(testRemoteUri);
 
         Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(remoteInstance);
 
         assertTrue(result.isPresent());
         assertEquals(expectedMessageRoutingInfo, result.get());
+
+        verify(restTemplate).exchange(uriArgumentCaptor.capture(),
+                                      eq(HttpMethod.GET),
+                                      eq(HttpEntity.EMPTY),
+                                      eq(MessageRoutingInformation.class));
+
+        URI resultUri = uriArgumentCaptor.getValue();
+        assertEquals(messageRoutingInformationEndpoint, resultUri.getPath());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testGetMessageRoutingInformationReturnsEmptyOptionalFromNonAxonServiceInstanceRequest()
+            throws Exception {
+        ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
+        when(nonAxonInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
+
+        ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.hasBody()).thenReturn(false);
+        URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
+        when(restTemplate.exchange(
+                eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
+        )).thenReturn(responseEntity);
+
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(nonAxonInstance);
+
+        assertFalse(result.isPresent());
 
         verify(restTemplate).exchange(uriArgumentCaptor.capture(),
                                       eq(HttpMethod.GET),
@@ -153,7 +187,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(remoteInstance.getUri()).thenReturn(URI.create("http://remote"));
+        when(remoteInstance.getUri()).thenReturn(testRemoteUri);
 
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
@@ -167,5 +201,43 @@ public class SpringCloudHttpBackupCommandRouterTest {
                                       eq(HttpMethod.GET),
                                       eq(HttpEntity.EMPTY),
                                       eq(MessageRoutingInformation.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance()
+            throws Exception {
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+
+        String nonAxonServiceInstanceId = "nonAxonInstance";
+        ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
+        when(nonAxonInstance.getServiceId()).thenReturn(nonAxonServiceInstanceId);
+        when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, nonAxonServiceInstanceId));
+        when(discoveryClient.getInstances(nonAxonServiceInstanceId)).thenReturn(ImmutableList.of(nonAxonInstance));
+
+        ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.hasBody()).thenReturn(false);
+        URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
+        when(restTemplate.exchange(
+                eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
+        )).thenReturn(responseEntity);
+
+        // First update - black lists 'nonAxonServiceInstance' as it does not contain any message routing information
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        // Second update
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        verify(discoveryClient, times(2)).getServices();
+        verify(discoveryClient, times(2)).getInstances(nonAxonServiceInstanceId);
+        verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
+        verify(restTemplate, times(1)).exchange(uriArgumentCaptor.capture(),
+                                                eq(HttpMethod.GET),
+                                                eq(HttpEntity.EMPTY),
+                                                eq(MessageRoutingInformation.class));
+
+        URI resultUri = uriArgumentCaptor.getValue();
+        assertEquals(messageRoutingInformationEndpoint, resultUri.getPath());
     }
 }
