@@ -100,7 +100,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment.
+     * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
      * <p>
      * This implementation will delegate the decision to the {@link EventHandlerInvoker}.
      *
@@ -152,8 +152,16 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
     }
 
-    private Object doHandle(Segment segment, EventMessage<?> m) throws Exception {
-        eventHandlerInvoker.handle(m, segment);
-        return null;
+    /**
+     * Report the given {@code eventMessage} as ignored. Any registered {@link MessageMonitor} shall be notified of the
+     * ignored message.
+     * <p>
+     * Typically, messages are ignored when they are received by a processor that has no suitable Handler for the type
+     * of Event received.
+     *
+     * @param eventMessage the message that has been ignored.
+     */
+    protected void reportIgnored(EventMessage<?> eventMessage) {
+        messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 }

@@ -150,23 +150,23 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public static <S> SagaConfiguration<S> trackingSagaManager(
             Class<S> sagaType,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
-        SagaConfiguration<S> configuration = new SagaConfiguration<>(sagaType, c -> null);
+        SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, c -> null);
         String processorName = sagaType.getSimpleName() + "Processor";
-        configuration.processor.update(c -> {
+        sagaConfiguration.processor.update(configuration -> {
             TrackingEventProcessor processor = new TrackingEventProcessor(
                     processorName,
-                    configuration.sagaManager.get(),
-                    messageSourceBuilder.apply(configuration.config),
-                    configuration.tokenStore.get(),
-                    configuration.transactionManager.get(),
-                    configuration.messageMonitor.get(),
-                    configuration.rollbackConfiguration.get(),
-                    configuration.errorHandler.get(),
-                    configuration.trackingEventProcessorConfiguration.get());
-            processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
+                    sagaConfiguration.sagaManager.get(),
+                    messageSourceBuilder.apply(sagaConfiguration.config),
+                    sagaConfiguration.tokenStore.get(),
+                    sagaConfiguration.transactionManager.get(),
+                    sagaConfiguration.messageMonitor.get(),
+                    sagaConfiguration.rollbackConfiguration.get(),
+                    sagaConfiguration.errorHandler.get(),
+                    sagaConfiguration.trackingEventProcessorConfiguration.get());
+            processor.registerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
             return processor;
         });
-        return configuration;
+        return sagaConfiguration;
     }
 
     /**
@@ -174,7 +174,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * Saga Store configured in the global Configuration. This method can be used to override the store for specific
      * Sagas.
      *
-     * @param sagaStoreBuilder The builder that returnes a fully initialized Saga Store instance based on the global
+     * @param sagaStoreBuilder The builder that returns a fully initialized Saga Store instance based on the global
      *                         Configuration
      * @return this SagaConfiguration instance, ready for further configuration
      */
@@ -225,17 +225,6 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     /**
-     * Configures a MessageMonitor to be used to monitor Events processed on by the Saga being configured.
-     *
-     * @param messageMonitor The function to create the MessageMonitor
-     * @return this SagaConfiguration instance, ready for further configuration
-     */
-    public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
-        this.messageMonitor.update(messageMonitor);
-        return this;
-    }
-
-    /**
      * Configures the ErrorHandler to use when an error occurs processing an Event.
      * <p>
      * The default is to propagate errors, causing the processors to release their token and go into a retry loop.
@@ -272,6 +261,17 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      */
     public SagaConfiguration<S> configureTransactionManager(Function<Configuration, TransactionManager> transactionManager) {
         this.transactionManager.update(transactionManager);
+        return this;
+    }
+
+    /**
+     * Configures a MessageMonitor to be used to monitor Events processed on by the Saga being configured.
+     *
+     * @param messageMonitor The function to create the MessageMonitor
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
+        this.messageMonitor.update(messageMonitor);
         return this;
     }
 

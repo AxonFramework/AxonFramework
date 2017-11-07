@@ -23,13 +23,21 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -51,6 +59,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private ProcessorSelector defaultSelector;
+    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
 
     private Configuration config;
 
@@ -86,8 +95,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
                                              PropagatingErrorHandler.INSTANCE,
-                                             conf.messageMonitor(SubscribingEventProcessor.class,
-                                                                 name));
+                                             getMessageMonitor(conf, SubscribingEventProcessor.class, name));
     }
 
     /**
@@ -222,19 +230,28 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                        Function<Configuration, TrackingEventProcessorConfiguration> config,
                                                        Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
                                                        Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
-        return new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
-                                                                              conf.parameterResolverFactory(),
-                                                                              conf.getComponent(
-                                                                                      ListenerInvocationErrorHandler.class,
-                                                                                      LoggingErrorHandler::new),
+        return new TrackingEventProcessor(name,
+                                          new SimpleEventHandlerInvoker(handlers,
+                                                                        conf.parameterResolverFactory(),
+                                                                        conf.getComponent(
+                                                                                ListenerInvocationErrorHandler.class,
+                                                                                LoggingErrorHandler::new),
                                                                               sequencingPolicy.apply(conf)),
                                           source.apply(conf),
                                           conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
-                                          conf.messageMonitor(TrackingEventProcessor.class, name),
+                                          getMessageMonitor(conf, EventProcessor.class, name),
                                           RollbackConfigurationType.ANY_THROWABLE,
                                           PropagatingErrorHandler.instance(),
                                           config.apply(conf));
+    }
+
+    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration, Class<?> componentType, String componentName) {
+        if (messageMonitorFactories.containsKey(componentName)) {
+            return messageMonitorFactories.get(componentName).create(configuration, componentType, componentName);
+        } else {
+            return configuration.messageMonitor(componentType, componentName);
+        }
     }
 
     /**
@@ -468,6 +485,32 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     public <T extends EventProcessor> Optional<T> getProcessor(String name) {
         //noinspection unchecked
         return (Optional<T>) initializedProcessors.stream().filter(p -> name.equals(p.getName())).findAny();
+    }
+
+    /**
+     * Configures the builder function to create the Message Monitor for the {@link EventProcessor} of the given name.
+     * This overrides any Message Monitor configured through {@link Configurer}.
+     *
+     * @param name                  The name of the event processor
+     * @param messageMonitorBuilder The builder function to use
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration configureMessageMonitor(String name, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+        return configureMessageMonitor(name,
+                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
+    }
+
+    /**
+     * Configures the factory to create the Message Monitor for the {@link EventProcessor} of the given name. This
+     * overrides any Message Monitor configured through {@link Configurer}.
+     *
+     * @param name                  The name of the event processor
+     * @param messageMonitorFactory The factory to use
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory) {
+        messageMonitorFactories.put(name, messageMonitorFactory);
+        return this;
     }
 
     /**

@@ -16,8 +16,11 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -30,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -130,6 +134,36 @@ public class EventHandlingConfigurationTest {
         assertEquals(1, config.getModules().size());
     }
 
+    @Test
+    public void testConfigureMonitor() throws Exception {
+        MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
+        MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
+
+        // Use InMemoryEventStorageEngine so tracking processors don't miss events
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
+
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
+                .registerSubscribingEventProcessor("subscribing")
+                .registerTrackingProcessor("tracking")
+                .configureMessageMonitor("subscribing", c -> subscribingMonitor)
+                .configureMessageMonitor("tracking", c -> trackingMonitor)
+                .assignHandlersMatching("subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
+                .assignHandlersMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
+                .registerEventHandler(c -> new SubscribingEventHandler())
+                .registerEventHandler(c -> new TrackingEventHandler());
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        try {
+            config.eventBus().publish(new GenericEventMessage<Object>("test"));
+            
+            assertEquals(1, subscribingMonitor.getMessages().size());
+            assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
+        } finally {
+            config.shutdown();
+        }
+    }
+
     private static class StubEventProcessor implements EventProcessor {
 
         private final String name;
@@ -185,4 +219,18 @@ public class EventHandlingConfigurationTest {
             return interceptorChain.proceed();
         }
     }
+
+    @ProcessingGroup("subscribing")
+    private class SubscribingEventHandler {
+    }
+
+    @ProcessingGroup("tracking")
+    private class TrackingEventHandler {
+
+        @EventHandler
+        public void handle(String event) {
+
+        }
+    }
+
 }
