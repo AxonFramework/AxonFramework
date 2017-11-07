@@ -16,6 +16,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -24,7 +25,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +35,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class EventHandlingConfigurationTest {
 
@@ -144,6 +147,8 @@ public class EventHandlingConfigurationTest {
                 .registerTrackingProcessor("tracking")
                 .configureMessageMonitor("subscribing", c -> subscribingMonitor)
                 .configureMessageMonitor("tracking", c -> trackingMonitor)
+                .assignHandlersMatching("subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
+                .assignHandlersMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
                 .registerEventHandler(c -> new SubscribingEventHandler())
                 .registerEventHandler(c -> new TrackingEventHandler());
         configurer.registerModule(module);
@@ -221,6 +226,11 @@ public class EventHandlingConfigurationTest {
 
     @ProcessingGroup("tracking")
     private class TrackingEventHandler {
+
+        @EventHandler
+        public void handle(String event) {
+
+        }
     }
 
 }
