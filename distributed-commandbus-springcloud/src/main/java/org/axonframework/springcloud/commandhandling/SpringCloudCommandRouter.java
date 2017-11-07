@@ -25,6 +25,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -32,8 +34,10 @@ import org.springframework.context.event.EventListener;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -46,6 +50,8 @@ import java.util.function.Predicate;
  */
 public class SpringCloudCommandRouter implements CommandRouter {
 
+    private static final Logger logger = LoggerFactory.getLogger(SpringCloudCommandRouter.class);
+
     private static final String LOAD_FACTOR = "loadFactor";
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
@@ -55,6 +61,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     protected final XStreamSerializer serializer = new XStreamSerializer();
     private final Predicate<ServiceInstance> serviceInstanceFilter;
     private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
+    private final Set<ServiceInstance> blackListedServiceInstances = new HashSet<>();
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
@@ -153,24 +160,38 @@ public class SpringCloudCommandRouter implements CommandRouter {
                        .map(discoveryClient::getInstances)
                        .flatMap(Collection::stream)
                        .filter(serviceInstanceFilter)
+                       .filter(this::ifNotBlackListed)
                        .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
                                                                                       updatedConsistentHash));
 
         atomicConsistentHash.set(updatedConsistentHash.get());
     }
 
+    private boolean ifNotBlackListed(ServiceInstance serviceInstance) {
+        return !blackListedServiceInstances.contains(serviceInstance);
+    }
+
     private void updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                     AtomicReference<ConsistentHash> atomicConsistentHash) {
         SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
-        Optional<MessageRoutingInformation> optionalMessageRoutingInfo =
-                getMessageRoutingInformation(serviceInstance);
-        MessageRoutingInformation messageRoutingInfo = optionalMessageRoutingInfo.get();
 
-        atomicConsistentHash.updateAndGet(
-                consistentHash -> consistentHash.with(simpleMember,
-                                                      messageRoutingInfo.getLoadFactor(),
-                                                      messageRoutingInfo.getCommandFilter(serializer))
-        );
+        Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
+
+        if (optionalMessageRoutingInfo.isPresent()) {
+            MessageRoutingInformation messageRoutingInfo = optionalMessageRoutingInfo.get();
+            atomicConsistentHash.updateAndGet(
+                    consistentHash -> consistentHash.with(simpleMember,
+                                                          messageRoutingInfo.getLoadFactor(),
+                                                          messageRoutingInfo.getCommandFilter(serializer))
+            );
+        } else {
+            logger.info(
+                    "Black listed ServiceInstance [{}] under host [{}] and port [{}] since we could not retrieve the "
+                            + "required Message Routing Information from it.",
+                    serviceInstance.getServiceId(), serviceInstance.getHost(), serviceInstance.getPort()
+            );
+            blackListedServiceInstances.add(serviceInstance);
+        }
     }
 
     /**
