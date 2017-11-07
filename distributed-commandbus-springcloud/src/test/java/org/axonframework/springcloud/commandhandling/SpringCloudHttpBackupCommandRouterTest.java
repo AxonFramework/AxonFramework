@@ -34,6 +34,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.*;
@@ -80,6 +81,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
                 new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.hasBody()).thenReturn(true);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
         when(restTemplate.exchange(
                 any(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
@@ -106,36 +108,35 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test
-    public void testMessageRoutingInformationFromNonMetadataSourceReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal()
+    public void testGetMessageRoutingInformationReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal()
             throws Exception {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+        //TODO Still needs a fix
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(serviceInstance);
 
-        MessageRoutingInformation result =
-                testSubject.messageRoutingInformationFromNonMetadataSource(serviceInstance);
-
-        assertEquals(expectedMessageRoutingInfo, result);
+        assertTrue(result.isPresent());
+        assertEquals(expectedMessageRoutingInfo, result.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testMessageRoutingInformationFromNonMetadataSourceThrowsIllegalArgumentExceptionIfEndpointIsMissing()
-            throws Exception {
+    public void testGetMessageRoutingInformationThrowsIllegalArgumentExceptionIfEndpointIsMissing() throws Exception {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(null);
 
-        testSubject.messageRoutingInformationFromNonMetadataSource(remoteInstance);
+        testSubject.getMessageRoutingInformation(remoteInstance);
     }
 
     @Test
-    public void testMessageRoutingInformationFromNonMetadataSourceRequestMessageRoutingInformation() throws Exception {
+    public void testGetMessageRoutingInformationRequestsMessageRoutingInformation() throws Exception {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(URI.create("http://remote"));
 
-        MessageRoutingInformation result =
-                testSubject.messageRoutingInformationFromNonMetadataSource(remoteInstance);
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(remoteInstance);
 
-        assertEquals(expectedMessageRoutingInfo, result);
+        assertTrue(result.isPresent());
+        assertEquals(expectedMessageRoutingInfo, result.get());
 
         verify(restTemplate).exchange(uriArgumentCaptor.capture(),
                                       eq(HttpMethod.GET),
