@@ -222,7 +222,7 @@ public class JGroupsConnectorTest {
 
         // secretly insert an illegal message
         Message message = new Message(channel1.getAddress(),
-                                      new JoinMessage(new IpAddress(12345), 10, DenyAll.INSTANCE));
+                                      new JoinMessage(10, DenyAll.INSTANCE, true));
         message.setSrc(new IpAddress(12345));
         channel1.getReceiver().receive(message);
 

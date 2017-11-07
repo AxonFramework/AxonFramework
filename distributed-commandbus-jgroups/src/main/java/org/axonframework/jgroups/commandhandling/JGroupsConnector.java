@@ -125,9 +125,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         try {
             if (channel.isConnected()) {
                 Address localAddress = channel.getAddress();
-                Message joinMessage = new Message(null, new JoinMessage(localAddress, loadFactor, commandFilter));
-                joinMessage.setFlag(Message.Flag.OOB);
-                channel.send(joinMessage);
+                logger.info("Broadcasting membership from {}", localAddress);
+                sendMyConfigurationTo(null, true);
             }
         } catch (Exception e) {
             throw new ServiceRegistryException("Could not broadcast local membership details to the cluster", e);
@@ -150,7 +149,6 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
         channel.setReceiver(this);
         channel.connect(clusterName);
-        broadCastMembership();
 
         Address localAddress = channel.getAddress();
         String localName = localAddress.toString();
@@ -176,12 +174,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void viewAccepted(final View view) {
+    public synchronized void viewAccepted(final View view) {
         if (currentView == null) {
+            currentView = view;
             logger.info("Local segment ({}) joined the cluster. Broadcasting configuration.", channel.getAddress());
             try {
                 broadCastMembership();
-                joinedCondition.markJoined(true);
+                joinedCondition.markJoined();
             } catch (Exception e) {
                 throw new MembershipUpdateFailedException("Failed to broadcast my settings", e);
             }
@@ -190,17 +189,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             Address[] joined = diff[0];
             Address[] left = diff[1];
             currentView = view;
-
-            stream(joined).filter(member -> !member.equals(channel.getAddress())).forEach(member -> {
-                logger.info("New member detected: [{}]. Sending it my configuration.", member);
-                try {
-                    Message joinMessage = new Message(member, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
-                    joinMessage.setFlag(Message.Flag.OOB);
-                    channel.send(joinMessage);
-                } catch (Exception e) {
-                    throw new MembershipUpdateFailedException("Failed to notify my existence to " + member);
-                }
-            });
+            Address localAddress = channel.getAddress();
 
             stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> {
                 SimpleMember<Address> member = members.get(lm);
@@ -210,6 +199,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
                 return ch.without(member);
             }));
             stream(left).forEach(members::remove);
+            stream(joined).filter(member -> !member.equals(localAddress))
+                          .forEach(member -> sendMyConfigurationTo(member, false));
         }
         currentView = view;
     }
@@ -238,6 +229,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             processDispatchMessage(msg, (JGroupsDispatchMessage) message);
         } else if (message instanceof JGroupsReplyMessage) {
             processReplyMessage((JGroupsReplyMessage) message);
+        } else {
+            logger.warn("Received unknown message: " + message.getClass().getName());
         }
     }
 
@@ -247,7 +240,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         if (callbackWrapper == null) {
             logger.warn(
                     "Received a callback for a message that has either already received a callback, or which was not " +
-                            "sent through this node. Ignoring.");
+                    "sent through this node. Ignoring.");
         } else {
             if (message.isSuccess()) {
                 callbackWrapper.success(message.getReturnValue(serializer));
@@ -306,14 +299,20 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     private void processJoinMessage(final Message message, final JoinMessage joinMessage) {
         String joinedMember = message.getSrc().toString();
-        if (channel.getView() == null || channel.getView().containsMember(message.getSrc())) {
+        if (channel.getView().containsMember(message.getSrc())) {
             int loadFactor = joinMessage.getLoadFactor();
             Predicate<? super CommandMessage<?>> commandFilter = joinMessage.messageFilter();
-            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(),NON_LOCAL_MEMBER, s -> {});
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, s -> {});
             members.put(member.endpoint(), member);
             consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
+            if (joinMessage.isExpectReply() && !channel.getAddress().equals(message.getSrc())) {
+                sendMyConfigurationTo(member.endpoint(), false);
+            }
+
             if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
                 logger.info("{} joined with load factor: {}", joinedMember, loadFactor);
+            } else {
+                logger.debug("Got my own ({}) join message for load factor: {}", joinedMember, loadFactor);
             }
             if (logger.isDebugEnabled()) {
                 logger.debug("Got a network of members: {}", members.values());
@@ -321,6 +320,18 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         } else {
             logger.warn("Received join message from '{}', but a connection with the sender has been lost.",
                         message.getSrc().toString());
+        }
+    }
+
+    private void sendMyConfigurationTo(Address endpoint, boolean expectReply) {
+        try {
+            logger.info("Sending reply to {} with my configuration", getOrDefault(endpoint, "all nodes"));
+            Message returnJoinMessage = new Message(endpoint, new JoinMessage(this.loadFactor, this.commandFilter, expectReply));
+            returnJoinMessage.setFlag(Message.Flag.OOB);
+            channel.send(returnJoinMessage);
+        } catch (Exception e) {
+            logger.warn("An exception occurred while sending membership information to newly joined member: {}",
+                        endpoint);
         }
     }
 
@@ -419,8 +430,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             joinCountDown.await(timeout, timeUnit);
         }
 
-        private void markJoined(boolean joinSucceeded) {
-            this.success = joinSucceeded;
+        private void markJoined() {
+            this.success = true;
             joinCountDown.countDown();
         }
 
