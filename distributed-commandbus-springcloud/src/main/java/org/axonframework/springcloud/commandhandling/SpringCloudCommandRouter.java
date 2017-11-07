@@ -229,7 +229,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * MessageRoutingInformation for the given {@code serviceInstance} if it could be retrieved.
      */
     protected Optional<MessageRoutingInformation> getMessageRoutingInformation(ServiceInstance serviceInstance) {
-        if (serviceInstanceMetadataContainsMessageRoutingInformation(serviceInstance)) {
+        if (!serviceInstanceMetadataContainsMessageRoutingInformation(serviceInstance)) {
             return Optional.empty();
         }
 
