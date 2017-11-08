@@ -25,13 +25,15 @@ public class DistributedCommandBusProperties {
      */
     private boolean enabled = false;
 
-    private JGroupsProperties jgroups = new JGroupsProperties();
-
     /**
      * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will
      * receive compared to other nodes in the cluster. Defaults to 100.
      */
     private int loadFactor = 100;
+
+    private JGroupsProperties jgroups = new JGroupsProperties();
+
+    private SpringCloudProperties springCloud = new SpringCloudProperties();
 
     public boolean isEnabled() {
         return enabled || jgroups.isEnabled();
@@ -55,6 +57,14 @@ public class DistributedCommandBusProperties {
 
     public void setJgroups(JGroupsProperties jgroups) {
         this.jgroups = jgroups;
+    }
+
+    public SpringCloudProperties getSpringCloud() {
+        return springCloud;
+    }
+
+    public void setSpringCloud(SpringCloudProperties springCloud) {
+        this.springCloud = springCloud;
     }
 
     public static class JGroupsProperties {
@@ -190,9 +200,37 @@ public class DistributedCommandBusProperties {
             public void setHosts(String hosts) {
                 this.hosts = hosts;
             }
-
         }
-
     }
 
+    public static class SpringCloudProperties {
+
+        /**
+         * Enable a HTTP GET fallback strategy for retrieving the message routing information from other nodes in a
+         * distributed Axon set up. Defaults to "true".
+         */
+        private boolean fallbackToHttpGet = true;
+
+        /**
+         * The URL used to perform HTTP GET requests on for retrieving another nodes message routing information in a
+         * distributed Axon set up. Defaults to "/message-routing-information".
+         */
+        private String fallbackUrl = "/message-routing-information";
+
+        public boolean isFallbackToHttpGet() {
+            return fallbackToHttpGet;
+        }
+
+        public void setFallbackToHttpGet(boolean fallbackToHttpGet) {
+            this.fallbackToHttpGet = fallbackToHttpGet;
+        }
+
+        public String getFallbackUrl() {
+            return fallbackUrl;
+        }
+
+        public void setFallbackUrl(String fallbackUrl) {
+            this.fallbackUrl = fallbackUrl;
+        }
+    }
 }
