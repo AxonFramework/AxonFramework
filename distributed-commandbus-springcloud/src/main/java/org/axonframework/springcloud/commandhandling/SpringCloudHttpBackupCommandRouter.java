@@ -18,6 +18,7 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -83,6 +84,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
      * @param messageRoutingInformationEndpoint The endpoint where to retrieve the another nodes message routing
      *                                          information from
      */
+    @Autowired
     public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
                                               RoutingStrategy routingStrategy,
                                               RestTemplate restTemplate,
@@ -120,7 +122,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                               RoutingStrategy routingStrategy,
                                               Predicate<ServiceInstance> serviceInstanceFilter,
                                               RestTemplate restTemplate,
-                                              @Value("${axon.distributed.spring-cloud.fallback-url}:/message-routing-information") String messageRoutingInformationEndpoint) {
+                                              String messageRoutingInformationEndpoint) {
         super(discoveryClient, routingStrategy, serviceInstanceFilter);
         this.restTemplate = restTemplate;
         this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
