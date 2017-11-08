@@ -58,7 +58,7 @@ public class SpringCloudAutoConfiguration {
     @Primary
     @ConditionalOnMissingBean
     @ConditionalOnBean(DiscoveryClient.class)
-    @ConditionalOnProperty("axon.distributed.spring-cloud.fallback-to-http-get")
+    @ConditionalOnProperty(value = "axon.distributed.spring-cloud.fallback-to-http-get", matchIfMissing = true)
     public CommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
                                                             RestTemplate restTemplate) {
         return new SpringCloudHttpBackupCommandRouter(discoveryClient,
