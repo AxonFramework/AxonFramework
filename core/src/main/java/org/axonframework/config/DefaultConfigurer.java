@@ -44,7 +44,6 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
@@ -52,7 +51,11 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -79,8 +82,10 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
-    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory =
-            new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
+    private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
+    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
+            new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
+
     private final Component<List<CorrelationDataProvider>> correlationProviders =
             new Component<>(config, "correlationProviders",
                             c -> Collections.singletonList(new MessageOriginProvider()));
@@ -143,7 +148,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
-        components.put(CommandGateway.class, new Component<>(config, "resourceInjector", this::defaultCommandGateway));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
     }
@@ -223,9 +228,22 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer configureMessageMonitor(
-            Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>>
-                    messageMonitorFactoryBuilder) {
-        messageMonitorFactory.update(messageMonitorFactoryBuilder);
+            Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
+        messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
+        return this;
+    }
+
+    @Override
+    public Configurer configureMessageMonitor(Class<?> componentType, MessageMonitorFactory messageMonitorFactory) {
+        messageMonitorFactoryBuilder.add(componentType, messageMonitorFactory);
+        return this;
+    }
+
+    @Override
+    public Configurer configureMessageMonitor(Class<?> componentType,
+                                              String componentName,
+                                              MessageMonitorFactory messageMonitorFactory) {
+        messageMonitorFactoryBuilder.add(componentType, componentName, messageMonitorFactory);
         return this;
     }
 
@@ -272,9 +290,8 @@ public class DefaultConfigurer implements Configurer {
     public Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
-                    messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor
-            );
+                    messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
+            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });
@@ -369,7 +386,7 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType,
                                                                                String componentName) {
-            return messageMonitorFactory.get().apply(componentType, componentName);
+            return messageMonitorFactoryComponent.get().apply(componentType, componentName);
         }
 
         @Override

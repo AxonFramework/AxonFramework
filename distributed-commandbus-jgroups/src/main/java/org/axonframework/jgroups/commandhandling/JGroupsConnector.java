@@ -200,7 +200,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             }));
             stream(left).forEach(members::remove);
             stream(joined).filter(member -> !member.equals(localAddress))
-                          .forEach(member -> sendMyConfigurationTo(member, false));
+                          .forEach(member -> sendMyConfigurationTo(member, true));
         }
         currentView = view;
     }
@@ -325,7 +325,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     private void sendMyConfigurationTo(Address endpoint, boolean expectReply) {
         try {
-            logger.info("Sending reply to {} with my configuration", getOrDefault(endpoint, "all nodes"));
+            logger.info("Sending my configuration to {}.", getOrDefault(endpoint, "all nodes"));
             Message returnJoinMessage = new Message(endpoint, new JoinMessage(this.loadFactor, this.commandFilter, expectReply));
             returnJoinMessage.setFlag(Message.Flag.OOB);
             channel.send(returnJoinMessage);

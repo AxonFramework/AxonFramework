@@ -254,6 +254,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     lastToken = trackedEventMessage.trackingToken();
                     if (canHandle(trackedEventMessage, segment)) {
                         batch.add(trackedEventMessage);
+                    } else {
+                        reportIgnored(trackedEventMessage);
                     }
                 }
                 if (batch.isEmpty()) {

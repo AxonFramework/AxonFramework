@@ -103,8 +103,8 @@ public class JgroupsConnectorTest_Gossip {
         while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (System.currentTimeMillis() > deadline) {
-                assertEquals("Connectors did not manage to synchronize consistent hash ring within " + 60
-                             + " seconds...", connector1.getConsistentHash(), connector2.getConsistentHash());
+                assertEquals("Connectors did not manage to synchronize consistent hash ring within 60 seconds...",
+                             connector1.getConsistentHash(), connector2.getConsistentHash());
             }
             Thread.sleep(100);
         }
@@ -128,7 +128,7 @@ public class JgroupsConnectorTest_Gossip {
         bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
 
         // now, they should detect eachother and start syncing their state
-        waitForConnectorSync(10);
+        waitForConnectorSync();
 
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
@@ -151,14 +151,14 @@ public class JgroupsConnectorTest_Gossip {
         }
     }
 
-    private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {
+    private void waitForConnectorSync() throws InterruptedException {
         long deadline = System.currentTimeMillis() + 10000;
         while ((connector1.getConsistentHash().getMembers().isEmpty())
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (System.currentTimeMillis() > deadline) {
-                assertEquals("Connectors did not manage to synchronize consistent hash ring within " + timeoutInSeconds
-                             + " seconds...", connector1.getConsistentHash(), connector2.getConsistentHash());
+                assertEquals("Connectors did not manage to synchronize consistent hash ring within 10 seconds...",
+                             connector1.getConsistentHash(), connector2.getConsistentHash());
             }
             Thread.sleep(100);
         }
