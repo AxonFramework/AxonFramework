@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
@@ -42,6 +41,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static org.axonframework.common.ReflectionUtils.getFieldValue;
+import static org.axonframework.common.ReflectionUtils.setFieldValue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -110,7 +111,7 @@ public class SpringCloudCommandRouterTest {
         );
         AtomicReference<ConsistentHash> testAtomicConsistentHash =
                 new AtomicReference<>(new ConsistentHash().with(testMember, LOAD_FACTOR, commandMessage -> true));
-        ReflectionUtils.setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
+        setFieldValue(atomicConsistentHashField, testSubject, testAtomicConsistentHash);
 
         Optional<Member> resultOptional = testSubject.findDestination(TEST_COMMAND);
 
@@ -141,7 +142,7 @@ public class SpringCloudCommandRouterTest {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
@@ -160,7 +161,7 @@ public class SpringCloudCommandRouterTest {
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
@@ -188,14 +189,14 @@ public class SpringCloudCommandRouterTest {
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(2, resultMemberSet.size());
 
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
         AtomicReference<ConsistentHash> resultAtomicConsistentHashAfterLocalUpdate =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSetAfterLocalUpdate = resultAtomicConsistentHashAfterLocalUpdate.get().getMembers();
         assertEquals(2, resultMemberSetAfterLocalUpdate.size());
@@ -220,7 +221,7 @@ public class SpringCloudCommandRouterTest {
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(2, resultMemberSet.size());
@@ -231,7 +232,7 @@ public class SpringCloudCommandRouterTest {
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
         AtomicReference<ConsistentHash> resultAtomicConsistentHashAfterVanish =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
         assertEquals(1, resultMemberSetAfterVanish.size());
@@ -259,7 +260,7 @@ public class SpringCloudCommandRouterTest {
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
@@ -267,6 +268,44 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
         verify(discoveryClient).getInstances(expectedServiceInstanceId);
+    }
+
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventBlackListsNonAxonInstances()
+            throws Exception {
+        SpringCloudCommandRouter testSubject =
+                new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstance -> true);
+
+        String blackListedInstancesFieldName = "blackListedServiceInstances";
+        Field blackListedInstancesField =
+                SpringCloudCommandRouter.class.getDeclaredField(blackListedInstancesFieldName);
+
+        int expectedMemberSetSize = 1;
+        String nonAxonServiceInstanceId = "nonAxonInstance";
+
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
+        when(nonAxonInstance.getServiceId()).thenReturn(nonAxonServiceInstanceId);
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, nonAxonServiceInstanceId));
+        when(discoveryClient.getInstances(nonAxonServiceInstanceId)).thenReturn(ImmutableList.of(nonAxonInstance));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                getFieldValue(atomicConsistentHashField, testSubject);
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+        assertEquals(expectedMemberSetSize, resultMemberSet.size());
+
+        Set<ServiceInstance> resultBlackList = getFieldValue(blackListedInstancesField, testSubject);
+        assertTrue(resultBlackList.contains(nonAxonInstance));
+
+        verify(discoveryClient).getServices();
+        verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
+        verify(discoveryClient).getInstances(nonAxonServiceInstanceId);
     }
 
     @Test
@@ -289,30 +328,10 @@ public class SpringCloudCommandRouterTest {
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
-                ReflectionUtils.getFieldValue(atomicConsistentHashField, testSubject);
+                getFieldValue(atomicConsistentHashField, testSubject);
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testUpdateMembershipsOnHeartbeatEventThrowsUnsupportedOperationExceptionForServiceInstanceWithoutCommandRouterSpecificMetadata()
-            throws Exception {
-        Predicate<ServiceInstance> serviceInstanceFilter = serviceInstance -> true;
-        SpringCloudCommandRouter testSubject =
-                new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstanceFilter);
-
-        HashMap<String, String> testMetadataWithoutMembershipInformation = new HashMap<>();
-
-        ServiceInstance remoteInstance = mock(ServiceInstance.class);
-        when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(remoteInstance.getUri()).thenReturn(URI.create("remote"));
-        when(remoteInstance.getMetadata()).thenReturn(testMetadataWithoutMembershipInformation);
-
-        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
-        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(ImmutableList.of(remoteInstance));
-
-        testSubject.updateMemberships(mock(HeartbeatEvent.class));
     }
 
     private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
