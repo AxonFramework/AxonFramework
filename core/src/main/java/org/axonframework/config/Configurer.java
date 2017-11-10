@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
@@ -207,6 +208,18 @@ public interface Configurer {
     Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder);
 
     /**
+     * Registers a command handler bean with this configuration. The bean may be of any type. The actual query handler
+     * methods will be detected based on the annotations present on the bean's methods.
+     * <p>
+     * The builder function receives the Configuration as input, and is expected to return a fully initialized instance
+     * of the command handler bean.
+     *
+     * @param annotatedQueryHandlerBuilder The builder function of the Query Handler bean
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder);
+
+    /**
      * Configures an Embedded Event Store which uses the given Event Storage Engine to store its events. The builder
      * receives the Configuration as input and is expected to return a fully initialized {@link EventStorageEngine}
      * instance.
@@ -253,6 +266,10 @@ public interface Configurer {
      */
     default Configurer configureCommandBus(Function<Configuration, CommandBus> commandBusBuilder) {
         return registerComponent(CommandBus.class, commandBusBuilder);
+    }
+
+    default Configurer configureQueryBus(Function<Configuration, QueryBus> queryBusBuilder) {
+        return registerComponent(QueryBus.class, queryBusBuilder);
     }
 
     /**
