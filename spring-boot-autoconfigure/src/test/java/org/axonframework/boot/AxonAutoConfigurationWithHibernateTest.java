@@ -2,6 +2,7 @@ package org.axonframework.boot;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
@@ -48,6 +49,7 @@ public class AxonAutoConfigurationWithHibernateTest {
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));
         assertEquals(SQLErrorCodesResolver.class, applicationContext.getBean(PersistenceExceptionResolver.class).getClass());
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
+        assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
         assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
