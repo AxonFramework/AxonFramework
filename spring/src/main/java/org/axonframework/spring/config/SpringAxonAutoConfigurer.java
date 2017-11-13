@@ -16,8 +16,12 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventBus;
@@ -196,14 +200,13 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }
 
-    private String[] registerModules(Configurer configurer) {
+    private void registerModules(Configurer configurer) {
         // find all modules. If none, create standard event handler module
         String[] modules = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
         for (String module : modules) {
             configurer.registerModule(
                     new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(module, ModuleConfiguration.class)));
         }
-        return modules;
     }
 
     private void registerSagaBeanDefinitions(Configurer configurer) {
@@ -221,20 +224,22 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 beanFactory.registerSingleton(configName, sagaConfiguration);
 
                 if (!"".equals(sagaAnnotation.sagaStore())) {
-                    sagaConfiguration
-                            .configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                    //noinspection unchecked
+                    sagaConfiguration.configureSagaStore(
+                                    c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
                 }
                 configurer.registerModule(sagaConfiguration);
             }
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
         for (String aggregate : aggregates) {
             Aggregate aggregateAnnotation = beanFactory.findAnnotationOnBean(aggregate, Aggregate.class);
-            AggregateConfigurer<?> aggregateConf =
-                    AggregateConfigurer.defaultConfiguration(beanFactory.getType(aggregate));
+            Class<?> aggregateType = beanFactory.getType(aggregate);
+            AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
             if ("".equals(aggregateAnnotation.repository())) {
                 String repositoryName = lcFirst(aggregate) + "Repository";
                 String factoryName =
@@ -250,6 +255,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
                     aggregateConf
                             .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
+                    if (AnnotationUtils.findAnnotationAttributes(aggregateType, "javax.persistence.Entity").isPresent()) {
+                        aggregateConf.configureRepository(
+                                c -> new GenericJpaRepository(
+                                        c.getComponent(EntityManagerProvider.class,
+                                                       () -> beanFactory.getBean(EntityManagerProvider.class)),
+                                        aggregateType,
+                                        c.eventBus(),
+                                        c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
+                                        c.parameterResolverFactory()));
+                    }
                 }
             } else {
                 aggregateConf.configureRepository(
