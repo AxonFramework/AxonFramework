@@ -129,13 +129,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         try {
             unitOfWork.executeWithResult(() -> {
-                unitOfWork.resources().put("messageMonitor", monitorCallbacks.get(unitOfWork.getMessage()));
+                MessageMonitor.MonitorCallback monitorCallback = monitorCallbacks.get(unitOfWork.getMessage());
                 unitOfWork.onCleanup(uow -> {
-                    MessageMonitor.MonitorCallback callback = uow.getResource("messageMonitor");
                     if (uow.isRolledBack()) {
-                        callback.reportFailure(uow.getExecutionResult().getExceptionResult());
+                        monitorCallback.reportFailure(uow.getExecutionResult().getExceptionResult());
                     } else {
-                        callback.reportSuccess();
+                        monitorCallback.reportSuccess();
                     }
                 });
                 return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
