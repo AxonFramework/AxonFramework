@@ -16,6 +16,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.ReflectionUtils;
 
 import java.lang.reflect.Field;
@@ -44,16 +45,22 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
 
+        ForwardingMode eventRoutingMode = eventRoutingMode((Boolean) attributes.get("forwardEvents"),
+                                                           (ForwardingMode) attributes.get("eventRoutingMode"));
         return Optional.of(new AnnotatedChildEntity<>(
                 entityModel,
                 (Boolean) attributes.get("forwardCommands"),
-                (Boolean) attributes.get("forwardEvents"),
-                (Boolean) attributes.get("forwardEntityOriginatingEventsOnly"),
+                eventRoutingMode,
+                (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
                 (msg, parent) -> {
                     Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
                     return fieldVal == null ? emptyList() : singleton(fieldVal);
                 }
         ));
+    }
+
+    private ForwardingMode eventRoutingMode(Boolean forwardEvents, ForwardingMode eventRoutingMode) {
+        return !forwardEvents ? ForwardingMode.NONE : eventRoutingMode;
     }
 }

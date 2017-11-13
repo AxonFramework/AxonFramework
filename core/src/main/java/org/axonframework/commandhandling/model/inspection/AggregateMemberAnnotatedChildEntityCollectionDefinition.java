@@ -16,6 +16,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 
@@ -49,11 +50,13 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
 
         Map<String, Property<Object>> routingKeyProperties = extractCommandHandlerRoutingKeys(field, childEntityModel);
 
+        ForwardingMode eventRoutingMode = eventRoutingMode((Boolean) attributes.get("forwardEvents"),
+                                                           (ForwardingMode) attributes.get("eventRoutingMode"));
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
-                (Boolean) attributes.get("forwardEvents"),
-                (Boolean) attributes.get("forwardEntityOriginatingEventsOnly"),
+                eventRoutingMode,
+                (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> {
                     Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
                     Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
