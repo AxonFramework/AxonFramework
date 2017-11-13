@@ -115,17 +115,17 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         final AtomicInteger counter2 = new AtomicInteger(0);
-        connector1.connect();
-        connector2.connect();
-        assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
-        assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
 
         DistributedCommandBus bus1 = new DistributedCommandBus(connector1, connector1);
         bus1.updateLoadFactor(20);
-        //bus1.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        connector1.connect();
+        assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
+
         DistributedCommandBus bus2 = new DistributedCommandBus(connector2, connector2);
-        bus2.updateLoadFactor(20);
         bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        bus2.updateLoadFactor(20);
+        connector2.connect();
+        assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
 
         // now, they should detect eachother and start syncing their state
         waitForConnectorSync();
