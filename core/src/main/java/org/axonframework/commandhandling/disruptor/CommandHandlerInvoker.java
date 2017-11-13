@@ -111,7 +111,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
     /**
      * Create a repository instance for an aggregate created by the given {@code aggregateFactory}. The returning
-     * repository must be sage to use by this invoker instance.
+     * repository must be safe to use by this invoker instance.
      *
      * @param <T>                       The type of aggregate created by the factory
      * @param aggregateFactory          The factory creating aggregate instances
