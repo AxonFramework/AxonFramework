@@ -25,10 +25,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -83,7 +80,7 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
             for (MessageHandlingMember<? super T> handler : handlers) {
                 if (handler.canHandle(eventMessage)) {
                     return handler.unwrap(SagaMethodMessageHandlingMember.class)
-                            .map(mh -> mh.getAssociationValue(eventMessage));
+                                  .map(mh -> mh.getAssociationValue(eventMessage));
                 }
             }
             return Optional.empty();
@@ -93,8 +90,19 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
         @SuppressWarnings("unchecked")
         public List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> eventMessage) {
             return handlers.stream().filter(h -> h.canHandle(eventMessage))
-                    .map(h -> (SagaMethodMessageHandlingMember<T>) h.unwrap(SagaMethodMessageHandlingMember.class)
-                            .orElse(null)).filter(h -> h != null).collect(Collectors.toCollection(ArrayList::new));
+                           .map(h -> (SagaMethodMessageHandlingMember<T>) h.unwrap(SagaMethodMessageHandlingMember.class)
+                                                                           .orElse(null))
+                           .filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        @Override
+        public boolean hasHandlerMethod(EventMessage<?> eventMessage) {
+            for (MessageHandlingMember<? super T> handler : handlers) {
+                if (handler.canHandle(eventMessage)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override

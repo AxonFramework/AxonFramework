@@ -29,7 +29,8 @@ public final class HandlerComparator {
 
     private static final Comparator<MessageHandlingMember<?>> INSTANCE = Comparator
             .comparing((Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
-                       HandlerComparator::compareHierarchy).thenComparing(
+                       HandlerComparator::compareHierarchy)
+            .thenComparing(
                     Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
                             .reversed())
             .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));

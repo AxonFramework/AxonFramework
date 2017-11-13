@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -47,7 +46,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #process(List)} for processing.
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Segment)} for processing.
  *
  * @author Rene de Waele
  */
@@ -101,17 +100,33 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
+     * Indicates whether the processor can/should handle the given {@code eventMessage} for the given {@code segment}.
+     * <p>
+     * This implementation will delegate the decision to the {@link EventHandlerInvoker}.
+     *
+     * @param eventMessage The message for which to identify if the processor can handle it
+     * @param segment      The segment for which the event should be processed
+     * @return {@code true} if the event message should be handled, otherwise {@code false}
+     */
+    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+        return eventHandlerInvoker.canHandle(eventMessage, segment);
+    }
+
+    /**
      * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
      * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
      * interceptors}.
      *
      * @param eventMessages The batch of messages that is to be processed
+     * @param unitOfWork    The Unit of Work that has been prepared to process the messages
+     * @param segment       The segment for which the events should be processed
      * @throws Exception when an exception occurred during processing of the batch
      */
-    protected void process(List<? extends EventMessage<?>> eventMessages) throws Exception {
+    protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
+                                       UnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                       Segment segment) throws Exception {
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
-        UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
         try {
             unitOfWork.executeWithResult(() -> {
                 unitOfWork.resources().put("messageMonitor", monitorCallbacks.get(unitOfWork.getMessage()));
@@ -123,7 +138,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                         callback.reportSuccess();
                     }
                 });
-                return new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed();
+                return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
+                    eventHandlerInvoker.handle(m, segment);
+                    return null;
+                }).proceed();
             }, rollbackConfiguration);
         } catch (Exception e) {
             if (unitOfWork.isRolledBack()) {
@@ -132,5 +150,18 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 logger.info("Exception occurred while processing a message, but unit of work was committed. {}", e.getClass().getName());
             }
         }
+    }
+
+    /**
+     * Report the given {@code eventMessage} as ignored. Any registered {@link MessageMonitor} shall be notified of the
+     * ignored message.
+     * <p>
+     * Typically, messages are ignored when they are received by a processor that has no suitable Handler for the type
+     * of Event received.
+     *
+     * @param eventMessage the message that has been ignored.
+     */
+    protected void reportIgnored(EventMessage<?> eventMessage) {
+        messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     }
 }

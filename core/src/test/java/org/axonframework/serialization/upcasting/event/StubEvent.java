@@ -13,9 +13,6 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-/**
- * @author Rene de Waele
- */
 public class StubEvent {
 
     private final String name;

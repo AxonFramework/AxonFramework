@@ -24,9 +24,12 @@ import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
@@ -54,7 +57,7 @@ public class TrackingEventProcessorTest {
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
 
-    private static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
+    static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
         return new TrackingEventStream() {
             private boolean hasPeeked;
             private TrackedEventMessage<?> peekEvent;
@@ -98,6 +101,7 @@ public class TrackingEventProcessorTest {
     public void setUp() throws Exception {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
+        when(mockListener.canHandle(any())).thenReturn(true);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
@@ -123,7 +127,6 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testTokenIsStoredWhenEventIsRead() throws Exception {
-
         CountDownLatch countDownLatch = new CountDownLatch(1);
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
@@ -132,7 +135,31 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
+        verify(tokenStore).extendClaim(eq(testSubject.getName()), anyInt());
         verify(tokenStore).storeToken(any(), any(), anyInt());
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
+    }
+
+    @Test
+    public void testTokenIsStoredOncePerEventBatch() throws Exception {
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore,
+                                                 NoTransactionManager.instance(), NoOpMessageMonitor.instance(),
+                                                 RollbackConfigurationType.ANY_THROWABLE,
+                                                 PropagatingErrorHandler.INSTANCE,
+                                                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing());
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        testSubject.start();
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
+                   countDownLatch.await(5, TimeUnit.SECONDS));
+        InOrder inOrder = inOrder(tokenStore);
+        inOrder.verify(tokenStore, times(1)).extendClaim(eq(testSubject.getName()), anyInt());
+        inOrder.verify(tokenStore, times(1)).storeToken(any(), any(), anyInt());
+
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
@@ -217,9 +244,6 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
         assertEquals(4, ackedEvents.size());
-
-        // batch size = 1
-        verify(tokenStore, times(4)).storeToken(any(), anyString(), anyInt());
     }
 
     @Test
@@ -307,6 +331,9 @@ public class TrackingEventProcessorTest {
 
     @Test
     public void testEventProcessorIsReEntrant() throws Exception {
+        testSubject.start();
+        assertTrue("TrackingEventProcessor is not started", testSubject.getState() == TrackingEventProcessor.State.STARTED);
+        testSubject.shutDown();
 
         testSubject.start();
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
@@ -314,10 +341,8 @@ public class TrackingEventProcessorTest {
             countDownLatch2.countDown();
             return null;
         }).when(mockListener).handle(any());
-
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
-
     }
 
 }

@@ -18,8 +18,9 @@ package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -76,11 +77,14 @@ public class AbstractSingleEventUpcasterTest {
         Object payload = new StubEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData =
-                new GenericTrackedDomainEventEntry<>(trackingToken, aggregateType, aggregateId,
-                                                     sequenceNumber, "eventId", Instant.now(),
-                                                     serializedPayload.getType().getName(),
-                                                     serializedPayload.getType().getRevision(), serializedPayload,
-                                                     serializer.serialize(MetaData.emptyInstance(), String.class));
+                new TrackedDomainEventData<>(trackingToken,
+                                             new GenericDomainEventEntry<>(aggregateType, aggregateId, sequenceNumber,
+                                                                           "eventId", Instant.now(),
+                                                                           serializedPayload.getType().getName(),
+                                                                           serializedPayload.getType().getRevision(),
+                                                                           serializedPayload,
+                                                                           serializer.serialize(MetaData.emptyInstance(),
+                                                                                                String.class)));
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
         List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());

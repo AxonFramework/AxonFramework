@@ -47,7 +47,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
 
     /**
      * Initializes the CommandHandlingEntry
-     *
      */
     public CommandHandlingEntry() {
         repeatingCommandHandler = new RepeatingCommandHandler();
@@ -65,8 +64,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
 
     /**
      * Returns the InterceptorChain for the publication process registered with this entry, or {@code null} if
-     * none
-     * is available.
+     * none is available.
      *
      * @return the InterceptorChain for the publication process registered with this entry
      */

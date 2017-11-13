@@ -19,18 +19,20 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -80,7 +82,10 @@ public class SagaManagerTest {
     public void testSagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
-        unitOfWork.executeWithResult(() -> testSubject.handle(event));
+        unitOfWork.executeWithResult(() -> {
+            testSubject.handle(event, Segment.ROOT_SEGMENT);
+            return null;
+        });
         verify(mockSagaRepository).find(associationValue);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
@@ -94,7 +99,10 @@ public class SagaManagerTest {
         doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
             UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
-            unitOfWork.executeWithResult(() -> testSubject.handle(event));
+            unitOfWork.executeWithResult(() -> {
+                testSubject.handle(event, Segment.ROOT_SEGMENT);
+                return null;
+            });
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -104,11 +112,51 @@ public class SagaManagerTest {
     }
 
     @Test
+    public void testSagaIsCreatedInRootSegment() throws Exception {
+        this.sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
+        this.associationValue = new AssociationValue("someKey", "someValue");
+
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
+        when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
+
+        testSubject.handle(event, Segment.ROOT_SEGMENT);
+        verify(mockSagaRepository).createInstance(any(), any());
+    }
+
+    @Test
+    public void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
+        this.sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
+        this.associationValue = new AssociationValue("someKey", "someValue");
+        Segment[] segments = Segment.ROOT_SEGMENT.split();
+        Segment matchingSegment = segments[0].matches("someValue") ? segments[0] : segments[1];
+        Segment otherSegment = segments[0].matches("someValue") ? segments[1] : segments[0];
+
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        ArgumentCaptor<String> createdSaga = ArgumentCaptor.forClass(String.class);
+        when(mockSagaRepository.createInstance(createdSaga.capture(), any())).thenReturn(mockSaga1);
+        when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
+
+        testSubject.handle(event, otherSegment);
+        verify(mockSagaRepository, never()).createInstance(any(), any());
+
+        testSubject.handle(event, matchingSegment);
+        verify(mockSagaRepository).createInstance(any(), any());
+
+        createdSaga.getAllValues()
+                   .forEach(sagaId -> assertTrue("Saga ID doesn't match segment that should have created it: " + sagaId,
+                                                 matchingSegment.matches(sagaId)));
+        createdSaga.getAllValues()
+                   .forEach(sagaId -> assertFalse("Saga ID matched against the wrong segment: " + sagaId,
+                                                 otherSegment.matches(sagaId)));
+    }
+
+    @Test
     public void testExceptionSuppressed() throws Exception {
         testSubject.setSuppressExceptions(true);
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
-        testSubject.handle(event);
+        testSubject.handle(event, Segment.ROOT_SEGMENT);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
         verify(mockSaga3, never()).handle(event);
@@ -116,7 +164,7 @@ public class SagaManagerTest {
 
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
-        return new CopyOnWriteArraySet<T>(Arrays.asList(items));
+        return new CopyOnWriteArraySet<>(Arrays.asList(items));
     }
 
     private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
@@ -126,7 +174,7 @@ public class SagaManagerTest {
         }
 
         @Override
-        public boolean hasHandler(EventMessage<?> event) {
+        public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
             return true;
         }
 

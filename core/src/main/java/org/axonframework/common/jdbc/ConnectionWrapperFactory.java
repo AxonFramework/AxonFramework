@@ -52,7 +52,7 @@ public abstract class ConnectionWrapperFactory {
     public static <I> Connection wrap(final Connection connection, final Class<I> wrapperInterface,
                                       final I wrapperHandler,
                                       final ConnectionCloseHandler closeHandler) {
-        return (Connection) Proxy.newProxyInstance(wrapperInterface.getClassLoader(),
+        return (Connection) Proxy.newProxyInstance(wrapperHandler.getClass().getClassLoader(),
                                                    new Class[]{Connection.class, wrapperInterface},
                                                    (proxy, method, args) -> {
                                                        if ("equals".equals(method.getName()) && args != null

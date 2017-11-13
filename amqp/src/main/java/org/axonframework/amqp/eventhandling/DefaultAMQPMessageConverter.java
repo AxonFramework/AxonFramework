@@ -27,6 +27,7 @@ import org.axonframework.serialization.*;
 
 import java.util.*;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
@@ -79,7 +80,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         headers.put("axon-message-id", eventMessage.getIdentifier());
         headers.put("axon-message-type", serializedObject.getType().getName());
         headers.put("axon-message-revision", serializedObject.getType().getRevision());
-        headers.put("axon-message-timestamp", eventMessage.getTimestamp().toString());
+        headers.put("axon-message-timestamp", formatInstant(eventMessage.getTimestamp()));
         if (eventMessage instanceof DomainEventMessage) {
             headers.put("axon-message-aggregate-id", ((DomainEventMessage) eventMessage).getAggregateIdentifier());
             headers.put("axon-message-aggregate-seq", ((DomainEventMessage) eventMessage).getSequenceNumber());
