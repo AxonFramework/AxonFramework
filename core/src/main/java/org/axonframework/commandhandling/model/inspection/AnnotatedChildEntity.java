@@ -16,6 +16,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -37,14 +38,16 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
  * handlers.
  *
- * @param <P> the parent entity type
- * @param <C> the child entity type
+ * @param <P> the parent entity type.
+ * @param <C> the child entity type.
  */
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
+    private static final String EMPTY_STRING = "";
+
     private final EntityModel<C> entityModel;
-    private final boolean forwardEvents;
-    private final boolean forwardEntityOriginatingEventsOnly;
+    private final ForwardingMode eventRoutingMode;
+    private final String eventRoutingKey;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
 
@@ -52,23 +55,27 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
      * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command
      * and event handling to an annotated child entity.
      *
-     * @param entityModel                        model describing the entity
-     * @param forwardCommands                    flag indicating whether commands should be forwarded to the entity
-     * @param forwardEvents                      flag indicating whether events should be forwarded to the entity
-     * @param forwardEntityOriginatingEventsOnly flag indicating if only entity specific events should be forwarded
-     * @param commandTargetResolver              resolver for command handler methods on the target
-     * @param eventTargetResolver                resolver for event handler methods on the target
+     * @param entityModel           a {@link org.axonframework.commandhandling.model.inspection.EntityModel} describing
+     *                              the entity.
+     * @param forwardCommands       flag indicating whether commands should be forwarded to the entity
+     * @param eventRoutingMode      a {@link org.axonframework.commandhandling.model.ForwardingMode} enum describing the
+     *                              used routing mode for events.
+     *                              only entity specific events should be forwarded
+     * @param eventRoutingKey       a {@link java.lang.String} specifying the routing key for all events within this
+     *                              Entity.
+     * @param commandTargetResolver resolver for command handler methods on the target
+     * @param eventTargetResolver   resolver for event handler methods on the target
      */
     @SuppressWarnings("unchecked")
     public AnnotatedChildEntity(EntityModel<C> entityModel,
                                 boolean forwardCommands,
-                                boolean forwardEvents,
-                                boolean forwardEntityOriginatingEventsOnly,
+                                ForwardingMode eventRoutingMode,
+                                String eventRoutingKey,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
                                 BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver) {
         this.entityModel = entityModel;
-        this.forwardEvents = forwardEvents;
-        this.forwardEntityOriginatingEventsOnly = forwardEntityOriginatingEventsOnly;
+        this.eventRoutingMode = eventRoutingMode;
+        this.eventRoutingKey = eventRoutingKey;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
@@ -84,7 +91,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @SuppressWarnings("unchecked")
     @Override
     public void publish(EventMessage<?> msg, P declaringInstance) {
-        if (!forwardEvents) {
+        if (eventRoutingMode == ForwardingMode.NONE) {
             return;
         }
 
@@ -130,14 +137,21 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
     @SuppressWarnings("unchecked")
     private void publishToTarget(EventMessage<?> msg, C target) {
-        if (forwardEntityOriginatingEventsOnly) {
-            Property routingProperty = getProperty(msg.getPayloadType(), entityModel.routingKey());
-            Object routingValue = routingProperty.getValue(msg.getPayload());
-            if (Objects.equals(routingValue, entityModel.getIdentifier(target))) {
-                return;
+        if (eventRoutingMode == ForwardingMode.ALL) {
+            entityModel.publish(msg, target);
+        } else if (eventRoutingMode == ForwardingMode.ROUTING_KEY) {
+            Property eventRoutingProperty = getProperty(msg.getPayloadType(), eventRoutingKey());
+
+            Object eventRoutingValue = eventRoutingProperty.getValue(msg.getPayload());
+            Object entityIdentifier = entityModel.getIdentifier(target);
+
+            if (Objects.equals(eventRoutingValue, entityIdentifier)) {
+                entityModel.publish(msg, target);
             }
         }
+    }
 
-        this.entityModel.publish(msg, target);
+    private String eventRoutingKey() {
+        return Objects.equals(eventRoutingKey, EMPTY_STRING) ? entityModel.routingKey() : eventRoutingKey;
     }
 }
