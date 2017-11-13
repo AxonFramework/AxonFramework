@@ -28,12 +28,27 @@ import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
+/**
+ * Abstract implementation of the {@link org.axonframework.commandhandling.model.inspection.ChildEntityDefinition} to
+ * provide reusable functionality for collections of ChildEntityDefinitions.
+ */
 public abstract class AbstractChildEntityCollectionDefinition implements ChildEntityDefinition {
 
+    /**
+     * Resolves the type of the Child Entity, either by pulling it from the {@link org.axonframework.commandhandling.model.AggregateMember}
+     * its attributes, or by resolving it him self through the {@link AbstractChildEntityCollectionDefinition#resolveType(Map,
+     * Field)} function.
+     *
+     * @param attributes a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link java.lang.Object}
+     *                   containing the attributes of the {@link org.axonframework.commandhandling.model.AggregateMember}
+     *                   annotation.
+     * @param field      a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
+     * @return the type as a {@link java.lang.Class} of the Child Entity.
+     */
     protected Class<?> resolveType(Map<String, Object> attributes, Field field) {
         Class<?> entityType = (Class<?>) attributes.get("type");
         if (Void.class.equals(entityType)) {
-            entityType = resolveGenericType(field, 0).orElseThrow(() -> new AxonConfigurationException(format(
+            entityType = resolveGenericType(field).orElseThrow(() -> new AxonConfigurationException(format(
                     "Unable to resolve entity type of field [%s]. Please provide type explicitly in @AggregateMember annotation.",
                     field.toGenericString()
             )));
@@ -43,18 +58,26 @@ public abstract class AbstractChildEntityCollectionDefinition implements ChildEn
     }
 
     /**
-     * @param field
-     * @param index
-     * @return
+     * Resolves the generic type of a {@link java.lang.reflect.Field} Child Entity.
+     *
+     * @param field a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
+     * @return the type as a {@link java.lang.Class} of the given {@code field}.
      */
-    protected abstract Optional<Class<?>> resolveGenericType(Field field, Integer index);
+    protected abstract Optional<Class<?>> resolveGenericType(Field field);
 
     /**
-     * @param field
-     * @param childEntityModel
-     * @return
+     * Retrieves the routing keys of every command handler on the given {@code childEntityModel} to be able to correctly
+     * route commands to Entities.
+     *
+     * @param field            a {@link java.lang.reflect.Field} denoting the Child Entity upon which the {@code
+     *                         childEntityModel} is based.
+     * @param childEntityModel a {@link org.axonframework.commandhandling.model.inspection.EntityModel} to retrieve the
+     *                         routing key properties from.
+     * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link
+     * org.axonframework.common.property.Property} from Command Message name to routing key.
      */
-    protected Map<String, Property<Object>> getRoutingKeyProperties(Field field, EntityModel<Object> childEntityModel) {
+    protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
+                                                                             EntityModel<Object> childEntityModel) {
         return childEntityModel.commandHandlers()
                                .values()
                                .stream()
@@ -63,14 +86,17 @@ public abstract class AbstractChildEntityCollectionDefinition implements ChildEn
                                .filter(Objects::nonNull)
                                .collect(Collectors.toMap(
                                        CommandMessageHandlingMember::commandName,
-                                       commandHandler -> getRoutingKeyProperty(field, childEntityModel, commandHandler)
+                                       commandHandler -> extractCommandHandlerRoutingKey(childEntityModel,
+                                                                                         commandHandler,
+                                                                                         field
+                                       )
                                ));
     }
 
     @SuppressWarnings("unchecked")
-    private Property<Object> getRoutingKeyProperty(Field field,
-                                                   EntityModel<Object> childEntityModel,
-                                                   CommandMessageHandlingMember commandHandler) {
+    private Property<Object> extractCommandHandlerRoutingKey(EntityModel<Object> childEntityModel,
+                                                             CommandMessageHandlingMember commandHandler,
+                                                             Field field) {
         String routingKey = getOrDefault(commandHandler.routingKey(), childEntityModel.routingKey());
 
         Property<Object> property = getProperty(commandHandler.payloadType(), routingKey);

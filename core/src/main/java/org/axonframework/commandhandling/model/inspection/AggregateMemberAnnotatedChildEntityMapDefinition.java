@@ -34,7 +34,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractChildEntityCollectionDefinition {
 
     @Override
-    protected Optional<Class<?>> resolveGenericType(Field field, Integer index) {
+    protected Optional<Class<?>> resolveGenericType(Field field) {
         return ReflectionUtils.resolveGenericType(field, 1);
     }
 
@@ -46,7 +46,7 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
         }
         EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
 
-        Map<String, Property<Object>> routingKeyProperties = getRoutingKeyProperties(field, childEntityModel);
+        Map<String, Property<Object>> routingKeyProperties = extractCommandHandlerRoutingKeys(field, childEntityModel);
 
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
