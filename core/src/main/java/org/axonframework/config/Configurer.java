@@ -208,11 +208,11 @@ public interface Configurer {
     Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder);
 
     /**
-     * Registers a command handler bean with this configuration. The bean may be of any type. The actual query handler
+     * Registers a query handler bean with this configuration. The bean may be of any type. The actual query handler
      * methods will be detected based on the annotations present on the bean's methods.
      * <p>
      * The builder function receives the Configuration as input, and is expected to return a fully initialized instance
-     * of the command handler bean.
+     * of the query handler bean.
      *
      * @param annotatedQueryHandlerBuilder The builder function of the Query Handler bean
      * @return the current instance of the Configurer, for chaining purposes
@@ -268,6 +268,14 @@ public interface Configurer {
         return registerComponent(CommandBus.class, commandBusBuilder);
     }
 
+    /**
+     * Configures the given Query Bus to use in this configuration. The builder receives the Configuration as input
+     * and is expected to return a fully initialized {@link QueryBus}
+     * instance.
+     *
+     * @param queryBusBuilder The builder function for the {@link QueryBus}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
     default Configurer configureQueryBus(Function<Configuration, QueryBus> queryBusBuilder) {
         return registerComponent(QueryBus.class, queryBusBuilder);
     }

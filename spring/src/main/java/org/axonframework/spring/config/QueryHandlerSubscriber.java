@@ -10,6 +10,7 @@ import org.springframework.context.SmartLifecycle;
 import java.util.Collection;
 
 /**
+ * Registers Spring beans that implement {@link QueryHandlerAdapter} with the query bus.
  * @since 3.1
  * @author Marc Gathier
  *

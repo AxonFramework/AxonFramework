@@ -178,6 +178,12 @@ public class DefaultConfigurer implements Configurer {
         return new DefaultQueryGateway(config.queryBus());
     }
 
+    /**
+     * Provides the default QueryBus implementations. Subclasses may override this method to provide their own default.
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default QueryBus to use
+     */
     protected QueryBus defaultQueryBus(Configuration config) {
         return new SimpleQueryBus();
     }

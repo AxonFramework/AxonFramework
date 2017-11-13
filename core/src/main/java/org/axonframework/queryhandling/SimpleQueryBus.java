@@ -14,11 +14,12 @@ import java.util.stream.StreamSupport;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers.
+ *
  * @author Marc Gathier
  * @since 3.1
  */
 public class SimpleQueryBus implements QueryBus {
-    private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?>>>> subscriptions = new ConcurrentHashMap<>();
+    final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?>>>> subscriptions = new ConcurrentHashMap<>();
 
     @Override
     public Registration subscribe(String queryName, String responseName, MessageHandler<? super QueryMessage<?>> handler) {
@@ -32,7 +33,8 @@ public class SimpleQueryBus implements QueryBus {
         CompletableFuture<R> completableFuture = new CompletableFuture<>();
         Set<MessageHandler<? super QueryMessage<?>>> handlers = getHandlersForMessage(query);
         try {
-            completableFuture.complete((R)handlers.iterator().next().handle(query));
+            //noinspection unchecked
+            completableFuture.complete((R) handlers.iterator().next().handle(query));
         } catch (Exception e) {
             completableFuture.completeExceptionally(e);
         }
@@ -42,7 +44,9 @@ public class SimpleQueryBus implements QueryBus {
     private boolean unsubscribe(QueryDefinition registrationKey, MessageHandler<? super QueryMessage<?>> handler) {
         subscriptions.computeIfPresent(registrationKey, (key, handlers) -> {
             handlers.remove(handler);
-            if( handlers.isEmpty()) return null;
+            if (handlers.isEmpty()) {
+                return null;
+            }
             return handlers;
         });
         return true;
@@ -53,11 +57,12 @@ public class SimpleQueryBus implements QueryBus {
         Set<MessageHandler<? super QueryMessage<?>>> handlers = getHandlersForMessage(query);
         return StreamSupport.stream(new Spliterator<R>() {
             final Iterator<MessageHandler<? super QueryMessage<?>>> handlerIterator = handlers.iterator();
+
             @SuppressWarnings("unchecked")
             public boolean tryAdvance(Consumer<? super R> action) {
-                if( handlerIterator.hasNext()) {
+                if (handlerIterator.hasNext()) {
                     try {
-                        action.accept((R)handlerIterator.next().handle(query));
+                        action.accept((R) handlerIterator.next().handle(query));
                         return true;
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -87,8 +92,8 @@ public class SimpleQueryBus implements QueryBus {
 
     private <Q> Set<MessageHandler<? super QueryMessage<?>>> getHandlersForMessage(QueryMessage<Q> queryMessage) {
         Set<MessageHandler<? super QueryMessage<?>>> handlers = subscriptions.get(new QueryDefinition(queryMessage.getQueryName(), queryMessage.getResponseName()));
-        if( handlers == null || handlers.isEmpty()) {
-            throw new NoHandlerForQueryException(MessageFormat.format("No handler found for %s with response name %s",queryMessage.getQueryName(), queryMessage.getResponseName()));
+        if (handlers == null || handlers.isEmpty()) {
+            throw new NoHandlerForQueryException(MessageFormat.format("No handler found for %s with response name %s", queryMessage.getQueryName(), queryMessage.getResponseName()));
         }
         return handlers;
     }

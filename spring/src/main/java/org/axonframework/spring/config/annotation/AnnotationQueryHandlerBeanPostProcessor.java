@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<QueryHandlerAdapter, AnnotationQueryHandlerAdapter> {
     @Override
     protected Class<?>[] getAdapterInterfaces() {
-        return new Class[] {QueryHandlerAdapter.class};
+        return new Class[]{QueryHandlerAdapter.class};
     }
 
     @Override
@@ -32,7 +32,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
 
     @Override
     protected AnnotationQueryHandlerAdapter initializeAdapterFor(Object o, ParameterResolverFactory parameterResolverFactory) {
-        return new AnnotationQueryHandlerAdapter( o, parameterResolverFactory);
+        return new AnnotationQueryHandlerAdapter(o, parameterResolverFactory);
     }
 
     private class HasQueryHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
@@ -44,7 +44,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
 
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if( method.isAnnotationPresent(QueryHandler.class)) result.set(true);
+            if (method.isAnnotationPresent(QueryHandler.class)) result.set(true);
         }
     }
 }
