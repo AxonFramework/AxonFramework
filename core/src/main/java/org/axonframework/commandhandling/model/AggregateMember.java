@@ -42,21 +42,41 @@ public @interface AggregateMember {
 
     /**
      * Indicates whether commands should be forwarded to this AggregateMember. Defaults to {@code true}.
+     *
+     * @return a {@code boolean} denoting iff commands should be forwarded, yes or no.
      */
     boolean forwardCommands() default true;
 
     /**
      * Indicates whether events should be forwarded to this AggregateMember. Defaults to {@code true}.
+     *
+     * @return a {@code boolean} denoting if events should be forwarded, yes or no.
+     *
+     * @deprecated in favor of the {@code eventRoutingMode}.
      */
+    @Deprecated
     boolean forwardEvents() default true;
 
     /**
-     * Indicates whether only events originating from this entity should be forwarded
+     * Indicates the routing mode used for events within this entity. Defaults to {@code ForwardingMode.ALL} to allow
+     * all events through.
+     *
+     * @return a {@link org.axonframework.commandhandling.model.ForwardingMode} describing what mode should be used in
+     * forwarding events to this Aggregate Member.
      */
-    boolean forwardEntityOriginatingEventsOnly() default false;
+    ForwardingMode eventRoutingMode() default ForwardingMode.ALL;
+
+    /**
+     * The property of the event to be used as a routing key towards this Aggregate Member.
+     *
+     * @return The property of the event to use as routing key.
+     */
+    String eventRoutingKey() default "";
 
     /**
      * Provides the member's type. By default the type of member is determined from the field's generic type.
+     *
+     * @return a {@link java.lang.Class} instance of the type of this Aggregate Member
      */
     Class<?> type() default Void.class;
 }
