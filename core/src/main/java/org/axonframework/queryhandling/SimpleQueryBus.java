@@ -36,7 +36,7 @@ public class SimpleQueryBus implements QueryBus {
             //noinspection unchecked
             completableFuture.complete((R) handlers.iterator().next().handle(query));
         } catch (Exception e) {
-            completableFuture.completeExceptionally(e);
+            completableFuture.completeExceptionally(new QueryExecutionException(e));
         }
         return completableFuture;
     }
@@ -65,8 +65,7 @@ public class SimpleQueryBus implements QueryBus {
                         action.accept((R) handlerIterator.next().handle(query));
                         return true;
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        return false;
+                        throw new QueryExecutionException(e);
                     }
                 }
 
