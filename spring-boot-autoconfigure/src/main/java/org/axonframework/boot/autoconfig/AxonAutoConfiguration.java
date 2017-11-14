@@ -131,8 +131,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(value = QueryBus.class)
     @Qualifier("localSegment")
     @Bean
-    public SimpleQueryBus queryBus() {
-        return new SimpleQueryBus();
+    public SimpleQueryBus queryBus( AxonConfiguration axonConfiguration) {
+        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"));
     }
 
 
