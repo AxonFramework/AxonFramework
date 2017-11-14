@@ -53,7 +53,7 @@ public class SagaConfigurationTest {
         assertEquals("ObjectProcessor", actual.getName());
         // make sure the event bus was used as message source
         verify(configuration).eventBus();
-        verify(configuration).messageMonitor(EventProcessor.class, actual.getName());
+        verify(configuration).messageMonitor(TrackingEventProcessor.class, actual.getName());
         verify(configuration).getComponent(eq(RollbackConfiguration.class), any());
         verify(configuration).getComponent(eq(TokenStore.class), any());
         verify(configuration).getComponent(eq(TransactionManager.class), any());
@@ -71,7 +71,7 @@ public class SagaConfigurationTest {
         assertEquals("ObjectProcessor", actual.getName());
         // make sure the event bus was used as message source
         verify(configuration).eventBus();
-        verify(configuration).messageMonitor(EventProcessor.class, actual.getName());
+        verify(configuration).messageMonitor(SubscribingEventProcessor.class, actual.getName());
         verify(configuration).getComponent(eq(RollbackConfiguration.class), any());
         verify(configuration).getComponent(eq(ErrorHandler.class), any());
         verify(configuration).getComponent(eq(SagaStore.class), any());

@@ -57,45 +57,6 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>> handlerInterceptors = new ArrayList<>();
     private Configuration config;
 
-    @SuppressWarnings("unchecked")
-    private SagaConfiguration(Class<S> sagaType, Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder) {
-        String managerName = sagaType.getSimpleName() + "Manager";
-        String processorName = sagaType.getSimpleName() + "Processor";
-        String repositoryName = sagaType.getSimpleName() + "Repository";
-        transactionManager = new Component<>(() -> config, "transactionManager",
-                                             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance));
-        messageMonitor = new Component<>(() -> config, "messageMonitor",
-                                         c -> c.messageMonitor(EventProcessor.class, processorName));
-        tokenStore = new Component<>(() -> config, "messageMonitor",
-                                     c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
-        errorHandler = new Component<>(() -> config, "errorHandler",
-                                       c -> c.getComponent(ErrorHandler.class,
-                                                           () -> PropagatingErrorHandler.INSTANCE));
-        rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
-                                                c -> c.getComponent(RollbackConfiguration.class,
-                                                                    () -> RollbackConfigurationType.ANY_THROWABLE));
-        sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
-        sagaRepository = new Component<>(() -> config, repositoryName,
-                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
-                                                                            c.parameterResolverFactory()));
-        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
-                                                                                                 c.parameterResolverFactory()));
-        trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
-                                                              c -> c.getComponent(TrackingEventProcessorConfiguration.class,
-                                                                                  TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
-        processor = new Component<>(() -> config, processorName,
-                                    c -> {
-                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(processorName, sagaManager.get(),
-                                                                                                            rollbackConfiguration.get(),
-                                                                                                            messageSourceBuilder.apply(c),
-                                                                                                            DirectEventProcessingStrategy.INSTANCE,
-                                                                                                            errorHandler.get(),
-                                                                                                            messageMonitor.get());
-                                        processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
-                                        return processor;
-                                    });
-    }
-
     /**
      * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor to process
      * incoming Events.
@@ -120,7 +81,28 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public static <S> SagaConfiguration<S> subscribingSagaManager(
             Class<S> sagaType,
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder) {
-        return new SagaConfiguration<>(sagaType, messageSourceBuilder);
+        return subscribingSagaManager(sagaType, messageSourceBuilder, c -> DirectEventProcessingStrategy.INSTANCE);
+    }
+
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor to process
+     * incoming Events from the message source provided by given {@code messageSourceBuilder}.
+     * <p>
+     * This methods allows a custom {@link EventProcessingStrategy} to be provided, in case handlers shouldn't be
+     * invoked in the thread that delivers the message.
+     *
+     * @param sagaType                The type of Saga to handle events with
+     * @param messageSourceBuilder    The function providing the message source based on the configuration
+     * @param eventProcessingStrategy The strategy to use to invoke the event handlers.
+     * @param <S>                     The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> subscribingSagaManager(
+            Class<S> sagaType,
+            Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
+            Function<Configuration, EventProcessingStrategy> eventProcessingStrategy) {
+        return new SagaConfiguration<>(sagaType, SubscribingEventProcessor.class,
+                                       messageSourceBuilder, eventProcessingStrategy);
     }
 
     /**
@@ -150,7 +132,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public static <S> SagaConfiguration<S> trackingSagaManager(
             Class<S> sagaType,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
-        SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, c -> null);
+        SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, TrackingEventProcessor.class,
+                                                                         c -> null, c -> null);
         String processorName = sagaType.getSimpleName() + "Processor";
         sagaConfiguration.processor.update(configuration -> {
             TrackingEventProcessor processor = new TrackingEventProcessor(
@@ -167,6 +150,47 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             return processor;
         });
         return sagaConfiguration;
+    }
+
+    @SuppressWarnings("unchecked")
+    private SagaConfiguration(Class<S> sagaType, Class<? extends EventProcessor> eventProcessorType,
+                              Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
+                              Function<Configuration, EventProcessingStrategy> processingStrategy) {
+        String managerName = sagaType.getSimpleName() + "Manager";
+        String processorName = sagaType.getSimpleName() + "Processor";
+        String repositoryName = sagaType.getSimpleName() + "Repository";
+        transactionManager = new Component<>(() -> config, "transactionManager",
+                                             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance));
+        messageMonitor = new Component<>(() -> config, "messageMonitor",
+                                         c -> c.messageMonitor(eventProcessorType, processorName));
+        tokenStore = new Component<>(() -> config, "messageMonitor",
+                                     c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
+        errorHandler = new Component<>(() -> config, "errorHandler",
+                                       c -> c.getComponent(ErrorHandler.class,
+                                                           () -> PropagatingErrorHandler.INSTANCE));
+        rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
+                                                c -> c.getComponent(RollbackConfiguration.class,
+                                                                    () -> RollbackConfigurationType.ANY_THROWABLE));
+        sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
+        sagaRepository = new Component<>(() -> config, repositoryName,
+                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
+                                                                            c.parameterResolverFactory()));
+        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
+                                                                                                 c.parameterResolverFactory()));
+        trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
+                                                              c -> c.getComponent(TrackingEventProcessorConfiguration.class,
+                                                                                  TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
+        processor = new Component<>(() -> config, processorName,
+                                    c -> {
+                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(processorName, sagaManager.get(),
+                                                                                                            rollbackConfiguration.get(),
+                                                                                                            messageSourceBuilder.apply(c),
+                                                                                                            processingStrategy.apply(c),
+                                                                                                            errorHandler.get(),
+                                                                                                            messageMonitor.get());
+                                        processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
+                                        return processor;
+                                    });
     }
 
     /**
