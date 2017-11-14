@@ -49,7 +49,8 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
 
         Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
         ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
-        Map<String, Property<Object>> routingKeyProperties = extractCommandHandlerRoutingKeys(field, childEntityModel);
+        Map<String, Property<Object>> commandHandlerRoutingKeys =
+                extractCommandHandlerRoutingKeys(field, childEntityModel);
 
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
@@ -57,7 +58,8 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
                 eventForwardingMode(forwardEvents, eventForwardingMode),
                 (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> {
-                    Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
+                    Object routingValue = commandHandlerRoutingKeys.get(msg.getCommandName())
+                                                                   .getValue(msg.getPayload());
                     Map<?, ?> fieldValue = ReflectionUtils.getFieldValue(field, parent);
                     return fieldValue == null ? null : fieldValue.get(routingValue);
                 },

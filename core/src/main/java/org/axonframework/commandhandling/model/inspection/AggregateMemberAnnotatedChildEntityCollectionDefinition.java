@@ -50,7 +50,8 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
 
         Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
         ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
-        Map<String, Property<Object>> routingKeyProperties = extractCommandHandlerRoutingKeys(field, childEntityModel);
+        Map<String, Property<Object>> commandHandlerRoutingKeys =
+                extractCommandHandlerRoutingKeys(field, childEntityModel);
 
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
@@ -58,7 +59,8 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
                 eventForwardingMode(forwardEvents, eventForwardingMode),
                 (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> {
-                    Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
+                    Object routingValue = commandHandlerRoutingKeys.get(msg.getCommandName())
+                                                                   .getValue(msg.getPayload());
                     Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
                     return StreamSupport.stream(iterable.spliterator(), false)
                                         .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i)))
