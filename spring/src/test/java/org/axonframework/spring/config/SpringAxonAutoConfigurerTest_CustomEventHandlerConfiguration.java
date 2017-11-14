@@ -19,6 +19,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.Test;
@@ -51,6 +52,9 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
 
     @Autowired(required = false)
     private CommandBus commandBus;
+
+    @Autowired(required = false)
+    private QueryBus queryBus;
 
     @Autowired
     private org.axonframework.config.Configuration axonConfig;

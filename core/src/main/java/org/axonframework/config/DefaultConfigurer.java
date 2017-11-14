@@ -185,7 +185,7 @@ public class DefaultConfigurer implements Configurer {
      * @return the default QueryBus to use
      */
     protected QueryBus defaultQueryBus(Configuration config) {
-        return new SimpleQueryBus();
+        return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"));
     }
     /**
      * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default
