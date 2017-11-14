@@ -110,6 +110,33 @@ public class EventHandlingConfigurationTest {
     }
 
     @Test
+    public void testDefaultAssignToKeepsAnnotationScanning() {
+        Map<String, StubEventProcessor> processors = new HashMap<>();
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
+                .registerEventProcessorFactory((config, name, handlers) -> {
+                    StubEventProcessor processor = new StubEventProcessor(name, handlers);
+                    processors.put(name, processor);
+                    return processor;
+                });
+        AnnotatedBean annotatedBean = new AnnotatedBean();
+        Object object = new Object();
+
+        module.assignHandlersMatching("java.util.concurrent", "concurrent"::equals);
+        module.byDefaultAssignTo("default");
+        module.registerEventHandler(c -> object);        // --> default
+        module.registerEventHandler(c -> "concurrent");  // --> java.util.concurrent
+        module.registerEventHandler(c -> annotatedBean); // --> processingGroup
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        assertEquals(3, processors.size());
+        assertTrue(processors.get("default").getEventHandlers().contains(object));
+        assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
+        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
+        assertEquals(1, config.getModules().size());
+    }
+
+    @Test
     public void testAssignInterceptors() {
         EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .usingTrackingProcessors()

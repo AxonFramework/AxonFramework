@@ -46,8 +46,8 @@ import static java.util.Comparator.comparing;
 
 /**
  * Module Configuration implementation that defines an Event Handling component. Typically, such a configuration
- * consists of a number of Event Handlers, which are assigned to one or more Event Processors that define the
- * transactional semantics of the processing.
+ * consists of a number of Event Handlers and one or more Event Processors that define the transactional semantics of
+ * the processing. Each Event Handler is assigned to one Event Processor.
  */
 public class EventHandlingConfiguration implements ModuleConfiguration {
 
@@ -58,26 +58,33 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
-    private ProcessorSelector defaultSelector;
+
+    // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
+    // if no annotation is present, the package name is used
+    private Function<Object, String> fallback = (o) -> o.getClass().getPackage().getName();
+    private final ProcessorSelector defaultSelector = new ProcessorSelector(
+            Integer.MIN_VALUE,
+            o -> {
+                Class<?> handlerType = o.getClass();
+                Optional<Map<String, Object>> annAttr = AnnotationUtils.findAnnotationAttributes(handlerType,
+                                                                                                 ProcessingGroup.class);
+                return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
+                                          .orElse(fallback.apply(o)));
+            });
+
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
 
     private Configuration config;
 
     /**
-     * Creates a default configuration for an Event Handling module that assigns Event Handlers to Subscribing Event
-     * Processors based on the package they're in. For each package found, a new Event Processor instance is created,
-     * with the package name as the processor name. This default behavior can be overridden in the instance returned.
+     * Creates a default configuration for an Event Handling module that creates a {@link SubscribingEventProcessor}
+     * instance for all Event Handlers that have the same Processing Group name. The Processing Group name is determined
+     * by inspecting the {@link ProcessingGroup} annotation; if no annotation is present, the package name is used as
+     * the Processing Group name. This default behavior can be overridden in the instance returned.
      * <p>
      * At a minimum, the Event Handler beans need to be registered before this component is useful.
      */
     public EventHandlingConfiguration() {
-        byDefaultAssignTo(o -> {
-            Class<?> handlerType = o.getClass();
-            Optional<Map<String, Object>> annAttr = AnnotationUtils.findAnnotationAttributes(handlerType, ProcessingGroup.class);
-            return annAttr
-                    .map(attr -> (String) attr.get("processingGroup"))
-                    .orElseGet(() -> handlerType.getPackage().getName());
-        });
     }
 
     private SubscribingEventProcessor defaultEventProcessor(Configuration conf, String name, List<?> eh) {
@@ -293,17 +300,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Registers the Event Processor name to assign Event Handler beans to when no other, more explicit, rule matches.
-     *
-     * @param name The Event Processor name to assign Event Handlers to, by default.
-     * @return this EventHandlingConfiguration instance for further configuration
-     */
-    public EventHandlingConfiguration byDefaultAssignTo(String name) {
-        defaultSelector = new ProcessorSelector(name, Integer.MIN_VALUE, r -> true);
-        return this;
-    }
-
-    /**
      * Register the given {@code interceptorBuilder} to build an Message Handling Interceptor for the Event Processor
      * with given {@code processorName}.
      * <p>
@@ -343,15 +339,26 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Registers a function that defines the Event Processor name to assign Event Handler beans to when no other rule
-     * matches.
+     * Registers the Event Processor name to assign Event Handler beans to when no other, more explicit, rule matches
+     * and no {@link ProcessingGroup} annotation is found.
+     *
+     * @param name The Event Processor name to assign Event Handlers to
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration byDefaultAssignTo(String name) {
+        return byDefaultAssignTo((object) -> name);
+    }
+
+    /**
+     * Registers a function that defines the Event Processor name to assign Event Handler beans to when no other, more
+     * explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
      * @param assignmentFunction The function that returns a Processor Name for each Event Handler bean
      * @return this EventHandlingConfiguration instance for further configuration
      */
     @SuppressWarnings("UnusedReturnValue")
     public EventHandlingConfiguration byDefaultAssignTo(Function<Object, String> assignmentFunction) {
-        defaultSelector = new ProcessorSelector(Integer.MIN_VALUE, assignmentFunction.andThen(Optional::of));
+        fallback = assignmentFunction;
         return this;
     }
 
@@ -380,7 +387,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * undefined.
      *
      * @param name     The name of the Event Processor to assign matching Event Handlers to
-     * @param priority The priority for this rule.
+     * @param priority The priority for this rule
      * @param criteria The criteria for Event Handler to match
      * @return this EventHandlingConfiguration instance for further configuration
      */
