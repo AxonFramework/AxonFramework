@@ -30,11 +30,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -56,15 +57,18 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private static final boolean LOCAL_MEMBER = true;
     private static final boolean NON_LOCAL_MEMBER = false;
 
+    private final Object monitor = new Object();
+
     private final CommandBus localSegment;
     private final CommandCallbackRepository<Address> callbackRepository = new CommandCallbackRepository<>();
     private final Serializer serializer;
     private final JoinCondition joinedCondition = new JoinCondition();
-    private final Map<Address, SimpleMember<Address>> members = new HashMap<>();
+    private final Map<Address, VersionedMember> members = new ConcurrentHashMap<>();
     private final String clusterName;
     private final RoutingStrategy routingStrategy;
     private final JChannel channel;
     private final AtomicReference<ConsistentHash> consistentHash = new AtomicReference<>(new ConsistentHash());
+    private final AtomicInteger membershipVersion = new AtomicInteger(0);
     private volatile View currentView;
     private volatile int loadFactor = 0;
     private volatile Predicate<? super CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
@@ -112,21 +116,23 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
         this.loadFactor = loadFactor;
         this.commandFilter = commandFilter;
-        broadCastMembership();
+        broadCastMembership(membershipVersion.getAndIncrement(), false);
     }
 
     /**
      * Send the local membership details (load factor and supported Command types) to other member nodes of this
      * cluster.
      *
+     * @param updateVersion The version for the update to be send with the membership information
+     * @param expectReply
      * @throws ServiceRegistryException when an exception occurs sending membership details to other nodes
      */
-    protected void broadCastMembership() throws ServiceRegistryException {
+    protected void broadCastMembership(int updateVersion, boolean expectReply) throws ServiceRegistryException {
         try {
             if (channel.isConnected()) {
                 Address localAddress = channel.getAddress();
                 logger.info("Broadcasting membership from {}", localAddress);
-                sendMyConfigurationTo(null, true);
+                sendMyConfigurationTo(null, expectReply, updateVersion);
             }
         } catch (Exception e) {
             throw new ServiceRegistryException("Could not broadcast local membership details to the cluster", e);
@@ -153,7 +159,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         Address localAddress = channel.getAddress();
         String localName = localAddress.toString();
         SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
-        members.put(localAddress, localMember);
+        members.put(localAddress, new VersionedMember(localMember, membershipVersion.getAndIncrement()));
         consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
     }
 
@@ -179,7 +185,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             currentView = view;
             logger.info("Local segment ({}) joined the cluster. Broadcasting configuration.", channel.getAddress());
             try {
-                broadCastMembership();
+                broadCastMembership(membershipVersion.get(), true);
                 joinedCondition.markJoined();
             } catch (Exception e) {
                 throw new MembershipUpdateFailedException("Failed to broadcast my settings", e);
@@ -192,7 +198,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             Address localAddress = channel.getAddress();
 
             stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> {
-                SimpleMember<Address> member = members.get(lm);
+                VersionedMember member = members.get(lm);
                 if (member == null) {
                     return ch;
                 }
@@ -200,7 +206,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             }));
             stream(left).forEach(members::remove);
             stream(joined).filter(member -> !member.equals(localAddress))
-                          .forEach(member -> sendMyConfigurationTo(member, true));
+                    .forEach(member -> sendMyConfigurationTo(member, true, membershipVersion.get()));
         }
         currentView = view;
     }
@@ -240,7 +246,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         if (callbackWrapper == null) {
             logger.warn(
                     "Received a callback for a message that has either already received a callback, or which was not " +
-                    "sent through this node. Ignoring.");
+                            "sent through this node. Ignoring.");
         } else {
             if (message.isSuccess()) {
                 callbackWrapper.success(message.getReturnValue(serializer));
@@ -302,11 +308,27 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         if (channel.getView().containsMember(message.getSrc())) {
             int loadFactor = joinMessage.getLoadFactor();
             Predicate<? super CommandMessage<?>> commandFilter = joinMessage.messageFilter();
-            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, s -> {});
-            members.put(member.endpoint(), member);
-            consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, s -> {
+            });
+
+            // this lock could be removed if versioning support is added to the consistent hash
+            synchronized (monitor) {
+                // this part shouldn't be executed by two threads simultaneously, as it may cause race conditions
+                int order = members.compute(member.endpoint(), (k, v) -> {
+                    if (v == null || v.order() <= joinMessage.getOrder()) {
+                        return new VersionedMember(member, joinMessage.getOrder());
+                    }
+                    return v;
+                }).order();
+
+                if (joinMessage.getOrder() != order) {
+                    logger.info("Received outdated update. Discarding it.");
+                    return;
+                }
+                consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
+            }
             if (joinMessage.isExpectReply() && !channel.getAddress().equals(message.getSrc())) {
-                sendMyConfigurationTo(member.endpoint(), false);
+                sendMyConfigurationTo(member.endpoint(), false, membershipVersion.get());
             }
 
             if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
@@ -323,10 +345,11 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
     }
 
-    private void sendMyConfigurationTo(Address endpoint, boolean expectReply) {
+    private void sendMyConfigurationTo(Address endpoint, boolean expectReply, int order) {
         try {
             logger.info("Sending my configuration to {}.", getOrDefault(endpoint, "all nodes"));
-            Message returnJoinMessage = new Message(endpoint, new JoinMessage(this.loadFactor, this.commandFilter, expectReply));
+            Message returnJoinMessage = new Message(endpoint, new JoinMessage(this.loadFactor, this.commandFilter,
+                                                                              order, expectReply));
             returnJoinMessage.setFlag(Message.Flag.OOB);
             channel.send(returnJoinMessage);
         } catch (Exception e) {
@@ -437,6 +460,40 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
         public boolean isJoined() {
             return success;
+        }
+    }
+
+    private static class VersionedMember implements Member {
+        private final SimpleMember<Address> member;
+        private final int version;
+
+        public VersionedMember(SimpleMember<Address> member, int version) {
+            this.member = member;
+            this.version = version;
+        }
+
+        public int order() {
+            return version;
+        }
+
+        @Override
+        public String name() {
+            return member.name();
+        }
+
+        @Override
+        public <T> Optional<T> getConnectionEndpoint(Class<T> protocol) {
+            return member.getConnectionEndpoint(protocol);
+        }
+
+        @Override
+        public boolean local() {
+            return member.local();
+        }
+
+        @Override
+        public void suspect() {
+            member.suspect();
         }
     }
 }

@@ -18,8 +18,6 @@ package org.axonframework.jgroups.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.jgroups.util.Streamable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -37,11 +35,11 @@ import java.util.function.Predicate;
  */
 public class JoinMessage implements Externalizable {
 
-    private static final long serialVersionUID = -2477146975364875911L;
-    private static final Logger logger = LoggerFactory.getLogger(JoinMessage.class);
+    private static final long serialVersionUID = 1456658552741424773L;
     private Predicate<? super CommandMessage<?>> messageFilter;
     private boolean expectReply;
     private int loadFactor;
+    private int order;
 
     /**
      * Default constructor required by the {@link Streamable} and {@link Externalizable} interfaces. Do not use
@@ -57,11 +55,14 @@ public class JoinMessage implements Externalizable {
      *
      * @param loadFactor    The loadFactor the member wishes to join with
      * @param messageFilter A predicate the will filter command messages this node will accept.
+     * @param order         The index of this update, allowing recipients to order them
      * @param expectReply   Indicates whether the sending member expects a reply with membership information
      */
-    public JoinMessage(int loadFactor, Predicate<? super CommandMessage<?>> messageFilter, boolean expectReply) {
+    public JoinMessage(int loadFactor, Predicate<? super CommandMessage<?>> messageFilter, int order,
+                       boolean expectReply) {
         this.loadFactor = loadFactor;
         this.messageFilter = messageFilter;
+        this.order = order;
         this.expectReply = expectReply;
     }
 
@@ -83,10 +84,20 @@ public class JoinMessage implements Externalizable {
         return expectReply;
     }
 
+    /**
+     * The index of this message compared to others about the same sender.
+     *
+     * @return the relative order of this update
+     */
+    public int getOrder() {
+        return order;
+    }
+
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeInt(loadFactor);
         out.writeObject(messageFilter);
+        out.writeInt(order);
         out.writeBoolean(expectReply);
     }
 
@@ -95,6 +106,7 @@ public class JoinMessage implements Externalizable {
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         loadFactor = in.readInt();
         messageFilter = (Predicate<CommandMessage<?>>) in.readObject();
+        order = in.readInt();
         expectReply = in.readBoolean();
     }
 
