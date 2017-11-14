@@ -29,17 +29,17 @@ import static org.axonframework.commandhandling.model.inspection.ModelInspector.
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 
-public class EntityEventRoutingModelInspectorTest {
+public class EntityEventForwardingModelInspectorTest {
 
     private static final String AGGREGATE_ID = "aggregateId";
     private static final String ENTITY_ID = "entityId";
 
     @Test
     public void testExpectEventsToBeRoutedToNoEntityForForwardModeSetToNone() throws Exception {
-        AggregateModel<SomeNoneEventRoutingEntityAggregate> inspector =
-                inspectAggregate(SomeNoneEventRoutingEntityAggregate.class);
+        AggregateModel<SomeNoneEventForwardingEntityAggregate> inspector =
+                inspectAggregate(SomeNoneEventForwardingEntityAggregate.class);
 
-        SomeNoneEventRoutingEntityAggregate target = new SomeNoneEventRoutingEntityAggregate();
+        SomeNoneEventForwardingEntityAggregate target = new SomeNoneEventForwardingEntityAggregate();
 
         // Both called once, as the entity does not receive any events
         AtomicLong aggregatePayload = new AtomicLong();
@@ -53,9 +53,10 @@ public class EntityEventRoutingModelInspectorTest {
 
     @Test
     public void testExpectEventsToBeRoutedToRightEntityOnly() throws Exception {
-        AggregateModel<SomeEventRoutingEntityAggregate> inspector = inspectAggregate(SomeEventRoutingEntityAggregate.class);
+        AggregateModel<SomeEventForwardingEntityAggregate> inspector =
+                inspectAggregate(SomeEventForwardingEntityAggregate.class);
 
-        SomeEventRoutingEntityAggregate target = new SomeEventRoutingEntityAggregate();
+        SomeEventForwardingEntityAggregate target = new SomeEventForwardingEntityAggregate();
 
         // Called once
         AtomicLong aggregatePayload = new AtomicLong();
@@ -70,11 +71,11 @@ public class EntityEventRoutingModelInspectorTest {
 
     @Test
     public void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKey() throws Exception {
-        AggregateModel<SomeEventRoutingEntityAggregateWithSpecificEventRoutingKey> inspector =
-                inspectAggregate(SomeEventRoutingEntityAggregateWithSpecificEventRoutingKey.class);
+        AggregateModel<SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey> inspector =
+                inspectAggregate(SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey.class);
 
-        SomeEventRoutingEntityAggregateWithSpecificEventRoutingKey target =
-                new SomeEventRoutingEntityAggregateWithSpecificEventRoutingKey();
+        SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey target =
+                new SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey();
 
         // Called once
         AtomicLong aggregatePayload = new AtomicLong();
@@ -89,10 +90,10 @@ public class EntityEventRoutingModelInspectorTest {
 
     @Test
     public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollection() throws Exception {
-        AggregateModel<SomeEventRoutingEntityCollectionAggregate> inspector =
-                inspectAggregate(SomeEventRoutingEntityCollectionAggregate.class);
+        AggregateModel<SomeEventForwardingEntityCollectionAggregate> inspector =
+                inspectAggregate(SomeEventForwardingEntityCollectionAggregate.class);
 
-        SomeEventRoutingEntityCollectionAggregate target = new SomeEventRoutingEntityCollectionAggregate();
+        SomeEventForwardingEntityCollectionAggregate target = new SomeEventForwardingEntityCollectionAggregate();
 
         // All called once, as there is an event per entity only
         AtomicLong entityOnePayload = new AtomicLong();
@@ -109,10 +110,10 @@ public class EntityEventRoutingModelInspectorTest {
 
     @Test
     public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityMap() throws Exception {
-        AggregateModel<SomeEventRoutingEntityMapAggregate> inspector =
-                inspectAggregate(SomeEventRoutingEntityMapAggregate.class);
+        AggregateModel<SomeEventForwardingEntityMapAggregate> inspector =
+                inspectAggregate(SomeEventForwardingEntityMapAggregate.class);
 
-        SomeEventRoutingEntityMapAggregate target = new SomeEventRoutingEntityMapAggregate();
+        SomeEventForwardingEntityMapAggregate target = new SomeEventForwardingEntityMapAggregate();
 
         // All called once, as there is an event per entity only
         AtomicLong entityOnePayload = new AtomicLong();
@@ -127,13 +128,13 @@ public class EntityEventRoutingModelInspectorTest {
         assertEquals(1L, entityThreePayload.get());
     }
 
-    private static class SomeNoneEventRoutingEntityAggregate {
+    private static class SomeNoneEventForwardingEntityAggregate {
 
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventRoutingMode = ForwardingMode.NONE)
-        private SomeEventRoutingEntity entity = new SomeEventRoutingEntity(ENTITY_ID);
+        @AggregateMember(eventForwardingMode = ForwardingMode.NONE)
+        private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler
         public void handle(EntityRoutedEvent event) {
@@ -141,13 +142,13 @@ public class EntityEventRoutingModelInspectorTest {
         }
     }
 
-    private static class SomeEventRoutingEntityAggregate {
+    private static class SomeEventForwardingEntityAggregate {
 
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventRoutingMode = ForwardingMode.ROUTING_KEY)
-        private SomeEventRoutingEntity entity = new SomeEventRoutingEntity(ENTITY_ID);
+        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY)
+        private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler
         public void handle(EntityRoutedEvent event) {
@@ -155,13 +156,13 @@ public class EntityEventRoutingModelInspectorTest {
         }
     }
 
-    private static class SomeEventRoutingEntityAggregateWithSpecificEventRoutingKey {
+    private static class SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey {
 
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventRoutingMode = ForwardingMode.ROUTING_KEY, eventRoutingKey = "someIdentifier")
-        private SomeEventRoutingEntity entity = new SomeEventRoutingEntity(ENTITY_ID);
+        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY, eventRoutingKey = "someIdentifier")
+        private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler
         public void handle(SomeOtherEntityRoutedEvent event) {
@@ -169,44 +170,44 @@ public class EntityEventRoutingModelInspectorTest {
         }
     }
 
-    private static class SomeEventRoutingEntityCollectionAggregate {
+    private static class SomeEventForwardingEntityCollectionAggregate {
 
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventRoutingMode = ForwardingMode.ROUTING_KEY)
-        private List<SomeEventRoutingEntity> entities;
+        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY)
+        private List<SomeEventForwardedEntity> entities;
 
-        SomeEventRoutingEntityCollectionAggregate() {
+        SomeEventForwardingEntityCollectionAggregate() {
             this.entities = new ArrayList<>();
-            entities.add(new SomeEventRoutingEntity("entityId1"));
-            entities.add(new SomeEventRoutingEntity("entityId2"));
-            entities.add(new SomeEventRoutingEntity("entityId3"));
+            entities.add(new SomeEventForwardedEntity("entityId1"));
+            entities.add(new SomeEventForwardedEntity("entityId2"));
+            entities.add(new SomeEventForwardedEntity("entityId3"));
         }
     }
 
-    private static class SomeEventRoutingEntityMapAggregate {
+    private static class SomeEventForwardingEntityMapAggregate {
 
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventRoutingMode = ForwardingMode.ROUTING_KEY)
-        private Map<String, SomeEventRoutingEntity> entities;
+        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY)
+        private Map<String, SomeEventForwardedEntity> entities;
 
-        SomeEventRoutingEntityMapAggregate() {
+        SomeEventForwardingEntityMapAggregate() {
             this.entities = new HashMap<>();
-            entities.put("entityId1", new SomeEventRoutingEntity("entityId1"));
-            entities.put("entityId2", new SomeEventRoutingEntity("entityId2"));
-            entities.put("entityId3", new SomeEventRoutingEntity("entityId3"));
+            entities.put("entityId1", new SomeEventForwardedEntity("entityId1"));
+            entities.put("entityId2", new SomeEventForwardedEntity("entityId2"));
+            entities.put("entityId3", new SomeEventForwardedEntity("entityId3"));
         }
     }
 
-    private static class SomeEventRoutingEntity {
+    private static class SomeEventForwardedEntity {
 
         @EntityId
         private final String entityId;
 
-        SomeEventRoutingEntity(String entityId) {
+        SomeEventForwardedEntity(String entityId) {
             this.entityId = entityId;
         }
 

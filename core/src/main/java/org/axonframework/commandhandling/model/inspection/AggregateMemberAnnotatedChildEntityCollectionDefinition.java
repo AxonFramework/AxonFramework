@@ -48,14 +48,14 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
         }
         EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
 
+        Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
+        ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
         Map<String, Property<Object>> routingKeyProperties = extractCommandHandlerRoutingKeys(field, childEntityModel);
 
-        ForwardingMode eventRoutingMode = eventRoutingMode((Boolean) attributes.get("forwardEvents"),
-                                                           (ForwardingMode) attributes.get("eventRoutingMode"));
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
-                eventRoutingMode,
+                eventForwardingMode(forwardEvents, eventForwardingMode),
                 (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> {
                     Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());

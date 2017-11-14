@@ -46,7 +46,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     private static final String EMPTY_STRING = "";
 
     private final EntityModel<C> entityModel;
-    private final ForwardingMode eventRoutingMode;
+    private final ForwardingMode eventForwardingMode;
     private final String eventRoutingKey;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
@@ -58,8 +58,8 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
      * @param entityModel           a {@link org.axonframework.commandhandling.model.inspection.EntityModel} describing
      *                              the entity.
      * @param forwardCommands       flag indicating whether commands should be forwarded to the entity
-     * @param eventRoutingMode      a {@link org.axonframework.commandhandling.model.ForwardingMode} enum describing the
-     *                              used routing mode for events.
+     * @param eventForwardingMode   a {@link org.axonframework.commandhandling.model.ForwardingMode} enum describing the
+     *                              used forwarding mode for events.
      *                              only entity specific events should be forwarded
      * @param eventRoutingKey       a {@link java.lang.String} specifying the routing key for all events within this
      *                              Entity.
@@ -69,12 +69,12 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @SuppressWarnings("unchecked")
     public AnnotatedChildEntity(EntityModel<C> entityModel,
                                 boolean forwardCommands,
-                                ForwardingMode eventRoutingMode,
+                                ForwardingMode eventForwardingMode,
                                 String eventRoutingKey,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
                                 BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver) {
         this.entityModel = entityModel;
-        this.eventRoutingMode = eventRoutingMode;
+        this.eventForwardingMode = eventForwardingMode;
         this.eventRoutingKey = eventRoutingKey;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
@@ -91,7 +91,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @SuppressWarnings("unchecked")
     @Override
     public void publish(EventMessage<?> msg, P declaringInstance) {
-        if (eventRoutingMode == ForwardingMode.NONE) {
+        if (eventForwardingMode == ForwardingMode.NONE) {
             return;
         }
 
@@ -137,9 +137,9 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
     @SuppressWarnings("unchecked")
     private void publishToTarget(EventMessage<?> msg, C target) {
-        if (eventRoutingMode == ForwardingMode.ALL) {
+        if (eventForwardingMode == ForwardingMode.ALL) {
             entityModel.publish(msg, target);
-        } else if (eventRoutingMode == ForwardingMode.ROUTING_KEY) {
+        } else if (eventForwardingMode == ForwardingMode.ROUTING_KEY) {
             Property eventRoutingProperty = getProperty(msg.getPayloadType(), eventRoutingKey());
 
             Object eventRoutingValue = eventRoutingProperty.getValue(msg.getPayload());

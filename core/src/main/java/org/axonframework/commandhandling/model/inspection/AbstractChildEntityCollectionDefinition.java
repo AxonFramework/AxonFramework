@@ -114,21 +114,23 @@ public abstract class AbstractChildEntityCollectionDefinition implements ChildEn
     }
 
     /**
-     * Determine the event routing mode of this Child Entity, based on the deprecated {@code forwardEvents} field and
-     * the {@code eventRoutingMode} field. Returns {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code false}
-     * , and the supplied {@code eventRoutingMode} if {@code forwardEvents} is {@code true}.
+     * Determine the event forwarding mode of this Child Entity, based on the deprecated {@code forwardEvents} field
+     * and
+     * the {@code eventForwardingMode} field. Returns {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code
+     * false} , and the supplied {@code eventForwardingMode} if {@code forwardEvents} is {@code true}.
      * <p>
      * As long as the {@link org.axonframework.commandhandling.model.AggregateMember} still services the {@code
      * forwardEvents} field, this function needs to exists.
      *
-     * @param forwardEvents    a {@link java.lang.Boolean} flag to forward events yes/no.
-     * @param eventRoutingMode a {@link org.axonframework.commandhandling.model.ForwardingMode} describing the desired
-     *                         routing modes of events for this Child Entity.
+     * @param forwardEvents       a {@link java.lang.Boolean} flag to forward events yes/no.
+     * @param eventForwardingMode a {@link org.axonframework.commandhandling.model.ForwardingMode} describing the
+     *                            desired forwarding modes of events for this Child Entity.
      * @return {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code false}, and the given {@code
-     * eventRoutingMode} if {@code forwardEvents} is {@code true}.
+     * @return {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code false}, and the given {@code
+     * eventForwardingMode} if {@code forwardEvents} is {@code true}.
      */
-    protected ForwardingMode eventRoutingMode(Boolean forwardEvents, ForwardingMode eventRoutingMode) {
-        return !forwardEvents ? ForwardingMode.NONE : eventRoutingMode;
+    protected ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
+        return !forwardEvents ? ForwardingMode.NONE : eventForwardingMode;
     }
 }
 

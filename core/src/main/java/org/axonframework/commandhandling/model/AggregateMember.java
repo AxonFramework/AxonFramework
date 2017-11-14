@@ -52,19 +52,19 @@ public @interface AggregateMember {
      *
      * @return a {@code boolean} denoting if events should be forwarded, yes or no.
      *
-     * @deprecated in favor of the {@code eventRoutingMode}.
+     * @deprecated in favor of the {@code eventForwardingMode}.
      */
     @Deprecated
     boolean forwardEvents() default true;
 
     /**
-     * Indicates the routing mode used for events within this entity. Defaults to {@code ForwardingMode.ALL} to allow
+     * Indicates the forwarding mode used for events within this entity. Defaults to {@code ForwardingMode.ALL} to allow
      * all events through.
      *
      * @return a {@link org.axonframework.commandhandling.model.ForwardingMode} describing what mode should be used in
      * forwarding events to this Aggregate Member.
      */
-    ForwardingMode eventRoutingMode() default ForwardingMode.ALL;
+    ForwardingMode eventForwardingMode() default ForwardingMode.ALL;
 
     /**
      * The property of the event to be used as a routing key towards this Aggregate Member.

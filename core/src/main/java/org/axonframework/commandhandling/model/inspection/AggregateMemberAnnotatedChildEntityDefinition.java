@@ -45,12 +45,13 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
 
-        ForwardingMode eventRoutingMode = eventRoutingMode((Boolean) attributes.get("forwardEvents"),
-                                                           (ForwardingMode) attributes.get("eventRoutingMode"));
+        Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
+        ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
+
         return Optional.of(new AnnotatedChildEntity<>(
                 entityModel,
                 (Boolean) attributes.get("forwardCommands"),
-                eventRoutingMode,
+                eventForwardingMode(forwardEvents, eventForwardingMode),
                 (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
                 (msg, parent) -> {
@@ -60,7 +61,7 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
         ));
     }
 
-    private ForwardingMode eventRoutingMode(Boolean forwardEvents, ForwardingMode eventRoutingMode) {
-        return !forwardEvents ? ForwardingMode.NONE : eventRoutingMode;
+    private ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
+        return !forwardEvents ? ForwardingMode.NONE : eventForwardingMode;
     }
 }
