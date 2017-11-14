@@ -26,10 +26,7 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.SnapshotTrigger;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -194,8 +191,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             }
             if (aggregateRoot == null) {
                 Object cachedItem = cache.get(aggregateIdentifier);
-                if (cachedItem != null && EventSourcedAggregate.class.isInstance(cachedItem)) {
-                    EventSourcedAggregate<T> cachedAggregate = (EventSourcedAggregate<T>) cachedItem;
+                if (cachedItem != null && AggregateCacheEntry.class.isInstance(cachedItem)) {
+                    EventSourcedAggregate<T> cachedAggregate = ((AggregateCacheEntry<T>) cachedItem).recreateAggregate(model, eventStore, snapshotTriggerDefinition);
                     aggregateRoot = cachedAggregate.invoke(r -> {
                         if (aggregateFactory.getAggregateType().isInstance(r)) {
                             return cachedAggregate;
@@ -219,7 +216,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                     model, eventStore, trigger);
                 aggregateRoot.initializeState(eventStream);
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
-                cache.put(aggregateIdentifier, aggregateRoot);
+                cache.put(aggregateIdentifier, new AggregateCacheEntry<>(aggregateRoot));
             }
             return aggregateRoot;
         }
@@ -230,7 +227,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             EventSourcedAggregate<T> aggregate =
                     EventSourcedAggregate.initialize(factoryMethod, model, eventStore, trigger);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
-            cache.put(aggregate.identifierAsString(), aggregate);
+            cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
             return aggregate;
         }
 

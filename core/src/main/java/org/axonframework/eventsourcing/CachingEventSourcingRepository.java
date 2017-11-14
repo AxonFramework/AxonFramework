@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -26,7 +25,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.io.Serializable;
 import java.util.concurrent.Callable;
 
 
@@ -130,20 +128,20 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
         EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
         String aggregateIdentifier = aggregate.identifierAsString();
-        cache.put(aggregateIdentifier, new CacheEntry<>(aggregate));
+        cache.put(aggregateIdentifier, new AggregateCacheEntry<>(aggregate));
         return aggregate;
     }
 
     @Override
     protected void doSaveWithLock(EventSourcedAggregate<T> aggregate) {
         super.doSaveWithLock(aggregate);
-        cache.put(aggregate.identifierAsString(), new CacheEntry<>(aggregate));
+        cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
     }
 
     @Override
     protected void doDeleteWithLock(EventSourcedAggregate<T> aggregate) {
         super.doDeleteWithLock(aggregate);
-        cache.put(aggregate.identifierAsString(), new CacheEntry<>(aggregate));
+        cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
     }
 
     /**
@@ -158,7 +156,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
         EventSourcedAggregate<T> aggregate = null;
-        CacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
+        AggregateCacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
         if (cacheEntry != null) {
             aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventStore, snapshotTriggerDefinition);
         }
@@ -171,33 +169,4 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         return aggregate;
     }
 
-    private static class CacheEntry<T> implements Serializable {
-
-        private final T aggregateRoot;
-        private final Long version;
-        private final boolean deleted;
-        private final SnapshotTrigger snapshotTrigger;
-
-        private final transient EventSourcedAggregate<T> aggregate;
-
-        public CacheEntry(EventSourcedAggregate<T> aggregate) {
-            this.aggregate = aggregate;
-            this.aggregateRoot = aggregate.getAggregateRoot();
-            this.version = aggregate.version();
-            this.deleted = aggregate.isDeleted();
-            this.snapshotTrigger =
-                    (aggregate.getSnapshotTrigger() instanceof Serializable) ? aggregate.getSnapshotTrigger() :
-                            NoSnapshotTriggerDefinition.TRIGGER;
-        }
-
-        public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
-                                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
-            if (aggregate != null) {
-                return aggregate;
-            }
-            return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore,
-                                                     snapshotTriggerDefinition
-                                                             .reconfigure(aggregateRoot.getClass(), snapshotTrigger));
-        }
-    }
 }
