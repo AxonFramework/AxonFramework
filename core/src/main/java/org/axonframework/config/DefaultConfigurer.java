@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,6 +46,7 @@ import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
@@ -304,7 +306,7 @@ public class DefaultConfigurer implements Configurer {
         startHandlers.add(() -> {
             Registration registration =
                     new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
-                            config.parameterResolverFactory())
+                                                      config.parameterResolverFactory())
                             .subscribe(config.queryBus());
             shutdownHandlers.add(registration::cancel);
         });

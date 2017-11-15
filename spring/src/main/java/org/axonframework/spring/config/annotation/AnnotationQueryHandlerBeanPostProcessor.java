@@ -16,9 +16,9 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.queryhandling.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.spring.config.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
 

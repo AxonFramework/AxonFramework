@@ -114,7 +114,7 @@ public class SimpleQueryBus implements QueryBus {
             return Stream.empty();
         }
 
-        return StreamSupport.stream(new Spliterator<R>() {
+        return StreamSupport.stream(new Spliterators.AbstractSpliterator<R>(handlers.size(), Spliterator.SIZED) {
             final Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
 
             @SuppressWarnings("unchecked")
@@ -131,21 +131,6 @@ public class SimpleQueryBus implements QueryBus {
                     }
                 }
                 return false;
-            }
-
-            @Override
-            public Spliterator<R> trySplit() {
-                return null;
-            }
-
-            @Override
-            public long estimateSize() {
-                return handlers.size();
-            }
-
-            @Override
-            public int characteristics() {
-                return Spliterator.SIZED;
             }
         }, false);
     }

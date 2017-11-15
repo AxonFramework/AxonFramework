@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.common.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.PayloadParameterResolver;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryMessage;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.lang.reflect.Method;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
@@ -39,22 +40,16 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationQueryHandlerAdapterTest {
-    private AnnotationQueryHandlerAdapter testSubject;
+    private AnnotationQueryHandlerAdapter<?> testSubject;
 
     @Mock
     private QueryBus queryBus;
-    private MyQueryHandler mockTarget;
     private MySecondQueryHandler mockTarget2;
-    private AnnotationQueryHandlerAdapter testSubject2;
-    private AnnotationQueryHandlerAdapter testSubject3;
 
     @Before
     public void setUp() throws Exception {
-        mockTarget = new MyQueryHandler();
         mockTarget2 = new MySecondQueryHandler();
-        testSubject = new AnnotationQueryHandlerAdapter(mockTarget);
-        testSubject2 = new AnnotationQueryHandlerAdapter(mockTarget2);
-        testSubject3 = new AnnotationQueryHandlerAdapter(new MyThirdQueryHandler());
+        testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
         when(queryBus.subscribe(anyObject(), anyObject(), anyObject())).thenReturn(() -> true);
     }
 
@@ -75,28 +70,25 @@ public class AnnotationQueryHandlerAdapterTest {
 
     @Test(expected = UnsupportedHandlerException.class)
     public void subscribeInvalidParameters() throws Exception {
-        testSubject2.subscribe(queryBus);
+        new AnnotationQueryHandlerAdapter<>(mockTarget2);
     }
 
     @Test(expected = UnsupportedHandlerException.class)
     public void subscribeVoidMethod() throws Exception {
-        testSubject3.subscribe(queryBus);
+        new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler());
     }
 
     @Test
     public void testRunQuery() throws Exception {
-        Method echo = MyQueryHandler.class.getMethod("echo", String.class);
-        ParameterResolver[] parameterResolvers = new ParameterResolver[]{new PayloadParameterResolver(String.class)};
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
-        testSubject.runQuery(echo, parameterResolvers, mockTarget, queryMessage);
+        Object result = testSubject.handle(queryMessage);
+        assertEquals("hello", result);
     }
 
-    @Test(expected = QueryExecutionException.class)
+    @Test(expected = MockException.class)
     public void testRunQueryWithException() throws Exception {
-        Method echo = MyQueryHandler.class.getMethod("echo3", String.class);
-        ParameterResolver[] parameterResolvers = new ParameterResolver[]{new PayloadParameterResolver(String.class)};
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
-        testSubject.runQuery(echo, parameterResolvers, mockTarget, queryMessage);
+        QueryMessage<String, Integer> queryMessage = new GenericQueryMessage<>("hello", Integer.class);
+        testSubject.handle(queryMessage);
     }
 
     public class MyQueryHandler {
@@ -121,13 +113,11 @@ public class AnnotationQueryHandlerAdapterTest {
         public String echo(MetaData metaData, String echo) {
             return echo;
         }
-
     }
 
     public class MyThirdQueryHandler {
         @QueryHandler
         public void echo(String echo) {
         }
-
     }
 }

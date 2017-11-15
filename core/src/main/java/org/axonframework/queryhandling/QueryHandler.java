@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 
 import java.lang.annotation.*;
 
@@ -32,7 +33,7 @@ import java.lang.annotation.*;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @MessageHandler(messageType = QueryMessage.class)
 public @interface QueryHandler{
     /**
