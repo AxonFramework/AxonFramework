@@ -65,6 +65,21 @@ public class StubEventScheduler implements EventScheduler {
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
+    /**
+     * Resets the initial "current time" of this SubEventScheduler. Must be called before any events are scheduled
+     *
+     * @param currentDateTime The instant to use as the current Date and Time
+     * @throws IllegalStateException when calling this method after events are scheduled
+     */
+    public void initializeAt(TemporalAccessor currentDateTime) {
+        if (!scheduledEvents.isEmpty()) {
+            throw new IllegalStateException("Initializing the scheduler at a specific dateTime must take place "
+                                                    + "before any events are scheduled");
+        }
+        this.currentDateTime = Instant.from(currentDateTime);
+    }
+
+
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);

@@ -116,8 +116,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void ensureSagaManagerInitialized() {
         if (sagaManager == null) {
-            ParameterResolverFactory parameterResolverFactory = ordered(new SimpleResourceParameterResolverFactory(registeredResources),
-                                                                        ClasspathParameterResolverFactory.forClass(sagaType));
+            ParameterResolverFactory parameterResolverFactory = ordered(new SimpleResourceParameterResolverFactory(
+                                                                                registeredResources),
+                                                                        ClasspathParameterResolverFactory
+                                                                                .forClass(sagaType));
             SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                              new TransienceValidatingResourceInjector(),
                                                                              parameterResolverFactory);
@@ -175,6 +177,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public ContinuedGivenState givenAPublished(Object event) {
         handleInSaga(timeCorrectedEventMessage(event));
+        return this;
+    }
+
+    @Override
+    public ContinuedGivenState givenCurrentTime(Instant currentTime) {
+        eventScheduler.initializeAt(currentTime);
         return this;
     }
 
@@ -390,16 +398,18 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             super.injectResources(saga);
             if (transienceCheckEnabled) {
                 StreamSupport.stream(fieldsOf(saga.getClass()).spliterator(), false)
-                        .filter(f -> !Modifier.isTransient(f.getModifiers()))
-                        .filter(f -> registeredResources.contains(ReflectionUtils.getFieldValue(f, saga)))
-                        .findFirst()
-                        .ifPresent(field -> {
-                            throw new AssertionError(format("Field %s.%s is injected with a resource, " +
-                                                                    "but it doesn't have the 'transient' modifier.\n" +
-                                                                    "Mark field as 'transient' or disable this check using:\n" +
-                                                                    "fixture.withTransienceCheckDisabled()",
-                                                            field.getDeclaringClass(), field.getName()));
-                        });
+                             .filter(f -> !Modifier.isTransient(f.getModifiers()))
+                             .filter(f -> registeredResources.contains(ReflectionUtils.getFieldValue(f, saga)))
+                             .findFirst()
+                             .ifPresent(field -> {
+                                 throw new AssertionError(format("Field %s.%s is injected with a resource, " +
+                                                                         "but it doesn't have the 'transient' modifier.\n"
+                                                                         +
+                                                                         "Mark field as 'transient' or disable this check using:\n"
+                                                                         +
+                                                                         "fixture.withTransienceCheckDisabled()",
+                                                                 field.getDeclaringClass(), field.getName()));
+                             });
             }
         }
     }
