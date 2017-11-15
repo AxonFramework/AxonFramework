@@ -27,14 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -125,22 +122,18 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
                                        UnitOfWork<? extends EventMessage<?>> unitOfWork,
                                        Segment segment) throws Exception {
-        Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
-                eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         try {
             unitOfWork.executeWithResult(() -> {
-                unitOfWork.resources().put("messageMonitor", monitorCallbacks.get(unitOfWork.getMessage()));
-                unitOfWork.onCleanup(uow -> {
-                    MessageMonitor.MonitorCallback callback = uow.getResource("messageMonitor");
-                    if (uow.isRolledBack()) {
-                        callback.reportFailure(uow.getExecutionResult().getExceptionResult());
-                    } else {
-                        callback.reportSuccess();
-                    }
-                });
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(unitOfWork.getMessage());
                 return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
-                    eventHandlerInvoker.handle(m, segment);
-                    return null;
+                    try {
+                        eventHandlerInvoker.handle(m, segment);
+                        monitorCallback.reportSuccess();
+                        return null;
+                    } catch (Throwable throwable) {
+                        monitorCallback.reportFailure(throwable);
+                        throw throwable;
+                    }
                 }).proceed();
             }, rollbackConfiguration);
         } catch (Exception e) {
