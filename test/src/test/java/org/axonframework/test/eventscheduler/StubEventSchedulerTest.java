@@ -18,11 +18,12 @@ package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.*;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,6 +31,9 @@ import static org.junit.Assert.assertEquals;
  * @author Allard Buijze
  */
 public class StubEventSchedulerTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
 
     private StubEventScheduler testSubject;
 
@@ -42,6 +46,13 @@ public class StubEventSchedulerTest {
     public void testScheduleEvent() {
         testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
         assertEquals(1, testSubject.getScheduledItems().size());
+    }
+
+    @Test
+    public void testInitializeAtDateTimeAfterSchedulingEvent() throws Exception {
+        testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
+        exception.expect(IllegalStateException.class);
+        testSubject.initializeAt(Instant.now().minus(10, ChronoUnit.MINUTES));
     }
 
     private EventMessage<MockEvent> event(MockEvent mockEvent) {

@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
@@ -237,6 +238,19 @@ public class AnnotatedSagaTest {
         fixture.givenAPublished(GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(identifier.toString())))
                 .whenTimeElapses(Duration.ofMinutes(1))
                 .expectScheduledEventOfType(Duration.ofMinutes(9), TimerTriggeredEvent.class);
+    }
+
+    @Test
+    public void testFixtureApi_givenCurrentTime() throws Exception {
+        String identifier = UUID.randomUUID().toString();
+        Instant fourDaysAgo = Instant.now().minus(4, ChronoUnit.DAYS);
+        Instant fourDaysMinusTenMinutesAgo = fourDaysAgo.plus(10, ChronoUnit.MINUTES);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture
+                .givenCurrentTime(fourDaysAgo)
+                .whenPublishingA(new TriggerSagaStartEvent(identifier))
+                .expectScheduledEvent(fourDaysMinusTenMinutesAgo, new TimerTriggeredEvent(identifier));
     }
 
     @Test

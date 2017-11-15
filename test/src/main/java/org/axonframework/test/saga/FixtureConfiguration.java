@@ -135,6 +135,15 @@ public interface FixtureConfiguration {
     GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier);
 
     /**
+     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start
+     * of the given state.
+     *
+     * @param currentTime The simulated "current time" at which the given state is initialized
+     * @return an object that allows chaining of more given state
+     */
+    ContinuedGivenState givenCurrentTime(Instant currentTime);
+
+    /**
      * Indicates that the given {@code applicationEvent} has been published in the past. This event is sent to the
      * associated sagas.
      *
