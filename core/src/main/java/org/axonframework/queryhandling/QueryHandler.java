@@ -21,7 +21,7 @@ import java.lang.annotation.*;
 
 /**
  * Marker annotation to mark any method on an object as being a QueryHandler. Use the {@link
- * AnnotationQueryHandlerAdapter} to subscribe the annotated class to the command bus.
+ * AnnotationQueryHandlerAdapter} to subscribe the annotated class to the query bus.
 
  * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may
  * specify a second parameter of type {@link org.axonframework.messaging.MetaData}. The active MetaData will be
@@ -42,12 +42,5 @@ public @interface QueryHandler{
      * @return The query name
      */
     String queryName() default "";
-
-    /**
-     * The name of the response this handler listens to. Defaults to the fully qualified class name of the response type of the operation
-     *
-     * @return The response name
-     */
-    String responseName() default "";
 
 }

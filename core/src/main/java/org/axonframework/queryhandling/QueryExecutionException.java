@@ -16,13 +16,22 @@
 package org.axonframework.queryhandling;
 
 /**
- * Exception thrown when execution of the query fails.
+ * Exception indicating that the execution of a Query Handler has resulted in an exception
  *
- * @since 3.1
  * @author Marc Gathier
+ * @since 3.1
  */
 public class QueryExecutionException extends RuntimeException {
-    public QueryExecutionException(Throwable throwable) {
-        super(throwable);
+
+    private static final long serialVersionUID = 3269266885785226323L;
+
+    /**
+     * Initializes the exception with given {@code message} and {@code cause}
+     *
+     * @param message Message explaining the context of the error
+     * @param cause   The underlying cause of the invocation failure
+     */
+    public QueryExecutionException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

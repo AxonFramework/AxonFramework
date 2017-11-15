@@ -20,15 +20,32 @@ import org.axonframework.messaging.Message;
 import java.util.Map;
 
 /**
+ * Message type that carries a Query: a request for information. Besides a payload, Query Messages also carry the
+ * expected response type. This is the type of result expected by the caller.
+ * <p>
+ * Handlers should only answer a query if they can respond with the appropriate response type.
+ *
  * @author Marc Gathier
  * @since 3.1
  */
-public interface QueryMessage<T>  extends Message<T> {
+public interface QueryMessage<T, R> extends Message<T> {
+
+    /**
+     * Returns the name identifying the query to be executed.
+     *
+     * @return the name identifying the query to be executed.
+     */
     String getQueryName();
-    String getResponseName();
 
-    QueryMessage<T> withMetaData(Map<String, ?> var1);
+    /**
+     * The type of response expected by the sender of the query
+     *
+     * @return the type of response expected by the sender of the query
+     */
+    Class<R> getResponseType();
 
-    QueryMessage<T> andMetaData(Map<String, ?> var1);
+    QueryMessage<T, R> withMetaData(Map<String, ?> metaData);
+
+    QueryMessage<T, R> andMetaData(Map<String, ?> additionalMetaData);
 
 }

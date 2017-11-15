@@ -22,53 +22,44 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * @since 3.1
+ * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
+ *
  * @author Marc Gathier
+ * @since 3.1
  */
 public class DefaultQueryGateway implements QueryGateway {
-    private final QueryBus queryBus;
-    private final MessageDispatchInterceptor<? super QueryMessage<?>>[] dispatchInterceptors;
 
-    public DefaultQueryGateway(QueryBus queryBus, MessageDispatchInterceptor<? super QueryMessage<?>>... dispatchInterceptors) {
+    private final QueryBus queryBus;
+    private final MessageDispatchInterceptor<? super QueryMessage<?, ?>>[] dispatchInterceptors;
+
+    /**
+     * Initializes the gateway to send queries to the given {@code queryBus} and invoking given
+     * {@code dispatchInterceptors} prior to publication ont he query bus.
+     *
+     * @param queryBus             The bus to deliver messages on
+     * @param dispatchInterceptors The interceptors to invoke prior to publication on the bus
+     */
+    @SafeVarargs
+    public DefaultQueryGateway(QueryBus queryBus, MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
         this.queryBus = queryBus;
         this.dispatchInterceptors = dispatchInterceptors;
     }
 
     @Override
-    public <R, Q> CompletableFuture<R> send(Q query, String resultName) {
-        return send( query, query.getClass().getName(), resultName);
-    }
-
-
-    @Override
-    public <R, Q> CompletableFuture<R> send(Q query, Class<R> resultClass) {
-        return send(query, query.getClass().getName(), resultClass.getName());
+    public <R, Q> Stream<R> send(Q query, String queryName, Class<R> responseType, long timeout, TimeUnit timeUnit) {
+        return queryBus.queryAll(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit);
     }
 
     @Override
-    public <R, Q> CompletableFuture<R> send(Q query, String queryName, String resultName) {
-        return queryBus.query(processInterceptors(new GenericQueryMessage<Q>(query, queryName, resultName)));
+    public <R, Q> CompletableFuture<R> send(Q query, String queryName, Class<R> responseType) {
+        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)));
     }
 
-    @Override
-    public <R, Q> Stream<R> send(Q query, String resultName, long timeout, TimeUnit timeUnit) {
-        return send(query, query.getClass().getName(), resultName, timeout, timeUnit);
-    }
-
-    @Override
-    public <R, Q> Stream<R> send(Q query, Class<R> resultClass, long timeout, TimeUnit timeUnit) {
-        return send( query, query.getClass().getName(), resultClass.getName(), timeout, timeUnit);
-    }
-
-    @Override
-    public <R, Q> Stream<R> send(Q query, String queryName, String resultName, long timeout, TimeUnit timeUnit) {
-        return queryBus.queryAll(processInterceptors(new GenericQueryMessage<Q>(query, queryName, resultName)), timeout, timeUnit);
-    }
-
-    protected <C> QueryMessage<? extends C> processInterceptors(QueryMessage<C> commandMessage) {
-        QueryMessage<? extends C> message = commandMessage;
-        for (MessageDispatchInterceptor<? super QueryMessage<?>> dispatchInterceptor : dispatchInterceptors) {
-            message = (QueryMessage) dispatchInterceptor.handle(message);
+    @SuppressWarnings("unchecked")
+    private <C, R> QueryMessage<? extends C, R> processInterceptors(QueryMessage<C, R> queryMessage) {
+        QueryMessage<? extends C, R> message = queryMessage;
+        for (MessageDispatchInterceptor<? super QueryMessage<?, ?>> dispatchInterceptor : dispatchInterceptors) {
+            message = (QueryMessage<? extends C, R>) dispatchInterceptor.handle(message);
         }
         return message;
     }

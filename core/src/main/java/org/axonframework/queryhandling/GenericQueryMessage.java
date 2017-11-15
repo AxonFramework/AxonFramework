@@ -23,27 +23,54 @@ import org.axonframework.messaging.MetaData;
 import java.util.Map;
 
 /**
+ * Generic implementation of the QueryMessage. Unless explicitly provided, it assumes the {@code queryName} of the
+ * message is the fully qualified class name of the message's payload.
+ *
+ * @param <T> The type of payload expressing the query in this message
+ * @param <R> The type of response expected from this query
  * @author Marc Gathier
  * @since 3.1
  */
-public class GenericQueryMessage<T> extends MessageDecorator<T> implements QueryMessage<T> {
+public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements QueryMessage<T, R> {
+
+    private static final long serialVersionUID = -3908412412867063631L;
+
     private final String queryName;
-    private final String responseName;
+    private final Class<R> responseType;
 
-    public GenericQueryMessage(T payload, String responseName) {
-        this(payload, MetaData.emptyInstance(), payload.getClass().getName(), responseName);
+    /**
+     * Initializes the message with the given {@code payload} and expected {@code responseType}. The query name is
+     * set to the fully qualified class name of the {@code payload}.
+     *
+     * @param payload      The payload expressing the query
+     * @param responseType The expected response type
+     */
+    public GenericQueryMessage(T payload, Class<R> responseType) {
+        this(payload, payload.getClass().getName(), responseType);
     }
 
-    public GenericQueryMessage(T payload, String queryName, String responseName) {
-        this(payload, MetaData.emptyInstance(), queryName, responseName);
+    /**
+     * Initializes the message with the given {@code payload}, {@code queryName} and expected {@code responseType}.
+     *
+     * @param payload      The payload expressing the query
+     * @param queryName    The name identifying the query to execute
+     * @param responseType The expected response type
+     */
+    public GenericQueryMessage(T payload, String queryName, Class<R> responseType) {
+        this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
-    public GenericQueryMessage(T payload, Map<String, ?> metaData, String queryName, String responseName) {
-        this(new GenericMessage<T>(payload, metaData), queryName, responseName);
-    }
-    public GenericQueryMessage(Message<T> delegate, String queryName, String responseName) {
+    /**
+     * Initialize the Query Message, using given {@code delegate} as the carrier of payload and metadata and given
+     * {@code queryName} and expecting the given {@code responseType}.
+     *
+     * @param delegate The message containing the payload and meta data for this message
+     * @param queryName    The name identifying the query to execute
+     * @param responseType The expected response type
+     */
+    public GenericQueryMessage(Message<T> delegate, String queryName, Class<R> responseType) {
         super(delegate);
-        this.responseName = responseName;
+        this.responseType = responseType;
         this.queryName = queryName;
     }
 
@@ -52,19 +79,19 @@ public class GenericQueryMessage<T> extends MessageDecorator<T> implements Query
         return queryName;
     }
 
-    @Override
-    public String getResponseName() {
-        return responseName;
-    }
-
 
     @Override
-    public QueryMessage<T> withMetaData(Map<String, ?> metaData) {
-        return new GenericQueryMessage<T>(getDelegate().withMetaData(metaData), queryName, responseName);
+    public Class<R> getResponseType() {
+        return responseType;
     }
 
     @Override
-    public QueryMessage<T> andMetaData(Map<String, ?> metaData) {
-        return new GenericQueryMessage<T>(getDelegate().andMetaData(metaData), queryName, responseName);
+    public QueryMessage<T, R> withMetaData(Map<String, ?> metaData) {
+        return new GenericQueryMessage<>(getDelegate().withMetaData(metaData), queryName, responseType);
+    }
+
+    @Override
+    public QueryMessage<T, R> andMetaData(Map<String, ?> metaData) {
+        return new GenericQueryMessage<>(getDelegate().andMetaData(metaData), queryName, responseType);
     }
 }

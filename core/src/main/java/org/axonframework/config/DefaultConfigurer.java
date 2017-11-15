@@ -52,11 +52,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -185,7 +181,8 @@ public class DefaultConfigurer implements Configurer {
      * @return the default QueryBus to use
      */
     protected QueryBus defaultQueryBus(Configuration config) {
-        return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"));
+        return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
+                                  config.getComponent(QueryInvocationErrorHandler.class));
     }
     /**
      * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default

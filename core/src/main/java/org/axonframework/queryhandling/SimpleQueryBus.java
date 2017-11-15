@@ -19,57 +19,82 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.text.MessageFormat;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.text.MessageFormat.format;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
+
 /**
- * Implementation of the QueryBus that dispatches queries to the handlers.
+ * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
+ * this implementation, as handlers are considered to answer immediately.
+ * <p>
+ * In case multiple handlers are registered for the same query and response type, the {@link #query(QueryMessage)}
+ * method will invoke one of these handlers. Which one is unspecified.
  *
  * @author Marc Gathier
  * @since 3.1
  */
 public class SimpleQueryBus implements QueryBus {
-    final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?>>>> subscriptions = new ConcurrentHashMap<>();
-    private final MessageMonitor<? super QueryMessage<?>> messageMonitor;
+    private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
+    private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscriptions = new ConcurrentHashMap<>();
+    private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
+    private final QueryInvocationErrorHandler errorHandler;
+
+    /**
+     * Initialize the query bus without monitoring on messages and a {@link LoggingQueryInvocationErrorHandler}.
+     */
     public SimpleQueryBus() {
-        this(NoOpMessageMonitor.INSTANCE);
+        this(NoOpMessageMonitor.INSTANCE, null);
     }
-    public SimpleQueryBus(MessageMonitor<? super QueryMessage<?>> messageMonitor) {
+
+    /**
+     * Initialize the query bus with the given {@code messageMonitor} and given {@code errorHandler}.
+     *
+     * @param messageMonitor The message monitor notified for incoming messages and their result
+     * @param errorHandler   The error handler to invoke when query handler report an error
+     */
+    public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
+                          QueryInvocationErrorHandler errorHandler) {
         this.messageMonitor = messageMonitor;
+        this.errorHandler = getOrDefault(errorHandler, () -> new LoggingQueryInvocationErrorHandler(logger));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <R> Registration subscribe(String queryName, Class<R> responseType, MessageHandler<? super QueryMessage<?, R>> handler) {
+        QueryDefinition registrationKey = new QueryDefinition(queryName, responseType);
+        subscriptions.computeIfAbsent(registrationKey, (k) -> new CopyOnWriteArraySet<>()).add((MessageHandler<? super QueryMessage<?, ?>>) handler);
+        return () -> unsubscribe(registrationKey, (MessageHandler<? super QueryMessage<?, ?>>) handler);
     }
 
     @Override
-    public Registration subscribe(String queryName, String responseName, MessageHandler<? super QueryMessage<?>> handler) {
-        QueryDefinition registrationKey = new QueryDefinition(queryName, responseName);
-        subscriptions.computeIfAbsent(registrationKey, (k) -> new CopyOnWriteArraySet<>()).add(handler);
-        return () -> unsubscribe(registrationKey, handler);
-    }
-
-    @Override
-    public <Q, R> CompletableFuture<R> query(QueryMessage<Q> query) {
+    public <Q, R> CompletableFuture<R> query(QueryMessage<Q, R> query) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         CompletableFuture<R> completableFuture = new CompletableFuture<>();
-        Set<MessageHandler<? super QueryMessage<?>>> handlers = getHandlersForMessage(query);
+        Set<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(query);
         try {
+            if (handlers.isEmpty()) {
+                throw new NoHandlerForQueryException(format("No handler found for %s with response name %s", query.getQueryName(), query.getResponseType()));
+            }
             //noinspection unchecked
             completableFuture.complete((R) handlers.iterator().next().handle(query));
             monitorCallback.reportSuccess();
         } catch (Exception e) {
-            completableFuture.completeExceptionally(new QueryExecutionException(e));
+            completableFuture.completeExceptionally(e);
             monitorCallback.reportFailure(e);
         }
         return completableFuture;
     }
 
-    private boolean unsubscribe(QueryDefinition registrationKey, MessageHandler<? super QueryMessage<?>> handler) {
+    private boolean unsubscribe(QueryDefinition registrationKey, MessageHandler<? super QueryMessage<?, ?>> handler) {
         subscriptions.computeIfPresent(registrationKey, (key, handlers) -> {
             handlers.remove(handler);
             if (handlers.isEmpty()) {
@@ -81,24 +106,30 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> Stream<R> queryAll(QueryMessage<Q> query, long timeout, TimeUnit unit) {
+    public <Q, R> Stream<R> queryAll(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        Set<MessageHandler<? super QueryMessage<?>>> handlers = getHandlersForMessage(query);
+        Set<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(query);
+        if (handlers.isEmpty()) {
+            monitorCallback.reportIgnored();
+            return Stream.empty();
+        }
+
         return StreamSupport.stream(new Spliterator<R>() {
-            final Iterator<MessageHandler<? super QueryMessage<?>>> handlerIterator = handlers.iterator();
+            final Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
 
             @SuppressWarnings("unchecked")
             public boolean tryAdvance(Consumer<? super R> action) {
-                if (handlerIterator.hasNext()) {
+                while (handlerIterator.hasNext()) {
+                    MessageHandler<? super QueryMessage<?, ?>> handler = handlerIterator.next();
                     try {
-                        action.accept((R) handlerIterator.next().handle(query));
+                        action.accept((R) handler.handle(query));
+                        monitorCallback.reportSuccess();
                         return true;
                     } catch (Exception e) {
                         monitorCallback.reportFailure(e);
-                        throw new QueryExecutionException(e);
+                        errorHandler.onError(e, query, handler);
                     }
                 }
-                monitorCallback.reportSuccess();
                 return false;
             }
 
@@ -119,39 +150,46 @@ public class SimpleQueryBus implements QueryBus {
         }, false);
     }
 
-    private <Q> Set<MessageHandler<? super QueryMessage<?>>> getHandlersForMessage(QueryMessage<Q> queryMessage) {
-        Set<MessageHandler<? super QueryMessage<?>>> handlers = subscriptions.get(new QueryDefinition(queryMessage.getQueryName(), queryMessage.getResponseName()));
-        if (handlers == null || handlers.isEmpty()) {
-            throw new NoHandlerForQueryException(MessageFormat.format("No handler found for %s with response name %s", queryMessage.getQueryName(), queryMessage.getResponseName()));
-        }
-        return handlers;
+    /**
+     * Returns the subscriptions for this query bus. While the returned map is unmodifiable, it may or may not reflect
+     * changes made to the subscriptions after the call was made.
+     *
+     * @return the subscriptions for this query bus
+     */
+    protected Map<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> getSubscriptions() {
+        return Collections.unmodifiableMap(subscriptions);
     }
 
-    private class QueryDefinition {
-        private final String queryName;
-        private final String responseName;
+    private <Q, R> Set<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(QueryMessage<Q, R> queryMessage) {
+        return subscriptions.getOrDefault(new QueryDefinition(queryMessage.getQueryName(), queryMessage.getResponseType()),
+                                          Collections.emptySet());
+    }
 
-        private QueryDefinition(String queryName, String responseName) {
+    private static class QueryDefinition {
+        private final String queryName;
+        private final Class<?> responseType;
+
+        private QueryDefinition(String queryName, Class<?> responseType) {
             this.queryName = queryName;
-            this.responseName = responseName;
+            this.responseType = responseType;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof QueryDefinition)) {
+                return false;
+            }
             QueryDefinition that = (QueryDefinition) o;
-
-            return queryName.equals(that.queryName)
-                    && responseName.equals(that.responseName);
+            return Objects.equals(queryName, that.queryName) &&
+                    Objects.equals(responseType, that.responseType);
         }
 
         @Override
         public int hashCode() {
-            int result = queryName.hashCode();
-            result = 31 * result + responseName.hashCode();
-            return result;
+            return Objects.hash(queryName, responseType);
         }
     }
 }

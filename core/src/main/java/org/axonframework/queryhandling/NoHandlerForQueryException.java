@@ -18,11 +18,21 @@ package org.axonframework.queryhandling;
 import org.axonframework.common.AxonNonTransientException;
 
 /**
+ * Exception indicating a query for a single result was executed, but no handlers were found that could provide an
+ * answer.
+ *
  * @author Marc Gathier
  * @since 3.1
  */
 public class NoHandlerForQueryException extends AxonNonTransientException {
 
+    private static final long serialVersionUID = 7525883085990429064L;
+
+    /**
+     * Initialize the exception with given {@code message}
+     *
+     * @param message The message explaining the context of the exception
+     */
     public NoHandlerForQueryException(String message) {
         super(message);
     }

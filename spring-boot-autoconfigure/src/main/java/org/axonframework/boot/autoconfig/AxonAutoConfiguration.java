@@ -33,6 +33,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -128,11 +129,20 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return commandBus;
     }
 
+    @ConditionalOnMissingBean(value = {QueryBus.class, QueryInvocationErrorHandler.class})
+    @Qualifier("localSegment")
+    @Bean
+    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration) {
+        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
+                                  axonConfiguration.getComponent(QueryInvocationErrorHandler.class));
+    }
+
+    @ConditionalOnBean(QueryInvocationErrorHandler.class)
     @ConditionalOnMissingBean(value = QueryBus.class)
     @Qualifier("localSegment")
     @Bean
-    public SimpleQueryBus queryBus( AxonConfiguration axonConfiguration) {
-        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"));
+    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, QueryInvocationErrorHandler eh) {
+        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"), eh);
     }
 
 

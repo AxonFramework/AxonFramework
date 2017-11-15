@@ -26,6 +26,7 @@ import org.axonframework.common.Registration;
 public interface QueryHandlerAdapter {
     /**
      * Subscribes query handlers to the given query bus
+     *
      * @param queryBus the query bus
      * @return a handle to unsubscribe
      */

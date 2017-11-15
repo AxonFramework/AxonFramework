@@ -17,16 +17,15 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -38,32 +37,48 @@ import java.util.stream.Collectors;
  * @since 3.1
  */
 public class AnnotationQueryHandlerAdapter implements QueryHandlerAdapter {
+    
     private final Object target;
     private final ParameterResolverFactory parameterResolverFactory;
 
+    /**
+     * Initializes the adapter, forwarding call to the given {@code target}.
+     *
+     * @param target The instance with {@link QueryHandler} annotated methods
+     */
+    public AnnotationQueryHandlerAdapter(Object target) {
+        this(target, ClasspathParameterResolverFactory.forClass(target.getClass()));
+    }
+
+    /**
+     * Initializes the adapter, forwarding call to the given {@code target}, resolving parameters using the given
+     * {@code parameterResolverFactory}.
+     *
+     * @param target                   The instance with {@link QueryHandler} annotated methods
+     * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with
+     */
     public AnnotationQueryHandlerAdapter(Object target, ParameterResolverFactory parameterResolverFactory) {
         this.target = target;
         this.parameterResolverFactory = parameterResolverFactory;
     }
 
-    @Override
     public Registration subscribe(QueryBus queryBus) {
         Collection<Registration> registrationList = Arrays.stream(target.getClass().getMethods())
                 .filter(m -> m.isAnnotationPresent(QueryHandler.class))
                 .map(m -> subscribe(queryBus, m))
-                .collect(Collectors.toCollection(ArrayDeque::new));
+                .collect(Collectors.toList());
         return () -> registrationList.stream().map(Registration::cancel)
                 .reduce(Boolean::logicalOr)
                 .orElse(false);
     }
 
     private Registration subscribe(QueryBus queryBus, Method m) {
-        if( Void.TYPE.equals(m.getReturnType()) ) {
+        if (Void.TYPE.equals(m.getReturnType())) {
             throw new UnsupportedHandlerException("Void method not supported in handler " + m.toGenericString() + ".", m);
         }
         QueryHandler qh = m.getAnnotation(QueryHandler.class);
         String queryName = qh.queryName().isEmpty() ? m.getParameters()[0].getType().getName() : qh.queryName();
-        String responseName = qh.responseName().isEmpty() ? m.getReturnType().getName() : qh.responseName();
+        Class<?> responseName = m.getReturnType();
         ParameterResolver[] parameterResolvers = new ParameterResolver[m.getParameterCount()];
         for (int i = 0; i < m.getParameterCount(); i++) {
             parameterResolvers[i] = parameterResolverFactory.createInstance(m, m.getParameters(), i);
@@ -77,7 +92,16 @@ public class AnnotationQueryHandlerAdapter implements QueryHandlerAdapter {
         return queryBus.subscribe(queryName, responseName, (qm) -> runQuery(m, parameterResolvers, target, qm));
     }
 
-    Object runQuery(Method method, ParameterResolver[] parameterResolvers, Object target, QueryMessage<?> queryMessage) {
+    /**
+     * Invokes the
+     *
+     * @param method
+     * @param parameterResolvers
+     * @param target
+     * @param queryMessage
+     * @return
+     */
+    protected Object runQuery(Method method, ParameterResolver[] parameterResolvers, Object target, QueryMessage<?, ?> queryMessage) {
         try {
             Object[] params = new Object[method.getParameterCount()];
             for (int i = 0; i < method.getParameterCount(); i++) {
@@ -86,8 +110,7 @@ public class AnnotationQueryHandlerAdapter implements QueryHandlerAdapter {
 
             return method.invoke(target, params);
         } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-            throw new QueryExecutionException(e);
+            throw new QueryExecutionException("Exception occurred invoking a query handler", e);
         }
     }
 

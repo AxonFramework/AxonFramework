@@ -15,7 +15,6 @@
  */
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.QueryHandler;
@@ -30,8 +29,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Spring Bean post processor that automatically generates an adapter for each bean containing {@link QueryHandler}
  * annotated methods.
  *
- * @since 3.1
  * @author Marc Gathier
+ * @since 3.1
  */
 public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<QueryHandlerAdapter, AnnotationQueryHandlerAdapter> {
     @Override
@@ -64,7 +63,9 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
 
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if (method.isAnnotationPresent(QueryHandler.class)) result.set(true);
+            if (method.isAnnotationPresent(QueryHandler.class)) {
+                result.set(true);
+            }
         }
     }
 }
