@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
@@ -112,6 +113,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         registry.registerBeanDefinition("commandHandlerSubscriber",
                                         genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
+        registry.registerBeanDefinition("queryHandlerSubscriber",
+                genericBeanDefinition(QueryHandlerSubscriber.class).getBeanDefinition());
+
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
         RuntimeBeanReference parameterResolver =
@@ -121,6 +125,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         findComponent(CommandBus.class)
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
+        findComponent(QueryBus.class)
+                .ifPresent(queryBus -> configurer.configureQueryBus(c -> getBean(queryBus, c)));
         findComponent(EventStorageEngine.class)
                 .ifPresent(ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
         findComponent(EventBus.class).ifPresent(eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));

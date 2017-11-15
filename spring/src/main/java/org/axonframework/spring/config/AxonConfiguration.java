@@ -27,6 +27,9 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -64,13 +67,19 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.commandBus();
     }
 
+    @NoBeanOfType(QueryBus.class)
+    @Bean
+    @Override
+    public QueryBus queryBus() {
+        return config.queryBus();
+    }
+
     @NoBeanOfType(EventBus.class)
     @Bean
     @Override
     public EventBus eventBus() {
         return config.eventBus();
     }
-
     @Override
     public ResourceInjector resourceInjector() {
         return config.resourceInjector();
@@ -86,6 +95,12 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
         return new DefaultCommandGateway(commandBus);
+    }
+
+    @NoBeanOfType(QueryGateway.class)
+    @Bean
+    public QueryGateway queryGateway(QueryBus queryBus) {
+        return new DefaultQueryGateway(queryBus);
     }
 
     @Override

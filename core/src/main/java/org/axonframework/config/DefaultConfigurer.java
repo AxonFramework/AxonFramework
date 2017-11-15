@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,6 +45,8 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
@@ -51,11 +54,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -149,6 +148,8 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
+        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
     }
@@ -164,6 +165,27 @@ public class DefaultConfigurer implements Configurer {
         return new DefaultCommandGateway(config.commandBus());
     }
 
+    /**
+     * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch
+     * queries.
+     *
+     * @param config the configuration that supplies the query bus
+     * @return the default query gateway
+     */
+    protected QueryGateway defaultQueryGateway(Configuration config) {
+        return new DefaultQueryGateway(config.queryBus());
+    }
+
+    /**
+     * Provides the default QueryBus implementations. Subclasses may override this method to provide their own default.
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default QueryBus to use
+     */
+    protected QueryBus defaultQueryBus(Configuration config) {
+        return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
+                                  config.getComponent(QueryInvocationErrorHandler.class));
+    }
     /**
      * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default
      *
@@ -274,6 +296,18 @@ public class DefaultConfigurer implements Configurer {
                     new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config),
                                                         config.parameterResolverFactory())
                             .subscribe(config.commandBus());
+            shutdownHandlers.add(registration::cancel);
+        });
+        return this;
+    }
+
+    @Override
+    public Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
+        startHandlers.add(() -> {
+            Registration registration =
+                    new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
+                                                      config.parameterResolverFactory())
+                            .subscribe(config.queryBus());
             shutdownHandlers.add(registration::cancel);
         });
         return this;
