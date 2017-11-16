@@ -184,6 +184,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected QueryBus defaultQueryBus(Configuration config) {
         return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
+                                  config.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                   config.getComponent(QueryInvocationErrorHandler.class));
     }
     /**

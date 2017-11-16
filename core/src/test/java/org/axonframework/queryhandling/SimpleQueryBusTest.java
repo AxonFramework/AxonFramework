@@ -16,19 +16,24 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.MockException;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -51,7 +56,7 @@ public class SimpleQueryBusTest {
         monitorCallback = mock(MessageMonitor.MonitorCallback.class);
         when(messageMonitor.onMessageIngested(any())).thenReturn(monitorCallback);
 
-        testSubject = new SimpleQueryBus(messageMonitor, errorHandler);
+        testSubject = new SimpleQueryBus(messageMonitor, null, errorHandler);
     }
 
     @Test
@@ -72,6 +77,36 @@ public class SimpleQueryBusTest {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
         CompletableFuture<String> result = testSubject.query(queryMessage);
         assertEquals("hello1234", result.get());
+    }
+
+    @Test
+    public void queryWithTransaction() throws Exception {
+        TransactionManager mockTxManager = mock(TransactionManager.class);
+        Transaction mockTx = mock(Transaction.class);
+        when(mockTxManager.startTransaction()).thenReturn(mockTx);
+        testSubject = new SimpleQueryBus(mockTxManager);
+
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
+        CompletableFuture<String> result = testSubject.query(queryMessage);
+        assertEquals("hello1234", result.get());
+        verify(mockTxManager).startTransaction();
+        verify(mockTx).commit();
+    }
+
+    @Test
+    public void queryWithInterceptors() throws Exception {
+        testSubject.registerDispatchInterceptor(messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value")));
+        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+            if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
+                return "fakeReply";
+            }
+            return interceptorChain.proceed();
+        });
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
+        CompletableFuture<String> result = testSubject.query(queryMessage);
+        assertEquals("fakeReply", result.get());
     }
 
     @Test
@@ -140,6 +175,87 @@ public class SimpleQueryBusTest {
         verify(messageMonitor, times(1)).onMessageIngested(any());
         verify(monitorCallback, times(2)).reportSuccess();
     }
+
+    @Test
+    public void queryAllWithTransaction() throws Exception {
+        TransactionManager mockTxManager = mock(TransactionManager.class);
+        Transaction mockTx = mock(Transaction.class);
+        when(mockTxManager.startTransaction()).thenReturn(mockTx);
+        testSubject = new SimpleQueryBus(messageMonitor, mockTxManager, errorHandler);
+
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", String.class);
+
+        Set<Object> allResults = testSubject.queryAll(queryMessage, 0, TimeUnit.SECONDS).collect(Collectors.toSet());
+        assertEquals(2, allResults.size());
+        verify(messageMonitor, times(1)).onMessageIngested(any());
+        verify(monitorCallback, times(2)).reportSuccess();
+        verify(mockTxManager, times(2)).startTransaction();
+        verify(mockTx, times(2)).commit();
+    }
+
+    @Test
+    public void queryAllWithTransactionRollsBackOnFailure() throws Exception {
+        TransactionManager mockTxManager = mock(TransactionManager.class);
+        Transaction mockTx = mock(Transaction.class);
+        when(mockTxManager.startTransaction()).thenReturn(mockTx);
+        testSubject = new SimpleQueryBus(messageMonitor, mockTxManager, errorHandler);
+
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> {throw new MockException();});
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", String.class);
+
+        Set<Object> allResults = testSubject.queryAll(queryMessage, 0, TimeUnit.SECONDS).collect(Collectors.toSet());
+        assertEquals(1, allResults.size());
+        verify(messageMonitor, times(1)).onMessageIngested(any());
+        verify(monitorCallback, times(1)).reportSuccess();
+        verify(monitorCallback, times(1)).reportFailure(isA(MockException.class));
+        verify(mockTxManager, times(2)).startTransaction();
+        verify(mockTx, times(1)).commit();
+        verify(mockTx, times(1)).rollback();
+    }
+
+    @Test
+    public void queryFirstFromScatterGatherWillCommitUnitOfWork() throws Exception {
+        TransactionManager mockTxManager = mock(TransactionManager.class);
+        Transaction mockTx = mock(Transaction.class);
+        when(mockTxManager.startTransaction()).thenReturn(mockTx);
+        testSubject = new SimpleQueryBus(messageMonitor, mockTxManager, errorHandler);
+
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", String.class);
+
+        Optional<String> firstResult = testSubject.queryAll(queryMessage, 0, TimeUnit.SECONDS).findFirst();
+        assertTrue(firstResult.isPresent());
+        verify(messageMonitor, times(1)).onMessageIngested(any());
+        verify(monitorCallback, atMost(2)).reportSuccess();
+        verify(mockTxManager).startTransaction();
+        verify(mockTx).commit();
+    }
+
+    @Test
+    public void queryAllWithInterceptors() throws Exception {
+        testSubject.registerDispatchInterceptor(messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value")));
+        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+            if (unitOfWork.getMessage().getMetaData().containsKey("key")) {
+                return "fakeReply";
+            }
+            return interceptorChain.proceed();
+        });
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
+        testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
+        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", String.class);
+
+        List<Object> allResults = testSubject.queryAll(queryMessage, 0, TimeUnit.SECONDS).collect(Collectors.toList());
+        assertEquals(2, allResults.size());
+        verify(messageMonitor, times(1)).onMessageIngested(any());
+        verify(monitorCallback, times(2)).reportSuccess();
+        assertEquals(asList("fakeReply", "fakeReply"), allResults);
+    }
+
+
 
     @Test
     public void queryAllReturnsEmptyStreamWhenNoHandlersAvailable() throws Exception {

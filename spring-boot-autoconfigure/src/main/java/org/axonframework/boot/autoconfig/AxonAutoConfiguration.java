@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -132,8 +133,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(value = {QueryBus.class, QueryInvocationErrorHandler.class})
     @Qualifier("localSegment")
     @Bean
-    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration) {
+    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager) {
         return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
+                                  transactionManager,
                                   axonConfiguration.getComponent(QueryInvocationErrorHandler.class));
     }
 
@@ -141,8 +143,11 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(value = QueryBus.class)
     @Qualifier("localSegment")
     @Bean
-    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, QueryInvocationErrorHandler eh) {
-        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"), eh);
+    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager,
+                                   QueryInvocationErrorHandler eh) {
+        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
+                                  transactionManager,
+                                  eh);
     }
 
 
