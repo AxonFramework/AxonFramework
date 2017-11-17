@@ -73,6 +73,6 @@ public interface QueryBus {
      */
     <Q, R> Stream<R> queryAll(QueryMessage<Q, R> query, long timeout, TimeUnit unit);
 
-//    <Q, I, U> void subscriptionQuery(QueryMessage<Q, I> query, UpdateHandler<I, U> updateHandler);
+    <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query, UpdateHandler<I, U> updateHandler);
 
 }

@@ -153,6 +153,11 @@ public class SimpleQueryBus implements QueryBus {
         }, false);
     }
 
+    @Override
+    public <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query, UpdateHandler<I, U> updateHandler) {
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     private <Q, R> R interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow, MessageHandler<? super QueryMessage<?, ?>> handler) throws Exception {
         return uow.executeWithResult(() -> (R) new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed());

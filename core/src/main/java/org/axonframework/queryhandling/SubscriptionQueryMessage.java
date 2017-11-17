@@ -16,13 +16,8 @@
 
 package org.axonframework.queryhandling;
 
-public interface UpdateHandler<I, U> {
+public interface SubscriptionQueryMessage<Q, I, U> extends QueryMessage<Q, I> {
 
-    void onInitialResult(I initial);
+    Class<U> getUpdateResponseType();
 
-    void onUpdate(U update);
-
-    void onCompleted();
-
-    void onError(Throwable error);
 }

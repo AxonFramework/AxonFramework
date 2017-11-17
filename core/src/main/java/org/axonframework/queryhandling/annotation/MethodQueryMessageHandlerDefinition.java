@@ -23,6 +23,7 @@ import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.UpdateHandler;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -57,10 +58,30 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             returnType = original.unwrap(Method.class).map(Method::getReturnType)
                     .orElseThrow(() -> new UnsupportedHandlerException("@QueryHandler annotation can only be put on methods.",
                                                                        original.unwrap(Member.class).orElse(null)));
-            if (Void.TYPE.equals(returnType)) {
+            //noinspection ConstantConditions
+            boolean isSubscriptionHandler = hasUpdateHandlerParameter(original.unwrap(Method.class).get());
+            if (isSubscriptionHandler && !AutoCloseable.class.isAssignableFrom(returnType)) {
+                throw new UnsupportedHandlerException("@QueryHandler annotated methods with UpdateHandler parameter must return an AutoCloseable (e.g. a Registration)",
+                                                      original.unwrap(Member.class).orElse(null));
+            } else if (Void.TYPE.equals(returnType)) {
                 throw new UnsupportedHandlerException("@QueryHandler annotated methods must not declare void return type",
                                                       original.unwrap(Member.class).orElse(null));
             }
+        }
+
+        private boolean hasUpdateHandlerParameter(Method method) {
+            for (Class<?> param : method.getParameterTypes()) {
+                if (UpdateHandler.class.isAssignableFrom(param)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Object handle(Message<?> message, T target) throws Exception {
+
+            return super.handle(message, target);
         }
 
         @SuppressWarnings("unchecked")
