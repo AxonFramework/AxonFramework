@@ -221,13 +221,44 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
 
         // secretly insert an illegal message
-        channel1.getReceiver().receive(new Message(channel1.getAddress(), new IpAddress(12345),
-                                                   new JoinMessage(new IpAddress(12345), 10, DenyAll.INSTANCE)));
+        Message message = new Message(channel1.getAddress(),
+                                      new JoinMessage(10, DenyAll.INSTANCE, 0, true));
+        message.setSrc(new IpAddress(12345));
+        channel1.getReceiver().receive(message);
 
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()
                             .map(i -> i.getConnectionEndpoint(Address.class).orElse(null)).anyMatch(a -> a.equals(new IpAddress(12345))));
     }
+
+    @SuppressWarnings("unchecked")
+    @Test(timeout = 30000)
+    public void testUpdatesToMemberShipProcessedInOrder() throws Exception {
+        assertNull(connector1.getNodeName());
+        assertNull(connector2.getNodeName());
+
+        dcb1.subscribe(String.class.getName(), new CountingCommandHandler(new AtomicInteger(0)));
+        dcb2.subscribe(String.class.getName(), new CountingCommandHandler(new AtomicInteger(0)));
+
+        connector1.connect();
+        connector2.connect();
+
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        for (int i = 0; i <= 100; i = i + 10) {
+            dcb1.updateLoadFactor(i);
+
+        }
+        // send some fake news
+        channel1.send(null, new JoinMessage(1, DenyAll.INSTANCE, 0, false));
+
+        waitForConnectorSync();
+    }
+
 
     private void waitForConnectorSync() throws InterruptedException {
         int t = 0;
@@ -398,4 +429,20 @@ public class JGroupsConnectorTest {
         }
     }
 
-}
+        public static void assertWithin(int time, TimeUnit unit, Runnable assertion) {
+            long now = System.currentTimeMillis();
+            long deadline = now + unit.toMillis(time);
+            do {
+                try {
+                    assertion.run();
+                    break;
+                } catch (AssertionError e) {
+                    if (now >= deadline) {
+                        throw e;
+                    }
+                }
+                now = System.currentTimeMillis();
+            } while (true);
+        }
+
+    }

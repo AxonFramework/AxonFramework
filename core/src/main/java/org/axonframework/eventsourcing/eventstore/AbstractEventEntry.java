@@ -1,9 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,6 +15,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.*;
 
@@ -23,6 +26,7 @@ import javax.persistence.MappedSuperclass;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
@@ -71,7 +75,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
         this.metaData = metaData.getData();
-        this.timeStamp = eventMessage.getTimestamp().toString();
+        this.timeStamp = formatInstant(eventMessage.getTimestamp());
     }
 
     /**
@@ -88,7 +92,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
                               T payload, T metaData) {
         this.eventIdentifier = eventIdentifier;
         if (timestamp instanceof TemporalAccessor) {
-            this.timeStamp = Instant.from((TemporalAccessor) timestamp).toString();
+            this.timeStamp = formatInstant((TemporalAccessor) timestamp);
         } else {
             this.timeStamp = timestamp.toString();
         }
@@ -111,7 +115,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     public Instant getTimestamp() {
-        return Instant.parse(timeStamp);
+        return DateTimeUtils.parseInstant(timeStamp);
     }
 
     @Override

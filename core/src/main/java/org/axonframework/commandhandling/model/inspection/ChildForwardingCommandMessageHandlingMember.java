@@ -33,7 +33,6 @@ import java.util.function.BiFunction;
  */
 public class ChildForwardingCommandMessageHandlingMember<P, C> implements CommandMessageHandlingMember<P> {
 
-    private final String routingKey;
     private final MessageHandlingMember<? super C> childHandler;
     private final BiFunction<CommandMessage<?>, P, C> childEntityResolver;
     private final String commandName;
@@ -44,13 +43,11 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
      * entity. Child entities are resolved using the given {@code childEntityResolver}. If an entity is found the
      * command will be handled using the given {@code childHandler}.
      *
-     * @param routingKey          the property name on the command to determine which entity should handle the command
      * @param childHandler        handler of the command once a suitable entity is found
      * @param childEntityResolver resolver of child entities for a given command
      */
-    public ChildForwardingCommandMessageHandlingMember(String routingKey, MessageHandlingMember<? super C> childHandler,
+    public ChildForwardingCommandMessageHandlingMember(MessageHandlingMember<? super C> childHandler,
                                                        BiFunction<CommandMessage<?>, P, C> childEntityResolver) {
-        this.routingKey = routingKey;
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
         this.commandName =
@@ -67,7 +64,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
 
     @Override
     public String routingKey() {
-        return routingKey;
+        return null;
     }
 
     @Override

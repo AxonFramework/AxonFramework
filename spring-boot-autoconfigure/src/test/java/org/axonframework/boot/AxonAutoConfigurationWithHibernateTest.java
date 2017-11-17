@@ -2,16 +2,20 @@ package org.axonframework.boot;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -22,9 +26,8 @@ import javax.persistence.PersistenceContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@ContextConfiguration(classes = {DataSourceAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class,
-        AxonAutoConfiguration.class})
+@ContextConfiguration
+@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithHibernateTest {
 
@@ -44,8 +47,18 @@ public class AxonAutoConfigurationWithHibernateTest {
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertNotNull(applicationContext.getBean(TokenStore.class));
         assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));
+        assertEquals(SQLErrorCodesResolver.class, applicationContext.getBean(PersistenceExceptionResolver.class).getClass());
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
+        assertNotNull(applicationContext.getBean(ConnectionProvider.class));
 
         assertEquals(5, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
+    }
+
+    @Test
+    public void testEventStorageEngingeUsesSerializerBean() {
+        final Serializer serializer = applicationContext.getBean(Serializer.class);
+        final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
+
+        assertEquals(serializer, engine.getSerializer());
     }
 }

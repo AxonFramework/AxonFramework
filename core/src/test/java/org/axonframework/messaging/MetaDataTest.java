@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,17 +13,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.eventstore.benchmark;
+package org.axonframework.messaging;
 
-import com.eaio.uuid.UUID;
-import org.axonframework.common.IdentifierFactory;
+import org.junit.Test;
 
-/**
- * @author Allard Buijze
- */
-public class FastUUIDIdentifierFactory extends IdentifierFactory {
-    @Override
-    public String generateIdentifier() {
-        return new UUID().toString();
+import static org.junit.Assert.assertEquals;
+
+public class MetaDataTest {
+
+    @Test
+    public void testAddNullValueToMetaData() throws Exception {
+        MetaData metaData = MetaData.with("nullkey", null).and("otherkey", "value").and("lastkey", "lastvalue")
+                .subset("nullkey", "otherkey");
+
+        assertEquals(2, metaData.size());
+        assertEquals(null, metaData.get("nullkey"));
+        assertEquals("value", metaData.get("otherkey"));
     }
 }

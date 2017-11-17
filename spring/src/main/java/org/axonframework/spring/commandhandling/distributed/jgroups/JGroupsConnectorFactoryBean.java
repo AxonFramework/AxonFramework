@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  * @since 2.0
  */
 public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector>, InitializingBean, SmartLifecycle,
-        BeanNameAware, ApplicationContextAware {
+                                                    BeanNameAware, ApplicationContextAware {
 
     private JGroupsConnector connector;
     private JChannelFactory channelFactory = new JGroupsXmlConfigurationChannelFactory("tcp_mcast.xml");
@@ -98,7 +98,12 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
         if (channelName != null) {
             channel.setName(channelName);
         }
-        connector = new JGroupsConnector(localSegment, channel, clusterName, serializer, routingStrategy);
+        connector = instantiateConnector(localSegment, channel, clusterName, serializer, routingStrategy);
+    }
+
+    protected JGroupsConnector instantiateConnector(CommandBus localSegment, JChannel channel, String clusterName,
+                                                    Serializer serializer, RoutingStrategy routingStrategy) {
+        return new JGroupsConnector(localSegment, channel, clusterName, serializer, routingStrategy);
     }
 
     /**

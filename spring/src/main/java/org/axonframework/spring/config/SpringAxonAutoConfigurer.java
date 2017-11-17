@@ -1,8 +1,27 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventBus;
@@ -16,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
@@ -93,6 +113,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         registry.registerBeanDefinition("commandHandlerSubscriber",
                                         genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
+        registry.registerBeanDefinition("queryHandlerSubscriber",
+                genericBeanDefinition(QueryHandlerSubscriber.class).getBeanDefinition());
+
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
         RuntimeBeanReference parameterResolver =
@@ -102,6 +125,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         findComponent(CommandBus.class)
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
+        findComponent(QueryBus.class)
+                .ifPresent(queryBus -> configurer.configureQueryBus(c -> getBean(queryBus, c)));
         findComponent(EventStorageEngine.class)
                 .ifPresent(ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
         findComponent(EventBus.class).ifPresent(eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
@@ -181,39 +206,48 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }
 
-    private String[] registerModules(Configurer configurer) {
+    private void registerModules(Configurer configurer) {
         // find all modules. If none, create standard event handler module
         String[] modules = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
         for (String module : modules) {
             configurer.registerModule(
                     new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(module, ModuleConfiguration.class)));
         }
-        return modules;
     }
 
     private void registerSagaBeanDefinitions(Configurer configurer) {
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
-            SagaConfiguration<?> sagaConfiguration =
-                    SagaConfiguration.subscribingSagaManager(beanFactory.getType(saga));
+            Class<?> sagaType = beanFactory.getType(saga);
 
-            if (!"".equals(sagaAnnotation.sagaStore())) {
-                sagaConfiguration
-                        .configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+            String configName = lcFirst(sagaType.getSimpleName()) + "Configuration";
+            if (beanFactory.containsBean(configName)) {
+                configurer.registerModule(new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(configName, ModuleConfiguration.class)));
+            } else {
+                SagaConfiguration<?> sagaConfiguration =
+                        SagaConfiguration.subscribingSagaManager(sagaType);
+                beanFactory.registerSingleton(configName, sagaConfiguration);
+
+                if (!"".equals(sagaAnnotation.sagaStore())) {
+                    //noinspection unchecked
+                    sagaConfiguration.configureSagaStore(
+                                    c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                }
+                configurer.registerModule(sagaConfiguration);
             }
-            configurer.registerModule(sagaConfiguration);
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
         for (String aggregate : aggregates) {
             Aggregate aggregateAnnotation = beanFactory.findAnnotationOnBean(aggregate, Aggregate.class);
-            AggregateConfigurer<?> aggregateConf =
-                    AggregateConfigurer.defaultConfiguration(beanFactory.getType(aggregate));
+            Class<?> aggregateType = beanFactory.getType(aggregate);
+            AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
             if ("".equals(aggregateAnnotation.repository())) {
-                String repositoryName = aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "Repository";
+                String repositoryName = lcFirst(aggregate) + "Repository";
                 String factoryName =
                         aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "AggregateFactory";
                 if (beanFactory.containsBean(repositoryName)) {
@@ -227,6 +261,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
                     aggregateConf
                             .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
+                    if (AnnotationUtils.findAnnotationAttributes(aggregateType, "javax.persistence.Entity").isPresent()) {
+                        aggregateConf.configureRepository(
+                                c -> new GenericJpaRepository(
+                                        c.getComponent(EntityManagerProvider.class,
+                                                       () -> beanFactory.getBean(EntityManagerProvider.class)),
+                                        aggregateType,
+                                        c.eventBus(),
+                                        c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
+                                        c.parameterResolverFactory()));
+                    }
                 }
             } else {
                 aggregateConf.configureRepository(
@@ -235,6 +279,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
             configurer.configureAggregate(aggregateConf);
         }
+    }
+
+    /**
+     * Return the given {@code string}, with its first character lowercase
+     *
+     * @param string The input string
+     * @return The input string, with first character lowercase
+     */
+    private String lcFirst(String string) {
+        return string.substring(0, 1).toLowerCase() + string.substring(1);
     }
 
     private <T> String findComponent(Class<T> componentType, BeanDefinitionRegistry registry,
@@ -282,7 +336,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
-    private class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
+    private static class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
 
         private final Supplier<ModuleConfiguration> delegateSupplier;
         private ModuleConfiguration delegate;

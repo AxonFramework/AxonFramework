@@ -33,9 +33,10 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
@@ -43,6 +44,7 @@ import java.util.function.Function;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -64,6 +66,15 @@ public class CommandHandlerInvokerTest {
     public void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
         mockCache = mock(Cache.class);
+        doAnswer(invocation -> {
+            // attempt to serialize whatever is being added to the cache
+            try {
+                new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(invocation.getArguments()[1]);
+            } catch (Exception e) {
+                fail("Attempt to add a non-serializable instance to the cache: " + invocation.getArgumentAt(1, Object.class));
+            }
+            return null;
+        }).when(mockCache).put(anyString(), any());
         testSubject = new CommandHandlerInvoker(mockEventStore, mockCache, 0);
         aggregateIdentifier = "mockAggregate";
         mockCommandMessage = mock(CommandMessage.class);
@@ -114,7 +125,7 @@ public class CommandHandlerInvokerTest {
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
-        verify(mockCache).put(eq(aggregateIdentifier), isA(EventSourcedAggregate.class));
+        verify(mockCache).put(eq(aggregateIdentifier), notNull());
         verify(mockEventStore).readEvents(eq(aggregateIdentifier));
     }
 
@@ -126,14 +137,11 @@ public class CommandHandlerInvokerTest {
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         when(mockCommandHandler.handle(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
-        when(mockCache.get(aggregateIdentifier)).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return EventSourcedAggregate.initialize(new StubAggregate(aggregateIdentifier),
-                                                        ModelInspector.inspectAggregate(StubAggregate.class),
-                                                        mockEventStore, mockTrigger);
-            }
-        });
+        when(mockCache.get(aggregateIdentifier)).thenAnswer(
+                invocationOnMock -> new AggregateCacheEntry<>(
+                        EventSourcedAggregate.initialize(new StubAggregate(aggregateIdentifier),
+                                                         ModelInspector.inspectAggregate(StubAggregate.class),
+                                                         mockEventStore, mockTrigger)));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
@@ -154,7 +162,7 @@ public class CommandHandlerInvokerTest {
 
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
-        verify(mockCache).put(eq(aggregateIdentifier), isA(EventSourcedAggregate.class));
+        verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
         verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
         verify(mockEventStore).publish(Matchers.<DomainEventMessage<?>[]>anyVararg());
     }
@@ -180,7 +188,7 @@ public class CommandHandlerInvokerTest {
         assertSame(repository1, repository2);
     }
 
-    public static class StubAggregate {
+    public static class StubAggregate implements Serializable {
 
         @AggregateIdentifier
         private String id;

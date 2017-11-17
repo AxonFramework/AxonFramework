@@ -50,6 +50,7 @@ public class FireEventJob implements Job {
      * The key used to locate the Event Bus in the scheduler context.
      */
     public static final String EVENT_BUS_KEY = EventBus.class.getName();
+
     /**
      * The key used to locate the optional TransactionManager in the scheduler context.
      */
@@ -85,7 +86,7 @@ public class FireEventJob implements Job {
                              eventMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
-            logger.warn("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription());
+            logger.error("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription(), e);
             throw new JobExecutionException(e);
         }
     }

@@ -17,7 +17,6 @@
 package org.axonframework.jgroups.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.jgroups.Address;
 import org.jgroups.util.Streamable;
 
 import java.io.Externalizable;
@@ -36,10 +35,11 @@ import java.util.function.Predicate;
  */
 public class JoinMessage implements Externalizable {
 
-    private static final long serialVersionUID = 5829153340455127795L;
-    private Predicate<CommandMessage<?>> messageFilter;
-    private Address address;
+    private static final long serialVersionUID = 1456658552741424773L;
+    private Predicate<? super CommandMessage<?>> messageFilter;
+    private boolean expectReply;
     private int loadFactor;
+    private int order;
 
     /**
      * Default constructor required by the {@link Streamable} and {@link Externalizable} interfaces. Do not use
@@ -53,14 +53,17 @@ public class JoinMessage implements Externalizable {
     /**
      * Initializes a JoinMessage with the given {@code loadFactor}.
      *
-     * @param address       The address of the cluster member
      * @param loadFactor    The loadFactor the member wishes to join with
      * @param messageFilter A predicate the will filter command messages this node will accept.
+     * @param order         The index of this update, allowing recipients to order them
+     * @param expectReply   Indicates whether the sending member expects a reply with membership information
      */
-    public JoinMessage(Address address, int loadFactor, Predicate<CommandMessage<?>> messageFilter) {
-        this.address = address;
+    public JoinMessage(int loadFactor, Predicate<? super CommandMessage<?>> messageFilter, int order,
+                       boolean expectReply) {
         this.loadFactor = loadFactor;
         this.messageFilter = messageFilter;
+        this.order = order;
+        this.expectReply = expectReply;
     }
 
     /**
@@ -72,19 +75,39 @@ public class JoinMessage implements Externalizable {
         return loadFactor;
     }
 
+    /**
+     * Indicates whether the sender of this message expects a reply
+     *
+     * @return whether the sender of this message expects a reply
+     */
+    public boolean isExpectReply() {
+        return expectReply;
+    }
+
+    /**
+     * The index of this message compared to others about the same sender.
+     *
+     * @return the relative order of this update
+     */
+    public int getOrder() {
+        return order;
+    }
+
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(address);
         out.writeInt(loadFactor);
         out.writeObject(messageFilter);
+        out.writeInt(order);
+        out.writeBoolean(expectReply);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        address = (Address) in.readObject();
         loadFactor = in.readInt();
         messageFilter = (Predicate<CommandMessage<?>>) in.readObject();
+        order = in.readInt();
+        expectReply = in.readBoolean();
     }
 
     /**
@@ -92,7 +115,7 @@ public class JoinMessage implements Externalizable {
      *
      * @return the member's message filter
      */
-    public Predicate<CommandMessage<?>> messageFilter() {
+    public Predicate<? super CommandMessage<?>> messageFilter() {
         return messageFilter;
     }
 }

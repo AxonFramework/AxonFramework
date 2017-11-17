@@ -79,7 +79,7 @@ public interface MessageStream<M extends Message<?>> extends AutoCloseable {
 
     /**
      * Returns this MessageStream as a {@link Stream} of Messages. Note that the returned Stream will
-     * start at the current position this instance.
+     * start at the current position of this instance.
      * <p>
      * Note that iterating over the returned Stream may affect this MessageStream and vice versa. It is therefore
      * not recommended to use this MessageStream after invoking this method.

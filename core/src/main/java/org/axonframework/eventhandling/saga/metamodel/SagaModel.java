@@ -49,6 +49,16 @@ public interface SagaModel<T> {
     List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> event);
 
     /**
+     * Indicates whether the Saga described by this model has a handler for the given {@code eventMessage}
+     *
+     * @param eventMessage The message to check the availability of a handler for
+     * @return {@code true} if there the Saga has a handler for this message, otherwise {@code false}
+     */
+    default boolean hasHandlerMethod(EventMessage<?> eventMessage) {
+        return !findHandlerMethods(eventMessage).isEmpty();
+    }
+
+    /**
      * Returns the factory that created this model.
      *
      * @return The factory that made this model

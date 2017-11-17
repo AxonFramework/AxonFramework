@@ -28,6 +28,15 @@
 
     <packaging>jar</packaging>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -67,7 +76,7 @@
         <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
-            <version>3.6.10.Final</version>
+            <version>${jgroups.version}</version>
             <optional>true</optional>
         </dependency>
 

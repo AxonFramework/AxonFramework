@@ -8,3 +8,4 @@ target/
 .project
 .settings/
 events/
+.DS_Store

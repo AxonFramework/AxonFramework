@@ -26,6 +26,9 @@ import org.axonframework.eventhandling.saga.repository.StubSaga;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +46,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.*;
 
 /**
@@ -82,7 +87,7 @@ public class JpaSagaStoreTest {
 
     protected void startUnitOfWork() {
         Assert.isTrue(unitOfWork == null || !unitOfWork.isActive(),
-                      () -> "Cannot start unit of work. There is one still active.");
+                () -> "Cannot start unit of work. There is one still active.");
         unitOfWork = DefaultUnitOfWork.startAndGet(null);
         TransactionStatus tx = txManager.getTransaction(new DefaultTransactionDefinition());
         unitOfWork.onRollback(u -> txManager.rollback(tx));
@@ -101,7 +106,7 @@ public class JpaSagaStoreTest {
     public void testAddingAnInactiveSagaDoesntStoreIt() throws Exception {
         unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                                                            StubSaga::new);
+                    StubSaga::new);
             saga.execute(testSaga -> {
                 testSaga.registerAssociationValue(new AssociationValue("key", "value"));
                 testSaga.end();
@@ -113,7 +118,7 @@ public class JpaSagaStoreTest {
         entityManager.clear();
 
         assertEquals(0L,
-                     (long) entityManager.createQuery("select count(*) from SagaEntry", Long.class).getSingleResult());
+                (long) entityManager.createQuery("select count(*) from SagaEntry", Long.class).getSingleResult());
     }
 
 
@@ -136,7 +141,7 @@ public class JpaSagaStoreTest {
     public void testAddAndLoadSaga_ByAssociationValue() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                                                            StubSaga::new);
+                    StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
         });
@@ -163,7 +168,7 @@ public class JpaSagaStoreTest {
     public void testLoadSaga_AssociationValueRemoved() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                                                            StubSaga::new);
+                    StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
         });
@@ -184,13 +189,13 @@ public class JpaSagaStoreTest {
     public void testEndSaga() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                                                            StubSaga::new);
+                    StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
         });
         entityManager.clear();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                            .setParameter("id", identifier).getResultList().isEmpty());
+                .setParameter("id", identifier).getResultList().isEmpty());
         startUnitOfWork();
         unitOfWork.execute(() -> {
             Saga<StubSaga> loaded = repository.load(identifier);
@@ -200,7 +205,45 @@ public class JpaSagaStoreTest {
 
         assertNull(entityManager.find(SagaEntry.class, identifier));
         assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                           .setParameter("id", identifier).getResultList().isEmpty());
+                .setParameter("id", identifier).getResultList().isEmpty());
+    }
+
+    @DirtiesContext
+    @Test
+    public void testStoreSagaWithCustomEntity() throws Exception {
+
+        JpaSagaStore sagaStore = new JpaSagaStore(new SimpleEntityManagerProvider(entityManager)) {
+            @Override
+            protected AbstractSagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
+                return new CustomSagaEntry(saga, sagaIdentifier, serializer);
+            }
+
+            @Override
+            protected String sagaEntryEntityName() {
+                return CustomSagaEntry.class.getSimpleName();
+            }
+
+            @Override
+            protected Class<? extends SimpleSerializedObject<?>> serializedObjectType() {
+                return CustomSerializedSaga.class;
+            }
+        };
+
+        repository = new AnnotatedSagaRepository<>(StubSaga.class, sagaStore);
+
+        String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
+                IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier());
+
+        assertFalse(entityManager.createQuery("SELECT e FROM CustomSagaEntry e").getResultList().isEmpty());
+
+        entityManager.clear();
+
+        startUnitOfWork();
+        unitOfWork.execute(() -> {
+            Saga<StubSaga> loaded = repository.load(identifier);
+            loaded.execute(StubSaga::end);
+            assertNotNull(entityManager.find(CustomSagaEntry.class, identifier));
+        });
     }
 
 

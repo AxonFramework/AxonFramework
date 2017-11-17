@@ -43,6 +43,12 @@ public interface Member {
     <T> Optional<T> getConnectionEndpoint(Class<T> protocol);
 
     /**
+     *
+     * @return True if the member is local. False if the member is remote or if this information is unknown.
+     */
+    boolean local();
+
+    /**
      * Mark this member as suspect, i.e. suspected of being (temporarily) unavailable.
      */
     void suspect();

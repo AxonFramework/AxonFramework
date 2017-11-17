@@ -200,7 +200,7 @@ public abstract class Matchers {
      * @return a matcher that matches against "nothing".
      */
     @Factory
-    public static Matcher<Message<?>> andNoMore() {
+    public static <T> Matcher<T> andNoMore() {
         return nothing();
     }
 
@@ -211,7 +211,7 @@ public abstract class Matchers {
      * @return a matcher that matches against "nothing".
      */
     @Factory
-    public static Matcher<Message<?>> nothing() {
+    public static <T> Matcher<T> nothing() {
         return new NullOrVoidMatcher<>();
     }
 

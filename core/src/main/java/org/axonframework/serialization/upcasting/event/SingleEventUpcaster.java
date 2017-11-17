@@ -24,5 +24,5 @@ import org.axonframework.serialization.upcasting.Upcaster;
  *
  * @author Rene de Waele
  */
-public abstract class SingleEventUpcaster extends SingleEntryUpcaster<IntermediateEventRepresentation> {
+public abstract class SingleEventUpcaster extends SingleEntryUpcaster<IntermediateEventRepresentation> implements EventUpcaster {
 }

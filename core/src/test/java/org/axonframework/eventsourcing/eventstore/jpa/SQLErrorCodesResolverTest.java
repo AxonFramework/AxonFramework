@@ -93,6 +93,36 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingDB2LinuxDataSource() throws Exception {
+        String databaseProductName = "DB2/LINUXX8664";
+        DataSource dataSource = createMockDataSource(databaseProductName);
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(dataSource);
+
+        SQLException sqlException = new SQLException("test", "error", -803);
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                sqlException));
+
+        assertTrue(isDuplicateKey);
+    }
+
+    @Test
+    public void testIsDuplicateKey_isDuplicateKey_usingRandomDb2DataSource() throws Exception {
+        String databaseProductName = "DB2 Completely unexpected value";
+        DataSource dataSource = createMockDataSource(databaseProductName);
+
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(dataSource);
+
+        SQLException sqlException = new SQLException("test", "error", -803);
+
+        boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
+                sqlException));
+
+        assertTrue(isDuplicateKey);
+    }
+
+    @Test
     public void testIsDuplicateKey_isDuplicateKey_usingProductName() throws Exception {
         String databaseProductName = "HSQL Database Engine";
 

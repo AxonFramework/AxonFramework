@@ -16,22 +16,45 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.MessageHandler;
-
 /**
  * Interface for an event message handler that defers handling to one or more other handlers.
  *
  * @author Rene de Waele
  */
-public interface EventHandlerInvoker extends MessageHandler<EventMessage<?>> {
+public interface EventHandlerInvoker {
 
     /**
-     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage}.
+     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage} for a given
+     * {@code segment}.
      *
      * @param eventMessage The message to be processed
+     * @param segment      The segment for which the event handler should be invoked
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
      * otherwise
      */
-    boolean hasHandler(EventMessage<?> eventMessage);
+    boolean canHandle(EventMessage<?> eventMessage, Segment segment);
 
+    /**
+     * Handle the given {@code message}, regardless of any Segmentation of processing.
+     *
+     * @param message The message to handle
+     * @throws Exception when an exception occurs while handling the message
+     * @deprecated Callers should use {@link #handle(EventMessage, Segment)} instead
+     */
+    @Deprecated
+    default void handle(EventMessage<?> message) throws Exception {
+        handle(message, Segment.ROOT_SEGMENT);
+    }
+
+    /**
+     * Handle the given {@code message} for the given {@code segment}.
+     * <p>
+     * Callers are recommended to invoke {@link #canHandle(EventMessage, Segment)} prior to invocation, but aren't
+     * required to do so. Implementations must ensure to take the given segment into account when processing messages.
+     *
+     * @param message The message to handle
+     * @param segment The segment for which to handle the message
+     * @throws Exception when an exception occurs while handling the message
+     */
+    void handle(EventMessage<?> message, Segment segment) throws Exception;
 }

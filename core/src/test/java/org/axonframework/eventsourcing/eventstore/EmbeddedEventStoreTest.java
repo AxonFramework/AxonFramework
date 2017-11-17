@@ -21,8 +21,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -210,5 +214,50 @@ public class EmbeddedEventStoreTest {
         assertEquals(110, eventMessages.size());
         assertEquals(0, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
+    }
+
+    @Test
+    public void testLoadEventsAfterPublishingInSameUnitOfWork() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        testSubject.publish(events.subList(0, 2));
+        DefaultUnitOfWork.startAndGet(null)
+                .execute(() -> {
+                    Assert.assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+
+                    testSubject.publish(events.subList(2, events.size()));
+                    Assert.assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
+                });
+    }
+
+    @Test
+    public void testLoadEventsWithOffsetAfterPublishingInSameUnitOfWork() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        testSubject.publish(events.subList(0, 2));
+        DefaultUnitOfWork.startAndGet(null)
+                .execute(() -> {
+                    Assert.assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+
+                    testSubject.publish(events.subList(2, events.size()));
+                    Assert.assertEquals(8, testSubject.readEvents(AGGREGATE, 2).asStream().count());
+                });
+    }
+
+    @Test
+    public void testEventsAppendedInvisibleUntilUnitOfWorkIsCommitted() {
+        List<DomainEventMessage<?>> events = createEvents(10);
+        testSubject.publish(events.subList(0, 2));
+        DefaultUnitOfWork<Message<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        testSubject.publish(events.subList(2, events.size()));
+
+        CurrentUnitOfWork.clear(unitOfWork);
+        // working outside the context of the UoW now
+        Assert.assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+
+        CurrentUnitOfWork.set(unitOfWork);
+        // Back in the context
+        Assert.assertEquals(10, testSubject.readEvents(AGGREGATE).asStream().count());
+        unitOfWork.rollback();
+
+        Assert.assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 }

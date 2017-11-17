@@ -13,6 +13,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -20,7 +24,8 @@ import java.util.Objects;
  *
  * @author Rene de Waele
  */
-public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken> {
+public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken>,
+                                                    Serializable {
 
     private final long globalIndex;
 
@@ -29,7 +34,8 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
      *
      * @param globalIndex the global sequence number of the event
      */
-    public GlobalSequenceTrackingToken(long globalIndex) {
+    @JsonCreator
+    public GlobalSequenceTrackingToken(@JsonProperty("globalIndex") long globalIndex) {
         this.globalIndex = globalIndex;
     }
 

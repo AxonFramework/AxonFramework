@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
@@ -6,11 +21,15 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
+import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -48,13 +67,19 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.commandBus();
     }
 
+    @NoBeanOfType(QueryBus.class)
+    @Bean
+    @Override
+    public QueryBus queryBus() {
+        return config.queryBus();
+    }
+
     @NoBeanOfType(EventBus.class)
     @Bean
     @Override
     public EventBus eventBus() {
         return config.eventBus();
     }
-
     @Override
     public ResourceInjector resourceInjector() {
         return config.resourceInjector();
@@ -70,6 +95,12 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
         return new DefaultCommandGateway(commandBus);
+    }
+
+    @NoBeanOfType(QueryGateway.class)
+    @Bean
+    public QueryGateway queryGateway(QueryBus queryBus) {
+        return new DefaultQueryGateway(queryBus);
     }
 
     @Override
@@ -95,6 +126,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public EventUpcasterChain upcasterChain() {
         return config.upcasterChain();
+    }
+
+    @Override
+    public List<ModuleConfiguration> getModules() {
+        return config.getModules();
     }
 
     @Override

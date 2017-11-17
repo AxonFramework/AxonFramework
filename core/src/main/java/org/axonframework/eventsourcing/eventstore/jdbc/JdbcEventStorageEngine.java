@@ -13,33 +13,38 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.Assert;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toSet;
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
@@ -56,8 +61,12 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  */
 public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
+    private static final Logger logger = LoggerFactory.getLogger(JpaEventStorageEngine.class);
+
     private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
+    private static final int DEFAULT_GAP_TIMEOUT = 60000;
+    private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
 
     private final ConnectionProvider connectionProvider;
     private final TransactionManager transactionManager;
@@ -65,6 +74,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private final EventSchema schema;
     private final int maxGapOffset;
     private final long lowestGlobalSequence;
+    private int gapTimeout = DEFAULT_GAP_TIMEOUT;
+    private int gapCleaningThreshold = DEFAULT_GAP_CLEANING_THRESHOLD;
 
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
@@ -191,10 +202,18 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        transactionManager.executeInTransaction(
-                () -> executeUpdates(getConnection(), e -> handlePersistenceException(e, snapshot),
-                                     connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
-                                     connection -> appendSnapshot(connection, snapshot, serializer)));
+        transactionManager.executeInTransaction(() -> {
+            try {
+                executeUpdates(
+                        getConnection(), e -> handlePersistenceException(e, snapshot),
+                        connection -> appendSnapshot(connection, snapshot, serializer),
+                        connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber())
+
+                );
+            } catch (ConcurrencyException e) {
+                // ignore duplicate key issues in snapshot. It just means a snapshot already exists
+            }
+        });
     }
 
     /**
@@ -237,10 +256,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @return A {@link PreparedStatement} that deletes all the aggregate's snapshots when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    protected PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier) throws SQLException {
+    protected PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier, long sequenceNumber) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(
-                "DELETE FROM " + schema.snapshotTable() + " WHERE " + schema.aggregateIdentifierColumn() + " = ?");
+                "DELETE FROM " + schema.snapshotTable() + " WHERE " + schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " < ?");
         preparedStatement.setString(1, aggregateIdentifier);
+        preparedStatement.setLong(2, sequenceNumber);
         return preparedStatement;
     }
 
@@ -249,12 +269,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                                                    int batchSize) {
         Transaction tx = transactionManager.startTransaction();
         try {
-            return executeQuery(getConnection(), connection -> {
-                PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
-                statement.setMaxRows(batchSize);
-                return statement;
-            }, listResults(this::getDomainEventData), e -> new EventStoreException(
-                    format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
+            return executeQuery(getConnection(),
+                                connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
+                                listResults(this::getDomainEventData), e -> new EventStoreException(
+                            format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
         } finally {
             tx.commit();
         }
@@ -262,25 +280,69 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
+        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () -> "Unsupported token format: " + lastToken);
         Transaction tx = transactionManager.startTransaction();
         try {
-            return executeQuery(getConnection(), connection -> {
-                PreparedStatement statement = readEventData(connection, lastToken);
-                statement.setMaxRows(batchSize);
-                return statement;
-            }, resultSet -> {
-                TrackingToken previousToken = lastToken;
-                List<TrackedEventData<?>> results = new ArrayList<>();
-                while (resultSet.next()) {
-                    TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
-                    results.add(next);
-                    previousToken = next.trackingToken();
-                }
-                return results;
-            }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
+
+            // if there are many gaps, it worthwhile checking if it is possible to clean them up
+            GapAwareTrackingToken cleanedToken;
+            if (lastToken != null && ((GapAwareTrackingToken) lastToken).getGaps().size() > gapCleaningThreshold) {
+                cleanedToken = cleanGaps(lastToken);
+            } else {
+                cleanedToken = (GapAwareTrackingToken) lastToken;
+            }
+
+            return executeQuery(getConnection(),
+                                connection -> readEventData(connection, cleanedToken, batchSize),
+                                resultSet -> {
+                                    GapAwareTrackingToken previousToken = cleanedToken;
+                                    List<TrackedEventData<?>> results = new ArrayList<>();
+                                    while (resultSet.next()) {
+                                        TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
+                                        results.add(next);
+                                        previousToken = (GapAwareTrackingToken) next.trackingToken();
+                                    }
+                                    return results;
+                                }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
         } finally {
             tx.commit();
         }
+    }
+
+    private GapAwareTrackingToken cleanGaps(TrackingToken lastToken) {
+        SortedSet<Long> gaps = ((GapAwareTrackingToken) lastToken).getGaps();
+        return executeQuery(getConnection(), conn -> {
+            PreparedStatement statement = conn.prepareStatement(format("SELECT %s, %s FROM %s WHERE %s >= ? AND %s <= ?",
+                                                                       schema.globalIndexColumn(),
+                                                                       schema.timestampColumn(),
+                                                                       schema.domainEventTable(),
+                                                                       schema.globalIndexColumn(),
+                                                                       schema.globalIndexColumn()));
+            statement.setLong(1, gaps.first());
+            statement.setLong(2, gaps.last() + 1L);
+            return statement;
+        }, resultSet -> {
+            GapAwareTrackingToken cleanToken = (GapAwareTrackingToken) lastToken;
+            while (resultSet.next()) {
+
+                try {
+                    Instant timestamp = DateTimeUtils.parseInstant(readTimeStamp(resultSet, schema.timestampColumn()).toString());
+                    long sequenceNumber = resultSet.getLong(schema.globalIndexColumn());
+                    if (gaps.contains(sequenceNumber)
+                            || timestamp.isAfter(GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS))) {
+                        // filled a gap, should not continue cleaning up
+                        break;
+                    }
+                    if (gaps.contains(sequenceNumber - 1)) {
+                        cleanToken = cleanToken.advanceTo(sequenceNumber - 1, maxGapOffset, false);
+                    }
+                } catch (DateTimeParseException e) {
+                    logger.info("Unable to parse timestamp to clean old gaps. Tokens may contain large numbers of gaps, decreasing Tracking performance.");
+                    break;
+                }
+            }
+            return cleanToken;
+        }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
     }
 
     @Override
@@ -309,15 +371,16 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
 
     protected PreparedStatement readEventData(Connection connection, String identifier,
-                                              long firstSequenceNumber) throws SQLException {
+                                              long firstSequenceNumber, int batchSize) throws SQLException {
         Transaction tx = transactionManager.startTransaction();
         try {
             final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
-                    schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? ORDER BY " +
-                    schema.sequenceNumberColumn() + " ASC";
+                    schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? AND " +
+                    schema.sequenceNumberColumn() + " < ? ORDER BY " + schema.sequenceNumberColumn() + " ASC";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, identifier);
             preparedStatement.setLong(2, firstSequenceNumber);
+            preparedStatement.setLong(3, firstSequenceNumber + batchSize);
             return preparedStatement;
         } finally {
             tx.commit();
@@ -334,12 +397,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
+    protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken,
+                                              int batchSize) throws SQLException {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       () -> format("Token [%s] is of the wrong type", lastToken));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
-        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
-                schema.globalIndexColumn() + " > ? ";
+        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
+                " WHERE (" + schema.globalIndexColumn() + " > ? AND " + schema.globalIndexColumn() + " <= ?) ";
         List<Long> gaps;
         if (previousToken != null) {
             gaps = previousToken.getGaps().stream().collect(Collectors.toList());
@@ -352,9 +416,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
         sql += "ORDER BY " + schema.globalIndexColumn() + " ASC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        preparedStatement.setLong(1, previousToken == null ? -1 : previousToken.getIndex());
+        long globalIndex = previousToken == null ? -1 : previousToken.getIndex();
+        preparedStatement.setLong(1, globalIndex);
+        preparedStatement.setLong(2, globalIndex + batchSize);
         for (int i = 0; i < gaps.size(); i++) {
-            preparedStatement.setLong(i + 2, gaps.get(i));
+            preparedStatement.setLong(i + 3, gaps.get(i));
         }
         return preparedStatement;
     }
@@ -384,25 +450,32 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @throws SQLException when an exception occurs while creating the event data
      */
     protected TrackedEventData<?> getTrackedEventData(ResultSet resultSet,
-                                                      TrackingToken previousToken) throws SQLException {
+                                                      GapAwareTrackingToken previousToken) throws SQLException {
         long globalSequence = resultSet.getLong(schema.globalIndexColumn());
-        TrackingToken trackingToken;
-        if (previousToken == null) {
-            trackingToken = GapAwareTrackingToken.newInstance(globalSequence, LongStream
-                    .range(Math.min(lowestGlobalSequence, globalSequence), globalSequence).mapToObj(Long::valueOf)
-                    .collect(toSet()));
+
+        GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(resultSet.getString(schema.typeColumn()),
+                                                                               resultSet.getString(schema.aggregateIdentifierColumn()),
+                                                                               resultSet.getLong(schema.sequenceNumberColumn()),
+                                                                               resultSet.getString(schema.eventIdentifierColumn()),
+                                                                               readTimeStamp(resultSet, schema.timestampColumn()),
+                                                                               resultSet.getString(schema.payloadTypeColumn()),
+                                                                               resultSet.getString(schema.payloadRevisionColumn()),
+                                                                               readPayload(resultSet, schema.payloadColumn()),
+                                                                               readPayload(resultSet, schema.metaDataColumn()));
+        // now that we have the event itself, we can calculate the token
+        boolean allowGaps = domainEvent.getTimestamp().isAfter(GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS));
+        GapAwareTrackingToken token = previousToken;
+        if (token == null) {
+            token = GapAwareTrackingToken.newInstance(globalSequence,
+                                                      allowGaps ?
+                                                              LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
+                                                                      .boxed()
+                                                                      .collect(Collectors.toCollection(TreeSet::new)) :
+                                                              Collections.emptySortedSet());
         } else {
-            trackingToken = ((GapAwareTrackingToken) previousToken).advanceTo(globalSequence, maxGapOffset);
+            token = token.advanceTo(globalSequence, maxGapOffset, allowGaps);
         }
-        return new GenericTrackedDomainEventEntry<>(trackingToken, resultSet.getString(schema.typeColumn()),
-                                                    resultSet.getString(schema.aggregateIdentifierColumn()),
-                                                    resultSet.getLong(schema.sequenceNumberColumn()),
-                                                    resultSet.getString(schema.eventIdentifierColumn()),
-                                                    readTimeStamp(resultSet, schema.timestampColumn()),
-                                                    resultSet.getString(schema.payloadTypeColumn()),
-                                                    resultSet.getString(schema.payloadRevisionColumn()),
-                                                    readPayload(resultSet, schema.payloadColumn()),
-                                                    readPayload(resultSet, schema.metaDataColumn()));
+        return new TrackedDomainEventData<>(token, domainEvent);
     }
 
     /**
@@ -413,7 +486,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @throws SQLException when an exception occurs while creating the event data
      */
     protected DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
-        return (DomainEventData<?>) getTrackedEventData(resultSet, null);
+        return new GenericDomainEventEntry<>(resultSet.getString(schema.typeColumn()),
+                                             resultSet.getString(schema.aggregateIdentifierColumn()),
+                                             resultSet.getLong(schema.sequenceNumberColumn()),
+                                             resultSet.getString(schema.eventIdentifierColumn()),
+                                             readTimeStamp(resultSet, schema.timestampColumn()),
+                                             resultSet.getString(schema.payloadTypeColumn()),
+                                             resultSet.getString(schema.payloadRevisionColumn()),
+                                             readPayload(resultSet, schema.payloadColumn()),
+                                             readPayload(resultSet, schema.metaDataColumn()));
     }
 
     /**
@@ -458,7 +539,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
                                   Instant timestamp) throws SQLException {
-        preparedStatement.setString(position, timestamp.toString());
+        preparedStatement.setString(position, formatInstant(timestamp));
     }
 
     /**
@@ -518,5 +599,25 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         } catch (SQLException e) {
             throw new EventStoreException("Failed to obtain a database connection", e);
         }
+    }
+
+    /**
+     * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will affect
+     * the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
+     * performance of reading events. Defaults to 60000 (1 minute).
+     *
+     * @param gapTimeout The amount of time, in milliseconds until a gap may be considered timed out.
+     */
+    public void setGapTimeout(int gapTimeout) {
+        this.gapTimeout = gapTimeout;
+    }
+
+    /**
+     * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to 250.
+     *
+     * @param gapCleaningThreshold The number of gaps before triggering a cleanup.
+     */
+    public void setGapCleaningThreshold(int gapCleaningThreshold) {
+        this.gapCleaningThreshold = gapCleaningThreshold;
     }
 }

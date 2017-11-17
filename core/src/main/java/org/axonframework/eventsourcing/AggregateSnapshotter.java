@@ -126,7 +126,6 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         aggregate.initializeState(eventStream);
         return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
                                                aggregate.getAggregateRoot());
-
     }
 
     /**

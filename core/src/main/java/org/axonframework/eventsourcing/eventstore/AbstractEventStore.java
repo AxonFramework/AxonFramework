@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Abstract implementation of an {@link EventStore} that uses a {@link EventStorageEngine} to store and load events.
@@ -80,19 +81,40 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
                         e.getClass().getName(), e.getMessage());
             optionalSnapshot = Optional.empty();
         }
+        DomainEventStream eventStream;
         if (optionalSnapshot.isPresent()) {
             DomainEventMessage<?> snapshot = optionalSnapshot.get();
-            return DomainEventStream.concat(DomainEventStream.of(snapshot),
-                                            storageEngine.readEvents(aggregateIdentifier,
-                                                                     snapshot.getSequenceNumber() + 1));
+            eventStream = DomainEventStream.concat(DomainEventStream.of(snapshot),
+                                                   storageEngine.readEvents(aggregateIdentifier,
+                                                                            snapshot.getSequenceNumber() + 1));
         } else {
-            return storageEngine.readEvents(aggregateIdentifier);
+            eventStream = storageEngine.readEvents(aggregateIdentifier);
         }
+
+        Stream<? extends DomainEventMessage<?>> domainEventMessages = stagedDomainEventMessages(aggregateIdentifier);
+        return DomainEventStream.concat(eventStream, DomainEventStream.of(domainEventMessages));
+    }
+
+    /**
+     * Returns a Stream of all DomainEventMessages that have been staged for publication by an Aggregate with given
+     * {@code aggregateIdentifier}.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to get staged events for
+     * @return a Stream of DomainEventMessage of the identified aggregate
+     */
+    protected Stream<? extends DomainEventMessage<?>> stagedDomainEventMessages(String aggregateIdentifier) {
+        return queuedMessages().stream()
+                .filter(m -> m instanceof DomainEventMessage)
+                .map(m -> (DomainEventMessage<?>) m)
+                .filter(m -> aggregateIdentifier.equals(m.getAggregateIdentifier()));
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
-        return storageEngine.readEvents(aggregateIdentifier, firstSequenceNumber);
+        return DomainEventStream.concat(storageEngine.readEvents(aggregateIdentifier, firstSequenceNumber),
+                                        DomainEventStream.of(
+                                                stagedDomainEventMessages(aggregateIdentifier)
+                                                        .filter(m -> m.getSequenceNumber() >= firstSequenceNumber)));
     }
 
     @Override

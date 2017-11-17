@@ -50,7 +50,8 @@ public class JavaSerializationAMQPMessageConverterTest {
         assertEquals(eventMessage.getPayloadType(), actualResult.getPayloadType());
         assertEquals(eventMessage.getTimestamp(), actualResult.getTimestamp());
         assertEquals(eventMessage.getAggregateIdentifier(), ((DomainEventMessage)actualResult).getAggregateIdentifier());
-        assertEquals(eventMessage.getType(), ((DomainEventMessage)actualResult).getType());
+//        the type wasn't part of the legacy message
+//        assertEquals(eventMessage.getType(), ((DomainEventMessage)actualResult).getType());
         assertEquals(eventMessage.getSequenceNumber(), ((DomainEventMessage)actualResult).getSequenceNumber());
     }
 

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +17,7 @@ package org.axonframework.amqp.eventhandling;
 
 import com.rabbitmq.client.AMQP;
 import org.axonframework.common.Assert;
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -25,8 +25,10 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.*;
 
-import java.time.Instant;
 import java.util.*;
+
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Default implementation of the AMQPMessageConverter interface. This implementation will suffice in most cases. It
@@ -70,7 +72,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
 
     @Override
     public AMQPMessage createAMQPMessage(EventMessage<?> eventMessage) {
-        SerializedObject<byte[]> serializedObject = serializer.serialize(eventMessage.getPayload(), byte[].class);
+        SerializedObject<byte[]> serializedObject = serializePayload(eventMessage, serializer, byte[].class);
         String routingKey = routingKeyResolver.resolveRoutingKey(eventMessage);
         AMQP.BasicProperties.Builder properties = new AMQP.BasicProperties.Builder();
         Map<String, Object> headers = new HashMap<>();
@@ -78,7 +80,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         headers.put("axon-message-id", eventMessage.getIdentifier());
         headers.put("axon-message-type", serializedObject.getType().getName());
         headers.put("axon-message-revision", serializedObject.getType().getRevision());
-        headers.put("axon-message-timestamp", eventMessage.getTimestamp().toString());
+        headers.put("axon-message-timestamp", formatInstant(eventMessage.getTimestamp()));
         if (eventMessage instanceof DomainEventMessage) {
             headers.put("axon-message-aggregate-id", ((DomainEventMessage) eventMessage).getAggregateIdentifier());
             headers.put("axon-message-aggregate-seq", ((DomainEventMessage) eventMessage).getSequenceNumber());
@@ -113,9 +115,9 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
             return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get("axon-message-aggregate-type")),
                                                    Objects.toString(headers.get("axon-message-aggregate-id")),
                                                    (Long) headers.get("axon-message-aggregate-seq"),
-                                                   message, () -> Instant.parse(timestamp)));
+                                                   message, () -> DateTimeUtils.parseInstant(timestamp)));
         } else {
-            return Optional.of(new GenericEventMessage<>(message, () -> Instant.parse(timestamp)));
+            return Optional.of(new GenericEventMessage<>(message, () -> DateTimeUtils.parseInstant(timestamp)));
         }
     }
 

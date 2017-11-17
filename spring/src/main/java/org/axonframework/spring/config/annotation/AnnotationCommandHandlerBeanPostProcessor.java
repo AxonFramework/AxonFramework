@@ -56,15 +56,15 @@ public class AnnotationCommandHandlerBeanPostProcessor
 
     private boolean hasCommandHandlerMethod(Class<?> beanClass) {
         final AtomicBoolean result = new AtomicBoolean(false);
-        ReflectionUtils.doWithMethods(beanClass, new HasEventHandlerAnnotationMethodCallback(result));
+        ReflectionUtils.doWithMethods(beanClass, new HasCommandHandlerAnnotationMethodCallback(result));
         return result.get();
     }
 
-    private static final class HasEventHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
+    private static final class HasCommandHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
 
         private final AtomicBoolean result;
 
-        private HasEventHandlerAnnotationMethodCallback(AtomicBoolean result) {
+        private HasCommandHandlerAnnotationMethodCallback(AtomicBoolean result) {
             this.result = result;
         }
 

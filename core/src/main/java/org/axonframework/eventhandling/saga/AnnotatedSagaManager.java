@@ -17,11 +17,13 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike the
  * SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
  *
+ * @param <T> The type of Saga managed by this instance
  * @author Allard Buijze
  * @since 0.7
  */
@@ -96,6 +99,12 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         this.sagaMetaModel = sagaMetaModel;
     }
 
+    @Override
+    public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
+        // The segment is used to filter Saga instances, so all events match when there's a handler
+        return sagaMetaModel.hasHandlerMethod(eventMessage);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
@@ -112,11 +121,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     @Override
     protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
         List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
-        return handlers.stream().map(handler -> handler.getAssociationValue(event)).collect(Collectors.toSet());
-    }
-
-    @Override
-    public boolean hasHandler(EventMessage<?> event) {
-        return !sagaMetaModel.findHandlerMethods(event).isEmpty();
+        return handlers.stream().map(handler -> handler.getAssociationValue(event))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 }

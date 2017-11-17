@@ -22,9 +22,11 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.internal.stubbing.answers.Returns;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
+import javax.persistence.LockModeType;
 import javax.persistence.Version;
 import java.util.UUID;
 import java.util.function.Function;
@@ -41,16 +43,19 @@ public class GenericJpaRepositoryTest {
     private GenericJpaRepository<StubJpaAggregate> testSubject;
     private String aggregateId;
     private StubJpaAggregate aggregate;
+    private Function<String, ?> identifierConverter;
 
     @Before
     public void setUp() {
         mockEntityManager = mock(EntityManager.class);
+        identifierConverter = mock(Function.class);
+        when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
-                                                                 StubJpaAggregate.class, null);
+                                                 StubJpaAggregate.class, null, identifierConverter);
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
-        when(mockEntityManager.find(StubJpaAggregate.class, "123")).thenReturn(aggregate);
+        when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class))).thenReturn(aggregate);
     }
 
     @After
@@ -63,6 +68,13 @@ public class GenericJpaRepositoryTest {
     @Test
     public void testLoadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
+        assertSame(aggregate, actualResult.invoke(Function.identity()));
+    }
+
+    @Test
+    public void testLoadAggregateWithConverter() {
+        when(identifierConverter.apply("original")).thenAnswer(new Returns(aggregateId));
+        Aggregate<StubJpaAggregate> actualResult = testSubject.load("original");
         assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
@@ -110,8 +122,8 @@ public class GenericJpaRepositoryTest {
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
     }
-    
-    private class StubJpaAggregate  {
+
+    private class StubJpaAggregate {
 
         @Id
         private final String identifier;

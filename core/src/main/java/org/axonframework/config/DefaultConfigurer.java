@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -44,7 +45,8 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
@@ -79,8 +81,10 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
-    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory =
-            new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
+    private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
+    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
+            new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
+
     private final Component<List<CorrelationDataProvider>> correlationProviders =
             new Component<>(config, "correlationProviders",
                             c -> Collections.singletonList(new MessageOriginProvider()));
@@ -96,6 +100,7 @@ public class DefaultConfigurer implements Configurer {
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private final List<Runnable> startHandlers = new ArrayList<>();
     private final List<Runnable> shutdownHandlers = new ArrayList<>();
+    private List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
 
@@ -141,7 +146,10 @@ public class DefaultConfigurer implements Configurer {
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(CommandGateway.class, new Component<>(config, "resourceInjector", this::defaultCommandGateway));
+        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
+        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
     }
@@ -157,6 +165,28 @@ public class DefaultConfigurer implements Configurer {
         return new DefaultCommandGateway(config.commandBus());
     }
 
+    /**
+     * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch
+     * queries.
+     *
+     * @param config the configuration that supplies the query bus
+     * @return the default query gateway
+     */
+    protected QueryGateway defaultQueryGateway(Configuration config) {
+        return new DefaultQueryGateway(config.queryBus());
+    }
+
+    /**
+     * Provides the default QueryBus implementations. Subclasses may override this method to provide their own default.
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default QueryBus to use
+     */
+    protected QueryBus defaultQueryBus(Configuration config) {
+        return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
+                                  config.getComponent(TransactionManager.class, NoTransactionManager::instance),
+                                  config.getComponent(QueryInvocationErrorHandler.class));
+    }
     /**
      * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default
      *
@@ -221,9 +251,22 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer configureMessageMonitor(
-            Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>>
-                    messageMonitorFactoryBuilder) {
-        messageMonitorFactory.update(messageMonitorFactoryBuilder);
+            Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
+        messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
+        return this;
+    }
+
+    @Override
+    public Configurer configureMessageMonitor(Class<?> componentType, MessageMonitorFactory messageMonitorFactory) {
+        messageMonitorFactoryBuilder.add(componentType, messageMonitorFactory);
+        return this;
+    }
+
+    @Override
+    public Configurer configureMessageMonitor(Class<?> componentType,
+                                              String componentName,
+                                              MessageMonitorFactory messageMonitorFactory) {
+        messageMonitorFactoryBuilder.add(componentType, componentName, messageMonitorFactory);
         return this;
     }
 
@@ -241,6 +284,7 @@ public class DefaultConfigurer implements Configurer {
         } else {
             initHandlers.add(module::initialize);
         }
+        this.modules.add(module);
         startHandlers.add(module::start);
         shutdownHandlers.add(module::shutdown);
         return this;
@@ -259,6 +303,18 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
+        startHandlers.add(() -> {
+            Registration registration =
+                    new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
+                                                      config.parameterResolverFactory())
+                            .subscribe(config.queryBus());
+            shutdownHandlers.add(registration::cancel);
+        });
+        return this;
+    }
+
+    @Override
     public <C> Configurer registerComponent(Class<C> componentType,
                                             Function<Configuration, ? extends C> componentBuilder) {
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
@@ -269,9 +325,8 @@ public class DefaultConfigurer implements Configurer {
     public Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
-                    messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor
-            );
+                    messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
+            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });
@@ -279,6 +334,7 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
+        this.modules.add(aggregateConfiguration);
         this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
         this.initHandlers.add(aggregateConfiguration::initialize);
         this.startHandlers.add(aggregateConfiguration::start);
@@ -365,7 +421,7 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType,
                                                                                String componentName) {
-            return messageMonitorFactory.get().apply(componentType, componentName);
+            return messageMonitorFactoryComponent.get().apply(componentType, componentName);
         }
 
         @Override
@@ -381,6 +437,11 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public List<CorrelationDataProvider> correlationDataProviders() {
             return correlationProviders.get();
+        }
+
+        @Override
+        public List<ModuleConfiguration> getModules() {
+            return modules;
         }
 
         @Override

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +15,7 @@
 
 package org.axonframework.amqp.eventhandling.legacy;
 
+import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
@@ -26,7 +26,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.time.Instant;
 
 /**
  * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been written
@@ -76,11 +75,9 @@ public class EventMessageReader {
         EventMessageType messageType = EventMessageType.fromTypeByte((byte) firstByte);
         String identifier = in.readUTF();
         String timestamp = in.readUTF();
-        String type = null;
         String aggregateIdentifier = null;
         long sequenceNumber = 0;
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            type = in.readUTF();
             aggregateIdentifier = in.readUTF();
             sequenceNumber = in.readLong();
         }
@@ -96,14 +93,14 @@ public class EventMessageReader {
         SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(metaData, byte[].class);
 
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
+            return new GenericDomainEventMessage<>(null, aggregateIdentifier, sequenceNumber,
                                                    new SerializedMessage<>(identifier, serializedPayload,
                                                                            serializedMetaData, serializer),
-                                                   () -> Instant.parse(timestamp));
+                                                   () -> DateTimeUtils.parseInstant(timestamp));
         } else {
             return new GenericEventMessage<>(
                     new SerializedMessage<>(identifier, serializedPayload, serializedMetaData, serializer),
-                    () -> Instant.parse(timestamp));
+                    () -> DateTimeUtils.parseInstant(timestamp));
         }
     }
 }
