@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,42 @@
  * limitations under the License.
  */
 
-package org.axonframework.mongo.eventsourcing.eventstore;
+package org.axonframework.mongo;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 
 /**
- * Interface describing a mechanism that provides access to the Database and Collections required by the
- * MongoEventStore.
- *
- * @author Jettro Coenradie
- * @since 2.0 (in incubator since 0.7)
+ * Template object providing access to the collections necessary for the Mongo based components.
  */
 public interface MongoTemplate {
 
     /**
+     * Returns a reference to the collection containing the Tracking Tokens.
+     *
+     * @return MongoCollection containing the Tracking Tokens
+     */
+    MongoCollection<Document> trackingTokensCollection();
+
+    /**
      * Returns a reference to the collection containing the events.
      *
-     * @return DBCollection containing the domain events
+     * @return MongoCollection containing the domain events
      */
     MongoCollection<Document> eventCollection();
 
     /**
      * Returns a reference to the collection containing the snapshot events.
      *
-     * @return DBCollection containing the snapshot events
+     * @return MongoCollection containing the snapshot events
      */
     MongoCollection<Document> snapshotCollection();
+
+    /**
+     * Returns a reference to the collection containing the saga instances.
+     *
+     * @return MongoCollection containing the sagas
+     */
+    MongoCollection<Document> sagaCollection();
+
 }

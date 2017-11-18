@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import org.axonframework.mongo.AbstractMongoTemplate;
+import org.axonframework.mongo.MongoTemplate;
 import org.bson.Document;
 
 /**
@@ -29,7 +30,9 @@ import org.bson.Document;
  * @author Allard Buijze
  * @author Jettro Coenradie
  * @since 2.0 (in incubator since 0.7)
+ * @deprecated Use {@link org.axonframework.mongo.DefaultMongoTemplate} instead.
  */
+@Deprecated
 public class DefaultMongoTemplate extends AbstractMongoTemplate implements MongoTemplate {
 
     private static final String DEFAULT_DOMAINEVENTS_COLLECTION = "domainevents";
@@ -74,6 +77,12 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
         this.snapshotEventsCollectionName = snapshotEventsCollectionName;
     }
 
+    @Override
+    public MongoCollection<Document> trackingTokensCollection() {
+        throw new UnsupportedOperationException("Not supported.");
+
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -88,5 +97,10 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
     @Override
     public MongoCollection<Document> snapshotCollection() {
         return database().getCollection(snapshotEventsCollectionName);
+    }
+
+    @Override
+    public MongoCollection<Document> sagaCollection() {
+        throw new UnsupportedOperationException("Not supported.");
     }
 }

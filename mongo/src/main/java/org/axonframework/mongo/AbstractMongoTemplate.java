@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,10 @@ public abstract class AbstractMongoTemplate {
      */
     protected AbstractMongoTemplate(MongoClient mongo, String databaseName) { // NOSONAR
         database = mongo.getDatabase(databaseName);
+    }
+
+    protected AbstractMongoTemplate(MongoDatabase database) {
+        this.database = database;
     }
 
     /**
