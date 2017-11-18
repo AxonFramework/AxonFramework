@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.mongo.eventsourcing.tokenstore;
 
 import com.mongodb.MongoClient;
@@ -8,12 +24,14 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.mongo.DefaultMongoTemplate;
+import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.bson.Document;
 import org.junit.*;
-import org.junit.runner.*;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -23,19 +41,17 @@ import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertArrayEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
 public class MongoTokenStoreTest {
 
-    private TokenStore tokenStore;
-    private TokenStore tokenStoreDifferentOwner;
+    private MongoTokenStore tokenStore;
+    private MongoTokenStore tokenStoreDifferentOwner;
 
     private static MongodExecutable mongoExe;
     private static MongodProcess mongod;
@@ -76,11 +92,13 @@ public class MongoTokenStoreTest {
 
         mongoTemplate = new DefaultMongoTemplate(mongoClient);
         trackingTokensCollection = mongoTemplate.trackingTokensCollection();
+        trackingTokensCollection.drop();
         tokenStore = new MongoTokenStore(mongoTemplate,
                                          serializer,
                                          claimTimeout,
                                          testOwner,
                                          contentType);
+        tokenStore.ensureIndexes();
         tokenStoreDifferentOwner = new MongoTokenStore(mongoTemplate,
                                                        serializer,
                                                        claimTimeout,
@@ -109,7 +127,28 @@ public class MongoTokenStoreTest {
         tokenStoreDifferentOwner.storeToken(token, testProcessorName, testSegment);
     }
 
+    @Test(expected = UnableToClaimTokenException.class)
+    public void testAttemptToExtendClaimOnAlreadyClaimedToken() throws Exception {
+        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        tokenStoreDifferentOwner.extendClaim(testProcessorName, testSegment);
+    }
+
     @Test
+    public void testClaimAndExtend() throws Exception {
+        TrackingToken token = new GlobalSequenceTrackingToken(1L);
+        tokenStore.storeToken(token, testProcessorName, testSegment);
+
+        try {
+            tokenStoreDifferentOwner.fetchToken(testProcessorName, testSegment);
+            Assert.fail("Expected UnableToClaimTokenException");
+        } catch (UnableToClaimTokenException exception) {
+            // expected
+        }
+
+        tokenStore.extendClaim(testProcessorName, testSegment);
+    }
+
+    @Test(expected = UnableToClaimTokenException.class)
     public void testReleaseClaimAndExtendClaim() throws Exception {
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, testProcessorName, testSegment);
@@ -123,8 +162,18 @@ public class MongoTokenStoreTest {
 
         tokenStore.releaseClaim(testProcessorName, testSegment);
         tokenStoreDifferentOwner.extendClaim(testProcessorName, testSegment);
+    }
 
-        Assert.assertEquals(token, tokenStoreDifferentOwner.fetchToken(testProcessorName, testSegment));
+    @Test
+    public void testFetchSegments() {
+        tokenStore.fetchToken("processor1", 1);
+        tokenStore.fetchToken("processor1", 0);
+        tokenStore.fetchToken("processor1", 2);
+        tokenStore.fetchToken("processor2", 0);
+
+        assertArrayEquals(new int[]{0,1,2}, tokenStore.fetchSegments("processor1"));
+        assertArrayEquals(new int[]{0}, tokenStore.fetchSegments("processor2"));
+        assertArrayEquals(new int[0], tokenStore.fetchSegments("processor3"));
     }
 
     @Test

@@ -1,15 +1,35 @@
+/*
+ * Copyright (c) 2010-2017. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.mongo.eventsourcing.tokenstore;
 
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.result.UpdateResult;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.GenericTokenEntry;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.serialization.Serializer;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -17,13 +37,17 @@ import org.bson.types.Binary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.lang.management.ManagementFactory;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
+import java.util.ArrayList;
 
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Projections.*;
+import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Updates.set;
 import static java.lang.String.format;
@@ -33,14 +57,13 @@ import static java.lang.String.format;
  */
 public class MongoTokenStore implements TokenStore {
 
+    private final static Clock clock = Clock.systemUTC();
+    private final static Logger logger = LoggerFactory.getLogger(MongoTokenStore.class);
     private final MongoTemplate mongoTemplate;
     private final Serializer serializer;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
     private final Class<?> contentType;
-
-    private final static Clock clock = Clock.systemUTC();
-    private final static Logger logger = LoggerFactory.getLogger(MongoTokenStore.class);
 
     /**
      * Creates a MongoTokenStore with a default claim timeout of 10 seconds, a default owner identifier and a default
@@ -89,21 +112,50 @@ public class MongoTokenStore implements TokenStore {
         return tokenEntry.getToken(serializer);
     }
 
+    @Override
+    public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
+        UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
+                .updateOne(and(eq("processorName", processorName),
+                               eq("segment", segment),
+                               eq("owner", nodeId)),
+                           set("timestamp", TokenEntry.clock.instant().toEpochMilli()));
+        if (updateResult.getMatchedCount() == 0) {
+            throw new UnableToClaimTokenException(format("Unable to extend claim on token token '%s[%s]'. It is owned " +
+                                                                 "by another segment.", processorName, segment));
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void releaseClaim(String processorName, int segment) {
         UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
-                                                 .updateOne(and(
-                                                         eq("processorName", processorName),
-                                                         eq("segment", segment),
-                                                         eq("owner", nodeId)
-                                                 ), set("owner", null));
+                .updateOne(and(
+                        eq("processorName", processorName),
+                        eq("segment", segment),
+                        eq("owner", nodeId)
+                ), set("owner", null));
 
         if (updateResult.getMatchedCount() == 0) {
             logger.warn("Releasing claim of token {}/{} failed. It was owned by another node.", processorName, segment);
         }
+    }
+
+    @Override
+    public int[] fetchSegments(String processorName) {
+        ArrayList<Integer> segments = mongoTemplate.trackingTokensCollection()
+                .find(eq("processorName", processorName))
+                .sort(ascending("segment"))
+                .projection(fields(include("segment"), excludeId()))
+                .map(d -> d.get("segment", Integer.class))
+                .into(new ArrayList<>());
+        // toArray doesn't work because of autoboxing limitations
+        int[] ints = new int[segments.size()];
+        for (int i = 0; i < ints.length; i++) {
+            ints[i] = segments.get(i);
+        }
+        return ints;
     }
 
     /**
@@ -135,12 +187,12 @@ public class MongoTokenStore implements TokenStore {
                               set("token", tokenEntry.getSerializedToken().getData()),
                               set("tokenType", tokenEntry.getSerializedToken().getType().getName()));
         UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
-                                                 .updateOne(claimableTokenEntryFilter(processorName, segment), update);
+                .updateOne(claimableTokenEntryFilter(processorName, segment), update);
 
         if (updateResult.getModifiedCount() == 0) {
             try {
                 mongoTemplate.trackingTokensCollection()
-                             .insertOne(tokenEntryToDocument(tokenEntry));
+                        .insertOne(tokenEntryToDocument(tokenEntry));
             } catch (MongoWriteException exception) {
                 if (ErrorCategory.fromErrorCode(exception.getError().getCode()) == ErrorCategory.DUPLICATE_KEY) {
                     throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'",
@@ -153,11 +205,11 @@ public class MongoTokenStore implements TokenStore {
 
     private AbstractTokenEntry<?> loadOrInsertTokenEntry(String processorName, int segment) {
         Document document = mongoTemplate.trackingTokensCollection()
-                                         .findOneAndUpdate(claimableTokenEntryFilter(processorName, segment),
-                                                           combine(set("owner", nodeId),
-                                                                   set("timestamp", clock.millis())),
-                                                           new FindOneAndUpdateOptions()
-                                                                   .returnDocument(ReturnDocument.AFTER));
+                .findOneAndUpdate(claimableTokenEntryFilter(processorName, segment),
+                                  combine(set("owner", nodeId),
+                                          set("timestamp", clock.millis())),
+                                  new FindOneAndUpdateOptions()
+                                          .returnDocument(ReturnDocument.AFTER));
 
         if (document == null) {
             try {
@@ -169,7 +221,7 @@ public class MongoTokenStore implements TokenStore {
                 tokenEntry.claim(nodeId, claimTimeout);
 
                 mongoTemplate.trackingTokensCollection()
-                             .insertOne(tokenEntryToDocument(tokenEntry));
+                        .insertOne(tokenEntryToDocument(tokenEntry));
 
                 return tokenEntry;
             } catch (MongoWriteException exception) {
@@ -192,7 +244,7 @@ public class MongoTokenStore implements TokenStore {
                         tokenEntry.getSerializedToken() == null ? null : tokenEntry.getSerializedToken().getData())
                 .append("tokenType",
                         tokenEntry.getSerializedToken() == null ? null : tokenEntry.getSerializedToken()
-                                                                                   .getContentType().getName());
+                                .getContentType().getName());
     }
 
     private AbstractTokenEntry<?> documentToTokenEntry(Document document) {
@@ -206,6 +258,7 @@ public class MongoTokenStore implements TokenStore {
                 contentType);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T readSerializedData(Document document) {
         if (byte[].class.equals(contentType)) {
             Binary token = document.get("token", Binary.class);
@@ -213,4 +266,14 @@ public class MongoTokenStore implements TokenStore {
         }
         return (T) document.get("token", contentType);
     }
+
+    /**
+     * Creates the indexes required to work with the TokenStore.
+     */
+    @PostConstruct
+    public void ensureIndexes() {
+        mongoTemplate.trackingTokensCollection().createIndex(Indexes.ascending("processorName", "segment"),
+                                                             new IndexOptions().unique(true));
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.mongo.eventhandling.saga.repository;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import org.axonframework.mongo.AbstractMongoTemplate;
+import org.axonframework.mongo.MongoTemplate;
 import org.bson.Document;
 
 /**
@@ -27,7 +28,9 @@ import org.bson.Document;
  * @author Jettro Coenradie
  * @author Allard Buijze
  * @since 2.0
+ * @deprecated Use {@link org.axonframework.mongo.DefaultMongoTemplate} instead.
  */
+@Deprecated
 public class DefaultMongoTemplate extends AbstractMongoTemplate implements MongoTemplate {
 
     private static final String DEFAULT_SAGAS_COLLECTION_NAME = "sagas";
@@ -56,6 +59,21 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
     public DefaultMongoTemplate(MongoClient mongo, String databaseName, String sagasCollectionName) {
         super(mongo, databaseName);
         this.sagasCollectionName = sagasCollectionName;
+    }
+
+    @Override
+    public MongoCollection<Document> trackingTokensCollection() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public MongoCollection<Document> eventCollection() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public MongoCollection<Document> snapshotCollection() {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
