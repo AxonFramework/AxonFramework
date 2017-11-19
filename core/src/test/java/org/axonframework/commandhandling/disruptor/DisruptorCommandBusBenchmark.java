@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,10 @@ public class DisruptorCommandBusBenchmark {
     public static void main(String[] args) throws InterruptedException {
         InMemoryEventStore eventStore = new InMemoryEventStore();
         StubHandler stubHandler = new StubHandler();
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus();
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+        stubHandler.setRepository(commandBus.createRepository(eventStore,
+                                                              new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
         eventStore.publish(new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent()));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,9 +46,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<AggregateFactory<A>> aggregateFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private final Component<CommandTargetResolver> commandTargetResolver;
-    private Configuration parent;
-
     private final List<Registration> registrations = new ArrayList<>();
+    private Configuration parent;
 
     /**
      * Creates a default Configuration for an aggregate of the given {@code aggregateType}. This required either a
@@ -101,7 +100,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                  aggregate.toString());
             if (c.commandBus() instanceof DisruptorCommandBus) {
                 return ((DisruptorCommandBus) c.commandBus())
-                        .createRepository(aggregateFactory.get(), c.parameterResolverFactory());
+                        .createRepository(c.eventStore(), aggregateFactory.get(),
+                                          snapshotTriggerDefinition.get(),
+                                          c.parameterResolverFactory());
             }
             return new EventSourcingRepository<>(aggregateFactory.get(), c.eventStore(), c.parameterResolverFactory(),
                                                  snapshotTriggerDefinition.get());

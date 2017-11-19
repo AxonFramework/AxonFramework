@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,21 +55,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     private final Map<Class<?>, DisruptorRepository> repositories = new ConcurrentHashMap<>();
     private final Cache cache;
     private final int segmentId;
-    private final EventStore eventStore;
-
-    /**
-     * Create an aggregate invoker instance that uses the given {@code eventStore} and {@code cache} to
-     * retrieve aggregate instances.
-     *
-     * @param eventStore The event store providing access to events to reconstruct aggregates
-     * @param cache      The cache temporarily storing aggregate instances
-     * @param segmentId  The id of the segment this invoker should handle
-     */
-    public CommandHandlerInvoker(EventStore eventStore, Cache cache, int segmentId) {
-        this.eventStore = eventStore;
-        this.cache = cache;
-        this.segmentId = segmentId;
-    }
 
     /**
      * Returns the Repository instance for Aggregate with given {@code typeIdentifier} used by the
@@ -87,6 +72,17 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         Assert.state(invoker != null,
                      () -> "The repositories of a DisruptorCommandBus are only available " + "in the invoker thread");
         return invoker.repositories.get(type);
+    }
+
+    /**
+     * Create an aggregate invoker instance for the given {@code segment} and {@code cache}.
+     *
+     * @param cache     The cache temporarily storing aggregate instances
+     * @param segmentId The id of the segment this invoker should handle
+     */
+    public CommandHandlerInvoker(Cache cache, int segmentId) {
+        this.cache = cache;
+        this.segmentId = segmentId;
     }
 
     @Override
@@ -111,13 +107,15 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * repository must be safe to use by this invoker instance.
      *
      * @param <T>                       The type of aggregate created by the factory
+     * @param eventStore                The events store to load and publish events
      * @param aggregateFactory          The factory creating aggregate instances
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
      * @return A Repository instance for the given aggregate
      */
     @SuppressWarnings("unchecked")
-    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
         return repositories.computeIfAbsent(aggregateFactory.getAggregateType(),
