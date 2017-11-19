@@ -128,6 +128,7 @@ public class AggregateAnnotationCommandHandlerTest {
         Set<String> actual = testSubject.supportedCommandNames();
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
+                CreateFactoryMethodCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
                 FailingCreateCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethodAndVersion.class.getName(),
@@ -157,6 +158,18 @@ public class AggregateAnnotationCommandHandlerTest {
 
         final CommandCallback callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
+        commandBus.dispatch(message, callback);
+        verify(mockRepository).newInstance(any());
+        // make sure the identifier was invoked in the callback
+        verify(callback).onSuccess(message, "id");
+    }
+
+
+    @Test
+    public void testCommandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
+
+        final CommandCallback callback = spy(LoggingCallback.INSTANCE);
+        final CommandMessage<Object> message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
         commandBus.dispatch(message, callback);
         verify(mockRepository).newInstance(any());
         // make sure the identifier was invoked in the callback
@@ -585,6 +598,11 @@ public class AggregateAnnotationCommandHandlerTest {
         }
 
         @CommandHandler
+        public static StubCommandAnnotatedAggregate createStubCommandAnnotatedAggregate(CreateFactoryMethodCommand createFactoryMethodCommand){
+            return new StubCommandAnnotatedAggregate(createFactoryMethodCommand.getId());
+        }
+
+        @CommandHandler
         public StubCommandAnnotatedAggregate(FailingCreateCommand createCommand) {
             super(IdentifierFactory.getInstance().generateIdentifier());
             throw new RuntimeException(createCommand.getParameter());
@@ -741,6 +759,28 @@ public class AggregateAnnotationCommandHandlerTest {
             return id;
         }
     }
+
+
+    private static class CreateFactoryMethodCommand {
+
+        private final String id;
+
+        private String parameter;
+
+        private CreateFactoryMethodCommand(String id, String parameter) {
+            this.id = id;
+            this.parameter = parameter;
+        }
+
+        public String getParameter() {
+            return parameter;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
 
     private static class FailingCreateCommand extends CreateCommand {
 

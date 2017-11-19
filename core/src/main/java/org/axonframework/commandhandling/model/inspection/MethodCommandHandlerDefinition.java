@@ -26,6 +26,8 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 
 /**
@@ -61,7 +63,8 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
             } else {
                 commandName = (String) annotationAttributes.get("commandName");
             }
-            isFactoryHandler = (executable instanceof Constructor);
+            final boolean factoryMethod = executable instanceof Method && Modifier.isStatic(executable.getModifiers());
+            isFactoryHandler = executable instanceof Constructor || factoryMethod;
         }
 
         @Override
