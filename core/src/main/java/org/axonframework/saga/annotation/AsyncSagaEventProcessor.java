@@ -159,7 +159,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                     // deadlock if a thread is waiting for the lock and we need its vote.
                     boolean owned = ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier());
                     if (owned && !sagaInvoked) {
-                        persistBatch(sequence);
+                        persistSagasWithRetry(sequence);
                     }
                     boolean shouldCreate = entry.waitForSagaCreationVote(sagaInvoked, processorCount, owned);
                     if (shouldCreate) {
