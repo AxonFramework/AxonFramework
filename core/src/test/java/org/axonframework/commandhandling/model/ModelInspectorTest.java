@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,10 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 import javax.persistence.Id;
@@ -236,6 +235,11 @@ public class ModelInspectorTest {
         assertEquals("id", inspector.getIdentifier(new SomeSubclass()));
     }
 
+    @Test(expected = AxonConfigurationException.class)
+    public void testIllegalFactoryMethodThrowsExceptionClass() throws Exception {
+        ModelInspector.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class);
+    }
+
     private static class JavaxPersistenceAnnotatedHandlers {
 
         @Id
@@ -378,4 +382,41 @@ public class ModelInspectorTest {
 
     }
 
+    public static class SomeAnnotatedFactoryMethodClass {
+
+        @AggregateIdentifier
+        private String id = "id";
+
+        SomeAnnotatedFactoryMethodClass(String id) {
+            this.id = id;
+        }
+
+        @CommandHandler
+        public static SomeAnnotatedFactoryMethodClass factoryMethod(String id) {
+            return new SomeAnnotatedFactoryMethodClass(id);
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    public static class SomeIllegalAnnotatedFactoryMethodClass {
+
+        @AggregateIdentifier
+        private String id = "id";
+
+        SomeIllegalAnnotatedFactoryMethodClass(String id) {
+            this.id = id;
+        }
+
+        @CommandHandler
+        public static Object illegalFactoryMethod(String id) {
+            return new SomeAnnotatedFactoryMethodClass(id);
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
 }
