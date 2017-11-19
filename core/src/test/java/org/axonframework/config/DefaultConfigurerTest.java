@@ -55,8 +55,26 @@ import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 public class DefaultConfigurerTest {
+
+    private EntityManager em;
+
+    @Before
+    public void setUp() throws Exception {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
+        properties.put("hibernate.hbm2ddl.auto", "create-drop");
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
+        em = emf.createEntityManager();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        em.close();
+    }
 
     @Test
     public void defaultConfigurationWithEventSourcing() throws Exception {
@@ -118,7 +136,6 @@ public class DefaultConfigurerTest {
 
     @Test
     public void defaultConfigurationWithUpcaster() throws Exception {
-        EntityManager em = createEntityManager();
         AtomicInteger counter = new AtomicInteger();
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.serializer(), c.upcasterChain(), c.getComponent(PersistenceExceptionResolver.class), () -> em, c.getComponent(TransactionManager.class)))
@@ -139,21 +156,20 @@ public class DefaultConfigurerTest {
     }
 
     @Test
-    public void defaultConfigurationWithJpaRepository() throws Exception {
-        EntityManager em = createEntityManager();
-        Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .configureTransactionManager(c -> new EntityManagerTransactionManager(em))
-                                                .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
-                                                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
-                                                    return commandBus;
-                                                })
-                                                .configureAggregate(
-                                                        defaultConfiguration(StubAggregate.class)
-                                                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
-                                                                                                                     StubAggregate.class, c.eventBus(),
-                                                                                                                     c.parameterResolverFactory())))
-                                                .buildConfiguration();
+    public void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
+        EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager( em ));
+        Configuration config = DefaultConfigurer.jpaConfiguration(() ->em, transactionManager)
+                .configureCommandBus(c -> {
+                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
+                    return commandBus;
+                })
+                .configureAggregate(
+                        defaultConfiguration(StubAggregate.class)
+                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
+                                                                                     StubAggregate.class, c.eventBus(),
+                                                                                     c.parameterResolverFactory())))
+                .buildConfiguration();
 
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
@@ -161,6 +177,33 @@ public class DefaultConfigurerTest {
         assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(1, config.getModules().size());
+        verify(transactionManager).startTransaction();
+    }
+
+    @Test
+    public void testJpaConfigurationWithJpaRepository() throws Exception {
+        EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
+        Configuration config = DefaultConfigurer.jpaConfiguration(() -> em)
+                .registerComponent(TransactionManager.class, c -> transactionManager)
+                .configureCommandBus(c -> {
+                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
+                    return commandBus;
+                })
+                .configureAggregate(
+                        defaultConfiguration(StubAggregate.class)
+                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
+                                                                                     StubAggregate.class, c.eventBus(),
+                                                                                     c.parameterResolverFactory())))
+                .buildConfiguration();
+
+        config.start();
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        assertEquals("test", callback.get());
+        assertNotNull(config.repository(StubAggregate.class));
+        assertEquals(1, config.getModules().size());
+        verify(transactionManager).startTransaction();
     }
 
     @Test
@@ -193,14 +236,6 @@ public class DefaultConfigurerTest {
                                                 .start();
 
         assertThat(config.getModules().size(), CoreMatchers.is(3));
-    }
-
-    private EntityManager createEntityManager() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
-        properties.put("hibernate.hbm2ddl.auto", "create-drop");
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
-        return emf.createEntityManager();
     }
 
     @Entity(name = "StubAggregate")

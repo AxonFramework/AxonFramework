@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -117,24 +118,45 @@ public class DefaultConfigurer implements Configurer {
     /**
      * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
      * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * <br>
+     * This method allows to provide a transaction manager for usage in JTA-managed entity manager.
+     *
+     * @param entityManagerProvider The instance that provides access to the JPA EntityManager
+     * @param transactionManager    TransactionManager to be used for accessing the entity manager.
+     * @return a Configurer instance for further configuration
+     */
+    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+        return new DefaultConfigurer()
+                .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
+                .registerComponent(TransactionManager.class, c -> transactionManager)
+                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
+                        c.serializer(),
+                        c.upcasterChain(),
+                        c.getComponent(PersistenceExceptionResolver.class), null,
+                        c.getComponent(EntityManagerProvider.class),
+                        c.getComponent(TransactionManager.class),
+                        null, null, true))
+                .registerComponent(TokenStore.class,
+                                   c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class),
+                                                          c.serializer()))
+                .registerComponent(SagaStore.class,
+                                   c -> new JpaSagaStore(c.serializer(),
+                                                         c.getComponent(EntityManagerProvider.class)));
+    }
+
+    /**
+     * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
+     * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * <br>
+     * This configuration should be used with an entity manager running without JTA transaction. If you are using a entity manager
+     * in JTA mode, please provide the corresponding {@link TransactionManager} in
+     * the {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider, TransactionManager)} method.
      *
      * @param entityManagerProvider The instance that provides access to the JPA EntityManager
      * @return a Configurer instance for further configuration
      */
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
-        return new DefaultConfigurer().registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
-                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
-                        c.serializer(),
-                        c.upcasterChain(),
-                        null, null,
-                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider),
-                        c.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE),
-                        null, null, true))
-                .registerComponent(TokenStore.class, c -> new JpaTokenStore(
-                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider), c.serializer()))
-                .registerComponent(SagaStore.class, c -> new JpaSagaStore(
-                        c.serializer(),
-                        c.getComponent(EntityManagerProvider.class, () -> entityManagerProvider)));
+        return jpaConfiguration(entityManagerProvider, NoTransactionManager.INSTANCE);
     }
 
     /**
