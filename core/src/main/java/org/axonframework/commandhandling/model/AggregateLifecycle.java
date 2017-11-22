@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,15 +80,6 @@ public abstract class AggregateLifecycle {
     }
 
     /**
-     * Indicates whether this Aggregate instance is 'live'. This means events currently applied represent events that
-     * are currently happening, as opposed to events representing historic decisions.
-     *
-     * @return {@code true} if the aggregate is 'live', {@code false} if the aggregate is initializing state based on
-     * historic events
-     */
-    protected abstract boolean getIsLive();
-
-    /**
      * Marks this aggregate as deleted, instructing a repository to remove that aggregate at an appropriate time.
      * <p/>
      * Note that different repository implementations may react differently to aggregates marked for deletion.
@@ -119,6 +110,15 @@ public abstract class AggregateLifecycle {
         }
         return instance;
     }
+
+    /**
+     * Indicates whether this Aggregate instance is 'live'. This means events currently applied represent events that
+     * are currently happening, as opposed to events representing historic decisions.
+     *
+     * @return {@code true} if the aggregate is 'live', {@code false} if the aggregate is initializing state based on
+     * historic events
+     */
+    protected abstract boolean getIsLive();
 
     /**
      * Marks this aggregate as deleted. Implementations may react differently to aggregates marked for deletion.
@@ -161,17 +161,30 @@ public abstract class AggregateLifecycle {
      * @throws Exception if executing the task causes an exception
      */
     protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        AggregateLifecycle existing = CURRENT.get();
-        CURRENT.set(this);
+        Runnable handle = registerAsCurrent();
         try {
             return task.call();
         } finally {
+            handle.run();
+        }
+    }
+
+    /**
+     * Registers the current AggregateLifecycle as the current lifecycle. The returned Runnable should be executed to
+     * restore the lifecycle to the previous state.
+     *
+     * @return a runnable that must be executed to return the lifecycle to the original state
+     */
+    protected Runnable registerAsCurrent() {
+        AggregateLifecycle existing = CURRENT.get();
+        CURRENT.set(this);
+        return () -> {
             if (existing == null) {
                 CURRENT.remove();
             } else {
                 CURRENT.set(existing);
             }
-        }
+        };
     }
 
     /**
