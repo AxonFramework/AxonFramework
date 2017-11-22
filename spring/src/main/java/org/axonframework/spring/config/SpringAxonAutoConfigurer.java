@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +32,7 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -114,7 +116,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                         genericBeanDefinition(CommandHandlerSubscriber.class).getBeanDefinition());
 
         registry.registerBeanDefinition("queryHandlerSubscriber",
-                genericBeanDefinition(QueryHandlerSubscriber.class).getBeanDefinition());
+                                        genericBeanDefinition(QueryHandlerSubscriber.class).getBeanDefinition());
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
@@ -232,7 +234,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 if (!"".equals(sagaAnnotation.sagaStore())) {
                     //noinspection unchecked
                     sagaConfiguration.configureSagaStore(
-                                    c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
+                            c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
                 }
                 configurer.registerModule(sagaConfiguration);
             }
@@ -247,7 +249,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             Class<?> aggregateType = beanFactory.getType(aggregate);
             AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
             if ("".equals(aggregateAnnotation.repository())) {
-                String repositoryName = lcFirst(aggregate) + "Repository";
+                String repositoryName = lcFirst(aggregateType.getSimpleName()) + "Repository";
                 String factoryName =
                         aggregate.substring(0, 1).toLowerCase() + aggregate.substring(1) + "AggregateFactory";
                 if (beanFactory.containsBean(repositoryName)) {
@@ -261,7 +263,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
                     aggregateConf
                             .configureAggregateFactory(c -> beanFactory.getBean(factoryName, AggregateFactory.class));
-                    if (AnnotationUtils.findAnnotationAttributes(aggregateType, "javax.persistence.Entity").isPresent()) {
+                    String triggerDefinition = aggregateAnnotation.snapshotTriggerDefinition();
+                    if (!"".equals(triggerDefinition)) {
+                        aggregateConf.configureSnapshotTrigger(
+                                c -> beanFactory.getBean(triggerDefinition, SnapshotTriggerDefinition.class));
+                    }
+                    if (AnnotationUtils.findAnnotation(aggregateType, "javax.persistence.Entity") != null) {
                         aggregateConf.configureRepository(
                                 c -> new GenericJpaRepository(
                                         c.getComponent(EntityManagerProvider.class,

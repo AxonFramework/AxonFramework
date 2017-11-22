@@ -88,7 +88,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         this.aggregate = aggregate;
 
         commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
-                                                c -> new AnnotationCommandTargetResolver());
+                                                c -> c.getComponent(CommandTargetResolver.class,
+                                                                    AnnotationCommandTargetResolver::new));
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         aggregateFactory =
@@ -163,6 +164,19 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public AggregateConfigurer<A> configureCommandTargetResolver(
             Function<Configuration, CommandTargetResolver> commandTargetResolverBuilder) {
         commandTargetResolver.update(commandTargetResolverBuilder);
+        return this;
+    }
+
+    /**
+     * Configures snapshotting for the Aggregate type under configuration.
+     * <p>
+     * Note that this configuration is ignored if a custom repository instance is configured.
+     *
+     * @param snapshotTriggerDefinition The function creating the SnapshotTriggerDefinition
+     * @return this configurer instance for chaining
+     */
+    public AggregateConfigurer<A> configureSnapshotTrigger(Function<Configuration, SnapshotTriggerDefinition> snapshotTriggerDefinition) {
+        this.snapshotTriggerDefinition.update(snapshotTriggerDefinition);
         return this;
     }
 

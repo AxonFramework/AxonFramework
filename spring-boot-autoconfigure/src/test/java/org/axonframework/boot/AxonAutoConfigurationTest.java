@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,8 +24,15 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.serialization.Serializer;
@@ -46,8 +54,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 @ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
@@ -71,8 +81,10 @@ public class AxonAutoConfigurationTest {
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
         assertNotNull(applicationContext.getBean(EventBus.class));
+        assertNotNull(applicationContext.getBean(EventStore.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
+        assertEquals(MultiParameterResolverFactory.class, applicationContext.getBean(ParameterResolverFactory.class).getClass());
         assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
         assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
         assertNotNull(applicationContext.getBean(Context.MySaga.class));
@@ -83,6 +95,16 @@ public class AxonAutoConfigurationTest {
 
     @Configuration
     public static class Context {
+
+        @Bean
+        public SnapshotTriggerDefinition snapshotTriggerDefinition() {
+            return new EventCountSnapshotTriggerDefinition(mock(Snapshotter.class), 2);
+        }
+
+        @Bean
+        public ParameterResolverFactory customerParameterResolverFactory() {
+            return new SimpleResourceParameterResolverFactory(singleton(new CustomResource()));
+        }
 
         @Bean
         public EventStorageEngine storageEngine() {
@@ -99,11 +121,11 @@ public class AxonAutoConfigurationTest {
             return new SimpleCorrelationDataProvider("key2");
         }
 
-        @Aggregate
+        @Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition")
         public static class MyAggregate {
 
             @CommandHandler
-            public void handle(String type, SomeComponent test) {
+            public void handle(String type, SomeComponent test, CustomResource resource) {
 
             }
 
@@ -135,6 +157,10 @@ public class AxonAutoConfigurationTest {
         @Component
         public static class SomeOtherComponent {
         }
+
+
+    }
+    public static class CustomResource {
 
     }
 }
