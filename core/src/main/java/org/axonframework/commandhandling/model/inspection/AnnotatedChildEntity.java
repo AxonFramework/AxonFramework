@@ -87,38 +87,36 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @SuppressWarnings("unchecked")
     @Override
     public void publish(EventMessage<?> msg, P declaringInstance) {
-        if (eventForwardingMode == ForwardingMode.NONE) {
-            return;
-        }
-
         eventTargetResolver.apply(msg, declaringInstance)
+                           .filter(target -> filterTarget(msg, target))
                            .collect(Collectors.toList())
-                           .forEach(target -> publishToTarget(msg, target));
+                           .forEach(target -> entityModel.publish(msg, target));
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
-        return commandHandlers;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void publishToTarget(EventMessage<?> msg, C target) {
-        if (eventForwardingMode == ForwardingMode.ALL) {
-            entityModel.publish(msg, target);
+    private boolean filterTarget(EventMessage msg, C target) {
+        if (eventForwardingMode == ForwardingMode.NONE) {
+            return false;
+        } else if (eventForwardingMode == ForwardingMode.ALL) {
+            return true;
         } else if (eventForwardingMode == ForwardingMode.ROUTING_KEY) {
             Property eventRoutingProperty = getProperty(msg.getPayloadType(), eventRoutingKey());
 
             Object eventRoutingValue = eventRoutingProperty.getValue(msg.getPayload());
             Object entityIdentifier = entityModel.getIdentifier(target);
 
-            if (Objects.equals(eventRoutingValue, entityIdentifier)) {
-                entityModel.publish(msg, target);
-            }
+            return Objects.equals(eventRoutingValue, entityIdentifier);
         }
+        return false;
     }
 
     private String eventRoutingKey() {
         return Objects.equals(eventRoutingKey, EMPTY_STRING) ? entityModel.routingKey() : eventRoutingKey;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
+        return commandHandlers;
     }
 }
