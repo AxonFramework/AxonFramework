@@ -54,58 +54,38 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                 (Boolean) attributes.get("forwardCommands"),
                 eventForwardingMode(forwardEvents, eventForwardingMode),
                 (String) attributes.get("eventRoutingKey"),
-                (msg, parent) -> createCommandTargetResolvers(msg, parent, field, childEntityModel),
-                (msg, parent) -> createEventTargetResolvers(field, parent)
+                (msg, parent) -> resolveCommandTarget(msg, parent, field, childEntityModel),
+                (msg, parent) -> resolveEventTarget(parent, field)
         ));
     }
 
     /**
-     * @param field
-     * @return
+     * Check whether the given {@link java.lang.reflect.Field} is of a type the
+     * {@link org.axonframework.commandhandling.model.inspection.ChildEntityDefinition} supports. The Collection
+     * implementation for example check whether the field is of type {@link java.lang.Iterable}.
+     *
+     * @param field A {@link java.lang.reflect.Field} containing a Child Entity.
+     * @return true if the type is as required by the implementation and false if it is not.
      */
     protected abstract boolean fieldIsOfType(Field field);
 
     /**
-     * @param declaringEntity
-     * @param attributes
-     * @param field
-     * @param <T>
-     * @return
+     * Extracts the Child Entity contained in the given {@code declaringEntity} as an
+     * {@link org.axonframework.commandhandling.model.inspection.EntityModel}. The type of the Child Entity is defined
+     * through a key in the provided {@code attributes} or based on given {@link java.lang.reflect.Field}.
+     *
+     * @param declaringEntity The {@link org.axonframework.commandhandling.model.inspection.EntityModel} declaring the
+     *                        given {@code field}.
+     * @param attributes      A {@link java.util.Map} containing the
+     *                        {@link org.axonframework.commandhandling.model.AggregateMember} attributes.
+     * @param field           The {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param <T>             The type {@code T} of the given {@code declaringEntity}
+     *                        {@link org.axonframework.commandhandling.model.inspection.EntityModel}.
+     * @return the Child Entity contained in the {@code declaringEntity}.
      */
     protected abstract <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
                                                                        Map<String, Object> attributes,
                                                                        Field field);
-
-    /**
-     * Resolves the type of the Child Entity, either by pulling it from the {@link org.axonframework.commandhandling.model.AggregateMember}
-     * its attributes, or by resolving it him self through the {@link AbstractChildEntityDefinition#resolveType(Map,
-     * Field)} function.
-     *
-     * @param attributes a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link java.lang.Object}
-     *                   containing the attributes of the {@link org.axonframework.commandhandling.model.AggregateMember}
-     *                   annotation.
-     * @param field      a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
-     * @return the type as a {@link java.lang.Class} of the Child Entity.
-     */
-//    private Class<?> resolveType(Map<String, Object> attributes, Field field) {
-//        Class<?> entityType = (Class<?>) attributes.get("type");
-//        if (Void.class.equals(entityType)) {
-//            entityType = resolveGenericType(field).orElseThrow(() -> new AxonConfigurationException(format(
-//                    "Unable to resolve entity type of field [%s]. Please provide type explicitly in @AggregateMember annotation.",
-//                    field.toGenericString()
-//            )));
-//        }
-//
-//        return entityType;
-//    }
-
-    /**
-     * Resolves the generic type of a {@link java.lang.reflect.Field} Child Entity.
-     *
-     * @param field a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
-     * @return the type as a {@link java.lang.Class} of the given {@code field}.
-     */
-//    protected abstract Optional<Class<?>> resolveGenericType(Field field);
 
     /**
      * Retrieves the routing keys of every command handler on the given {@code childEntityModel} to be able to correctly
@@ -115,8 +95,8 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      *                         childEntityModel} is based.
      * @param childEntityModel a {@link org.axonframework.commandhandling.model.inspection.EntityModel} to retrieve the
      *                         routing key properties from.
-     * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link
-     * org.axonframework.common.property.Property} from Command Message name to routing key.
+     * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/
+     * {@link org.axonframework.common.property.Property} from Command Message name to routing key.
      */
     @SuppressWarnings("WeakerAccess")
     protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
@@ -155,44 +135,39 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
         return property;
     }
 
-    /**
-     * Determine the event forwarding mode of this Child Entity, based on the deprecated {@code forwardEvents} field
-     * and
-     * the {@code eventForwardingMode} field. Returns {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code
-     * false} , and the supplied {@code eventForwardingMode} if {@code forwardEvents} is {@code true}.
-     * <p>
-     * As long as the {@link org.axonframework.commandhandling.model.AggregateMember} still services the {@code
-     * forwardEvents} field, this function needs to exists.
-     *
-     * @param forwardEvents       a {@link java.lang.Boolean} flag to forward events yes/no.
-     * @param eventForwardingMode a {@link org.axonframework.commandhandling.model.ForwardingMode} describing the
-     *                            desired forwarding modes of events for this Child Entity.
-     * @return {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code false}, and the given {@code
-     * eventForwardingMode} if {@code forwardEvents} is {@code true}.
-     */
     private ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
         return !forwardEvents ? ForwardingMode.NONE : eventForwardingMode;
     }
 
     /**
-     * @param msg
-     * @param parent
-     * @param field
-     * @param childEntityModel
-     * @param <T>
-     * @return
+     * Resolve the target of an incoming {@link org.axonframework.commandhandling.CommandMessage} to the right Child
+     * Entity. Returns the Child Entity the {@code msg} needs to be routed to.
+     *
+     * @param msg              The {@link org.axonframework.commandhandling.CommandMessage} which is being resolved to a
+     *                         target entity.
+     * @param parent           The {@code parent} Entity of type {@code T} of this Child Entity.
+     * @param field            The {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param childEntityModel The {@link org.axonframework.commandhandling.model.inspection.EntityModel} for the Child
+     *                         Entity.
+     * @param <T>              The type {@code T} of the given {@code parent} Entity.
+     * @return The Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
      */
-    protected abstract <T> Object createCommandTargetResolvers(CommandMessage<?> msg,
-                                                               T parent,
-                                                               Field field,
-                                                               EntityModel<Object> childEntityModel);
+    protected abstract <T> Object resolveCommandTarget(CommandMessage<?> msg,
+                                                       T parent,
+                                                       Field field,
+                                                       EntityModel<Object> childEntityModel);
 
     /**
-     * @param field
-     * @param parent
-     * @param <T>
-     * @return
+     * Resolve the targets of an incoming {@link org.axonframework.eventhandling.EventMessage} to the right Child
+     * Entities. Returns an {@link java.lang.Iterable} of all the Child Entities the Event Message needs to be routed
+     * to.
+     *
+     * @param parent The {@code parent} Entity of type {@code T} of this Child Entity.
+     * @param field  The {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param <T>    The type {@code T} of the given {@code parent} Entity.
+     * @return An {@link java.lang.Iterable} of Child Entities which are the targets of the incoming
+     * {@link org.axonframework.eventhandling.EventMessage}.
      */
-    protected abstract <T> Iterable<Object> createEventTargetResolvers(Field field, T parent);
+    protected abstract <T> Iterable<Object> resolveEventTarget(T parent, Field field);
 }
 
