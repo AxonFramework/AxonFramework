@@ -61,25 +61,39 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         this.configurer = configurer;
     }
 
-    @NoBeanOfType(CommandBus.class)
-    @Bean
+    @Override
     public CommandBus commandBus() {
         return config.commandBus();
     }
 
-    @NoBeanOfType(QueryBus.class)
-    @Bean
     @Override
     public QueryBus queryBus() {
         return config.queryBus();
     }
 
-    @NoBeanOfType(EventBus.class)
-    @Bean
     @Override
     public EventBus eventBus() {
         return config.eventBus();
     }
+
+    @NoBeanOfType(QueryBus.class)
+    @Bean("queryBus")
+    public QueryBus defaultQueryBus() {
+        return config.queryBus();
+    }
+
+    @NoBeanOfType(CommandBus.class)
+    @Bean("commandBus")
+    public CommandBus defaultCommandBus() {
+        return commandBus();
+    }
+
+    @NoBeanOfType(EventBus.class)
+    @Bean("eventBus")
+    public EventBus defaultEventBus() {
+        return eventBus();
+    }
+
     @Override
     public ResourceInjector resourceInjector() {
         return config.resourceInjector();
