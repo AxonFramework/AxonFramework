@@ -119,12 +119,17 @@ public class DistributedCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
-        MonitorAwareCallback<? super C, R> monitorAwareCallback = new MonitorAwareCallback<>(callback, messageMonitor.onMessageIngested(command));
-
+        MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(command);
         Member destination = commandRouter.findDestination(command)
-                .orElseThrow(() -> new CommandDispatchException("No node known to accept " + command.getCommandName()));
+                                          .orElseThrow(() -> {
+                                              CommandDispatchException exception = new CommandDispatchException(
+                                                      "No node known to accept " + command.getCommandName());
+                                              messageMonitorCallback.reportFailure(exception);
+                                              return exception;
+                                          });
         try {
-            connector.send(destination, interceptedCommand, monitorAwareCallback);
+            connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
+                                                                                       messageMonitorCallback));
         } catch (Exception e) {
             destination.suspect();
             throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);

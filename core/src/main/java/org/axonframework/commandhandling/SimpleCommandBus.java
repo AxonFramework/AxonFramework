@@ -21,7 +21,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -32,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -111,7 +116,14 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"unchecked"})
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
-        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
+
+        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command).orElseThrow(() -> {
+            NoHandlerForCommandException exception = new NoHandlerForCommandException(
+                    format("No handler was subscribed to command [%s]", command.getCommandName()));
+            monitorCallback.reportFailure(exception);
+            return exception;
+        });
+
         try {
             Object result = doDispatch(command, handler);
             monitorCallback.reportSuccess();
@@ -122,13 +134,8 @@ public class SimpleCommandBus implements CommandBus {
         }
     }
 
-    private MessageHandler<? super CommandMessage<?>> findCommandHandlerFor(CommandMessage<?> command) {
-        final MessageHandler<? super CommandMessage<?>> handler = subscriptions.get(command.getCommandName());
-        if (handler == null) {
-            throw new NoHandlerForCommandException(format("No handler was subscribed to command [%s]",
-                                                          command.getCommandName()));
-        }
-        return handler;
+    private Optional<MessageHandler<? super CommandMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
+        return Optional.of(subscriptions.get(command.getCommandName()));
     }
 
     private <C> Object doDispatch(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler) throws Exception {

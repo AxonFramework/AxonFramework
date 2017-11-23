@@ -15,6 +15,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Optional;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
@@ -83,6 +84,25 @@ public class DistributedCommandBusTest {
     }
 
     @Test
+    public void testUnknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector);
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
+        when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
+
+        try {
+            testSubject.dispatch(testCommandMessage);
+        } catch (CommandDispatchException e) {
+            assertTrue(e.getMessage().startsWith("No node known to accept"));
+        }
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockMessageMonitor, never()).onMessageIngested(any());
+        verify(mockMonitorCallback, never()).reportSuccess();
+    }
+
+    @Test
     public void testDispatchWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
@@ -94,7 +114,27 @@ public class DistributedCommandBusTest {
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
         verify(mockCallback).onSuccess(testCommandMessage, null);
+    }
 
+    @Test
+    public void testUnknownCommandWithCallbackAndMessageMonitor() throws Exception {
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
+        when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
+
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        try {
+            testSubject.dispatch(testCommandMessage);
+        } catch (CommandDispatchException e) {
+            assertTrue(e.getMessage().startsWith("No node known to accept"));
+        }
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockMessageMonitor).onMessageIngested(any());
+        verify(mockMonitorCallback).reportFailure(any());
+        verify(mockCallback, never()).onFailure(any(), any());
+        verify(mockCallback, never()).onSuccess(any(), any());
     }
 
     @Test
