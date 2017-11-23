@@ -44,23 +44,17 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
         if (attributes == null || fieldIsOfType(field)) {
             return Optional.empty();
         }
-        EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
+        EntityModel<Object> childEntityModel = extractChildEntityModel(declaringEntity, attributes, field);
 
         Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
         ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
-        Map<String, Property<Object>> commandHandlerRoutingKeys =
-                extractCommandHandlerRoutingKeys(field, childEntityModel);
 
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 eventForwardingMode(forwardEvents, eventForwardingMode),
                 (String) attributes.get("eventRoutingKey"),
-                (msg, parent) -> createCommandTargetResolvers(msg,
-                                                              parent,
-                                                              commandHandlerRoutingKeys,
-                                                              field,
-                                                              childEntityModel),
+                (msg, parent) -> createCommandTargetResolvers(msg, parent, field, childEntityModel),
                 (msg, parent) -> createEventTargetResolvers(field, parent)
         ));
     }
@@ -70,6 +64,17 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @return
      */
     protected abstract boolean fieldIsOfType(Field field);
+
+    /**
+     * @param declaringEntity
+     * @param attributes
+     * @param field
+     * @param <T>
+     * @return
+     */
+    protected abstract <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
+                                                                       Map<String, Object> attributes,
+                                                                       Field field);
 
     /**
      * Resolves the type of the Child Entity, either by pulling it from the {@link org.axonframework.commandhandling.model.AggregateMember}
@@ -82,17 +87,17 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @param field      a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
      * @return the type as a {@link java.lang.Class} of the Child Entity.
      */
-    private Class<?> resolveType(Map<String, Object> attributes, Field field) {
-        Class<?> entityType = (Class<?>) attributes.get("type");
-        if (Void.class.equals(entityType)) {
-            entityType = resolveGenericType(field).orElseThrow(() -> new AxonConfigurationException(format(
-                    "Unable to resolve entity type of field [%s]. Please provide type explicitly in @AggregateMember annotation.",
-                    field.toGenericString()
-            )));
-        }
-
-        return entityType;
-    }
+//    private Class<?> resolveType(Map<String, Object> attributes, Field field) {
+//        Class<?> entityType = (Class<?>) attributes.get("type");
+//        if (Void.class.equals(entityType)) {
+//            entityType = resolveGenericType(field).orElseThrow(() -> new AxonConfigurationException(format(
+//                    "Unable to resolve entity type of field [%s]. Please provide type explicitly in @AggregateMember annotation.",
+//                    field.toGenericString()
+//            )));
+//        }
+//
+//        return entityType;
+//    }
 
     /**
      * Resolves the generic type of a {@link java.lang.reflect.Field} Child Entity.
@@ -100,7 +105,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @param field a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
      * @return the type as a {@link java.lang.Class} of the given {@code field}.
      */
-    protected abstract Optional<Class<?>> resolveGenericType(Field field);
+//    protected abstract Optional<Class<?>> resolveGenericType(Field field);
 
     /**
      * Retrieves the routing keys of every command handler on the given {@code childEntityModel} to be able to correctly
@@ -113,8 +118,9 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link
      * org.axonframework.common.property.Property} from Command Message name to routing key.
      */
-    private Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
-                                                                           EntityModel<Object> childEntityModel) {
+    @SuppressWarnings("WeakerAccess")
+    protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
+                                                                             EntityModel<Object> childEntityModel) {
         return childEntityModel.commandHandlers()
                                .values()
                                .stream()
@@ -171,7 +177,6 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     /**
      * @param msg
      * @param parent
-     * @param commandHandlerRoutingKeys
      * @param field
      * @param childEntityModel
      * @param <T>
@@ -179,7 +184,6 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      */
     protected abstract <T> Object createCommandTargetResolvers(CommandMessage<?> msg,
                                                                T parent,
-                                                               Map<String, Property<Object>> commandHandlerRoutingKeys,
                                                                Field field,
                                                                EntityModel<Object> childEntityModel);
 

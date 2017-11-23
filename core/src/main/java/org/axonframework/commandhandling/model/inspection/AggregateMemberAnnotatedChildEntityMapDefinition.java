@@ -17,13 +17,16 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
+
+import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.resolveGenericType;
 
 /**
  * Implementation of a {@link AbstractChildEntityDefinition} that is used to detect Maps with entities as
@@ -33,24 +36,38 @@ import java.util.Optional;
 public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractChildEntityDefinition {
 
     @Override
-    protected Optional<Class<?>> resolveGenericType(Field field) {
-        return ReflectionUtils.resolveGenericType(field, 1);
-    }
-
-    @Override
     protected boolean fieldIsOfType(Field field) {
         return !Map.class.isAssignableFrom(field.getType());
     }
 
     @Override
+    protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
+                                                              Map<String, Object> attributes,
+                                                              Field field) {
+        Class<?> entityType = (Class<?>) attributes.get("type");
+        if (Void.class.equals(entityType)) {
+            entityType = resolveGenericType(field, 1).orElseThrow(
+                    () -> new AxonConfigurationException(format(
+                            "Unable to resolve entity type of field [%s]. Please provide type explicitly in @AggregateMember annotation.",
+                            field.toGenericString()
+                    )));
+        }
+
+        return declaringEntity.modelOf(entityType);
+    }
+
+    @Override
     protected <T> Object createCommandTargetResolvers(CommandMessage<?> msg,
                                                       T parent,
-                                                      Map<String, Property<Object>> commandHandlerRoutingKeys,
                                                       Field field,
                                                       EntityModel<Object> childEntityModel) {
+        Map<String, Property<Object>> commandHandlerRoutingKeys =
+                extractCommandHandlerRoutingKeys(field, childEntityModel);
+
         Object routingValue = commandHandlerRoutingKeys.get(msg.getCommandName())
                                                        .getValue(msg.getPayload());
         Map<?, ?> fieldValue = ReflectionUtils.getFieldValue(field, parent);
+
         return fieldValue == null ? null : fieldValue.get(routingValue);
     }
 

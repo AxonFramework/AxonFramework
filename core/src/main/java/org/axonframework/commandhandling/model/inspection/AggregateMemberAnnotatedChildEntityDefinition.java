@@ -15,53 +15,42 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
  * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
  */
-public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntityDefinition {
+public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
-        Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
-        if (attributes == null
-                || Iterable.class.isAssignableFrom(field.getType())
-                || Map.class.isAssignableFrom(field.getType())) {
-            return Optional.empty();
-        }
-
-        EntityModel entityModel = declaringEntity.modelOf(field.getType());
-
-        Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
-        ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
-
-        return Optional.of(new AnnotatedChildEntity<>(
-                entityModel,
-                (Boolean) attributes.get("forwardCommands"),
-                eventForwardingMode(forwardEvents, eventForwardingMode),
-                (String) attributes.get("eventRoutingKey"),
-                (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
-                (msg, parent) -> {
-                    Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
-                    return fieldVal == null ? emptyList() : singleton(fieldVal);
-                }
-        ));
+    protected boolean fieldIsOfType(Field field) {
+        return Iterable.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType());
     }
 
-    private ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
-        return !forwardEvents ? ForwardingMode.NONE : eventForwardingMode;
+    @Override
+    protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
+                                                              Map<String, Object> attributes, Field field) {
+        return declaringEntity.modelOf(field.getType());
+    }
+
+    @Override
+    protected <T> Object createCommandTargetResolvers(CommandMessage<?> msg, T parent,
+                                                      Field field, EntityModel<Object> childEntityModel) {
+        return ReflectionUtils.getFieldValue(field, parent);
+    }
+
+    @Override
+    protected <T> Iterable<Object> createEventTargetResolvers(Field field, T parent) {
+        Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
+        return fieldVal == null ? emptyList() : singleton(fieldVal);
     }
 }
