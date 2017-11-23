@@ -15,6 +15,8 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
@@ -27,17 +29,51 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
  * Abstract implementation of the {@link org.axonframework.commandhandling.model.inspection.ChildEntityDefinition} to
  * provide reusable functionality for collections of ChildEntityDefinitions.
  */
-public abstract class AbstractChildEntityCollectionDefinition implements ChildEntityDefinition {
+public abstract class AbstractChildEntityDefinition implements ChildEntityDefinition {
+
+    @Override
+    public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
+        Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
+        if (attributes == null || fieldIsOfType(field)) {
+            return Optional.empty();
+        }
+        EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
+
+        Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
+        ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
+        Map<String, Property<Object>> commandHandlerRoutingKeys =
+                extractCommandHandlerRoutingKeys(field, childEntityModel);
+
+        return Optional.of(new AnnotatedChildEntity<>(
+                childEntityModel,
+                (Boolean) attributes.get("forwardCommands"),
+                eventForwardingMode(forwardEvents, eventForwardingMode),
+                (String) attributes.get("eventRoutingKey"),
+                (msg, parent) -> createCommandTargetResolvers(msg,
+                                                              parent,
+                                                              commandHandlerRoutingKeys,
+                                                              field,
+                                                              childEntityModel),
+                (msg, parent) -> createEventTargetResolvers(field, parent)
+        ));
+    }
+
+    /**
+     * @param field
+     * @return
+     */
+    protected abstract boolean fieldIsOfType(Field field);
 
     /**
      * Resolves the type of the Child Entity, either by pulling it from the {@link org.axonframework.commandhandling.model.AggregateMember}
-     * its attributes, or by resolving it him self through the {@link AbstractChildEntityCollectionDefinition#resolveType(Map,
+     * its attributes, or by resolving it him self through the {@link AbstractChildEntityDefinition#resolveType(Map,
      * Field)} function.
      *
      * @param attributes a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link java.lang.Object}
@@ -46,7 +82,7 @@ public abstract class AbstractChildEntityCollectionDefinition implements ChildEn
      * @param field      a {@link java.lang.reflect.Field} denoting the Child Entity to resolve the type of.
      * @return the type as a {@link java.lang.Class} of the Child Entity.
      */
-    protected Class<?> resolveType(Map<String, Object> attributes, Field field) {
+    private Class<?> resolveType(Map<String, Object> attributes, Field field) {
         Class<?> entityType = (Class<?>) attributes.get("type");
         if (Void.class.equals(entityType)) {
             entityType = resolveGenericType(field).orElseThrow(() -> new AxonConfigurationException(format(
@@ -77,8 +113,8 @@ public abstract class AbstractChildEntityCollectionDefinition implements ChildEn
      * @return a {@link java.util.Map} of key/value types {@link java.lang.String}/{@link
      * org.axonframework.common.property.Property} from Command Message name to routing key.
      */
-    protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
-                                                                             EntityModel<Object> childEntityModel) {
+    private Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Field field,
+                                                                           EntityModel<Object> childEntityModel) {
         return childEntityModel.commandHandlers()
                                .values()
                                .stream()
@@ -126,11 +162,33 @@ public abstract class AbstractChildEntityCollectionDefinition implements ChildEn
      * @param eventForwardingMode a {@link org.axonframework.commandhandling.model.ForwardingMode} describing the
      *                            desired forwarding modes of events for this Child Entity.
      * @return {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code false}, and the given {@code
-     * @return {@code ForwardingMode.NONE} if {@code forwardEvents} is {@code false}, and the given {@code
      * eventForwardingMode} if {@code forwardEvents} is {@code true}.
      */
-    protected ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
+    private ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
         return !forwardEvents ? ForwardingMode.NONE : eventForwardingMode;
     }
+
+    /**
+     * @param msg
+     * @param parent
+     * @param commandHandlerRoutingKeys
+     * @param field
+     * @param childEntityModel
+     * @param <T>
+     * @return
+     */
+    protected abstract <T> Object createCommandTargetResolvers(CommandMessage<?> msg,
+                                                               T parent,
+                                                               Map<String, Property<Object>> commandHandlerRoutingKeys,
+                                                               Field field,
+                                                               EntityModel<Object> childEntityModel);
+
+    /**
+     * @param field
+     * @param parent
+     * @param <T>
+     * @return
+     */
+    protected abstract <T> Iterable<Object> createEventTargetResolvers(Field field, T parent);
 }
 
