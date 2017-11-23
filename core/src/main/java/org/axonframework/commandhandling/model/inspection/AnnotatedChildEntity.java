@@ -21,16 +21,11 @@ import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Spliterator;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
@@ -49,19 +44,19 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     private final ForwardingMode eventForwardingMode;
     private final String eventRoutingKey;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
-    private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
+    private final BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver;
 
     /**
      * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command
      * and event handling to an annotated child entity.
      *
-     * @param entityModel           a {@link org.axonframework.commandhandling.model.inspection.EntityModel} describing
+     * @param entityModel           a {@link EntityModel} describing
      *                              the entity.
      * @param forwardCommands       flag indicating whether commands should be forwarded to the entity
-     * @param eventForwardingMode   a {@link org.axonframework.commandhandling.model.ForwardingMode} enum describing the
+     * @param eventForwardingMode   a {@link ForwardingMode} enum describing the
      *                              used forwarding mode for events.
      *                              only entity specific events should be forwarded
-     * @param eventRoutingKey       a {@link java.lang.String} specifying the routing key for all events within this
+     * @param eventRoutingKey       a {@link String} specifying the routing key for all events within this
      *                              Entity.
      * @param commandTargetResolver resolver for command handler methods on the target
      * @param eventTargetResolver   resolver for event handler methods on the target
@@ -72,7 +67,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
                                 ForwardingMode eventForwardingMode,
                                 String eventRoutingKey,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
-                                BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver) {
+                                BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver) {
         this.entityModel = entityModel;
         this.eventForwardingMode = eventForwardingMode;
         this.eventRoutingKey = eventRoutingKey;
@@ -95,44 +90,14 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
             return;
         }
 
-        Iterable<C> targets = eventTargetResolver.apply(msg, declaringInstance);
-        if (targets != null) {
-            safeForEach(targets, target -> publishToTarget(msg, target));
-        }
+        eventTargetResolver.apply(msg, declaringInstance)
+                           .forEach(target -> publishToTarget(msg, target));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
-    }
-
-    private void safeForEach(Iterable<C> targets, Consumer<C> action) {
-        Spliterator<C> spliterator = targets.spliterator();
-        // if the spliterator is IMMUTABLE or CONCURRENT it is safe to use directly
-        if (spliteratorIsImmutableOrConcurrent(spliterator)) {
-            spliterator.forEachRemaining(action);
-        } else {
-            // possibly unsafe collection with a fail-fast iterator, create a copy and iterate over that instead
-            copy(targets).forEach(action);
-        }
-    }
-
-    private boolean spliteratorIsImmutableOrConcurrent(Spliterator<C> spliterator) {
-        return spliterator.hasCharacteristics(Spliterator.IMMUTABLE) ||
-                spliterator.hasCharacteristics(Spliterator.CONCURRENT);
-    }
-
-    private Iterable<C> copy(Iterable<C> original) {
-        if (original instanceof Collection) {
-            // use ArrayList because the size is known in advance
-            return new ArrayList<>((Collection<C>) original);
-        } else {
-            // use LinkedList because the size is not known in advance; growing an ArrayList is expensive
-            List<C> list = new LinkedList<>();
-            original.forEach(list::add);
-            return list;
-        }
     }
 
     @SuppressWarnings("unchecked")

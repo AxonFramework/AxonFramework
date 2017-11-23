@@ -21,9 +21,7 @@ import org.axonframework.common.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
+import java.util.stream.Stream;
 
 /**
  * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
@@ -52,8 +50,8 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
     }
 
     @Override
-    protected <T> Iterable<Object> resolveEventTarget(T parent, Field field) {
+    protected <T> Stream<Object> resolveEventTarget(T parent, Field field) {
         Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
-        return fieldVal == null ? emptyList() : singleton(fieldVal);
+        return fieldVal == null ? Stream.empty() : Stream.of(fieldVal);
     }
 }

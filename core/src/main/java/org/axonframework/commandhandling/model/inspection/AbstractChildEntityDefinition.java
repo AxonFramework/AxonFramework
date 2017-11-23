@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -47,16 +48,15 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
         EntityModel<Object> childEntityModel = extractChildEntityModel(declaringEntity, attributes, field);
 
         Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
-        ForwardingMode eventForwardingMode = (ForwardingMode) attributes.get("eventForwardingMode");
-
+        ForwardingMode eventForwardingMode =
+                eventForwardingMode(forwardEvents, (ForwardingMode) attributes.get("eventForwardingMode"));
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
-                eventForwardingMode(forwardEvents, eventForwardingMode),
+                eventForwardingMode,
                 (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> resolveCommandTarget(msg, parent, field, childEntityModel),
-                (msg, parent) -> resolveEventTarget(parent, field)
-        ));
+                (msg, parent) -> resolveEventTarget(parent, field)));
     }
 
     /**
@@ -159,15 +159,15 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
 
     /**
      * Resolve the targets of an incoming {@link org.axonframework.eventhandling.EventMessage} to the right Child
-     * Entities. Returns an {@link java.lang.Iterable} of all the Child Entities the Event Message needs to be routed
-     * to.
+     * Entities. Returns a {@link java.util.stream.Stream} of all the Child Entities the Event Message could be
+     * routed to.
      *
      * @param parent The {@code parent} Entity of type {@code T} of this Child Entity.
      * @param field  The {@link java.lang.reflect.Field} containing the Child Entity.
      * @param <T>    The type {@code T} of the given {@code parent} Entity.
-     * @return An {@link java.lang.Iterable} of Child Entities which are the targets of the incoming
+     * @return A {@link java.util.stream.Stream} of Child Entities which might be the targets of the incoming
      * {@link org.axonframework.eventhandling.EventMessage}.
      */
-    protected abstract <T> Iterable<Object> resolveEventTarget(T parent, Field field);
+    protected abstract <T> Stream<Object> resolveEventTarget(T parent, Field field);
 }
 

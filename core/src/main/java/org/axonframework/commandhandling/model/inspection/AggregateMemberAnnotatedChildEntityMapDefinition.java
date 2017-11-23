@@ -22,8 +22,8 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.resolveGenericType;
@@ -72,8 +72,8 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
     }
 
     @Override
-    protected <T> Iterable<Object> resolveEventTarget(T parent, Field field) {
+    protected <T> Stream<Object> resolveEventTarget(T parent, Field field) {
         Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parent);
-        return fieldValue == null ? Collections.emptyList() : fieldValue.values();
+        return fieldValue == null ? Stream.empty() : Stream.of(fieldValue.values());
     }
 }
