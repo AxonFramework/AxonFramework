@@ -54,11 +54,10 @@ public @interface AggregateMember {
     boolean forwardEvents() default true;
 
     /**
-     * Indicates the forwarding mode used for events within this entity. Defaults to {@code ForwardingMode.ALL} to allow
-     * all events through.
-     * forwarding events to this Aggregate Member.
+     * Indicates the forwarding mode used for events within this entity. Defaults to
+     * {@link org.axonframework.commandhandling.model.ForwardAll} to allow all events through.
      */
-    ForwardingMode eventForwardingMode() default ForwardingMode.ALL;
+    Class<? extends ForwardingMode> eventForwardingMode() default ForwardAll.class;
 
     /**
      * The property of the event to be used as a routing key towards this Aggregate Member. Defaults to {@code ""},

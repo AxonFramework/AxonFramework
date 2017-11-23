@@ -73,17 +73,14 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
         return fieldValue == null ? null : fieldValue.get(routingValue);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected <T> Stream<Object> resolveEventTarget(EventMessage msg,
+    protected <T> Stream<Object> resolveEventTarget(EventMessage message,
                                                     T parentEntity,
                                                     Field field,
-                                                    ForwardingMode eventForwardingMode,
-                                                    String eventRoutingKey,
-                                                    EntityModel childEntity) {
+                                                    ForwardingMode eventForwardingMode) {
         Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
         Stream<Object> eventTargetStream = fieldValue == null ? Stream.empty() : fieldValue.values().stream();
-        return eventTargetStream.filter(
-                target -> filterTarget(msg, target, eventForwardingMode, eventRoutingKey, childEntity)
-        );
+        return eventTargetStream.filter(target -> eventForwardingMode.forwardMessage(message, target));
     }
 }

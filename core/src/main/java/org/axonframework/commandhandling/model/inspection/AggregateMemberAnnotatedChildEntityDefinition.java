@@ -51,17 +51,14 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
         return ReflectionUtils.getFieldValue(field, parent);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected <T> Stream<Object> resolveEventTarget(EventMessage msg,
+    protected <T> Stream<Object> resolveEventTarget(EventMessage message,
                                                     T parentEntity,
                                                     Field field,
-                                                    ForwardingMode eventForwardingMode,
-                                                    String eventRoutingKey,
-                                                    EntityModel childEntity) {
+                                                    ForwardingMode eventForwardingMode) {
         Object fieldVal = ReflectionUtils.getFieldValue(field, parentEntity);
         Stream<Object> eventTargetStream = fieldVal == null ? Stream.empty() : Stream.of(fieldVal);
-        return eventTargetStream.filter(
-                target -> filterTarget(msg, target, eventForwardingMode, eventRoutingKey, childEntity)
-        );
+        return eventTargetStream.filter(target -> eventForwardingMode.forwardMessage(message, target));
     }
 }

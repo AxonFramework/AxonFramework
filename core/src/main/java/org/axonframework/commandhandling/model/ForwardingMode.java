@@ -15,23 +15,30 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.messaging.Message;
+
+import java.util.function.Supplier;
+
 /**
- * Enumeration describing the possible forwarding modes usable. Is for example used in the {@link
- * org.axonframework.commandhandling.model.AggregateMember} to describe how events should be routed to it.
+ * Interface describing the required functionality to forward a message.
+ * An example implementation is the {@link ForwardAll}, which forwards all incoming messages.
  */
-public enum ForwardingMode {
+public interface ForwardingMode<T extends Message<?>> {
 
     /**
-     * Forwards all the messages.
+     * Creates an instance of an implementation of a {@link ForwardingMode}.
+     *
+     * @return an implementation of a {@link ForwardingMode}.
      */
-    ALL,
-    /**
-     * Forwards none of the messages.
-     */
-    NONE,
-    /**
-     * Forwards messages based on a routing key value.
-     */
-    ROUTING_KEY
+    ForwardingMode getInstance(Supplier<ForwardingMode> forwardingModeConstructor);
 
+    /**
+     * Check whether the given {@code message} should be forwarded to the given {@code target}.
+     *
+     * @param message the message of type {@code T} to be forwarded.
+     * @param target  the target of type {@code E} where the {@code message} shoudl be forwarded to
+     * @param <E>     the type of the {@code target}
+     * @return true if the {@code message} should be forwarded; false if it should not.
+     */
+    <E> boolean forwardMessage(T message, E target);
 }

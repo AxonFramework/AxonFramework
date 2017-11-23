@@ -17,6 +17,9 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.ForwardAll;
+import org.axonframework.commandhandling.model.ForwardMatchingInstances;
+import org.axonframework.commandhandling.model.ForwardNone;
 import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
@@ -40,27 +43,29 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  */
 public abstract class AbstractChildEntityDefinition implements ChildEntityDefinition {
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
         if (attributes == null || fieldIsOfType(field)) {
             return Optional.empty();
         }
+
         EntityModel<Object> childEntityModel = extractChildEntityModel(declaringEntity, attributes, field);
 
-        Boolean forwardEvents = (Boolean) attributes.get("forwardEvents");
-        ForwardingMode eventForwardingMode =
-                eventForwardingMode(forwardEvents, (ForwardingMode) attributes.get("eventForwardingMode"));
+        ForwardingMode eventForwardingMode = eventForwardingMode(
+                (Boolean) attributes.get("forwardEvents"),
+                (Class<? extends ForwardingMode>) attributes.get("eventForwardingMode"),
+                (String) attributes.get("eventRoutingKey"),
+                childEntityModel
+        );
+
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 (msg, parent) -> resolveCommandTarget(msg, parent, field, childEntityModel),
-                (msg, parent) -> resolveEventTarget(msg,
-                                                    parent,
-                                                    field,
-                                                    eventForwardingMode,
-                                                    (String) attributes.get("eventRoutingKey"),
-                                                    childEntityModel)));
+                (msg, parent) -> resolveEventTarget(msg, parent, field, eventForwardingMode)
+        ));
     }
 
     /**
@@ -139,8 +144,20 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
         return property;
     }
 
-    private ForwardingMode eventForwardingMode(Boolean forwardEvents, ForwardingMode eventForwardingMode) {
-        return !forwardEvents ? ForwardingMode.NONE : eventForwardingMode;
+    private ForwardingMode eventForwardingMode(Boolean forwardEvents,
+                                               Class<? extends ForwardingMode> eventForwardingMode,
+                                               String eventRoutingKey,
+                                               EntityModel<Object> childEntityModel) {
+        if (!forwardEvents) {
+            return ForwardNone.INSTANCE;
+        }
+
+        if (eventForwardingMode.equals(ForwardAll.class)) {
+            return ForwardAll.INSTANCE;
+        } else if (eventForwardingMode.equals(ForwardMatchingInstances.class)) {
+            return new ForwardMatchingInstances(eventRoutingKey, childEntityModel);
+        }
+        return ForwardNone.INSTANCE;
     }
 
     /**
@@ -162,47 +179,22 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                                                        EntityModel<Object> childEntityModel);
 
     /**
-     * Resolve the targets of an incoming {@link org.axonframework.eventhandling.EventMessage} to the right Child
-     * Entities. Returns a {@link java.util.stream.Stream} of all the Child Entities the Event Message could be
+     * * Resolve the targets of an incoming {@link org.axonframework.eventhandling.EventMessage} to the right Child
+     * Entities. Returns a {@link java.util.stream.Stream} of all the Child Entities the Event Message should be
      * routed to.
      *
-     * @param <T>          The type {@code T} of the given {@code parent} Entity.
-     * @param parentEntity The {@code parent} Entity of type {@code T} of this Child Entity.
-     * @param field        The {@link Field} containing the Child Entity.
+     * @param message             The {@link org.axonframework.eventhandling.EventMessage} to route
+     * @param parentEntity        The {@code parent} Entity of type {@code T} of this Child Entity.
+     * @param field               The {@link Field} containing the Child Entity.
+     * @param eventForwardingMode The {@link org.axonframework.commandhandling.model.ForwardingMode} used for the {@code
+     *                            message} to route.
+     * @param <T>                 The type {@code T} of the given {@code parent} Entity.
      * @return A {@link java.util.stream.Stream} of Child Entities which might be the targets of the incoming
      * {@link org.axonframework.eventhandling.EventMessage}.
      */
-    protected abstract <T> Stream<Object> resolveEventTarget(EventMessage msg,
+    protected abstract <T> Stream<Object> resolveEventTarget(EventMessage message,
                                                              T parentEntity,
                                                              Field field,
-                                                             ForwardingMode eventForwardingMode,
-                                                             String eventRoutingKey,
-                                                             EntityModel childEntity);
-
-    @SuppressWarnings("unchecked")
-    protected <C> boolean filterTarget(EventMessage msg,
-                                       C target,
-                                       ForwardingMode eventForwardingMode,
-                                       String eventRoutingKey,
-                                       EntityModel childEntity) {
-        if (eventForwardingMode == ForwardingMode.NONE) {
-            return false;
-        } else if (eventForwardingMode == ForwardingMode.ALL) {
-            return true;
-        } else if (eventForwardingMode == ForwardingMode.ROUTING_KEY) {
-            Property eventRoutingProperty =
-                    getProperty(msg.getPayloadType(), eventRoutingKey(eventRoutingKey, childEntity));
-
-            Object eventRoutingValue = eventRoutingProperty.getValue(msg.getPayload());
-            Object entityIdentifier = childEntity.getIdentifier(target);
-
-            return Objects.equals(eventRoutingValue, entityIdentifier);
-        }
-        return false;
-    }
-
-    private String eventRoutingKey(String eventRoutingKey, EntityModel childEntity) {
-        return Objects.equals(eventRoutingKey, "") ? childEntity.routingKey() : eventRoutingKey;
-    }
+                                                             ForwardingMode eventForwardingMode);
 }
 

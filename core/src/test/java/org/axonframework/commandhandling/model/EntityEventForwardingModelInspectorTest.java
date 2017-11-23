@@ -133,7 +133,7 @@ public class EntityEventForwardingModelInspectorTest {
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventForwardingMode = ForwardingMode.NONE)
+        @AggregateMember(eventForwardingMode = ForwardNone.class)
         private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler
@@ -147,7 +147,7 @@ public class EntityEventForwardingModelInspectorTest {
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY)
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
         private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler
@@ -161,7 +161,7 @@ public class EntityEventForwardingModelInspectorTest {
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY, eventRoutingKey = "someIdentifier")
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class, eventRoutingKey = "someIdentifier")
         private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler
@@ -175,7 +175,7 @@ public class EntityEventForwardingModelInspectorTest {
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY)
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
         private List<SomeEventForwardedEntity> entities;
 
         SomeEventForwardingEntityCollectionAggregate() {
@@ -191,7 +191,7 @@ public class EntityEventForwardingModelInspectorTest {
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventForwardingMode = ForwardingMode.ROUTING_KEY)
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class)
         private Map<String, SomeEventForwardedEntity> entities;
 
         SomeEventForwardingEntityMapAggregate() {
