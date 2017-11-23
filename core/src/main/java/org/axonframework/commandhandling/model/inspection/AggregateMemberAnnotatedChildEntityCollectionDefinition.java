@@ -22,6 +22,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -78,6 +79,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
 
     @Override
     protected <T> Stream<Object> resolveEventTarget(T parent, Field field) {
-        return Stream.of(ReflectionUtils.getFieldValue(field, parent));
+        Collection<Object> fieldValue = ReflectionUtils.getFieldValue(field, parent);
+        return fieldValue == null ? Stream.empty() : fieldValue.stream();
     }
 }

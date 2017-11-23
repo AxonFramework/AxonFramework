@@ -74,6 +74,6 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
     @Override
     protected <T> Stream<Object> resolveEventTarget(T parent, Field field) {
         Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parent);
-        return fieldValue == null ? Stream.empty() : Stream.of(fieldValue.values());
+        return fieldValue == null ? Stream.empty() : fieldValue.values().stream();
     }
 }

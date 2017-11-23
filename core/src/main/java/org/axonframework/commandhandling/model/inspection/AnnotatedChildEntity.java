@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
@@ -91,6 +92,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         }
 
         eventTargetResolver.apply(msg, declaringInstance)
+                           .collect(Collectors.toList())
                            .forEach(target -> publishToTarget(msg, target));
     }
 
