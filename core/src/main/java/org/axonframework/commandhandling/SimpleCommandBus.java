@@ -135,7 +135,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     private Optional<MessageHandler<? super CommandMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
-        return Optional.of(subscriptions.get(command.getCommandName()));
+        return Optional.ofNullable(subscriptions.get(command.getCommandName()));
     }
 
     private <C> Object doDispatch(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler) throws Exception {
