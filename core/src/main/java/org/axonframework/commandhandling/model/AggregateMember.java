@@ -67,7 +67,9 @@ public @interface AggregateMember {
     ForwardingMode eventForwardingMode() default ForwardingMode.ALL;
 
     /**
-     * The property of the event to be used as a routing key towards this Aggregate Member.
+     * The property of the event to be used as a routing key towards this Aggregate Member. Defaults to {@code ""},
+     * which deeper down defaults to the {@link org.axonframework.commandhandling.model.EntityId} annotated field or
+     * that annotation its {@code routingKey} property.
      *
      * @return The property of the event to use as routing key.
      */
