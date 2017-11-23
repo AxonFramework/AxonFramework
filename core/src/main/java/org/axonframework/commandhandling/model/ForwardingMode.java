@@ -15,9 +15,11 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.commandhandling.model.inspection.EntityModel;
 import org.axonframework.messaging.Message;
 
-import java.util.function.Supplier;
+import java.lang.reflect.Field;
+import java.util.stream.Stream;
 
 /**
  * Interface describing the required functionality to forward a message.
@@ -26,19 +28,24 @@ import java.util.function.Supplier;
 public interface ForwardingMode<T extends Message<?>> {
 
     /**
-     * Creates an instance of an implementation of a {@link ForwardingMode}.
+     * Initializes an instance of a {@link ForwardingMode}.
      *
-     * @return an implementation of a {@link ForwardingMode}.
+     * @param field       The {@link java.lang.reflect.Field} to apply a ForwardingMode on. Provided to be able to check
+     *                    for annotations attributes which might assist in the forwarding process.
+     * @param childEntity A {@link org.axonframework.commandhandling.model.inspection.EntityModel} constructed from the
+     *                    given {@code field}.
      */
-    ForwardingMode getInstance(Supplier<ForwardingMode> forwardingModeConstructor);
+    default void initialize(Field field, EntityModel childEntity) {
+    }
 
     /**
-     * Check whether the given {@code message} should be forwarded to the given {@code target}.
+     * Filter the given {@link java.util.stream.Stream} of {@code candidates} which are to handle the supplied
+     * {@code message}.
      *
-     * @param message the message of type {@code T} to be forwarded.
-     * @param target  the target of type {@code E} where the {@code message} shoudl be forwarded to
-     * @param <E>     the type of the {@code target}
-     * @return true if the {@code message} should be forwarded; false if it should not.
+     * @param message    The message of type {@code T} to be forwarded.
+     * @param candidates The {@link java.util.stream.Stream} of candidates to filter.
+     * @param <E>        The type of the {@code candidates}
+     * @return a filtered {@link java.util.stream.Stream} of {@code candidates} which will handle the {@code message}.
      */
-    <E> boolean forwardMessage(T message, E target);
+    <E> Stream<E> filterCandidates(T message, Stream<E> candidates);
 }

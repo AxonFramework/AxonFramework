@@ -17,24 +17,17 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.messaging.Message;
 
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * Forward no messages {@code T} regardless of their set up.
  *
- * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being forwarded.
+ * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
  */
 public class ForwardNone<T extends Message<?>> implements ForwardingMode<T> {
 
-    public static final ForwardNone INSTANCE = new ForwardNone();
-
     @Override
-    public ForwardingMode getInstance(Supplier<ForwardingMode> forwardingModeConstructor) {
-        return forwardingModeConstructor.get();
-    }
-
-    @Override
-    public <E> boolean forwardMessage(T message, E target) {
-        return false;
+    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
+        return Stream.empty();
     }
 }

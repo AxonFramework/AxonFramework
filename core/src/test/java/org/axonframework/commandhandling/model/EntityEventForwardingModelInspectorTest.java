@@ -161,7 +161,7 @@ public class EntityEventForwardingModelInspectorTest {
         @AggregateIdentifier
         private String id = AGGREGATE_ID;
 
-        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class, eventRoutingKey = "someIdentifier")
+        @AggregateMember(eventForwardingMode = ForwardMatchingInstances.class, routingKey = "someIdentifier")
         private SomeEventForwardedEntity entity = new SomeEventForwardedEntity(ENTITY_ID);
 
         @EventHandler

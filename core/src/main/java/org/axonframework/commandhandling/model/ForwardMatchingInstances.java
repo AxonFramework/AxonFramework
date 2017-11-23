@@ -19,46 +19,50 @@ import org.axonframework.commandhandling.model.inspection.EntityModel;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.Message;
 
+import java.lang.reflect.Field;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
  * Only forward messages of type {@code T} if the routing key of the message matches the identifier of the entity.
  *
- * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being forwarded.
+ * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
  */
 public class ForwardMatchingInstances<T extends Message<?>> implements ForwardingMode<T> {
 
     private static final String EMPTY_STRING = "";
 
-    private final String routingKey;
-    private final EntityModel childEntity;
-
-    public ForwardMatchingInstances(String routingKey,
-                                    EntityModel childEntity) {
-        this.routingKey = routingKey;
-        this.childEntity = childEntity;
-    }
+    private String routingKey;
+    private EntityModel childEntity;
 
     @Override
-    public ForwardingMode getInstance(Supplier<ForwardingMode> forwardingModeConstructor) {
-        return forwardingModeConstructor.get();
+    public void initialize(Field field, EntityModel childEntity) {
+        this.childEntity = childEntity;
+        this.routingKey = findAnnotationAttributes(field, AggregateMember.class)
+                .map(map -> (String) map.get("routingKey"))
+                .filter(key -> !Objects.equals(key, EMPTY_STRING))
+                .orElse(childEntity.routingKey());
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> boolean forwardMessage(T message, E target) {
-        Property routingProperty = getProperty(message.getPayloadType(), routingKey());
+    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
+        Property routingProperty = getProperty(message.getPayloadType(), routingKey);
+        if (routingProperty == null) {
+            return Stream.empty();
+        }
 
         Object routingValue = routingProperty.getValue(message.getPayload());
-        Object identifier = childEntity.getIdentifier(target);
-
-        return Objects.equals(routingValue, identifier);
+        return candidates.filter(candidate -> matchesInstance(candidate, routingValue));
     }
 
-    private String routingKey() {
-        return Objects.equals(routingKey, EMPTY_STRING) ? childEntity.routingKey() : routingKey;
+    @SuppressWarnings("unchecked")
+    private <E> boolean matchesInstance(E candidate, Object routingValue) {
+        Object identifier = childEntity.getIdentifier(candidate);
+
+        return Objects.equals(routingValue, identifier);
     }
 }
