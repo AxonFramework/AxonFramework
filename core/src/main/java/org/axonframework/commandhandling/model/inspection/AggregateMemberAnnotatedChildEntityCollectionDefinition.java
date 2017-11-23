@@ -58,10 +58,10 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
     }
 
     @Override
-    protected <T> Object createCommandTargetResolvers(CommandMessage<?> msg,
-                                                      T parent,
-                                                      Field field,
-                                                      EntityModel<Object> childEntityModel) {
+    protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
+                                              T parent,
+                                              Field field,
+                                              EntityModel<Object> childEntityModel) {
         Map<String, Property<Object>> commandHandlerRoutingKeys =
                 extractCommandHandlerRoutingKeys(field, childEntityModel);
 
@@ -76,7 +76,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
     }
 
     @Override
-    protected <T> Iterable<Object> createEventTargetResolvers(Field field, T parent) {
+    protected <T> Iterable<Object> resolveEventTarget(T parent, Field field) {
         return ReflectionUtils.getFieldValue(field, parent);
     }
 }

@@ -57,10 +57,10 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
     }
 
     @Override
-    protected <T> Object createCommandTargetResolvers(CommandMessage<?> msg,
-                                                      T parent,
-                                                      Field field,
-                                                      EntityModel<Object> childEntityModel) {
+    protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
+                                              T parent,
+                                              Field field,
+                                              EntityModel<Object> childEntityModel) {
         Map<String, Property<Object>> commandHandlerRoutingKeys =
                 extractCommandHandlerRoutingKeys(field, childEntityModel);
 
@@ -72,7 +72,7 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
     }
 
     @Override
-    protected <T> Iterable<Object> createEventTargetResolvers(Field field, T parent) {
+    protected <T> Iterable<Object> resolveEventTarget(T parent, Field field) {
         Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parent);
         return fieldValue == null ? Collections.emptyList() : fieldValue.values();
     }

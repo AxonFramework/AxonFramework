@@ -38,18 +38,21 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
 
     @Override
     protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
-                                                              Map<String, Object> attributes, Field field) {
+                                                              Map<String, Object> attributes,
+                                                              Field field) {
         return declaringEntity.modelOf(field.getType());
     }
 
     @Override
-    protected <T> Object createCommandTargetResolvers(CommandMessage<?> msg, T parent,
-                                                      Field field, EntityModel<Object> childEntityModel) {
+    protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
+                                              T parent,
+                                              Field field,
+                                              EntityModel<Object> childEntityModel) {
         return ReflectionUtils.getFieldValue(field, parent);
     }
 
     @Override
-    protected <T> Iterable<Object> createEventTargetResolvers(Field field, T parent) {
+    protected <T> Iterable<Object> resolveEventTarget(T parent, Field field) {
         Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
         return fieldVal == null ? emptyList() : singleton(fieldVal);
     }
