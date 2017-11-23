@@ -16,19 +16,14 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.ForwardingMode;
-import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
  * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
@@ -39,11 +34,7 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  */
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
-    private static final String EMPTY_STRING = "";
-
     private final EntityModel<C> entityModel;
-    private final ForwardingMode eventForwardingMode;
-    private final String eventRoutingKey;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver;
 
@@ -54,24 +45,15 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
      * @param entityModel           a {@link EntityModel} describing
      *                              the entity.
      * @param forwardCommands       flag indicating whether commands should be forwarded to the entity
-     * @param eventForwardingMode   a {@link ForwardingMode} enum describing the
-     *                              used forwarding mode for events.
-     *                              only entity specific events should be forwarded
-     * @param eventRoutingKey       a {@link String} specifying the routing key for all events within this
-     *                              Entity.
      * @param commandTargetResolver resolver for command handler methods on the target
      * @param eventTargetResolver   resolver for event handler methods on the target
      */
     @SuppressWarnings("unchecked")
     public AnnotatedChildEntity(EntityModel<C> entityModel,
                                 boolean forwardCommands,
-                                ForwardingMode eventForwardingMode,
-                                String eventRoutingKey,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
                                 BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver) {
         this.entityModel = entityModel;
-        this.eventForwardingMode = eventForwardingMode;
-        this.eventRoutingKey = eventRoutingKey;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
@@ -88,30 +70,8 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @Override
     public void publish(EventMessage<?> msg, P declaringInstance) {
         eventTargetResolver.apply(msg, declaringInstance)
-                           .filter(target -> filterTarget(msg, target))
                            .collect(Collectors.toList())
                            .forEach(target -> entityModel.publish(msg, target));
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean filterTarget(EventMessage msg, C target) {
-        if (eventForwardingMode == ForwardingMode.NONE) {
-            return false;
-        } else if (eventForwardingMode == ForwardingMode.ALL) {
-            return true;
-        } else if (eventForwardingMode == ForwardingMode.ROUTING_KEY) {
-            Property eventRoutingProperty = getProperty(msg.getPayloadType(), eventRoutingKey());
-
-            Object eventRoutingValue = eventRoutingProperty.getValue(msg.getPayload());
-            Object entityIdentifier = entityModel.getIdentifier(target);
-
-            return Objects.equals(eventRoutingValue, entityIdentifier);
-        }
-        return false;
-    }
-
-    private String eventRoutingKey() {
-        return Objects.equals(eventRoutingKey, EMPTY_STRING) ? entityModel.routingKey() : eventRoutingKey;
     }
 
     @SuppressWarnings("unchecked")

@@ -17,9 +17,11 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -72,8 +74,16 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
     }
 
     @Override
-    protected <T> Stream<Object> resolveEventTarget(T parent, Field field) {
-        Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parent);
-        return fieldValue == null ? Stream.empty() : fieldValue.values().stream();
+    protected <T> Stream<Object> resolveEventTarget(EventMessage msg,
+                                                    T parentEntity,
+                                                    Field field,
+                                                    ForwardingMode eventForwardingMode,
+                                                    String eventRoutingKey,
+                                                    EntityModel childEntity) {
+        Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
+        Stream<Object> eventTargetStream = fieldValue == null ? Stream.empty() : fieldValue.values().stream();
+        return eventTargetStream.filter(
+                target -> filterTarget(msg, target, eventForwardingMode, eventRoutingKey, childEntity)
+        );
     }
 }

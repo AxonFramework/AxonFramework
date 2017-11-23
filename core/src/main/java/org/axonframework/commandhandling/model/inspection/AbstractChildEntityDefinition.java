@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -53,10 +54,13 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
-                eventForwardingMode,
-                (String) attributes.get("eventRoutingKey"),
                 (msg, parent) -> resolveCommandTarget(msg, parent, field, childEntityModel),
-                (msg, parent) -> resolveEventTarget(parent, field)));
+                (msg, parent) -> resolveEventTarget(msg,
+                                                    parent,
+                                                    field,
+                                                    eventForwardingMode,
+                                                    (String) attributes.get("eventRoutingKey"),
+                                                    childEntityModel)));
     }
 
     /**
@@ -162,12 +166,43 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * Entities. Returns a {@link java.util.stream.Stream} of all the Child Entities the Event Message could be
      * routed to.
      *
-     * @param parent The {@code parent} Entity of type {@code T} of this Child Entity.
-     * @param field  The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param <T>    The type {@code T} of the given {@code parent} Entity.
+     * @param <T>          The type {@code T} of the given {@code parent} Entity.
+     * @param parentEntity The {@code parent} Entity of type {@code T} of this Child Entity.
+     * @param field        The {@link Field} containing the Child Entity.
      * @return A {@link java.util.stream.Stream} of Child Entities which might be the targets of the incoming
      * {@link org.axonframework.eventhandling.EventMessage}.
      */
-    protected abstract <T> Stream<Object> resolveEventTarget(T parent, Field field);
+    protected abstract <T> Stream<Object> resolveEventTarget(EventMessage msg,
+                                                             T parentEntity,
+                                                             Field field,
+                                                             ForwardingMode eventForwardingMode,
+                                                             String eventRoutingKey,
+                                                             EntityModel childEntity);
+
+    @SuppressWarnings("unchecked")
+    protected <C> boolean filterTarget(EventMessage msg,
+                                       C target,
+                                       ForwardingMode eventForwardingMode,
+                                       String eventRoutingKey,
+                                       EntityModel childEntity) {
+        if (eventForwardingMode == ForwardingMode.NONE) {
+            return false;
+        } else if (eventForwardingMode == ForwardingMode.ALL) {
+            return true;
+        } else if (eventForwardingMode == ForwardingMode.ROUTING_KEY) {
+            Property eventRoutingProperty =
+                    getProperty(msg.getPayloadType(), eventRoutingKey(eventRoutingKey, childEntity));
+
+            Object eventRoutingValue = eventRoutingProperty.getValue(msg.getPayload());
+            Object entityIdentifier = childEntity.getIdentifier(target);
+
+            return Objects.equals(eventRoutingValue, entityIdentifier);
+        }
+        return false;
+    }
+
+    private String eventRoutingKey(String eventRoutingKey, EntityModel childEntity) {
+        return Objects.equals(eventRoutingKey, "") ? childEntity.routingKey() : eventRoutingKey;
+    }
 }
 
