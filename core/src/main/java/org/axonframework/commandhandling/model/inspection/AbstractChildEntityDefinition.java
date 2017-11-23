@@ -17,9 +17,6 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.ForwardAll;
-import org.axonframework.commandhandling.model.ForwardMatchingInstances;
-import org.axonframework.commandhandling.model.ForwardNone;
 import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
@@ -53,18 +50,15 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
 
         EntityModel<Object> childEntityModel = extractChildEntityModel(declaringEntity, attributes, field);
 
-        ForwardingMode eventForwardingMode = eventForwardingMode(
-                (Boolean) attributes.get("forwardEvents"),
-                (Class<? extends ForwardingMode>) attributes.get("eventForwardingMode"),
-                (String) attributes.get("eventRoutingKey"),
-                childEntityModel
+        ForwardingMode eventForwardingMode = instantiateForwardingMode(
+                field, childEntityModel, (Class<? extends ForwardingMode>) attributes.get("eventForwardingMode")
         );
 
         return Optional.of(new AnnotatedChildEntity<>(
                 childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 (msg, parent) -> resolveCommandTarget(msg, parent, field, childEntityModel),
-                (msg, parent) -> resolveEventTarget(msg, parent, field, eventForwardingMode)
+                (msg, parent) -> resolveEventTargets(msg, parent, field, eventForwardingMode)
         ));
     }
 
@@ -95,6 +89,40 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     protected abstract <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
                                                                        Map<String, Object> attributes,
                                                                        Field field);
+
+    private ForwardingMode instantiateForwardingMode(Field field,
+                                                     EntityModel<Object> childEntityModel,
+                                                     Class<? extends ForwardingMode> forwardingModeClass) {
+        ForwardingMode forwardingMode;
+        try {
+            forwardingMode = forwardingModeClass.newInstance();
+            forwardingMode.initialize(field, childEntityModel);
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new AxonConfigurationException(
+                    String.format("Failed to instantiate ForwardingMode of type [%s].", forwardingModeClass)
+            );
+        }
+
+        return forwardingMode;
+    }
+
+    /**
+     * Resolve the target of an incoming {@link org.axonframework.commandhandling.CommandMessage} to the right Child
+     * Entity. Returns the Child Entity the {@code msg} needs to be routed to.
+     *
+     * @param msg              The {@link org.axonframework.commandhandling.CommandMessage} which is being resolved to a
+     *                         target entity.
+     * @param parent           The {@code parent} Entity of type {@code T} of this Child Entity.
+     * @param field            The {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param childEntityModel The {@link org.axonframework.commandhandling.model.inspection.EntityModel} for the Child
+     *                         Entity.
+     * @param <T>              The type {@code T} of the given {@code parent} Entity.
+     * @return The Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
+     */
+    protected abstract <T> Object resolveCommandTarget(CommandMessage<?> msg,
+                                                       T parent,
+                                                       Field field,
+                                                       EntityModel<Object> childEntityModel);
 
     /**
      * Retrieves the routing keys of every command handler on the given {@code childEntityModel} to be able to correctly
@@ -144,57 +172,23 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
         return property;
     }
 
-    private ForwardingMode eventForwardingMode(Boolean forwardEvents,
-                                               Class<? extends ForwardingMode> eventForwardingMode,
-                                               String eventRoutingKey,
-                                               EntityModel<Object> childEntityModel) {
-        if (!forwardEvents) {
-            return ForwardNone.INSTANCE;
-        }
-
-        if (eventForwardingMode.equals(ForwardAll.class)) {
-            return ForwardAll.INSTANCE;
-        } else if (eventForwardingMode.equals(ForwardMatchingInstances.class)) {
-            return new ForwardMatchingInstances(eventRoutingKey, childEntityModel);
-        }
-        return ForwardNone.INSTANCE;
-    }
-
     /**
-     * Resolve the target of an incoming {@link org.axonframework.commandhandling.CommandMessage} to the right Child
-     * Entity. Returns the Child Entity the {@code msg} needs to be routed to.
-     *
-     * @param msg              The {@link org.axonframework.commandhandling.CommandMessage} which is being resolved to a
-     *                         target entity.
-     * @param parent           The {@code parent} Entity of type {@code T} of this Child Entity.
-     * @param field            The {@link java.lang.reflect.Field} containing the Child Entity.
-     * @param childEntityModel The {@link org.axonframework.commandhandling.model.inspection.EntityModel} for the Child
-     *                         Entity.
-     * @param <T>              The type {@code T} of the given {@code parent} Entity.
-     * @return The Child Entity which is the target of the incoming {@link org.axonframework.commandhandling.CommandMessage}.
-     */
-    protected abstract <T> Object resolveCommandTarget(CommandMessage<?> msg,
-                                                       T parent,
-                                                       Field field,
-                                                       EntityModel<Object> childEntityModel);
-
-    /**
-     * * Resolve the targets of an incoming {@link org.axonframework.eventhandling.EventMessage} to the right Child
+     * Resolve the targets of an incoming {@link org.axonframework.eventhandling.EventMessage} to the right Child
      * Entities. Returns a {@link java.util.stream.Stream} of all the Child Entities the Event Message should be
      * routed to.
      *
-     * @param message             The {@link org.axonframework.eventhandling.EventMessage} to route
+     * @param message             The {@link org.axonframework.eventhandling.EventMessage} to route.
      * @param parentEntity        The {@code parent} Entity of type {@code T} of this Child Entity.
-     * @param field               The {@link Field} containing the Child Entity.
-     * @param eventForwardingMode The {@link org.axonframework.commandhandling.model.ForwardingMode} used for the {@code
-     *                            message} to route.
+     * @param field               The {@link java.lang.reflect.Field} containing the Child Entity.
+     * @param eventForwardingMode The {@link org.axonframework.commandhandling.model.ForwardingMode} used to filter the
+     *                            {@code message} to route based on the ForwardingMode implementation.
      * @param <T>                 The type {@code T} of the given {@code parent} Entity.
-     * @return A {@link java.util.stream.Stream} of Child Entities which might be the targets of the incoming
+     * @return A filtered {@link java.util.stream.Stream} of Child Entity targets for the incoming
      * {@link org.axonframework.eventhandling.EventMessage}.
      */
-    protected abstract <T> Stream<Object> resolveEventTarget(EventMessage message,
-                                                             T parentEntity,
-                                                             Field field,
-                                                             ForwardingMode eventForwardingMode);
+    protected abstract <T> Stream<Object> resolveEventTargets(EventMessage message,
+                                                              T parentEntity,
+                                                              Field field,
+                                                              ForwardingMode eventForwardingMode);
 }
 

@@ -75,12 +75,13 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
 
     @SuppressWarnings("unchecked")
     @Override
-    protected <T> Stream<Object> resolveEventTarget(EventMessage message,
-                                                    T parentEntity,
-                                                    Field field,
-                                                    ForwardingMode eventForwardingMode) {
+    protected <T> Stream<Object> resolveEventTargets(EventMessage message,
+                                                     T parentEntity,
+                                                     Field field,
+                                                     ForwardingMode eventForwardingMode) {
         Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
-        Stream<Object> eventTargetStream = fieldValue == null ? Stream.empty() : fieldValue.values().stream();
-        return eventTargetStream.filter(target -> eventForwardingMode.forwardMessage(message, target));
+        return fieldValue == null
+                ? Stream.empty()
+                : eventForwardingMode.filterCandidates(message, fieldValue.values().stream());
     }
 }

@@ -53,12 +53,11 @@ public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChild
 
     @SuppressWarnings("unchecked")
     @Override
-    protected <T> Stream<Object> resolveEventTarget(EventMessage message,
-                                                    T parentEntity,
-                                                    Field field,
-                                                    ForwardingMode eventForwardingMode) {
+    protected <T> Stream<Object> resolveEventTargets(EventMessage message,
+                                                     T parentEntity,
+                                                     Field field,
+                                                     ForwardingMode eventForwardingMode) {
         Object fieldVal = ReflectionUtils.getFieldValue(field, parentEntity);
-        Stream<Object> eventTargetStream = fieldVal == null ? Stream.empty() : Stream.of(fieldVal);
-        return eventTargetStream.filter(target -> eventForwardingMode.forwardMessage(message, target));
+        return fieldVal == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(fieldVal));
     }
 }

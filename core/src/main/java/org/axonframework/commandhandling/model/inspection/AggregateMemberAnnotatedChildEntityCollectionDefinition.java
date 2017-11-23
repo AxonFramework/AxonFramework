@@ -81,12 +81,11 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
 
     @SuppressWarnings("unchecked")
     @Override
-    protected <T> Stream<Object> resolveEventTarget(EventMessage message,
-                                                    T parentEntity,
-                                                    Field field,
-                                                    ForwardingMode eventForwardingMode) {
+    protected <T> Stream<Object> resolveEventTargets(EventMessage message,
+                                                     T parentEntity,
+                                                     Field field,
+                                                     ForwardingMode eventForwardingMode) {
         Collection<Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
-        Stream<Object> eventTargetStream = fieldValue == null ? Stream.empty() : fieldValue.stream();
-        return eventTargetStream.filter(target -> eventForwardingMode.forwardMessage(message, target));
+        return fieldValue == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, fieldValue.stream());
     }
 }
