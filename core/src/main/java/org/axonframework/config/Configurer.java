@@ -298,6 +298,8 @@ public interface Configurer {
     /**
      * Configures the given event Serializer to use in this configuration. The builder receives the Configuration as
      * input and is expected to return a fully initialized {@link org.axonframework.serialization.Serializer} instance.
+     * <p/>
+     * This Serializer is specifically used to serialize events and their metadata.
      *
      * @param eventSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
      * @return The current instance of the Configurer, for chaining purposes.

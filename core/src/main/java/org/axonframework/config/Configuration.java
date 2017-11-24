@@ -164,7 +164,8 @@ public interface Configuration {
     }
 
     /**
-     * Returns the event serializer defined in this Configuration.
+     * Returns the {@link Serializer} defined in this Configuration which is used for serializing events and their
+     * metadata.
      *
      * @return the event serializer defined in this Configuration.
      */
