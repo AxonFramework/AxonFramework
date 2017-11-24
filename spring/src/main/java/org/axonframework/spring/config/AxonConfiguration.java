@@ -30,6 +30,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -55,7 +56,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     /**
      * Initializes a new {@link AxonConfiguration} that uses the given {@code configurer} to build the configuration.
      *
-     * @param configurer configuration builder for the AxonConfiguration
+     * @param configurer Configuration builder for the AxonConfiguration.
      */
     public AxonConfiguration(Configurer configurer) {
         this.configurer = configurer;
@@ -130,6 +131,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName) {
         return config.messageMonitor(componentType, componentName);
+    }
+
+    @Override
+    public Serializer eventSerializer() {
+        return config.eventSerializer();
     }
 
     @Override
