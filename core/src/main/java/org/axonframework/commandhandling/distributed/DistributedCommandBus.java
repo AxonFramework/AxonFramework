@@ -36,6 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static java.lang.String.format;
+
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
  * spread load. Each "physical" CommandBus instance is considered a "segment" of a conceptual distributed CommandBus.
@@ -101,7 +103,8 @@ public class DistributedCommandBus implements CommandBus {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
             Member destination = commandRouter.findDestination(interceptedCommand)
                                               .orElseThrow(() -> new NoHandlerForCommandException(
-                                                      "No node known to accept " + interceptedCommand.getCommandName()));
+                                                      format("No node known to accept [%s]",
+                                                             interceptedCommand.getCommandName())));
             try {
                 connector.send(destination, interceptedCommand);
             } catch (Exception e) {
@@ -125,7 +128,8 @@ public class DistributedCommandBus implements CommandBus {
         Member destination = commandRouter.findDestination(interceptedCommand)
                                           .orElseThrow(() -> {
                                               NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                                                      "No node known to accept " + interceptedCommand.getCommandName());
+                                                      format("No node known to accept [%s]",
+                                                             interceptedCommand.getCommandName()));
                                               messageMonitorCallback.reportFailure(exception);
                                               return exception;
                                           });
