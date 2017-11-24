@@ -52,6 +52,7 @@ public class AMQPAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
+    @ConditionalOnSingleOverallCandidate(Serializer.class)
     @Bean("amqpMessageConverter")
     public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
                                                             RoutingKeyResolver routingKeyResolver) {
