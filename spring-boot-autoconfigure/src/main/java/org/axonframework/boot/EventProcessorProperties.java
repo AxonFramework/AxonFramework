@@ -33,10 +33,6 @@ public class EventProcessorProperties {
         return processors;
     }
 
-//    public void setProcessors(Map<String, ProcessorSettings> processors) {
-//        this.processors = processors;
-//    }
-
     public enum Mode {
 
         TRACKING,
