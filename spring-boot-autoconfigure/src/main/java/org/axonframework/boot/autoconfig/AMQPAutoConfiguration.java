@@ -52,15 +52,13 @@ public class AMQPAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
-    @Bean
-    @Qualifier("amqpMessageConverter")
+    @Bean("amqpMessageConverter")
     public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
                                                             RoutingKeyResolver routingKeyResolver) {
         return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
     }
 
     @ConditionalOnMissingBean
-    @ConditionalOnBean(name = "eventSerializer")
     @Bean
     public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
                                                      RoutingKeyResolver routingKeyResolver) {
