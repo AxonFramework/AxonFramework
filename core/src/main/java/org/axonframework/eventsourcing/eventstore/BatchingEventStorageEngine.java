@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,15 +43,19 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     private final int batchSize;
 
     /**
-     * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
-     * persistenceExceptionResolver}.
+     * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain}, {@code
+     * persistenceExceptionResolver}, {@code eventSerializer} and {@code batchSize}.
      *
-     * @param serializer                   Used to serialize and deserialize event payload and metadata. If {@code null}
-     *                                     an {@link XStreamSerializer} is used.
+     * @param serializer                   Used to serialize and deserialize snapshots. If {@code null}
+     *                                     a {@link XStreamSerializer} is instantiated by the
+     *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
      *                                     null} a {@link NoOpEventUpcaster} is used.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
+     *                                     If {@code null} a {@link XStreamSerializer} is instantiated by the
+     *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. If {@code null} a batch size of 100
@@ -61,8 +64,9 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      *                                     required to rebuild an aggregate's state.
      */
     public BatchingEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
-                                      PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize) {
-        super(serializer, upcasterChain, persistenceExceptionResolver);
+                                      PersistenceExceptionResolver persistenceExceptionResolver,
+                                      Serializer eventSerializer, Integer batchSize) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, eventSerializer);
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);
     }
 
