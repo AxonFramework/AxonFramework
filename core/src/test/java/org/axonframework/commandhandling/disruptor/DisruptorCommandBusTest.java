@@ -64,6 +64,7 @@ import static java.util.Arrays.asList;
 import static junit.framework.TestCase.*;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -355,6 +356,7 @@ public class DisruptorCommandBusTest {
 
         try {
             testSubject.dispatch(asCommandMessage(new UnknownCommand(aggregateIdentifier2)));
+            fail("Expected NoHandlerForCommandException");
         } catch (NoHandlerForCommandException expected) {
             // ignore
         }
