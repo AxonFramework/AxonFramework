@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.serialization.Serializer;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -52,8 +53,9 @@ public class AMQPAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    public AMQPMessageConverter amqpMessageConverter(Serializer serializer, RoutingKeyResolver routingKeyResolver) {
-        return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
+    public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
+                                                     RoutingKeyResolver routingKeyResolver) {
+        return new DefaultAMQPMessageConverter(eventSerializer, routingKeyResolver, amqpProperties.isDurableMessages());
     }
 
     @ConditionalOnProperty("axon.amqp.exchange")
