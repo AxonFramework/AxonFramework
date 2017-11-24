@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,11 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marker annotation for a field that references one or more Entities capable of handling Commands or Events. The
@@ -54,10 +51,10 @@ public @interface AggregateMember {
     boolean forwardEvents() default true;
 
     /**
-     * Indicates the forwarding mode used for events within this entity. Defaults to
-     * {@link org.axonframework.commandhandling.model.ForwardAll} to allow all events through.
+     * Indicates the forwarding mode used for events within this entity. Defaults to {@link ForwardToAll} to forward all
+     * events to all entities referred to by the annotated field.
      */
-    Class<? extends ForwardingMode> eventForwardingMode() default ForwardAll.class;
+    Class<? extends ForwardingMode> eventForwardingMode() default ForwardToAll.class;
 
     /**
      * The property of the message to be used as a routing key towards this Aggregate Member. Defaults to {@code ""},
@@ -67,7 +64,7 @@ public @interface AggregateMember {
     String routingKey() default "";
 
     /**
-     * Provides the member's type. By default the type of member is determined from the field's generic type.
+     * Provides the member's type. By default the type of member is determined from the field's (generic) type.
      */
     Class<?> type() default Void.class;
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,7 +45,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     @Override
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = findAnnotationAttributes(field, AggregateMember.class).orElse(null);
-        if (attributes == null || fieldIsOfType(field)) {
+        if (attributes == null || !isFieldTypeSupported(field)) {
             return Optional.empty();
         }
 
@@ -63,14 +64,12 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     }
 
     /**
-     * Check whether the given {@link java.lang.reflect.Field} is of a type the
-     * {@link org.axonframework.commandhandling.model.inspection.ChildEntityDefinition} supports. The Collection
-     * implementation for example check whether the field is of type {@link java.lang.Iterable}.
+     * Check whether the given {@link java.lang.reflect.Field} is of a type supported by this definition.
      *
      * @param field A {@link java.lang.reflect.Field} containing a Child Entity.
      * @return true if the type is as required by the implementation and false if it is not.
      */
-    protected abstract boolean fieldIsOfType(Field field);
+    protected abstract boolean isFieldTypeSupported(Field field);
 
     /**
      * Extracts the Child Entity contained in the given {@code declaringEntity} as an

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,8 +33,8 @@ import java.util.stream.Stream;
 public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
     @Override
-    protected boolean fieldIsOfType(Field field) {
-        return Iterable.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType());
+    protected boolean isFieldTypeSupported(Field field) {
+        return !Iterable.class.isAssignableFrom(field.getType()) && !Map.class.isAssignableFrom(field.getType());
     }
 
     @Override

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
  *
  * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
  */
-public class ForwardAll<T extends Message<?>> implements ForwardingMode<T> {
+public class ForwardToAll<T extends Message<?>> implements ForwardingMode<T> {
 
     @Override
     public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {

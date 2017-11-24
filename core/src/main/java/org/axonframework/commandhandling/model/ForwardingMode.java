@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +24,7 @@ import java.util.stream.Stream;
 
 /**
  * Interface describing the required functionality to forward a message.
- * An example implementation is the {@link ForwardAll}, which forwards all incoming messages.
+ * An example implementation is the {@link ForwardToAll}, which forwards all incoming messages.
  */
 public interface ForwardingMode<T extends Message<?>> {
 

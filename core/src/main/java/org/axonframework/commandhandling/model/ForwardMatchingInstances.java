@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,7 +28,8 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
- * Only forward messages of type {@code T} if the routing key of the message matches the identifier of the entity.
+ * Only forward messages of type {@code T} if the routing key of the message matches that of the entity. Essentially,
+ * this means that events are only forwarded if the Message mentions the identifier of the entity instance.
  *
  * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.Message} being filtered.
  */
