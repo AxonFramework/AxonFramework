@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,49 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.ForwardingMode;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.Optional;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
+import java.util.stream.Stream;
 
 /**
  * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
  * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
  */
-public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntityDefinition {
+public class AggregateMemberAnnotatedChildEntityDefinition extends AbstractChildEntityDefinition {
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
-        Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
-        if (attributes == null
-                || Iterable.class.isAssignableFrom(field.getType())
-                || Map.class.isAssignableFrom(field.getType())) {
-            return Optional.empty();
-        }
-
-        EntityModel entityModel = declaringEntity.modelOf(field.getType());
-        return Optional.of(new AnnotatedChildEntity<>(entityModel,
-                                                      (Boolean) attributes.get("forwardCommands"),
-                                                      (Boolean) attributes.get("forwardEvents"),
-                                                      (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
-                                                      (msg, parent) -> {
-                                                          Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
-                                                          return fieldVal == null ? emptyList() : singleton(fieldVal);
-                                                      }));
+    protected boolean isFieldTypeSupported(Field field) {
+        return !Iterable.class.isAssignableFrom(field.getType()) && !Map.class.isAssignableFrom(field.getType());
     }
 
+    @Override
+    protected <T> EntityModel<Object> extractChildEntityModel(EntityModel<T> declaringEntity,
+                                                              Map<String, Object> attributes,
+                                                              Field field) {
+        return declaringEntity.modelOf(field.getType());
+    }
+
+    @Override
+    protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
+                                              T parent,
+                                              Field field,
+                                              EntityModel<Object> childEntityModel) {
+        return ReflectionUtils.getFieldValue(field, parent);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected <T> Stream<Object> resolveEventTargets(EventMessage message,
+                                                     T parentEntity,
+                                                     Field field,
+                                                     ForwardingMode eventForwardingMode) {
+        Object fieldVal = ReflectionUtils.getFieldValue(field, parentEntity);
+        return fieldVal == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, Stream.of(fieldVal));
+    }
 }
