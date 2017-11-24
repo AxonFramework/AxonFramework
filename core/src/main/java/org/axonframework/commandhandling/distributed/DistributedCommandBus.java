@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
@@ -99,7 +100,7 @@ public class DistributedCommandBus implements CommandBus {
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
             Member destination = commandRouter.findDestination(command)
-                    .orElseThrow(() -> new CommandDispatchException("No node known to accept " + command.getCommandName()));
+                    .orElseThrow(() -> new NoHandlerForCommandException("No node known to accept " + command.getCommandName()));
             try {
                 connector.send(destination, interceptedCommand);
             } catch (Exception e) {
@@ -122,7 +123,7 @@ public class DistributedCommandBus implements CommandBus {
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(command);
         Member destination = commandRouter.findDestination(command)
                                           .orElseThrow(() -> {
-                                              CommandDispatchException exception = new CommandDispatchException(
+                                              NoHandlerForCommandException exception = new NoHandlerForCommandException(
                                                       "No node known to accept " + command.getCommandName());
                                               messageMonitorCallback.reportFailure(exception);
                                               return exception;

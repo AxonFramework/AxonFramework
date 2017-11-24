@@ -19,19 +19,17 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
@@ -107,8 +105,8 @@ public class DistributedCommandBusTest {
 
         try {
             testSubject.dispatch(testCommandMessage);
-        } catch (CommandDispatchException e) {
-            assertTrue(e.getMessage().startsWith("No node known to accept"));
+        } catch (NoHandlerForCommandException e) {
+            // expected
         }
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
@@ -140,8 +138,8 @@ public class DistributedCommandBusTest {
         CommandCallback mockCallback = mock(CommandCallback.class);
         try {
             testSubject.dispatch(testCommandMessage);
-        } catch (CommandDispatchException e) {
-            assertTrue(e.getMessage().startsWith("No node known to accept"));
+        } catch (NoHandlerForCommandException e) {
+            // expected
         }
 
         verify(mockCommandRouter).findDestination(testCommandMessage);
