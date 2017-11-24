@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,9 +30,9 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.PostConstruct;
 
 /**
  * EventStorageEngine implementation that uses Mongo to store and fetch events.
@@ -57,22 +56,40 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     /**
-     * Initializes an EventStorageEngine that uses Mongo to store and load events. Events are fetched in batches of 100.
+     * Initializes an EventStorageEngine that uses Mongo to store and load events. Events are fetched in batches of 100
+     * and both event and snapshots use the same serializer. The same {@link org.axonframework.serialization.Serializer}
+     * is used for both snapshots and events.
      *
-     * @param serializer      Used to serialize and deserialize event payload and metadata.
+     * @param serializer      Used to serialize and deserialize event payload and metadata, and snapshots.
      * @param upcasterChain   Allows older revisions of serialized objects to be deserialized.
      * @param template        MongoTemplate instance to obtain the database and the collections.
-     * @param storageStrategy The strategy for storing and retrieving events from the collections
+     * @param storageStrategy The strategy for storing and retrieving events from the collections.
      */
     public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, MongoTemplate template,
                                    StorageStrategy storageStrategy) {
-        this(serializer, upcasterChain, null, template, storageStrategy);
+        this(serializer, upcasterChain, serializer, template, storageStrategy);
     }
 
     /**
-     * Initializes an EventStorageEngine that uses Mongo to store and load events.
+     * Initializes an EventStorageEngine that uses Mongo to store and load events. Events are fetched in batches of 100.
      *
-     * @param serializer      Used to serialize and deserialize event payload and metadata.
+     * @param serializer      Used to serialize and deserialize snapshots.
+     * @param upcasterChain   Allows older revisions of serialized objects to be deserialized.
+     * @param eventSerializer Used to serialize and deserialize event payload and metadata.
+     * @param template        MongoTemplate instance to obtain the database and the collections.
+     * @param storageStrategy The strategy for storing and retrieving events from the collections.
+     */
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, Serializer eventSerializer,
+                                   MongoTemplate template, StorageStrategy storageStrategy) {
+        this(serializer, upcasterChain, eventSerializer, null, template, storageStrategy);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses Mongo to store and load events. Both events and snapshots use the
+     * same serializer. The same {@link org.axonframework.serialization.Serializer} is used for both snapshots and
+     * events.
+     *
+     * @param serializer      Used to serialize and deserialize event payload and metadata, and snapshots.
      * @param upcasterChain   Allows older revisions of serialized objects to be deserialized.
      * @param batchSize       The number of events that should be read at each database access. When more than this
      *                        number of events must be read to rebuild an aggregate's state, the events are read in
@@ -80,33 +97,53 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      *                        and batch size such that a single batch will generally retrieve all events required to
      *                        rebuild an aggregate's state.
      * @param template        MongoTemplate instance to obtain the database and the collections.
-     * @param storageStrategy The strategy for storing and retrieving events from the collections
+     * @param storageStrategy The strategy for storing and retrieving events from the collections.
      */
     public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, Integer batchSize,
                                    MongoTemplate template, StorageStrategy storageStrategy) {
-        super(serializer, upcasterChain, MongoEventStorageEngine::isDuplicateKeyException, batchSize);
-        this.template = template;
-        this.storageStrategy = storageStrategy;
+        this(serializer, upcasterChain, serializer, batchSize, template, storageStrategy);
     }
 
     /**
      * Initializes an EventStorageEngine that uses Mongo to store and load events.
      *
-     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param serializer      Used to serialize and deserialize snapshots.
+     * @param upcasterChain   Allows older revisions of serialized objects to be deserialized.
+     * @param eventSerializer Used to serialize and deserialize event payload and metadata.
+     * @param batchSize       The number of events that should be read at each database access. When more than this
+     *                        number of events must be read to rebuild an aggregate's state, the events are read in
+     *                        batches of this size. Tip: if you use a snapshotter, make sure to choose snapshot trigger
+     *                        and batch size such that a single batch will generally retrieve all events required to
+     *                        rebuild an aggregate's state.
+     * @param template        MongoTemplate instance to obtain the database and the collections.
+     * @param storageStrategy The strategy for storing and retrieving events from the collections.
+     */
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, Serializer eventSerializer,
+                                   Integer batchSize, MongoTemplate template, StorageStrategy storageStrategy) {
+        this(serializer, upcasterChain, MongoEventStorageEngine::isDuplicateKeyException, eventSerializer, batchSize,
+             template, storageStrategy);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses Mongo to store and load events.
+     *
+     * @param serializer                   Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
-     * @param persistenceExceptionResolver Custom resolver of persistence errors
+     * @param persistenceExceptionResolver Custom resolver of persistence errors.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
      *                                     sure to choose snapshot trigger and batch size such that a single batch will
      *                                     generally retrieve all events required to rebuild an aggregate's state.
      * @param template                     MongoTemplate instance to obtain the database and the collections.
-     * @param storageStrategy              The strategy for storing and retrieving events from the collections
+     * @param storageStrategy              The strategy for storing and retrieving events from the collections.
      */
     public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
-                                   PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
+                                   PersistenceExceptionResolver persistenceExceptionResolver,
+                                   Serializer eventSerializer, Integer batchSize,
                                    MongoTemplate template, StorageStrategy storageStrategy) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize);
+        super(serializer, upcasterChain, persistenceExceptionResolver, eventSerializer, batchSize);
         this.template = template;
         this.storageStrategy = storageStrategy;
     }
@@ -139,7 +176,9 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
         try {
             storageStrategy.appendSnapshot(template.snapshotCollection(), snapshot, serializer);
-            storageStrategy.deleteSnapshots(template.snapshotCollection(), snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber());
+            storageStrategy.deleteSnapshots(
+                    template.snapshotCollection(), snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber()
+            );
         } catch (Exception e) {
             handlePersistenceException(e, snapshot);
         }
