@@ -120,8 +120,9 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
-                                           persistenceExceptionResolver, new XStreamSerializer(), 100, mongoTemplate,
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE,
+                                           persistenceExceptionResolver, serializer, 100, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
     }
 }

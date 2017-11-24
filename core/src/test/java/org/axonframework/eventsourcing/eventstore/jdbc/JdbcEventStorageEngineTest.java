@@ -155,9 +155,10 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                                   EventSchema eventSchema, Class<?> dataType,
                                                   EventTableFactory tableFactory) {
+        XStreamSerializer serializer = new XStreamSerializer();
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(
-                new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, new XStreamSerializer(), 100,
-                dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
+                serializer, upcasterChain, persistenceExceptionResolver, serializer, 100, dataSource::getConnection,
+                NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
         );
         try {
             Connection connection = dataSource.getConnection();

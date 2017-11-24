@@ -194,9 +194,10 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testStoreEventsWithCustomEntity() throws Exception {
+        XStreamSerializer serializer = new XStreamSerializer();
         testSubject = new JpaEventStorageEngine(
-                new XStreamSerializer(), NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
-                new XStreamSerializer(), 100, entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, false
+                serializer, NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, serializer, 100,
+                entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, false
         ) {
 
             @Override
@@ -243,8 +244,10 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
-                                         new XStreamSerializer(), 100, entityManagerProvider,
-                                         NoTransactionManager.INSTANCE, 1L, 10000, true);
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new JpaEventStorageEngine(
+                serializer, upcasterChain, persistenceExceptionResolver, serializer, 100, entityManagerProvider,
+                NoTransactionManager.INSTANCE, 1L, 10000, true
+        );
     }
 }

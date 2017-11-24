@@ -132,11 +132,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
-        SimpleCommandBus commandBus = new SimpleCommandBus(txManager,
-                                                           axonConfiguration
-                                                                   .messageMonitor(CommandBus.class, "commandBus"));
-        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration
-                                                                                       .correlationDataProviders()));
+        SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
+        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
         return commandBus;
     }
 
@@ -165,4 +162,5 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public void setBeanClassLoader(ClassLoader classLoader) {
         this.beanClassLoader = classLoader;
     }
+
 }

@@ -46,8 +46,8 @@ import java.io.IOException;
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_dbobject.xml"})
 public class MongoEventStorageEngineTest_DBObjectSerialization extends BatchingEventStorageEngineTest {
 
-    private static final Logger logger = LoggerFactory
-            .getLogger(MongoEventStorageEngineTest_DBObjectSerialization.class);
+    private static final Logger logger =
+            LoggerFactory.getLogger(MongoEventStorageEngineTest_DBObjectSerialization.class);
 
     private static MongodExecutable mongoExe;
     private static MongodProcess mongod;

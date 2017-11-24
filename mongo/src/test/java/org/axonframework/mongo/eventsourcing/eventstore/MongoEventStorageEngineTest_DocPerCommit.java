@@ -128,8 +128,10 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
 
     @Override
     protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
-                                           persistenceExceptionResolver, new XStreamSerializer(), 100, mongoTemplate,
-                                           new DocumentPerCommitStorageStrategy());
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new MongoEventStorageEngine(
+                serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, serializer, 100, mongoTemplate,
+                new DocumentPerCommitStorageStrategy()
+        );
     }
 }
