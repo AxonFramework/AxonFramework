@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +18,7 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.eventhandling.EventHandler;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.axonframework.commandhandling.model.inspection.ModelInspector.inspectAggregate;
+import static org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory.inspectAggregate;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class EntityEventForwardingModelInspectorTest {
 

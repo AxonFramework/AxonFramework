@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.*;
@@ -162,7 +162,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.cache = cache;
             this.eventStore = eventStore;
             this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-            this.model = ModelInspector.inspectAggregate(aggregateFactory.getAggregateType(), parameterResolverFactory);
+            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(), parameterResolverFactory);
         }
 
         @Override

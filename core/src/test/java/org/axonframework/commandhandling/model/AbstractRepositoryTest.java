@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,14 @@ public class AbstractRepositoryTest {
     public void testAggregateTypeVerification_CorrectType() throws Exception {
         //noinspection unchecked
         testSubject.newInstance(() -> new JpaAggregate("hi"));
+    }
+
+    @Test
+    public void testAggregateTypeVerification_SubclassesAreAllowed() throws Exception {
+        //noinspection unchecked
+        testSubject.newInstance(() -> new JpaAggregate("hi") {
+            // anonymous subclass
+        });
     }
 
     @Test(expected = IllegalArgumentException.class)

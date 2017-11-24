@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model;
+package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.CommandMessageHandlingMember;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.AggregateRoot;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;

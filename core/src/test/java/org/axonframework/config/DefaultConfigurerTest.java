@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,14 +16,11 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.AsynchronousCommandBus;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.VersionedAggregateIdentifier;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
@@ -38,22 +36,20 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.hamcrest.CoreMatchers;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
+import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.persistence.Entity;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Id;
-import javax.persistence.Persistence;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
+import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -178,6 +174,46 @@ public class DefaultConfigurerTest {
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(1, config.getModules().size());
         verify(transactionManager).startTransaction();
+    }
+
+    @Test
+    public void testJpaConfigurationWithInitialTransactionManagerJpaRepositoryFromConfiguration() throws Exception {
+        EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager( em ));
+        Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
+                .configureCommandBus(c -> {
+                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
+                    return commandBus;
+                })
+                .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
+                .buildConfiguration();
+
+        config.start();
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        assertEquals("test", callback.get());
+        assertNotNull(config.repository(StubAggregate.class));
+        assertEquals(1, config.getModules().size());
+        verify(transactionManager).startTransaction();
+    }
+
+    @Test
+    public void testMissingEntityManagerProviderIsReported() throws Exception {
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                .configureCommandBus(c -> {
+                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
+                    return commandBus;
+                })
+                .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
+                .buildConfiguration();
+
+        try {
+            config.start();
+            fail("Expected AxonConfigurationException");
+        } catch (AxonConfigurationException e) {
+            // expected
+        }
     }
 
     @Test

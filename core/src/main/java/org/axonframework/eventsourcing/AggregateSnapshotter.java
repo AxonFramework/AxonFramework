@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -120,7 +120,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (aggregateFactory == null) {
             throw new IllegalArgumentException("Aggregate Type is unknown in this snapshotter: " + aggregateType.getName());
         }
-        aggregateModels.computeIfAbsent(aggregateType, k -> ModelInspector.inspectAggregate(k, parameterResolverFactory));
+        aggregateModels.computeIfAbsent(aggregateType, k -> AnnotatedAggregateMetaModelFactory.inspectAggregate(k, parameterResolverFactory));
         Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
         aggregate.initializeState(eventStream);

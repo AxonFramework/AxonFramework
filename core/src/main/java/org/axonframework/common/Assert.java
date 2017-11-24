@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,18 @@ public abstract class Assert {
      */
     public static void notNull(Object value, Supplier<String> messageSupplier) {
         isTrue(value != null, messageSupplier);
+    }
+
+    /**
+     * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is
+     * thrown.
+     *
+     * @param value           the value not to be {@code null}
+     * @param messageSupplier Supplier of the exception message if the assertion fails
+     */
+    public static <T> T nonNull(T value, Supplier<String> messageSupplier) {
+        isTrue(value != null, messageSupplier);
+        return value;
     }
 
 }

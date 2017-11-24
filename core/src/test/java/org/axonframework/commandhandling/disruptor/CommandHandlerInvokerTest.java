@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -141,7 +141,7 @@ public class CommandHandlerInvokerTest {
         when(mockCache.get(aggregateIdentifier)).thenAnswer(
                 invocationOnMock -> new AggregateCacheEntry<>(
                         EventSourcedAggregate.initialize(new StubAggregate(aggregateIdentifier),
-                                                         ModelInspector.inspectAggregate(StubAggregate.class),
+                                                         AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class),
                                                          mockEventStore, mockTrigger)));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
