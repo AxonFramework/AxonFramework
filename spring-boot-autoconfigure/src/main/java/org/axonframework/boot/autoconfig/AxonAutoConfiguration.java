@@ -81,14 +81,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Bean
-    @Qualifier("eventSerializer")
-    public XStreamSerializer eventSerializer() {
-        XStreamSerializer xStreamSerializer = new XStreamSerializer();
-        xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
-        return xStreamSerializer;
-    }
-
-    @Bean
     @ConditionalOnMissingBean
     public CorrelationDataProvider messageOriginProvider() {
         return new MessageOriginProvider();
@@ -140,8 +132,11 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
-        SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
-        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
+        SimpleCommandBus commandBus = new SimpleCommandBus(txManager,
+                                                           axonConfiguration
+                                                                   .messageMonitor(CommandBus.class, "commandBus"));
+        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration
+                                                                                       .correlationDataProviders()));
         return commandBus;
     }
 
@@ -170,5 +165,4 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public void setBeanClassLoader(ClassLoader classLoader) {
         this.beanClassLoader = classLoader;
     }
-
 }
