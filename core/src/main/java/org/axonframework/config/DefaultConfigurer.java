@@ -98,8 +98,7 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
-    private final Component<Serializer> eventSerializer =
-            new Component<>(config, "eventSerializer", this::eventSerializer);
+    private Component<Serializer> eventSerializer = new Component<>(config, "eventSerializer", this::eventSerializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain",
@@ -377,6 +376,12 @@ public class DefaultConfigurer implements Configurer {
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });
+    }
+
+    @Override
+    public Configurer configureEventSerializer(Function<Configuration, Serializer> eventSerializerBuilder) {
+        eventSerializer = new Component<>(config, "eventSerializer", eventSerializerBuilder);
+        return this;
     }
 
     @Override

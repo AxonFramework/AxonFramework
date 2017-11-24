@@ -68,23 +68,24 @@ public interface Configurer {
      * Configures the builder function to create the Message Monitor for the Message processing components in this
      * configuration that match the given componentType, unless more specific configuration based on both type and name
      * is available.
-     *
+     * <p>
      * <p>A component matches componentType if componentType is assignable from the component's class. If a component
      * matches multiple types, and the types derive from each other, the configuration from the most derived type is
      * used. If the matching types do not derive from each other, the result is unspecified.</p>
-     *
+     * <p>
      * <p>For example: in case a monitor is configured for {@link CommandBus} and another monitor is configured for
      * {@link org.axonframework.commandhandling.SimpleCommandBus SimpleCommandBus}), components of type
      * {@link org.axonframework.commandhandling.AsynchronousCommandBus AsynchronousCommandBus} will use the monitor
      * configured for the SimpleCommandBus.</p>
-     *
+     * <p>
      * <p>A component's name matches componentName if they are identical; i.e. they are compared case sensitively.</p>
      *
      * @param componentType         The declared type of the component
      * @param messageMonitorBuilder The builder function to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureMessageMonitor(Class<?> componentType, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+    default Configurer configureMessageMonitor(Class<?> componentType,
+                                               Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
                                        (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
     }
@@ -92,16 +93,16 @@ public interface Configurer {
     /**
      * Configures the factory to create the Message Monitor for the Message processing components in this configuration
      * that match the given componentType, unless more specific configuration based on both type and name is available.
-     *
+     * <p>
      * <p>A component matches componentType if componentType is assignable from the component's class. If a component
      * matches multiple types, and the types derive from each other, the configuration from the most derived type is
      * used. If the matching types do not derive from each other, the result is unspecified.</p>
-     *
+     * <p>
      * <p>For example: in case a monitor is configured for {@link CommandBus} and another monitor is configured for
      * {@link org.axonframework.commandhandling.SimpleCommandBus SimpleCommandBus}), components of type
      * {@link org.axonframework.commandhandling.AsynchronousCommandBus AsynchronousCommandBus} will use the monitor
      * configured for the SimpleCommandBus.</p>
-     *
+     * <p>
      * <p>A component's name matches componentName if they are identical; i.e. they are compared case sensitively.</p>
      *
      * @param componentType         The declared type of the component
@@ -113,16 +114,16 @@ public interface Configurer {
     /**
      * Configures the builder function to create the Message Monitor for the Message processing components in this
      * configuration that match the given class and name.
-     *
+     * <p>
      * <p>A component matches componentType if componentType is assignable from the component's class. If a component
      * matches multiple types, and the types derive from each other, the configuration from the most derived type is
      * used. If the matching types do not derive from each other, the result is unspecified.</p>
-     *
+     * <p>
      * <p>For example: in case a monitor is configured for {@link CommandBus} and another monitor is configured for
      * {@link org.axonframework.commandhandling.SimpleCommandBus SimpleCommandBus}), components of type
      * {@link org.axonframework.commandhandling.AsynchronousCommandBus AsynchronousCommandBus} will use the monitor
      * configured for the SimpleCommandBus.</p>
-     *
+     * <p>
      * <p>A component's name matches componentName if they are identical; i.e. they are compared case sensitively.</p>
      *
      * @param componentType         The declared type of the component
@@ -140,16 +141,16 @@ public interface Configurer {
     /**
      * Configures the factory create the Message Monitor for those Message processing components in this configuration
      * that match the given class and name.
-     *
+     * <p>
      * <p>A component matches componentType if componentType is assignable from the component's class. If a component
      * matches multiple types, and the types derive from each other, the configuration from the most derived type is
      * used. If the matching types do not derive from each other, the result is unspecified.</p>
-     *
+     * <p>
      * <p>For example: in case a monitor is configured for {@link CommandBus} and another monitor is configured for
      * {@link org.axonframework.commandhandling.SimpleCommandBus SimpleCommandBus}), components of type
      * {@link org.axonframework.commandhandling.AsynchronousCommandBus AsynchronousCommandBus} will use the monitor
      * configured for the SimpleCommandBus.</p>
-     *
+     * <p>
      * <p>A component's name matches componentName if they are identical; i.e. they are compared case sensitively.</p>
      *
      * @param componentType         The declared type of the component
@@ -157,7 +158,8 @@ public interface Configurer {
      * @param messageMonitorFactory The factory to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer configureMessageMonitor(Class<?> componentType, String componentName, MessageMonitorFactory messageMonitorFactory);
+    Configurer configureMessageMonitor(Class<?> componentType, String componentName,
+                                       MessageMonitorFactory messageMonitorFactory);
 
     /**
      * Configures the CorrelationDataProviders that Message processing components should use to attach correlation data
@@ -177,6 +179,7 @@ public interface Configurer {
      *
      * @param module The module to register
      * @return the current instance of the Configurer, for chaining purposes
+     *
      * @see SagaConfiguration
      * @see EventHandlingConfiguration
      */
@@ -293,6 +296,15 @@ public interface Configurer {
     }
 
     /**
+     * Configures the given event Serializer to use in this configuration. The builder receives the Configuration as
+     * input and is expected to return a fully initialized {@link org.axonframework.serialization.Serializer} instance.
+     *
+     * @param eventSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
+     * @return The current instance of the Configurer, for chaining purposes.
+     */
+    Configurer configureEventSerializer(Function<Configuration, Serializer> eventSerializerBuilder);
+
+    /**
      * Configures the given Transaction Manager to use in this configuration. The builder receives the Configuration as
      * input and is expected to return a fully initialized {@link TransactionManager}
      * instance.
@@ -322,6 +334,7 @@ public interface Configurer {
      * @param aggregateConfiguration The instance describing the configuration of an Aggregate
      * @param <A>                    The type of aggregate the configuration is for
      * @return the current instance of the Configurer, for chaining purposes
+     *
      * @see AggregateConfigurer
      */
     <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration);
