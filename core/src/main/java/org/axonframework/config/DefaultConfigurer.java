@@ -98,7 +98,8 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
-    private Component<Serializer> eventSerializer = new Component<>(config, "eventSerializer", this::eventSerializer);
+    private final Component<Serializer> eventSerializer =
+            new Component<>(config, "eventSerializer", Configuration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain",
@@ -278,17 +279,6 @@ public class DefaultConfigurer implements Configurer {
         return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
     }
 
-    /**
-     * Provides the Event {@link org.axonframework.serialization.Serializer} implementation.
-     * Subclasses may override this method to provide their own default.
-     *
-     * @param config The configuration based on which the component is initialized.
-     * @return The event {@link org.axonframework.serialization.Serializer} to use.
-     */
-    protected Serializer eventSerializer(Configuration config) {
-        return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
-    }
-
     @Override
     public Configurer registerEventUpcaster(Function<Configuration, EventUpcaster> upcasterBuilder) {
         upcasters.add(new Component<>(config, "upcaster", upcasterBuilder));
@@ -380,7 +370,7 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer configureEventSerializer(Function<Configuration, Serializer> eventSerializerBuilder) {
-        eventSerializer = new Component<>(config, "eventSerializer", eventSerializerBuilder);
+        eventSerializer.update(eventSerializerBuilder);
         return this;
     }
 
