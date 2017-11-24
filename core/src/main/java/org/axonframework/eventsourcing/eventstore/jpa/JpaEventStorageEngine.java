@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -94,7 +93,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. Events are fetched in batches of 100.
-     * The same {@link org.axonframework.serialization.Serializer} is used for both snapshots and events
+     * The same {@link org.axonframework.serialization.Serializer} is used for both snapshots and events.
      *
      * @param serializer            Used to serialize and deserialize event payload and metadata, and snapshots.
      * @param upcasterChain         Allows older revisions of serialized objects to be deserialized.
@@ -134,7 +133,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. Events are fetched in batches of 100.
-     * The same {@link org.axonframework.serialization.Serializer} is used for both snapshots and events
+     * The same {@link org.axonframework.serialization.Serializer} is used for both snapshots and events.
      *
      * @param serializer                   Used to serialize and deserialize event payload and metadata, and snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
@@ -218,10 +217,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () -> String
-                .format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
-                        GapAwareTrackingToken.class.getSimpleName()));
-        SortedSet<Long> gaps = lastToken == null ? Collections.emptySortedSet() : ((GapAwareTrackingToken) lastToken).getGaps();
+        Assert.isTrue(
+                lastToken == null || lastToken instanceof GapAwareTrackingToken,
+                () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                    lastToken, GapAwareTrackingToken.class.getSimpleName())
+        );
+
         GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
 
         List<Object[]> entries = transactionManager.fetchInTransaction(() -> {
@@ -229,38 +230,43 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             TypedQuery<Object[]> query;
             if (previousToken == null || previousToken.getGaps().isEmpty()) {
                 query = entityManager().createQuery(
-                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                                "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                                + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
                                 "FROM " + domainEventEntryEntityName() + " e " +
                                 "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class);
             } else {
                 query = entityManager().createQuery(
-                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                                "e.eventIdentifier, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                        "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                                + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
                                 "FROM " + domainEventEntryEntityName() + " e " +
                                 "WHERE e.globalIndex > :token OR e.globalIndex IN (:gaps) ORDER BY e.globalIndex ASC",
-                        Object[].class)
-                        .setParameter("gaps", previousToken.getGaps());
+                        Object[].class
+                ).setParameter("gaps", previousToken.getGaps());
             }
-            return query
-                    .setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
-                    .setMaxResults(batchSize)
-                    .getResultList();
+            return query.setParameter("token", previousToken == null ? -1L : previousToken.getIndex())
+                        .setMaxResults(batchSize)
+                        .getResultList();
         });
         List<TrackedEventData<?>> result = new ArrayList<>();
         GapAwareTrackingToken token = previousToken;
         for (Object[] entry : entries) {
             long globalSequence = (Long) entry[0];
-            GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>((String) entry[1], (String) entry[2], (long) entry[3], (String) entry[4], entry[5], (String) entry[6], (String) entry[7], entry[8], entry[9]);
-            // now that we have the event itself, we can calculate the token
-            boolean allowGaps = domainEvent.getTimestamp().isAfter(GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS));
+            GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
+                    (String) entry[1], (String) entry[2], (long) entry[3], (String) entry[4], entry[5],
+                    (String) entry[6], (String) entry[7], entry[8], entry[9]
+            );
+
+            // Now that we have the event itself, we can calculate the token
+            boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutFrame());
             if (token == null) {
-                token = GapAwareTrackingToken.newInstance(globalSequence,
-                                                          allowGaps ?
-                                                                  LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
-                                                                          .boxed()
-                                                                          .collect(Collectors.toCollection(TreeSet::new)) :
-                                                                  Collections.emptySortedSet());
+                token = GapAwareTrackingToken.newInstance(
+                        globalSequence,
+                        allowGaps
+                                ? LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
+                                            .boxed()
+                                            .collect(Collectors.toCollection(TreeSet::new))
+                                : Collections.emptySortedSet()
+                );
             } else {
                 token = token.advanceTo(globalSequence, maxGapOffset, allowGaps);
             }
@@ -273,7 +279,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         GapAwareTrackingToken previousToken = lastToken;
         if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
             List<Object[]> results = transactionManager.fetchInTransaction(() -> entityManager()
-                    .createQuery("SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e WHERE e.globalIndex >= :firstGapOffset AND e.globalIndex <= :maxGlobalIndex", Object[].class)
+                    .createQuery(
+                            "SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e "
+                                    + "WHERE e.globalIndex >= :firstGapOffset "
+                                    + "AND e.globalIndex <= :maxGlobalIndex",
+                            Object[].class
+                    )
                     .setParameter("firstGapOffset", lastToken.getGaps().first())
                     .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
                     .getResultList());
@@ -281,8 +292,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                 try {
                     Instant timestamp = DateTimeUtils.parseInstant(result[1].toString());
                     long sequenceNumber = (long) result[0];
-                    if (previousToken.getGaps().contains(sequenceNumber)
-                            || timestamp.isAfter(GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS))) {
+                    if (previousToken.getGaps().contains(sequenceNumber) || timestamp.isAfter(gapTimeoutFrame())) {
                         // filled a gap, should not continue cleaning up
                         break;
                     }
@@ -293,10 +303,13 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                     logger.info("Unable to parse timestamp to clean old gaps", e);
                     break;
                 }
-
             }
         }
         return previousToken;
+    }
+
+    private Instant gapTimeoutFrame() {
+        return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
     }
 
     @Override
@@ -304,13 +317,14 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
         return transactionManager.fetchInTransaction(
-                () -> entityManager().createQuery(
-                        "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                                "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                                "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                                "e.payloadRevision, e.payload, e.metaData) " + "FROM " + domainEventEntryEntityName() + " e " +
-                                "WHERE e.aggregateIdentifier = :id " + "AND e.sequenceNumber >= :seq " +
-                                "ORDER BY e.sequenceNumber ASC")
+                () -> entityManager()
+                        .createQuery(
+                                "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                                        "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
+                                        + "e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
+                                        + domainEventEntryEntityName() + " e WHERE e.aggregateIdentifier = :id "
+                                        + "AND e.sequenceNumber >= :seq ORDER BY e.sequenceNumber ASC"
+                        )
                         .setParameter("id", aggregateIdentifier)
                         .setParameter("seq", firstSequenceNumber)
                         .setMaxResults(batchSize)
@@ -321,12 +335,14 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @SuppressWarnings("unchecked")
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return transactionManager.fetchInTransaction(
-                () -> entityManager().createQuery(
-                        "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                                "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
-                                "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " + "FROM " +
-                                snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id " +
-                                "ORDER BY e.sequenceNumber DESC")
+                () -> entityManager()
+                        .createQuery(
+                                "SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry("
+                                        + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                                        + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
+                                        + snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id "
+                                        + "ORDER BY e.sequenceNumber DESC"
+                        )
                         .setParameter("id", aggregateIdentifier)
                         .setMaxResults(1)
                         .getResultList()
@@ -370,9 +386,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param sequenceNumber      The sequence number from which value snapshots should be kept
      */
     protected void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
-        entityManager().createQuery("DELETE FROM " + snapshotEventEntryEntityName() +
-                                            " e WHERE e.aggregateIdentifier = :aggregateIdentifier" +
-                                            " AND e.sequenceNumber < :sequenceNumber")
+        entityManager()
+                .createQuery(
+                        "DELETE FROM " + snapshotEventEntryEntityName() + " e "
+                                + "WHERE e.aggregateIdentifier = :aggregateIdentifier "
+                                + "AND e.sequenceNumber < :sequenceNumber"
+                )
                 .setParameter("aggregateIdentifier", aggregateIdentifier)
                 .setParameter("sequenceNumber", sequenceNumber)
                 .executeUpdate();
