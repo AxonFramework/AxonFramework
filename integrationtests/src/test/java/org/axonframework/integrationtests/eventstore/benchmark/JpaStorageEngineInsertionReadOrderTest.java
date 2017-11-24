@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,9 +27,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
@@ -38,18 +36,18 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author Rene de Waele
@@ -78,7 +76,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
             return null;
         });
 
-        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, 20,
+        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, serializer, 20,
                                                 new SimpleEntityManagerProvider(entityManager),
                                                 new SpringTransactionManager(tx),
                                                 1L, 10000, true);
@@ -122,7 +120,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
     @Test(timeout = 30000)
     public void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
         //increase batch size to 100
-        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, 100,
+        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE, null, serializer, 100,
                                                 new SimpleEntityManagerProvider(entityManager),
                                                 new SpringTransactionManager(tx), 1L, 10000, true);
         int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
