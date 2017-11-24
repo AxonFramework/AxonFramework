@@ -1,6 +1,6 @@
 /*
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -32,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -106,41 +111,54 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param command  The actual command to dispatch to the handler
      * @param callback The callback to notify of the result
+     * @param <C>      The type of payload of the command
+     * @param <R>      The type of result expected from the command handler
+     */
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
+
+        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command).orElseThrow(() -> {
+            NoHandlerForCommandException exception = new NoHandlerForCommandException(
+                    format("No handler was subscribed to command [%s]", command.getCommandName()));
+            monitorCallback.reportFailure(exception);
+            return exception;
+        });
+
+        handle(command, handler, new MonitorAwareCallback<>(callback, monitorCallback));
+    }
+
+    private Optional<MessageHandler<? super CommandMessage<?>>> findCommandHandlerFor(CommandMessage<?> command) {
+        return Optional.ofNullable(subscriptions.get(command.getCommandName()));
+    }
+
+    /**
+     * Performs the actual handling logic.
+     *
+     * @param command  The actual command to handle
+     * @param handler  The handler that must be invoked for this command
+     * @param callback The callback to notify of the result
+     * @param <C>      The type of payload of the command
      * @param <R>      The type of result expected from the command handler
      */
     @SuppressWarnings({"unchecked"})
-    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
-        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
-        try {
-            Object result = doDispatch(command, handler);
-            monitorCallback.reportSuccess();
-            callback.onSuccess(command, (R) result);
-        } catch (Exception throwable) {
-            monitorCallback.reportFailure(throwable);
-            callback.onFailure(command, throwable);
-        }
-    }
-
-    private MessageHandler<? super CommandMessage<?>> findCommandHandlerFor(CommandMessage<?> command) {
-        final MessageHandler<? super CommandMessage<?>> handler = subscriptions.get(command.getCommandName());
-        if (handler == null) {
-            throw new NoHandlerForCommandException(format("No handler was subscribed to command [%s]",
-                                                          command.getCommandName()));
-        }
-        return handler;
-    }
-
-    private <C> Object doDispatch(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler) throws Exception {
+    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, R> callback) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Dispatching command [{}]", command.getCommandName());
+            logger.debug("Handling command [{}]", command.getCommandName());
         }
-        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-        Transaction transaction = transactionManager.startTransaction();
-        unitOfWork.onCommit(u -> transaction.commit());
-        unitOfWork.onRollback(u -> transaction.rollback());
-        InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
-        return unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
+
+        try {
+            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
+            Transaction transaction = transactionManager.startTransaction();
+            unitOfWork.onCommit(u -> transaction.commit());
+            unitOfWork.onRollback(u -> transaction.rollback());
+            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+
+            R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
+
+            callback.onSuccess(command, result);
+        } catch (Exception e) {
+            callback.onFailure(command, e);
+        }
     }
 
     /**
