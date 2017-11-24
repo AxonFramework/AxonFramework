@@ -99,8 +99,9 @@ public class DistributedCommandBus implements CommandBus {
     public <C> void dispatch(CommandMessage<C> command) {
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
-            Member destination = commandRouter.findDestination(command)
-                    .orElseThrow(() -> new NoHandlerForCommandException("No node known to accept " + command.getCommandName()));
+            Member destination = commandRouter.findDestination(interceptedCommand)
+                                              .orElseThrow(() -> new NoHandlerForCommandException(
+                                                      "No node known to accept " + interceptedCommand.getCommandName()));
             try {
                 connector.send(destination, interceptedCommand);
             } catch (Exception e) {
@@ -120,11 +121,11 @@ public class DistributedCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
-        MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(command);
-        Member destination = commandRouter.findDestination(command)
+        MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
+        Member destination = commandRouter.findDestination(interceptedCommand)
                                           .orElseThrow(() -> {
                                               NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                                                      "No node known to accept " + command.getCommandName());
+                                                      "No node known to accept " + interceptedCommand.getCommandName());
                                               messageMonitorCallback.reportFailure(exception);
                                               return exception;
                                           });

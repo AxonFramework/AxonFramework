@@ -233,7 +233,7 @@ public class DisruptorCommandBus implements CommandBus {
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             commandToDispatch = (CommandMessage) interceptor.handle(commandToDispatch);
         }
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(commandToDispatch);
 
         try {
             doDispatch(commandToDispatch, new MonitorAwareCallback(callback, monitorCallback));
