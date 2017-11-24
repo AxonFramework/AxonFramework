@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -76,6 +75,14 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     @ConditionalOnMissingBean(Serializer.class)
     public XStreamSerializer serializer() {
+        XStreamSerializer xStreamSerializer = new XStreamSerializer();
+        xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
+        return xStreamSerializer;
+    }
+
+    @Bean
+    @Qualifier("eventSerializer")
+    public XStreamSerializer eventSerializer() {
         XStreamSerializer xStreamSerializer = new XStreamSerializer();
         xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
         return xStreamSerializer;
