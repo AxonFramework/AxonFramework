@@ -72,8 +72,9 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @DirtiesContext
     public void testCustomSchemaConfig() throws Exception {
         setTestSubject(testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
-                                                  EventSchema.builder().withEventTable("CustomDomainEvent")
-                                                          .withPayloadColumn("eventData").build(), String.class,
+                                                  EventSchema.builder()
+                                                             .withEventTable("CustomDomainEvent")
+                                                             .withPayloadColumn("eventData").build(), String.class,
                                                   new HsqlEventTableFactory() {
                                                       @Override
                                                       protected String payloadType() {
@@ -85,24 +86,28 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Test
     public void testGapsForVeryOldEventsAreNotIncluded() throws SQLException {
-        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-1), createEvent(0));
-        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
+
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-2), createEvent(1));
-        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
+
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-3), createEvent(2));
+
         GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-4), createEvent(3));
 
-        try(Connection conn = dataSource.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
         }
 
         testSubject.fetchTrackedEvents(null, 100).stream()
-                .map(i -> (GapAwareTrackingToken) i.trackingToken())
-                .forEach(i -> {
-                    assertTrue(i.getGaps().size() <= 2);
-                });
+                   .map(i -> (GapAwareTrackingToken) i.trackingToken())
+                   .forEach(i -> assertTrue(i.getGaps().size() <= 2));
     }
 
     @DirtiesContext
@@ -120,21 +125,24 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         GenericEventMessage.clock = Clock.fixed(now, Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-4), createEvent(3)); // index 6 and 7
 
-        try(Connection conn = dataSource.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             conn.prepareStatement("DELETE FROM DomainEventEntry WHERE sequenceNumber < 0").executeUpdate();
         }
 
-        List<Long> gaps = LongStream.range(-50, 6).filter(i -> i != 1L && i != 3L && i != 5).boxed().collect(Collectors.toList());
-        List<? extends TrackedEventData<?>> events = testSubject.fetchTrackedEvents(GapAwareTrackingToken.newInstance(6, gaps), 100);
+        List<Long> gaps = LongStream.range(-50, 6)
+                                    .filter(i -> i != 1L && i != 3L && i != 5)
+                                    .boxed()
+                                    .collect(Collectors.toList());
+        List<? extends TrackedEventData<?>> events =
+                testSubject.fetchTrackedEvents(GapAwareTrackingToken.newInstance(6, gaps), 100);
         assertEquals(1, events.size());
-        assertEquals(4L, (long)((GapAwareTrackingToken)events.get(0).trackingToken()).getGaps().first());
+        assertEquals(4L, (long) ((GapAwareTrackingToken) events.get(0).trackingToken()).getGaps().first());
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
                             HsqlEventTableFactory.INSTANCE);
-
     }
 
     @Override
@@ -144,9 +152,9 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                          PersistenceExceptionResolver persistenceExceptionResolver,
-                                                          EventSchema eventSchema, Class<?> dataType,
-                                                          EventTableFactory tableFactory) {
+                                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                                  EventSchema eventSchema, Class<?> dataType,
+                                                  EventTableFactory tableFactory) {
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(
                 new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, new XStreamSerializer(), 100,
                 dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
