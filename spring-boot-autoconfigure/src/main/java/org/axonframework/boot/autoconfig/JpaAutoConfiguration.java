@@ -53,12 +53,12 @@ public class JpaAutoConfiguration {
                                                  AxonConfiguration configuration,
                                                  EntityManagerProvider entityManagerProvider,
                                                  TransactionManager transactionManager) {
-        return eventStorageEngine(serializer, persistenceExceptionResolver, serializer, configuration,
-                                  entityManagerProvider, transactionManager);
+        return new JpaEventStorageEngine(serializer, configuration.getComponent(EventUpcaster.class),
+                                         persistenceExceptionResolver, configuration.eventSerializer(), null,
+                                         entityManagerProvider, transactionManager, null, null, true);
     }
 
     @ConditionalOnMissingBean
-    @ConditionalOnBean(name = "eventSerializer")
     @Bean
     public EventStorageEngine eventStorageEngine(Serializer serializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
