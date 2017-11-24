@@ -237,7 +237,7 @@ public class DisruptorCommandBus implements CommandBus {
 
         try {
             doDispatch(commandToDispatch, new MonitorAwareCallback(callback, monitorCallback));
-        } catch (NoHandlerForCommandException e) {
+        } catch (Exception e) {
             monitorCallback.reportFailure(e);
             throw e;
         }

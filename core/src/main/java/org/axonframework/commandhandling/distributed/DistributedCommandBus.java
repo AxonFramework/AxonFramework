@@ -133,6 +133,7 @@ public class DistributedCommandBus implements CommandBus {
             connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
                                                                                        messageMonitorCallback));
         } catch (Exception e) {
+            messageMonitorCallback.reportFailure(e);
             destination.suspect();
             throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
         }
