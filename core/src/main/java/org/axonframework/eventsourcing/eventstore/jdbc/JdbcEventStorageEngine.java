@@ -1,9 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +25,14 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.DomainEventData;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
+import org.axonframework.eventsourcing.eventstore.TrackedEventData;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -39,7 +48,12 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -88,7 +102,32 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *                           databases for reading blob data.
      */
     public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
-        this(null, null, null, null, connectionProvider, transactionManager, byte[].class, new EventSchema(), null, null);
+        this(null, null, null, null, null, connectionProvider, transactionManager, byte[].class, new EventSchema(),
+             null, null);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
+     * The payload and metadata of events is stored as a serialized blob of bytes using the given {@code serializer}.
+     * <p>
+     * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
+     * deserialization. The same {@link org.axonframework.serialization.Serializer} is used for both snapshots and
+     * events.
+     *
+     * @param serializer                   Used to serialize and deserialize event payload and metadata, and snapshots.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     * @param connectionProvider           The provider of connections to the underlying database
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain
+     *                                     databases for reading blob data.
+     */
+    public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  ConnectionProvider connectionProvider, TransactionManager transactionManager) {
+        this(serializer, upcasterChain, persistenceExceptionResolver, serializer, connectionProvider,
+             transactionManager);
     }
 
     /**
@@ -98,34 +137,38 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
      * deserialization.
      *
-     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param serializer                   Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
      * @param connectionProvider           The provider of connections to the underlying database
-     * @param transactionManager           The instance managing transactions around fetching event data. Required by certain
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain
      *                                     databases for reading blob data.
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
-                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  PersistenceExceptionResolver persistenceExceptionResolver, Serializer eventSerializer,
                                   ConnectionProvider connectionProvider, TransactionManager transactionManager) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, null, connectionProvider, transactionManager,
-             byte[].class, new EventSchema(), null, null);
+        this(serializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null, connectionProvider,
+             transactionManager, byte[].class, new EventSchema(), null, null);
     }
 
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events.
      *
-     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param serializer                   Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
      *                                     sure to choose snapshot trigger and batch size such that a single batch will
      *                                     generally retrieve all events required to rebuild an aggregate's state.
      * @param connectionProvider           The provider of connections to the underlying database
-     * @param transactionManager           The instance managing transactions around fetching event data. Required by certain
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain
      *                                     databases for reading blob data.
      * @param dataType                     The data type for serialized event payload and metadata
      * @param schema                       Object that describes the database schema of event entries
@@ -138,12 +181,12 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *                                     is 1 unless the table has contained entries before.
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
-                                  PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
-                                  ConnectionProvider connectionProvider, TransactionManager transactionManager,
-                                  Class<?> dataType, EventSchema schema,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  Serializer eventSerializer, Integer batchSize, ConnectionProvider connectionProvider,
+                                  TransactionManager transactionManager, Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
         super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
-              batchSize);
+              eventSerializer, batchSize);
         this.connectionProvider = connectionProvider;
         this.transactionManager = transactionManager;
         this.dataType = dataType;

@@ -1,9 +1,11 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +27,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
@@ -40,7 +41,7 @@ import java.util.stream.LongStream;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Rene de Waele
@@ -146,9 +147,10 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                           PersistenceExceptionResolver persistenceExceptionResolver,
                                                           EventSchema eventSchema, Class<?> dataType,
                                                           EventTableFactory tableFactory) {
-        JdbcEventStorageEngine result =
-                new JdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
-                                           dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null);
+        JdbcEventStorageEngine result = new JdbcEventStorageEngine(
+                new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, new XStreamSerializer(), 100,
+                dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
+        );
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
