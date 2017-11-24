@@ -30,6 +30,7 @@ import org.mockito.runners.*;
 
 import java.util.Optional;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
@@ -105,6 +106,7 @@ public class DistributedCommandBusTest {
 
         try {
             testSubject.dispatch(testCommandMessage);
+            fail("Expected NoHandlerForCommandException");
         } catch (NoHandlerForCommandException e) {
             // expected
         }
@@ -138,6 +140,7 @@ public class DistributedCommandBusTest {
         CommandCallback mockCallback = mock(CommandCallback.class);
         try {
             testSubject.dispatch(testCommandMessage);
+            fail("Expected NoHandlerForCommandException");
         } catch (NoHandlerForCommandException e) {
             // expected
         }
