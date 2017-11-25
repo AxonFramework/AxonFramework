@@ -54,19 +54,19 @@ public class AMQPAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
-    @Bean("amqpMessageConverter")
-    public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
-                                                            RoutingKeyResolver routingKeyResolver) {
-        return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
-    }
-
-    @ConditionalOnMissingBean
     @ConditionalOnSingleCandidate(Serializer.class)
     @ConditionalOnQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
     @Bean
     public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
                                                      RoutingKeyResolver routingKeyResolver) {
         return new DefaultAMQPMessageConverter(eventSerializer, routingKeyResolver, amqpProperties.isDurableMessages());
+    }
+
+    @ConditionalOnMissingBean
+    @Bean("amqpMessageConverter")
+    public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
+                                                            RoutingKeyResolver routingKeyResolver) {
+        return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
     }
 
     @ConditionalOnProperty("axon.amqp.exchange")
