@@ -15,41 +15,41 @@
 
 package org.axonframework.boot.autoconfig;
 
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.MultiValueMap;
 
-public class OnQualifiedBeanCondition extends SpringBootCondition implements Condition {
+import java.util.stream.Stream;
 
-    private static final String EXPECTED_ANNOTATION = ConditionalOnQualifiedBean.class.getName();
-    private static final boolean CONDITION_NOT_MET = false;
-    private static final boolean CONDITION_MET = true;
+import static org.axonframework.spring.SpringUtils.isQualifierMatch;
+
+/**
+ * {@link Condition} implementation to check for a bean instance of a specific class *and* a specific qualifier on it.
+ */
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class OnQualifiedBeanCondition extends SpringBootCondition implements Condition {
 
     @Override
     public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        if (metadata.isAnnotated(EXPECTED_ANNOTATION)) {
-            MultiValueMap<String, Object> annotationAttributes =
-                    metadata.getAllAnnotationAttributes(EXPECTED_ANNOTATION, true);
-            Class conditionalOnClass = (Class) annotationAttributes.get("value").get(0);
-            String[] beansOfConditionalClassType = context.getBeanFactory()
-                                                          .getBeanNamesForType(conditionalOnClass);
-            int numberOfBeans = beansOfConditionalClassType.length;
-            return getConditionOutcome(numberOfBeans);
-        }
+        ConfigurableListableBeanFactory bf = context.getBeanFactory();
 
-        return new ConditionOutcome(CONDITION_NOT_MET, "");
-    }
+        MultiValueMap<String, Object> annotationAttributes =
+                metadata.getAllAnnotationAttributes(ConditionalOnQualifiedBean.class.getName(), true);
+        Class conditionalClass = (Class) annotationAttributes.get("beanClass").get(0);
+        String conditionalQualifier = (String) annotationAttributes.get("qualifier").get(0);
 
-    private ConditionOutcome getConditionOutcome(int numberOfBeans) {
-        if (numberOfBeans == 0) {
-            return new ConditionOutcome(CONDITION_NOT_MET, "");
-        } else if (numberOfBeans == 1) {
-            return new ConditionOutcome(CONDITION_MET, "");
-        } else {
-            return new ConditionOutcome(CONDITION_NOT_MET, "");
-        }
+
+        return Stream.of(bf.getBeanNamesForType(conditionalClass))
+                     .anyMatch(beanName -> isQualifierMatch(beanName, bf, conditionalQualifier))
+                ? new ConditionOutcome(true, String.format(
+                "Match found for class [%s] and qualifier [%s]", conditionalClass, conditionalQualifier))
+                : new ConditionOutcome(false, String.format(
+                "No match found for class [%s] and qualifier [%s]", conditionalClass, conditionalQualifier));
     }
 }
