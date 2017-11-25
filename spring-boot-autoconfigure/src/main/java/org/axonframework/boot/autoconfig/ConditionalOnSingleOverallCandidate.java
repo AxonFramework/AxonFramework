@@ -22,10 +22,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ *
+ */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Conditional(SingleOverallCandidateCondition.class)
+@Conditional(OnSingleOverallCandidateCondition.class)
 public @interface ConditionalOnSingleOverallCandidate {
 
+    /**
+     *
+     * @return
+     */
     Class<?> value() default Object.class;
 }
