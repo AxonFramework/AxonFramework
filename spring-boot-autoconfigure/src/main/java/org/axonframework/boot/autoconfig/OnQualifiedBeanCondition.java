@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.ConfigurationCondition;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
@@ -33,7 +34,12 @@ import static org.axonframework.spring.SpringUtils.isQualifierMatch;
  * {@link Condition} implementation to check for a bean instance of a specific class *and* a specific qualifier on it.
  */
 @Order(Ordered.LOWEST_PRECEDENCE)
-public class OnQualifiedBeanCondition extends SpringBootCondition implements Condition {
+public class OnQualifiedBeanCondition extends SpringBootCondition implements ConfigurationCondition {
+
+    @Override
+    public ConfigurationPhase getConfigurationPhase() {
+        return ConfigurationPhase.REGISTER_BEAN;
+    }
 
     @Override
     public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
