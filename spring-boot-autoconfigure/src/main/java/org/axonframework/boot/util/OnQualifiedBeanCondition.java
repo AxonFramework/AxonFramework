@@ -15,6 +15,8 @@
 
 package org.axonframework.boot.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
@@ -36,6 +38,8 @@ import static org.axonframework.spring.SpringUtils.isQualifierMatch;
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class OnQualifiedBeanCondition extends SpringBootCondition implements ConfigurationCondition {
 
+    private static final Logger logger = LoggerFactory.getLogger(OnQualifiedBeanCondition.class);
+
     @Override
     public ConfigurationPhase getConfigurationPhase() {
         return ConfigurationPhase.REGISTER_BEAN;
@@ -47,15 +51,29 @@ public class OnQualifiedBeanCondition extends SpringBootCondition implements Con
 
         MultiValueMap<String, Object> annotationAttributes =
                 metadata.getAllAnnotationAttributes(ConditionalOnQualifiedBean.class.getName(), true);
-        Class conditionalClass = (Class) annotationAttributes.get("beanClass").get(0);
-        String conditionalQualifier = (String) annotationAttributes.get("qualifier").get(0);
 
+        String fullyQualifiedClassName = (String) annotationAttributes.get("beanClass").get(0);
+        Class conditionalClass;
+        try {
+            conditionalClass = Class.forName(fullyQualifiedClassName);
+        } catch (ClassNotFoundException e) {
+            String failureMessage = String.format(
+                    "Failed to extract a class instance for fully qualified class name [%s]",
+                    fullyQualifiedClassName
+            );
+            logger.warn(failureMessage, e);
+            return new ConditionOutcome(false, failureMessage);
+        }
+
+        String conditionalQualifier = (String) annotationAttributes.get("qualifier").get(0);
 
         return Stream.of(bf.getBeanNamesForType(conditionalClass))
                      .anyMatch(beanName -> isQualifierMatch(beanName, bf, conditionalQualifier))
-                ? new ConditionOutcome(true, String.format(
-                "Match found for class [%s] and qualifier [%s]", conditionalClass, conditionalQualifier))
-                : new ConditionOutcome(false, String.format(
-                "No match found for class [%s] and qualifier [%s]", conditionalClass, conditionalQualifier));
+                ? new ConditionOutcome(true, String.format("Match found for class [%s] and qualifier [%s]",
+                                                           conditionalClass,
+                                                           conditionalQualifier))
+                : new ConditionOutcome(false, String.format("No match found for class [%s] and qualifier [%s]",
+                                                            conditionalClass,
+                                                            conditionalQualifier));
     }
 }
