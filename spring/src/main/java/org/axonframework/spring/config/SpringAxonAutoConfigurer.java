@@ -55,30 +55,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.ManagedList;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.core.type.MethodMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.util.ObjectUtils;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -88,6 +78,7 @@ import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.spring.SpringUtils.isQualifierMatch;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 /**
@@ -336,65 +327,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
     private <T> Optional<String> findComponent(Class<T> componentType, String componentQualifier) {
         return Stream.of(beanFactory.getBeanNamesForType(componentType))
-                     .filter(bean -> isQualifierMatch(componentQualifier, bean, beanFactory))
+                     .filter(bean -> isQualifierMatch(bean, beanFactory, componentQualifier))
                      .findFirst();
-    }
-
-    /*
-     * Copied from org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils plus an additional function
-     * to check for the Qualifier annotation on the factory method.
-     */
-    private static boolean isQualifierMatch(String qualifier, String beanName, ConfigurableListableBeanFactory bf) {
-        if (bf.containsBean(beanName)) {
-            try {
-                BeanDefinition bd = bf.getMergedBeanDefinition(beanName);
-                if (bd instanceof AnnotatedBeanDefinition) {
-                    MethodMetadata factoryMethodMetadata = ((AnnotatedBeanDefinition) bd).getFactoryMethodMetadata();
-                    Map<String, Object> qualifierAttributes =
-                            factoryMethodMetadata.getAnnotationAttributes(Qualifier.class.getName());
-                    if (qualifierAttributes != null && qualifier.equals(qualifierAttributes.get("value"))) {
-                        return true;
-                    }
-                }
-                // Explicit qualifier metadata on bean definition? (typically in XML definition)
-                if (bd instanceof AbstractBeanDefinition) {
-                    AbstractBeanDefinition abd = (AbstractBeanDefinition) bd;
-                    AutowireCandidateQualifier candidate = abd.getQualifier(Qualifier.class.getName());
-                    if ((candidate != null && qualifier.equals(candidate
-                                                                       .getAttribute(AutowireCandidateQualifier.VALUE_KEY)))
-                            ||
-                            qualifier.equals(beanName) || ObjectUtils.containsElement(bf.getAliases(beanName),
-                                                                                      qualifier)) {
-                        return true;
-                    }
-                }
-                // Corresponding qualifier on factory method? (typically in configuration class)
-                if (bd instanceof RootBeanDefinition) {
-                    Method factoryMethod = ((RootBeanDefinition) bd).getResolvedFactoryMethod();
-
-
-                    if (factoryMethod != null) {
-                        Qualifier targetAnnotation = org.springframework.core.annotation.AnnotationUtils
-                                .getAnnotation(factoryMethod, Qualifier.class);
-                        if (targetAnnotation != null) {
-                            return qualifier.equals(targetAnnotation.value());
-                        }
-                    }
-                }
-                // Corresponding qualifier on bean implementation class? (for custom user types)
-                Class<?> beanType = bf.getType(beanName);
-                if (beanType != null) {
-                    Qualifier targetAnnotation = org.springframework.core.annotation.AnnotationUtils
-                            .getAnnotation(beanType, Qualifier.class);
-                    if (targetAnnotation != null) {
-                        return qualifier.equals(targetAnnotation.value());
-                    }
-                }
-            } catch (NoSuchBeanDefinitionException ex) {
-                // Ignore - can't compare qualifiers for a manually registered singleton object
-            }
-        }
-        return false;
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType) {
