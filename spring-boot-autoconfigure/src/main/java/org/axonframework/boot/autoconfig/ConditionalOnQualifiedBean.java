@@ -27,12 +27,16 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Conditional(OnSingleOverallCandidateCondition.class)
-public @interface ConditionalOnSingleOverallCandidate {
+@Conditional(OnQualifiedBeanCondition.class)
+public @interface ConditionalOnQualifiedBean {
 
     /**
      *
-     * @return
      */
     Class<?> value() default Object.class;
+
+    /**
+     *
+     */
+    String qualifier() default "";
 }

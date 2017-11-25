@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +53,6 @@ public class AMQPAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
-    @ConditionalOnSingleOverallCandidate(Serializer.class)
     @Bean("amqpMessageConverter")
     public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
                                                             RoutingKeyResolver routingKeyResolver) {
@@ -60,6 +60,8 @@ public class AMQPAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
+    @ConditionalOnSingleCandidate(Serializer.class)
+    @ConditionalOnQualifiedBean(value = Serializer.class, qualifier = "eventSerializer")
     @Bean
     public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
                                                      RoutingKeyResolver routingKeyResolver) {

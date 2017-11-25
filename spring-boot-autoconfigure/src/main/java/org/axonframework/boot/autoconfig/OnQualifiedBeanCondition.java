@@ -22,9 +22,9 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.MultiValueMap;
 
-public class OnSingleOverallCandidateCondition extends SpringBootCondition implements Condition {
+public class OnQualifiedBeanCondition extends SpringBootCondition implements Condition {
 
-    private static final String EXPECTED_ANNOTATION = ConditionalOnSingleOverallCandidate.class.getName();
+    private static final String EXPECTED_ANNOTATION = ConditionalOnQualifiedBean.class.getName();
     private static final boolean CONDITION_NOT_MET = false;
     private static final boolean CONDITION_MET = true;
 
