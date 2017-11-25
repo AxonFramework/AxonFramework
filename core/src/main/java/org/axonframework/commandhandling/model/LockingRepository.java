@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
@@ -62,6 +63,16 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
+     * Initialize a repository with a pessimistic locking strategy, using the given {@code aggregateModel}, describing
+     * the structure of the aggregate.
+     *
+     * @param aggregateModel The model describing the structure of the aggregate
+     */
+    protected LockingRepository(AggregateModel<T> aggregateModel) {
+        this(aggregateModel, new PessimisticLockFactory());
+    }
+
+    /**
      * Initialize a repository with a pessimistic locking strategy and a parameter resolver factory.
      *
      * @param aggregateType            The type of aggregate stored in this repository
@@ -79,6 +90,18 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      */
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory) {
         super(aggregateType);
+        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
+        this.lockFactory = lockFactory;
+    }
+
+    /**
+     * Initialize the repository with the given {@code LockFactory} and {@code aggregateModel}
+     *
+     * @param aggregateModel The model describing the structure of the aggregate
+     * @param lockFactory    the lock factory to use
+     */
+    protected LockingRepository(AggregateModel<T> aggregateModel, LockFactory lockFactory) {
+        super(aggregateModel);
         Assert.notNull(lockFactory, () -> "LockFactory may not be null");
         this.lockFactory = lockFactory;
     }

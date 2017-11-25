@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
+import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -50,7 +50,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
-     * manager uses {@link #newInstance(Class)}. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
+     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta model.
      *
      * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
@@ -61,7 +61,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
-     * manager uses {@link #newInstance(Class)}. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
+     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta model.
      *
      * @param sagaType                 the saga target type
      * @param sagaRepository           The repository providing access to the Saga instances
@@ -69,19 +69,19 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      *                                 handlers with
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, ParameterResolverFactory parameterResolverFactory) {
-        this(sagaType, sagaRepository, () -> newInstance(sagaType), new DefaultSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType));
+        this(sagaType, sagaRepository, () -> newInstance(sagaType), new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType));
     }
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and {@code sagaFactory} to
-     * create new sagas. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
+     * create new sagas. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta model.
      *
      * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
      * @param sagaFactory    the factory for new saga instances of type {@code T}
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
-        this(sagaType, sagaRepository, sagaFactory, new DefaultSagaMetaModelFactory().modelOf(sagaType));
+        this(sagaType, sagaRepository, sagaFactory, new AnnotationSagaMetaModelFactory().modelOf(sagaType));
     }
 
     /**

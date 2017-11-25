@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,13 @@ import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertTrue;
 
-public class DefaultSagaMetaModelFactoryTest {
+public class AnnotationSagaMetaModelFactoryTest {
 
-    private DefaultSagaMetaModelFactory testSubject;
+    private AnnotationSagaMetaModelFactory testSubject;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new DefaultSagaMetaModelFactory();
+        testSubject = new AnnotationSagaMetaModelFactory();
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+
+import static org.axonframework.common.Assert.nonNull;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -43,9 +43,7 @@ import java.util.concurrent.Callable;
  */
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final String aggregatesKey = this + "_AGGREGATES";
-    private final Class<T> aggregateType;
     private final AggregateModel<T> aggregateModel;
 
     /**
@@ -55,9 +53,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected AbstractRepository(Class<T> aggregateType) {
-        Assert.notNull(aggregateType, () -> "aggregateType may not be null");
-        this.aggregateType = aggregateType;
-        this.aggregateModel = ModelInspector.inspectAggregate(aggregateType);
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null")));
     }
 
     /**
@@ -68,17 +64,26 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
      */
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        Assert.notNull(aggregateType, () -> "aggregateType may not be null");
-        Assert.notNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null");
-        this.aggregateType = aggregateType;
-        this.aggregateModel = ModelInspector.inspectAggregate(aggregateType, parameterResolverFactory);
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
+                                                                 nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")));
+    }
+
+    /**
+     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type.
+     *
+     * @param aggregateModel The model describing the structure of the aggregate
+     */
+    protected AbstractRepository(AggregateModel<T> aggregateModel) {
+        Assert.notNull(aggregateModel, () -> "aggregateModel may not be null");
+        this.aggregateModel = aggregateModel;
     }
 
     @Override
     public A newInstance(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNew(factoryMethod);
-        aggregate.execute(root -> Assert.isTrue(aggregateType.isInstance(root),
-                                                () -> "Unsuitable aggregate for this repository: wrong type"));
+        Assert.isTrue(aggregateModel.entityClass().isAssignableFrom(aggregate.rootType()),
+                      () -> "Unsuitable aggregate for this repository: wrong type");
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = managedAggregates(uow);
         Assert.isTrue(aggregates.putIfAbsent(aggregate.identifierAsString(), aggregate) == null,
@@ -217,8 +222,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      *
      * @return the aggregate type stored by this repository
      */
-    protected Class<T> getAggregateType() {
-        return aggregateType;
+    protected Class<? extends T> getAggregateType() {
+        return aggregateModel.entityClass();
     }
 
     /**

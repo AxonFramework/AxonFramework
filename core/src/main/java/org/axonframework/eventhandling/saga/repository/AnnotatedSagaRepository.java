@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.saga.AnnotatedSaga;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.Saga;
-import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
+import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -54,7 +54,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
     /**
      * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
-     * sagaStore}. The repository will use a {@link DefaultSagaMetaModelFactory} and {@link NoResourceInjector} to
+     * sagaStore}. The repository will use a {@link AnnotationSagaMetaModelFactory} and {@link NoResourceInjector} to
      * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
      * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
      *
@@ -67,7 +67,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
     /**
      * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
-     * sagaStore}. The repository will use given {@code resourceInjector} and {@link DefaultSagaMetaModelFactory} to
+     * sagaStore}. The repository will use given {@code resourceInjector} and {@link AnnotationSagaMetaModelFactory} to
      * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
      * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
      *
@@ -77,13 +77,13 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      */
     public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector) {
-        this(sagaType, sagaStore, new DefaultSagaMetaModelFactory().modelOf(sagaType), resourceInjector,
+        this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory().modelOf(sagaType), resourceInjector,
              new PessimisticLockFactory());
     }
 
     /**
      * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
-     * sagaStore}. The repository will use given {@code resourceInjector} and {@link DefaultSagaMetaModelFactory} to
+     * sagaStore}. The repository will use given {@code resourceInjector} and {@link AnnotationSagaMetaModelFactory} to
      * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
      * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
      *
@@ -96,7 +96,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector,
                                    ParameterResolverFactory parameterResolverFactory) {
-        this(sagaType, sagaStore, new DefaultSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType), resourceInjector,
+        this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType), resourceInjector,
              new PessimisticLockFactory());
     }
 

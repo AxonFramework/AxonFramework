@@ -1,20 +1,36 @@
+/*
+ * Copyright (c) 2012-2017. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.Optional;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
@@ -83,6 +99,26 @@ public class DistributedCommandBusTest {
     }
 
     @Test
+    public void testUnknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector);
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
+        when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
+
+        try {
+            testSubject.dispatch(testCommandMessage);
+            fail("Expected NoHandlerForCommandException");
+        } catch (NoHandlerForCommandException e) {
+            // expected
+        }
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockMessageMonitor, never()).onMessageIngested(any());
+        verify(mockMonitorCallback, never()).reportSuccess();
+    }
+
+    @Test
     public void testDispatchWithCallbackAndMessageMonitor() throws Exception {
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
@@ -94,7 +130,28 @@ public class DistributedCommandBusTest {
         verify(mockMessageMonitor).onMessageIngested(any());
         verify(mockMonitorCallback).reportSuccess();
         verify(mockCallback).onSuccess(testCommandMessage, null);
+    }
 
+    @Test
+    public void testUnknownCommandWithCallbackAndMessageMonitor() throws Exception {
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
+        when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
+
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        try {
+            testSubject.dispatch(testCommandMessage);
+            fail("Expected NoHandlerForCommandException");
+        } catch (NoHandlerForCommandException e) {
+            // expected
+        }
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockMessageMonitor).onMessageIngested(any());
+        verify(mockMonitorCallback).reportFailure(any());
+        verify(mockCallback, never()).onFailure(any(), any());
+        verify(mockCallback, never()).onSuccess(any(), any());
     }
 
     @Test

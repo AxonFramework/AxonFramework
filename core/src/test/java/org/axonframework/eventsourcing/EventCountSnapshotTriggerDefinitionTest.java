@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -55,7 +55,7 @@ public class EventCountSnapshotTriggerDefinitionTest {
         aggregateIdentifier = "aggregateIdentifier";
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
         aggregate = AnnotatedAggregate.initialize(new StubAggregate(aggregateIdentifier),
-                                                  ModelInspector.inspectAggregate(StubAggregate.class), null);
+                                                  AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class), null);
 
     }
 

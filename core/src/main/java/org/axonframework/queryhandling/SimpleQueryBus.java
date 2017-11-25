@@ -193,9 +193,11 @@ public class SimpleQueryBus implements QueryBus {
      * respective handlers. The interceptor is invoked separately for each handler instance (in a separate unit of work).
      *
      * @param interceptor the interceptor to invoke before passing a Query to the handler
+     * @return handle to unregister the interceptor
      */
-    public void registerHandlerInterceptor(MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor) {
-        this.handlerInterceptors.add(interceptor);
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor) {
+        handlerInterceptors.add(interceptor);
+        return () -> handlerInterceptors.remove(interceptor);
     }
 
     /**
@@ -203,9 +205,11 @@ public class SimpleQueryBus implements QueryBus {
      * once, regardless of the type of query (point-to-point or scatter-gather) executed.
      *
      * @param interceptor the interceptor to invoke when sending a Query
+     * @return handle to unregister the interceptor
      */
-    public void registerDispatchInterceptor(MessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
-        this.dispatchInterceptors.add(interceptor);
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
     }
 
     private <Q, R> Set<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(QueryMessage<Q, R> queryMessage) {

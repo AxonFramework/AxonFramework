@@ -64,6 +64,7 @@ import static java.util.Arrays.asList;
 import static junit.framework.TestCase.*;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -353,10 +354,17 @@ public class DisruptorCommandBusTest {
         testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
         testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
 
+        try {
+            testSubject.dispatch(asCommandMessage(new UnknownCommand(aggregateIdentifier2)));
+            fail("Expected NoHandlerForCommandException");
+        } catch (NoHandlerForCommandException expected) {
+            // ignore
+        }
+
         testSubject.stop();
 
         assertEquals(8, successCounter.get());
-        assertEquals(2, failureCounter.get());
+        assertEquals(3, failureCounter.get());
         assertEquals(0, ignoredCounter.get());
     }
 
@@ -504,6 +512,13 @@ public class DisruptorCommandBusTest {
     private static class CreateCommand extends StubCommand {
 
         public CreateCommand(Object aggregateIdentifier) {
+            super(aggregateIdentifier);
+        }
+    }
+
+    private static class UnknownCommand extends StubCommand {
+
+        public UnknownCommand(Object aggregateIdentifier) {
             super(aggregateIdentifier);
         }
     }

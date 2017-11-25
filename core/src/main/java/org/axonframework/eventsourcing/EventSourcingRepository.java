@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -87,6 +88,19 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
 
     /**
      * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
+     * create new aggregate instances.
+     *
+     * @param aggregateModel   The meta model describing the aggregate's structure
+     * @param aggregateFactory The factory for new aggregate instances
+     * @param eventStore       The event store that holds the event streams for this repository
+     * @see LockingRepository#LockingRepository(Class)
+     */
+    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory, EventStore eventStore) {
+        this(aggregateModel, aggregateFactory, eventStore, NoSnapshotTriggerDefinition.INSTANCE);
+    }
+
+    /**
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
      * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
      *
      * @param aggregateFactory          The factory for new aggregate instances
@@ -97,6 +111,25 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType());
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
+        this.aggregateFactory = aggregateFactory;
+        this.eventStore = eventStore;
+        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+    }
+
+    /**
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
+     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
+     *
+     * @param aggregateModel            The meta model describing the aggregate's structure
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     * @see LockingRepository#LockingRepository(Class)
+     */
+    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
+                                   EventStore eventStore, SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        super(aggregateModel);
         Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.aggregateFactory = aggregateFactory;
         this.eventStore = eventStore;

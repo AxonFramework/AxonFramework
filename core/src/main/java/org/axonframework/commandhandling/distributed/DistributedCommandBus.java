@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+
+import static java.lang.String.format;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -98,8 +101,10 @@ public class DistributedCommandBus implements CommandBus {
     public <C> void dispatch(CommandMessage<C> command) {
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
-            Member destination = commandRouter.findDestination(command)
-                    .orElseThrow(() -> new CommandDispatchException("No node known to accept " + command.getCommandName()));
+            Member destination = commandRouter.findDestination(interceptedCommand)
+                                              .orElseThrow(() -> new NoHandlerForCommandException(
+                                                      format("No node known to accept [%s]",
+                                                             interceptedCommand.getCommandName())));
             try {
                 connector.send(destination, interceptedCommand);
             } catch (Exception e) {
@@ -119,13 +124,20 @@ public class DistributedCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
-        MonitorAwareCallback<? super C, R> monitorAwareCallback = new MonitorAwareCallback<>(callback, messageMonitor.onMessageIngested(command));
-
-        Member destination = commandRouter.findDestination(command)
-                .orElseThrow(() -> new CommandDispatchException("No node known to accept " + command.getCommandName()));
+        MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
+        Member destination = commandRouter.findDestination(interceptedCommand)
+                                          .orElseThrow(() -> {
+                                              NoHandlerForCommandException exception = new NoHandlerForCommandException(
+                                                      format("No node known to accept [%s]",
+                                                             interceptedCommand.getCommandName()));
+                                              messageMonitorCallback.reportFailure(exception);
+                                              return exception;
+                                          });
         try {
-            connector.send(destination, interceptedCommand, monitorAwareCallback);
+            connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
+                                                                                       messageMonitorCallback));
         } catch (Exception e) {
+            messageMonitorCallback.reportFailure(e);
             destination.suspect();
             throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
         }
