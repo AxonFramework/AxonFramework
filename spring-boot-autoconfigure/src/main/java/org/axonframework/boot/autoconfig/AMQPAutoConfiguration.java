@@ -21,6 +21,7 @@ import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.spring.SpringAMQPPublisher;
 import org.axonframework.boot.AMQPProperties;
+import org.axonframework.boot.util.ConditionalOnQualifiedBean;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.serialization.Serializer;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -32,6 +33,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,17 +54,19 @@ public class AMQPAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
-    @Bean("amqpMessageConverter")
-    public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
-                                                            RoutingKeyResolver routingKeyResolver) {
-        return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
-    }
-
-    @ConditionalOnMissingBean
+    @ConditionalOnSingleCandidate(Serializer.class)
+    @ConditionalOnQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
     @Bean
     public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
                                                      RoutingKeyResolver routingKeyResolver) {
         return new DefaultAMQPMessageConverter(eventSerializer, routingKeyResolver, amqpProperties.isDurableMessages());
+    }
+
+    @ConditionalOnMissingBean
+    @Bean("amqpMessageConverter")
+    public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
+                                                            RoutingKeyResolver routingKeyResolver) {
+        return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
     }
 
     @ConditionalOnProperty("axon.amqp.exchange")
