@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.boot.autoconfig;
+package org.axonframework.boot.util;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;

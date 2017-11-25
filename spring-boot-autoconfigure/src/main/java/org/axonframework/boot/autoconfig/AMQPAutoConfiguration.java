@@ -21,6 +21,7 @@ import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.spring.SpringAMQPPublisher;
 import org.axonframework.boot.AMQPProperties;
+import org.axonframework.boot.util.ConditionalOnQualifiedBean;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.serialization.Serializer;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
