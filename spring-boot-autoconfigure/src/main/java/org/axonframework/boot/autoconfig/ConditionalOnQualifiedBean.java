@@ -15,6 +15,8 @@
 
 package org.axonframework.boot.autoconfig;
 
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Conditional;
 
 import java.lang.annotation.ElementType;
@@ -23,7 +25,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * {@link Conditional} that only matches when for the specified bean class in the {@link BeanFactory} there is an
+ * instance which has the given {@code qualifier} set on it.
+ * <p>
+ * The condition can only match the bean definitions that have been processed by the
+ * application context so far and, as such, it is strongly recommended to use this
+ * condition on auto-configuration classes only. If a candidate bean may be created by
+ * another auto-configuration, make sure that the one using this condition runs after.
  *
+ * @author Steven van Beelen
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
@@ -31,12 +41,14 @@ import java.lang.annotation.Target;
 public @interface ConditionalOnQualifiedBean {
 
     /**
-     *
+     * The class type of bean that should be checked. The condition matches if the class specified is contained in the
+     * {@link ApplicationContext}, together with the specified {@code qualifier}.
      */
-    Class<?> value() default Object.class;
+    Class<?> beanClass() default Object.class;
 
     /**
-     *
+     * The qualifier which all instances of the given {code beanClass} in the {@link ApplicationContext} will be matched
+     * for.
      */
     String qualifier() default "";
 }

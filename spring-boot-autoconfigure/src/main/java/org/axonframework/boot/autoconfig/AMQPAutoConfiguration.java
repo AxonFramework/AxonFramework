@@ -61,7 +61,7 @@ public class AMQPAutoConfiguration {
 
     @ConditionalOnMissingBean
     @ConditionalOnSingleCandidate(Serializer.class)
-    @ConditionalOnQualifiedBean(value = Serializer.class, qualifier = "eventSerializer")
+    @ConditionalOnQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
     @Bean
     public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
                                                      RoutingKeyResolver routingKeyResolver) {
