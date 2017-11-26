@@ -22,18 +22,19 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 /**
- * {@link Condition} implementation to check for a bean instance of a specific class *and* a specific qualifier on it.
+ * {@link Condition} implementation to check for a bean instance of a specific class *and* a specific qualifier on it,
+ * matching if no such bean can be found.
  */
 @Order(Ordered.LOWEST_PRECEDENCE)
-public class OnQualifiedBeanCondition extends AbstractQualifiedBeanCondition {
+public class OnMissingQualifiedBeanCondition extends AbstractQualifiedBeanCondition {
 
-    public OnQualifiedBeanCondition() {
-        super(ConditionalOnQualifiedBean.class.getName(), "beanClass", "qualifier");
+    public OnMissingQualifiedBeanCondition() {
+        super(ConditionalOnMissingQualifiedBean.class.getName(), "beanClass", "qualifier");
     }
 
     @Override
     protected ConditionOutcome buildOutcome(boolean anyMatch, String message) {
-        return new ConditionOutcome(anyMatch, message);
+        return new ConditionOutcome(!anyMatch, message);
     }
 
 }

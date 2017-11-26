@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +22,7 @@ import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.spring.SpringAMQPPublisher;
 import org.axonframework.boot.AMQPProperties;
+import org.axonframework.boot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.boot.util.ConditionalOnQualifiedBean;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.serialization.Serializer;
@@ -29,11 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,15 +54,17 @@ public class AMQPAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnSingleCandidate(Serializer.class)
     @ConditionalOnQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
-    @Bean
-    public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
-                                                     RoutingKeyResolver routingKeyResolver) {
+    @Bean("amqpMessageConverter")
+    public AMQPMessageConverter amqpMessageConverterWithEventSerializer(@Qualifier("eventSerializer") Serializer eventSerializer,
+                                                                        RoutingKeyResolver routingKeyResolver) {
         return new DefaultAMQPMessageConverter(eventSerializer, routingKeyResolver, amqpProperties.isDurableMessages());
     }
 
     @ConditionalOnMissingBean
+    @ConditionalOnSingleCandidate(Serializer.class)
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
     @Bean("amqpMessageConverter")
-    public AMQPMessageConverter defaultAmqpMessageConverter(Serializer serializer,
+    public AMQPMessageConverter amqpMessageConverterWithGenericSerializer(Serializer serializer,
                                                             RoutingKeyResolver routingKeyResolver) {
         return new DefaultAMQPMessageConverter(serializer, routingKeyResolver, amqpProperties.isDurableMessages());
     }

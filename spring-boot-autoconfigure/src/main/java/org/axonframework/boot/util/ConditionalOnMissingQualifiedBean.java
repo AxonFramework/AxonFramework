@@ -36,8 +36,8 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Conditional(OnQualifiedBeanCondition.class)
-public @interface ConditionalOnQualifiedBean {
+@Conditional(OnMissingQualifiedBeanCondition.class)
+public @interface ConditionalOnMissingQualifiedBean {
 
     /**
      * The class type of bean that should be checked. The condition matches if the class specified is contained in the
@@ -46,7 +46,8 @@ public @interface ConditionalOnQualifiedBean {
     Class<?> beanClass() default Object.class;
 
     /**
-     * The qualifier to check for on the inspected beans.
+     * The qualifier which all instances of the given {code beanClass} in the {@link ApplicationContext} will be matched
+     * for.
      */
     String qualifier();
 }
