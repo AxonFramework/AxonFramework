@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,8 +26,9 @@ import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -81,6 +83,9 @@ public class AxonAutoConfigurationWithAMQPAndEventSerializer {
         assertTrue(serializer instanceof XStreamSerializer);
 
         assertNotNull(applicationContext.getBean(SpringAMQPPublisher.class));
+
+        assertEquals(JavaSerializer.class, applicationContext.getBean(Serializer.class).getClass());
+        assertEquals(XStreamSerializer.class, applicationContext.getBean("myEventSerializer", Serializer.class).getClass());
     }
 
     @org.springframework.context.annotation.Configuration

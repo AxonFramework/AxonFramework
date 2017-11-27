@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,10 +26,11 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -77,11 +79,13 @@ public class AxonAutoConfigurationWithEventSerializerTest {
     }
 
     @Test
-    public void testEventStorageEngingeUsesSerializerBean() {
+    public void testEventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
+        final Serializer eventSerializer = applicationContext.getBean("myEventSerializer", Serializer.class);
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 
         assertEquals(serializer, engine.getSerializer());
+        assertEquals(eventSerializer, engine.getEventSerializer());
     }
 
     @org.springframework.context.annotation.Configuration
@@ -96,7 +100,7 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new XStreamSerializer();
+            return new JacksonSerializer();
         }
     }
 }

@@ -47,7 +47,8 @@ public @interface ConditionalOnMissingQualifiedBean {
 
     /**
      * The qualifier which all instances of the given {code beanClass} in the {@link ApplicationContext} will be matched
-     * for.
+     * for. One may indicate that a qualifier should <em>not</em> be present by prefixing it with {@code !}, e.g:
+     * {@code qualifier = "!unqualified"}.
      */
     String qualifier();
 }

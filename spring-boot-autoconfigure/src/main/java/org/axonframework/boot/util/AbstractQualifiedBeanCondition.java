@@ -64,8 +64,16 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
                 metadata.getAllAnnotationAttributes(annotationName, true);
 
         String beanType = (String) annotationAttributes.getFirst(beanClassAttribute);
-        String qualifier = (String) annotationAttributes.getFirst(qualifierAttribute);
-
+        String qualifierAttr = (String) annotationAttributes.getFirst(qualifierAttribute);
+        String qualifier;
+        boolean qualifierMatch;
+        if (qualifierAttr.startsWith("!")) {
+            qualifier = qualifierAttr.substring(1);
+            qualifierMatch = false;
+        } else {
+            qualifier = qualifierAttr;
+            qualifierMatch = true;
+        }
         Class conditionalClass;
         try {
             conditionalClass = Class.forName(beanType);
@@ -80,7 +88,7 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
 
         ConfigurableListableBeanFactory bf = context.getBeanFactory();
         boolean anyMatch = Stream.of(bf.getBeanNamesForType(conditionalClass))
-                                 .anyMatch(beanName -> isQualifierMatch(beanName, bf, qualifier));
+                                 .anyMatch(beanName -> qualifierMatch == isQualifierMatch(beanName, bf, qualifier));
         String message = anyMatch
                 ? String.format("Match found for class [%s] and qualifier [%s]", conditionalClass, qualifier)
                 : String.format("No match found for class [%s] and qualifier [%s]", conditionalClass, qualifier);
