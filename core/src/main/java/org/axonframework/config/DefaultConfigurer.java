@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -46,7 +45,11 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -55,7 +58,11 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -91,10 +98,13 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
+    private final Component<Serializer> eventSerializer =
+            new Component<>(config, "eventSerializer", Configuration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain",
-            c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList())));
+            c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()))
+    );
 
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
@@ -106,61 +116,7 @@ public class DefaultConfigurer implements Configurer {
     private boolean initialized = false;
 
     /**
-     * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
-     * {@link SimpleEventBus}.
-     *
-     * @return Configurer instance for further configuration
-     */
-    public static Configurer defaultConfiguration() {
-        return new DefaultConfigurer();
-    }
-
-    /**
-     * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
-     * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
-     * <br>
-     * This method allows to provide a transaction manager for usage in JTA-managed entity manager.
-     *
-     * @param entityManagerProvider The instance that provides access to the JPA EntityManager
-     * @param transactionManager    TransactionManager to be used for accessing the entity manager.
-     * @return a Configurer instance for further configuration
-     */
-    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
-        return new DefaultConfigurer()
-                .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
-                .registerComponent(TransactionManager.class, c -> transactionManager)
-                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
-                        c.serializer(),
-                        c.upcasterChain(),
-                        c.getComponent(PersistenceExceptionResolver.class), null,
-                        c.getComponent(EntityManagerProvider.class),
-                        c.getComponent(TransactionManager.class),
-                        null, null, true))
-                .registerComponent(TokenStore.class,
-                                   c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class),
-                                                          c.serializer()))
-                .registerComponent(SagaStore.class,
-                                   c -> new JpaSagaStore(c.serializer(),
-                                                         c.getComponent(EntityManagerProvider.class)));
-    }
-
-    /**
-     * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
-     * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
-     * <br>
-     * This configuration should be used with an entity manager running without JTA transaction. If you are using a entity manager
-     * in JTA mode, please provide the corresponding {@link TransactionManager} in
-     * the {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider, TransactionManager)} method.
-     *
-     * @param entityManagerProvider The instance that provides access to the JPA EntityManager
-     * @return a Configurer instance for further configuration
-     */
-    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
-        return jpaConfiguration(entityManagerProvider, NoTransactionManager.INSTANCE);
-    }
-
-    /**
-     * Initialize the Configurer
+     * Initialize the Configurer.
      */
     protected DefaultConfigurer() {
         components.put(ParameterResolverFactory.class,
@@ -177,22 +133,79 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
+     * {@link SimpleEventBus}.
+     *
+     * @return Configurer instance for further configuration.
+     */
+    public static Configurer defaultConfiguration() {
+        return new DefaultConfigurer();
+    }
+
+    /**
+     * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
+     * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * <br>
+     * This method allows to provide a transaction manager for usage in JTA-managed entity manager.
+     *
+     * @param entityManagerProvider The instance that provides access to the JPA EntityManager.
+     * @param transactionManager    TransactionManager to be used for accessing the entity manager.
+     * @return A Configurer instance for further configuration.
+     */
+    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider,
+                                              TransactionManager transactionManager) {
+        return new DefaultConfigurer()
+                .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
+                .registerComponent(TransactionManager.class, c -> transactionManager)
+                .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(
+                        c.serializer(),
+                        c.upcasterChain(),
+                        c.getComponent(PersistenceExceptionResolver.class),
+                        c.eventSerializer(),
+                        null,
+                        c.getComponent(EntityManagerProvider.class),
+                        c.getComponent(TransactionManager.class),
+                        null, null, true
+                ))
+                .registerComponent(TokenStore.class,
+                                   c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class),
+                                                          c.serializer()))
+                .registerComponent(SagaStore.class,
+                                   c -> new JpaSagaStore(c.serializer(),
+                                                         c.getComponent(EntityManagerProvider.class)));
+    }
+
+    /**
+     * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
+     * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * <br>
+     * This configuration should be used with an entity manager running without JTA transaction. If you are using a
+     * entity manager in JTA mode, please provide the corresponding {@link TransactionManager} in the
+     * {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider, TransactionManager)} method.
+     *
+     * @param entityManagerProvider The instance that provides access to the JPA EntityManager.
+     * @return A Configurer instance for further configuration.
+     */
+    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
+        return jpaConfiguration(entityManagerProvider, NoTransactionManager.INSTANCE);
+    }
+
+    /**
      * Returns a {@link DefaultCommandGateway} that will use the configuration's {@link CommandBus} to dispatch
      * commands.
      *
-     * @param config the configuration that supplies the command bus
-     * @return the default command gateway
+     * @param config The configuration that supplies the command bus.
+     * @return The default command gateway.
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(config.commandBus());
     }
 
     /**
-     * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch
-     * queries.
+     * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch queries.
      *
-     * @param config the configuration that supplies the query bus
-     * @return the default query gateway
+     * @param config The configuration that supplies the query bus.
+     * @return The default query gateway.
      */
     protected QueryGateway defaultQueryGateway(Configuration config) {
         return new DefaultQueryGateway(config.queryBus());
@@ -201,19 +214,20 @@ public class DefaultConfigurer implements Configurer {
     /**
      * Provides the default QueryBus implementations. Subclasses may override this method to provide their own default.
      *
-     * @param config The configuration based on which the component is initialized
-     * @return the default QueryBus to use
+     * @param config The configuration based on which the component is initialized.
+     * @return The default QueryBus to use.
      */
     protected QueryBus defaultQueryBus(Configuration config) {
         return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
                                   config.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                   config.getComponent(QueryInvocationErrorHandler.class));
     }
+
     /**
-     * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default
+     * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default.
      *
-     * @param config The configuration based on which the component is initialized
-     * @return the default ParameterResolverFactory to use
+     * @param config The configuration based on which the component is initialized.
+     * @return The default ParameterResolverFactory to use.
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(getClass()),
@@ -221,10 +235,10 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own default
+     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own default.
      *
-     * @param config The configuration based on which the component is initialized
-     * @return the default CommandBus to use
+     * @param config The configuration based on which the component is initialized.
+     * @return The default CommandBus to use.
      */
     protected CommandBus defaultCommandBus(Configuration config) {
         SimpleCommandBus cb =
@@ -238,28 +252,28 @@ public class DefaultConfigurer implements Configurer {
      * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given {@code config
      * Configuration}.
      *
-     * @param config the configuration that supplies registered components
-     * @return a resource injector that supplies components registered with the configuration
+     * @param config The configuration that supplies registered components.
+     * @return A resource injector that supplies components registered with the configuration.
      */
     protected ResourceInjector defaultResourceInjector(Configuration config) {
         return new ConfigurationResourceInjector(config);
     }
 
     /**
-     * Provides the default EventBus implementation. Subclasses may override this method to provide their own default
+     * Provides the default EventBus implementation. Subclasses may override this method to provide their own default.
      *
-     * @param config The configuration based on which the component is initialized
-     * @return the default EventBus to use
+     * @param config The configuration based on which the component is initialized.
+     * @return The default EventBus to use.
      */
     protected EventBus defaultEventBus(Configuration config) {
         return new SimpleEventBus(Integer.MAX_VALUE, config.messageMonitor(EventBus.class, "eventBus"));
     }
 
     /**
-     * Provides the default Serializer implementation. Subclasses may override this method to provide their own default
+     * Provides the default Serializer implementation. Subclasses may override this method to provide their own default.
      *
-     * @param config The configuration based on which the component is initialized
-     * @return the default Serializer to use
+     * @param config The configuration based on which the component is initialized.
+     * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
         return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
@@ -324,13 +338,13 @@ public class DefaultConfigurer implements Configurer {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
         startHandlers.add(() -> {
-            Registration registration =
-                    new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
-                                                      config.parameterResolverFactory())
-                            .subscribe(config.queryBus());
+            Registration registration = new AnnotationQueryHandlerAdapter(
+                    annotatedQueryHandlerBuilder.apply(config), config.parameterResolverFactory()
+            ).subscribe(config.queryBus());
             shutdownHandlers.add(registration::cancel);
         });
         return this;
@@ -352,6 +366,12 @@ public class DefaultConfigurer implements Configurer {
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });
+    }
+
+    @Override
+    public Configurer configureEventSerializer(Function<Configuration, Serializer> eventSerializerBuilder) {
+        eventSerializer.update(eventSerializerBuilder);
+        return this;
     }
 
     @Override
@@ -382,14 +402,14 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Invokes all registered start handlers
+     * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
         startHandlers.forEach(Runnable::run);
     }
 
     /**
-     * Invokes all registered shutdown handlers
+     * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
         shutdownHandlers.forEach(Runnable::run);
@@ -399,7 +419,7 @@ public class DefaultConfigurer implements Configurer {
      * Returns the current Configuration object being built by this Configurer, without initializing it. Note that
      * retrieving objects from this configuration may lead to premature initialization of certain components.
      *
-     * @return the current Configuration object being built by this Configurer
+     * @return The current Configuration object being built by this Configurer.
      */
     protected Configuration getConfig() {
         return config;
@@ -410,7 +430,7 @@ public class DefaultConfigurer implements Configurer {
      * type (typically an interface), the value is a Component instance that wraps the actual implementation. Note that
      * calling {@link Component#get()} may prematurely initialize a component.
      *
-     * @return a map of all registered components in this configuration
+     * @return A map of all registered components in this configuration.
      */
     public Map<Class<?>, Component<?>> getComponents() {
         return components;
@@ -432,18 +452,20 @@ public class DefaultConfigurer implements Configurer {
 
         @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
-            return componentType.cast(components.computeIfAbsent(componentType, k -> new Component<>(config,
-                                                                                                     componentType
-                                                                                                             .getSimpleName(),
-                                                                                                     c -> defaultImpl
-                                                                                                             .get()))
-                                              .get());
+            return componentType.cast(components.computeIfAbsent(
+                    componentType, k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
+            ).get());
         }
 
         @Override
         public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType,
                                                                                String componentName) {
             return messageMonitorFactoryComponent.get().apply(componentType, componentName);
+        }
+
+        @Override
+        public Serializer eventSerializer() {
+            return eventSerializer.get();
         }
 
         @Override

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +29,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
-import org.junit.runner.RunWith;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +49,7 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.cre
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_doc_per_commit.xml"})
 public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStorageEngineTest {
+
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStorageEngineTest_DocPerCommit.class);
 
     private static MongodExecutable mongoExe;
@@ -78,6 +78,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
 
     private DefaultMongoTemplate mongoTemplate;
 
+    @SuppressWarnings("Duplicates")
     @Before
     public void setUp() {
         MongoClient mongoClient = null;
@@ -127,8 +128,10 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
 
     @Override
     protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
-                                           persistenceExceptionResolver, 100, mongoTemplate,
-                                           new DocumentPerCommitStorageStrategy());
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new MongoEventStorageEngine(
+                serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, serializer, 100, mongoTemplate,
+                new DocumentPerCommitStorageStrategy()
+        );
     }
 }

@@ -164,6 +164,14 @@ public interface Configuration {
     }
 
     /**
+     * Returns the {@link Serializer} defined in this Configuration which is used for serializing events and their
+     * metadata.
+     *
+     * @return the event serializer defined in this Configuration.
+     */
+    Serializer eventSerializer();
+
+    /**
      * Starts this configuration. All components defined in this Configuration will be started.
      */
     void start();

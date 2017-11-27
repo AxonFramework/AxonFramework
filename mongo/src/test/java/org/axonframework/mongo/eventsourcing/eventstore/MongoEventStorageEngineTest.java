@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +28,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
-import org.junit.runner.RunWith;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +40,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 
 /**
@@ -51,6 +50,7 @@ import static org.junit.Assert.assertEquals;
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
 @DirtiesContext
 public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest {
+
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStorageEngineTest.class);
 
     private static MongodExecutable mongoExe;
@@ -120,8 +120,9 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
-                                           persistenceExceptionResolver, 100, mongoTemplate,
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE,
+                                           persistenceExceptionResolver, serializer, 100, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
     }
 }

@@ -18,6 +18,7 @@ package org.axonframework.boot.autoconfig;
 
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.boot.EventProcessorProperties;
+import org.axonframework.boot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
@@ -54,6 +55,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 import java.util.function.Function;
+import org.springframework.context.annotation.Primary;
 
 /**
  * @author Allard Buijze
@@ -77,7 +79,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Bean
-    @ConditionalOnMissingBean(Serializer.class)
+    @Primary
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer")
     public XStreamSerializer serializer() {
         XStreamSerializer xStreamSerializer = new XStreamSerializer();
         xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
