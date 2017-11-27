@@ -18,10 +18,7 @@ package org.axonframework.mongo.eventsourcing.tokenstore;
 
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoWriteException;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
-import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.*;
 import com.mongodb.client.result.UpdateResult;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
 import org.axonframework.eventhandling.tokenstore.GenericTokenEntry;
@@ -44,6 +41,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.*;
@@ -103,6 +103,22 @@ public class MongoTokenStore implements TokenStore {
         updateOrInsertTokenEntry(token, processorName, segment);
     }
 
+    @Override
+    public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        if (fetchSegments(processorName).length > 0) {
+            throw new UnableToClaimTokenException("Unable to initialize segments. Some tokens were already present for the given processor.");
+        }
+
+        List<Document> entries = IntStream.range(0, segmentCount)
+                                          .mapToObj(segment -> new GenericTokenEntry<>(null, serializer, contentType,
+                                                                                       processorName, segment))
+                                          .map(this::tokenEntryToDocument)
+                                          .collect(Collectors.toList());
+        mongoTemplate.trackingTokensCollection()
+                     .insertMany(entries, new InsertManyOptions().ordered(false));
+
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -115,10 +131,10 @@ public class MongoTokenStore implements TokenStore {
     @Override
     public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
         UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
-                .updateOne(and(eq("processorName", processorName),
-                               eq("segment", segment),
-                               eq("owner", nodeId)),
-                           set("timestamp", TokenEntry.clock.instant().toEpochMilli()));
+                                                 .updateOne(and(eq("processorName", processorName),
+                                                                eq("segment", segment),
+                                                                eq("owner", nodeId)),
+                                                            set("timestamp", TokenEntry.clock.instant().toEpochMilli()));
         if (updateResult.getMatchedCount() == 0) {
             throw new UnableToClaimTokenException(format("Unable to extend claim on token token '%s[%s]'. It is owned " +
                                                                  "by another segment.", processorName, segment));
@@ -131,11 +147,11 @@ public class MongoTokenStore implements TokenStore {
     @Override
     public void releaseClaim(String processorName, int segment) {
         UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
-                .updateOne(and(
-                        eq("processorName", processorName),
-                        eq("segment", segment),
-                        eq("owner", nodeId)
-                ), set("owner", null));
+                                                 .updateOne(and(
+                                                         eq("processorName", processorName),
+                                                         eq("segment", segment),
+                                                         eq("owner", nodeId)
+                                                 ), set("owner", null));
 
         if (updateResult.getMatchedCount() == 0) {
             logger.warn("Releasing claim of token {}/{} failed. It was owned by another node.", processorName, segment);
@@ -145,11 +161,11 @@ public class MongoTokenStore implements TokenStore {
     @Override
     public int[] fetchSegments(String processorName) {
         ArrayList<Integer> segments = mongoTemplate.trackingTokensCollection()
-                .find(eq("processorName", processorName))
-                .sort(ascending("segment"))
-                .projection(fields(include("segment"), excludeId()))
-                .map(d -> d.get("segment", Integer.class))
-                .into(new ArrayList<>());
+                                                   .find(eq("processorName", processorName))
+                                                   .sort(ascending("segment"))
+                                                   .projection(fields(include("segment"), excludeId()))
+                                                   .map(d -> d.get("segment", Integer.class))
+                                                   .into(new ArrayList<>());
         // toArray doesn't work because of autoboxing limitations
         int[] ints = new int[segments.size()];
         for (int i = 0; i < ints.length; i++) {
@@ -187,12 +203,12 @@ public class MongoTokenStore implements TokenStore {
                               set("token", tokenEntry.getSerializedToken().getData()),
                               set("tokenType", tokenEntry.getSerializedToken().getType().getName()));
         UpdateResult updateResult = mongoTemplate.trackingTokensCollection()
-                .updateOne(claimableTokenEntryFilter(processorName, segment), update);
+                                                 .updateOne(claimableTokenEntryFilter(processorName, segment), update);
 
         if (updateResult.getModifiedCount() == 0) {
             try {
                 mongoTemplate.trackingTokensCollection()
-                        .insertOne(tokenEntryToDocument(tokenEntry));
+                             .insertOne(tokenEntryToDocument(tokenEntry));
             } catch (MongoWriteException exception) {
                 if (ErrorCategory.fromErrorCode(exception.getError().getCode()) == ErrorCategory.DUPLICATE_KEY) {
                     throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'",
@@ -205,11 +221,11 @@ public class MongoTokenStore implements TokenStore {
 
     private AbstractTokenEntry<?> loadOrInsertTokenEntry(String processorName, int segment) {
         Document document = mongoTemplate.trackingTokensCollection()
-                .findOneAndUpdate(claimableTokenEntryFilter(processorName, segment),
-                                  combine(set("owner", nodeId),
-                                          set("timestamp", clock.millis())),
-                                  new FindOneAndUpdateOptions()
-                                          .returnDocument(ReturnDocument.AFTER));
+                                         .findOneAndUpdate(claimableTokenEntryFilter(processorName, segment),
+                                                           combine(set("owner", nodeId),
+                                                                   set("timestamp", clock.millis())),
+                                                           new FindOneAndUpdateOptions()
+                                                                   .returnDocument(ReturnDocument.AFTER));
 
         if (document == null) {
             try {
@@ -221,7 +237,7 @@ public class MongoTokenStore implements TokenStore {
                 tokenEntry.claim(nodeId, claimTimeout);
 
                 mongoTemplate.trackingTokensCollection()
-                        .insertOne(tokenEntryToDocument(tokenEntry));
+                             .insertOne(tokenEntryToDocument(tokenEntry));
 
                 return tokenEntry;
             } catch (MongoWriteException exception) {
@@ -244,7 +260,7 @@ public class MongoTokenStore implements TokenStore {
                         tokenEntry.getSerializedToken() == null ? null : tokenEntry.getSerializedToken().getData())
                 .append("tokenType",
                         tokenEntry.getSerializedToken() == null ? null : tokenEntry.getSerializedToken()
-                                .getContentType().getName());
+                                                                                   .getContentType().getName());
     }
 
     private AbstractTokenEntry<?> documentToTokenEntry(Document document) {

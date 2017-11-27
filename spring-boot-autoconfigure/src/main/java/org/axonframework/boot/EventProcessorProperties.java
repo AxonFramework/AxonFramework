@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,6 +52,23 @@ public class EventProcessorProperties {
          */
         private Mode mode = Mode.SUBSCRIBING;
 
+        /**
+         * Indicates the number of segments that should be created when the processor starts for the first time
+         */
+        private int initialSegmentCount;
+
+        /**
+         * The maximum number of threads the processor should process events with
+         */
+        private int threadCount = 1;
+
+        /**
+         * The maximum number of events a processor should process as part of a single batch
+         */
+        private int batchSize = 1;
+
+        private String sequencingPolicy;
+
         public String getSource() {
             return source;
         }
@@ -65,6 +83,38 @@ public class EventProcessorProperties {
 
         public void setMode(Mode mode) {
             this.mode = mode;
+        }
+
+        public int getInitialSegmentCount() {
+            return initialSegmentCount;
+        }
+
+        public void setInitialSegmentCount(int initialSegmentCount) {
+            this.initialSegmentCount = initialSegmentCount;
+        }
+
+        public int getThreadCount() {
+            return threadCount;
+        }
+
+        public void setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
+        }
+
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(int batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        public String getSequencingPolicy() {
+            return sequencingPolicy;
+        }
+
+        public void setSequencingPolicy(String sequencingPolicy) {
+            this.sequencingPolicy = sequencingPolicy;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Abstract implementation for XStream based serializers. It provides some helper methods and configuration features
@@ -162,7 +164,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         T result = doSerialize(object, expectedType, xStream);
-        return new SimpleSerializedObject<>(result, expectedType, typeForClass(object.getClass()));
+        return new SimpleSerializedObject<>(result, expectedType, typeForClass(getOrDefault(object, new Object()).getClass()));
     }
 
     /**

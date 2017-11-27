@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -473,12 +474,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public void run() {
             while (getState().isRunning()) {
-                final int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(TrackingEventProcessor.this.getName());
+                String processorName = TrackingEventProcessor.this.getName();
+                final int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
                 Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
 
                 // When in an initial stage, split segments to the requested number.
                 if (tokenStoreCurrentSegments.length == 0 && segments.length == 1 && segments.length < segmentsSize) {
                     segments = Segment.splitBalanced(segments[0], segmentsSize - 1).toArray(new Segment[segmentsSize]);
+                    transactionManager.executeInTransaction(() -> {
+                        tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                    });
                 }
 
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
@@ -491,7 +496,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
                     if (activeSegments.add(segment.getSegmentId())) {
                         try {
-                            transactionManager.executeInTransaction(() -> tokenStore.fetchToken(TrackingEventProcessor.this.getName(), segment.getSegmentId()));
+                            transactionManager.executeInTransaction(() -> tokenStore.fetchToken(processorName, segment.getSegmentId()));
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());

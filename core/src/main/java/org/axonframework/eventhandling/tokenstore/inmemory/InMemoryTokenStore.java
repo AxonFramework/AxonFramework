@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +17,7 @@
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -33,6 +37,17 @@ public class InMemoryTokenStore implements TokenStore {
     private static final GlobalSequenceTrackingToken NULL_TOKEN = new GlobalSequenceTrackingToken(-1);
 
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
+
+    @Override
+    public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        if (fetchSegments(processorName).length > 0) {
+            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
+        }
+        for (int segment = 0; segment < segmentCount; segment++) {
+            tokens.put(new ProcessAndSegment(processorName, segment), NULL_TOKEN);
+        }
+    }
+
 
     @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {

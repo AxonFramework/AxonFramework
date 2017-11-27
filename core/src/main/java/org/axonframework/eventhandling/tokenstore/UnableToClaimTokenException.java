@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,6 +34,16 @@ public class UnableToClaimTokenException extends AxonTransientException {
      */
     public UnableToClaimTokenException(String message) {
         super(message);
+    }
+
+    /**
+     * Initialize the exception with given {@code message} and {@code cause}.
+     *
+     * @param message The message describing the exception
+     * @param cause   The cause of the failure
+     */
+    public UnableToClaimTokenException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }
