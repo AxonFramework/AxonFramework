@@ -24,9 +24,11 @@ import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.Configuration;
 import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -50,13 +52,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+
+import java.util.function.Function;
 
 /**
  * @author Allard Buijze
  * @author Josh Long
  */
-@Configuration
+@org.springframework.context.annotation.Configuration
 @AutoConfigureAfter(name = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "org.axonframework.boot.autoconfig.JpaAutoConfiguration"})
 @EnableConfigurationProperties(value = {
@@ -112,12 +115,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
-                if (v.getSource() == null) {
-                    eventHandlingConfiguration.registerTrackingProcessor(k);
-                } else {
-                    eventHandlingConfiguration.registerTrackingProcessor(k, c -> applicationContext
-                            .getBean(v.getSource(), StreamableMessageSource.class));
-                }
+                TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
+                        .forParallelProcessing(v.getThreadCount())
+                        .andBatchSize(v.getBatchSize())
+                        .andInitialSegmentsCount(v.getInitialSegmentCount());
+                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy = resolveSequencingPolicy(applicationContext, v);
+                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource = resolveMessageSource(applicationContext, v);
+                eventHandlingConfiguration.registerTrackingProcessor(k, messageSource, c -> config, sequencingPolicy);
             } else {
                 if (v.getSource() == null) {
                     eventHandlingConfiguration.registerSubscribingEventProcessor(k);
@@ -127,6 +131,26 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 }
             }
         });
+    }
+
+    private Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> resolveMessageSource(ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
+        Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource;
+        if (v.getSource() == null) {
+            messageSource = Configuration::eventStore;
+        } else {
+            messageSource = c -> applicationContext.getBean(v.getSource(), StreamableMessageSource.class);
+        }
+        return messageSource;
+    }
+
+    private Function<Configuration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
+        Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy;
+        if (v.getSequencingPolicy() != null) {
+            sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
+        } else {
+            sequencingPolicy = c -> new SequentialPerAggregatePolicy();
+        }
+        return sequencingPolicy;
     }
 
     @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class}, value = CommandBus.class)
