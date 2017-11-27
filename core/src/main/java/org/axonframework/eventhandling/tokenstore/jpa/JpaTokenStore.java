@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,8 +29,8 @@ import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 import static java.lang.String.format;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
@@ -77,6 +78,19 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
+    public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        if (fetchSegments(processorName).length > 0) {
+            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
+        }
+        for (int segment = 0; segment < segmentCount; segment++) {
+            TokenEntry token = new TokenEntry(processorName, segment, null, serializer);
+            entityManager.persist(token);
+        }
+        entityManager.flush();
+    }
+
+    @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         TokenEntry tokenEntry = loadOrCreateToken(processorName, segment, entityManager);
@@ -87,15 +101,15 @@ public class JpaTokenStore implements TokenStore {
     public void releaseClaim(String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.owner = null " +
-                "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                "AND te.segment = :segment")
-                .setParameter("processorName", processorName)
-                .setParameter("segment", segment)
-                .setParameter("owner", nodeId)
-                .executeUpdate();
+                                                        "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                                                        "AND te.segment = :segment")
+                                   .setParameter("processorName", processorName)
+                                   .setParameter("segment", segment)
+                                   .setParameter("owner", nodeId)
+                                   .executeUpdate();
         if (updates == 0) {
             logger.warn("Releasing claim of token {}/{} failed. It was not owned by {}", processorName, segment,
-                    nodeId);
+                        nodeId);
         }
     }
 
@@ -109,19 +123,19 @@ public class JpaTokenStore implements TokenStore {
     public void extendClaim(String processorName, int segment) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                "WHERE te.processorName = :processorName " +
+                                                        "WHERE te.processorName = :processorName " +
                                                         "AND te.segment = :segment " +
                                                         "AND te.owner = :owner")
-                .setParameter("processorName", processorName)
-                .setParameter("segment", segment)
-                .setParameter("owner", nodeId)
-                .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
-                .executeUpdate();
+                                   .setParameter("processorName", processorName)
+                                   .setParameter("segment", segment)
+                                   .setParameter("owner", nodeId)
+                                   .setParameter("timestamp", formatInstant(TokenEntry.clock.instant()))
+                                   .executeUpdate();
 
         if (updates == 0) {
             throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
-                    processorName + "[" + segment + "]'. It is either claimed " +
-                    "by another process, or there is no such token.");
+                                                          processorName + "[" + segment + "]'. It is either claimed " +
+                                                          "by another process, or there is no such token.");
         }
     }
 
@@ -130,10 +144,10 @@ public class JpaTokenStore implements TokenStore {
 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         final List<Integer> resultList = entityManager.createQuery("SELECT te.segment FROM TokenEntry te " +
-                        "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                Integer.class)
-                .setParameter("processorName", processorName)
-                .getResultList();
+                                                                           "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                                                                   Integer.class)
+                                                      .setParameter("processorName", processorName)
+                                                      .getResultList();
         return resultList.stream().mapToInt(i -> i).toArray();
     }
 
@@ -162,7 +176,7 @@ public class JpaTokenStore implements TokenStore {
         } else if (!token.claim(nodeId, claimTimeout)) {
             throw new UnableToClaimTokenException(
                     format("Unable to claim token '%s[%s]'. It is owned by '%s'", token.getProcessorName(),
-                            token.getSegment(), token.getOwner()));
+                           token.getSegment(), token.getOwner()));
         }
         return token;
     }

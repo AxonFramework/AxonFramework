@@ -40,6 +40,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -117,6 +118,21 @@ public class MongoTokenStoreTest {
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, testProcessorName, testSegment);
         Assert.assertEquals(token, tokenStore.fetchToken(testProcessorName, testSegment));
+    }
+
+    @Test
+    public void testInitializeTokens() throws Exception {
+        tokenStore.initializeTokenSegments("test1", 7);
+
+        int[] actual = tokenStore.fetchSegments("test1");
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+    }
+
+    @Test(expected = UnableToClaimTokenException.class)
+    public void testInitializeTokensWhileAlreadyPresent() throws Exception {
+        tokenStore.fetchToken("test1", 1);
+        tokenStore.initializeTokenSegments("test1", 7);
     }
 
     @Test(expected = UnableToClaimTokenException.class)
