@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,16 +29,10 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -57,8 +52,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
+    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
-
     // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
     // if no annotation is present, the package name is used
     private Function<Object, String> fallback = (o) -> o.getClass().getPackage().getName();
@@ -71,9 +67,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                 return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
                                           .orElse(fallback.apply(o)));
             });
-
-    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-
     private Configuration config;
 
     /**
@@ -243,9 +236,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                         conf.getComponent(
                                                                                 ListenerInvocationErrorHandler.class,
                                                                                 LoggingErrorHandler::new),
-                                                                              sequencingPolicy.apply(conf)),
+                                                                        sequencingPolicy.apply(conf)),
                                           source.apply(conf),
-                                          conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                                          tokenStore.getOrDefault(name, c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)).apply(conf),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                           getMessageMonitor(conf, EventProcessor.class, name),
                                           RollbackConfigurationType.ANY_THROWABLE,
@@ -472,6 +465,22 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * Register the TokenStore to use for a processor of given {@code name}.
+     * <p>
+     * If no explicit TokenStore implementation is available for a Processor, it is taken from the main Configuration.
+     * <p>
+     * Note that this configuration is ignored if the processor with given name isn't a Tracking Processor.
+     *
+     * @param name       The name of the processor to configure the token store for
+     * @param tokenStore The function providing the TokenStore based on a given Configuration
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTokenStore(String name, Function<Configuration, TokenStore> tokenStore) {
+        this.tokenStore.put(name, tokenStore);
+        return this;
+    }
+
+    /**
      * Returns a list of Event Processors that have been initialized. Note that an empty list may be returned if this
      * configuration hasn't been {@link #initialize(Configuration) initialized} yet.
      *
@@ -504,7 +513,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      */
     public EventHandlingConfiguration configureMessageMonitor(String name, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(name,
-                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
+                                       (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
     }
 
     /**
