@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.text.MessageFormat.format;
+import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
