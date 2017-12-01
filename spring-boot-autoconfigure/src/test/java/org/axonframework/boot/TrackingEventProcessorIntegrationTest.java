@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import org.axonframework.boot.autoconfig.AMQPAutoConfiguration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
@@ -51,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 @SpringBootTest
 @SpringBootConfiguration
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {AMQPAutoConfiguration.class, JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class TrackingEventProcessorIntegrationTest {
 
