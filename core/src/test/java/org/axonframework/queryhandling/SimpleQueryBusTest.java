@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.MockException;
+import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
@@ -31,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -92,6 +94,49 @@ public class SimpleQueryBusTest {
         assertEquals("hello1234", result.get());
         verify(mockTxManager).startTransaction();
         verify(mockTx).commit();
+    }
+
+    @Test
+    public void testSubscribingSameHandlerTwiceInvokesOnce() throws Exception {
+        AtomicInteger invocationCount = new AtomicInteger();
+        MessageHandler<QueryMessage<?, String>> handler = message -> {
+            invocationCount.incrementAndGet();
+            return "reply";
+        };
+        Registration subscription = testSubject.subscribe("test", String.class, handler);
+        testSubject.subscribe("test", String.class, handler);
+
+        GenericQueryMessage<String, String> query = new GenericQueryMessage<>("request", "test", String.class);
+        String actual = testSubject.query(query).get();
+        assertEquals("reply", actual);
+        assertEquals(1, invocationCount.get());
+
+        assertTrue(subscription.cancel());
+
+        assertTrue(testSubject.query(query).isCompletedExceptionally());
+    }
+
+    @Test
+    public void queryForSingleResultWithUnsuitableHandlers() throws Exception {
+        AtomicInteger invocationCount = new AtomicInteger();
+        MessageHandler<QueryMessage<?, String>> failingHandler = message -> {
+            invocationCount.incrementAndGet();
+            throw new NoHandlerForQueryException("Mock");
+        };
+        MessageHandler<? super QueryMessage<?, String>> passingHandler = message -> {
+            invocationCount.incrementAndGet();
+            return "reply";
+        };
+        testSubject.subscribe("query", String.class, failingHandler);
+        //noinspection Convert2MethodRef
+        testSubject.subscribe("query", String.class, message -> failingHandler.handle(message));
+        testSubject.subscribe("query", String.class, passingHandler);
+
+        CompletableFuture<String> result = testSubject.query(new GenericQueryMessage<>("query", "query", String.class));
+
+        assertTrue(result.isDone());
+        assertEquals("reply", result.get());
+        assertEquals(3, invocationCount.get());
     }
 
     @Test
