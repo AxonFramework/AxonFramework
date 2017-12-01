@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,13 +24,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -237,9 +232,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
             Class<?> sagaType = beanFactory.getType(saga);
-
-            String configName = lcFirst(sagaType.getSimpleName()) + "Configuration";
-            if (beanFactory.containsBean(configName)) {
+            boolean explicitSagaConfig = !"".equals(sagaAnnotation.configurationBean());
+            String configName = explicitSagaConfig
+                    ? sagaAnnotation.configurationBean()
+                    : lcFirst(sagaType.getSimpleName()) + "Configuration";
+            if (explicitSagaConfig || beanFactory.containsBean(configName)) {
                 configurer.registerModule(new LazyRetrievedModuleConfiguration(
                         () -> beanFactory.getBean(configName, ModuleConfiguration.class))
                 );

@@ -32,12 +32,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
-import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.serialization.Serializer;
@@ -59,12 +54,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static java.util.Collections.singleton;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -100,6 +95,7 @@ public class AxonAutoConfigurationTest {
         assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
         assertNotNull(applicationContext.getBean(Context.MySaga.class));
         assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
+        assertNotNull(applicationContext.getBean("myDefaultConfigSagaConfiguration", SagaConfiguration.class));
 
         assertEquals(2, configuration.correlationDataProviders().size());
 
@@ -156,7 +152,7 @@ public class AxonAutoConfigurationTest {
             }
         }
 
-        @Saga
+        @Saga(configurationBean = "myCustomNamedSagaConfiguration")
         public static class MySaga {
             @SagaEventHandler(associationProperty = "toString")
             public void handle(String type, SomeComponent test) {
@@ -165,8 +161,17 @@ public class AxonAutoConfigurationTest {
 
         }
 
+        @Saga
+        public static class MyDefaultConfigSaga {
+            @SagaEventHandler(associationProperty = "toString")
+            public void handle(String type, SomeComponent test) {
+
+            }
+
+        }
+
         @Bean
-        public SagaConfiguration<MySaga> mySagaConfiguration() {
+        public SagaConfiguration<MySaga> myCustomNamedSagaConfiguration() {
             return SagaConfiguration.subscribingSagaManager(MySaga.class);
         }
 
