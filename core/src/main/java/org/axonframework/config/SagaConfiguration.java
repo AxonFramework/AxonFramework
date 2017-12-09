@@ -20,6 +20,9 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.LoggingSagaErrorHandler;
+import org.axonframework.eventhandling.saga.PropagatingSagaErrorHandler;
+import org.axonframework.eventhandling.saga.SagaInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -51,6 +54,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<SagaStore<? super S>> sagaStore;
     private final Component<RollbackConfiguration> rollbackConfiguration;
     private final Component<ErrorHandler> errorHandler;
+    private final Component<SagaInvocationErrorHandler> sagaInvocationErrorHandler;
     private final Component<TokenStore> tokenStore;
     private final Component<TransactionManager> transactionManager;
     private final Component<MessageMonitor<? super EventMessage<?>>> messageMonitor;
@@ -167,7 +171,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                      c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
         errorHandler = new Component<>(() -> config, "errorHandler",
                                        c -> c.getComponent(ErrorHandler.class,
-                                                           () -> PropagatingErrorHandler.INSTANCE));
+                                                           () -> PropagatingSagaErrorHandler.INSTANCE));
+        sagaInvocationErrorHandler = new Component<>(() -> config, "sagaInvocationErrorHandler",
+                                                     c -> c.getComponent(SagaInvocationErrorHandler.class, LoggingSagaErrorHandler::new));
         rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
                                                 c -> c.getComponent(RollbackConfiguration.class,
                                                                     () -> RollbackConfigurationType.ANY_THROWABLE));
@@ -176,7 +182,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                          c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
                                                                             c.parameterResolverFactory()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
-                                                                                                 c.parameterResolverFactory()));
+                                                                                                 c.parameterResolverFactory(),
+                                                                                                 sagaInvocationErrorHandler.get()));
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
                                                               c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                                                                   TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
@@ -258,6 +265,20 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      */
     public SagaConfiguration<S> configureErrorHandler(Function<Configuration, ErrorHandler> errorHandler) {
         this.errorHandler.update(errorHandler);
+        return this;
+    }
+
+    /**
+     * Configures the SagaInvocationErrorHandler to use when processing of event in saga fails.
+     * <p>
+     * The default is to log errors.
+     *
+     * @param sagaInvocationErrorHandler The function to create SagaInvocationErrorHandler
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureSagaInvocationErrorHandler(
+            Function<Configuration, SagaInvocationErrorHandler> sagaInvocationErrorHandler) {
+        this.sagaInvocationErrorHandler.update(sagaInvocationErrorHandler);
         return this;
     }
 

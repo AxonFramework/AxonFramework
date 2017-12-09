@@ -21,16 +21,12 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Segment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static java.lang.String.format;
 
 /**
  * Abstract implementation of the SagaManager interface that provides basic functionality required by most SagaManager
@@ -41,25 +37,26 @@ import static java.lang.String.format;
  */
 public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
-
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
-    private volatile boolean suppressExceptions = true;
+    private final SagaInvocationErrorHandler sagaInvocationErrorHandler;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
      *
-     * @param sagaType       The type of Saga Managed by this instance
-     * @param sagaRepository The repository providing the saga instances.
-     * @param sagaFactory    The factory responsible for creating new Saga instances
+     * @param sagaType                   The type of Saga Managed by this instance
+     * @param sagaRepository             The repository providing the saga instances.
+     * @param sagaFactory                The factory responsible for creating new Saga instances
+     * @param sagaInvocationErrorHandler The error handler to invoke when an error occurs
      */
-    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
+    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
+                                  SagaInvocationErrorHandler sagaInvocationErrorHandler) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
         Assert.notNull(sagaRepository, () -> "sagaRepository may not be null");
         this.sagaRepository = sagaRepository;
+        this.sagaInvocationErrorHandler = sagaInvocationErrorHandler;
     }
 
     @Override
@@ -91,7 +88,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
                && segment.matches(initializationPolicy.getInitialAssociationValue());
     }
 
-    private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) {
+    private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) throws Exception {
         Saga<T> newSaga = sagaRepository.createInstance(createSagaIdentifier(segment), sagaFactory);
         newSaga.getAssociationValues().add(associationValue);
         doInvokeSaga(event, newSaga);
@@ -147,28 +144,13 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      */
     protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event);
 
-    private boolean doInvokeSaga(EventMessage event, Saga<T> saga) {
+    private boolean doInvokeSaga(EventMessage event, Saga<T> saga) throws Exception {
         try {
             return saga.handle(event);
         } catch (Exception e) {
-            if (suppressExceptions) {
-                logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
-                                    saga.getClass().getSimpleName(), event.getPayloadType().getSimpleName()), e);
-                return true;
-            } else {
-                throw e;
-            }
+            sagaInvocationErrorHandler.onError(e, event, saga);
+            return true;
         }
-    }
-
-    /**
-     * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
-     * logged. Defaults to {@code true}.
-     *
-     * @param suppressExceptions whether or not to suppress exceptions from Sagas.
-     */
-    public void setSuppressExceptions(boolean suppressExceptions) {
-        this.suppressExceptions = suppressExceptions;
     }
 
     /**

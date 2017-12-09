@@ -19,6 +19,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.PropagatingSagaErrorHandler;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
@@ -89,7 +90,7 @@ public class SagaConfigurationTest {
                 .configureSagaStore(c -> sagaStore)
                 .configureMessageMonitor(c -> NoOpMessageMonitor.instance())
                 .configureRollbackConfiguration(c -> RollbackConfigurationType.ANY_THROWABLE)
-                .configureErrorHandler(c -> PropagatingErrorHandler.INSTANCE)
+                .configureErrorHandler(c -> PropagatingSagaErrorHandler.INSTANCE)
                 .configureTransactionManager(c -> NoTransactionManager.instance())
                 .configureTokenStore(c -> new InMemoryTokenStore());
         config.initialize(configuration);

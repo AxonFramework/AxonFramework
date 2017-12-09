@@ -42,6 +42,7 @@ public class SagaManagerTest {
 
     private AbstractSagaManager<Object> testSubject;
     private SagaRepository<Object> mockSagaRepository;
+    private SagaInvocationErrorHandler mockErrorHandler;
     private Saga<Object> mockSaga1;
     private Saga<Object> mockSaga2;
     private Saga<Object> mockSaga3;
@@ -55,6 +56,7 @@ public class SagaManagerTest {
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
         mockSaga3 = mock(Saga.class);
+        mockErrorHandler = mock(SagaInvocationErrorHandler.class);
         when(mockSaga1.isActive()).thenReturn(true);
         when(mockSaga2.isActive()).thenReturn(true);
         when(mockSaga3.isActive()).thenReturn(false);
@@ -75,7 +77,7 @@ public class SagaManagerTest {
                 .thenReturn(setOf("saga1", "saga2", "saga3", "noSaga"));
         sagaCreationPolicy = SagaCreationPolicy.NONE;
 
-        testSubject = new TestableAbstractSagaManager(mockSagaRepository);
+        testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockErrorHandler);
     }
 
     @Test
@@ -94,9 +96,10 @@ public class SagaManagerTest {
 
     @Test
     public void testExceptionPropagated() throws Exception {
-        testSubject.setSuppressExceptions(false);
         EventMessage<?> event = new GenericEventMessage<>(new Object());
-        doThrow(new MockException()).when(mockSaga1).handle(event);
+        MockException toBeThrown = new MockException();
+        doThrow(toBeThrown).when(mockSaga1).handle(event);
+        doThrow(toBeThrown).when(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
         try {
             UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
             unitOfWork.executeWithResult(() -> {
@@ -109,6 +112,7 @@ public class SagaManagerTest {
             assertEquals("Mock", e.getMessage());
         }
         verify(mockSaga1, times(1)).handle(event);
+        verify(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
     }
 
     @Test
@@ -153,13 +157,14 @@ public class SagaManagerTest {
 
     @Test
     public void testExceptionSuppressed() throws Exception {
-        testSubject.setSuppressExceptions(true);
         EventMessage<?> event = new GenericEventMessage<>(new Object());
-        doThrow(new MockException()).when(mockSaga1).handle(event);
+        MockException toBeThrown = new MockException();
+        doThrow(toBeThrown).when(mockSaga1).handle(event);
         testSubject.handle(event, Segment.ROOT_SEGMENT);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
         verify(mockSaga3, never()).handle(event);
+        verify(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
     }
 
     @SuppressWarnings({"unchecked"})
@@ -169,8 +174,9 @@ public class SagaManagerTest {
 
     private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
 
-        private TestableAbstractSagaManager(SagaRepository<Object> sagaRepository) {
-            super(Object.class, sagaRepository, Object::new);
+        private TestableAbstractSagaManager(SagaRepository<Object> sagaRepository,
+                                            SagaInvocationErrorHandler sagaInvocationErrorHandler) {
+            super(Object.class, sagaRepository, Object::new, sagaInvocationErrorHandler);
         }
 
         @Override

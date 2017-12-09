@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.LoggingSagaErrorHandler;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
@@ -123,8 +124,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                              new TransienceValidatingResourceInjector(),
                                                                              parameterResolverFactory);
-            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory);
-            sagaManager.setSuppressExceptions(false);
+            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory,
+                                                     new LoggingSagaErrorHandler());
         }
     }
 

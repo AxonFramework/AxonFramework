@@ -25,6 +25,7 @@ import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.SagaInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
@@ -48,6 +49,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -95,6 +97,9 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
+
+    @Autowired
+    private Context.MySagaInvocationErrorHandler mySagaInvocationErrorHandler;
 
     @Test
     public void contextWiresMainComponents() throws Exception {
@@ -156,6 +161,16 @@ public class SpringAxonAutoConfigurerTest {
 
         assertNotNull("Expected EventBus to be wired", myEventHandler.eventBus);
         assertFalse(myListenerInvocationErrorHandler.received.isEmpty());
+    }
+
+    @Test
+    public void testSagaInvocationErrorHandler() {
+        eventBus.publish(asEventMessage(new SomeEvent("id")));
+        eventBus.publish(asEventMessage(new SomeEventWhichHandlingFails("id")));
+
+        assertTrue(Context.MySaga.events.containsAll(Arrays.asList("id", "id")));
+        assertEquals(1, mySagaInvocationErrorHandler.received.size());
+        assertEquals("Ooops! I failed.", mySagaInvocationErrorHandler.received.get(0).getMessage());
     }
 
     @EnableAxon
@@ -240,6 +255,12 @@ public class SpringAxonAutoConfigurerTest {
                 assertNotNull(beanInjection);
                 events.add(event.getId());
             }
+
+            @SagaEventHandler(associationProperty = "id")
+            public void handle(SomeEventWhichHandlingFails event) {
+                events.add(event.getId());
+                throw new RuntimeException("Ooops! I failed.");
+            }
         }
 
         @Component
@@ -294,6 +315,18 @@ public class SpringAxonAutoConfigurerTest {
             }
         }
 
+        @Component
+        public static class MySagaInvocationErrorHandler implements SagaInvocationErrorHandler {
+
+            public List<Exception> received = new ArrayList<>();
+
+            @Override
+            public void onError(Exception exception, EventMessage event,
+                                org.axonframework.eventhandling.saga.Saga saga) {
+                received.add(exception);
+            }
+        }
+
         @Bean
         public SagaConfiguration mySagaConfiguration(@Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
             return SagaConfiguration.subscribingSagaManager(MySaga.class)
@@ -306,6 +339,19 @@ public class SpringAxonAutoConfigurerTest {
         private final String id;
 
         public SomeEvent(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    public static class SomeEventWhichHandlingFails {
+
+        private final String id;
+
+        public SomeEventWhichHandlingFails(String id) {
             this.id = id;
         }
 
