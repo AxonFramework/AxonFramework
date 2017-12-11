@@ -1,5 +1,6 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.boot.autoconfig.AxonAutoConfiguration,\
+  org.axonframework.boot.autoconfig.RoutingStrategyAutoConfiguration,\
   org.axonframework.boot.autoconfig.SpringCloudAutoConfiguration,\
   org.axonframework.boot.autoconfig.JGroupsAutoConfiguration,\
   org.axonframework.boot.autoconfig.AMQPAutoConfiguration,\
