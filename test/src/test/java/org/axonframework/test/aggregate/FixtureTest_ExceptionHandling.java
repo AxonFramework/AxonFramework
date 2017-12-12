@@ -22,14 +22,25 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.messaging.interceptors.BeanValidationInterceptor;
+import org.axonframework.messaging.interceptors.JSR303ViolationException;
 import org.axonframework.test.FixtureExecutionException;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.validation.constraints.NotNull;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 public class FixtureTest_ExceptionHandling {
 
     private final FixtureConfiguration<MyAggregate> fixture = new AggregateTestFixture<>(MyAggregate.class);
+
+    @Before
+    public  void setUp(){
+        fixture.registerCommandDispatchInterceptor(new BeanValidationInterceptor<>());
+    }
 
     @Test
     public void testCreateAggregate() {
@@ -80,6 +91,15 @@ public class FixtureTest_ExceptionHandling {
         );
     }
 
+    @Test
+    public void testGivenCommandWithValidationError(){
+        fixture.givenCommands(
+                new CreateMyAggregateCommand("3")
+        ).when(
+                new Jsr303ValidationCommand("2")
+        ).expectException(JSR303ViolationException.class);
+    }
+
     private static abstract class AbstractMyAggregateCommand {
         @TargetAggregateIdentifier
         public final String id;
@@ -118,6 +138,16 @@ public class FixtureTest_ExceptionHandling {
 
         public MyAggregateCreatedEvent(String id) {
             this.id = id;
+        }
+    }
+
+    private static class Jsr303ValidationCommand extends AbstractMyAggregateCommand {
+
+        @NotNull
+        private String email;
+
+        protected Jsr303ValidationCommand(String id){
+            super(id);
         }
     }
 
