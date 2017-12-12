@@ -67,7 +67,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
      *                       targeted aggregate.
      */
     public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType) {
-        this(annotationType, UnresolvedRoutingKeyPolicy.RANDOM_KEY);
+        this(annotationType, UnresolvedRoutingKeyPolicy.ERROR);
     }
 
     /**

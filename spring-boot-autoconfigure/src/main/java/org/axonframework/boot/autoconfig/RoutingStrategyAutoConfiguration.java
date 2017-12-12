@@ -20,7 +20,7 @@ package org.axonframework.boot.autoconfig;
 
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -34,7 +34,6 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.1.1
  */
 @Configuration
-@AutoConfigureAfter(JpaAutoConfiguration.class)
 @AutoConfigureBefore(SpringCloudAutoConfiguration.class)
 @ConditionalOnExpression("${axon.distributed.enabled:false} || ${axon.distributed.jgroups.enabled:false}")
 public class RoutingStrategyAutoConfiguration {
@@ -42,6 +41,6 @@ public class RoutingStrategyAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RoutingStrategy routingStrategy() {
-        return new AnnotationRoutingStrategy();
+        return new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
     }
 }
