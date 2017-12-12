@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 
 import java.util.HashSet;
@@ -40,7 +41,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
-    private final SagaInvocationErrorHandler sagaInvocationErrorHandler;
+    private volatile SagaInvocationErrorHandler sagaInvocationErrorHandler;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
@@ -151,6 +152,20 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
             sagaInvocationErrorHandler.onError(e, event, saga);
             return true;
         }
+    }
+
+    /**
+     * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
+     * logged. Defaults to {@code true}.
+     *
+     * @deprecated Instead of using this method, provide an implementation of {@link SagaInvocationErrorHandler}.
+     *
+     * @param suppressExceptions whether or not to suppress exceptions from Sagas.
+     */
+    @Deprecated
+    public void setSuppressExceptions(boolean suppressExceptions) {
+        this.sagaInvocationErrorHandler = suppressExceptions ? new LoggingSagaErrorHandler()
+                : PropagatingErrorHandler.INSTANCE;
     }
 
     /**

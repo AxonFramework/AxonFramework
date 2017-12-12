@@ -21,7 +21,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.LoggingSagaErrorHandler;
-import org.axonframework.eventhandling.saga.PropagatingSagaErrorHandler;
 import org.axonframework.eventhandling.saga.SagaInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -171,7 +170,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                      c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
         errorHandler = new Component<>(() -> config, "errorHandler",
                                        c -> c.getComponent(ErrorHandler.class,
-                                                           () -> PropagatingSagaErrorHandler.INSTANCE));
+                                                           () -> PropagatingErrorHandler.INSTANCE));
         sagaInvocationErrorHandler = new Component<>(() -> config, "sagaInvocationErrorHandler",
                                                      c -> c.getComponent(SagaInvocationErrorHandler.class, LoggingSagaErrorHandler::new));
         rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
