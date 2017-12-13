@@ -67,6 +67,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
     private final RestTemplate restTemplate;
     private final String messageRoutingInformationEndpoint;
+    private final MessageRoutingInformation unreachableService;
 
     private volatile MessageRoutingInformation messageRoutingInfo;
 
@@ -133,6 +134,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         this.restTemplate = restTemplate;
         this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
         this.messageRoutingInfo = null;
+        unreachableService = new MessageRoutingInformation(0, DenyAll.INSTANCE, serializer);
     }
 
     @Override
@@ -190,7 +192,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
             logger.info("Failed to receive message routing information from Service [" +
                                 serviceInstance.getServiceId() + "] due to in an exception. "
                                 + "Will temporarily set that this instance denies all incoming messages", e);
-            return Optional.of(new MessageRoutingInformation(0, DenyAll.INSTANCE, serializer));
+            return Optional.of(unreachableService);
         }
     }
 

@@ -211,7 +211,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testGetMessageRoutingInformationReturnsDenyAllMessageRoutingInformationFromServiceInstanceRequestWhichThrowsAnException() {
+    public void testGetMessageRoutingInformationReturnsUnreachableMessageRoutingInformationFromServiceInstanceRequestWhichThrowsAnException() {
         MessageRoutingInformation expectedMessageRoutingInfo =
                 new MessageRoutingInformation(0, DenyAll.INSTANCE, testSubject.serializer);
 
