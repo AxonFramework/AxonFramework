@@ -19,6 +19,7 @@ import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.jgroups.stack.GossipRouter;
@@ -74,7 +75,8 @@ public class JGroupsAutoConfiguration {
     @Bean
     public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
                                                                    @Qualifier("localSegment") CommandBus
-                                                                           localSegment) {
+                                                                           localSegment,
+                                                                   RoutingStrategy routingStrategy) {
         System.setProperty("jgroups.tunnel.gossip_router_hosts", properties.getJgroups().getGossip().getHosts());
         System.setProperty("jgroups.bind_addr", String.valueOf(properties.getJgroups().getBindAddr()));
         System.setProperty("jgroups.bind_port", String.valueOf(properties.getJgroups().getBindPort()));
@@ -84,6 +86,7 @@ public class JGroupsAutoConfiguration {
         jGroupsConnectorFactoryBean.setLocalSegment(localSegment);
         jGroupsConnectorFactoryBean.setSerializer(serializer);
         jGroupsConnectorFactoryBean.setConfiguration(properties.getJgroups().getConfigurationFile());
+        jGroupsConnectorFactoryBean.setRoutingStrategy(routingStrategy);
         return jGroupsConnectorFactoryBean;
     }
 

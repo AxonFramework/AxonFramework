@@ -17,9 +17,11 @@ package org.axonframework.boot;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.gateway.AbstractCommandGateway;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -71,6 +73,9 @@ public class AxonAutoConfigurationWithSpringCloudTest {
     private CommandBus commandBus;
 
     @Autowired
+    private RoutingStrategy routingStrategy;
+
+    @Autowired
     private CommandRouter commandRouter;
     @Autowired
     private CommandBusConnector commandBusConnector;
@@ -78,6 +83,9 @@ public class AxonAutoConfigurationWithSpringCloudTest {
     @Test
     public void testContextInitialization() throws Exception {
         assertNotNull(applicationContext);
+
+        assertNotNull(applicationContext.getBean(RoutingStrategy.class));
+        assertEquals(AnnotationRoutingStrategy.class, routingStrategy.getClass());
 
         assertNotNull(applicationContext.getBean(SpringCloudHttpBackupCommandRouter.class));
         assertEquals(SpringCloudHttpBackupCommandRouter.class, commandRouter.getClass());
