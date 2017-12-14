@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.*;
 import static org.axonframework.common.AssertUtils.assertWithin;
@@ -145,6 +146,22 @@ public class TrackingEventProcessorTest_MultiThreaded {
         Thread.sleep(200);
 
         assertWithin(1, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(0)));
+    }
+
+    @Test
+    public void testProcessorExtendsClaimOnSegment() throws InterruptedException {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+
+        testSubject.start();
+        // give it some time to split segments from the store and submit to executor service.
+        Thread.sleep(200);
+
+        eventBus.publish(createEvents(10));
+
+        assertWithin(200, MILLISECONDS, () -> verify(tokenStore, atLeast(1)).extendClaim("test", 0));
+        assertWithin(200, MILLISECONDS, () -> verify(tokenStore, atLeast(1)).extendClaim("test", 1));
+        assertWithin(1, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
     }
 
     @Test

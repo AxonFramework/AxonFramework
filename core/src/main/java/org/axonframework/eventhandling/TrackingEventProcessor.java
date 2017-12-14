@@ -160,7 +160,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         registerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
-                tokenStore.extendClaim(getName(), 0);
+                tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
             }
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isLastMessage()) {
                 unitOfWork.onPrepareCommit(uow -> tokenStore.storeToken(unitOfWork.getResource(lastTokenResourceKey),
