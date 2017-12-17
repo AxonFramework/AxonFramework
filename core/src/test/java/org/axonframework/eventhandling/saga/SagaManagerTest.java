@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -42,7 +43,7 @@ public class SagaManagerTest {
 
     private AbstractSagaManager<Object> testSubject;
     private SagaRepository<Object> mockSagaRepository;
-    private SagaInvocationErrorHandler mockErrorHandler;
+    private ListenerInvocationErrorHandler mockErrorHandler;
     private Saga<Object> mockSaga1;
     private Saga<Object> mockSaga2;
     private Saga<Object> mockSaga3;
@@ -56,7 +57,7 @@ public class SagaManagerTest {
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
         mockSaga3 = mock(Saga.class);
-        mockErrorHandler = mock(SagaInvocationErrorHandler.class);
+        mockErrorHandler = mock(ListenerInvocationErrorHandler.class);
         when(mockSaga1.isActive()).thenReturn(true);
         when(mockSaga2.isActive()).thenReturn(true);
         when(mockSaga3.isActive()).thenReturn(false);
@@ -72,6 +73,9 @@ public class SagaManagerTest {
         when(mockSaga1.getAssociationValues()).thenReturn(associationValues);
         when(mockSaga2.getAssociationValues()).thenReturn(associationValues);
         when(mockSaga3.getAssociationValues()).thenReturn(associationValues);
+
+        when(mockSaga1.canHandle(any(EventMessage.class))).thenReturn(true);
+        when(mockSaga2.canHandle(any(EventMessage.class))).thenReturn(true);
 
         when(mockSagaRepository.find(eq(associationValue)))
                 .thenReturn(setOf("saga1", "saga2", "saga3", "noSaga"));
@@ -175,8 +179,8 @@ public class SagaManagerTest {
     private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
 
         private TestableAbstractSagaManager(SagaRepository<Object> sagaRepository,
-                                            SagaInvocationErrorHandler sagaInvocationErrorHandler) {
-            super(Object.class, sagaRepository, Object::new, sagaInvocationErrorHandler);
+                                            ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+            super(Object.class, sagaRepository, Object::new, listenerInvocationErrorHandler);
         }
 
         @Override

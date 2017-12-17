@@ -13,16 +13,12 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.saga.Saga;
-import org.axonframework.eventhandling.saga.SagaInvocationErrorHandler;
-
 /**
  * Singleton ErrorHandler implementation that does not do anything.
  *
  * @author Rene de Waele
  */
-public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler,
-        SagaInvocationErrorHandler {
+public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
 
     /**
      * Singleton instance of a {@link PropagatingErrorHandler}.
@@ -39,11 +35,6 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
 
     @Override
     public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception {
-        throw exception;
-    }
-
-    @Override
-    public void onError(Exception exception, EventMessage event, Saga saga) throws Exception {
         throw exception;
     }
 

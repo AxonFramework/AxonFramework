@@ -20,6 +20,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 
@@ -41,23 +43,23 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
-    private volatile SagaInvocationErrorHandler sagaInvocationErrorHandler;
+    private volatile ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
      *
-     * @param sagaType                   The type of Saga Managed by this instance
-     * @param sagaRepository             The repository providing the saga instances.
-     * @param sagaFactory                The factory responsible for creating new Saga instances
-     * @param sagaInvocationErrorHandler The error handler to invoke when an error occurs
+     * @param sagaType                       The type of Saga Managed by this instance
+     * @param sagaRepository                 The repository providing the saga instances.
+     * @param sagaFactory                    The factory responsible for creating new Saga instances
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
     protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
-                                  SagaInvocationErrorHandler sagaInvocationErrorHandler) {
+                                  ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
         Assert.notNull(sagaRepository, () -> "sagaRepository may not be null");
         this.sagaRepository = sagaRepository;
-        this.sagaInvocationErrorHandler = sagaInvocationErrorHandler;
+        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
     @Override
@@ -146,25 +148,28 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event);
 
     private boolean doInvokeSaga(EventMessage event, Saga<T> saga) throws Exception {
-        try {
-            return saga.handle(event);
-        } catch (Exception e) {
-            sagaInvocationErrorHandler.onError(e, event, saga);
+        if (saga.canHandle(event)) {
+            try {
+                saga.handle(event);
+            } catch (Exception e) {
+                listenerInvocationErrorHandler.onError(e, event, saga);
+            }
             return true;
         }
+        return false;
     }
 
     /**
      * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
      * logged. Defaults to {@code true}.
      *
-     * @deprecated Instead of using this method, provide an implementation of {@link SagaInvocationErrorHandler}.
+     * @deprecated Instead of using this method, provide an implementation of {@link LoggingErrorHandler}.
      *
      * @param suppressExceptions whether or not to suppress exceptions from Sagas.
      */
     @Deprecated
     public void setSuppressExceptions(boolean suppressExceptions) {
-        this.sagaInvocationErrorHandler = suppressExceptions ? new LoggingSagaErrorHandler()
+        this.listenerInvocationErrorHandler = suppressExceptions ? new LoggingErrorHandler()
                 : PropagatingErrorHandler.INSTANCE;
     }
 

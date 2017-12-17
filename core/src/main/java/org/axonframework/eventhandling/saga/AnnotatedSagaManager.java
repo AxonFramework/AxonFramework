@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
@@ -65,20 +67,21 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta
      * model.
      *
-     * @param sagaType                   The saga target type
-     * @param sagaRepository             The repository providing access to the Saga instances
-     * @param parameterResolverFactory   The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                   handlers with
-     * @param sagaInvocationErrorHandler The error handler to invoke when an error occurs
+     * @param sagaType                       The saga target type
+     * @param sagaRepository                 The repository providing access to the Saga instances
+     * @param parameterResolverFactory       The ParameterResolverFactory instance to resolve parameter values for
+     *                                       annotated
+     *                                       handlers with
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
                                 ParameterResolverFactory parameterResolverFactory,
-                                SagaInvocationErrorHandler sagaInvocationErrorHandler) {
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         this(sagaType,
              sagaRepository,
              () -> newInstance(sagaType),
              new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
-             sagaInvocationErrorHandler);
+             listenerInvocationErrorHandler);
     }
 
     /**
@@ -94,22 +97,23 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
              sagaRepository,
              sagaFactory,
              new AnnotationSagaMetaModelFactory().modelOf(sagaType),
-             new LoggingSagaErrorHandler());
+             new LoggingErrorHandler());
     }
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas, the {@code sagaFactory} to
      * create new sagas and the {@code sagaMetaModel} to delegate messages to the saga instances.
      *
-     * @param sagaType                   The saga target type
-     * @param sagaRepository             The repository providing access to the Saga instances
-     * @param sagaFactory                The factory for new saga instances of type {@code T}
-     * @param sagaMetaModel              The meta model to delegate messages to a saga instance
-     * @param sagaInvocationErrorHandler The error handler to invoke when an error occurs
+     * @param sagaType                       The saga target type
+     * @param sagaRepository                 The repository providing access to the Saga instances
+     * @param sagaFactory                    The factory for new saga instances of type {@code T}
+     * @param sagaMetaModel                  The meta model to delegate messages to a saga instance
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
-                                SagaModel<T> sagaMetaModel, SagaInvocationErrorHandler sagaInvocationErrorHandler) {
-        super(sagaType, sagaRepository, sagaFactory, sagaInvocationErrorHandler);
+                                SagaModel<T> sagaMetaModel,
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        super(sagaType, sagaRepository, sagaFactory, listenerInvocationErrorHandler);
         this.sagaMetaModel = sagaMetaModel;
     }
 

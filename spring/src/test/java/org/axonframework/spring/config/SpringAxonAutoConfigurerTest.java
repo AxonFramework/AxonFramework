@@ -25,7 +25,6 @@ import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
-import org.axonframework.eventhandling.saga.SagaInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
@@ -98,9 +97,6 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
 
-    @Autowired
-    private Context.MySagaInvocationErrorHandler mySagaInvocationErrorHandler;
-
     @Test
     public void contextWiresMainComponents() throws Exception {
         assertNotNull(axonConfig);
@@ -169,8 +165,8 @@ public class SpringAxonAutoConfigurerTest {
         eventBus.publish(asEventMessage(new SomeEventWhichHandlingFails("id")));
 
         assertTrue(Context.MySaga.events.containsAll(Arrays.asList("id", "id")));
-        assertEquals(1, mySagaInvocationErrorHandler.received.size());
-        assertEquals("Ooops! I failed.", mySagaInvocationErrorHandler.received.get(0).getMessage());
+        assertEquals(1, myListenerInvocationErrorHandler.received.size());
+        assertEquals("Ooops! I failed.", myListenerInvocationErrorHandler.received.get(0).getMessage());
     }
 
     @EnableAxon
@@ -311,18 +307,6 @@ public class SpringAxonAutoConfigurerTest {
 
             @Override
             public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception {
-                received.add(exception);
-            }
-        }
-
-        @Component
-        public static class MySagaInvocationErrorHandler implements SagaInvocationErrorHandler {
-
-            public List<Exception> received = new ArrayList<>();
-
-            @Override
-            public void onError(Exception exception, EventMessage event,
-                                org.axonframework.eventhandling.saga.Saga saga) {
                 received.add(exception);
             }
         }

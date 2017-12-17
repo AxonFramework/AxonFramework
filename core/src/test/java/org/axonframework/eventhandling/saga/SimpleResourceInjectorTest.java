@@ -109,8 +109,12 @@ public class SimpleResourceInjectorTest {
         }
 
         @Override
-        public boolean handle(EventMessage event) {
+        public boolean canHandle(EventMessage<?> event) {
             return true;
+        }
+
+        @Override
+        public void handle(EventMessage event) {
         }
 
         @Override

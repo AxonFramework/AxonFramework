@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.function.Consumer;
@@ -34,7 +34,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga<T> {
+public interface Saga<T> extends EventListener {
 
     /**
      * Returns the unique identifier of this saga.
@@ -67,16 +67,6 @@ public interface Saga<T> {
      */
     void execute(Consumer<T> invocation);
 
-
-    /**
-     * Handle the given event. The actual result of processing depends on the implementation of the saga.
-     * <p/>
-     * Implementations are highly discouraged from throwing exceptions.
-     *
-     * @param event the event to handle
-     * @return {@code true} if the event was handled by the Saga, otherwise {@code false}
-     */
-    boolean handle(EventMessage<?> event);
 
     /**
      * Indicates whether or not this saga is active. A Saga is active when its life cycle has not been ended.

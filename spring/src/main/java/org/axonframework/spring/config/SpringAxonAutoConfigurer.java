@@ -29,7 +29,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.ResourceInjector;
-import org.axonframework.eventhandling.saga.SagaInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -155,8 +154,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(ListenerInvocationErrorHandler.class).ifPresent(
                 handler -> configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c))
         );
-        findComponent(SagaInvocationErrorHandler.class).ifPresent(
-                handler -> configurer.registerComponent(SagaInvocationErrorHandler.class, c -> getBean(handler, c)));
+        findComponent(ListenerInvocationErrorHandler.class).ifPresent(handler -> configurer
+                .registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c)));
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)
