@@ -26,6 +26,11 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MultiMessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +44,7 @@ import java.util.function.Function;
  */
 public class GlobalMetricRegistry {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalMetricRegistry.class);
     private final MetricRegistry registry;
 
     /**
@@ -78,7 +84,9 @@ public class GlobalMetricRegistry {
      * @param name   the name under which the metric should be registered to the registry
      * @param metric the metric to register
      * @param <T>    the metric type
+     * @deprecated Register metrics on the Metric Registry directly, instead. See {@link #getRegistry()}.
      */
+    @Deprecated
     public <T extends Metric> void registerMetric(String name, T metric) {
         registry.register(name, metric);
     }
@@ -103,7 +111,12 @@ public class GlobalMetricRegistry {
         if (EventBus.class.isAssignableFrom(componentType)) {
             return registerEventBus(componentName);
         }
-        throw new IllegalArgumentException(String.format("Unrecognized component: [%s]", componentType));
+        if (QueryBus.class.isAssignableFrom(componentType)) {
+            return registerQueryBus(componentName);
+        }
+        logger.warn("Cannot provide MessageMonitor for component [{}] of type [{}]. Returning No-Op instance.",
+                    componentName, componentType.getSimpleName());
+        return NoOpMessageMonitor.instance();
     }
 
     /**
@@ -142,7 +155,7 @@ public class GlobalMetricRegistry {
      * @param name the name under which the eventBus should be registered to the registry
      * @return MessageMonitor to monitor the behavior of an EventBus
      */
-    public MessageMonitor<EventMessage<?>> registerEventBus(String name) {
+    public MessageMonitor<? super EventMessage<?>> registerEventBus(String name) {
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
 
         MetricRegistry eventProcessingRegistry = new MetricRegistry();
@@ -162,16 +175,32 @@ public class GlobalMetricRegistry {
      * @param name the name under which the commandBus should be registered to the registry
      * @return MessageMonitor to monitor the behavior of a CommandBus
      */
-    public MessageMonitor<CommandMessage<?>> registerCommandBus(String name) {
+    public MessageMonitor<? super CommandMessage<?>> registerCommandBus(String name) {
+        return registerDefaultHandlerMessageMonitor(name);
+    }
+
+    /**
+     * Registers new metrics to the registry to monitor a {@link CommandBus}. The monitor will be registered with the
+     * registry under the given {@code name}. The returned {@link MessageMonitor} can be installed
+     * on the command bus to initiate the monitoring.
+     *
+     * @param name the name under which the commandBus should be registered to the registry
+     * @return MessageMonitor to monitor the behavior of a CommandBus
+     */
+    public MessageMonitor<? super QueryMessage<?, ?>> registerQueryBus(String name) {
+        return registerDefaultHandlerMessageMonitor(name);
+    }
+
+    private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name) {
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
         MessageCountingMonitor messageCountingMonitor = new MessageCountingMonitor();
 
-        MetricRegistry commandHandlingRegistry = new MetricRegistry();
-        commandHandlingRegistry.register("messageTimer", messageTimerMonitor);
-        commandHandlingRegistry.register("capacity", capacityMonitor);
-        commandHandlingRegistry.register("messageCounter", messageCountingMonitor);
-        registry.register(name, commandHandlingRegistry);
+        MetricRegistry handlerRegistry = new MetricRegistry();
+        handlerRegistry.register("messageTimer", messageTimerMonitor);
+        handlerRegistry.register("capacity", capacityMonitor);
+        handlerRegistry.register("messageCounter", messageCountingMonitor);
+        registry.register(name, handlerRegistry);
 
         return new MultiMessageMonitor<>(messageTimerMonitor, capacityMonitor, messageCountingMonitor);
     }

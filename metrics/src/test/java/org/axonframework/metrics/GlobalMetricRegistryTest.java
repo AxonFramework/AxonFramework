@@ -4,7 +4,9 @@ import com.codahale.metrics.ConsoleReporter;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -12,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class GlobalMetricRegistryTest {
@@ -19,12 +22,12 @@ public class GlobalMetricRegistryTest {
     private GlobalMetricRegistry subject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         subject = new GlobalMetricRegistry();
     }
 
     @Test
-    public void createEventProcessorMonitor() throws Exception {
+    public void createEventProcessorMonitor() {
         MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor("test1");
         MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor("test2");
 
@@ -40,8 +43,8 @@ public class GlobalMetricRegistryTest {
     }
 
     @Test
-    public void createEventBusMonitor() throws Exception {
-        MessageMonitor<EventMessage<?>> monitor = subject.registerEventBus("eventBus");
+    public void createEventBusMonitor() {
+        MessageMonitor<? super EventMessage<?>> monitor = subject.registerEventBus("eventBus");
 
         monitor.onMessageIngested(asEventMessage("test")).reportSuccess();
 
@@ -53,8 +56,8 @@ public class GlobalMetricRegistryTest {
     }
 
     @Test
-    public void createCommandBusMonitor() throws Exception {
-        MessageMonitor<CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
+    public void createCommandBusMonitor() {
+        MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
 
         monitor.onMessageIngested(new GenericCommandMessage<>("test")).reportSuccess();
 
@@ -65,4 +68,10 @@ public class GlobalMetricRegistryTest {
         assertTrue(output.contains("commandBus"));
     }
 
+    @Test
+    public void createMonitorForUnknownComponent() {
+        MessageMonitor<? extends Message<?>> actual = subject.registerComponent(String.class, "test");
+
+        assertSame(NoOpMessageMonitor.instance(), actual);
+    }
 }
