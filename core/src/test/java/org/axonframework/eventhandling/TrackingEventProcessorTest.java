@@ -121,6 +121,8 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
@@ -133,6 +135,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore).extendClaim(eq(testSubject.getName()), anyInt());
@@ -153,6 +157,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
                    countDownLatch.await(5, TimeUnit.SECONDS));
@@ -177,6 +183,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
@@ -202,6 +210,8 @@ public class TrackingEventProcessorTest {
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
     }
@@ -217,6 +227,8 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
 
         eventBus.publish(createEvents(2));
 
@@ -242,6 +254,8 @@ public class TrackingEventProcessorTest {
         assertEquals(2, countDownLatch2.getCount());
 
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
         assertEquals(4, ackedEvents.size());
     }
@@ -265,6 +279,8 @@ public class TrackingEventProcessorTest {
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, TimeUnit.SECONDS));
         assertEquals(5, ackedEvents.size());
         verify(eventBus, times(2)).openStream(any());
@@ -287,6 +303,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(events);
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
@@ -323,6 +341,8 @@ public class TrackingEventProcessorTest {
         }));
 
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
 
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
@@ -336,6 +356,9 @@ public class TrackingEventProcessorTest {
         testSubject.shutDown();
 
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
         doAnswer(invocation -> {
             countDownLatch2.countDown();
