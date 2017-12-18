@@ -154,6 +154,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(ListenerInvocationErrorHandler.class).ifPresent(
                 handler -> configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c))
         );
+        findComponent(ListenerInvocationErrorHandler.class).ifPresent(handler -> configurer
+                .registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c)));
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)

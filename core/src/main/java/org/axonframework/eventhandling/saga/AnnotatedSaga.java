@@ -93,11 +93,17 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     }
 
     @Override
-    public final boolean handle(EventMessage<?> event) {
+    public final boolean canHandle(EventMessage<?> event) {
+        return isActive && metaModel.findHandlerMethods(event).stream()
+                                    .anyMatch(h -> getAssociationValues().contains(h.getAssociationValue(event)));
+    }
+
+    @Override
+    public final void handle(EventMessage<?> event) {
         if (isActive) {
-            return metaModel.findHandlerMethods(event).stream()
-                    .filter(h -> getAssociationValues().contains(h.getAssociationValue(event)))
-                    .findFirst().map(h -> {
+            metaModel.findHandlerMethods(event).stream()
+                     .filter(h -> getAssociationValues().contains(h.getAssociationValue(event)))
+                     .findFirst().ifPresent(h -> {
                         try {
                             executeWithResult(() -> h.handle(event, sagaInstance));
                             if (event instanceof TrackedEventMessage) {
@@ -112,11 +118,8 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
                                 doEnd();
                             }
                         }
-                        return true;
-                    })
-                    .orElse(false);
+            });
         }
-        return false;
     }
 
     @Override

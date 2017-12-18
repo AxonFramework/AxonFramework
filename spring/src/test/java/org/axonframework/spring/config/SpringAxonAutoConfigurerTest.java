@@ -48,6 +48,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -158,6 +159,16 @@ public class SpringAxonAutoConfigurerTest {
         assertFalse(myListenerInvocationErrorHandler.received.isEmpty());
     }
 
+    @Test
+    public void testSagaInvocationErrorHandler() {
+        eventBus.publish(asEventMessage(new SomeEvent("id")));
+        eventBus.publish(asEventMessage(new SomeEventWhichHandlingFails("id")));
+
+        assertTrue(Context.MySaga.events.containsAll(Arrays.asList("id", "id")));
+        assertEquals(1, myListenerInvocationErrorHandler.received.size());
+        assertEquals("Ooops! I failed.", myListenerInvocationErrorHandler.received.get(0).getMessage());
+    }
+
     @EnableAxon
     @Scope
     @Configuration
@@ -240,6 +251,12 @@ public class SpringAxonAutoConfigurerTest {
                 assertNotNull(beanInjection);
                 events.add(event.getId());
             }
+
+            @SagaEventHandler(associationProperty = "id")
+            public void handle(SomeEventWhichHandlingFails event) {
+                events.add(event.getId());
+                throw new RuntimeException("Ooops! I failed.");
+            }
         }
 
         @Component
@@ -306,6 +323,19 @@ public class SpringAxonAutoConfigurerTest {
         private final String id;
 
         public SomeEvent(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    public static class SomeEventWhichHandlingFails {
+
+        private final String id;
+
+        public SomeEventWhichHandlingFails(String id) {
             this.id = id;
         }
 
