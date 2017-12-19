@@ -75,4 +75,5 @@ public class DomainEventStreamTest {
         testSubject.next();
         testSubject.next();
     }
+
 }

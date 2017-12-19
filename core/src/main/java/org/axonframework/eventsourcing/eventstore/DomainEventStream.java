@@ -136,27 +136,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
     static DomainEventStream concat(DomainEventStream a, DomainEventStream b) {
         Objects.requireNonNull(a);
         Objects.requireNonNull(b);
-        return new DomainEventStream() {
-            @Override
-            public DomainEventMessage<?> peek() {
-                return a.hasNext() ? a.peek() : b.peek();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return a.hasNext() || b.hasNext();
-            }
-
-            @Override
-            public DomainEventMessage<?> next() {
-                return a.hasNext() ? a.next() : b.next();
-            }
-
-            @Override
-            public Long getLastSequenceNumber() {
-                return b.getLastSequenceNumber() == null ? a.getLastSequenceNumber() : b.getLastSequenceNumber();
-            }
-        };
+        return new ConcatenatingDomainEventStream(a, b);
     }
 
     /**
