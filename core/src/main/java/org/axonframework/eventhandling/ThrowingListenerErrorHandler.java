@@ -16,8 +16,11 @@ package org.axonframework.eventhandling;
 /**
  * Implementation that simply throws the reported exception.
  *
+ * @deprecated Instead of this implementation, use {@link PropagatingErrorHandler}.
+ *
  * @author Rene de Waele
  */
+@Deprecated
 public enum ThrowingListenerErrorHandler implements ListenerInvocationErrorHandler {
 
     /**

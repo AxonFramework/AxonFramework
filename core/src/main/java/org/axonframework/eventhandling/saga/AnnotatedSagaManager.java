@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
@@ -50,7 +52,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
-     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta model.
+     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta
+     * model.
      *
      * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
@@ -61,41 +64,56 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
-     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta model.
+     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta
+     * model.
      *
-     * @param sagaType                 the saga target type
-     * @param sagaRepository           The repository providing access to the Saga instances
-     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                 handlers with
+     * @param sagaType                       The saga target type
+     * @param sagaRepository                 The repository providing access to the Saga instances
+     * @param parameterResolverFactory       The ParameterResolverFactory instance to resolve parameter values for
+     *                                       annotated
+     *                                       handlers with
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
-    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, ParameterResolverFactory parameterResolverFactory) {
-        this(sagaType, sagaRepository, () -> newInstance(sagaType), new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType));
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
+                                ParameterResolverFactory parameterResolverFactory,
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        this(sagaType,
+             sagaRepository,
+             () -> newInstance(sagaType),
+             new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
+             listenerInvocationErrorHandler);
     }
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and {@code sagaFactory} to
      * create new sagas. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta model.
      *
-     * @param sagaType       the saga target type
+     * @param sagaType       The saga target type
      * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaFactory    the factory for new saga instances of type {@code T}
+     * @param sagaFactory    The factory for new saga instances of type {@code T}
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
-        this(sagaType, sagaRepository, sagaFactory, new AnnotationSagaMetaModelFactory().modelOf(sagaType));
+        this(sagaType,
+             sagaRepository,
+             sagaFactory,
+             new AnnotationSagaMetaModelFactory().modelOf(sagaType),
+             new LoggingErrorHandler());
     }
 
     /**
      * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas, the {@code sagaFactory} to
      * create new sagas and the {@code sagaMetaModel} to delegate messages to the saga instances.
      *
-     * @param sagaType       the saga target type
-     * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaFactory    the factory for new saga instances of type {@code T}
-     * @param sagaMetaModel  the meta model to delegate messages to a saga instance
+     * @param sagaType                       The saga target type
+     * @param sagaRepository                 The repository providing access to the Saga instances
+     * @param sagaFactory                    The factory for new saga instances of type {@code T}
+     * @param sagaMetaModel                  The meta model to delegate messages to a saga instance
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
-                                SagaModel<T> sagaMetaModel) {
-        super(sagaType, sagaRepository, sagaFactory);
+                                SagaModel<T> sagaMetaModel,
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        super(sagaType, sagaRepository, sagaFactory, listenerInvocationErrorHandler);
         this.sagaMetaModel = sagaMetaModel;
     }
 

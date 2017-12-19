@@ -123,8 +123,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                              new TransienceValidatingResourceInjector(),
                                                                              parameterResolverFactory);
-            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory);
-            sagaManager.setSuppressExceptions(false);
+            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory,
+                                                     new LoggingErrorHandler());
         }
     }
 

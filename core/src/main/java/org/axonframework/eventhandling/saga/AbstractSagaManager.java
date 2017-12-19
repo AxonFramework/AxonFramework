@@ -20,17 +20,16 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.Segment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static java.lang.String.format;
 
 /**
  * Abstract implementation of the SagaManager interface that provides basic functionality required by most SagaManager
@@ -41,25 +40,26 @@ import static java.lang.String.format;
  */
 public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
-
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
-    private volatile boolean suppressExceptions = true;
+    private volatile ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
      *
-     * @param sagaType       The type of Saga Managed by this instance
-     * @param sagaRepository The repository providing the saga instances.
-     * @param sagaFactory    The factory responsible for creating new Saga instances
+     * @param sagaType                       The type of Saga Managed by this instance
+     * @param sagaRepository                 The repository providing the saga instances.
+     * @param sagaFactory                    The factory responsible for creating new Saga instances
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
-    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
+    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
+                                  ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
         Assert.notNull(sagaRepository, () -> "sagaRepository may not be null");
         this.sagaRepository = sagaRepository;
+        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
     @Override
@@ -91,7 +91,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
                && segment.matches(initializationPolicy.getInitialAssociationValue());
     }
 
-    private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) {
+    private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) throws Exception {
         Saga<T> newSaga = sagaRepository.createInstance(createSagaIdentifier(segment), sagaFactory);
         newSaga.getAssociationValues().add(associationValue);
         doInvokeSaga(event, newSaga);
@@ -147,28 +147,30 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      */
     protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event);
 
-    private boolean doInvokeSaga(EventMessage event, Saga<T> saga) {
-        try {
-            return saga.handle(event);
-        } catch (Exception e) {
-            if (suppressExceptions) {
-                logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
-                                    saga.getClass().getSimpleName(), event.getPayloadType().getSimpleName()), e);
-                return true;
-            } else {
-                throw e;
+    private boolean doInvokeSaga(EventMessage event, Saga<T> saga) throws Exception {
+        if (saga.canHandle(event)) {
+            try {
+                saga.handle(event);
+            } catch (Exception e) {
+                listenerInvocationErrorHandler.onError(e, event, saga);
             }
+            return true;
         }
+        return false;
     }
 
     /**
      * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
      * logged. Defaults to {@code true}.
      *
+     * @deprecated Instead of using this method, provide an implementation of {@link LoggingErrorHandler}.
+     *
      * @param suppressExceptions whether or not to suppress exceptions from Sagas.
      */
+    @Deprecated
     public void setSuppressExceptions(boolean suppressExceptions) {
-        this.suppressExceptions = suppressExceptions;
+        this.listenerInvocationErrorHandler = suppressExceptions ? new LoggingErrorHandler()
+                : PropagatingErrorHandler.INSTANCE;
     }
 
     /**

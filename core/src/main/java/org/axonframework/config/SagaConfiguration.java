@@ -51,6 +51,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<SagaStore<? super S>> sagaStore;
     private final Component<RollbackConfiguration> rollbackConfiguration;
     private final Component<ErrorHandler> errorHandler;
+    private final Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
     private final Component<TokenStore> tokenStore;
     private final Component<TransactionManager> transactionManager;
     private final Component<MessageMonitor<? super EventMessage<?>>> messageMonitor;
@@ -168,6 +169,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         errorHandler = new Component<>(() -> config, "errorHandler",
                                        c -> c.getComponent(ErrorHandler.class,
                                                            () -> PropagatingErrorHandler.INSTANCE));
+        listenerInvocationErrorHandler = new Component<>(() -> config, "listenerInvocationErrorHandler",
+                                                     c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new));
         rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
                                                 c -> c.getComponent(RollbackConfiguration.class,
                                                                     () -> RollbackConfigurationType.ANY_THROWABLE));
@@ -176,7 +179,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                          c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
                                                                             c.parameterResolverFactory()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
-                                                                                                 c.parameterResolverFactory()));
+                                                                                                 c.parameterResolverFactory(),
+                                                                                                 listenerInvocationErrorHandler
+                                                                                                         .get()));
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
                                                               c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                                                                   TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
@@ -258,6 +263,20 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      */
     public SagaConfiguration<S> configureErrorHandler(Function<Configuration, ErrorHandler> errorHandler) {
         this.errorHandler.update(errorHandler);
+        return this;
+    }
+
+    /**
+     * Configures the ListenerInvocationErrorHandler to use when processing of event in saga fails.
+     * <p>
+     * The default is to log errors.
+     *
+     * @param listenerInvocationErrorHandler The function to create ListenerInvocationErrorHandler
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
+    public SagaConfiguration<S> configureListenerInvocationErrorHandler(
+            Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandler) {
+        this.listenerInvocationErrorHandler.update(listenerInvocationErrorHandler);
         return this;
     }
 
