@@ -18,6 +18,9 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
@@ -28,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -57,10 +61,13 @@ import java.util.function.Predicate;
 @RequestMapping("${axon.distributed.spring-cloud.fallback-url:/message-routing-information}")
 public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter {
 
+    private static final Logger logger = LoggerFactory.getLogger(SpringCloudHttpBackupCommandRouter.class);
+
     private static final Predicate<ServiceInstance> ACCEPT_ALL_INSTANCES_FILTER = serviceInstance -> true;
 
     private final RestTemplate restTemplate;
     private final String messageRoutingInformationEndpoint;
+    private final MessageRoutingInformation unreachableService;
 
     private volatile MessageRoutingInformation messageRoutingInfo;
 
@@ -127,6 +134,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         this.restTemplate = restTemplate;
         this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
         this.messageRoutingInfo = null;
+        unreachableService = new MessageRoutingInformation(0, DenyAll.INSTANCE, serializer);
     }
 
     @Override
@@ -169,12 +177,23 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                    )));
         URI destinationUri = buildURIForPath(endpoint, messageRoutingInformationEndpoint);
 
-        ResponseEntity<MessageRoutingInformation> responseEntity = restTemplate.exchange(destinationUri,
-                                                                                         HttpMethod.GET,
-                                                                                         HttpEntity.EMPTY,
-                                                                                         MessageRoutingInformation.class);
+        try {
+            ResponseEntity<MessageRoutingInformation> responseEntity = restTemplate.exchange(destinationUri,
+                                                                                             HttpMethod.GET,
+                                                                                             HttpEntity.EMPTY,
+                                                                                             MessageRoutingInformation.class);
 
-        return responseEntity.hasBody() ? Optional.of(responseEntity.getBody()) : Optional.empty();
+            return responseEntity.hasBody() ? Optional.of(responseEntity.getBody()) : Optional.empty();
+        } catch (HttpClientErrorException e) {
+            logger.warn("Blacklisting Service [" + serviceInstance.getServiceId() + "], "
+                                + "as requesting message routing information from it resulted in an exception.", e);
+            return Optional.empty();
+        } catch (Exception e) {
+            logger.info("Failed to receive message routing information from Service [" +
+                                serviceInstance.getServiceId() + "] due to in an exception. "
+                                + "Will temporarily set that this instance denies all incoming messages", e);
+            return Optional.of(unreachableService);
+        }
     }
 
     private static URI buildURIForPath(URI uri, String appendToPath) {

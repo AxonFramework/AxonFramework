@@ -18,6 +18,7 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
@@ -28,7 +29,9 @@ import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -68,7 +71,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
         when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
@@ -95,12 +98,12 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test
-    public void testGetLocalMessageRoutingInformationReturnsNullIfMembershipIsNeverUpdated() throws Exception {
+    public void testGetLocalMessageRoutingInformationReturnsNullIfMembershipIsNeverUpdated() {
         assertNull(testSubject.getLocalMessageRoutingInformation());
     }
 
     @Test
-    public void testGetLocalMessageRoutingInformationReturnsMessageRoutingInformation() throws Exception {
+    public void testGetLocalMessageRoutingInformationReturnsMessageRoutingInformation() {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         MessageRoutingInformation result = testSubject.getLocalMessageRoutingInformation();
@@ -109,8 +112,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test
-    public void testGetMessageRoutingInformationReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal()
-            throws Exception {
+    public void testGetMessageRoutingInformationReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal() {
         ServiceInstance serviceInstance = mock(ServiceInstance.class);
         when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
@@ -125,7 +127,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGetMessageRoutingInformationThrowsIllegalArgumentExceptionIfEndpointIsMissing() throws Exception {
+    public void testGetMessageRoutingInformationThrowsIllegalArgumentExceptionIfEndpointIsMissing() {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(null);
@@ -134,7 +136,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     }
 
     @Test
-    public void testGetMessageRoutingInformationRequestsMessageRoutingInformation() throws Exception {
+    public void testGetMessageRoutingInformationRequestsMessageRoutingInformation() {
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
         when(remoteInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(remoteInstance.getUri()).thenReturn(testRemoteUri);
@@ -155,8 +157,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testGetMessageRoutingInformationReturnsEmptyOptionalFromNonAxonServiceInstanceRequest()
-            throws Exception {
+    public void testGetMessageRoutingInformationReturnsEmptyOptionalFromNonAxonServiceInstanceRequest() {
         ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
         when(nonAxonInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
@@ -181,8 +182,67 @@ public class SpringCloudHttpBackupCommandRouterTest {
         assertEquals(messageRoutingInformationEndpoint, resultUri.getPath());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventRequestsMessageRoutingInformationByHttpRequest() throws Exception {
+    public void testGetMessageRoutingInformationReturnsEmptyOptionalFromNonAxonServiceInstanceRequestWhichThrowsAnHttpClientErrorException() {
+        ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
+        when(nonAxonInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
+
+        ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.hasBody()).thenReturn(false);
+        URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
+        when(restTemplate.exchange(
+                eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
+        )).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST));
+
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(nonAxonInstance);
+
+        assertFalse(result.isPresent());
+
+        verify(restTemplate).exchange(uriArgumentCaptor.capture(),
+                                      eq(HttpMethod.GET),
+                                      eq(HttpEntity.EMPTY),
+                                      eq(MessageRoutingInformation.class));
+
+        URI resultUri = uriArgumentCaptor.getValue();
+        assertEquals(messageRoutingInformationEndpoint, resultUri.getPath());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testGetMessageRoutingInformationReturnsUnreachableMessageRoutingInformationFromServiceInstanceRequestWhichThrowsAnException() {
+        MessageRoutingInformation expectedMessageRoutingInfo =
+                new MessageRoutingInformation(0, DenyAll.INSTANCE, testSubject.serializer);
+
+        ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
+        when(nonAxonInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(nonAxonInstance.getUri()).thenReturn(URI.create("http://faulty-axon"));
+
+        ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.hasBody()).thenReturn(true);
+        when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
+        URI testRemoteUri = URI.create("http://faulty-axon/message-routing-information");
+        when(restTemplate.exchange(
+                eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
+        )).thenReturn(responseEntity);
+
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(nonAxonInstance);
+
+        assertTrue(result.isPresent());
+        assertEquals(expectedMessageRoutingInfo, result.get());
+
+        verify(restTemplate).exchange(uriArgumentCaptor.capture(),
+                                      eq(HttpMethod.GET),
+                                      eq(HttpEntity.EMPTY),
+                                      eq(MessageRoutingInformation.class));
+
+        URI resultUri = uriArgumentCaptor.getValue();
+        assertEquals(messageRoutingInformationEndpoint, resultUri.getPath());
+    }
+
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventRequestsMessageRoutingInformationByHttpRequest() {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         ServiceInstance remoteInstance = mock(ServiceInstance.class);
@@ -205,8 +265,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance()
-            throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance() {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         String nonAxonServiceInstanceId = "nonAxonInstance";

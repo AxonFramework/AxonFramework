@@ -214,12 +214,13 @@ public class SpringCloudCommandRouter implements CommandRouter {
         URI localServiceUri = localServiceInstance.getUri();
         boolean local = localServiceUri.equals(serviceUri);
 
-            return new SimpleMember<>(
-                    serviceId.toUpperCase() + "[" + serviceUri + "]",
-                    serviceUri,
-                    local,
-                    member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
-            );}
+        return new SimpleMember<>(
+                serviceId.toUpperCase() + "[" + serviceUri + "]",
+                serviceUri,
+                local,
+                member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
+        );
+    }
 
     /**
      * Retrieve the {@link MessageRoutingInformation} of the provided {@code serviceInstance}. If the
