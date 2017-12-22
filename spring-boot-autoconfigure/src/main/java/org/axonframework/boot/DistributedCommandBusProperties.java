@@ -17,6 +17,9 @@ package org.axonframework.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Defines the properties for the Distributed Command Bus, when automatically configured in the Application Context.
+ */
 @ConfigurationProperties(prefix = "axon.distributed")
 public class DistributedCommandBusProperties {
 
@@ -35,38 +38,82 @@ public class DistributedCommandBusProperties {
 
     private SpringCloudProperties springCloud = new SpringCloudProperties();
 
+    /**
+     * Indicates whether the (auto-configuration) of the Distributed Command Bus is enabled.
+     *
+     * @return whether the (auto-configuration) of the Distributed Command Bus is enabled
+     */
     public boolean isEnabled() {
         return enabled || jgroups.isEnabled();
     }
 
+    /**
+     * Enables (if {@code true}) or disables (if {@code false}, default) the auto-configuration of a Distributed
+     * Command Bus instance in the application context.
+     *
+     * @param enabled whether to enable Distributed Command Bus configuration
+     */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
 
+    /**
+     * Returns the load factor for this instance of the Distributed Command Bus (default 100)
+     *
+     * @return the load factor for this instance of the Distributed Command Bus
+     */
     public int getLoadFactor() {
         return loadFactor == 100 ? jgroups.getLoadFactor() : loadFactor;
     }
 
+    /**
+     * Sets the load factor for this instance of the Distributed Command Bus (default 100)
+     *
+     * @param loadFactor the load factor for this instance of the Distributed Command Bus
+     */
     public void setLoadFactor(int loadFactor) {
         this.loadFactor = loadFactor;
     }
 
+    /**
+     * Returns the JGroups configuration to use (if JGroups is on the classpath).
+     *
+     * @return the JGroups configuration to use
+     */
     public JGroupsProperties getJgroups() {
         return jgroups;
     }
 
+    /**
+     * Sets the JGroups configuration to use (if JGroups is on the classpath).
+     *
+     * @param jgroups the JGroups configuration to use
+     */
     public void setJgroups(JGroupsProperties jgroups) {
         this.jgroups = jgroups;
     }
 
+    /**
+     * Returns the Spring Cloud configuration to use (if Spring Cloud is on the classpath).
+     *
+     * @return the Spring Cloud configuration to use
+     */
     public SpringCloudProperties getSpringCloud() {
         return springCloud;
     }
 
+    /**
+     * Sets the Spring Cloud configuration to use (if Spring Cloud is on the classpath).
+     *
+     * @param springCloud the Spring Cloud configuration to use
+     */
     public void setSpringCloud(SpringCloudProperties springCloud) {
         this.springCloud = springCloud;
     }
 
+    /**
+     * The JGroups specific configuration for the Distributed Command Bus
+     */
     public static class JGroupsProperties {
 
         private Gossip gossip = new Gossip();
@@ -111,58 +158,140 @@ public class DistributedCommandBusProperties {
         @Deprecated
         private int loadFactor = 100;
 
+        /**
+         * Returns the Gossip configuration in case the Gossip protocol is configured for JGroups (default)
+         *
+         * @return the Gossip configuration
+         */
         public Gossip getGossip() {
             return gossip;
         }
+
+        /**
+         * Sets the Gossip configuration in case the Gossip protocol is configured for JGroups (default)
+         *
+         * @param gossip the Gossip configuration
+         */
 
         public void setGossip(Gossip gossip) {
             this.gossip = gossip;
         }
 
+        /**
+         * Indicates whether the Distributed CommandBus auto-configuration is enabled.
+         *
+         * @return whether the Distributed CommandBus auto-configuration is enabled
+         * @deprecated Use "enabled" on the distributed command bus level instead.
+         */
+        @Deprecated
         public boolean isEnabled() {
             return enabled;
         }
 
+        /**
+         * Sets whether the Distributed CommandBus auto-configuration is enabled.
+         *
+         * @param enabled whether the Distributed CommandBus auto-configuration is enabled
+         * @deprecated Use "enabled" on the distributed command bus level instead.
+         */
+        @Deprecated
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
         }
 
+        /**
+         * Returns the Cluster Name of the JGroups Cluster to connect with (defaults to "Axon")
+         *
+         * @return the Cluster Name of the JGroups Cluster to connect with
+         */
         public String getClusterName() {
             return clusterName;
         }
 
+        /**
+         * Sets the Cluster Name of the JGroups Cluster to connect with (defaults to "Axon")
+         *
+         * @param clusterName the Cluster Name of the JGroups Cluster to connect with
+         */
         public void setClusterName(String clusterName) {
             this.clusterName = clusterName;
         }
 
+        /**
+         * Returns the path to the configuration file to use to configure the Groups instance
+         *
+         * @return the path to the configuration file to use to configure the Groups instance
+         */
         public String getConfigurationFile() {
             return configurationFile;
         }
 
+        /**
+         * Sets the path to the configuration file to use to configure the Groups instance. Default to a TCP_GOSSIP
+         * based configuration.
+         *
+         * @param configurationFile the path to the configuration file to use to configure the Groups instance
+         */
         public void setConfigurationFile(String configurationFile) {
             this.configurationFile = configurationFile;
         }
 
+        /**
+         * Returns the Address to bind the JGroups client to. Defaults to "GLOBAL", which binds the client to the IP
+         * of any network interface connecting to an external network (i.e. other than loopback).
+         *
+         * @return the Address to bind the JGroups client to
+         */
         public String getBindAddr() {
             return bindAddr;
         }
 
+        /**
+         * Sets the Address to bind the JGroups to. Defaults to "GLOBAL", which binds to the IP
+         * of any network interface connecting to an external network (i.e. other than loopback).
+         *
+         * @param bindAddr The address to bind JGroups to
+         */
         public void setBindAddr(String bindAddr) {
             this.bindAddr = bindAddr;
         }
 
+        /**
+         * Returns the port to listen to JGroups connections (default 7800). Could be 0, to indicate any free port.
+         *
+         * @return the port to listen to JGroups connections (default 7800)
+         */
         public String getBindPort() {
             return bindPort;
         }
 
+        /**
+         * Returns the port to listen to JGroups connections (default 7800). Could be 0, to indicate any free port.
+         *
+         * @param bindPort the port to listen to JGroups connections (default 7800)
+         */
         public void setBindPort(String bindPort) {
             this.bindPort = bindPort;
         }
 
+        /**
+         * Returns the load factor for this instance
+         *
+         * @return the load factor for this instance
+         * @deprecated use load factor on the "distributed" level instead.
+         */
+        @Deprecated
         public int getLoadFactor() {
             return loadFactor;
         }
 
+        /**
+         * Sets the load factor for this instance
+         *
+         * @param loadFactor the load factor for this instance
+         * @deprecated use load factor on the "distributed" level instead.
+         */
+        @Deprecated
         public void setLoadFactor(int loadFactor) {
             this.loadFactor = loadFactor;
         }
@@ -185,18 +314,40 @@ public class DistributedCommandBusProperties {
              */
             private String hosts = "localhost[12001]";
 
+            /**
+             * Whether the embedded Gossip Server should be automatically started. Defaults to {@code false}
+             *
+             * @return whether the embedded Gossip Server should be automatically started
+             */
             public boolean isAutoStart() {
                 return autoStart;
             }
 
+            /**
+             * Sets whether the embedded Gossip Server should be automatically started. Defaults to {@code false}
+             *
+             * @param autoStart whether the embedded Gossip Server should be automatically started
+             */
             public void setAutoStart(boolean autoStart) {
                 this.autoStart = autoStart;
             }
 
+            /**
+             * Returns the host names and ports of the Gossip Routers to connect to. Nodes are provided in the format
+             * {@code HostA[5555],HostB[5555]}. Defaults to {@code localhost[12001]}.
+             *
+             * @return the host names and ports of the Gossip Routers to connect to.
+             */
             public String getHosts() {
                 return hosts;
             }
 
+            /**
+             * Sets the host names and ports of the Gossip Routers to connect to. Nodes are provided in the format
+             * {@code HostA[5555],HostB[5555]}. Defaults to {@code localhost[12001]}.
+             *
+             * @param hosts the host names and ports of the Gossip Routers to connect to.
+             */
             public void setHosts(String hosts) {
                 this.hosts = hosts;
             }
@@ -217,18 +368,42 @@ public class DistributedCommandBusProperties {
          */
         private String fallbackUrl = "/message-routing-information";
 
+        /**
+         * Indicates whether to fall back to HTTP GET when retrieving Instance Meta Data from the Discovery Server
+         * fails.
+         *
+         * @return whether to fall back to HTTP GET when retrieving Instance Meta Data from the Discovery Server fails
+         */
         public boolean isFallbackToHttpGet() {
             return fallbackToHttpGet;
         }
 
+        /**
+         * wether to fall back to HTTP GET when retrieving Instance Meta Data from the Discovery Server fails.
+         *
+         * @param fallbackToHttpGet whether to fall back to HTTP GET when retrieving Instance Meta Data from the
+         *                          Discovery Server fails
+         */
         public void setFallbackToHttpGet(boolean fallbackToHttpGet) {
             this.fallbackToHttpGet = fallbackToHttpGet;
         }
 
+        /**
+         * Returns the URL relative to the host's root to retrieve Instance Meta Data from. This is also the address
+         * where this node will expose its own Instance Meta Data.
+         *
+         * @return the URL relative to the host's root to retrieve Instance Meta Data from
+         */
         public String getFallbackUrl() {
             return fallbackUrl;
         }
 
+        /**
+         * Sets the URL relative to the host's root to retrieve Instance Meta Data from. This is also the address
+         * where this node will expose its own Instance Meta Data.
+         *
+         * @param fallbackUrl the URL relative to the host's root to retrieve Instance Meta Data from
+         */
         public void setFallbackUrl(String fallbackUrl) {
             this.fallbackUrl = fallbackUrl;
         }

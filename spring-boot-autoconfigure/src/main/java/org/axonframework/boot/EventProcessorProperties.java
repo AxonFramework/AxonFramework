@@ -21,6 +21,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Properties describing the settings for Event Processors
+ */
 @ConfigurationProperties("axon.eventhandling")
 public class EventProcessorProperties {
 
@@ -30,13 +33,26 @@ public class EventProcessorProperties {
      */
     private Map<String, ProcessorSettings> processors = new HashMap<>();
 
+    /**
+     * Returns the settings for each of the configured processors, by name
+     *
+     * @return the settings for each of the configured processors, by name
+     */
     public Map<String, ProcessorSettings> getProcessors() {
         return processors;
     }
 
+    /**
+     * The processing mode of the processor
+     */
     public enum Mode {
-
+        /**
+         * Indicates a TrackingProcessor should be used.
+         */
         TRACKING,
+        /**
+         * Indicates a SubscribingProcessor should be used.
+         */
         SUBSCRIBING
     }
 
@@ -69,50 +85,114 @@ public class EventProcessorProperties {
 
         private String sequencingPolicy;
 
+        /**
+         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the EventBus
+         * is used as source.
+         *
+         * @return the name of the bean that should be used as source for Event Messages
+         */
         public String getSource() {
             return source;
         }
 
+        /**
+         * Sets the name of the bean that should be used as source for Event Messages
+         *
+         * @param source the name of the bean that should be used as source for Event Messages
+         */
         public void setSource(String source) {
             this.source = source;
         }
 
+        /**
+         * Returns the type of processor to configure
+         *
+         * @return the type of processor to configure
+         */
         public Mode getMode() {
             return mode;
         }
 
+        /**
+         * Sets the type of processor that should be configured. Defaults to "subscribing".
+         *
+         * @param mode the type of processor that should be configured
+         */
         public void setMode(Mode mode) {
             this.mode = mode;
         }
 
+        /**
+         * Returns the number of initial segments that should be created, if no segments are already present.
+         *
+         * @return the number of initial segments that should be created
+         */
         public int getInitialSegmentCount() {
             return initialSegmentCount;
         }
 
+        /**
+         * Sets the number of initial segments that should be created, if no segments are already present. Defaults to
+         * 1.
+         *
+         * @param initialSegmentCount the number of initial segments that should be created
+         */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
         }
 
+        /**
+         * Returns the number of threads to use to process Events, when in "tracking" mode.
+         *
+         * @return the number of threads to use to process Events
+         */
         public int getThreadCount() {
             return threadCount;
         }
 
+        /**
+         * Sets the number of threads to use to process Events, when in "tracking" mode. Defaults to 1.
+         *
+         * @param threadCount the number of threads to use to process Events
+         */
         public void setThreadCount(int threadCount) {
             this.threadCount = threadCount;
         }
 
+        /**
+         * Returns the maximum size of a processing batch. This is the number of events that a processor in "tracking"
+         * mode will attempt to read and process within a single Unit of Work / Transaction.
+         *
+         * @return the maximum size of a processing batch
+         */
         public int getBatchSize() {
             return batchSize;
         }
 
+        /**
+         * Sets the maximum size of a processing batch. This is the number of events that a processor in "tracking"
+         * mode will attempt to read and process within a single Unit of Work / Transaction. Defaults to 1.
+         *
+         * @param batchSize the maximum size of a processing batch
+         */
         public void setBatchSize(int batchSize) {
             this.batchSize = batchSize;
         }
 
+        /**
+         * Returns the name of the bean that defines the Sequencing Policy for this processor.
+         * @return the name of the bean that defines the Sequencing Policy for this processor
+         */
         public String getSequencingPolicy() {
             return sequencingPolicy;
         }
 
+        /**
+         * Sets the name of the bean that defines the Sequencing Policy for this processor. The Sequencing Policy
+         * describes which Events must be handled sequentially, and which can be handled concurrently. Defaults to
+         * a "SequentialPerAggregatePolicy".
+         * @param sequencingPolicy the name of the bean that defines the Sequencing Policy for this processor
+         */
         public void setSequencingPolicy(String sequencingPolicy) {
             this.sequencingPolicy = sequencingPolicy;
         }
