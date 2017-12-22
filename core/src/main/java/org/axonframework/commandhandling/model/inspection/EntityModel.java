@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -59,7 +58,7 @@ public interface EntityModel<T> {
 
     /**
      * Get a mapping of {@link MessageHandlingMember} to command name (obtained via {@link
-     * CommandMessage#getCommandName()}).
+     * org.axonframework.commandhandling.CommandMessage#getCommandName()}).
      *
      * @return Map of message handler to command name
      */
@@ -67,8 +66,8 @@ public interface EntityModel<T> {
 
     /**
      * Get the {@link MessageHandlingMember} capable of handling commands with given {@code commandName} (see {@link
-     * CommandMessage#getCommandName()}). If the entity is not capable of handling such commands an exception is
-     * raised.
+     * org.axonframework.commandhandling.CommandMessage#getCommandName()}). If the entity is not capable of handling
+     * such commands an exception is raised.
      *
      * @param commandName The name of the command
      * @return The handler for the command
