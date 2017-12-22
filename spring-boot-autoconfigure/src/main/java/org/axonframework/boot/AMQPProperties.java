@@ -24,7 +24,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AMQPProperties {
 
     /**
-     * Name of the exchange to forward Event messages to
+     * Name of the exchange to forward Event messages to.
      */
     private String exchange;
 
@@ -39,18 +39,18 @@ public class AMQPProperties {
     private TransactionMode transactionMode = TransactionMode.NONE;
 
     /**
-     * Returns the name of the exchange to forward Event messages to
+     * Returns the name of the exchange to forward Event messages to.
      *
-     * @return the name of the exchange to forward Event messages to
+     * @return the name of the exchange to forward Event messages to.
      */
     public String getExchange() {
         return exchange;
     }
 
     /**
-     * Sets the name of the exchange to forward Event messages to
+     * Sets the name of the exchange to forward Event Messages to.
      *
-     * @param exchange the name of the exchange to forward Event messages to
+     * @param exchange the name of the exchange to forward Event Messages to.
      */
     public void setExchange(String exchange) {
         this.exchange = exchange;
@@ -59,7 +59,7 @@ public class AMQPProperties {
     /**
      * Indicates whether and how batches of events should be handled transactionally.
      *
-     * @return the currently configured TransactionMode
+     * @return the currently configured {@link TransactionMode}.
      */
     public TransactionMode getTransactionMode() {
         return transactionMode;
@@ -68,25 +68,25 @@ public class AMQPProperties {
     /**
      * Sets whether and how batches of events should be sent to the server transactionally.
      *
-     * @param transactionMode The transaction mode to use
+     * @param transactionMode The {@link TransactionMode} to use.
      */
     public void setTransactionMode(TransactionMode transactionMode) {
         this.transactionMode = transactionMode;
     }
 
     /**
-     * Indicates whether messages should be durable
+     * Indicates whether messages should be durable.
      *
-     * @return whether messages should be durable
+     * @return whether messages should be durable.
      */
     public boolean isDurableMessages() {
         return durableMessages;
     }
 
     /**
-     * Sets whether messages should have the "durable" flag when sent to the message broker
+     * Sets whether messages should have the "durable" flag when sent to the message broker.
      *
-     * @param durableMessages whether messages should have the "durable" flag when sent to the message broker
+     * @param durableMessages whether messages should have the "durable" flag when sent to the message broker.
      */
     public void setDurableMessages(boolean durableMessages) {
         this.durableMessages = durableMessages;
@@ -99,6 +99,7 @@ public class AMQPProperties {
          * has a negative impact on performance.
          */
         TRANSACTIONAL,
+
         /**
          * Indicates batches of messages should be sent and confirmed using Publisher Acknowledgements. This ensures
          * the sender of messages waits for an Acknowledgement from the server before moving on. However, it doesn't

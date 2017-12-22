@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Properties describing the settings for Event Processors
+ * Properties describing the settings for Event Processors.
  */
 @ConfigurationProperties("axon.eventhandling")
 public class EventProcessorProperties {
@@ -34,24 +34,24 @@ public class EventProcessorProperties {
     private Map<String, ProcessorSettings> processors = new HashMap<>();
 
     /**
-     * Returns the settings for each of the configured processors, by name
+     * Returns the settings for each of the configured processors, by name.
      *
-     * @return the settings for each of the configured processors, by name
+     * @return the settings for each of the configured processors, by name.
      */
     public Map<String, ProcessorSettings> getProcessors() {
         return processors;
     }
 
     /**
-     * The processing mode of the processor
+     * The processing mode of the processor.
      */
     public enum Mode {
         /**
-         * Indicates a TrackingProcessor should be used.
+         * Indicates a Tracking Processor should be used.
          */
         TRACKING,
         /**
-         * Indicates a SubscribingProcessor should be used.
+         * Indicates a Subscribing Processor should be used.
          */
         SUBSCRIBING
     }
@@ -59,55 +59,55 @@ public class EventProcessorProperties {
     public static class ProcessorSettings {
 
         /**
-         * Sets the source for this processor. Defaults to streaming from/subscribing to the Event Bus
+         * Sets the source for this processor. Defaults to streaming from/subscribing to the Event Bus.
          */
         private String source;
 
         /**
-         * Indicates whether this processor should be Tracking, or Subscribing its source
+         * Indicates whether this processor should be Tracking, or Subscribing its source.
          */
         private Mode mode = Mode.SUBSCRIBING;
 
         /**
-         * Indicates the number of segments that should be created when the processor starts for the first time
+         * Indicates the number of segments that should be created when the processor starts for the first time.
          */
         private int initialSegmentCount;
 
         /**
-         * The maximum number of threads the processor should process events with
+         * The maximum number of threads the processor should process events with.
          */
         private int threadCount = 1;
 
         /**
-         * The maximum number of events a processor should process as part of a single batch
+         * The maximum number of events a processor should process as part of a single batch.
          */
         private int batchSize = 1;
 
         private String sequencingPolicy;
 
         /**
-         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the EventBus
-         * is used as source.
+         * Returns the name of the bean that should be used as source for Event Messages. If not provided, the
+         * {@link org.axonframework.eventhandling.EventBus} is used as source.
          *
-         * @return the name of the bean that should be used as source for Event Messages
+         * @return the name of the bean that should be used as source for Event Messages.
          */
         public String getSource() {
             return source;
         }
 
         /**
-         * Sets the name of the bean that should be used as source for Event Messages
+         * Sets the name of the bean that should be used as source for Event Messages.
          *
-         * @param source the name of the bean that should be used as source for Event Messages
+         * @param source the name of the bean that should be used as source for Event Messages.
          */
         public void setSource(String source) {
             this.source = source;
         }
 
         /**
-         * Returns the type of processor to configure
+         * Returns the type of processor to configure.
          *
-         * @return the type of processor to configure
+         * @return the type of processor to configure.
          */
         public Mode getMode() {
             return mode;
@@ -116,7 +116,7 @@ public class EventProcessorProperties {
         /**
          * Sets the type of processor that should be configured. Defaults to "subscribing".
          *
-         * @param mode the type of processor that should be configured
+         * @param mode the type of processor that should be configured.
          */
         public void setMode(Mode mode) {
             this.mode = mode;
@@ -125,7 +125,7 @@ public class EventProcessorProperties {
         /**
          * Returns the number of initial segments that should be created, if no segments are already present.
          *
-         * @return the number of initial segments that should be created
+         * @return the number of initial segments that should be created.
          */
         public int getInitialSegmentCount() {
             return initialSegmentCount;
@@ -135,7 +135,7 @@ public class EventProcessorProperties {
          * Sets the number of initial segments that should be created, if no segments are already present. Defaults to
          * 1.
          *
-         * @param initialSegmentCount the number of initial segments that should be created
+         * @param initialSegmentCount the number of initial segments that should be created.
          */
         public void setInitialSegmentCount(int initialSegmentCount) {
             this.initialSegmentCount = initialSegmentCount;
@@ -144,7 +144,7 @@ public class EventProcessorProperties {
         /**
          * Returns the number of threads to use to process Events, when in "tracking" mode.
          *
-         * @return the number of threads to use to process Events
+         * @return the number of threads to use to process Events.
          */
         public int getThreadCount() {
             return threadCount;
@@ -153,7 +153,7 @@ public class EventProcessorProperties {
         /**
          * Sets the number of threads to use to process Events, when in "tracking" mode. Defaults to 1.
          *
-         * @param threadCount the number of threads to use to process Events
+         * @param threadCount the number of threads to use to process Events.
          */
         public void setThreadCount(int threadCount) {
             this.threadCount = threadCount;
@@ -163,7 +163,7 @@ public class EventProcessorProperties {
          * Returns the maximum size of a processing batch. This is the number of events that a processor in "tracking"
          * mode will attempt to read and process within a single Unit of Work / Transaction.
          *
-         * @return the maximum size of a processing batch
+         * @return the maximum size of a processing batch.
          */
         public int getBatchSize() {
             return batchSize;
@@ -173,7 +173,7 @@ public class EventProcessorProperties {
          * Sets the maximum size of a processing batch. This is the number of events that a processor in "tracking"
          * mode will attempt to read and process within a single Unit of Work / Transaction. Defaults to 1.
          *
-         * @param batchSize the maximum size of a processing batch
+         * @param batchSize the maximum size of a processing batch.
          */
         public void setBatchSize(int batchSize) {
             this.batchSize = batchSize;
@@ -181,7 +181,8 @@ public class EventProcessorProperties {
 
         /**
          * Returns the name of the bean that defines the Sequencing Policy for this processor.
-         * @return the name of the bean that defines the Sequencing Policy for this processor
+         *
+         * @return the name of the bean that defines the Sequencing Policy for this processor.
          */
         public String getSequencingPolicy() {
             return sequencingPolicy;
@@ -191,7 +192,8 @@ public class EventProcessorProperties {
          * Sets the name of the bean that defines the Sequencing Policy for this processor. The Sequencing Policy
          * describes which Events must be handled sequentially, and which can be handled concurrently. Defaults to
          * a "SequentialPerAggregatePolicy".
-         * @param sequencingPolicy the name of the bean that defines the Sequencing Policy for this processor
+         *
+         * @param sequencingPolicy the name of the bean that defines the Sequencing Policy for this processor.
          */
         public void setSequencingPolicy(String sequencingPolicy) {
             this.sequencingPolicy = sequencingPolicy;
