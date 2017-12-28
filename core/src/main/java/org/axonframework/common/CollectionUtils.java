@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,15 @@
 
 package org.axonframework.common;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Spliterator;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Utility methods for operations on collections.
@@ -38,11 +45,11 @@ public abstract class CollectionUtils {
      * If any of the two inputs collections is {@code null} or empty the other input collection is returned (even if
      * that one is {@code null} as well).
      *
-     * @param collection1 the first collection
-     * @param collection2 the second collection
+     * @param collection1   the first collection
+     * @param collection2   the second collection
      * @param factoryMethod function to initialize the new collection
-     * @param <S> the type of elements in the collections
-     * @param <T> the type of collection
+     * @param <S>           the type of elements in the collections
+     * @param <T>           the type of collection
      * @return a collection that combines both collections
      */
     public static <S, T extends Collection<S>> T merge(T collection1, T collection2, Supplier<T> factoryMethod) {
@@ -57,4 +64,46 @@ public abstract class CollectionUtils {
         combined.addAll(collection2);
         return combined;
     }
+
+    /**
+     * Returns a Collection instance that contains the elements of the given {@code potentialCollection}. If not a
+     * Collection-like structure, it will return a Collection with the given {@code potentialCollection} as the sole
+     * element.
+     * <p>
+     * The following structures are recognized and will have their elements placed inside a Collection:
+     * <ul>
+     * <li>{@link Stream}</li>
+     * <li>{@link Collection}</li>
+     * <li>Array</li>
+     * <li>{@link Spliterator}</li>
+     * <li>{@link Iterable}</li>
+     * </ul>
+     *
+     * @param potentialCollection The instance to collect all elements from
+     * @param <R>                 The type of instance contained in the resulting Collection
+     * @return A Collection of the elements contained in the given {@code potentialCollection}
+     */
+    @SuppressWarnings("unchecked")
+    public static <R> Collection<R> asCollection(Object potentialCollection) {
+        if (potentialCollection == null) {
+            return Collections.emptyList();
+        }
+        if (potentialCollection instanceof Collection) {
+            return ((Collection<R>) potentialCollection);
+        }
+        if (potentialCollection.getClass().isArray()) {
+            return Arrays.asList((R[]) potentialCollection);
+        }
+        if (potentialCollection instanceof Stream) {
+            return ((Stream<R>) potentialCollection).collect(toList());
+        }
+        if (potentialCollection instanceof Spliterator) {
+            return StreamSupport.stream((Spliterator<R>) potentialCollection, false).collect(toList());
+        }
+        if (potentialCollection instanceof Iterable) {
+            return StreamSupport.stream(((Iterable<R>) potentialCollection).spliterator(), false).collect(toList());
+        }
+        return Collections.singletonList((R) potentialCollection);
+    }
+
 }

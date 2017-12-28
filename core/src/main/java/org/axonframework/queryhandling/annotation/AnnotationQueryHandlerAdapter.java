@@ -92,6 +92,6 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
             return null;
         }
         QueryHandlingMember qhm = unwrap.get();
-        return queryBus.subscribe(qhm.getQueryName(), qhm.getReturnType(), this);
+        return queryBus.subscribe(qhm.getQueryName(), qhm.getResultType(), this);
     }
 }

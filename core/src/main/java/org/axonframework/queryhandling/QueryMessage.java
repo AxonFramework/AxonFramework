@@ -44,8 +44,21 @@ public interface QueryMessage<T, R> extends Message<T> {
      */
     Class<R> getResponseType();
 
+    /**
+     * Returns a copy of this QueryMessage with the given {@code metaData}. The payload remains unchanged.
+     *
+     * @param metaData The new MetaData for the QueryMessage
+     * @return a copy of this message with the given MetaData
+     */
     QueryMessage<T, R> withMetaData(Map<String, ?> metaData);
 
+    /**
+     * Returns a copy of this QueryMessage with its MetaData merged with given {@code metaData}. The payload
+     * remains unchanged.
+     *
+     * @param additionalMetaData The MetaData to merge into the QueryMessage
+     * @return a copy of this message with the given additional MetaData
+     */
     QueryMessage<T, R> andMetaData(Map<String, ?> additionalMetaData);
 
 }

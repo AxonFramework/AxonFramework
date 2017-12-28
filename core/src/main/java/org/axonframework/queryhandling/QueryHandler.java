@@ -23,7 +23,7 @@ import java.lang.annotation.*;
 /**
  * Marker annotation to mark any method on an object as being a QueryHandler. Use the {@link
  * AnnotationQueryHandlerAdapter} to subscribe the annotated class to the query bus.
-
+ * <p>
  * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may
  * specify a second parameter of type {@link org.axonframework.messaging.MetaData}. The active MetaData will be
  * passed if that parameter is supplied.
@@ -35,7 +35,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @MessageHandler(messageType = QueryMessage.class)
-public @interface QueryHandler{
+public @interface QueryHandler {
+
     /**
      * The name of the Query this handler listens to. Defaults to the fully qualified class name of the payload type
      * (i.e. first parameter).
@@ -43,5 +44,15 @@ public @interface QueryHandler{
      * @return The query name
      */
     String queryName() default "";
+
+    /**
+     * Defines the type of response to declare for this handler. By default, the value is deducted
+     * from the return type.
+     * <p>
+     * Note that in case of collections, the responseType should define the type of object contained in the collection.
+     *
+     * @return the type of response provided by this handler
+     */
+    Class<?> responseType() default Void.class;
 
 }

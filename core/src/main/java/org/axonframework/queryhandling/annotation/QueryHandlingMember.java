@@ -37,5 +37,5 @@ public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
      *
      * @return the return type declared by the handler
      */
-    Class<?> getReturnType();
+    Class<?> getResultType();
 }

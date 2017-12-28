@@ -17,6 +17,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
  * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
  *
  * @author Marc Gathier
+ * @author Allard Buijze
  * @since 3.1
  */
 public class DefaultQueryGateway implements QueryGateway {
@@ -46,13 +48,15 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> Stream<R> send(Q query, String queryName, Class<R> responseType, long timeout, TimeUnit timeUnit) {
-        return queryBus.queryAll(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit);
+    public <R, Q> Stream<Collection<R>> scatterGather(String queryName, Q query, Class<R> responseType, long timeout, TimeUnit timeUnit) {
+        return queryBus.scatterGather(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit)
+                       .map(QueryResponseMessage::getResults);
     }
 
     @Override
-    public <R, Q> CompletableFuture<R> send(Q query, String queryName, Class<R> responseType) {
-        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)));
+    public <R, Q> CompletableFuture<Collection<R>> query(String queryName, Q query, Class<R> responseType) {
+        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)))
+                       .thenApply(QueryResponseMessage::getResults);
     }
 
     @SuppressWarnings("unchecked")

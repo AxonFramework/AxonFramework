@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -41,7 +42,16 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     private final List<CorrelationDataProvider> correlationDataProviders;
 
     /**
-     * Initializes the interceptor that registers given {@code correlationDataProvider} with the current Unit of Work.
+     * Initializes the interceptor that registers given {@code correlationDataProviders} with the current Unit of Work.
+     *
+     * @param correlationDataProviders The CorrelationDataProviders to register with the Interceptor
+     */
+    public CorrelationDataInterceptor(CorrelationDataProvider... correlationDataProviders) {
+        this(Arrays.asList(correlationDataProviders));
+    }
+
+    /**
+     * Initializes the interceptor that registers given {@code correlationDataProviders} with the current Unit of Work.
      *
      * @param correlationDataProviders The CorrelationDataProviders to register with the Interceptor
      */
