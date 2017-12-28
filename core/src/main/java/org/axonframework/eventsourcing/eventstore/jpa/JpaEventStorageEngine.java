@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,33 +24,23 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
@@ -377,6 +368,17 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         } catch (Exception e) {
             handlePersistenceException(e, snapshot);
         }
+    }
+
+    @Override
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        List<Long> results = entityManager().createQuery("SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName() + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
+                                            .setParameter("aggregateId", aggregateIdentifier)
+                                            .getResultList();
+        if (results.size() == 0) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(results.get(0));
     }
 
     /**

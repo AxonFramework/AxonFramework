@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Sorts;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -187,6 +188,14 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         return stream(cursor.spliterator(), false).findFirst().map(this::extractSnapshot);
     }
 
+    @Override
+    public Optional<Long> lastSequenceNumberFor(MongoCollection<Document> eventsCollection, String aggregateIdentifier) {
+        Document lastDocument = eventsCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
+                .sort(Sorts.descending(eventConfiguration.sequenceNumberProperty()))
+                .first();
+        return Optional.ofNullable(lastDocument).map(this::extractHighestSequenceNumber);
+    }
+
     /**
      * Retrieves snapshot event data from the given Mongo {@code object}.
      *
@@ -194,6 +203,19 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
      * @return snapshot data contained in given document
      */
     protected abstract DomainEventData<?> extractSnapshot(Document object);
+
+    /**
+     * Extract the highest sequence number known from the entry represented by the given {@code document}.
+     *
+     * This implementation takes the {@code sequenceNumberProperty} defined in the {@code eventConfiguration}.
+     * Implementations that allow storage of multiple events in a single document should override this method.
+     *
+     * @param document The document representing the entry stored in Mongo
+     * @return a Long representing the highest sequence number found
+     */
+    protected Long extractHighestSequenceNumber(Document document) {
+        return (Long) document.get(eventConfiguration.sequenceNumberProperty());
+    }
 
     @Override
     public void ensureIndexes(MongoCollection<Document> eventsCollection,

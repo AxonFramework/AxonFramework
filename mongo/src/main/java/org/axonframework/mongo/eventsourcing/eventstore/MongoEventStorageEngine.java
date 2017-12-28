@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,9 +31,9 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
 
 /**
  * EventStorageEngine implementation that uses Mongo to store and fetch events.
@@ -199,5 +200,10 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         return storageStrategy.findTrackedEvents(template.eventCollection(), lastToken, batchSize);
+    }
+
+    @Override
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        return storageStrategy.lastSequenceNumberFor(template.eventCollection(), aggregateIdentifier);
     }
 }
