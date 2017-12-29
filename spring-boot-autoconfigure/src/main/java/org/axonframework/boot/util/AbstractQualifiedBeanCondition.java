@@ -43,7 +43,8 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
 
     /**
      * Initialize the condition, looking for properties on a given annotation
-     * @param annotationName The fully qualified class name of the annotation to find attributes on
+     *
+     * @param annotationName     The fully qualified class name of the annotation to find attributes on
      * @param beanClassAttribute The attribute containing the bean class
      * @param qualifierAttribute The attribute containing the qualifier
      */
@@ -74,6 +75,7 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
             qualifier = qualifierAttr;
             qualifierMatch = true;
         }
+        String[] qualifiers = qualifier.split(",");
         Class conditionalClass;
         try {
             conditionalClass = Class.forName(beanType);
@@ -88,11 +90,20 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
 
         ConfigurableListableBeanFactory bf = context.getBeanFactory();
         boolean anyMatch = Stream.of(bf.getBeanNamesForType(conditionalClass))
-                                 .anyMatch(beanName -> qualifierMatch == isQualifierMatch(beanName, bf, qualifier));
+                                 .anyMatch(beanName -> qualifierMatch == isOneMatching(beanName, bf, qualifiers));
         String message = anyMatch
                 ? String.format("Match found for class [%s] and qualifier [%s]", conditionalClass, qualifier)
                 : String.format("No match found for class [%s] and qualifier [%s]", conditionalClass, qualifier);
         return buildOutcome(anyMatch, message);
+    }
+
+    private boolean isOneMatching(String beanName, ConfigurableListableBeanFactory bf, String[] qualifiers) {
+        for (String qualifier : qualifiers) {
+            if (isQualifierMatch(beanName, bf, qualifier)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected abstract ConditionOutcome buildOutcome(boolean anyMatch, String message);

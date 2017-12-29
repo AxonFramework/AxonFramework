@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,9 +74,8 @@ public class JGroupsAutoConfiguration {
 
     @ConditionalOnMissingBean({CommandRouter.class, CommandBusConnector.class})
     @Bean
-    public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
-                                                                   @Qualifier("localSegment") CommandBus
-                                                                           localSegment,
+    public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(@Qualifier("messageSerializer") Serializer messageSerializer,
+                                                                   @Qualifier("localSegment") CommandBus localSegment,
                                                                    RoutingStrategy routingStrategy) {
         System.setProperty("jgroups.tunnel.gossip_router_hosts", properties.getJgroups().getGossip().getHosts());
         System.setProperty("jgroups.bind_addr", String.valueOf(properties.getJgroups().getBindAddr()));
@@ -84,7 +84,7 @@ public class JGroupsAutoConfiguration {
         JGroupsConnectorFactoryBean jGroupsConnectorFactoryBean = new JGroupsConnectorFactoryBean();
         jGroupsConnectorFactoryBean.setClusterName(properties.getJgroups().getClusterName());
         jGroupsConnectorFactoryBean.setLocalSegment(localSegment);
-        jGroupsConnectorFactoryBean.setSerializer(serializer);
+        jGroupsConnectorFactoryBean.setSerializer(messageSerializer);
         jGroupsConnectorFactoryBean.setConfiguration(properties.getJgroups().getConfigurationFile());
         jGroupsConnectorFactoryBean.setRoutingStrategy(routingStrategy);
         return jGroupsConnectorFactoryBean;

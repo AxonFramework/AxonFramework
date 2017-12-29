@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,11 +46,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.*;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -58,11 +55,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -98,8 +91,8 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
-    private final Component<Serializer> eventSerializer =
-            new Component<>(config, "eventSerializer", Configuration::serializer);
+    private final Component<Serializer> eventSerializer = new Component<>(config, "eventSerializer", Configuration::messageSerializer);
+    private final Component<Serializer> messageSerializer = new Component<>(config, "messageSerializer", Configuration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain",
@@ -375,6 +368,12 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public Configurer configureMessageSerializer(Function<Configuration, Serializer> messageSerializerBuilder) {
+        messageSerializer.update(messageSerializerBuilder);
+        return this;
+    }
+
+    @Override
     public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
         this.modules.add(aggregateConfiguration);
         this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
@@ -466,6 +465,11 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public Serializer eventSerializer() {
             return eventSerializer.get();
+        }
+
+        @Override
+        public Serializer messageSerializer() {
+            return messageSerializer.get();
         }
 
         @Override

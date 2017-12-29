@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -79,7 +80,7 @@ public class SpringCloudAutoConfiguration {
     @ConditionalOnMissingBean
     public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
                                                              RestTemplate restTemplate,
-                                                             Serializer serializer) {
+                                                             @Qualifier("messageSerializer") Serializer serializer) {
         return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
     }
 

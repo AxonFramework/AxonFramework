@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -299,12 +300,23 @@ public interface Configurer {
      * Configures the given event Serializer to use in this configuration. The builder receives the Configuration as
      * input and is expected to return a fully initialized {@link org.axonframework.serialization.Serializer} instance.
      * <p/>
-     * This Serializer is specifically used to serialize events and their metadata.
+     * This Serializer is specifically used to serialize EventMessage payload and metadata.
      *
      * @param eventSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
      * @return The current instance of the Configurer, for chaining purposes.
      */
     Configurer configureEventSerializer(Function<Configuration, Serializer> eventSerializerBuilder);
+
+    /**
+     * Configures the given event Serializer to use in this configuration. The builder receives the Configuration as
+     * input and is expected to return a fully initialized {@link org.axonframework.serialization.Serializer} instance.
+     * <p/>
+     * This Serializer is specifically used to serialize Message payload and Metadata.
+     *
+     * @param messageSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
+     * @return The current instance of the Configurer, for chaining purposes.
+     */
+    Configurer configureMessageSerializer(Function<Configuration, Serializer> messageSerializerBuilder);
 
     /**
      * Configures the given Transaction Manager to use in this configuration. The builder receives the Configuration as

@@ -47,13 +47,21 @@ public class AxonAutoConfigurationWithOnlyEventSerializerTest {
     @Qualifier("eventSerializer")
     private Serializer eventSerializer;
 
+    @Autowired
+    @Qualifier("messageSerializer")
+    private Serializer messageSerializer;
+
     @Test
     public void testRevertsToDefaultSerializer() {
         assertNotNull(serializer);
         assertNotNull(eventSerializer);
+        assertNotNull(messageSerializer);
         assertEquals(XStreamSerializer.class, serializer.getClass());
         assertEquals(JacksonSerializer.class, eventSerializer.getClass());
+        assertEquals(XStreamSerializer.class, messageSerializer.getClass());
         assertNotSame(eventSerializer, serializer);
+        assertNotSame(eventSerializer, messageSerializer);
+        assertNotSame(serializer, messageSerializer);
     }
 
     @org.springframework.context.annotation.Configuration
@@ -64,5 +72,13 @@ public class AxonAutoConfigurationWithOnlyEventSerializerTest {
         public Serializer myEventSerializer() {
             return new JacksonSerializer();
         }
+
+        @Bean
+        @Qualifier("messageSerializer")
+        public Serializer myMessageSerializer() {
+            return new XStreamSerializer();
+        }
+
+
     }
 }

@@ -139,6 +139,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
         findComponent(Serializer.class, "eventSerializer")
                 .ifPresent(eventSerializer -> configurer.configureEventSerializer(c -> getBean(eventSerializer, c)));
+        findComponent(Serializer.class, "messageSerializer")
+                .ifPresent(messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)));
         findComponent(TokenStore.class)
                 .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
         try {

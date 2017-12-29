@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,18 +46,6 @@ import javax.persistence.EntityManagerFactory;
 @Configuration
 @AutoConfigureAfter(JdbcAutoConfiguration.class)
 public class JpaAutoConfiguration {
-
-    @ConditionalOnMissingBean
-    @Bean
-    public EventStorageEngine eventStorageEngine(Serializer serializer,
-                                                 PersistenceExceptionResolver persistenceExceptionResolver,
-                                                 AxonConfiguration configuration,
-                                                 EntityManagerProvider entityManagerProvider,
-                                                 TransactionManager transactionManager) {
-        return new JpaEventStorageEngine(serializer, configuration.getComponent(EventUpcaster.class),
-                                         persistenceExceptionResolver, configuration.eventSerializer(), null,
-                                         entityManagerProvider, transactionManager, null, null, true);
-    }
 
     @ConditionalOnMissingBean
     @Bean

@@ -35,7 +35,9 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
@@ -61,8 +63,7 @@ import java.util.List;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 @ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
@@ -80,13 +81,17 @@ public class AxonAutoConfigurationTest {
     @Autowired
     private AxonConfiguration configuration;
 
+    @Autowired
+    private Serializer serializer;
+
     @Test
-    public void testContextInitialization() throws Exception {
+    public void testContextInitialization() {
         assertNotNull(applicationContext);
         assertNotNull(configurer);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));
         assertNotNull(applicationContext.getBean(EventBus.class));
+        assertNotNull(applicationContext.getBean(QueryBus.class));
         assertNotNull(applicationContext.getBean(EventStore.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
@@ -103,6 +108,10 @@ public class AxonAutoConfigurationTest {
         assertEquals(0, someComponent.invocations.size());
         applicationContext.getBean(EventBus.class).publish(asEventMessage("testing"));
         assertEquals(1, someComponent.invocations.size());
+
+        assertTrue(serializer instanceof XStreamSerializer);
+        assertSame(applicationContext.getBean("eventSerializer"), applicationContext.getBean("messageSerializer"));
+        assertSame(applicationContext.getBean("serializer"), applicationContext.getBean("messageSerializer"));
     }
 
     @Configuration

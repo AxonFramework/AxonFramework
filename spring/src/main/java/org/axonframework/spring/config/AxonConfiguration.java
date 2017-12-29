@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -139,6 +140,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
+    public Serializer messageSerializer() {
+        return config.messageSerializer();
+    }
+
+    @Override
     public List<CorrelationDataProvider> correlationDataProviders() {
         return config.correlationDataProviders();
     }
@@ -203,7 +209,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         config = configurer.buildConfiguration();
     }
 

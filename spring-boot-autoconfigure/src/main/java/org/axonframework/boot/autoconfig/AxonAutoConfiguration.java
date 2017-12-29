@@ -18,6 +18,7 @@ package org.axonframework.boot.autoconfig;
 
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.boot.EventProcessorProperties;
+import org.axonframework.boot.SerializerProperties;
 import org.axonframework.boot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -41,7 +42,8 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.*;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -53,9 +55,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 import java.util.function.Function;
-import org.springframework.context.annotation.Primary;
 
 /**
  * @author Allard Buijze
@@ -66,25 +68,75 @@ import org.springframework.context.annotation.Primary;
         "org.axonframework.boot.autoconfig.JpaAutoConfiguration"})
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
-        DistributedCommandBusProperties.class
+        DistributedCommandBusProperties.class,
+        SerializerProperties.class
 })
 public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     private final EventProcessorProperties eventProcessorProperties;
+    private final SerializerProperties serializerProperties;
 
     private ClassLoader beanClassLoader;
 
-    public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties) {
+    public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
+                                 SerializerProperties serializerProperties) {
         this.eventProcessorProperties = eventProcessorProperties;
+        this.serializerProperties = serializerProperties;
     }
 
     @Bean
     @Primary
-    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer")
-    public XStreamSerializer serializer() {
-        XStreamSerializer xStreamSerializer = new XStreamSerializer();
-        xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
-        return xStreamSerializer;
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
+    public Serializer serializer(RevisionResolver revisionResolver) {
+        return buildSerializer(revisionResolver, serializerProperties.getGeneral());
+    }
+
+    private Serializer buildSerializer(RevisionResolver revisionResolver, SerializerProperties.SerializerType serializerType) {
+        switch (serializerType) {
+            case JACKSON:
+                return new JacksonSerializer(revisionResolver, new ChainingConverter(beanClassLoader));
+            case JAVA:
+                return new JavaSerializer(revisionResolver);
+            case XSTREAM:
+            case DEFAULT:
+            default:
+                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
+                xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
+                return xStreamSerializer;
+
+        }
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RevisionResolver revisionResolver() {
+        return new AnnotationRevisionResolver();
+    }
+
+    @Bean
+    @Qualifier("eventSerializer")
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
+    public Serializer eventSerializer(@Qualifier("messageSerializer") Serializer messageSerializer,
+                                      Serializer generalSerializer,
+                                      RevisionResolver revisionResolver) {
+        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getEvents())
+                || serializerProperties.getEvents().equals(serializerProperties.getMessages())) {
+            return messageSerializer;
+        } else if (serializerProperties.getGeneral().equals(serializerProperties.getEvents())) {
+            return generalSerializer;
+        }
+        return buildSerializer(revisionResolver, serializerProperties.getEvents());
+    }
+
+    @Bean
+    @Qualifier("messageSerializer")
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
+    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
+        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
+                || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
+            return genericSerializer;
+        }
+        return buildSerializer(revisionResolver, serializerProperties.getMessages());
     }
 
     @Bean
@@ -175,7 +227,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @ConditionalOnBean(QueryInvocationErrorHandler.class)
-    @ConditionalOnMissingBean(value = QueryBus.class)
+    @ConditionalOnMissingBean(QueryBus.class)
     @Qualifier("localSegment")
     @Bean
     public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager,
@@ -184,7 +236,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                   transactionManager,
                                   eh);
     }
-
 
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {
