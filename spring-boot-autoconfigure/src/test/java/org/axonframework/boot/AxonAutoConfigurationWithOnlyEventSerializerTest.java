@@ -78,7 +78,5 @@ public class AxonAutoConfigurationWithOnlyEventSerializerTest {
         public Serializer myMessageSerializer() {
             return new XStreamSerializer();
         }
-
-
     }
 }

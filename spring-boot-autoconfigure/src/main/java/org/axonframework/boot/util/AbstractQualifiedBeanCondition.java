@@ -44,9 +44,9 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
     /**
      * Initialize the condition, looking for properties on a given annotation
      *
-     * @param annotationName     The fully qualified class name of the annotation to find attributes on
-     * @param beanClassAttribute The attribute containing the bean class
-     * @param qualifierAttribute The attribute containing the qualifier
+     * @param annotationName     The fully qualified class name of the annotation to find attributes on.
+     * @param beanClassAttribute The attribute containing the bean class.
+     * @param qualifierAttribute The attribute containing the qualifier.
      */
     public AbstractQualifiedBeanCondition(String annotationName, String beanClassAttribute, String qualifierAttribute) {
         this.annotationName = annotationName;

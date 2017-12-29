@@ -25,7 +25,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * The Event serializer, if specified, is used to serialize the payload and meta-data of EventMessages as they are
  * stored in the event store and published. If no Event Serializer is specified, it defaults to the Message Serializer.
  * <p>
- * The Message Serializer is used to serialized the payload and meta-data of all messages and, where relevant, their
+ * The Message Serializer is used to serialize the payload and meta-data of all messages and, where relevant, their
  * return values. Commands, Queries and Events, but also the Command Result and Query Responses are serialized using
  * this serializer. If no Message Serializer is specified, it defaults to the General Serializer.
  * <p>
@@ -69,7 +69,7 @@ public class SerializerProperties {
      * Sets the type of serializer to use to serialize any type of object, for which no more specific serializer is
      * configured. Defaults to an XStream based serializer.
      *
-     * @param serializerType The serializer to use for serialization of all kinds of objects
+     * @param serializerType The serializer to use for serialization of all kinds of objects.
      */
     public void setGeneral(SerializerType serializerType) {
         this.general = serializerType;
@@ -79,7 +79,7 @@ public class SerializerProperties {
      * The type of serializer to use to serialize the payload and meta data of Event Messages. Defaults to the Message
      * Serializer, or otherwise the General Serializer.
      *
-     * @return the type of serializer to use for Event Messages
+     * @return The type of serializer to use for Event Messages.
      */
     public SerializerType getEvents() {
         return events;
@@ -89,7 +89,7 @@ public class SerializerProperties {
      * The type of serializer to use to serialize the payload and meta data of Event Messages. Defaults to the Message
      * Serializer, or otherwise the General Serializer.
      *
-     * @param serializerType the type of serializer to use for Event Messages
+     * @param serializerType The type of serializer to use for Event Messages.
      */
     public void setEvents(SerializerType serializerType) {
         this.events = serializerType;
@@ -99,7 +99,7 @@ public class SerializerProperties {
      * The type of serializer to use to serialize the payload and meta data of Messages. Defaults to the General
      * Serializer.
      *
-     * @return the type of serializer to use for Messages
+     * @return The type of serializer to use for Messages.
      */
     public SerializerType getMessages() {
         return messages;
@@ -109,7 +109,7 @@ public class SerializerProperties {
      * The type of serializer to use to serialize the payload and meta data of Messages. Defaults to the Message
      * Serializer, or otherwise the General Serializer.
      *
-     * @param serializerType the type of serializer to use for Messages
+     * @param serializerType The type of serializer to use for Messages.
      */
     public void setMessages(SerializerType serializerType) {
         this.messages = serializerType;

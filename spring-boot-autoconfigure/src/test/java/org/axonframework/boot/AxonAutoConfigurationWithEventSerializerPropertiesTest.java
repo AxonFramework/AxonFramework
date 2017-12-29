@@ -28,8 +28,8 @@ import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -91,5 +91,4 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertEquals(serializer, engine.getSerializer());
         assertEquals(eventSerializer, engine.getEventSerializer());
     }
-
 }
