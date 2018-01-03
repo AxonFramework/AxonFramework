@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.common.AssertUtils;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
@@ -107,6 +108,8 @@ public class QuartzEventSchedulerTest {
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
+
+        AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> verify(mockTransaction).commit());
         InOrder inOrder = inOrder(transactionManager, eventBus, mockTransaction);
         inOrder.verify(transactionManager).startTransaction();
         inOrder.verify(eventBus).publish(isA(EventMessage.class));
@@ -114,7 +117,7 @@ public class QuartzEventSchedulerTest {
     }
 
     @Test
-    public void testCancelJob() throws SchedulerException, InterruptedException {
+    public void testCancelJob() throws SchedulerException {
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(1000), new StubEvent());
