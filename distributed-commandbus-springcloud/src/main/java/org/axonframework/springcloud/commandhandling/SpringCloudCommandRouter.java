@@ -36,6 +36,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -172,7 +173,34 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     private boolean ifNotBlackListed(ServiceInstance serviceInstance) {
-        return !blackListedServiceInstances.contains(serviceInstance);
+        return blackListedServiceInstances.stream()
+                                          .noneMatch(blackListedServiceInstance -> equals(serviceInstance,
+                                                                                          blackListedServiceInstance));
+    }
+
+    /**
+     * Implementation of the {@link org.springframework.cloud.client.ServiceInstance} in some cases do no have an
+     * {@code equals()} implementation. Thus we provide our own {@code equals()} function to match a given
+     * {@code blackListedServiceInstance} with another given {@code serviceInstance}.
+     * The match is done on the service id, host and port.
+     *
+     * @param serviceInstance            A {@link org.springframework.cloud.client.ServiceInstance} to compare with the
+     *                                   given {@code blackListedServiceInstance}
+     * @param blackListedServiceInstance A {@link org.springframework.cloud.client.ServiceInstance} to compare with the
+     *                                   given {@code serviceInstance}
+     * @return True if both instances match on the service id, host and port, and false if they do not
+     */
+    @SuppressWarnings("SimplifiableIfStatement")
+    private boolean equals(ServiceInstance serviceInstance, ServiceInstance blackListedServiceInstance) {
+        if (serviceInstance == blackListedServiceInstance) {
+            return true;
+        }
+        if (blackListedServiceInstance == null) {
+            return false;
+        }
+        return Objects.equals(serviceInstance.getServiceId(), blackListedServiceInstance.getServiceId())
+                && Objects.equals(serviceInstance.getHost(), blackListedServiceInstance.getHost())
+                && Objects.equals(serviceInstance.getPort(), blackListedServiceInstance.getPort());
     }
 
     private void updateMembershipForServiceInstance(ServiceInstance serviceInstance,

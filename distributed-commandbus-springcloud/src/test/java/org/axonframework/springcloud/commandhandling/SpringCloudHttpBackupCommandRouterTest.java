@@ -291,6 +291,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
         verify(discoveryClient, times(2)).getServices();
         verify(discoveryClient, times(2)).getInstances(nonAxonServiceInstanceId);
         verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
+        // Just once, only for the nonAxonInstance. The default serviceInstance is local, so no rest call is done
         verify(restTemplate, times(1)).exchange(uriArgumentCaptor.capture(),
                                                 eq(HttpMethod.GET),
                                                 eq(HttpEntity.EMPTY),

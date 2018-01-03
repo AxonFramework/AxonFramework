@@ -97,7 +97,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testFindDestinationReturnsEmptyOptionalMemberForCommandMessage() throws Exception {
+    public void testFindDestinationReturnsEmptyOptionalMemberForCommandMessage() {
         Optional<Member> result = testSubject.findDestination(TEST_COMMAND);
 
         assertFalse(result.isPresent());
@@ -105,7 +105,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testFindDestinationReturnsMemberForCommandMessage() throws Exception {
+    public void testFindDestinationReturnsMemberForCommandMessage() {
         SimpleMember<URI> testMember = new SimpleMember<>(
                 SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]", SERVICE_INSTANCE_URI, false, null
         );
@@ -124,7 +124,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipUpdatesLocalServiceInstance() throws Exception {
+    public void testUpdateMembershipUpdatesLocalServiceInstance() {
         Predicate<? super CommandMessage<?>> commandNameFilter = new CommandNameFilter(String.class.getName());
         String commandFilterData = new XStreamSerializer().serialize(commandNameFilter, String.class).getData();
         testSubject.updateMembership(LOAD_FACTOR, commandNameFilter);
@@ -138,7 +138,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMemberShipUpdatesConsistentHash() throws Exception {
+    public void testUpdateMemberShipUpdatesConsistentHash() {
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
         AtomicReference<ConsistentHash> resultAtomicConsistentHash =
@@ -153,7 +153,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventUpdatesConsistentHash() throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventUpdatesConsistentHash() {
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
@@ -203,7 +203,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() throws Exception {
+    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() {
         // Update router memberships with local and remote service instance
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
@@ -240,8 +240,7 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventFiltersInstancesWithoutCommandRouterSpecificMetadata()
-            throws Exception {
+    public void testUpdateMembershipsOnHeartbeatEventFiltersInstancesWithoutCommandRouterSpecificMetadata() {
         int expectedMemberSetSize = 1;
         String expectedServiceInstanceId = "nonCommandRouterServiceInstance";
 
@@ -306,6 +305,37 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
         verify(discoveryClient).getInstances(nonAxonServiceInstanceId);
+    }
+
+    @Test
+    public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance() {
+        SpringCloudCommandRouter testSubject =
+                new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstance -> true);
+
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        String nonAxonServiceInstanceId = "nonAxonInstance";
+        ServiceInstance nonAxonInstance = mock(ServiceInstance.class);
+        when(nonAxonInstance.getServiceId()).thenReturn(nonAxonServiceInstanceId);
+        when(nonAxonInstance.getHost()).thenReturn("nonAxonHost");
+        when(nonAxonInstance.getPort()).thenReturn(0);
+        when(nonAxonInstance.getMetadata()).thenReturn(Collections.emptyMap());
+
+        when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, nonAxonServiceInstanceId));
+        when(discoveryClient.getInstances(nonAxonServiceInstanceId)).thenReturn(ImmutableList.of(nonAxonInstance));
+
+        // First update - black lists 'nonAxonServiceInstance' as it does not contain any message routing information
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        // Second update
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+
+        verify(discoveryClient, times(2)).getServices();
+        verify(discoveryClient, times(2)).getInstances(nonAxonServiceInstanceId);
+        verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
+        // Twice for the default serviceInstanceId, once for the nonAxonServiceInstanceId, as it's black listed.
+        verify(discoveryClient, times(3)).getLocalServiceInstance();
     }
 
     @Test
