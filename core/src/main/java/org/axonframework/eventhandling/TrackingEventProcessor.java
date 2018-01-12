@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -386,6 +387,23 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         threadFactory.newThread(new WorkerLauncher()).start();
     }
 
+    /**
+     * Instructs the current Thread to sleep until the given deadline. This method may be overridden to check for
+     * flags that have been set to return earlier than the given deadline.
+     * <p>
+     * The default implementation will sleep in blocks of 100ms, intermittently checking for the processor's state. Once
+     * the processor stops running, this method will return immediately (after detecting the state change).
+     *
+     * @param millisToSleep The number of milliseconds to sleep
+     * @throws InterruptedException whn the Thread is interrupted
+     */
+    protected void doSleepFor(long millisToSleep) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + millisToSleep;
+        while (getState().isRunning() && System.currentTimeMillis() < deadline) {
+            Thread.sleep(100);
+        }
+    }
+
     protected enum State {
 
         NOT_STARTED(false), STARTED(true), PAUSED(false), SHUT_DOWN(false), PAUSED_ERROR(false);
@@ -464,9 +482,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public String toString() {
             return "TrackingSegmentWorker{" +
-                   "processor=" + getName() +
-                   ", segment=" + segment +
-                   '}';
+                    "processor=" + getName() +
+                    ", segment=" + segment +
+                    '}';
         }
     }
 
@@ -491,7 +509,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 TrackingSegmentWorker workingInCurrentThread = null;
                 boolean attemptImmediateRetry = false;
                 for (int i = 0; i < segments.length
-                                && activeSegments.size() < maxThreadCount; i++) {
+                        && activeSegments.size() < maxThreadCount; i++) {
                     Segment segment = segments[i];
 
                     if (activeSegments.add(segment.getSegmentId())) {
@@ -501,11 +519,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
+                            attemptImmediateRetry = true;
                             continue;
                         } catch (Exception e) {
-                            logger.info("An error occurred while attempting to claim a token for segment: {}. Will retry later...", segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
-                            attemptImmediateRetry = true;
+                            if (AxonNonTransientException.isCauseOf(e)) {
+                                logger.error("An unrecoverable error has occurred wile attempting to claim a token for segment: {}. Shutting down processor [{}].", segment.getSegmentId(), getName(), e);
+                                state.set(State.PAUSED_ERROR);
+                                break;
+                            }
+                            logger.info("An error occurred while attempting to claim a token for segment: {}. Will retry later...", segment.getSegmentId(), e);
                             continue;
                         }
 
@@ -528,9 +551,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 }
 
                 try {
-                    long deadline = System.currentTimeMillis() + 5000;
-                    while (!attemptImmediateRetry && getState().isRunning() && System.currentTimeMillis() < deadline) {
-                        Thread.sleep(100);
+                    if (!attemptImmediateRetry) {
+                        doSleepFor(5000);
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
