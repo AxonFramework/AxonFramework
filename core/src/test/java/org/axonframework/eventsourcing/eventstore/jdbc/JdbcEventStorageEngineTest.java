@@ -20,8 +20,10 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -35,11 +37,14 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.junit.Assert.*;
 
@@ -139,6 +144,40 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         assertEquals(4L, (long) ((GapAwareTrackingToken) events.get(0).trackingToken()).getGaps().first());
     }
 
+    @Test
+    public void testEventsWithUnknownPayloadTypeAreSkipped() throws SQLException, InterruptedException {
+        String expectedPayloadOne = "Payload3";
+        String expectedPayloadTwo = "Payload4";
+        List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
+
+        int testBatchSize = 2;
+        testSubject = createEngine(
+                NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
+                HsqlEventTableFactory.INSTANCE, testBatchSize
+        );
+        EmbeddedEventStore testEventStore = new EmbeddedEventStore(testSubject);
+
+        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
+                                 createEvent(AGGREGATE, 2, "Payload2"));
+        // Update events which will be part of the first batch to an unknown payload type
+        try (Connection conn = dataSource.getConnection()) {
+            conn.prepareStatement("UPDATE DomainEventEntry e SET e.payloadType = 'unknown'")
+                .executeUpdate();
+        }
+        testSubject.appendEvents(createEvent(AGGREGATE, 3, expectedPayloadOne),
+                                 createEvent(AGGREGATE, 4, expectedPayloadTwo));
+
+        List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
+                                                           .map(m -> (String) m.getPayload())
+                                                           .collect(toList());
+        assertEquals(expected, eventStorageEngineResult);
+
+        TrackingEventStream eventStoreResult = testEventStore.openStream(null);
+        assertTrue(eventStoreResult.hasNextAvailable());
+        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
+        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
+    }
+
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
@@ -153,13 +192,24 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                   PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  EventSchema eventSchema, Class<?> dataType,
+                                                  EventSchema eventSchema,
+                                                  Class<?> dataType,
                                                   EventTableFactory tableFactory) {
+        return createEngine(upcasterChain, persistenceExceptionResolver, eventSchema, dataType, tableFactory, 100);
+    }
+
+    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
+                                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                                  EventSchema eventSchema,
+                                                  Class<?> dataType,
+                                                  EventTableFactory tableFactory,
+                                                  int batchSize) {
         XStreamSerializer serializer = new XStreamSerializer();
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(
-                serializer, upcasterChain, persistenceExceptionResolver, serializer, 100, dataSource::getConnection,
-                NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
+                serializer, upcasterChain, persistenceExceptionResolver, serializer, batchSize,
+                dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
         );
+
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();

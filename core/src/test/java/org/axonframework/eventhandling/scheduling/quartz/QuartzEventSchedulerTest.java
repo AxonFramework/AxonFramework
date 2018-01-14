@@ -21,7 +21,6 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.junit.After;
@@ -101,7 +100,7 @@ public class QuartzEventSchedulerTest {
         doAnswer(invocation -> {
             latch.countDown();
             return null;
-        }).when(eventBus).publish(isA(EventMessage.class));
+        }).when(mockTransaction).commit();
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), new StubEvent());
@@ -114,6 +113,7 @@ public class QuartzEventSchedulerTest {
         inOrder.verify(transactionManager).startTransaction();
         inOrder.verify(eventBus).publish(isA(EventMessage.class));
         inOrder.verify(mockTransaction).commit();
+        inOrder.verifyNoMoreInteractions();
     }
 
     @Test
@@ -126,10 +126,6 @@ public class QuartzEventSchedulerTest {
         assertEquals(0, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         scheduler.shutdown(true);
         verify(eventBus, never()).publish(isA(EventMessage.class));
-    }
-
-    private EventMessage newStubEvent() {
-        return new GenericEventMessage<>(new StubEvent());
     }
 
     private class StubEvent {

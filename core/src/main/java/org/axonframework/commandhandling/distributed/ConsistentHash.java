@@ -47,6 +47,16 @@ public class ConsistentHash {
     }
 
     /**
+     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
+     *
+     * @param routingKey the routing key to hash
+     * @return a hash of the input key
+     */
+    protected static String hash(String routingKey) {
+        return Digester.md5Hex(routingKey);
+    }
+
+    /**
      * Returns the member instance to which the given {@code message} should be routed. If no suitable member could be
      * found an empty Optional is returned.
      *
@@ -65,16 +75,6 @@ public class ConsistentHash {
             foundMember = findSuitableMember(commandMessage, headIterator);
         }
         return foundMember;
-    }
-
-    /**
-     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
-     *
-     * @param routingKey the routing key to hash
-     * @return a hash of the input key
-     */
-    protected static String hash(String routingKey) {
-        return Digester.md5Hex(routingKey);
     }
 
     private Optional<Member> findSuitableMember(CommandMessage<?> commandMessage,
@@ -155,6 +155,17 @@ public class ConsistentHash {
     @Override
     public int hashCode() {
         return Objects.hash(hashToMember);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("ConsistentHash [");
+        Set<ConsistentHashMember> members = new TreeSet<>(Comparator.comparing(ConsistentHashMember::name));
+        members.addAll(this.hashToMember.values());
+        members.forEach(m -> sb.append(m.toString()).append(","));
+        sb.delete(sb.length() - 1, sb.length());
+        sb.append("]");
+        return sb.toString();
     }
 
     /**
@@ -243,19 +254,8 @@ public class ConsistentHash {
 
         @Override
         public String toString() {
-            return member.name() + "("+ segmentCount +")";
+            return member.name() + "(" + segmentCount + ")";
         }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("ConsistentHash [");
-        Set<ConsistentHashMember> members = new TreeSet<>(Comparator.comparing(ConsistentHashMember::name));
-        members.addAll(this.hashToMember.values());
-        members.forEach(m -> sb.append(m.toString()).append(","));
-        sb.delete(sb.length() - 1, sb.length());
-        sb.append("]");
-        return sb.toString();
     }
 }
 

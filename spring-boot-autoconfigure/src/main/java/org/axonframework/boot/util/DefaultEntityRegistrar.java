@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.boot;
+package org.axonframework.boot.util;
 
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
@@ -29,7 +30,7 @@ public class DefaultEntityRegistrar implements ImportBeanDefinitionRegistrar {
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-        Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes("org.axonframework.boot.RegisterDefaultEntities");
+        Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes("org.axonframework.boot.util.RegisterDefaultEntities");
         String[] packages = (String[]) attributes.get("packages");
 
         AutoConfigurationPackages.register(registry, packages);

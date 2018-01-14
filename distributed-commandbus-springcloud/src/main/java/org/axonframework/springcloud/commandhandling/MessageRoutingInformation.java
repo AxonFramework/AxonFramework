@@ -15,6 +15,8 @@
 
 package org.axonframework.springcloud.commandhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -39,9 +41,10 @@ public class MessageRoutingInformation implements Serializable {
     private final String serializedCommandFilter;
     private final String serializedCommandFilterType;
 
-    public MessageRoutingInformation(int loadFactor,
-                                     String serializedCommandFilter,
-                                     String serializedCommandFilterType) {
+    @JsonCreator
+    public MessageRoutingInformation(@JsonProperty("loadFactor") int loadFactor,
+                                     @JsonProperty("serializedCommandFilter") String serializedCommandFilter,
+                                     @JsonProperty("serializedCommandFilterType") String serializedCommandFilterType) {
         this.loadFactor = loadFactor;
         this.serializedCommandFilter = serializedCommandFilter;
         this.serializedCommandFilterType = serializedCommandFilterType;
