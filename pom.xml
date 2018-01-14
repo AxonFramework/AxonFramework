@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2017. Axon Framework
+  ~ Copyright (c) 2010-2018. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@
         </license>
     </licenses>
     <issueManagement>
-        <system>YouTrack</system>
+        <system>GitHub</system>
         <url>http://issues.axonframework.org</url>
     </issueManagement>
 
@@ -436,27 +436,18 @@
     <developers>
         <developer>
             <name>Allard Buijze</name>
-            <email>allard.buijze@trifork.nl</email>
-            <organization>Trifork</organization>
-            <organizationUrl>www.trifork.nl</organizationUrl>
+            <email>allard.buijze@axoniq.io</email>
+            <organization>AxonIQ</organization>
+            <organizationUrl>https://axoniq.io</organizationUrl>
             <roles>
                 <role>Project Owner</role>
             </roles>
         </developer>
         <developer>
-            <name>Rene de Waele</name>
-            <email>rene.dewaele@trifork.nl</email>
-            <organization>Trifork</organization>
-            <organizationUrl>www.trifork.nl</organizationUrl>
-            <roles>
-                <role>Committer</role>
-            </roles>
-        </developer>
-        <developer>
             <name>Steven van Beelen</name>
-            <email>steven.vanbeelen@trifork.nl</email>
-            <organization>Trifork</organization>
-            <organizationUrl>www.trifork.nl</organizationUrl>
+            <email>steven.vanbeelen@axoniq.io</email>
+            <organization>AxonIQ</organization>
+            <organizationUrl>https://axoniq.io</organizationUrl>
             <roles>
                 <role>Committer</role>
             </roles>
