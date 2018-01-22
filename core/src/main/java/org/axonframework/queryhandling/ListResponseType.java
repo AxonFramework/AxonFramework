@@ -1,6 +1,7 @@
 package org.axonframework.queryhandling;
 
 import java.lang.reflect.Type;
+import java.util.List;
 
 /**
  *
@@ -8,7 +9,7 @@ import java.lang.reflect.Type;
  * @author Steven van Beelen
  * @since 3.2
  */
-public class ListResponseType<T> implements ResponseType<T> {
+public class ListResponseType<T> implements ResponseType<List<T>> {
 
     private final Class<?> listType;
 
@@ -22,7 +23,7 @@ public class ListResponseType<T> implements ResponseType<T> {
     }
 
     @Override
-    public T convert(Object response) {
+    public List<T> convert(Object response) {
         return null;
     }
 }

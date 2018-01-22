@@ -1,5 +1,7 @@
 package org.axonframework.queryhandling;
 
+import java.util.List;
+
 /**
  * Utility class containing static methods to obtain instances of {@link org.axonframework.queryhandling.ResponseType}.
  *
@@ -28,7 +30,7 @@ public abstract class ResponseTypes {
      * @return a {@link org.axonframework.queryhandling.ResponseType} specifying the desire to retrieve a list of
      * instances of type {@code T}
      */
-    public static <T> ResponseType<T> listOf(Class<T> type) {
+    public static <T> ResponseType<List<T>> listOf(Class<T> type) {
         return new ListResponseType<>(type);
     }
 
@@ -40,7 +42,7 @@ public abstract class ResponseTypes {
      * @return a {@link org.axonframework.queryhandling.ResponseType} specifying the desire to retrieve a page of
      * instances of type {@code T}
      */
-    public static <T> ResponseType<T> pageOf(Class<T> type) {
+    public static <T> ResponseType<Page<T>> pageOf(Class<T> type) {
         return new PageResponseType<>(type);
     }
 

@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
  * @author Steven van Beelen
  * @since 3.2
  */
-public class PageResponseType<T> implements ResponseType<T> {
+public class PageResponseType<T> implements ResponseType<Page<T>> {
 
     private final Class<?> pageType;
 
@@ -22,7 +22,7 @@ public class PageResponseType<T> implements ResponseType<T> {
     }
 
     @Override
-    public T convert(Object response) {
+    public Page<T> convert(Object response) {
         return null;
     }
 }
