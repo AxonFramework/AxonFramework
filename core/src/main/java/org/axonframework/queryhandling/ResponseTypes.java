@@ -16,8 +16,8 @@ public abstract class ResponseTypes {
      * @return a {@link org.axonframework.queryhandling.ResponseType} specifying the desire to retrieve a single
      * instance of type {@code T}
      */
-    public static <T> ResponseType<T> instanceOf(T type) {
-        return new InstanceResponseType<>(type.getClass());
+    public static <T> ResponseType<T> instanceOf(Class<T> type) {
+        return new InstanceResponseType<>(type);
     }
 
     /**
@@ -28,8 +28,8 @@ public abstract class ResponseTypes {
      * @return a {@link org.axonframework.queryhandling.ResponseType} specifying the desire to retrieve a list of
      * instances of type {@code T}
      */
-    public static <T> ResponseType<T> listOf(T type) {
-        return new ListResponseType<>(type.getClass());
+    public static <T> ResponseType<T> listOf(Class<T> type) {
+        return new ListResponseType<>(type);
     }
 
     /**
@@ -40,8 +40,8 @@ public abstract class ResponseTypes {
      * @return a {@link org.axonframework.queryhandling.ResponseType} specifying the desire to retrieve a page of
      * instances of type {@code T}
      */
-    public static <T> ResponseType<T> pageOf(T type) {
-        return new PageResponseType<>(type.getClass());
+    public static <T> ResponseType<T> pageOf(Class<T> type) {
+        return new PageResponseType<>(type);
     }
 
     private ResponseTypes() {
