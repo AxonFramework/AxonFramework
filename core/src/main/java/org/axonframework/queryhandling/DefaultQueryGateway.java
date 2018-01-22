@@ -17,7 +17,6 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -43,7 +42,8 @@ public class DefaultQueryGateway implements QueryGateway {
      * @param dispatchInterceptors The interceptors to invoke prior to publication on the bus
      */
     @SafeVarargs
-    public DefaultQueryGateway(QueryBus queryBus, MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
+    public DefaultQueryGateway(QueryBus queryBus,
+                               MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
         this.queryBus = queryBus;
         this.dispatchInterceptors = dispatchInterceptors;
     }
@@ -56,9 +56,11 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> Stream<Collection<R>> scatterGather(String queryName, Q query, Class<R> responseType, long timeout, TimeUnit timeUnit) {
-        return queryBus.scatterGather(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit)
-                       .map(QueryResponseMessage::getResults);
+    public <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
+                                          TimeUnit timeUnit) {
+//        return queryBus.scatterGather(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit)
+//                       .map(QueryResponseMessage::getResults);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -69,5 +71,4 @@ public class DefaultQueryGateway implements QueryGateway {
         }
         return message;
     }
-
 }
