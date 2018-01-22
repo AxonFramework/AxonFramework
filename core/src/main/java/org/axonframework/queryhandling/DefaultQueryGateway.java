@@ -27,6 +27,7 @@ import java.util.stream.Stream;
  *
  * @author Marc Gathier
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 3.1
  */
 public class DefaultQueryGateway implements QueryGateway {
@@ -48,20 +49,16 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> Stream<Collection<R>> scatterGather(String queryName, Q query, Class<R> responseType, long timeout, TimeUnit timeUnit) {
-        return queryBus.scatterGather(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit)
-                       .map(QueryResponseMessage::getResults);
-    }
-
-    @Override
     public <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType) {
+//        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)))
+//                       .thenApply(QueryResponseMessage::getResults);
         return null;
     }
 
     @Override
-    public <R, Q> CompletableFuture<Collection<R>> query(String queryName, Q query, Class<R> responseType) {
-        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)))
-                       .thenApply(QueryResponseMessage::getResults);
+    public <R, Q> Stream<Collection<R>> scatterGather(String queryName, Q query, Class<R> responseType, long timeout, TimeUnit timeUnit) {
+        return queryBus.scatterGather(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit)
+                       .map(QueryResponseMessage::getResults);
     }
 
     @SuppressWarnings("unchecked")

@@ -26,17 +26,51 @@ import java.util.stream.Stream;
  *
  * @author Marc Gathier
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 3.1
  */
 public interface QueryGateway {
 
     /**
-     * Sends given {@code query} over the query bus, expecting a response in the form of {@code responseType}.
-     * The query name will be derived from the provided {@code query}. Execution may be asynchronous.
+     * Sends given {@code query} over the query bus, expecting a response with the given {@code responseType}.
+     * The query name will be derived from the provided {@code query}.
+     * The query result will come from a single source and execution may be asynchronous.
      *
-     * @param query        The query to be sent
+     * @param query        The {@code query} to be sent
+     * @param responseType A {@link java.lang.Class} describing the desired response type
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
+     * {@code responseType}
+     */
+    default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
+        return query(query.getClass().getName(), query, responseType);
+    }
+
+    /**
+     * Sends given {@code query} over the query bus, expecting a response with the given {@code responseType}.
+     * The query result will come from a single source and execution may be asynchronous.
+     *
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
+     * @param query        The {@code query} to be sent
      * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
-     * @param <R>          The response class contained in the {@code responseType}
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
+     * {@code responseType}
+     */
+    default <R, Q> CompletableFuture<R> query(String queryName, Q query, Class<R> responseType) {
+        return query(queryName, query, ResponseTypes.instanceOf(responseType));
+    }
+
+    /**
+     * Sends given {@code query} over the query bus, expecting a response in the form of {@code responseType}.
+     * The query name will be derived from the provided {@code query}.
+     * The query result will come from a single source and execution may be asynchronous.
+     *
+     * @param query        The {@code query} to be sent
+     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
+     * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
@@ -47,83 +81,17 @@ public interface QueryGateway {
 
     /**
      * Sends given {@code query} over the query bus, expecting a response in the form of {@code responseType}.
-     * Execution may be asynchronous.
+     * The query result will come from a single source and execution may be asynchronous.
      *
      * @param queryName    A {@link java.lang.String} describing the query to be executed
-     * @param query        The query to be sent
+     * @param query        The {@code query} to be sent
      * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
-     * @param <R>          The response class contained in the {@code responseType}
+     * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
      * {@code responseType}
      */
     <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType);
-
-    /**
-     * Sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.
-     *
-     * @param query        The query.
-     * @param responseType The expected result type.
-     * @param <R>          The type of result expected from query execution.
-     * @param <Q>          The query class.
-     * @return A completable future that contains the first result of the query.
-     *
-     * @throws NullPointerException when query is null.
-     */
-    default <R, Q> CompletableFuture<Collection<R>> query(Q query, Class<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
-    }
-
-    /**
-     * Sends given query to the query bus and expects a result with name resultName. Execution may be asynchronous.
-     *
-     * @param <R>          The type of result expected from query execution.
-     * @param <Q>          The query class.
-     * @param queryName    The name of the query.
-     * @param query        The query.
-     * @param responseType The expected response type.
-     * @return A completable future that contains the first result of the query.
-     */
-    <R, Q> CompletableFuture<Collection<R>> query(String queryName, Q query, Class<R> responseType);
-
-    /**
-     * Sends given {@code query} over the query bus, expecting a single instance of type {@code R}.
-     * The query name will be derived from the provided {@code query}. Execution may be asynchronous.
-     *
-     * @param query        The query to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
-     * @param <R>          The response class contained in the {@code responseType}
-     * @param <Q>          The query class
-     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
-     * {@code responseType}
-     *
-     * @deprecated in favor of issuing a regular query with
-     * {@link org.axonframework.queryhandling.ResponseTypes#instanceOf(Class)} as the {@code responseType}
-     */
-    @Deprecated
-    default <R, Q> CompletableFuture<R> querySingle(Q query, Class<R> responseType) {
-        return querySingle(query.getClass().getName(), query, responseType);
-    }
-
-    /**
-     * Sends given {@code query} over the query bus, expecting a single instance of type {@code R}.
-     * Execution may be asynchronous.
-     *
-     * @param queryName    A {@link java.lang.String} describing the query to be executed
-     * @param query        The query to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
-     * @param <R>          The response class contained in the {@code responseType}
-     * @param <Q>          The query class
-     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
-     * {@code responseType}
-     *
-     * @deprecated in favor of issuing a regular query with
-     * {@link org.axonframework.queryhandling.ResponseTypes#instanceOf(Class)} as the {@code responseType}
-     */
-    @Deprecated
-    default <R, Q> CompletableFuture<R> querySingle(String queryName, Q query, Class<R> responseType) {
-        return query(queryName, query, ResponseTypes.instanceOf(responseType));
-    }
 
     /**
      * Sends given query to the query bus and expects a stream of results with name resultName. The stream is completed
@@ -175,7 +143,7 @@ public interface QueryGateway {
      */
     @Deprecated
     default <R, Q> CompletableFuture<R> send(String queryName, Q query, Class<R> responseType) {
-        return query(queryName, query, responseType).thenApply(s -> s.isEmpty() ? null : s.iterator().next());
+        return query(queryName, query, responseType);
     }
 
     /**
@@ -192,7 +160,7 @@ public interface QueryGateway {
      */
     @Deprecated
     default <R, Q> CompletableFuture<R> send(Q query, Class<R> responseType) {
-        return querySingle(query.getClass().getName(), query, responseType);
+        return query(query.getClass().getName(), query, responseType);
     }
 
     /**
