@@ -199,8 +199,11 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> QueryResponseMessage<R> interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow,
                                                               MessageHandler<? super QueryMessage<?, R>> handler)
             throws Exception {
-        return uow.executeWithResult(() -> GenericQueryResponseMessage.asResponseMessage(
-                new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed()));
+        return uow.executeWithResult(() -> {
+            ResponseType<R> responseType = uow.getMessage().getResponseType();
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            return GenericQueryResponseMessage.asResponseMessage(responseType.convert(queryResponse));
+        });
     }
 
     @SuppressWarnings("unchecked")
