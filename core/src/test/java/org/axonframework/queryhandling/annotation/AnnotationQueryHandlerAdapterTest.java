@@ -23,11 +23,11 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.axonframework.queryhandling.ResponseTypes;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -35,17 +35,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-/**
- * Author: marc
- */
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationQueryHandlerAdapterTest {
+
     private AnnotationQueryHandlerAdapter<?> testSubject;
 
     @Mock
@@ -86,7 +83,8 @@ public class AnnotationQueryHandlerAdapterTest {
 
     @Test
     public void testRunQuery() throws Exception {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
+        QueryMessage<String, String> queryMessage =
+                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(String.class));
         Object result = testSubject.handle(queryMessage);
         assertEquals("hello", result);
     }
@@ -94,27 +92,31 @@ public class AnnotationQueryHandlerAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testRunQueryForCollection() throws Exception {
-        QueryMessage<Integer, String> queryMessage = new GenericQueryMessage<>(5, String.class);
+        QueryMessage<Integer, List<String>> queryMessage =
+                new GenericQueryMessage<>(5, ResponseTypes.listOf(String.class));
         Collection<String> result = (Collection<String>) testSubject.handle(queryMessage);
         assertEquals(5, result.size());
     }
 
     @Test(expected = MockException.class)
     public void testRunQueryWithException() throws Exception {
-        QueryMessage<String, Integer> queryMessage = new GenericQueryMessage<>("hello", Integer.class);
+        QueryMessage<String, Integer> queryMessage =
+                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class));
         testSubject.handle(queryMessage);
     }
 
     @Test
     public void testExplicitlyDeclaredReturnType() throws Exception {
-        QueryMessage<String, BigDecimal> queryMessage = new GenericQueryMessage<>("hello", BigDecimal.class);
+        QueryMessage<String, List<BigDecimal>> queryMessage =
+                new GenericQueryMessage<>("hello", ResponseTypes.listOf(BigDecimal.class));
         Object result = testSubject.handle(queryMessage);
 
-        assertEquals(1, ((Collection)result).size());
-        assertEquals(BigDecimal.ONE, ((Collection)result).iterator().next());
+        assertEquals(1, ((Collection) result).size());
+        assertEquals(BigDecimal.ONE, ((Collection) result).iterator().next());
     }
 
     public class MyQueryHandler {
+
         @QueryHandler
         public String echo(String echo) {
             return echo;
@@ -143,10 +145,10 @@ public class AnnotationQueryHandlerAdapterTest {
         public List bigIntegers(String echo) {
             return Collections.singletonList(BigDecimal.ONE);
         }
-
     }
 
     public class MySecondQueryHandler {
+
         @QueryHandler
         public String echo(MetaData metaData, String echo) {
             return echo;
@@ -154,6 +156,7 @@ public class AnnotationQueryHandlerAdapterTest {
     }
 
     public class MyThirdQueryHandler {
+
         @QueryHandler
         public void echo(String echo) {
         }

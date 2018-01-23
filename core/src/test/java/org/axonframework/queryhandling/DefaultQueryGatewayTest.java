@@ -19,16 +19,14 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
@@ -54,9 +52,10 @@ public class DefaultQueryGatewayTest {
 
     @Test
     public void testDispatchSingleResultQuery() throws Exception {
-        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(CompletableFuture.completedFuture(answer));
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(CompletableFuture.completedFuture(answer));
 
-        CompletableFuture<String> actual = testSubject.querySingle("query", String.class);
+        CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertEquals("answer", actual.get());
 
         verify(mockBus).query(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
@@ -75,10 +74,13 @@ public class DefaultQueryGatewayTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testDispatchMultiResultQuery() {
-        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any())).thenReturn(Stream.of(answer));
+        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
+                .thenReturn(Stream.of(answer));
 
-        Stream<Collection<String>> actual = testSubject.scatterGather("query", String.class, 1, TimeUnit.SECONDS);
-        assertEquals("answer", actual.findFirst().get().iterator().next());
+        Stream<String> actual = testSubject.scatterGather(
+                "query", ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS
+        );
+        assertEquals("answer", actual.findFirst().get());
 
         verify(mockBus).scatterGather(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
             @Override
