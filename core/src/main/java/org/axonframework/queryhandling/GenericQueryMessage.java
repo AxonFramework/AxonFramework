@@ -36,16 +36,16 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
     private static final long serialVersionUID = -3908412412867063631L;
 
     private final String queryName;
-    private final Class<R> responseType;
+    private final ResponseType<R> responseType;
 
     /**
      * Initializes the message with the given {@code payload} and expected {@code responseType}. The query name is
      * set to the fully qualified class name of the {@code payload}.
      *
      * @param payload      The payload expressing the query
-     * @param responseType The expected response type
+     * @param responseType The expected response type of type {@link org.axonframework.queryhandling.ResponseType}
      */
-    public GenericQueryMessage(T payload, Class<R> responseType) {
+    public GenericQueryMessage(T payload, ResponseType<R> responseType) {
         this(payload, payload.getClass().getName(), responseType);
     }
 
@@ -54,9 +54,9 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      *
      * @param payload      The payload expressing the query
      * @param queryName    The name identifying the query to execute
-     * @param responseType The expected response type
+     * @param responseType The expected response type of type {@link org.axonframework.queryhandling.ResponseType}
      */
-    public GenericQueryMessage(T payload, String queryName, Class<R> responseType) {
+    public GenericQueryMessage(T payload, String queryName, ResponseType<R> responseType) {
         this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
     }
 
@@ -66,9 +66,9 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      *
      * @param delegate The message containing the payload and meta data for this message
      * @param queryName    The name identifying the query to execute
-     * @param responseType The expected response type
+     * @param responseType The expected response type of type {@link org.axonframework.queryhandling.ResponseType}
      */
-    public GenericQueryMessage(Message<T> delegate, String queryName, Class<R> responseType) {
+    public GenericQueryMessage(Message<T> delegate, String queryName, ResponseType<R> responseType) {
         super(delegate);
         this.responseType = responseType;
         this.queryName = queryName;
@@ -81,7 +81,7 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
 
 
     @Override
-    public Class<R> getResponseType() {
+    public ResponseType<R> getResponseType() {
         return responseType;
     }
 

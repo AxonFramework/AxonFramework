@@ -42,7 +42,7 @@ public interface QueryMessage<T, R> extends Message<T> {
      *
      * @return the type of response expected by the sender of the query
      */
-    Class<R> getResponseType();
+    ResponseType<R> getResponseType();
 
     /**
      * Returns a copy of this QueryMessage with the given {@code metaData}. The payload remains unchanged.
