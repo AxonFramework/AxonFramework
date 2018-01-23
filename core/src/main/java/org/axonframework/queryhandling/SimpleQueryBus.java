@@ -30,6 +30,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -108,7 +109,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public <R> Registration subscribe(String queryName,
-                                      Class<R> responseType,
+                                      Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
         CopyOnWriteArrayList<QuerySubscription> handlers =
                 subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());

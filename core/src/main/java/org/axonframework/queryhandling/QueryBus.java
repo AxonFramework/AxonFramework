@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 
+import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -44,7 +45,7 @@ public interface QueryBus {
      * @param handler      a handler that implements the query
      * @return a handle to un-subscribe the query handler
      */
-    <R> Registration subscribe(String queryName, Class<R> responseType, MessageHandler<? super QueryMessage<?, R>> handler);
+    <R> Registration subscribe(String queryName, Type responseType, MessageHandler<? super QueryMessage<?, R>> handler);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName
@@ -82,5 +83,4 @@ public interface QueryBus {
      * @return stream of query results
      */
     <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit);
-
 }
