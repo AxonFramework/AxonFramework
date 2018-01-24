@@ -32,7 +32,6 @@ import org.mockito.runners.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -92,8 +91,8 @@ public class AnnotationQueryHandlerAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testRunQueryForCollection() throws Exception {
-        QueryMessage<Integer, List<String>> queryMessage =
-                new GenericQueryMessage<>(5, ResponseTypes.listOf(String.class));
+        QueryMessage<Integer, String> queryMessage =
+                new GenericQueryMessage<>(5, ResponseTypes.instanceOf(String.class));
         Collection<String> result = (Collection<String>) testSubject.handle(queryMessage);
         assertEquals(5, result.size());
     }
@@ -107,8 +106,8 @@ public class AnnotationQueryHandlerAdapterTest {
 
     @Test
     public void testExplicitlyDeclaredReturnType() throws Exception {
-        QueryMessage<String, List<BigDecimal>> queryMessage =
-                new GenericQueryMessage<>("hello", ResponseTypes.listOf(BigDecimal.class));
+        QueryMessage<String, BigDecimal> queryMessage =
+                new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(BigDecimal.class));
         Object result = testSubject.handle(queryMessage);
 
         assertEquals(1, ((Collection) result).size());
@@ -139,11 +138,6 @@ public class AnnotationQueryHandlerAdapterTest {
                 value.add("echo");
             }
             return value;
-        }
-
-        @QueryHandler(responseType = BigDecimal.class)
-        public List bigIntegers(String echo) {
-            return Collections.singletonList(BigDecimal.ONE);
         }
     }
 

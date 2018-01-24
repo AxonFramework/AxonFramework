@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -25,11 +24,10 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 
-import java.lang.reflect.*;
-import java.util.Collection;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Spliterator;
-import java.util.stream.Stream;
 
 /**
  * Definition of handlers that can handle QueryMessages. These handlers are wrapped with a QueryHandlingMember that
@@ -37,71 +35,50 @@ import java.util.stream.Stream;
  */
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
-    private static final Class[] SUPPORTED_COLLECTION_TYPES = new Class[]{Collection.class, Iterable.class, Spliterator.class, Stream.class};
-
     @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(QueryHandler.class)
-                .map(attr -> (MessageHandlingMember<T>) new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(original, attr))
-                .orElse(original);
+                       .map(attr -> (MessageHandlingMember<T>)
+                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(original, attr))
+                       .orElse(original);
     }
 
     private class MethodQueryMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements QueryHandlingMember<T> {
 
         private final String queryName;
-        private final Class<?> resultType;
+        private final Type resultType;
 
         public MethodQueryMessageHandlingMember(MessageHandlingMember<T> original, Map<String, Object> attr) {
             super(original);
-            String qn = (String) attr.get("queryName");
-            if ("".equals(qn)) {
-                qn = original.payloadType().getName();
+
+            String queryNameAttribute = (String) attr.get("queryName");
+            if ("".equals(queryNameAttribute)) {
+                queryNameAttribute = original.payloadType().getName();
             }
-            queryName = qn;
-            Class<?> declaredResponseType = (Class<?>) attr.get("responseType");
-            if (Void.class.equals(declaredResponseType)) {
-                resultType = original.unwrap(Method.class).map(this::queryResultType)
-                                     .orElseThrow(() -> new UnsupportedHandlerException("@QueryHandler annotation can only be put on methods.",
-                                                                                        original.unwrap(Member.class).orElse(null)));
-            } else {
-                resultType = (Class<?>) attr.get("responseType");
-            }
+            queryName = queryNameAttribute;
+
+            resultType = original.unwrap(Method.class)
+                                 .map(this::queryResultType)
+                                 .orElseThrow(() -> new UnsupportedHandlerException(
+                                         "@QueryHandler annotation can only be put on methods.",
+                                         original.unwrap(Member.class).orElse(null)
+                                 ));
             if (Void.TYPE.equals(resultType)) {
-                throw new UnsupportedHandlerException("@QueryHandler annotated methods must not declare void return type",
-                                                      original.unwrap(Member.class).orElse(null));
+                throw new UnsupportedHandlerException(
+                        "@QueryHandler annotated methods must not declare void return type",
+                        original.unwrap(Member.class).orElse(null)
+                );
             }
         }
 
-        private Class<?> queryResultType(Method method) {
-            if (method.getReturnType().isArray()) {
-                return method.getReturnType().getComponentType();
-            } else if (isCollectionLike(method.getReturnType())) {
-                Type rType = method.getGenericReturnType();
-                if (rType instanceof ParameterizedType) {
-                    Type[] args = ((ParameterizedType) rType).getActualTypeArguments();
-                    if (args.length > 0 && args[0] instanceof Class<?>) {
-                        return (Class<?>) args[0];
-                    } else if (args.length > 0 && args[0] instanceof WildcardType) {
-                        Type[] upperBounds = ((WildcardType) args[0]).getUpperBounds();
-                        if (upperBounds.length == 1 && upperBounds[0] instanceof Class<?>) {
-                            return (Class<?>) upperBounds[0];
-                        }
-                    }
-                }
-                throw new AxonConfigurationException("Cannot extract query result type from declared return value of method: " + method.toGenericString());
+        private Type queryResultType(Method method) {
+            if (Void.class.equals(method.getReturnType())) {
+                throw new UnsupportedHandlerException(
+                        "@QueryHandler annotated methods must not declare void return type", method
+                );
             }
-            return method.getReturnType();
-        }
-
-        @SuppressWarnings("unchecked")
-        private boolean isCollectionLike(Class<?> type) {
-            for (Class collectionType : SUPPORTED_COLLECTION_TYPES) {
-                if (collectionType.isAssignableFrom(type)) {
-                    return true;
-                }
-            }
-            return false;
+            return method.getGenericReturnType();
         }
 
         @SuppressWarnings("unchecked")
@@ -118,7 +95,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             return queryName;
         }
 
-        public Class<?> getResultType() {
+        public Type getResultType() {
             return resultType;
         }
     }

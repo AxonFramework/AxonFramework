@@ -18,10 +18,13 @@ package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
+import java.lang.reflect.Type;
+
 /**
  * Interface indicating that a MessageHandlingMember is capable of handling specific query messages.
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
+ * @author Allard Buijze
  */
 public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
 
@@ -37,5 +40,5 @@ public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
      *
      * @return the return type declared by the handler
      */
-    Class<?> getResultType();
+    Type getResultType();
 }
