@@ -45,14 +45,4 @@ public @interface QueryHandler {
      */
     String queryName() default "";
 
-    /**
-     * Defines the type of response to declare for this handler. By default, the value is deducted
-     * from the return type.
-     * <p>
-     * Note that in case of collections, the responseType should define the type of object contained in the collection.
-     *
-     * @return the type of response provided by this handler
-     */
-    Class<?> responseType() default Void.class;
-
 }
