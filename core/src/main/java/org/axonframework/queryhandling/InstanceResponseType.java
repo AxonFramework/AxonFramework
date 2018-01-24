@@ -3,22 +3,25 @@ package org.axonframework.queryhandling;
 import java.lang.reflect.Type;
 
 /**
- *
- * @param <T>
+ * @param <R>
  * @author Steven van Beelen
  * @since 3.2
  */
-public class InstanceResponseType<T> implements ResponseType<T> {
+public class InstanceResponseType<R> implements ResponseType<R> {
 
-    private final Class responseType;
+    private final Type expectedResponseType;
 
-    public InstanceResponseType(Class<?> responseType) {
-        this.responseType = responseType;
+    public InstanceResponseType(Type expectedResponseType) {
+        this.expectedResponseType = expectedResponseType;
     }
 
     @Override
-    public boolean matches(Type type) {
+    public boolean matches(Type responseType) {
         return false;
     }
 
+    @Override
+    public R convert(Object response) {
+        return null;
+    }
 }

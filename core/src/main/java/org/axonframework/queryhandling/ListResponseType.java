@@ -4,21 +4,20 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 /**
- *
  * @param <T>
  * @author Steven van Beelen
  * @since 3.2
  */
 public class ListResponseType<T> implements ResponseType<List<T>> {
 
-    private final Class<?> listType;
+    private final Type expectedListGenericType;
 
-    public ListResponseType(Class<?> listType) {
-        this.listType = listType;
+    public ListResponseType(Type expectedListGenericType) {
+        this.expectedListGenericType = expectedListGenericType;
     }
 
     @Override
-    public boolean matches(Type type) {
+    public boolean matches(Type responseType) {
         return false;
     }
 

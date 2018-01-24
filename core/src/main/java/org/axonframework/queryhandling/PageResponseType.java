@@ -10,14 +10,14 @@ import java.lang.reflect.Type;
  */
 public class PageResponseType<T> implements ResponseType<Page<T>> {
 
-    private final Class<?> pageType;
+    private final Type expectedPageGenericType;
 
-    public PageResponseType(Class<?> pageType) {
-        this.pageType = pageType;
+    public PageResponseType(Type expectedPageGenericType) {
+        this.expectedPageGenericType = expectedPageGenericType;
     }
 
     @Override
-    public boolean matches(Type type) {
+    public boolean matches(Type responseType) {
         return false;
     }
 
