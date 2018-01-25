@@ -10,9 +10,9 @@ import java.lang.reflect.Type;
  */
 public class PageResponseType<T> implements ResponseType<Page<T>> {
 
-    private final Type expectedPageGenericType;
+    private final Class<?> expectedPageGenericType;
 
-    public PageResponseType(Type expectedPageGenericType) {
+    public PageResponseType(Class<?> expectedPageGenericType) {
         this.expectedPageGenericType = expectedPageGenericType;
     }
 

@@ -9,9 +9,9 @@ import java.lang.reflect.Type;
  */
 public class InstanceResponseType<R> implements ResponseType<R> {
 
-    private final Type expectedResponseType;
+    private final Class<?> expectedResponseType;
 
-    public InstanceResponseType(Type expectedResponseType) {
+    public InstanceResponseType(Class<?> expectedResponseType) {
         this.expectedResponseType = expectedResponseType;
     }
 

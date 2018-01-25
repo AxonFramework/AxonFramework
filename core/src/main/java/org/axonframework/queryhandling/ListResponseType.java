@@ -10,9 +10,9 @@ import java.util.List;
  */
 public class ListResponseType<T> implements ResponseType<List<T>> {
 
-    private final Type expectedListGenericType;
+    private final Class<?> expectedListGenericType;
 
-    public ListResponseType(Type expectedListGenericType) {
+    public ListResponseType(Class<?> expectedListGenericType) {
         this.expectedListGenericType = expectedListGenericType;
     }
 
