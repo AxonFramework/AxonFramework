@@ -23,7 +23,7 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.ResponseTypes;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;

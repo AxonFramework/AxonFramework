@@ -1,4 +1,4 @@
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.responsetypes;
 
 import org.junit.*;
 
@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
-
 
 @SuppressWarnings("unused")
 public class InstanceResponseTypeTest<E> {
@@ -410,5 +409,4 @@ public class InstanceResponseTypeTest<E> {
     private static class ComplexTypedQueryResponse extends SubTypedQueryResponse implements QueryResponseInterface {
 
     }
-
 }

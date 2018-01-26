@@ -1,6 +1,7 @@
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.responsetypes;
 
 import com.coekie.gentyref.GenericTypeReflector;
+import org.axonframework.queryhandling.ResponseType;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;

@@ -1,9 +1,10 @@
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.responsetypes;
+
+import org.axonframework.queryhandling.ResponseType;
 
 import java.lang.reflect.Type;
 
 /**
- *
  * @param <T>
  * @author Steven van Beelen
  * @since 3.2

@@ -1,4 +1,4 @@
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.responsetypes;
 
 /**
  * TODO Dummy page for now, should get further implementation

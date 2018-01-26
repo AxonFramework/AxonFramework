@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;

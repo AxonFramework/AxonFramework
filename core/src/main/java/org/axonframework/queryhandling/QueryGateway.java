@@ -15,6 +15,8 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
