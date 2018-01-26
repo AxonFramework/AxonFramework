@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

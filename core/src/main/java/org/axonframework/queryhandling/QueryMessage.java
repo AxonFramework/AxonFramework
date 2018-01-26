@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 
 import java.util.Map;
 
@@ -60,5 +61,4 @@ public interface QueryMessage<T, R> extends Message<T> {
      * @return a copy of this message with the given additional MetaData
      */
     QueryMessage<T, R> andMetaData(Map<String, ?> additionalMetaData);
-
 }

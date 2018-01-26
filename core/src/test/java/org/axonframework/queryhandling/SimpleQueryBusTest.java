@@ -25,6 +25,8 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
 
 import java.util.Arrays;

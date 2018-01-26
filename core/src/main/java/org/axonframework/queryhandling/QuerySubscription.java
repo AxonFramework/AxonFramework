@@ -1,6 +1,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 
 import java.lang.reflect.Type;
 

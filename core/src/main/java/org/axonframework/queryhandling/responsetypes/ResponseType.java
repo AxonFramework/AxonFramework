@@ -1,4 +1,4 @@
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.responsetypes;
 
 import java.lang.reflect.Type;
 

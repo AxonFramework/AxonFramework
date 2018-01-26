@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 
 import java.util.concurrent.CompletableFuture;
@@ -55,7 +56,7 @@ public interface QueryGateway {
      *
      * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
@@ -71,7 +72,7 @@ public interface QueryGateway {
      * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
@@ -88,7 +89,7 @@ public interface QueryGateway {
      *
      * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
      * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
      * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
@@ -103,7 +104,7 @@ public interface QueryGateway {
      * asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
      * @param timeout      A timeout of {@code long} for the query
      * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}
@@ -121,7 +122,7 @@ public interface QueryGateway {
      *
      * @param queryName    A {@link java.lang.String} describing the query to be executed
      * @param query        The {@code query} to be sent
-     * @param responseType The {@link org.axonframework.queryhandling.ResponseType} used for this query
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
      * @param timeout      A timeout of {@code long} for the query
      * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}
      * @param <R>          The response class contained in the given {@code responseType}

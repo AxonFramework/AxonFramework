@@ -19,6 +19,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 
 import java.util.Map;
 
@@ -43,7 +44,8 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      * set to the fully qualified class name of the {@code payload}.
      *
      * @param payload      The payload expressing the query
-     * @param responseType The expected response type of type {@link org.axonframework.queryhandling.ResponseType}
+     * @param responseType The expected response type of type
+     *                     {@link org.axonframework.queryhandling.responsetypes.ResponseType}
      */
     public GenericQueryMessage(T payload, ResponseType<R> responseType) {
         this(payload, payload.getClass().getName(), responseType);
@@ -54,7 +56,8 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      *
      * @param payload      The payload expressing the query
      * @param queryName    The name identifying the query to execute
-     * @param responseType The expected response type of type {@link org.axonframework.queryhandling.ResponseType}
+     * @param responseType The expected response type of type
+     *                     {@link org.axonframework.queryhandling.responsetypes.ResponseType}
      */
     public GenericQueryMessage(T payload, String queryName, ResponseType<R> responseType) {
         this(new GenericMessage<>(payload, MetaData.emptyInstance()), queryName, responseType);
@@ -64,9 +67,10 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
      * Initialize the Query Message, using given {@code delegate} as the carrier of payload and metadata and given
      * {@code queryName} and expecting the given {@code responseType}.
      *
-     * @param delegate The message containing the payload and meta data for this message
+     * @param delegate     The message containing the payload and meta data for this message
      * @param queryName    The name identifying the query to execute
-     * @param responseType The expected response type of type {@link org.axonframework.queryhandling.ResponseType}
+     * @param responseType The expected response type of type
+     *                     {@link org.axonframework.queryhandling.responsetypes.ResponseType}
      */
     public GenericQueryMessage(Message<T> delegate, String queryName, ResponseType<R> responseType) {
         super(delegate);
