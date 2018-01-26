@@ -4,16 +4,14 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 /**
- * @param <T>
+ * @param <R>
  * @author Steven van Beelen
  * @since 3.2
  */
-public class ListResponseType<T> implements ResponseType<List<T>> {
-
-    private final Class<?> expectedListGenericType;
+public class ListResponseType<R> extends AbstractResponseType<List<R>> {
 
     public ListResponseType(Class<?> expectedListGenericType) {
-        this.expectedListGenericType = expectedListGenericType;
+        super(expectedListGenericType);
     }
 
     @Override
@@ -22,7 +20,7 @@ public class ListResponseType<T> implements ResponseType<List<T>> {
     }
 
     @Override
-    public List<T> convert(Object response) {
+    public List<R> convert(Object response) {
         return null;
     }
 }

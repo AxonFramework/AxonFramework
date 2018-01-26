@@ -3,16 +3,14 @@ package org.axonframework.queryhandling.responsetypes;
 import java.lang.reflect.Type;
 
 /**
- * @param <T>
+ * @param <R>
  * @author Steven van Beelen
  * @since 3.2
  */
-public class PageResponseType<T> implements ResponseType<Page<T>> {
-
-    private final Class<?> expectedPageGenericType;
+public class PageResponseType<R> extends AbstractResponseType<Page<R>> {
 
     public PageResponseType(Class<?> expectedPageGenericType) {
-        this.expectedPageGenericType = expectedPageGenericType;
+        super(expectedPageGenericType);
     }
 
     @Override
@@ -21,7 +19,7 @@ public class PageResponseType<T> implements ResponseType<Page<T>> {
     }
 
     @Override
-    public Page<T> convert(Object response) {
+    public Page<R> convert(Object response) {
         return null;
     }
 }
