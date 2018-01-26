@@ -15,15 +15,6 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
 
     @Override
     public boolean matches(Type responseType) {
-        return isCollectionOfExpectedType(responseType) ||
-                isArrayOfExpectedType(responseType) ||
-                isGenericArrayOfExpectedType(responseType) ||
-                isGenericAssignableFrom(responseType) ||
-                isAssignableFrom(responseType);
-    }
-
-    @Override
-    public R convert(Object response) {
-        return null;
+        return isGenericAssignableFrom(responseType) || isAssignableFrom(responseType);
     }
 }

@@ -45,13 +45,13 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsArrayOfProvidedType() throws NoSuchMethodException {
-        testMatches("someArrayQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsArrayOfProvidedType() throws NoSuchMethodException {
+        testMatches("someArrayQuery", DOES_NOT_MATCHES);
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsArrayWithSubTypeOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSubTypedArrayQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsArrayWithSubTypeOfProvidedType() throws NoSuchMethodException {
+        testMatches("someSubTypedArrayQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -65,14 +65,14 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsBoundedGenericArrayOfProvidedType() throws NoSuchMethodException {
-        testMatches("someBoundedGenericArrayQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericArrayOfProvidedType() throws NoSuchMethodException {
+        testMatches("someBoundedGenericArrayQuery", DOES_NOT_MATCHES);
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsMultiBoundedGenericArrayOfProvidedType()
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericArrayOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiBoundedGenericArrayQuery", MATCHES);
+        testMatches("someMultiBoundedGenericArrayQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -81,13 +81,13 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someListQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsListOfProvidedType() throws NoSuchMethodException {
+        testMatches("someListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsSubListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSubListQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsSubListOfProvidedType() throws NoSuchMethodException {
+        testMatches("someSubListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -96,8 +96,8 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsBoundedGenericListOfProvidedType() throws NoSuchMethodException {
-        testMatches("someBoundedGenericListQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericListOfProvidedType() throws NoSuchMethodException {
+        testMatches("someBoundedGenericListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -106,9 +106,9 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsMultiBoundedGenericListOfProvidedType()
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiBoundedGenericListQuery", MATCHES);
+        testMatches("someMultiBoundedGenericListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -127,9 +127,9 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsUpperBoundedWildcardListOfProvidedType()
+    public void testMatchesReturnsFalseIfResponseTypeIsUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someUpperBoundedWildcardListQuery", MATCHES);
+        testMatches("someUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -138,15 +138,15 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsGenericUpperBoundedWildcardListOfProvidedType()
+    public void testMatchesReturnsFalseIfResponseTypeIsGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someGenericUpperBoundedWildcardListQuery", MATCHES);
+        testMatches("someGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsMultiGenericUpperBoundedWildcardListOfProvidedType()
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiGenericUpperBoundedWildcardListOfProvidedType()
             throws NoSuchMethodException {
-        testMatches("someMultiGenericUpperBoundedWildcardListQuery", MATCHES);
+        testMatches("someMultiGenericUpperBoundedWildcardListQuery", DOES_NOT_MATCHES);
     }
 
     @Test
@@ -156,13 +156,13 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsSetOfProvidedType() throws NoSuchMethodException {
-        testMatches("someSetQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsSetOfProvidedType() throws NoSuchMethodException {
+        testMatches("someSetQuery", DOES_NOT_MATCHES);
     }
 
     @Test
-    public void testMatchesReturnsTrueIfResponseTypeIsStreamOfProvidedType() throws NoSuchMethodException {
-        testMatches("someStreamQuery", MATCHES);
+    public void testMatchesReturnsFalseIfResponseTypeIsStreamOfProvidedType() throws NoSuchMethodException {
+        testMatches("someStreamQuery", DOES_NOT_MATCHES);
     }
 
     @Test
