@@ -12,41 +12,41 @@ import java.util.List;
 public abstract class ResponseTypes {
 
     /**
-     * Specify the desire to retrieve a single instance of type {@code T} when performing a query.
+     * Specify the desire to retrieve a single instance of type {@code R} when performing a query.
      *
-     * @param type the {@code T} which is expected to be the response type
-     * @param <T>  the generic type of the instantiated
+     * @param type the {@code R} which is expected to be the response type
+     * @param <R>  the generic type of the instantiated
      *             {@link org.axonframework.queryhandling.responsetypes.ResponseType}
      * @return a {@link org.axonframework.queryhandling.responsetypes.ResponseType} specifying the desire to retrieve a
-     * single instance of type {@code T}
+     * single instance of type {@code R}
      */
-    public static <T> ResponseType<T> instanceOf(Class<T> type) {
+    public static <R> ResponseType<R> instanceOf(Class<R> type) {
         return new InstanceResponseType<>(type);
     }
 
     /**
-     * Specify the desire to retrieve a list of instances of type {@code T} when performing a query.
+     * Specify the desire to retrieve a collection of instances of type {@code R} when performing a query.
      *
-     * @param type the {@code T} which is expected to be the response type
-     * @param <T>  the generic type of the instantiated
+     * @param type the {@code R} which is expected to be the response type
+     * @param <R>  the generic type of the instantiated
      *             {@link org.axonframework.queryhandling.responsetypes.ResponseType}
      * @return a {@link org.axonframework.queryhandling.responsetypes.ResponseType} specifying the desire to retrieve a
-     * list of instances of type {@code T}
+     * collection of instances of type {@code R}
      */
-    public static <T> ResponseType<List<T>> listOf(Class<T> type) {
-        return new ListResponseType<>(type);
+    public static <R> ResponseType<List<R>> multipleInstancesOf(Class<R> type) {
+        return new MultipleInstancesResponseType<>(type);
     }
 
     /**
-     * Specify the desire to retrieve a page of instances of type {@code T} when performing a query.
+     * Specify the desire to retrieve a page of instances of type {@code R} when performing a query.
      *
-     * @param type the {@code T} which is expected to be the response type
-     * @param <T>  the generic type of the instantiated
+     * @param type the {@code R} which is expected to be the response type
+     * @param <R>  the generic type of the instantiated
      *             {@link org.axonframework.queryhandling.responsetypes.ResponseType}
      * @return a {@link org.axonframework.queryhandling.responsetypes.ResponseType} specifying the desire to retrieve a
-     * page of instances of type {@code T}
+     * page of instances of type {@code R}
      */
-    public static <T> ResponseType<Page<T>> pageOf(Class<T> type) {
+    public static <R> ResponseType<Page<R>> pageOf(Class<R> type) {
         return new PageResponseType<>(type);
     }
 

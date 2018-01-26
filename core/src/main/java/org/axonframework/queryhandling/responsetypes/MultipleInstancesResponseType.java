@@ -8,10 +8,10 @@ import java.util.List;
  * @author Steven van Beelen
  * @since 3.2
  */
-public class ListResponseType<R> extends AbstractResponseType<List<R>> {
+public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<R>> {
 
-    public ListResponseType(Class<?> expectedListGenericType) {
-        super(expectedListGenericType);
+    public MultipleInstancesResponseType(Class<?> expectedCollectionGenericType) {
+        super(expectedCollectionGenericType);
     }
 
     @Override
