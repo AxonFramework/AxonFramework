@@ -2,6 +2,11 @@ package org.axonframework.queryhandling.responsetypes;
 
 import org.junit.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+
 @SuppressWarnings("unused")
 public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
 
@@ -168,5 +173,19 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMapOfProvidedType() throws NoSuchMethodException {
         testMatches("someMapQuery", DOES_NOT_MATCHES);
+    }
+
+    @Test
+    public void testConvertReturnsSingleResponseAsIs() {
+        QueryResponse testResponse = new QueryResponse();
+
+        QueryResponse result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse, result);
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testConvertThrowsClassCastExceptionForMultipleInstanceResponse() {
+        testSubject.convert(new ArrayList<QueryResponse>());
     }
 }

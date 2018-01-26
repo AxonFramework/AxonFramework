@@ -24,7 +24,7 @@ public abstract class AbstractResponseTypeTest<R> {
     static final Boolean MATCHES = Boolean.TRUE;
     static final Boolean DOES_NOT_MATCHES = Boolean.FALSE;
 
-    private final ResponseType<R> testSubject;
+    protected final ResponseType<R> testSubject;
 
     protected AbstractResponseTypeTest(ResponseType<R> testSubject) {
         this.testSubject = testSubject;
