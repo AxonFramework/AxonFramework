@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -91,6 +94,15 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
         return Optional.ofNullable(activeStorage.readSnapshot(aggregateIdentifier).orElseGet(
                 () -> historicStorage.readSnapshot(aggregateIdentifier).orElse(null)));
+    }
+
+    @Override
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        Optional<Long> result = activeStorage.lastSequenceNumberFor(aggregateIdentifier);
+        if (result.isPresent()) {
+            return result;
+        }
+        return historicStorage.lastSequenceNumberFor(aggregateIdentifier);
     }
 
     private class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {

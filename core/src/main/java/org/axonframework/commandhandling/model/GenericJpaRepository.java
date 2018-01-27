@@ -23,10 +23,12 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -229,12 +231,18 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                                  format("Aggregate [%s] with identifier [%s] not found",
                                                         getAggregateType().getSimpleName(), aggregateIdentifier));
         }
-        return AnnotatedAggregate.initialize(aggregateRoot, aggregateModel(), eventBus);
+        AnnotatedAggregate<T> aggregate = AnnotatedAggregate.initialize(aggregateRoot, aggregateModel(), eventBus);
+        if (eventBus instanceof EventStore) {
+            Optional<Long> sequenceNumber = ((EventStore) eventBus).lastSequenceNumberFor(aggregateIdentifier);
+            sequenceNumber.ifPresent(aggregate::initSequence);
+        }
+        return aggregate;
     }
 
     @Override
     protected AnnotatedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
-        return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), eventBus);
+        // generate sequence numbers in events when using an Event Store
+        return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), eventBus, eventBus instanceof EventStore);
     }
 
     @Override

@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -116,4 +119,19 @@ public interface EventStorageEngine {
      * @return An optional with a snapshot of the aggregate
      */
     Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier);
+
+    /**
+     * Returns the last known sequence number for the given {@code aggregateIdentifier}.
+     * <p>
+     * While it's recommended to use the sequence numbers from the {@link DomainEventStream}, there are cases where
+     * knowing the sequence number is required, without having read the actual events. In such case, this method is a
+     * viable alternative.
+     *
+     * @param aggregateIdentifier The identifier to find the last sequence number for
+     * @return an optional with the highest sequence number, or an empty optional if the aggregate identifier wasn't
+     * found
+     */
+    default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber).max(Long::compareTo);
+    }
 }

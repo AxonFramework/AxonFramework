@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +30,8 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
@@ -39,6 +41,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -46,7 +49,8 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Rene de Waele
@@ -73,9 +77,17 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
+    public void testLoadLastSequenceNumber() {
+        String aggregateId = UUID.randomUUID().toString();
+        testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
+        assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
+        assertFalse(testSubject.lastSequenceNumberFor("inexistent").isPresent());
+    }
+
+    @Test
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
-    public void testCustomSchemaConfig() throws Exception {
+    public void testCustomSchemaConfig() {
         setTestSubject(testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
                                                   EventSchema.builder()
                                                              .withEventTable("CustomDomainEvent")
