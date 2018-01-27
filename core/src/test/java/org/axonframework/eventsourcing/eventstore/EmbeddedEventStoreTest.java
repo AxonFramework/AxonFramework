@@ -211,19 +211,18 @@ public class EmbeddedEventStoreTest {
     /* Reproduces issue reported in https://github.com/AxonFramework/AxonFramework/issues/485 */
     @Test
     public void testStreamEventsShouldNotReturnDuplicateTokens() throws InterruptedException {
-        testSubject.publish(createEvent());
-        newTestSubject(1, 1, 1);
+        newTestSubject(0, 1000, 1000);
         Stream mockStream = mock(Stream.class);
         Iterator mockIterator = mock(Iterator.class);
         when(mockStream.iterator()).thenReturn(mockIterator);
         when(storageEngine.readEvents(any(TrackingToken.class), eq(false)))
                 .thenReturn(mockStream);
         when(mockIterator.hasNext()).thenReturn(false, true);
-        when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(10), createEvent()));
+        when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1), createEvent()));
         TrackingEventStream stream = testSubject.openStream(null);
-        assertFalse(stream.hasNextAvailable());
+        assertFalse(stream.hasNextAvailable(10, MILLISECONDS));
         testSubject.publish(createEvent());
-        // if the stream correctly updates the token interally, it should not find events anymore
+        // if the stream correctly updates the token internally, it should not find events anymore
         assertFalse(stream.hasNextAvailable(10, MILLISECONDS));
     }
 
