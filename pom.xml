@@ -325,6 +325,7 @@
                 <version>2.5.3</version>
                 <configuration>
                     <mavenExecutorId>forked-path</mavenExecutorId>
+                    <goals>install</goals>
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
                 </configuration>

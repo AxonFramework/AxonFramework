@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
@@ -66,6 +67,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private final Map<Address, VersionedMember> members = new ConcurrentHashMap<>();
     private final String clusterName;
     private final RoutingStrategy routingStrategy;
+    private final ConsistentHashChangeListener consistentHashChangeListener;
     private final JChannel channel;
     private final AtomicReference<ConsistentHash> consistentHash = new AtomicReference<>(new ConsistentHash());
     private final AtomicInteger membershipVersion = new AtomicInteger(0);
@@ -105,11 +107,33 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      */
     public JGroupsConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer,
                             RoutingStrategy routingStrategy) {
+        this(localSegment, channel, clusterName, serializer, routingStrategy, ch -> {
+        });
+    }
+
+    /**
+     * Initialize the connector using the given {@code localSegment} to handle commands on the local node, and the given
+     * {@code channel} to connect between nodes. A unique {@code clusterName} should be chose to define which nodes can
+     * connect to each other. The given {@code serializer} is used to serialize messages when they are sent between
+     * nodes. The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
+     * respective handler nodes. The given {@code consistentHashChangeCallback} is notified when a change in membership
+     * has <em>potentially</em> caused a change in the consistent hash.
+     *
+     * @param localSegment                 The CommandBus implementation that handles the local Commands
+     * @param channel                      The JGroups Channel used to communicate between nodes
+     * @param clusterName                  The name of the Cluster
+     * @param serializer                   The serializer to serialize Command Messages with
+     * @param routingStrategy              The strategy for routing Commands to a Node
+     * @param consistentHashChangeListener The callback to invoke when the consistent hash has changed
+     */
+    public JGroupsConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer,
+                            RoutingStrategy routingStrategy, ConsistentHashChangeListener consistentHashChangeListener) {
         this.localSegment = localSegment;
         this.serializer = serializer;
         this.channel = channel;
         this.clusterName = clusterName;
         this.routingStrategy = routingStrategy;
+        this.consistentHashChangeListener = consistentHashChangeListener;
     }
 
     @Override
@@ -160,7 +184,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         String localName = localAddress.toString();
         SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
         members.put(localAddress, new VersionedMember(localMember, membershipVersion.getAndIncrement()));
-        consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
+        updateConsistentHash(ch -> ch.with(localMember, loadFactor, commandFilter));
     }
 
     /**
@@ -171,12 +195,12 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void getState(OutputStream ostream) throws Exception {
+    public void getState(OutputStream ostream) {
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void setState(InputStream istream) throws Exception {
+    public void setState(InputStream istream) {
     }
 
     @Override
@@ -197,7 +221,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             currentView = view;
             Address localAddress = channel.getAddress();
 
-            stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> {
+            stream(left).forEach(lm -> updateConsistentHash(ch -> {
                 VersionedMember member = members.get(lm);
                 if (member == null) {
                     return ch;
@@ -206,7 +230,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             }));
             stream(left).forEach(members::remove);
             stream(joined).filter(member -> !member.equals(localAddress))
-                    .forEach(member -> sendMyConfigurationTo(member, true, membershipVersion.get()));
+                          .forEach(member -> sendMyConfigurationTo(member, true, membershipVersion.get()));
         }
         currentView = view;
     }
@@ -325,7 +349,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
                     logger.info("Received outdated update. Discarding it.");
                     return;
                 }
-                consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
+                updateConsistentHash(ch -> ch.with(member, loadFactor, commandFilter));
             }
             if (joinMessage.isExpectReply() && !channel.getAddress().equals(message.getSrc())) {
                 sendMyConfigurationTo(member.endpoint(), false, membershipVersion.get());
@@ -343,6 +367,10 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             logger.warn("Received join message from '{}', but a connection with the sender has been lost.",
                         message.getSrc().toString());
         }
+    }
+
+    private void updateConsistentHash(UnaryOperator<ConsistentHash> consistentHashUpdate) {
+        consistentHashChangeListener.onConsistentHashChanged(consistentHash.updateAndGet(consistentHashUpdate));
     }
 
     private void sendMyConfigurationTo(Address endpoint, boolean expectReply, int order) {

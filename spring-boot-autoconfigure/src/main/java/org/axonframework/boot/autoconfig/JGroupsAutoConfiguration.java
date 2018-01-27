@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
@@ -76,7 +77,8 @@ public class JGroupsAutoConfiguration {
     @Bean
     public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(@Qualifier("messageSerializer") Serializer messageSerializer,
                                                                    @Qualifier("localSegment") CommandBus localSegment,
-                                                                   RoutingStrategy routingStrategy) {
+                                                                   RoutingStrategy routingStrategy,
+                                                                   @Autowired(required = false) ConsistentHashChangeListener consistentHashChangeListener) {
         System.setProperty("jgroups.tunnel.gossip_router_hosts", properties.getJgroups().getGossip().getHosts());
         System.setProperty("jgroups.bind_addr", String.valueOf(properties.getJgroups().getBindAddr()));
         System.setProperty("jgroups.bind_port", String.valueOf(properties.getJgroups().getBindPort()));
@@ -86,6 +88,9 @@ public class JGroupsAutoConfiguration {
         jGroupsConnectorFactoryBean.setLocalSegment(localSegment);
         jGroupsConnectorFactoryBean.setSerializer(messageSerializer);
         jGroupsConnectorFactoryBean.setConfiguration(properties.getJgroups().getConfigurationFile());
+        if (consistentHashChangeListener != null) {
+            jGroupsConnectorFactoryBean.setConsistentHashChangeListener(consistentHashChangeListener);
+        }
         jGroupsConnectorFactoryBean.setRoutingStrategy(routingStrategy);
         return jGroupsConnectorFactoryBean;
     }

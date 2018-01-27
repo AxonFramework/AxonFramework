@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,16 +19,16 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.runners.*;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -73,6 +74,8 @@ public class SpringCloudCommandRouterTest {
     private HashMap<String, String> serviceInstanceMetadata;
     @Mock
     private ServiceInstance serviceInstance;
+    @Mock
+    private ConsistentHashChangeListener consistentHashChangeListener;
 
     @Before
     public void setUp() throws Exception {
@@ -93,7 +96,8 @@ public class SpringCloudCommandRouterTest {
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
 
-        testSubject = new SpringCloudCommandRouter(discoveryClient, routingStrategy);
+        testSubject = new SpringCloudCommandRouter(discoveryClient, routingStrategy,
+                                                   s -> true, consistentHashChangeListener);
     }
 
     @Test
@@ -135,6 +139,17 @@ public class SpringCloudCommandRouterTest {
                      serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
         verify(discoveryClient, times(2)).getLocalServiceInstance();
+        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(new TypeSafeMatcher<ConsistentHash>() {
+            @Override
+            protected boolean matchesSafely(ConsistentHash item) {
+                return item.getMembers().stream().map(Member::name).anyMatch(i -> i.equals(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]"));
+            }
+
+            @Override
+            public void describeTo(Description description) {
+
+            }
+        }));
     }
 
     @Test
