@@ -16,7 +16,7 @@
 
 package org.axonframework.boot.autoconfig;
 
-import org.axonframework.boot.RegisterDefaultEntities;
+import org.axonframework.boot.util.RegisterDefaultEntities;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;

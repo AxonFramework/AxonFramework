@@ -25,7 +25,6 @@ import org.axonframework.common.property.Property;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -86,7 +85,9 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
                                                      T parentEntity,
                                                      Field field,
                                                      ForwardingMode eventForwardingMode) {
-        Collection<Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
-        return fieldValue == null ? Stream.empty() : eventForwardingMode.filterCandidates(message, fieldValue.stream());
+        Iterable<Object> fieldValue = ReflectionUtils.getFieldValue(field, parentEntity);
+        return fieldValue == null
+                ? Stream.empty()
+                : eventForwardingMode.filterCandidates(message, StreamSupport.stream(fieldValue.spliterator(), false));
     }
 }

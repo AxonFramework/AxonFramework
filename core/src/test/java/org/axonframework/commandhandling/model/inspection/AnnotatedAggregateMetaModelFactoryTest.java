@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -330,13 +331,13 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         private final String entityId;
 
         @AggregateMember
-        private final Collection<SomeRecursiveEntity> children;
+        private final SomeIterable<SomeRecursiveEntity> children;
 
         public SomeRecursiveEntity(Supplier<Collection<SomeRecursiveEntity>> supplier, SomeRecursiveEntity parent, String entityId) {
             this.supplier = supplier;
             this.parent = parent;
             this.entityId = entityId;
-            this.children = supplier.get();
+            this.children = new SomeIterable<>(supplier.get());
         }
         
         public SomeRecursiveEntity getChild(String childId) {
@@ -417,6 +418,48 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
         public String getId() {
             return id;
+        }
+    }
+
+    /**
+     * Wrapper implementation to ensure that the @AggregateMember field is solely triggered by the fact it implements
+     * Iterable, and doesn't depend on any other interface being declared. See issue #461.
+     *
+     * @param <T> The type contained in this iterable
+     */
+    private static class SomeIterable<T> implements Iterable<T> {
+
+        private final Collection<T> contents;
+
+        public SomeIterable(Collection<T> contents) {
+            this.contents = contents;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return contents.iterator();
+        }
+
+        @Override
+        public void forEach(Consumer<? super T> action) {
+            contents.forEach(action);
+        }
+
+        @Override
+        public Spliterator<T> spliterator() {
+            return contents.spliterator();
+        }
+
+        public boolean add(T item) {
+            return contents.add(item);
+        }
+
+        public boolean remove(T item) {
+            return contents.remove(item);
+        }
+
+        public int size() {
+            return contents.size();
         }
     }
 }

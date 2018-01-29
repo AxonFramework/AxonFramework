@@ -26,21 +26,20 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.serialization.SerializationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
+import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
@@ -56,6 +55,7 @@ public class TrackingEventProcessorTest {
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
+    private List<Long> sleepInstructions;
 
     static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
         return new TrackingEventStream() {
@@ -104,7 +104,15 @@ public class TrackingEventProcessorTest {
         when(mockListener.canHandle(any())).thenReturn(true);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
+        sleepInstructions = new ArrayList<>();
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE) {
+            @Override
+            protected void doSleepFor(long millisToSleep) {
+                if (isRunning()) {
+                    sleepInstructions.add(millisToSleep);
+                }
+            }
+        };
     }
 
     @After
@@ -125,6 +133,40 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testProcessorStopsOnNonTransientExceptionWhenLoadingToken() {
+        when(tokenStore.fetchToken("test", 0)).thenThrow(new SerializationException("Faking a serialization issue"));
+
+        testSubject.start();
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse("Expected processor to have stopped", testSubject.isRunning()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue("Expected processor to set the error flag", testSubject.isError()));
+        assertEquals(Collections.emptyList(), sleepInstructions);
+    }
+
+    @Test
+    public void testProcessorRetriesOnTransientExceptionWhenLoadingToken() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        when(tokenStore.fetchToken("test", 0)).thenThrow(new RuntimeException("Faking a recoverable issue"))
+                                              .thenCallRealMethod();
+
+        testSubject.start();
+
+        // give it a bit of time to start
+        Thread.sleep(200);
+        eventBus.publish(createEvent());
+
+        assertTrue("Expected listener to have received published event", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(testSubject.isRunning());
+        assertFalse(testSubject.isError());
+        assertEquals(Collections.singletonList(5000L), sleepInstructions);
     }
 
     @Test

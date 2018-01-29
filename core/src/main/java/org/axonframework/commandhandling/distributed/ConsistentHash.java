@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.digest.Digester;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -34,16 +35,64 @@ import java.util.function.Predicate;
 public class ConsistentHash {
 
     private final SortedMap<String, ConsistentHashMember> hashToMember;
+    private final int modCount;
+    private final Function<String, String> hashFunction;
+    private final Map<String, ConsistentHashMember> members;
 
     /**
      * Initializes a new {@link ConsistentHash}. To register members use {@link #with(Member, int, Predicate)}.
      */
     public ConsistentHash() {
-        hashToMember = Collections.emptySortedMap();
+        this(ConsistentHash::hash);
     }
 
-    private ConsistentHash(SortedMap<String, ConsistentHashMember> hashed) {
-        hashToMember = hashed;
+    /**
+     * Initializes a new {@link ConsistentHash} using the given {@code hashFunction} to calculate positions for each
+     * member on the ring. To register members use {@link #with(Member, int, Predicate)}.
+     *
+     * @param hashFunction The hash function to use to calculate each member's positions on the ring
+     */
+    public ConsistentHash(Function<String, String> hashFunction) {
+        hashToMember = Collections.emptySortedMap();
+        members = Collections.emptyMap();
+        modCount = 0;
+        this.hashFunction = hashFunction;
+    }
+
+    private ConsistentHash(Map<String, ConsistentHashMember> members,
+                           Function<String, String> hashFunction, int modCount) {
+        this.hashFunction = hashFunction;
+        this.modCount = modCount;
+        this.hashToMember = new TreeMap<>();
+        this.members = members;
+        members.values().forEach(m -> m.hashes().forEach(h -> hashToMember.put(h, m)));
+    }
+
+    /**
+     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
+     *
+     * @param routingKey the routing key to hash
+     * @return a hash of the input key
+     */
+    protected static String hash(String routingKey) {
+        return Digester.md5Hex(routingKey);
+    }
+
+    /**
+     * Returns the collection of nodes, represented as {@link ConsistentHashMember}, in the order they would be
+     * considered for the given routing key. Whether a CommandMessage would be forwarded to each of the candidates,
+     * depends on the Command Filter of each node.
+     *
+     * @param routingKey The routing key to select ordering
+     * @return A collection containing each of the nodes, in the order they would be considered
+     */
+    public Collection<ConsistentHashMember> getEligibleMembers(String routingKey) {
+        String hash = hash(routingKey);
+        Collection<ConsistentHashMember> tail = hashToMember.tailMap(hash).values();
+        Collection<ConsistentHashMember> head = hashToMember.headMap(hash).values();
+        LinkedHashSet<ConsistentHashMember> combined = new LinkedHashSet<>(tail);
+        combined.addAll(head);
+        return combined;
     }
 
     /**
@@ -67,16 +116,6 @@ public class ConsistentHash {
         return foundMember;
     }
 
-    /**
-     * Returns the hash of the given {@code routingKey}. By default this creates a MD5 hash with hex encoding.
-     *
-     * @param routingKey the routing key to hash
-     * @return a hash of the input key
-     */
-    protected static String hash(String routingKey) {
-        return Digester.md5Hex(routingKey);
-    }
-
     private Optional<Member> findSuitableMember(CommandMessage<?> commandMessage,
                                                 Iterator<Map.Entry<String, ConsistentHashMember>> iterator) {
         while (iterator.hasNext()) {
@@ -94,7 +133,7 @@ public class ConsistentHash {
      * @return the members of this consistent hash
      */
     public Set<Member> getMembers() {
-        return Collections.unmodifiableSet(new HashSet<>(hashToMember.values()));
+        return new HashSet<>(members.values());
     }
 
     /**
@@ -113,14 +152,14 @@ public class ConsistentHash {
         Assert.notNull(member, () -> "Member may not be null");
 
         ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);
-        if (getMembers().contains(newMember)) {
+        if (members.containsKey(member.name()) && newMember.equals(members.get(member.name()))) {
             return this;
         }
 
-        SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
-        newMember.hashes().forEach(h -> members.put(h, newMember));
+        Map<String, ConsistentHashMember> newMembers = new TreeMap<>(members);
+        newMembers.put(member.name(), newMember);
 
-        return new ConsistentHash(members);
+        return new ConsistentHash(newMembers, hashFunction, modCount + 1);
     }
 
     /**
@@ -131,13 +170,13 @@ public class ConsistentHash {
      */
     public ConsistentHash without(Member member) {
         Assert.notNull(member, () -> "Member may not be null");
-        SortedMap<String, ConsistentHashMember> newHashes = new TreeMap<>();
-        this.hashToMember.forEach((h, v) -> {
-            if (!Objects.equals(v.name(), member.name())) {
-                newHashes.put(h, v);
-            }
-        });
-        return new ConsistentHash(newHashes);
+        if (!members.containsKey(member.name())) {
+            return this;
+        }
+
+        Map<String, ConsistentHashMember> newMembers = new TreeMap<>(members);
+        newMembers.remove(member.name());
+        return new ConsistentHash(newMembers, hashFunction, modCount + 1);
     }
 
     @Override
@@ -155,6 +194,27 @@ public class ConsistentHash {
     @Override
     public int hashCode() {
         return Objects.hash(hashToMember);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("ConsistentHash [");
+        Collection<ConsistentHashMember> members = this.members.values();
+        members.forEach(m -> sb.append(m.toString()).append(","));
+        if (!members.isEmpty()) {
+            sb.delete(sb.length() - 1, sb.length());
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    /**
+     * Returns the version of this consistent hash instance. The version is increased by one each time a change is made.
+     *
+     * @return the version of this consistent hash instance
+     */
+    public int version() {
+        return modCount;
     }
 
     /**
@@ -202,6 +262,15 @@ public class ConsistentHash {
         }
 
         /**
+         * Returns this member's filter describing the commands it supports
+         *
+         * @return the filter that describes this member's supported commands
+         */
+        public Predicate<? super CommandMessage<?>> getCommandFilter() {
+            return commandFilter;
+        }
+
+        /**
          * Returns the hashes covered by the member. If the hash of the routing key matches with one of the returned
          * hashes and the member is capable of handling the command then it will be selected as a target for the
          * command.
@@ -243,19 +312,8 @@ public class ConsistentHash {
 
         @Override
         public String toString() {
-            return member.name() + "("+ segmentCount +")";
+            return member.name() + "(" + segmentCount + ")";
         }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("ConsistentHash [");
-        Set<ConsistentHashMember> members = new TreeSet<>(Comparator.comparing(ConsistentHashMember::name));
-        members.addAll(this.hashToMember.values());
-        members.forEach(m -> sb.append(m.toString()).append(","));
-        sb.delete(sb.length() - 1, sb.length());
-        sb.append("]");
-        return sb.toString();
     }
 }
 

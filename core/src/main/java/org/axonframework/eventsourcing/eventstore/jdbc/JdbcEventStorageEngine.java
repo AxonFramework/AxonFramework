@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,14 +26,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -48,12 +42,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -258,6 +247,20 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         });
     }
 
+    @Override
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        String sql = "SELECT max(" + schema.sequenceNumberColumn() + ") FROM " + schema.domainEventTable() + " WHERE " + schema.aggregateIdentifierColumn() + " = ?";
+        return Optional.ofNullable(transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(), connection -> {
+                                       PreparedStatement stmt = connection.prepareStatement(sql);
+                                       stmt.setString(1, aggregateIdentifier);
+                                       return stmt;
+                                   }, resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null,
+                                   e -> new EventStoreException(
+                                           format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
+                                   ))));
+    }
+
     /**
      * Creates a statement to append the given {@code snapshot} to the event storage using given {@code connection} to
      * the database. Use the given {@code serializer} to serialize the payload and metadata of the event.
@@ -266,7 +269,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param snapshot   The snapshot to append.
      * @param serializer The serializer that should be used when serializing the event's payload and metadata.
      * @return A {@link PreparedStatement} that appends the snapshot when executed.
-     *
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
@@ -297,7 +299,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection          The connection to the database.
      * @param aggregateIdentifier The identifier of the aggregate whose snapshots to delete.
      * @return A {@link PreparedStatement} that deletes all the aggregate's snapshots when executed.
-     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier, long sequenceNumber)
@@ -423,7 +424,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param identifier          The identifier of the aggregate.
      * @param firstSequenceNumber The expected sequence number of the first returned entry.
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
-     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
 
@@ -452,7 +452,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param lastToken  Object describing the global index of the last processed event or {@code null} to return all
      *                   entries in the store.
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
-     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken,
@@ -489,7 +488,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection The connection to the database.
      * @param identifier The aggregate identifier.
      * @return A {@link PreparedStatement} that returns the last snapshot entry of the aggregate (if any) when executed.
-     *
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement readSnapshotData(Connection connection, String identifier) throws SQLException {
@@ -506,7 +504,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param resultSet     The results of a query for tracked events.
      * @param previousToken The last known token of the tracker before obtaining this result set.
      * @return The next tracked event.
-     *
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected TrackedEventData<?> getTrackedEventData(ResultSet resultSet,
@@ -552,7 +549,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet The results of a query for domain events of an aggregate.
      * @return The next domain event.
-     *
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
@@ -572,7 +568,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *
      * @param resultSet The results of a query for a snapshot of an aggregate.
      * @return The next snapshot data.
-     *
      * @throws SQLException when an exception occurs while creating the event data.
      */
     protected DomainEventData<?> getSnapshotData(ResultSet resultSet) throws SQLException {
@@ -594,7 +589,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param resultSet  The resultSet containing the stored data.
      * @param columnName The name of the column containing the timestamp.
      * @return an object describing the timestamp.
-     *
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
@@ -621,7 +615,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param resultSet  The resultSet containing the stored data.
      * @param columnName The name of the column containing the payload.
      * @return an object describing the serialized data.
-     *
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     @SuppressWarnings("unchecked")

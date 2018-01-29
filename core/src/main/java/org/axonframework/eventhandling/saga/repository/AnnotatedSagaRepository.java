@@ -124,7 +124,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
     @Override
     public AnnotatedSaga<T> doLoad(String sagaIdentifier) {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
+        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+        UnitOfWork<?> processRoot = unitOfWork.root();
 
         AnnotatedSaga<T> loadedSaga = managedSagas.computeIfAbsent(sagaIdentifier, id -> {
             AnnotatedSaga<T> result = doLoadSaga(sagaIdentifier);

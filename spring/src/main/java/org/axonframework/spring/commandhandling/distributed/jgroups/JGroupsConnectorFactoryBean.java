@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.jgroups.commandhandling.ConnectionFailedException;
 import org.axonframework.jgroups.commandhandling.JChannelFactory;
@@ -63,9 +64,10 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
     private long joinTimeout = -1;
     private boolean registerMBean = false;
     private RoutingStrategy routingStrategy = new AnnotationRoutingStrategy();
+    private ConsistentHashChangeListener consistentHashChangeListener = newConsistentHash -> {/* noop*/};
 
     @Override
-    public JGroupsConnector getObject() throws Exception {
+    public JGroupsConnector getObject() {
         return connector;
     }
 
@@ -103,7 +105,8 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
 
     protected JGroupsConnector instantiateConnector(CommandBus localSegment, JChannel channel, String clusterName,
                                                     Serializer serializer, RoutingStrategy routingStrategy) {
-        return new JGroupsConnector(localSegment, channel, clusterName, serializer, routingStrategy);
+        return new JGroupsConnector(localSegment, channel, clusterName, serializer, routingStrategy,
+                                    consistentHashChangeListener);
     }
 
     /**
@@ -276,5 +279,9 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+    }
+
+    public void setConsistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
+        this.consistentHashChangeListener = consistentHashChangeListener;
     }
 }

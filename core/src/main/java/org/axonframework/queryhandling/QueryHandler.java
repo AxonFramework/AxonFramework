@@ -16,13 +16,13 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.annotation.MessageHandler;
-import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 
 import java.lang.annotation.*;
 
 /**
  * Marker annotation to mark any method on an object as being a QueryHandler. Use the {@link
- * AnnotationQueryHandlerAdapter} to subscribe the annotated class to the query bus.
+ * org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter AnnotationQueryHandlerAdapter} to subscribe
+ * the annotated class to the query bus.
  * <p>
  * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may
  * specify a second parameter of type {@link org.axonframework.messaging.MetaData}. The active MetaData will be

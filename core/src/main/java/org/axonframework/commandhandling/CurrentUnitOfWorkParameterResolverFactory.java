@@ -42,11 +42,14 @@ public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResol
 
     @Override
     public Object resolveParameterValue(Message message) {
+        if (!CurrentUnitOfWork.isStarted()) {
+            return null;
+        }
         return CurrentUnitOfWork.get();
     }
 
     @Override
     public boolean matches(Message message) {
-        return CurrentUnitOfWork.isStarted();
+        return true;
     }
 }

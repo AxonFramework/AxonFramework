@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
+
+import java.util.Optional;
 
 /**
  * Provides a mechanism to open streams from events in the the underlying event storage.
@@ -77,4 +79,19 @@ public interface EventStore extends EventBus {
      * @param snapshot The snapshot to replace part of the DomainEventStream.
      */
     void storeSnapshot(DomainEventMessage<?> snapshot);
+
+    /**
+     * Returns the last known sequence number of an Event for the given {@code aggregateIdentifier}.
+     * <p>
+     * It is preferred to retrieve the last known sequence number from the Domain Event Stream when sourcing an
+     * Aggregate from events. However, this method provides an alternative in cases no events have been read. For
+     * example when using state storage.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate to find the highest sequence for
+     * @return An optional containing the highest sequence number found, or an empty optional is no events are found
+     * for this aggregate
+     */
+    default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber).max(Long::compareTo);
+    }
 }

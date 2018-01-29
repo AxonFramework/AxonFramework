@@ -96,6 +96,29 @@ public class AssociationValueMap {
         mappings.clear();
     }
 
+    /**
+     * Indicates whether any elements are contained within this map.
+     *
+     * @return {@code true} if this Map is empty, {@code false} if it contains any associations.
+     */
+    public boolean isEmpty() {
+        return mappings.isEmpty();
+    }
+
+    /**
+     * Returns an approximation of the size of this map. Due to the concurrent nature of this map, size cannot return
+     * an
+     * accurate value.
+     * <p/>
+     * This is not a constant-time operation. The backing store of this map requires full traversal of elements to
+     * calculate this size.
+     *
+     * @return an approximation of the number of elements in this map
+     */
+    public int size() {
+        return mappings.size();
+    }
+
     private static final class SagaAssociationValue {
 
         private final AssociationValue associationValue;
@@ -127,29 +150,6 @@ public class AssociationValueMap {
         public String getSagaType() {
             return sagaType;
         }
-    }
-
-    /**
-     * Indicates whether any elements are contained within this map.
-     *
-     * @return {@code true} if this Map is empty, {@code false} if it contains any associations.
-     */
-    public boolean isEmpty() {
-        return mappings.isEmpty();
-    }
-
-    /**
-     * Returns an approximation of the size of this map. Due to the concurrent nature of this map, size cannot return
-     * an
-     * accurate value.
-     * <p/>
-     * This is not a constant-time operation. The backing store of this map requires full traversal of elements to
-     * calculate this size.
-     *
-     * @return an approximation of the number of elements in this map
-     */
-    public int size() {
-        return mappings.size();
     }
 
     private static class AssociationValueComparator implements Comparator<SagaAssociationValue>, Serializable {

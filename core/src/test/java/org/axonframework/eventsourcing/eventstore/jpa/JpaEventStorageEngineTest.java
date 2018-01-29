@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,39 +23,39 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.EventData;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 import java.util.stream.LongStream;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
 
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Rene de Waele
@@ -98,6 +99,14 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
         assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    @Test
+    public void testLoadLastSequenceNumber() {
+        testSubject.appendEvents(createEvents(2));
+        entityManager.clear();
+        assertEquals(1L, (long) testSubject.lastSequenceNumberFor(AGGREGATE).orElse(-1L));
+        assertFalse(testSubject.lastSequenceNumberFor(UUID.randomUUID().toString()).isPresent());
     }
 
     @Test
@@ -160,7 +169,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         List<Long> gaps = LongStream.range(-50, largestIndex).boxed()
                                     .filter(g -> !sequences.contains(g))
                                     .filter(g -> g < secondLastEventIndex)
-                                    .collect(Collectors.toList());
+                                    .collect(toList());
         List<? extends TrackedEventData<?>> events = testSubject.fetchTrackedEvents(
                 GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps), 100
         );
@@ -193,7 +202,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Test
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
-    public void testStoreEventsWithCustomEntity() throws Exception {
+    public void testStoreEventsWithCustomEntity() {
         XStreamSerializer serializer = new XStreamSerializer();
         testSubject = new JpaEventStorageEngine(
                 serializer, NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, serializer, 100,
@@ -232,6 +241,37 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().getPayload());
     }
 
+    @Test
+    public void testEventsWithUnknownPayloadTypeAreSkipped() throws InterruptedException {
+        String expectedPayloadOne = "Payload3";
+        String expectedPayloadTwo = "Payload4";
+        List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
+
+        int testBatchSize = 2;
+        testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, testBatchSize);
+        EmbeddedEventStore testEventStore = new EmbeddedEventStore(testSubject);
+
+        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
+                                 createEvent(AGGREGATE, 2, "Payload2"));
+        // Update events which will be part of the first batch to an unknown payload type
+        entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
+                     .executeUpdate();
+        testSubject.appendEvents(createEvent(AGGREGATE, 3, expectedPayloadOne),
+                                 createEvent(AGGREGATE, 4, expectedPayloadTwo));
+
+        List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
+                                                           .map(m -> (String) m.getPayload())
+                                                           .collect(toList());
+        assertEquals(expected, eventStorageEngineResult);
+
+        TrackingEventStream eventStoreResult = testEventStore.openStream(null);
+
+        assertTrue(eventStoreResult.hasNextAvailable());
+        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
+        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
+        assertFalse(eventStoreResult.hasNextAvailable());
+    }
+
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
@@ -244,10 +284,17 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver) {
+        return createEngine(upcasterChain, persistenceExceptionResolver, 100);
+    }
+
+    protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
+                                                 PersistenceExceptionResolver persistenceExceptionResolver,
+                                                 int batchSize) {
         XStreamSerializer serializer = new XStreamSerializer();
         return new JpaEventStorageEngine(
-                serializer, upcasterChain, persistenceExceptionResolver, serializer, 100, entityManagerProvider,
+                serializer, upcasterChain, persistenceExceptionResolver, serializer, batchSize, entityManagerProvider,
                 NoTransactionManager.INSTANCE, 1L, 10000, true
         );
     }
+
 }

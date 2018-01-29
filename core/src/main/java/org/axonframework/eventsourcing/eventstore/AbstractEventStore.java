@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,9 +104,9 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      */
     protected Stream<? extends DomainEventMessage<?>> stagedDomainEventMessages(String aggregateIdentifier) {
         return queuedMessages().stream()
-                .filter(m -> m instanceof DomainEventMessage)
-                .map(m -> (DomainEventMessage<?>) m)
-                .filter(m -> aggregateIdentifier.equals(m.getAggregateIdentifier()));
+                               .filter(m -> m instanceof DomainEventMessage)
+                               .map(m -> (DomainEventMessage<?>) m)
+                               .filter(m -> aggregateIdentifier.equals(m.getAggregateIdentifier()));
     }
 
     @Override
@@ -129,5 +129,16 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      */
     protected EventStorageEngine storageEngine() {
         return storageEngine;
+    }
+
+    @Override
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
+        Optional<Long> highestStaged = stagedDomainEventMessages(aggregateIdentifier)
+                .map(DomainEventMessage::getSequenceNumber)
+                .max(Long::compareTo);
+        if (highestStaged.isPresent()) {
+            return highestStaged;
+        }
+        return storageEngine.lastSequenceNumberFor(aggregateIdentifier);
     }
 }

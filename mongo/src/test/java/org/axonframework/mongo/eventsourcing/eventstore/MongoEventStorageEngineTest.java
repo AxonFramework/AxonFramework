@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +29,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
-import org.junit.runner.*;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +40,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 
 /**
@@ -110,6 +113,15 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
         testSubject.storeSnapshot(createEvent(2));
 
         assertEquals(1, mongoTemplate.snapshotCollection().count());
+    }
+
+    @Test
+    public void testFetchHighestSequenceNumber() {
+        testSubject.appendEvents(createEvent(0), createEvent(1));
+        testSubject.appendEvents(createEvent(2));
+
+        assertEquals(2, (long) testSubject.lastSequenceNumberFor(AGGREGATE).get());
+        assertFalse(testSubject.lastSequenceNumberFor("notexist").isPresent());
     }
 
     @Override

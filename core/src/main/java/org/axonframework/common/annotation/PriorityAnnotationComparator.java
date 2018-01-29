@@ -18,6 +18,7 @@ package org.axonframework.common.annotation;
 
 import org.axonframework.common.Priority;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.Comparator;
 
 /**
@@ -48,11 +49,12 @@ public class PriorityAnnotationComparator<T> implements Comparator<T> {
 
     @Override
     public int compare(T o1, T o2) {
-        Priority annotation1 = o1.getClass().getAnnotation(Priority.class);
-        Priority annotation2 = o2.getClass().getAnnotation(Priority.class);
-        int priority1 = annotation1 == null ? Priority.NEUTRAL : annotation1.value();
-        int priority2 = annotation2 == null ? Priority.NEUTRAL : annotation2.value();
+        return Integer.compare(getPriority(o2.getClass()), getPriority(o1.getClass()));
+    }
 
-        return (priority1 > priority2) ? -1 : ((priority2 == priority1) ? 0 : 1);
+    private int getPriority(AnnotatedElement annotatedElement) {
+        return AnnotationUtils.findAnnotationAttributes(annotatedElement, Priority.class)
+                              .map(m -> (int) m.get("priority"))
+                              .orElse(Priority.NEUTRAL);
     }
 }
