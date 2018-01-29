@@ -3,12 +3,10 @@ package org.axonframework.queryhandling.responsetypes;
 import org.junit.*;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
-@SuppressWarnings("unused")
-public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
+public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractResponseTypeTest.QueryResponse> {
 
     public InstanceResponseTypeTest() {
         super(new InstanceResponseType<>(QueryResponse.class));
@@ -70,7 +68,8 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
     }
 
     @Test
-    public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericArrayOfProvidedType() throws NoSuchMethodException {
+    public void testMatchesReturnsFalseIfResponseTypeIsBoundedGenericArrayOfProvidedType()
+            throws NoSuchMethodException {
         testMatches("someBoundedGenericArrayQuery", DOES_NOT_MATCHES);
     }
 
@@ -193,11 +192,13 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
         assertEquals(testResponse, result);
     }
 
+    @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForDifferentSingleInstanceResponse() {
         QueryResponse result = testSubject.convert(new QueryResponseInterface() {});
     }
 
+    @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForMultipleInstanceResponse() {
         QueryResponse result = testSubject.convert(new ArrayList<QueryResponse>());
