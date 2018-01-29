@@ -184,8 +184,22 @@ public class InstanceResponseTypeTest<E> extends AbstractResponseTypeTest<Abstra
         assertEquals(testResponse, result);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test
+    public void testConvertReturnsSingleResponseAsIsForSubTypedResponse() {
+        SubTypedQueryResponse testResponse = new SubTypedQueryResponse();
+
+        QueryResponse result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse, result);
+    }
+
+    @Test(expected = Exception.class)
+    public void testConvertThrowsClassCastExceptionForDifferentSingleInstanceResponse() {
+        QueryResponse result = testSubject.convert(new QueryResponseInterface() {});
+    }
+
+    @Test(expected = Exception.class)
     public void testConvertThrowsClassCastExceptionForMultipleInstanceResponse() {
-        testSubject.convert(new ArrayList<QueryResponse>());
+        QueryResponse result = testSubject.convert(new ArrayList<QueryResponse>());
     }
 }
