@@ -22,7 +22,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -32,17 +31,17 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 3.2
  */
-public class GenericQueryResponseMessage<T> extends MessageDecorator<Collection<T>> implements QueryResponseMessage<T> {
+public class GenericQueryResponseMessage<T> extends MessageDecorator<T> implements QueryResponseMessage<T> {
 
     private static final long serialVersionUID = -735698768536456937L;
 
     /**
-     * Initialize the response message with given {@code results}.
+     * Initialize the response message with given {@code result}.
      *
-     * @param results The results reported by the Query Handler
+     * @param result The result reported by the Query Handler
      */
-    public GenericQueryResponseMessage(Collection<T> results) {
-        this(results, MetaData.emptyInstance());
+    public GenericQueryResponseMessage(T result) {
+        this(result, MetaData.emptyInstance());
     }
 
     /**
@@ -51,7 +50,7 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<Collection<
      * @param results  The results reported by the Query Handler
      * @param metaData The meta data to contain in the message
      */
-    public GenericQueryResponseMessage(Collection<T> results, Map<String, ?> metaData) {
+    public GenericQueryResponseMessage(T results, Map<String, ?> metaData) {
         super(new GenericMessage<>(results, metaData));
     }
 
@@ -64,7 +63,7 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<Collection<
      *
      * @param delegate The message to retrieve message details from
      */
-    public GenericQueryResponseMessage(Message<Collection<T>> delegate) {
+    public GenericQueryResponseMessage(Message<T> delegate) {
         super(delegate);
     }
 
@@ -83,7 +82,7 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<Collection<
         if (result instanceof QueryResponseMessage) {
             return (QueryResponseMessage<R>) result;
         } else {
-            return new GenericQueryResponseMessage<>(CollectionUtils.asCollection(result));
+            return new GenericQueryResponseMessage(result);
         }
     }
 
