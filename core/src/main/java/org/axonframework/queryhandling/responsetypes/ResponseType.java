@@ -1,5 +1,6 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import java.io.Serializable;
 import java.lang.reflect.Type;
 
 /**
@@ -18,7 +19,7 @@ import java.lang.reflect.Type;
  * @author Steven van Beelen
  * @since 3.2
  */
-public interface ResponseType<R> {
+public interface ResponseType<R> extends Serializable {
 
     /**
      * Match the query handler its response {@link java.lang.reflect.Type} with the {@link ResponseType} implementation
