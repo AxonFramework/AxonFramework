@@ -51,17 +51,16 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Override
     public <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType) {
-//        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)))
-//                       .thenApply(QueryResponseMessage::getResults);
-        return null;
+        return queryBus.query(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)))
+                       .thenApply(QueryResponseMessage::getPayload);
     }
 
     @Override
     public <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
                                           TimeUnit timeUnit) {
-//        return queryBus.scatterGather(processInterceptors(new GenericQueryMessage<>(query, queryName, responseType)), timeout, timeUnit)
-//                       .map(QueryResponseMessage::getResults);
-        return null;
+        GenericQueryMessage<Q, R> queryMessage = new GenericQueryMessage<>(query, queryName, responseType);
+        return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
+                       .map(QueryResponseMessage::getPayload);
     }
 
     @SuppressWarnings("unchecked")

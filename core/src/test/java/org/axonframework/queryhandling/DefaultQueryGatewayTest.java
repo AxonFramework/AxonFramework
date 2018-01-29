@@ -22,7 +22,6 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
 
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -37,15 +36,15 @@ import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
 
-    private MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor;
     private QueryBus mockBus;
     private DefaultQueryGateway testSubject;
     private QueryResponseMessage<String> answer;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        answer = new GenericQueryResponseMessage<>(Collections.singleton("answer"));
-        mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
+        answer = new GenericQueryResponseMessage<>("answer");
+        MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
         testSubject = new DefaultQueryGateway(mockBus, mockDispatchInterceptor);
         when(mockDispatchInterceptor.handle(isA(QueryMessage.class))).thenAnswer(i -> i.getArguments()[0]);
@@ -96,6 +95,7 @@ public class DefaultQueryGatewayTest {
         }), eq(1L), eq(TimeUnit.SECONDS));
     }
 
+    @SuppressWarnings("unused")
     private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
     }
