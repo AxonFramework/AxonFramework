@@ -256,7 +256,7 @@ public class SimpleQueryBus implements QueryBus {
             QueryMessage<Q, R> queryMessage) {
         ResponseType<R> responseType = queryMessage.getResponseType();
 
-        return subscriptions.get(queryMessage.getQueryName())
+        return subscriptions.getOrDefault(queryMessage.getQueryName(), new CopyOnWriteArrayList<>())
                             .stream()
                             .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
                             .map((Function<QuerySubscription, MessageHandler>) QuerySubscription::getQueryHandler)
