@@ -83,7 +83,6 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
         return queryName;
     }
 
-
     @Override
     public ResponseType<R> getResponseType() {
         return responseType;
