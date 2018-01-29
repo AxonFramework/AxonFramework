@@ -10,13 +10,25 @@ import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 
 /**
+ * Abstract implementation of the {@link org.axonframework.queryhandling.responsetypes.ResponseType} which contains
+ * match functions for the majority of the {@link java.lang.reflect.Type} options available.
+ * Proves useful for reuse among ResponseType implementations.
  *
- * @param <R>
+ * @param <R> The response type which will be matched against and converted to
+ * @author Steven van Beelen
+ * @since 3.2
  */
 public abstract class AbstractResponseType<R> implements ResponseType<R> {
 
     protected final Class<?> expectedResponseType;
 
+    /**
+     * Instantiate a {@link org.axonframework.queryhandling.responsetypes.ResponseType} with the given
+     * {@code expectedResponseType} as the type to be matched against and to which the query response should be converted
+     * to.
+     *
+     * @param expectedResponseType the response type which is expected to be matched against and returned
+     */
     protected AbstractResponseType(Class<?> expectedResponseType) {
         this.expectedResponseType = expectedResponseType;
     }
@@ -82,5 +94,4 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     protected boolean isAssignableFrom(Type responseType) {
         return responseType instanceof Class && expectedResponseType.isAssignableFrom((Class) responseType);
     }
-
 }
