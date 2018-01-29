@@ -16,7 +16,9 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
     @Override
     public boolean matches(Type responseType) {
-        return false;
+        return isCollectionOfExpectedType(responseType) ||
+                isGenericArrayOfExpectedType(responseType) ||
+                isArrayOfExpectedType(responseType);
     }
 
     @Override
