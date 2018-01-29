@@ -27,11 +27,11 @@ import java.util.Map;
 /**
  * QueryResponseMessage implementation that takes all properties as constructor parameters.
  *
- * @param <T> The type of return value contained in this response
+ * @param <R> The type of return value contained in this response
  * @author Allard Buijze
  * @since 3.2
  */
-public class GenericQueryResponseMessage<T> extends MessageDecorator<T> implements QueryResponseMessage<T> {
+public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implements QueryResponseMessage<R> {
 
     private static final long serialVersionUID = -735698768536456937L;
 
@@ -40,18 +40,18 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<T> implemen
      *
      * @param result The result reported by the Query Handler
      */
-    public GenericQueryResponseMessage(T result) {
+    public GenericQueryResponseMessage(R result) {
         this(result, MetaData.emptyInstance());
     }
 
     /**
-     * Initialize the response message with given {@code results}.
+     * Initialize the response message with given {@code result}.
      *
-     * @param results  The results reported by the Query Handler
+     * @param result   The result reported by the Query Handler
      * @param metaData The meta data to contain in the message
      */
-    public GenericQueryResponseMessage(T results, Map<String, ?> metaData) {
-        super(new GenericMessage<>(results, metaData));
+    public GenericQueryResponseMessage(R result, Map<String, ?> metaData) {
+        super(new GenericMessage<>(result, metaData));
     }
 
     /**
@@ -63,7 +63,7 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<T> implemen
      *
      * @param delegate The message to retrieve message details from
      */
-    public GenericQueryResponseMessage(Message<T> delegate) {
+    public GenericQueryResponseMessage(Message<R> delegate) {
         super(delegate);
     }
 
@@ -75,7 +75,8 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<T> implemen
      *
      * @param result The result of a Query, to be wrapped in a QueryResponseMessage
      * @param <R>    The type of response expected
-     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a QueryResponseMessage.
+     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
+     * QueryResponseMessage.
      */
     @SuppressWarnings("unchecked")
     public static <R> QueryResponseMessage<R> asResponseMessage(Object result) {
@@ -87,12 +88,12 @@ public class GenericQueryResponseMessage<T> extends MessageDecorator<T> implemen
     }
 
     @Override
-    public QueryResponseMessage<T> withMetaData(Map<String, ?> metaData) {
+    public QueryResponseMessage<R> withMetaData(Map<String, ?> metaData) {
         return new GenericQueryResponseMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
-    public QueryResponseMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
+    public QueryResponseMessage<R> andMetaData(Map<String, ?> additionalMetaData) {
         return new GenericQueryResponseMessage<>(getDelegate().andMetaData(additionalMetaData));
     }
 }
