@@ -255,9 +255,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-        ResultValidatorImpl resultValidator = new ResultValidatorImpl(publishedEvents, fieldFilter);
+        final ResultValidatorImpl resultValidator = new ResultValidatorImpl(publishedEvents, fieldFilter);
 
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
+        final CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command).andMetaData(metaData);
+        try {
+            commandBus.dispatch(commandMessage, resultValidator);
+        } catch (Exception e) {
+            resultValidator.onFailure(commandMessage, e);
+        }
 
         detectIllegalStateChanges(fieldFilter);
         resultValidator.assertValidRecording();
