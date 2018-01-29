@@ -21,7 +21,7 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
-    public InstanceResponseType(Class<?> expectedResponseType) {
+    public InstanceResponseType(Class<R> expectedResponseType) {
         super(expectedResponseType);
     }
 

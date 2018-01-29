@@ -22,7 +22,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      *
      * @param expectedCollectionGenericType the response type which is expected to be matched against and returned
      */
-    public MultipleInstancesResponseType(Class<?> expectedCollectionGenericType) {
+    public MultipleInstancesResponseType(Class<R> expectedCollectionGenericType) {
         super(expectedCollectionGenericType);
     }
 
