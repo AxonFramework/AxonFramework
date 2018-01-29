@@ -19,6 +19,9 @@ package org.axonframework.commandhandling.distributed;
 /**
  * Represents a listener that is notified when a ConsistentHash instance of the component it is regisered with has
  * changed.
+ *
+ * @author Allard Buijze
+ * @since 3.2
  */
 @FunctionalInterface
 public interface ConsistentHashChangeListener {
