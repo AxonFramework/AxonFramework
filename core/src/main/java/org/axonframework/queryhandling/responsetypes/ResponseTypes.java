@@ -37,19 +37,6 @@ public abstract class ResponseTypes {
         return new MultipleInstancesResponseType<>(type);
     }
 
-    /**
-     * Specify the desire to retrieve a page of instances of type {@code R} when performing a query.
-     *
-     * @param type the {@code R} which is expected to be the response type
-     * @param <R>  the generic type of the instantiated
-     *             {@link org.axonframework.queryhandling.responsetypes.ResponseType}
-     * @return a {@link org.axonframework.queryhandling.responsetypes.ResponseType} specifying the desire to retrieve a
-     * page of instances of type {@code R}
-     */
-    public static <R> ResponseType<Page<R>> pageOf(Class<R> type) {
-        return new PageResponseType<>(type);
-    }
-
     private ResponseTypes() {
         // Utility class
     }
