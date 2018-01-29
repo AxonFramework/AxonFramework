@@ -1,6 +1,12 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -14,6 +20,8 @@ import java.util.List;
  * @since 3.2
  */
 public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<R>> {
+
+    private static final Logger logger = LoggerFactory.getLogger(MultipleInstancesResponseType.class);
 
     /**
      * Instantiate a {@link org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType} with the given
@@ -58,13 +66,52 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      * generic type {@code R} from this {@link org.axonframework.queryhandling.responsetypes.ResponseType} instance.
      * Will ensure that if the given {@code response} is of another collections format (e.g. an array, or a
      * {@link java.util.stream.Stream}) that it will be converted to a List.
-     * Should only be called if {@link ResponseType#matches(Type)} returns true.
+     * Should only be called if {@link ResponseType#matches(Type)} returns true. Will throw an
+     * {@link java.lang.IllegalArgumentException} if the given response is not convertible to a List of the expected
+     * response type.
      *
      * @param response the {@link java.lang.Object} to convert into a {@link java.util.List} of generic type {@code R}
      * @return a {@link java.util.List} of generic type {@code R}, based on the given {@code response}
      */
+    @SuppressWarnings("unchecked") // Suppress cast to array R, since in proper use of this function it is allowed
     @Override
     public List<R> convert(Object response) {
-        return null;
+        Class<?> responseType = response.getClass();
+
+        if (isArrayOfExpectedType(responseType)) {
+            return Arrays.asList((R[]) response);
+        } else if (isIterableOfExpectedType(response)) {
+            return convertToList((Iterable) response);
+        }
+
+        throw new IllegalArgumentException("Retrieved response [" + responseType + "] is not convertible to a List of "
+                                                   + "the expected response type [" + expectedResponseType + "]");
+    }
+
+    private boolean isIterableOfExpectedType(Object response) {
+        Class<?> responseType = response.getClass();
+
+        boolean isIterableType = Iterable.class.isAssignableFrom(responseType);
+        if (!isIterableType) {
+            return false;
+        }
+        Iterator responseIterator = ((Iterable) response).iterator();
+
+        boolean canMatchContainedType = responseIterator.hasNext();
+        if (!canMatchContainedType) {
+            logger.info("The given response is an Iterable without any contents, hence we cannot verify if the "
+                                + "contained type is assignable to the expected type.");
+            return true;
+        }
+
+        return isAssignableFrom(responseIterator.next().getClass());
+    }
+
+    @SuppressWarnings("unchecked") // Suppress cast to R, since in proper use of this function it is allowed
+    private List<R> convertToList(Iterable responseIterable) {
+        List<R> response = new ArrayList<>();
+        Iterator responseIterator = responseIterable.iterator();
+        responseIterator.forEachRemaining(responseInstance -> response.add((R) responseInstance));
+        return response;
     }
 }

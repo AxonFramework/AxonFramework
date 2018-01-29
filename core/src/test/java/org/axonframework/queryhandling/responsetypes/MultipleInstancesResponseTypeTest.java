@@ -2,7 +2,12 @@ package org.axonframework.queryhandling.responsetypes;
 
 import org.junit.*;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import static org.junit.Assert.*;
 
 public class MultipleInstancesResponseTypeTest
         extends AbstractResponseTypeTest<List<AbstractResponseTypeTest.QueryResponse>> {
@@ -37,7 +42,8 @@ public class MultipleInstancesResponseTypeTest
     }
 
     @Test
-    public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericOfProvidedType() throws NoSuchMethodException {
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiBoundedGenericOfProvidedType()
+            throws NoSuchMethodException {
         testMatches("someMultiBoundedGenericQuery", DOES_NOT_MATCHES);
     }
 
@@ -170,5 +176,90 @@ public class MultipleInstancesResponseTypeTest
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsMapOfProvidedType() throws NoSuchMethodException {
         testMatches("someMapQuery", DOES_NOT_MATCHES);
+    }
+
+    @SuppressWarnings("unused")
+    @Test(expected = Exception.class)
+    public void testConvertThrowsExceptionForSingleInstanceResponse() {
+        List<QueryResponse> result = testSubject.convert(new QueryResponse());
+    }
+
+    @Test
+    public void testConvertReturnsListOnResponseOfArrayType() {
+        QueryResponse[] testResponse = new QueryResponse[]{new QueryResponse()};
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse.length, result.size());
+        assertEquals(testResponse[0], result.get(0));
+    }
+
+    @Test
+    public void testConvertReturnsListOnResponseOfSubTypedArrayType() {
+        SubTypedQueryResponse[] testResponse = new SubTypedQueryResponse[]{new SubTypedQueryResponse()};
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse.length, result.size());
+        assertEquals(testResponse[0], result.get(0));
+    }
+
+    @SuppressWarnings("unused")
+    @Test(expected = Exception.class)
+    public void testConvertThrowsExceptionForResponseOfDifferentArrayType() {
+        QueryResponseInterface[] testResponse = new QueryResponseInterface[]{new QueryResponseInterface() {}};
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+    }
+
+    @Test
+    public void testConvertReturnsListOnResponseOfListType() {
+        List<QueryResponse> testResponse = new ArrayList<>();
+        testResponse.add(new QueryResponse());
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse.size(), result.size());
+        assertEquals(testResponse.get(0), result.get(0));
+    }
+
+    @Test
+    public void testConvertReturnsListOnResponseOfSubTypedListType() {
+        List<SubTypedQueryResponse> testResponse = new ArrayList<>();
+        testResponse.add(new SubTypedQueryResponse());
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse.size(), result.size());
+        assertEquals(testResponse.get(0), result.get(0));
+    }
+
+    @Test
+    public void testConvertReturnsListOnResponseOfSetType() {
+        Set<QueryResponse> testResponse = new HashSet<>();
+        testResponse.add(new QueryResponse());
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+
+        assertEquals(testResponse.size(), result.size());
+        assertEquals(testResponse.iterator().next(), result.get(0));
+    }
+
+    @SuppressWarnings("unused")
+    @Test(expected = Exception.class)
+    public void testConvertThrowsExceptionForResponseOfDifferentListType() {
+        List<QueryResponseInterface> testResponse = new ArrayList<>();
+        testResponse.add(new QueryResponseInterface() {});
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+    }
+
+    @Test
+    public void testConvertReturnsEmptyListForResponseOfDifferentListTypeIfTheListIsEmpty() {
+        List<QueryResponseInterface> testResponse = new ArrayList<>();
+
+        List<QueryResponse> result = testSubject.convert(testResponse);
+
+        assertTrue(result.isEmpty());
     }
 }
