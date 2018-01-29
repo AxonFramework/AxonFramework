@@ -12,6 +12,8 @@ import java.util.Arrays;
 /**
  * Abstract implementation of the {@link org.axonframework.queryhandling.responsetypes.ResponseType} which contains
  * match functions for the majority of the {@link java.lang.reflect.Type} options available.
+ * For single instance response types, a direct assignable to check will be performed. For multiple instances response
+ * types, the match will be performed against the containing type of that array/collection/etc.
  * Proves useful for reuse among ResponseType implementations.
  *
  * @param <R> The response type which will be matched against and converted to
@@ -24,10 +26,11 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
 
     /**
      * Instantiate a {@link org.axonframework.queryhandling.responsetypes.ResponseType} with the given
-     * {@code expectedResponseType} as the type to be matched against and to which the query response should be converted
-     * to.
+     * {@code expectedResponseType} as the type to be matched against and to which the query response should be
+     * converted to, as is or as the contained type for an array/list/etc.
      *
-     * @param expectedResponseType the response type which is expected to be matched against and returned
+     * @param expectedResponseType the response type which is expected to be matched against and to be returned, as is
+     *                             or as the contained type for an array/list/etc
      */
     protected AbstractResponseType(Class<?> expectedResponseType) {
         this.expectedResponseType = expectedResponseType;
@@ -75,9 +78,11 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isArrayOfExpectedType(Type responseType) {
-        return responseType instanceof Class &&
-                ((Class) responseType).isArray() &&
-                isAssignableFrom(GenericTypeReflector.getArrayComponentType(responseType));
+        return isArray(responseType) && isAssignableFrom(GenericTypeReflector.getArrayComponentType(responseType));
+    }
+
+    protected boolean isArray(Type responseType) {
+        return responseType instanceof Class && ((Class) responseType).isArray();
     }
 
     protected boolean isGenericArrayOfExpectedType(Type responseType) {
