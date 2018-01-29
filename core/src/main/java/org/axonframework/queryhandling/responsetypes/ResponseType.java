@@ -33,6 +33,7 @@ public interface ResponseType<R> {
     /**
      * Converts the given {@code response} of type {@link java.lang.Object} into the type {@code R} of this
      * {@link ResponseType} instance. Should only be called if {@link ResponseType#matches(Type)} returns true.
+     * It is unspecified what this function does if the {@link ResponseType#matches(Type)} returned false.
      *
      * @param response the {@link java.lang.Object} to convert into {@code R}
      * @return a {@code response} of type {@code R}
