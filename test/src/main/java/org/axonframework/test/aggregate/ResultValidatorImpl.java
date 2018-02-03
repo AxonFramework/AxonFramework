@@ -115,6 +115,36 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         return this;
     }
 
+    @Override
+    public ResultValidator expectExceptionMessage(Matcher<?> exceptionMessageMatcher) {
+        StringDescription description = new StringDescription(
+                new StringBuilder("Given exception message matcher is null!"));
+        if (exceptionMessageMatcher == null) {
+            reporter.reportWrongExceptionMessage(actualException, description);
+            return this;
+        }
+        exceptionMessageMatcher.describeTo(description);
+        if (actualException != null && !exceptionMessageMatcher.matches(actualException.getMessage())) {
+            reporter.reportWrongExceptionMessage(actualException, description);
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectExceptionMessage(String exceptionMessage) {
+        StringDescription description = new StringDescription(
+                new StringBuilder("Given exception message is null!"));
+        if (exceptionMessage == null) {
+            reporter.reportWrongExceptionMessage(actualException, description);
+            return this;
+        }
+        description = new StringDescription(new StringBuilder(exceptionMessage));
+        if (actualException != null && !exceptionMessage.equals(actualException.getMessage())) {
+            reporter.reportWrongExceptionMessage(actualException, description);
+        }
+        return this;
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     public ResultValidator expectException(Class<? extends Throwable> expectedException) {
