@@ -1,6 +1,6 @@
 package org.axonframework.queryhandling.responsetypes;
 
-import com.coekie.gentyref.GenericTypeReflector;
+import com.googlecode.gentyref.GenericTypeReflector;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -8,6 +8,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * Abstract implementation of the {@link org.axonframework.queryhandling.responsetypes.ResponseType} which contains
@@ -37,29 +38,35 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isCollectionOfExpectedType(Type responseType) {
+        Type collectionType = GenericTypeReflector.getExactSuperType(responseType, Iterable.class);
+        return collectionType != null && isParameterizedTypeOfExpectedType(collectionType);
+    }
+
+    protected boolean isStreamOfExpectedType(Type responseType) {
+        Type streamType = GenericTypeReflector.getExactSuperType(responseType, Stream.class);
+        return streamType != null && isParameterizedTypeOfExpectedType(streamType);
+    }
+
+    protected boolean isParameterizedTypeOfExpectedType(Type responseType) {
         boolean isParameterizedType = isParameterizedType(responseType);
         if (!isParameterizedType) {
             return false;
         }
 
         Type[] actualTypeArguments = ((ParameterizedType) responseType).getActualTypeArguments();
-        return hasOneTypeArgumentWhichMatches(actualTypeArguments);
-    }
-
-    protected boolean isParameterizedType(Type responseType) {
-        return responseType instanceof ParameterizedType;
-    }
-
-    protected boolean hasOneTypeArgumentWhichMatches(Type[] typeArguments) {
-        boolean hasOneTypeArgument = typeArguments.length == 1;
+        boolean hasOneTypeArgument = actualTypeArguments.length == 1;
         if (!hasOneTypeArgument) {
             return false;
         }
 
-        Type responseType = typeArguments[0];
-        return isAssignableFrom(responseType) ||
-                isGenericAssignableFrom(responseType) ||
-                isWildcardTypeWithMatchingUpperBound(responseType);
+        Type actualTypeArgument = actualTypeArguments[0];
+        return isAssignableFrom(actualTypeArgument) ||
+                isGenericAssignableFrom(actualTypeArgument) ||
+                isWildcardTypeWithMatchingUpperBound(actualTypeArgument);
+    }
+
+    protected boolean isParameterizedType(Type responseType) {
+        return responseType instanceof ParameterizedType;
     }
 
     protected boolean isWildcardTypeWithMatchingUpperBound(Type responseType) {
@@ -78,7 +85,7 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isArrayOfExpectedType(Type responseType) {
-        return isArray(responseType) && isAssignableFrom(GenericTypeReflector.getArrayComponentType(responseType));
+        return isArray(responseType) && isAssignableFrom(((Class) responseType).getComponentType());
     }
 
     protected boolean isArray(Type responseType) {
@@ -86,14 +93,22 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isGenericArrayOfExpectedType(Type responseType) {
-        return responseType instanceof GenericArrayType &&
+        return isGenericArrayType(responseType) &&
                 isGenericAssignableFrom(((GenericArrayType) responseType).getGenericComponentType());
     }
 
+    protected boolean isGenericArrayType(Type responseType) {
+        return responseType instanceof GenericArrayType;
+    }
+
     protected boolean isGenericAssignableFrom(Type responseType) {
-        return responseType instanceof TypeVariable &&
+        return isTypeVariable(responseType) &&
                 Arrays.stream(((TypeVariable) responseType).getBounds())
                       .anyMatch(this::isAssignableFrom);
+    }
+
+    protected boolean isTypeVariable(Type responseType) {
+        return responseType instanceof TypeVariable;
     }
 
     protected boolean isAssignableFrom(Type responseType) {

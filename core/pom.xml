@@ -200,9 +200,9 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.coekie.gentyref</groupId>
+            <groupId>com.googlecode.gentyref</groupId>
             <artifactId>gentyref</artifactId>
-            <version>1.3.0</version>
+            <version>1.2.0</version>
         </dependency>
 
         <!-- Optional dependencies -->
