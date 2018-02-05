@@ -192,6 +192,31 @@ public abstract class AbstractResponseTypeTest<R> {
     }
 
     @SuppressWarnings("unused")
+    public QueryResponseList someListImplementationQuery() {
+        return new QueryResponseList();
+    }
+
+    @SuppressWarnings("unused")
+    public <E> UnboundQueryResponseList<E> someUnboundedListImplementationQuery() {
+        return new UnboundQueryResponseList<>();
+    }
+
+    @SuppressWarnings("unused")
+    public <E extends QueryResponse> BoundQueryResponseList<E> someBoundedListImplementationQuery() {
+        return new BoundQueryResponseList<>();
+    }
+
+    @SuppressWarnings({"unused", "TypeParameterHidesVisibleType"})
+    public <E, R> MultiUnboundQueryResponseList<E, R> someMultiUnboundedListImplementationQuery() {
+        return new MultiUnboundQueryResponseList<>();
+    }
+
+    @SuppressWarnings({"unused", "TypeParameterHidesVisibleType"})
+    public <E extends QueryResponse, R> MultiBoundQueryResponseList<E, R> someMultiBoundedListImplementationQuery() {
+        return new MultiBoundQueryResponseList<>();
+    }
+
+    @SuppressWarnings("unused")
     public Set<QueryResponse> someSetQuery() {
         return new HashSet<>();
     }
@@ -218,7 +243,29 @@ public abstract class AbstractResponseTypeTest<R> {
 
     }
 
-    static class ComplexTypedQueryResponse extends SubTypedQueryResponse implements QueryResponseInterface {
+    private static class ComplexTypedQueryResponse extends SubTypedQueryResponse implements QueryResponseInterface {
+
+    }
+
+    private static class QueryResponseList extends ArrayList<QueryResponse> {
+
+    }
+
+    private static class UnboundQueryResponseList<E> extends ArrayList<E> {
+
+    }
+
+    private static class BoundQueryResponseList<E extends QueryResponse> extends ArrayList<E> {
+
+    }
+
+    @SuppressWarnings("unused")
+    private static class MultiUnboundQueryResponseList<E, R> extends ArrayList<E> {
+
+    }
+
+    @SuppressWarnings("unused")
+    private static class MultiBoundQueryResponseList<E extends QueryResponse, R> extends ArrayList<E> {
 
     }
 }
