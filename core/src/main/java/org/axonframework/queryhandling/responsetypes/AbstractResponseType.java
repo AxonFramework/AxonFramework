@@ -37,7 +37,7 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
         this.expectedResponseType = expectedResponseType;
     }
 
-    protected boolean isCollectionOfExpectedType(Type responseType) {
+    protected boolean isIterableOfExpectedType(Type responseType) {
         Type collectionType = GenericTypeReflector.getExactSuperType(responseType, Iterable.class);
         return collectionType != null && isParameterizedTypeOfExpectedType(collectionType);
     }
