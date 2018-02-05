@@ -164,6 +164,35 @@ public class MultipleInstancesResponseTypeTest
     }
 
     @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsListImplementationOfProvidedType() throws NoSuchMethodException {
+        testMatches("someListImplementationQuery", MATCHES);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsUnboundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someUnboundedListImplementationQuery", DOES_NOT_MATCHES);
+    }
+
+    @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsBoundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someBoundedListImplementationQuery", MATCHES);
+    }
+
+    @Test
+    public void testMatchesReturnsFalseIfResponseTypeIsMultiUnboundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someMultiUnboundedListImplementationQuery", DOES_NOT_MATCHES);
+    }
+
+    @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsMultiBoundedListImplementationOfProvidedType()
+            throws NoSuchMethodException {
+        testMatches("someMultiBoundedListImplementationQuery", MATCHES);
+    }
+
+    @Test
     public void testMatchesReturnsTrueIfResponseTypeIsSetOfProvidedType() throws NoSuchMethodException {
         testMatches("someSetQuery", MATCHES);
     }
@@ -207,7 +236,8 @@ public class MultipleInstancesResponseTypeTest
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsExceptionForResponseOfDifferentArrayType() {
-        QueryResponseInterface[] testResponse = new QueryResponseInterface[]{new QueryResponseInterface() {}};
+        QueryResponseInterface[] testResponse = new QueryResponseInterface[]{new QueryResponseInterface() {
+        }};
 
         List<QueryResponse> result = testSubject.convert(testResponse);
     }
@@ -249,7 +279,8 @@ public class MultipleInstancesResponseTypeTest
     @Test(expected = Exception.class)
     public void testConvertThrowsExceptionForResponseOfDifferentListType() {
         List<QueryResponseInterface> testResponse = new ArrayList<>();
-        testResponse.add(new QueryResponseInterface() {});
+        testResponse.add(new QueryResponseInterface() {
+        });
 
         List<QueryResponse> result = testSubject.convert(testResponse);
     }
