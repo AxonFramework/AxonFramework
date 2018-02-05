@@ -21,8 +21,8 @@ import static org.junit.Assert.*;
  */
 public abstract class AbstractResponseTypeTest<R> {
 
-    static final Boolean MATCHES = Boolean.TRUE;
-    static final Boolean DOES_NOT_MATCHES = Boolean.FALSE;
+    protected static final Boolean MATCHES = Boolean.TRUE;
+    protected static final Boolean DOES_NOT_MATCHES = Boolean.FALSE;
 
     protected final ResponseType<R> testSubject;
 
@@ -192,11 +192,6 @@ public abstract class AbstractResponseTypeTest<R> {
     }
 
     @SuppressWarnings("unused")
-    public QueryResponseList someListImplementationQuery() {
-        return new QueryResponseList();
-    }
-
-    @SuppressWarnings("unused")
     public <E> UnboundQueryResponseList<E> someUnboundedListImplementationQuery() {
         return new UnboundQueryResponseList<>();
     }
@@ -244,10 +239,6 @@ public abstract class AbstractResponseTypeTest<R> {
     }
 
     private static class ComplexTypedQueryResponse extends SubTypedQueryResponse implements QueryResponseInterface {
-
-    }
-
-    private static class QueryResponseList extends ArrayList<QueryResponse> {
 
     }
 

@@ -168,6 +168,26 @@ public class MultipleInstancesResponseTypeTest
         testMatches("someListImplementationQuery", MATCHES);
     }
 
+    /*
+     This dummy function (QueryResponseList someListImplementationQuery) and dummy class (QueryResponseList) are
+     contained in this test class instead of the AbstractResponseTypeTest class, because the functionality to derive
+     whether a response type has a direct super type which we service (an Iterable in this case), checks if the
+     enclosing classes contain unresolved generic types. It does this to check whether the type has raw types or not.
+     Since the AbstractResponseTypeTest has a generic type R for test implementations, a check by that functionality for
+     AbstractResponseTypeTest.QueryResponseList results in the state that it thinks it's unresolved
+     (whilst in fact it is). This is however such a slim scenario, that I decided to put the dummy class and test
+     function in the actual test class itself instead of in the abstract test class.
+     */
+    @SuppressWarnings("unused")
+    public static QueryResponseList someListImplementationQuery() {
+        return new QueryResponseList();
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    static class QueryResponseList extends ArrayList<QueryResponse> {
+
+    }
+
     @Test
     public void testMatchesReturnsFalseIfResponseTypeIsUnboundedListImplementationOfProvidedType()
             throws NoSuchMethodException {
