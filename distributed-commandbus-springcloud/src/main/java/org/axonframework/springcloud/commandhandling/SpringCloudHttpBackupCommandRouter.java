@@ -99,7 +99,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
                                               RoutingStrategy routingStrategy,
                                               RestTemplate restTemplate,
-                                              @Value("${axon.distributed.spring-cloud.fallback-url}:/message-routing-information") String messageRoutingInformationEndpoint) {
+                                              @Value("${axon.distributed.spring-cloud.fallback-url:/message-routing-information}") String messageRoutingInformationEndpoint) {
         this(discoveryClient,
              routingStrategy,
              ACCEPT_ALL_INSTANCES_FILTER,
