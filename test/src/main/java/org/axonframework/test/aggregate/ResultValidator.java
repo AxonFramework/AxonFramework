@@ -112,7 +112,6 @@ public interface ResultValidator {
      */
     ResultValidator expectException(Class<? extends Throwable> expectedException);
 
-
     /**
      * Expect an exception to occur during command handler execution that matches with the given {@code matcher}.
      *
