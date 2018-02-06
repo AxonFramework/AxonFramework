@@ -199,11 +199,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.googlecode.gentyref</groupId>
-            <artifactId>gentyref</artifactId>
-            <version>1.2.0</version>
-        </dependency>
 
         <!-- Optional dependencies -->
         <dependency>

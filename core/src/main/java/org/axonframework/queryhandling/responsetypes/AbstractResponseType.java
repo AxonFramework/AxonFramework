@@ -1,6 +1,6 @@
 package org.axonframework.queryhandling.responsetypes;
 
-import com.googlecode.gentyref.GenericTypeReflector;
+import org.axonframework.common.TypeReflectionUtils;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -38,12 +38,12 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     protected boolean isIterableOfExpectedType(Type responseType) {
-        Type collectionType = GenericTypeReflector.getExactSuperType(responseType, Iterable.class);
-        return collectionType != null && isParameterizedTypeOfExpectedType(collectionType);
+        Type iterableType = TypeReflectionUtils.getExactSuperType(responseType, Iterable.class);
+        return iterableType != null && isParameterizedTypeOfExpectedType(iterableType);
     }
 
     protected boolean isStreamOfExpectedType(Type responseType) {
-        Type streamType = GenericTypeReflector.getExactSuperType(responseType, Stream.class);
+        Type streamType = TypeReflectionUtils.getExactSuperType(responseType, Stream.class);
         return streamType != null && isParameterizedTypeOfExpectedType(streamType);
     }
 
