@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,8 +24,10 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotSame;
+import static org.junit.Assert.assertFalse;
 
 public class MongoTrackingTokenTest {
 
@@ -89,6 +92,14 @@ public class MongoTrackingTokenTest {
         MongoTrackingToken subject = MongoTrackingToken.of(time(0), "0").advanceTo(time(1001), "1", ONE_SECOND);
         assertEquals(time(1001), subject.getTimestamp());
         assertKnownEventIds(subject, "1");
+    }
+
+    @Test
+    public void testAdvancingATokenMakesItCoverThePrevious() {
+        MongoTrackingToken subject = MongoTrackingToken.of(time(1000), "0");
+        MongoTrackingToken advancedToken = subject.advanceTo(time(1001), "1", ONE_SECOND);
+        assertTrue(advancedToken.covers(subject));
+        assertFalse(MongoTrackingToken.of(time(1000), "1").covers(subject));
     }
 
     private static void assertKnownEventIds(MongoTrackingToken token, String... expectedKnownIds) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -306,11 +307,49 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Stops processing if it currently running, but doesn't stop free up the processing thread. If the processor is
-     * not running, the state isn't changed.
+     * Sets the paused flag, causing processor threads to shut down.
+     *
+     * @deprecated in favor of {@link #shutDown()}.
      */
+    @Deprecated
     public void pause() {
         this.state.updateAndGet(s -> s.isRunning() ? State.PAUSED : s);
+    }
+
+    /**
+     * Resets tokens to the initial state. This effectively causes a replay.
+     *
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
+     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
+     * as a processor can only reset the tokens if it is able to claim them all.
+     */
+    public void resetTokens() {
+        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
+        Assert.state(!isRunning() && activeProcessorThreads() == 0,
+                     () -> "TrackingProcessor must be shut down before triggering a reset");
+        transactionManager.executeInTransaction(() -> {
+            int[] segments = tokenStore.fetchSegments(getName());
+            TrackingToken[] tokens = new TrackingToken[segments.length];
+            for (int i = 0; i < segments.length; i++) {
+                tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
+            }
+            // we now have all tokens, hurray
+            eventHandlerInvoker().performReset();
+
+            for (int i = 0; i < tokens.length; i++) {
+                tokenStore.storeToken(null, getName(), segments[i]);
+            }
+        });
+    }
+
+    /**
+     * Indicates whether this tracking processor supports a "reset". Generally, a reset is supported if at least one
+     * of the event handlers assigned to this processor supports it, and no handlers explicitly prevent the resets.
+     *
+     * @return {@code true} if resets are supported, {@code false} otherwise
+     */
+    public boolean supportsReset() {
+        return eventHandlerInvoker().supportsReset();
     }
 
     /**
@@ -326,7 +365,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Indicates whether the processor has been paused due to an error. In such case, the processor has forcefully
      * paused, as it wasn't able to automatically recover.
      * <p>
-     * Note that this method also returns {@code false} when the processor was paused using {@link #pause()}.
+     * Note that this method also returns {@code false} when the processor was stooped using {@link #shutDown()}.
      *
      * @return {@code true} when paused due to an error, otherwise {@code false}
      */
@@ -499,9 +538,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 // When in an initial stage, split segments to the requested number.
                 if (tokenStoreCurrentSegments.length == 0 && segments.length == 1 && segments.length < segmentsSize) {
                     segments = Segment.splitBalanced(segments[0], segmentsSize - 1).toArray(new Segment[segmentsSize]);
-                    transactionManager.executeInTransaction(() -> {
-                        tokenStore.initializeTokenSegments(processorName, segmentsSize);
-                    });
+                    transactionManager.executeInTransaction(
+                            () -> tokenStore.initializeTokenSegments(processorName, segmentsSize));
                 }
 
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).

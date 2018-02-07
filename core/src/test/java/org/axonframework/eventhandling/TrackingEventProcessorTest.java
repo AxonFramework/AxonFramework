@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
@@ -34,6 +36,7 @@ import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -102,7 +105,8 @@ public class TrackingEventProcessorTest {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        when(mockListener.supportsReset()).thenReturn(true);
+        eventHandlerInvoker = spy(new SimpleEventHandlerInvoker(mockListener));
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         sleepInstructions = new ArrayList<>();
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE) {
@@ -277,7 +281,7 @@ public class TrackingEventProcessorTest {
         assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(2, ackedEvents.size());
 
-        testSubject.pause();
+        testSubject.shutDown();
         // The thread may block for 1 second waiting for a next event to pop up
         while (testSubject.activeProcessorThreads() > 0) {
             Thread.sleep(1);
@@ -410,4 +414,54 @@ public class TrackingEventProcessorTest {
         assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void testResetCausesEventsToBeReplayed() throws Exception {
+        when(mockListener.supportsReset()).thenAnswer(i-> true);
+        final List<EventMessage<?>> handled = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            handled.add(i.getArgumentAt(0, EventMessage.class));
+            return null;
+        }).when(mockListener).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, ()-> assertEquals(4, handled.size()));
+        testSubject.shutDown();
+        testSubject.resetTokens();
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, ()-> assertEquals(8, handled.size()));
+        assertEquals(handled.subList(0, 3), handled.subList(4, 7));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testResetRejectedWhileRunning() {
+        testSubject.start();
+        testSubject.resetTokens();
+    }
+
+    @Test
+    public void testResetNotSupportedWhenInvokerDoesNotSupportReset() {
+        when(mockListener.supportsReset()).thenReturn(false);
+        assertFalse(testSubject.supportsReset());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testResetRejectedWhenInvokerDoesNotSupportReset() {
+        when(mockListener.supportsReset()).thenReturn(false);
+        testSubject.resetTokens();
+    }
+
+    @Test
+    public void testResetRejectedIfNotAllTokensCanBeClaimed() {
+        tokenStore.initializeTokenSegments("test", 4);
+        when(tokenStore.fetchToken("test",3)).thenThrow(new UnableToClaimTokenException("Mock"));
+
+        try {
+            testSubject.resetTokens();
+            fail("Expected exception");
+        } catch (UnableToClaimTokenException e) {
+            // expected
+        }
+        verify(tokenStore, never()).storeToken(isNull(TrackingToken.class), anyString(), anyInt());
+    }
 }

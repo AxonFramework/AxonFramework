@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,5 +23,24 @@ package org.axonframework.eventsourcing.eventstore;
  * @author Rene de Waele
  */
 public interface TrackingToken {
+
+    /**
+     * Returns a token that represents the lower bound between this and the {@code other} token. Effectively, the
+     * returned token will cause messages not received by both this and the {@code other} token to be redelivered.
+     *
+     * @param other The token to compare to this one
+     * @return The token representing the lower bound of the two
+     */
+    TrackingToken lowerBound(TrackingToken other);
+
+    /**
+     * Indicates whether this token covers the {@code other} token completely. That means that this token represents a
+     * position in a stream that has received all of the messages that a stream represented by the {@code other} token
+     * has received.
+     *
+     * @param other The token to compare to this one
+     * @return {@code true} if this token covers the other, otherwise {@code false}
+     */
+    boolean covers(TrackingToken other);
 
 }

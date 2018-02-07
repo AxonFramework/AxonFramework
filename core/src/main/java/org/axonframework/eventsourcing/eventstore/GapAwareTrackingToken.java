@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,6 +41,11 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     private final long index;
     private final SortedSet<Long> gaps;
 
+    private GapAwareTrackingToken(long index, SortedSet<Long> gaps) {
+        this.index = index;
+        this.gaps = gaps;
+    }
+
     /**
      * Returns a new {@link GapAwareTrackingToken} instance based on the given {@code index} and collection of {@code
      * gaps}.
@@ -58,11 +66,6 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         Assert.isTrue(gapSet.last() < index,
                       () -> String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
         return new GapAwareTrackingToken(index, gapSet);
-    }
-
-    private GapAwareTrackingToken(long index, SortedSet<Long> gaps) {
-        this.index = index;
-        this.gaps = gaps;
     }
 
     /**
@@ -133,6 +136,36 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      */
     public SortedSet<Long> getGaps() {
         return Collections.unmodifiableSortedSet(gaps);
+    }
+
+    @Override
+    public GapAwareTrackingToken lowerBound(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        SortedSet<Long> mergedGaps = new TreeSet<>(this.gaps);
+        mergedGaps.addAll(otherToken.gaps);
+        long mergedIndex = calculateIndex(otherToken, mergedGaps);
+        mergedGaps.removeIf(i -> i >= mergedIndex);
+        return new GapAwareTrackingToken(mergedIndex, mergedGaps);
+    }
+
+    private long calculateIndex(GapAwareTrackingToken otherToken, SortedSet<Long> mergedGaps) {
+        long mergedIndex = Math.min(this.index, otherToken.index);
+        while (mergedGaps.contains(mergedIndex)) {
+            mergedIndex--;
+        }
+        return mergedIndex;
+    }
+
+    @Override
+    public boolean covers(TrackingToken other) {
+        Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
+
+        return otherToken.index <= this.index
+                && !this.gaps.contains(otherToken.index)
+                && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
     }
 
     /**

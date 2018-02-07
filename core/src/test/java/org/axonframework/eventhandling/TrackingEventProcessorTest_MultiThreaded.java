@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    public void testProcessorWorkerCountWithMultipleSegments() throws InterruptedException {
+    public void testProcessorWorkerCountWithMultipleSegments() {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
@@ -281,7 +281,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         assertWithin(1, SECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1), tokenStore.fetchToken("test", 0)));
         assertWithin(1, SECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1), tokenStore.fetchToken("test", 1)));
 
-        testSubject.pause();
+        testSubject.shutDown();
         // The thread may block for 1 second waiting for a next event to pop up
         while (testSubject.activeProcessorThreads() > 0) {
             Thread.sleep(1);

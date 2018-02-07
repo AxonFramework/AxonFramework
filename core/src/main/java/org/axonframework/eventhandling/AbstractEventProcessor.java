@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,6 +143,16 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 logger.info("Exception occurred while processing a message, but unit of work was committed. {}", e.getClass().getName());
             }
         }
+    }
+
+    /**
+     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * methods for any given message.
+     *
+     * @return the invoker assigned to this processor
+     */
+    protected EventHandlerInvoker eventHandlerInvoker() {
+        return eventHandlerInvoker;
     }
 
     /**
