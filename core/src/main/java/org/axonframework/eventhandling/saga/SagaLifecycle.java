@@ -47,18 +47,6 @@ public abstract class SagaLifecycle {
 
     /**
      * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
-     * the registered property. The Object will be converted to a string. If the saga already has the given
-     * association, nothing happens.
-     *
-     * @param associationKey   The key of the association value to associate this saga with.
-     * @param associationValue The value of the association value to associate this saga with.
-     */
-    public static void associateWith(String associationKey, Object associationValue) {
-        associateWith(new AssociationValue(associationKey, associationValue.toString()));
-    }
-
-    /**
-     * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
      * the registered property. If the saga already has the given association, nothing happens.
      *
      * @param associationValue The association to associate this saga with.
