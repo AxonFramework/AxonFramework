@@ -144,7 +144,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     public void testHashSetIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(HashSet::new);
     }
-    
+
     @Test
     public void testCopyOnWriteArrayListIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(CopyOnWriteArrayList::new);
@@ -154,7 +154,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     public void testConcurrentLinkedQueueIsModifiedDuringIterationInRecursiveHierarchy() {
         testCollectionIsModifiedDuringIterationInRecursiveHierarchy(ConcurrentLinkedQueue::new);
     }
-    
+
     private void testCollectionIsModifiedDuringIterationInRecursiveHierarchy(Supplier<Collection<SomeRecursiveEntity>> supplier) {
         // Note that if the inspector does not support recursive entities this will throw an StackOverflowError.
         AggregateModel<SomeRecursiveEntity> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeRecursiveEntity.class);
@@ -178,14 +178,14 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
         // Assert child1: it should have 1 child
         assertEquals(1, child1.children.size());
-        
+
         // Now move child3 up one level so it is a child of child1.
         // The resulting hierarchy will look as follows:
         // root 
         //      child1
         //              child2
         //              child3
-        
+
         // Note that if the inspector does not use copy-iterators this will throw an ConcurrentModificationException.
         inspector.publish(asEventMessage(new MoveChildUp(childId2, childId3)), root);
         assertEquals(2, child1.children.size());
@@ -241,6 +241,13 @@ public class AnnotatedAggregateMetaModelFactoryTest {
         AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class);
     }
 
+    @Test(expected = AxonConfigurationException.class)
+    public void typedAggregateIdentifier() {
+        AggregateModel<TypedIdentifierAggregate> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(TypedIdentifierAggregate.class);
+
+        assertNotNull(inspector.getIdentifier(new TypedIdentifierAggregate()));
+    }
+
     private static class JavaxPersistenceAnnotatedHandlers {
 
         @Id
@@ -291,6 +298,27 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
     }
 
+    private static class CustomIdentifier {
+    }
+
+    @AggregateRoot
+    private static class TypedIdentifierAggregate {
+
+        @AggregateIdentifier
+        private CustomIdentifier aggregateIdentifier = new CustomIdentifier();
+
+        @CommandHandler
+        public boolean handleInSubclass(String test) {
+            return test.contains("sub");
+        }
+
+        @EventHandler
+        public void handle(AtomicLong value) {
+            value.incrementAndGet();
+        }
+
+    }
+
     private static class SomeOtherEntity {
 
         @CommandHandler
@@ -303,7 +331,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
             value.incrementAndGet();
         }
     }
-    
+
     private static class CreateChild {
         private final String parentId;
         private final String childId;
@@ -339,10 +367,10 @@ public class AnnotatedAggregateMetaModelFactoryTest {
             this.entityId = entityId;
             this.children = new SomeIterable<>(supplier.get());
         }
-        
+
         public SomeRecursiveEntity getChild(String childId) {
-            for(SomeRecursiveEntity c : children) {
-                if(Objects.equals(c.entityId, childId)) {
+            for (SomeRecursiveEntity c : children) {
+                if (Objects.equals(c.entityId, childId)) {
                     return c;
                 }
             }
