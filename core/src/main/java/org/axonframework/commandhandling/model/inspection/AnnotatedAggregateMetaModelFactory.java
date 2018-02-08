@@ -121,7 +121,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private Field versionField;
         private String routingKey;
 
-        AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
+        public AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
             this.inspectedType = aggregateType;
             this.commandHandlers = new HashMap<>();
             this.eventHandlers = new ArrayList<>();
@@ -255,7 +255,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          * @return the handler of the message if present on the model
          */
         @SuppressWarnings("unchecked")
-        private Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
+        protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
             for (MessageHandlingMember<? super T> handler : eventHandlers) {
                 if (handler.canHandle(message)) {
                     return Optional.of(handler);
