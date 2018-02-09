@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +24,8 @@ package org.axonframework.commandhandling.distributed;
  */
 @FunctionalInterface
 public interface ConsistentHashChangeListener {
+
+    ConsistentHashChangeListener NO_OP_CONSISTENT_HASH_CHANGE_LISTENER = newConsistentHash -> { };
 
     /**
      * Notification that a consistent hash has changed. Implementations should take into account that this listener

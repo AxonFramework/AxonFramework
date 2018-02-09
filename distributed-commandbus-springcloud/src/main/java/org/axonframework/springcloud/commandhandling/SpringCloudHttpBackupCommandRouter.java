@@ -41,6 +41,8 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import static org.axonframework.commandhandling.distributed.ConsistentHashChangeListener.NO_OP_CONSISTENT_HASH_CHANGE_LISTENER;
+
 /**
  * Implementation of the {@link org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter} which has a
  * backup mechanism to provide Message Routing Information for other nodes and to retrieve Message Routing Information
@@ -150,7 +152,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
              localServiceInstance,
              routingStrategy,
              serviceInstanceFilter,
-             h -> { }, // NoOp ConsistentHashChangeListener
+             NO_OP_CONSISTENT_HASH_CHANGE_LISTENER,
              restTemplate,
              messageRoutingInformationEndpoint);
     }
