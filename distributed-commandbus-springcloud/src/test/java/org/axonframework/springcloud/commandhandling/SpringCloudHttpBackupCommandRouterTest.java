@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,13 +20,17 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.runners.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -57,6 +61,8 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @Mock
     private DiscoveryClient discoveryClient;
     @Mock
+    private Registration localServiceInstance;
+    @Mock
     private RoutingStrategy routingStrategy;
     @Mock
     private RestTemplate restTemplate;
@@ -76,9 +82,12 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
         when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
 
+        when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(localServiceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
+        when(localServiceInstance.getMetadata()).thenReturn(new HashMap<>());
+
         when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
-        when(discoveryClient.getLocalServiceInstance()).thenReturn(serviceInstance);
 
         expectedMessageRoutingInfo =
                 new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
@@ -92,6 +101,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
         )).thenReturn(responseEntity);
 
         testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient,
+                                                             localServiceInstance,
                                                              routingStrategy,
                                                              restTemplate,
                                                              messageRoutingInformationEndpoint);
