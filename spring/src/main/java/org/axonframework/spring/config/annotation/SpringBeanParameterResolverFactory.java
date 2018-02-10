@@ -20,9 +20,11 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.spring.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -35,8 +37,9 @@ import java.util.Map;
 /**
  * ParameterResolverFactory implementation that resolves parameters in the Spring Application Context. A parameter can
  * be resolved as a Spring bean if there is exactly one bean assignable to the parameter type. If multiple beans are
- * available and one is marked as primary, that bean is chosen. Note that when multiple beans are marked as primary,
- * either one can be selected as parameter value.
+ * available the desired one can be designated with a {@link Qualifier} annotation on the parameter. By absence of a
+ * {@link Qualifier} annotation the bean marked as primary will be chosen.
+ * Note that when multiple beans are marked as primary, either one can be selected as parameter value.
  *
  * @author Allard Buijze
  * @since 2.1
@@ -76,8 +79,16 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         } else if (beansFound.size() > 1) {
             final AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
             if (beanFactory instanceof ConfigurableListableBeanFactory) {
+                final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
+                // find @Qualifier matching candidate
                 for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
-                    final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
+                    final Qualifier qualifier = parameters[parameterIndex].getAnnotation(Qualifier.class);
+                    if (qualifier != null && SpringUtils.isQualifierMatch(bean.getKey(), clBeanFactory, qualifier.value())) {
+                        return new SpringBeanParameterResolver(beanFactory, bean.getKey());
+                    }
+                }
+                // find @Primary matching candidate
+                for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
                     if (clBeanFactory.containsBeanDefinition(bean.getKey())
                             && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
                         return new SpringBeanParameterResolver(beanFactory, bean.getKey());
@@ -85,7 +96,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
                 }
             }
             if (logger.isWarnEnabled()) {
-                logger.warn("{} beans of type {} found, but none was marked as primary. Ignoring this parameter.",
+                logger.warn("{} beans of type {} found, but none was marked as primary and parameter lacks @Qualifier. Ignoring this parameter.",
                             beansFound.size(), parameterType.getSimpleName());
             }
             return null;
