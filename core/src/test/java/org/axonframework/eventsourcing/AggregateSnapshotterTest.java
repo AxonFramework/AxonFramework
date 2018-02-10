@@ -96,7 +96,7 @@ public class AggregateSnapshotterTest {
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
         DomainEventMessage secondEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
-                                                                        "deleted", MetaData.emptyInstance());
+                                                                         "deleted", MetaData.emptyInstance());
         DomainEventStream eventStream = DomainEventStream.of(firstEvent, secondEvent);
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
         when(mockAggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
@@ -111,14 +111,14 @@ public class AggregateSnapshotterTest {
     public static class StubAggregate {
 
         @AggregateIdentifier
-        private Object identifier;
+        private String identifier;
 
         public StubAggregate() {
-            identifier = UUID.randomUUID();
+            identifier = UUID.randomUUID().toString();
         }
 
         public StubAggregate(Object identifier) {
-            this.identifier = identifier;
+            this.identifier = identifier.toString();
         }
 
         public void doSomething() {
@@ -134,7 +134,7 @@ public class AggregateSnapshotterTest {
             identifier = ((DomainEventMessage) event).getAggregateIdentifier();
             // See Issue #
             if ("Mock contents".equals(event.getPayload().toString())) {
-                    apply("Another");
+                apply("Another");
             }
             if ("deleted".equals(event.getPayload().toString())) {
                 markDeleted();
