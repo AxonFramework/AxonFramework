@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.unmodifiableSet;
 
@@ -150,6 +151,15 @@ public class MongoTrackingToken implements TrackingToken {
             }
         });
         return new MongoTrackingToken(min(timestamp, otherToken.timestamp), intersection);
+    }
+
+    @Override
+    public TrackingToken upperBound(TrackingToken other) {
+        Assert.isTrue(other instanceof MongoTrackingToken, () -> "Incompatible token type provided.");
+        Long timestamp = max(((MongoTrackingToken)other).timestamp, this.timestamp);
+        Map<String, Long> events = new HashMap<>(trackedEvents);
+        events.putAll(((MongoTrackingToken) other).trackedEvents);
+        return new MongoTrackingToken(timestamp, events);
     }
 
     @Override

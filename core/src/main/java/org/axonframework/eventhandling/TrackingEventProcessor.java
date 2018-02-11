@@ -21,6 +21,8 @@ import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -36,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -301,9 +304,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             final TrackingToken trackingToken = transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(getName(), segment.getSegmentId()));
             logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
             eventStream = transactionManager.fetchInTransaction(
-                    () -> messageSource.openStream(trackingToken));
+                    () -> doOpenStream(trackingToken));
         }
         return eventStream;
+    }
+
+    private MessageStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
+        if (trackingToken instanceof ReplayToken) {
+            return new ReplayingMessageStream((ReplayToken) trackingToken,
+                                              messageSource.openStream(((ReplayToken) trackingToken).unwrap()));
+        }
+        return messageSource.openStream(trackingToken);
     }
 
     /**
@@ -318,7 +329,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     /**
      * Resets tokens to the initial state. This effectively causes a replay.
-     *
+     * <p>
      * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
      * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
      * as a processor can only reset the tokens if it is able to claim them all.
@@ -337,7 +348,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             eventHandlerInvoker().performReset();
 
             for (int i = 0; i < tokens.length; i++) {
-                tokenStore.storeToken(null, getName(), segments[i]);
+                tokenStore.storeToken(new ReplayToken(tokens[i]), getName(), segments[i]);
             }
         });
     }
@@ -596,6 +607,58 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     Thread.currentThread().interrupt();
                     break;
                 }
+            }
+        }
+    }
+
+    private class ReplayingMessageStream implements MessageStream<TrackedEventMessage<?>> {
+
+        private final MessageStream<TrackedEventMessage<?>> delegate;
+        private ReplayToken lastToken;
+
+        public ReplayingMessageStream(ReplayToken token, MessageStream<TrackedEventMessage<?>> delegate) {
+            this.delegate = delegate;
+            this.lastToken = token;
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return delegate.peek();
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            return delegate.hasNextAvailable(timeout, unit);
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            TrackedEventMessage<?> trackedEventMessage = alterToken(delegate.nextAvailable());
+            this.lastToken = trackedEventMessage.trackingToken() instanceof ReplayToken
+                    ? (ReplayToken) trackedEventMessage.trackingToken()
+                    : null;
+            return trackedEventMessage;
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public boolean hasNextAvailable() {
+            return delegate.hasNextAvailable();
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> TrackedEventMessage<T> alterToken(TrackedEventMessage<T> message) {
+            if (lastToken == null) {
+                return message;
+            }
+            if (message instanceof DomainEventMessage) {
+                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()), (DomainEventMessage<T>) message);
+            } else {
+                return new GenericTrackedEventMessage<>(lastToken.advancedTo(message.trackingToken()), message);
             }
         }
     }

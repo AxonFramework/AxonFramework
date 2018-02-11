@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
+import org.axonframework.common.CollectionUtils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -148,6 +149,18 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         long mergedIndex = calculateIndex(otherToken, mergedGaps);
         mergedGaps.removeIf(i -> i >= mergedIndex);
         return new GapAwareTrackingToken(mergedIndex, mergedGaps);
+    }
+
+    @Override
+    public TrackingToken upperBound(TrackingToken otherToken) {
+        Assert.isTrue(otherToken instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
+        GapAwareTrackingToken other = (GapAwareTrackingToken) otherToken;
+        SortedSet<Long> newGaps = CollectionUtils.intersect(this.gaps, other.gaps, TreeSet::new);
+        long min = Math.min(this.index, other.index) + 1;
+        SortedSet<Long> mergedGaps = CollectionUtils.merge(this.gaps.tailSet(min), other.gaps.tailSet(min), TreeSet::new);
+        newGaps.addAll(mergedGaps);
+
+        return new GapAwareTrackingToken(Math.max(this.index, other.index), newGaps);
     }
 
     private long calculateIndex(GapAwareTrackingToken otherToken, SortedSet<Long> mergedGaps) {

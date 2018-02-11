@@ -85,6 +85,15 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
     }
 
     @Override
+    public TrackingToken upperBound(TrackingToken other) {
+        Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
+        if (((GlobalSequenceTrackingToken) other).globalIndex > this.globalIndex) {
+            return other;
+        }
+        return this;
+    }
+
+    @Override
     public boolean covers(TrackingToken other) {
         Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
         GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;

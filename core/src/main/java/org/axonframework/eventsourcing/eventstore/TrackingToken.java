@@ -34,6 +34,16 @@ public interface TrackingToken {
     TrackingToken lowerBound(TrackingToken other);
 
     /**
+     * Returns the token that represents the furthest possible position in a stream that either this token or the given
+     * {@code other} represents. Effectively, this means this token will only deliver messages that neither this, nor
+     * the other have been received.
+     *
+     * @param other The token to compare this token to
+     * @return a token that represents the furthest position of this or the other stream
+     */
+    TrackingToken upperBound(TrackingToken other);
+
+    /**
      * Indicates whether this token covers the {@code other} token completely. That means that this token represents a
      * position in a stream that has received all of the messages that a stream represented by the {@code other} token
      * has received.
