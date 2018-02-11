@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             return MetaDataParameterResolver.INSTANCE;
         }
         if (parameterIndex == 0) {
-            return new PayloadParameterResolver(parameterType);
+            Class<?> payloadType = (Class<?>) AnnotationUtils.findAnnotationAttributes(executable, MessageHandler.class)
+                                                             .map(attr -> attr.get("payloadType"))
+                                                             .orElse(Object.class);
+            if (payloadType.isAssignableFrom(parameterType)) {
+                return new PayloadParameterResolver(parameterType);
+            }
         }
         return null;
     }

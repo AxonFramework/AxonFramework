@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.axonframework.common.Assert;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -66,6 +70,35 @@ public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<Gl
      */
     public GlobalSequenceTrackingToken next() {
         return offsetBy(1);
+    }
+
+    @Override
+    public TrackingToken lowerBound(TrackingToken other) {
+        Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
+        GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
+
+        if (otherToken.globalIndex < this.globalIndex) {
+            return otherToken;
+        } else {
+            return this;
+        }
+    }
+
+    @Override
+    public TrackingToken upperBound(TrackingToken other) {
+        Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
+        if (((GlobalSequenceTrackingToken) other).globalIndex > this.globalIndex) {
+            return other;
+        }
+        return this;
+    }
+
+    @Override
+    public boolean covers(TrackingToken other) {
+        Assert.isTrue(other instanceof GlobalSequenceTrackingToken, () -> "Incompatible token type provided.");
+        GlobalSequenceTrackingToken otherToken = (GlobalSequenceTrackingToken) other;
+
+        return otherToken.globalIndex < this.globalIndex;
     }
 
     @Override

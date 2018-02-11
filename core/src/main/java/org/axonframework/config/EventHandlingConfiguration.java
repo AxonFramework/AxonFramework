@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -501,6 +501,20 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     public <T extends EventProcessor> Optional<T> getProcessor(String name) {
         //noinspection unchecked
         return (Optional<T>) initializedProcessors.stream().filter(p -> name.equals(p.getName())).findAny();
+    }
+
+    /**
+     * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}. This
+     * method also returns an empty optional if the Processor was configured, but it hasn't been assigned any Event
+     * Handlers.
+     *
+     * @param name         The name of the processor to return
+     * @param expectedType The type of processor expected
+     * @param <T>          The type of processor expected
+     * @return an Optional referencing the processor, if present and of expected type.
+     */
+    public <T extends EventProcessor> Optional<T> getProcessor(String name, Class<T> expectedType) {
+        return getProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
     }
 
     /**

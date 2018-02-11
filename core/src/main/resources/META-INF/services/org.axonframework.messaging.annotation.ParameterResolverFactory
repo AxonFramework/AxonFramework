@@ -21,3 +21,4 @@ org.axonframework.eventsourcing.SequenceNumberParameterResolverFactory
 org.axonframework.eventsourcing.eventstore.TrackingTokenParameterResolverFactory
 org.axonframework.messaging.annotation.DefaultParameterResolverFactory
 org.axonframework.messaging.annotation.MessageIdentifierParameterResolverFactory
+org.axonframework.eventhandling.replay.ReplayParameterResolverFactory

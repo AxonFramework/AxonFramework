@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,7 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.*;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -180,5 +175,15 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      */
     public Class<T> getSagaType() {
         return sagaType;
+    }
+
+    @Override
+    public boolean supportsReset() {
+        return false;
+    }
+
+    @Override
+    public void performReset() {
+        throw new ResetNotSupportedException("Sagas do no support resetting tokens");
     }
 }
