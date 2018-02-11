@@ -19,9 +19,11 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.NonStaticFieldsFilter;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -66,7 +68,13 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
+            if (EventMessage.class.isInstance(expectedEvent)) {
+                EventMessage<?> expectedEventMessage = (EventMessage<?>) expectedEvent;
+                if (!verifyEventEquality(expectedEventMessage.getPayload(), actualEvent.getPayload())
+                        || !verifyMetaDataEquality(expectedEventMessage.getMetaData(), actualEvent.getMetaData())) {
+                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+                }
+            } else if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -169,4 +177,19 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         }
         return true;
     }
+
+    private boolean verifyMetaDataEquality(MetaData expectedEvent, MetaData actualEvent) {
+        if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
+            return false;
+        }
+        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedEvent, NonStaticFieldsFilter.instance());
+        if (!matcher.matches(actualEvent)) {
+            reporter.reportDifferentEventContents(expectedEvent.getClass(),
+                                                  matcher.getFailedField(),
+                                                  matcher.getFailedFieldActualValue(),
+                                                  matcher.getFailedFieldExpectedValue());
+        }
+        return true;
+    }
+
 }
