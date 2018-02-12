@@ -178,13 +178,13 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         return true;
     }
 
-    private boolean verifyMetaDataEquality(MetaData expectedEvent, MetaData actualEvent) {
-        if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
+    private boolean verifyMetaDataEquality(MetaData expectedMetaData, MetaData actualMetaData) {
+        if (!expectedMetaData.getClass().equals(actualMetaData.getClass())) {
             return false;
         }
-        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedEvent, NonStaticFieldsFilter.instance());
-        if (!matcher.matches(actualEvent)) {
-            reporter.reportDifferentEventContents(expectedEvent.getClass(),
+        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedMetaData, NonStaticFieldsFilter.instance());
+        if (!matcher.matches(actualMetaData)) {
+            reporter.reportDifferentEventContents(expectedMetaData.getClass(),
                                                   matcher.getFailedField(),
                                                   matcher.getFailedFieldActualValue(),
                                                   matcher.getFailedFieldExpectedValue());

@@ -34,8 +34,6 @@ public class ResultValidatorImplTest {
             validator.expectEvents(expected);
             fail("Expected MetaData differs from actual MetaData");
         } catch (AxonAssertionError error) {
-            assertTrue("", error.getMessage().contains("Expected <{key1=otherValue}>"));
-            assertTrue("", error.getMessage().contains("got <{key1=value1}>"));
         }
     }
 }
