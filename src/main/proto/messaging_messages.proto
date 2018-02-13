@@ -1,0 +1,83 @@
+syntax = "proto3";
+package io.axoniq.axonhub;
+import "common_messages.proto";
+option java_multiple_files = true;
+
+message Command {
+    /* A message id */
+    string message_identifier = 1;
+    string name = 2;
+    int64 timestamp = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+}
+
+message CommandResponse {
+    /* A message id */
+    string message_identifier = 1;
+    bool success = 2;
+    string message = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+}
+
+message QueryRequest {
+    /* A message id */
+    string message_identifier = 1;
+    string query = 2;
+    int64 timestamp = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    string result_name = 6;
+    repeated ProcessingInstruction processing_instructions = 7;
+}
+
+message QueryResponse {
+    /* A message id */
+    string message_identifier = 1;
+    bool success = 2;
+    string message = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+}
+
+
+message CommandSubscription {
+    string message_id = 1;
+    string command = 2;
+    string component_name = 3;
+    string client_name = 4;
+}
+
+message QuerySubscription {
+    string message_id = 1;
+    string query = 2;
+    string result_name = 3;
+    string component_name = 4;
+    string client_name = 5;
+    int32 nrOfHandlers = 6;
+}
+
+message Confirmation {
+    string message_id = 1;
+    bool success = 2;
+}
+
+message ProcessingInstruction {
+    ProcessingKey key = 1;
+    io.axoniq.platform.MetaDataValue value = 2;
+}
+
+enum ProcessingKey {
+    ROUTING_KEY = 0;
+    PRIORITY = 1;
+    TIMEOUT = 2;
+    NR_OF_RESULTS = 3;
+    ORIGINAL_MESSAGE_ID = 4;
+    TARGET_CLIENT = 5;
+    CONTEXT = 6;
+}
+

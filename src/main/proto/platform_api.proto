@@ -1,0 +1,50 @@
+syntax = "proto3";
+package io.axoniq.platform.grpc;
+
+option java_multiple_files = true;
+
+service PlatformService {
+    rpc GetPlatformServer (ClientIdentification) returns (PlatformInfo) {
+    }
+
+    rpc OpenStream( stream PlatformInboundInstruction) returns (stream PlatformOutboundInstruction) {}
+
+}
+
+message PlatformInboundInstruction {
+    oneof request {
+        ClientIdentification register = 1;
+    }
+}
+
+message PlatformOutboundInstruction {
+    oneof request {
+        NodeInfo node_notification = 1;
+        RequestReconnect request_reconnect = 3;
+        RequestReleaseTracker request_release_tracker = 4;
+    }
+}
+
+message RequestReconnect {
+}
+
+message RequestReleaseTracker {
+}
+
+message PlatformInfo {
+    NodeInfo primary = 1;
+}
+
+message NodeInfo {
+    string host_name = 1;
+    int32 grpc_port = 2;
+    int32 http_port = 3;
+    int32 version = 4;
+    string node_name = 5;
+}
+
+message ClientIdentification {
+    string client_name = 1;
+    string component_name = 2;
+}
+

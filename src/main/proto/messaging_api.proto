@@ -1,0 +1,73 @@
+syntax = "proto3";
+package io.axoniq.axonhub.grpc;
+import "messaging_messages.proto";
+
+option java_multiple_files = true;
+
+service CommandService {
+    rpc OpenStream( stream CommandProviderOutbound) returns (stream CommandProviderInbound) {}
+    rpc Dispatch( Command) returns (CommandResponse) {}
+}
+
+service QueryService {
+    rpc OpenStream (stream QueryProviderOutbound) returns (stream QueryProviderInbound) {}
+    rpc Query (QueryRequest) returns (stream QueryResponse) {}
+}
+
+message CommandProviderOutbound {
+    oneof request {
+        CommandSubscription subscribe = 1;
+        CommandSubscription unsubscribe = 2;
+        FlowControl flowControl = 3;
+        CommandResponse commandResponse = 4;
+    }
+}
+
+message QueryProviderOutbound {
+    oneof request {
+        QuerySubscription subscribe = 1;
+        QuerySubscription unsubscribe = 2;
+        FlowControl flowControl = 3;
+        QueryResponse queryResponse = 4;
+        QueryComplete queryComplete = 5;
+    }
+}
+
+message CommandProviderInbound {
+    oneof request {
+        Confirmation confirmation = 1;
+        Command command = 2;
+    }
+}
+
+message QueryProviderInbound {
+    oneof request {
+        Confirmation confirmation = 1;
+        QueryRequest query = 2;
+    }
+}
+
+message FlowControl {
+    string message_id = 1;
+    string client_name = 2;
+    int64 permits = 3;
+}
+
+message QueryComplete {
+    string message_id = 1;
+}
+
+message NodeNotification {
+    string host_name = 1;
+    int32 grpc_port = 2;
+    int32 http_port = 3;
+    int32 version = 4;
+    NodeEvent event_type = 5;
+}
+
+enum NodeEvent {
+    ADD = 0;
+    DELETE = 1;
+}
+
+

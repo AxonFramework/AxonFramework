@@ -1,0 +1,96 @@
+syntax = "proto3";
+package io.axoniq.axondb.grpc;
+import "eventstore_messages.proto";
+option java_multiple_files = true;
+
+
+service EventStore {
+
+    // Accepts a stream of Events returning a Confirmation when completed.
+    rpc AppendEvent (stream Event) returns (Confirmation) {
+    }
+
+    // Accepts a Snapshot event returning a Confirmation when completed.
+    rpc AppendSnapshot (Event) returns (Confirmation) {
+    }
+
+    // Retrieves the Events for a given aggregate. Results are streamed rather than returned at once.
+    rpc ListAggregateEvents (GetAggregateEventsRequest) returns (stream Event) {
+    }
+
+    // Retrieves the Events from a given tracking token. Results are streamed rather than returned at once.
+    rpc ListEvents (stream GetEventsRequest) returns (stream EventWithToken) {
+    }
+
+    // Gets the highest sequence number for a specific aggregate.
+    rpc ReadHighestSequenceNr (ReadHighestSequenceNrRequest) returns (ReadHighestSequenceNrResponse) {
+    }
+
+    // Performs a query on the event store, returns a stream of results. Input is a stream to allow flow control from the
+    // client
+    rpc QueryEvents (stream QueryEventsRequest) returns (stream QueryEventsResponse) {
+    }
+
+}
+
+message EventWithToken {
+    int64 token = 1;
+    Event event = 2;
+}
+
+message QueryEventsRequest {
+    string query = 1;
+    int64 number_of_permits = 2;
+    bool live_events = 3;
+}
+
+message QueryEventsResponse {
+    oneof data {
+        ColumnsResponse columns = 1;
+        RowResponse row = 2;
+        Confirmation files_completed = 3;
+    }
+}
+
+message ColumnsResponse {
+    repeated string column = 1;
+}
+
+message RowResponse {
+    repeated QueryValue idValues = 1;
+    repeated QueryValue sortValues = 2;
+    map<string, QueryValue> values = 3;
+}
+
+
+
+message ReadHighestSequenceNrRequest {
+    string aggregate_id = 1;
+    int64 from_sequence_nr = 3;
+}
+
+message ReadHighestSequenceNrResponse {
+    int64 to_sequence_nr = 1;
+}
+
+message RetrieveClusterInfoRequest {
+}
+
+message Confirmation {
+    bool success = 1;
+}
+
+message GetAggregateEventsRequest {
+    string aggregate_id = 1;
+    int64 initialSequence = 2;
+    bool allowSnapshots = 3;
+}
+
+message GetEventsRequest {
+    int64 tracking_token = 1;
+    int64 number_of_permits = 2;
+    string client = 3;
+    string component = 4;
+    string processor = 5;
+}
+
