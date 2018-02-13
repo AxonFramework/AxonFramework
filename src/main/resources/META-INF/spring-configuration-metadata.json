@@ -1,0 +1,62 @@
+{
+  "hints": [],
+  "groups": [
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging",
+      "type": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration"
+    }
+  ],
+  "properties": [
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.servers",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.clientName",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.token",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.flowControl.initialNrOfPermits",
+      "defaultValue": 10000,
+      "description": "Initial number of permits granted in communication between application and messaging platform.",
+      "type": "java.lang.Long"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.flowControl.nrOfNewPermits",
+      "defaultValue": 9000,
+      "type": "java.lang.Long"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.flowControl.newPermitsThreshold",
+      "defaultValue": 1000,
+      "type": "java.lang.Long"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.ssl.enabled",
+      "defaultValue": false,
+      "type": "java.lang.Boolean"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.ssl.certChainFile",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "io.axoniq.axonhub.client.AxonIQPlatformConfiguration",
+      "name": "axoniq.messaging.componentName",
+      "type": "java.lang.String"
+    }
+  ]
+}
