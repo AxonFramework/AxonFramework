@@ -97,7 +97,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                                    LoggingErrorHandler::new)),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
-                                             PropagatingErrorHandler.INSTANCE,
+                                             getErrorHandler(conf, name),
                                              getMessageMonitor(conf, SubscribingEventProcessor.class, name));
     }
 
