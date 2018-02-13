@@ -107,6 +107,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param configuration The main configuration
      * @param processorName The name of the processor to retrieve interceptors for
      * @return a list of Interceptors
+     *
      * @see EventHandlingConfiguration#registerHandlerInterceptor(BiFunction)
      * @see EventHandlingConfiguration#registerHandlerInterceptor(String, Function)
      */
@@ -158,8 +159,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param sequencingPolicy The policy for processing events sequentially
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration usingTrackingProcessors(Function<Configuration, TrackingEventProcessorConfiguration> config,
-                                                              Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
+    public EventHandlingConfiguration usingTrackingProcessors(
+            Function<Configuration, TrackingEventProcessorConfiguration> config,
+            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return registerEventProcessorFactory(
                 (conf, name, handlers) -> buildTrackingEventProcessor(conf, name, handlers, config,
                                                                       Configuration::eventBus,
@@ -189,10 +191,15 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     @SuppressWarnings("unchecked")
-    public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return registerTrackingProcessor(name, source,
-                                         c -> c.getComponent(TrackingEventProcessorConfiguration.class, TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
-                                         c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new));
+    public EventHandlingConfiguration registerTrackingProcessor(String name,
+                                                                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
+        return registerTrackingProcessor(
+                name,
+                source,
+                c -> c.getComponent(TrackingEventProcessorConfiguration.class,
+                                    TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
+                c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new)
+        );
     }
 
     /**
@@ -222,7 +229,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
+    public EventHandlingConfiguration registerTrackingProcessor(String name,
+                                                                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
                                                                 Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration,
                                                                 Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return registerEventProcessor(name, (conf, n, handlers) ->
@@ -241,7 +249,10 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                                 LoggingErrorHandler::new),
                                                                         sequencingPolicy.apply(conf)),
                                           source.apply(conf),
-                                          tokenStore.getOrDefault(name, c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)).apply(conf),
+                                          tokenStore.getOrDefault(
+                                                  name,
+                                                  c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
+                                          ).apply(conf),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                           getMessageMonitor(conf, EventProcessor.class, name),
                                           RollbackConfigurationType.ANY_THROWABLE,
@@ -249,7 +260,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           config.apply(conf));
     }
 
-    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration, Class<?> componentType, String componentName) {
+    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration,
+                                                                 Class<?> componentType,
+                                                                 String componentName) {
         if (messageMonitorFactories.containsKey(componentName)) {
             return messageMonitorFactories.get(componentName).create(configuration, componentType, componentName);
         } else {
@@ -335,7 +348,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param interceptorBuilder The builder function that provides an interceptor for each available processor
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration registerHandlerInterceptor(BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+    public EventHandlingConfiguration registerHandlerInterceptor(
+            BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         defaultHandlerInterceptors.add(interceptorBuilder);
         return this;
     }
@@ -534,9 +548,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param messageMonitorBuilder The builder function to use
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration configureMessageMonitor(String name, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
-        return configureMessageMonitor(name,
-                                       (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
+    public EventHandlingConfiguration configureMessageMonitor(String name,
+                                                              Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+        return configureMessageMonitor(
+                name,
+                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
+        );
     }
 
     /**
@@ -547,7 +564,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param messageMonitorFactory The factory to use
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory) {
+    public EventHandlingConfiguration configureMessageMonitor(String name,
+                                                              MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactories.put(name, messageMonitorFactory);
         return this;
     }
@@ -599,7 +617,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
          * @return a fully initialized Event Processor
          */
         EventProcessor createEventProcessor(Configuration configuration, String name, List<?> eventHandlers);
-
     }
 
     private static class ProcessorSelector {
