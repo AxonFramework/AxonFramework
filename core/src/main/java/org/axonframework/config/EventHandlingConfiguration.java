@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -53,6 +52,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
@@ -68,6 +68,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           .orElse(fallback.apply(o)));
             });
     private Configuration config;
+    private final Component<ErrorHandler> defaultErrorHandler = new Component<>(
+            () -> config, "errorHandler", c -> c.getComponent(ErrorHandler.class, PropagatingErrorHandler::instance)
+    );
 
     /**
      * Creates a default configuration for an Event Handling module that creates a {@link SubscribingEventProcessor}
@@ -242,7 +245,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                           getMessageMonitor(conf, EventProcessor.class, name),
                                           RollbackConfigurationType.ANY_THROWABLE,
-                                          PropagatingErrorHandler.instance(),
+                                          getErrorHandler(conf, name),
                                           config.apply(conf));
     }
 
@@ -252,6 +255,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         } else {
             return configuration.messageMonitor(componentType, componentName);
         }
+    }
+
+    private ErrorHandler getErrorHandler(Configuration config, String componentName) {
+        return errorHandlers.containsKey(componentName)
+                ? errorHandlers.get(componentName).apply(config)
+                : defaultErrorHandler.get();
     }
 
     /**
@@ -540,6 +549,36 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      */
     public EventHandlingConfiguration configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactories.put(name, messageMonitorFactory);
+        return this;
+    }
+
+    /**
+     * Configures the default {@link org.axonframework.eventhandling.ErrorHandler} for any
+     * {@link org.axonframework.eventhandling.EventProcessor}. This can be overridden per EventProcessor by calling the
+     * {@link EventHandlingConfiguration#configureErrorHandler(String, Function)} function.
+     *
+     * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
+     *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureErrorHandler(Function<Configuration, ErrorHandler> errorHandlerBuilder) {
+        defaultErrorHandler.update(errorHandlerBuilder);
+        return this;
+    }
+
+    /**
+     * Configures a {@link org.axonframework.eventhandling.ErrorHandler} for the
+     * {@link org.axonframework.eventhandling.EventProcessor} of the given {@code name}. This
+     * overrides the default ErrorHandler configured through the {@link org.axonframework.config.Configurer}.
+     *
+     * @param name                The name of the event processor
+     * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
+     *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureErrorHandler(String name,
+                                                            Function<Configuration, ErrorHandler> errorHandlerBuilder) {
+        errorHandlers.put(name, errorHandlerBuilder);
         return this;
     }
 
