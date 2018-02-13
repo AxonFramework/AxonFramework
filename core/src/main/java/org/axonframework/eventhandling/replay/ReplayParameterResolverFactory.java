@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +25,18 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 
+/**
+ * An implementation of the {@link org.axonframework.messaging.annotation.ParameterResolverFactory} which resolves the
+ * {@link org.axonframework.eventhandling.ReplayStatus} parameter. Will resolve a {@link ReplayStatus#REPLAY} parameter
+ * if the {@link org.axonframework.messaging.Message} is a {@link org.axonframework.eventhandling.TrackedEventMessage},
+ * containing a {@link org.axonframework.eventhandling.ReplayToken}. Otherwise, it will resolve a
+ * {@link ReplayStatus#REGULAR} parameter.
+ *
+ * @author Allard Buijze
+ * @since 3.2
+ */
 public class ReplayParameterResolverFactory implements ParameterResolverFactory {
+
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (ReplayStatus.class.isAssignableFrom(parameters[parameterIndex].getType())) {
@@ -36,6 +46,7 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
     }
 
     private class ReplayParameterResolver implements ParameterResolver {
+
         @Override
         public Object resolveParameterValue(Message message) {
             return message instanceof TrackedEventMessage
