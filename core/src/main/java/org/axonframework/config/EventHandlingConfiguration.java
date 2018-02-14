@@ -51,6 +51,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
+    private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
@@ -68,6 +69,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           .orElse(fallback.apply(o)));
             });
     private Configuration config;
+    private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
+            () -> config,
+            "listenerInvocationErrorHandler",
+            c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new)
+    );
     private final Component<ErrorHandler> defaultErrorHandler = new Component<>(
             () -> config, "errorHandler", c -> c.getComponent(ErrorHandler.class, PropagatingErrorHandler::instance)
     );
@@ -90,11 +96,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private SubscribingEventProcessor subscribingEventProcessor(Configuration conf, String name, List<?> eh,
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         return new SubscribingEventProcessor(name,
-                                             new SimpleEventHandlerInvoker(eh,
-                                                                           conf.parameterResolverFactory(),
-                                                                           conf.getComponent(
-                                                                                   ListenerInvocationErrorHandler.class,
-                                                                                   LoggingErrorHandler::new)),
+                                             new SimpleEventHandlerInvoker(
+                                                     eh,
+                                                     conf.parameterResolverFactory(),
+                                                     getListenerInvocationErrorHandler(conf, name)
+                                             ),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
                                              getErrorHandler(conf, name),
@@ -244,9 +250,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         return new TrackingEventProcessor(name,
                                           new SimpleEventHandlerInvoker(handlers,
                                                                         conf.parameterResolverFactory(),
-                                                                        conf.getComponent(
-                                                                                ListenerInvocationErrorHandler.class,
-                                                                                LoggingErrorHandler::new),
+                                                                        getListenerInvocationErrorHandler(conf, name),
                                                                         sequencingPolicy.apply(conf)),
                                           source.apply(conf),
                                           tokenStore.getOrDefault(
@@ -258,6 +262,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           RollbackConfigurationType.ANY_THROWABLE,
                                           getErrorHandler(conf, name),
                                           config.apply(conf));
+    }
+
+    private ListenerInvocationErrorHandler getListenerInvocationErrorHandler(Configuration config,
+                                                                             String componentName) {
+        return listenerInvocationErrorHandlers.containsKey(componentName)
+                ? listenerInvocationErrorHandlers.get(componentName).apply(config)
+                : defaultListenerInvocationErrorHandler.get();
     }
 
     private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration,
@@ -538,6 +549,39 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      */
     public <T extends EventProcessor> Optional<T> getProcessor(String name, Class<T> expectedType) {
         return getProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
+    }
+
+    /**
+     * Configures the default {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for any
+     * {@link org.axonframework.eventhandling.EventProcessor}. This can be overridden per EventProcessor by calling the
+     * {@link EventHandlingConfiguration#configureListenerInvocationErrorHandler(String, Function)} function.
+     *
+     * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
+     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
+     *                                              with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureListenerInvocationErrorHandler(
+            Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+        defaultListenerInvocationErrorHandler.update(listenerInvocationErrorHandlerBuilder);
+        return this;
+    }
+
+    /**
+     * Configures a {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for the
+     * {@link org.axonframework.eventhandling.EventProcessor} of the given {@code name}. This overrides the default
+     * ListenerInvocationErrorHandler configured through the {@link org.axonframework.config.Configurer}.
+     *
+     * @param name                                  The name of the event processor
+     * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
+     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
+     *                                              with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureListenerInvocationErrorHandler(String name,
+                                                                              Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+        listenerInvocationErrorHandlers.put(name, listenerInvocationErrorHandlerBuilder);
+        return this;
     }
 
     /**
