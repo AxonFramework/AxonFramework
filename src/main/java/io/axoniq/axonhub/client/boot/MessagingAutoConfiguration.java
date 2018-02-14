@@ -16,11 +16,11 @@
 package io.axoniq.axonhub.client.boot;
 
 
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.command.AxonIQCommandBus;
+import io.axoniq.axonhub.client.command.AxonHubCommandBus;
 import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
-import io.axoniq.axonhub.client.query.AxonIQQueryBus;
+import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
@@ -49,25 +49,25 @@ import org.springframework.context.annotation.Primary;
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 public class MessagingAutoConfiguration {
     @Bean
-    public AxonIQPlatformConfiguration routingConfiguration() {
-        return new AxonIQPlatformConfiguration();
+    public AxonHubConfiguration axonHubConfiguration() {
+        return new AxonHubConfiguration();
     }
 
     @Bean
-    public PlatformConnectionManager platformConnectionManager(AxonIQPlatformConfiguration routingConfiguration) {
+    public PlatformConnectionManager platformConnectionManager(AxonHubConfiguration routingConfiguration) {
         return new PlatformConnectionManager(routingConfiguration);
     }
 
     @Bean
     @Primary
     @ConditionalOnMissingBean
-    public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration , AxonIQPlatformConfiguration routingConfiguration,
+    public CommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration , AxonHubConfiguration axonHubConfiguration,
                                  Serializer serializer, PlatformConnectionManager platformConnectionManager, CommandPriorityCalculator priorityCalculator) {
 
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
 
-        return new AxonIQCommandBus(platformConnectionManager, routingConfiguration, commandBus, serializer, new AnnotationRoutingStrategy(),
+        return new AxonHubCommandBus(platformConnectionManager, axonHubConfiguration, commandBus, serializer, new AnnotationRoutingStrategy(),
                 priorityCalculator);
     }
 
@@ -91,10 +91,10 @@ public class MessagingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public QueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonIQPlatformConfiguration routingConfiguration,
+    public QueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration axonHubConfiguration,
                              AxonConfiguration axonConfiguration,  TransactionManager txManager, Serializer serializer,
                              QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
-        return new AxonIQQueryBus(platformConnectionManager, routingConfiguration,
+        return new AxonHubQueryBus(platformConnectionManager, axonHubConfiguration,
                 new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"), txManager, queryInvocationErrorHandler),
                 serializer, priorityCalculator);
     }

@@ -16,7 +16,7 @@
 package io.axoniq.axonhub.client.boot;
 
 
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.axon.AxonHubEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -36,8 +36,8 @@ import org.springframework.context.annotation.Configuration;
 public class EventStoreAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public EventStore eventStore(AxonIQPlatformConfiguration routingConfiguration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
-        return new AxonHubEventStore(routingConfiguration, platformConnectionManager, serializer);
+    public EventStore eventStore(AxonHubConfiguration axonHubConfiguration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
+        return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, serializer);
     }
 }
 
