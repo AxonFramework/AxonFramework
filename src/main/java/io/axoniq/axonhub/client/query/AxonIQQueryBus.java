@@ -234,9 +234,7 @@ public class AxonIQQueryBus implements QueryBus {
                     }
                 };
 
-                StreamObserver<QueryProviderOutbound> stream = QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
-                        .withInterceptors(interceptors)
-                        .openStream(queryProviderInboundStreamObserver);
+                StreamObserver<QueryProviderOutbound> stream = platformConnectionManager.getQueryStream(queryProviderInboundStreamObserver, interceptors);
                 outboundStreamObserver = new FlowControllingStreamObserver<>(stream,
                         configuration,
                         flowControl -> QueryProviderOutbound.newBuilder().setFlowControl(flowControl).build(),

@@ -17,6 +17,7 @@ package io.axoniq.axonhub.client;
 
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
+import io.axoniq.axonhub.grpc.*;
 import io.axoniq.platform.grpc.*;
 import io.grpc.*;
 import io.grpc.netty.GrpcSslContexts;
@@ -186,4 +187,15 @@ public class PlatformConnectionManager {
         }
     }
 
+    public StreamObserver<CommandProviderOutbound> getCommandStream(StreamObserver<CommandProviderInbound> commandsFromRoutingServer, ClientInterceptor[] interceptors) {
+        return CommandServiceGrpc.newStub(getChannel())
+                .withInterceptors(interceptors)
+                .openStream(commandsFromRoutingServer);
+    }
+
+    public StreamObserver<QueryProviderOutbound> getQueryStream(StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver, ClientInterceptor[] interceptors) {
+        return QueryServiceGrpc.newStub(getChannel())
+                .withInterceptors(interceptors)
+                .openStream(queryProviderInboundStreamObserver);
+    }
 }

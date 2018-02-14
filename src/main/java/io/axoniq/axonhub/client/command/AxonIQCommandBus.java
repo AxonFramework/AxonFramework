@@ -225,9 +225,7 @@ public class AxonIQCommandBus implements CommandBus {
                     }
                 };
 
-                StreamObserver<CommandProviderOutbound> stream = CommandServiceGrpc.newStub(platformConnectionManager.getChannel())
-                        .withInterceptors(interceptors)
-                        .openStream(commandsFromRoutingServer);
+                StreamObserver<CommandProviderOutbound> stream = platformConnectionManager.getCommandStream(commandsFromRoutingServer, interceptors);
                 subscriberStreamObserver = new FlowControllingStreamObserver<>(stream,
                         configuration,
                         flowControl -> CommandProviderOutbound.newBuilder().setFlowControl(flowControl).build(),

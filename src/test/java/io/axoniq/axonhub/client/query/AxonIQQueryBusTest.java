@@ -15,24 +15,32 @@
 
 package io.axoniq.axonhub.client.query;
 
+import com.google.protobuf.ByteString;
+import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
+import io.axoniq.axonhub.grpc.QueryProviderInbound;
+import io.axoniq.axonhub.grpc.QueryProviderOutbound;
+import io.axoniq.platform.SerializedObject;
+import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * Author: marc
@@ -40,19 +48,22 @@ import static org.junit.Assert.assertTrue;
 public class AxonIQQueryBusTest {
     private AxonIQQueryBus queryBus;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
+    private XStreamSerializer ser;
+    private AxonIQPlatformConfiguration conf;
+    private SimpleQueryBus localSegment;
 
 
     @Before
     public void setup() throws Exception {
-        AxonIQPlatformConfiguration conf = new AxonIQPlatformConfiguration();
+        conf = new AxonIQPlatformConfiguration();
         conf.setRoutingServers("localhost:4343");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        QueryBus localSegment = new SimpleQueryBus();
-        Serializer ser = new XStreamSerializer();
+        localSegment = new SimpleQueryBus();
+        ser = new XStreamSerializer();
         queryBus = new AxonIQQueryBus(new PlatformConnectionManager(conf), conf, localSegment, ser, new QueryPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
@@ -79,6 +90,48 @@ public class AxonIQQueryBusTest {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World", String.class);
 
         assertEquals("test", queryBus.query(queryMessage).get());
+    }
+
+    @Test
+    public void processQuery() throws Exception {
+        PlatformConnectionManager platformConnectionManager = mock(PlatformConnectionManager.class);
+        AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            inboundStreamObserverRef.set( invocationOnMock.getArgument(0));
+            return new StreamObserver<QueryProviderOutbound>() {
+                @Override
+                public void onNext(QueryProviderOutbound commandProviderOutbound) {
+                    System.out.println(commandProviderOutbound);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    System.out.println("Error:" + throwable);
+                }
+
+                @Override
+                public void onCompleted() {
+                    System.out.println("Completed");
+                }
+            };
+        }).when(platformConnectionManager).getQueryStream(any(), any());
+
+        AxonIQQueryBus queryBus2 = new AxonIQQueryBus(platformConnectionManager, conf, localSegment, ser, new QueryPriorityCalculator() {});
+        Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
+        QueryProviderInbound inboundMessage = QueryProviderInbound.newBuilder()
+                .setQuery(QueryRequest.newBuilder()
+                    .setQuery("testQuery")
+                        .setResultName(String.class.getName())
+                        .setPayload(SerializedObject.newBuilder()
+                            .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                                .setType(String.class.getName())
+                        )
+                )
+                .build();
+        inboundStreamObserverRef.get().onNext(inboundMessage);
+
+        response.close();
+
     }
 
     @Test

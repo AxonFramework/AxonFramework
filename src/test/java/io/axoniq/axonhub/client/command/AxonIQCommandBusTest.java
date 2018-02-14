@@ -15,12 +15,20 @@
 
 package io.axoniq.axonhub.client.command;
 
-import io.axoniq.axonhub.client.PlatformConnectionManager;
+import com.google.protobuf.ByteString;
+import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
-import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import io.axoniq.axonhub.client.PlatformConnectionManager;
+import io.axoniq.axonhub.grpc.CommandProviderInbound;
+import io.axoniq.axonhub.grpc.CommandProviderOutbound;
+import io.axoniq.platform.MetaDataValue;
+import io.axoniq.platform.SerializedObject;
+import io.grpc.stub.StreamObserver;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Registration;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
 import org.junit.Before;
@@ -31,6 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * Author: marc
@@ -38,32 +49,30 @@ import static org.junit.Assert.*;
 public class AxonIQCommandBusTest {
     private AxonIQCommandBus testSubject;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
+    private AxonIQPlatformConfiguration conf;
+    private XStreamSerializer ser;
+    private SimpleCommandBus localSegment;
 
 
     @Before
     public void setup() throws Exception {
-        AxonIQPlatformConfiguration conf = new AxonIQPlatformConfiguration();
+        conf = new AxonIQPlatformConfiguration();
         conf.setRoutingServers("localhost:4343");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        CommandBus localSegment = new SimpleCommandBus();
-        Serializer ser = new XStreamSerializer();
+        localSegment = new SimpleCommandBus();
+        ser = new XStreamSerializer();
         testSubject = new AxonIQCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
-                new RoutingStrategy() {
-                    @Override
-                    public String getRoutingKey(CommandMessage<?> command) {
-                        return "RoutingKey";
-                    }
-                }, new CommandPriorityCalculator() {});
+                command -> "RoutingKey", new CommandPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         dummyMessagePlatformServer.stop();
     }
 
@@ -122,6 +131,45 @@ public class AxonIQCommandBusTest {
         Thread.sleep(30);
         assertEquals(0, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
     }
+
+    @Test
+    public void processCommand() {
+        PlatformConnectionManager mockPlatformConnectionManager = mock(PlatformConnectionManager.class);
+        AtomicReference<StreamObserver<CommandProviderInbound>> inboundStreamObserverRef = new AtomicReference<>();
+        doAnswer(invocationOnMock -> {
+            inboundStreamObserverRef.set( invocationOnMock.getArgument(0));
+            return new StreamObserver<CommandProviderOutbound>() {
+                @Override
+                public void onNext(CommandProviderOutbound commandProviderOutbound) {
+                    System.out.println(commandProviderOutbound);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+
+                }
+
+                @Override
+                public void onCompleted() {
+
+                }
+            };
+        }).when(mockPlatformConnectionManager).getCommandStream(any(), any());
+        AxonIQCommandBus testSubject2 = new AxonIQCommandBus(mockPlatformConnectionManager, conf, localSegment, ser,
+                command -> "RoutingKey", new CommandPriorityCalculator() {});
+        testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
+
+        inboundStreamObserverRef.get().onNext(CommandProviderInbound.newBuilder()
+                .setCommand(Command.newBuilder().setName(String.class.getName())
+                        .setPayload(SerializedObject.newBuilder()
+                        .setType(String.class.getName())
+                        .setData(ByteString.copyFromUtf8("<string>test</string>")))
+                        .putMetaData("test1", MetaDataValue.newBuilder().setTextValue("Text").build())
+                )
+                .build());
+
+    }
+
     @Test
     public void resubscribe() throws Exception {
         testSubject.subscribe(String.class.getName(), c -> "Done");
