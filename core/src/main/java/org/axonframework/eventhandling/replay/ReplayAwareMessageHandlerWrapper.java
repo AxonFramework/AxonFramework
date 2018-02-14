@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,6 +28,13 @@ import java.util.Map;
 
 import static java.util.Collections.singletonMap;
 
+/**
+ * An implementation of the {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} that is used for
+ * {@link org.axonframework.eventhandling.AllowReplay} annotated message handling methods.
+ *
+ * @author Allard Buijze
+ * @since 3.2
+ */
 public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefinition {
 
     private static Map<String, Object> DEFAULT_SETTING = singletonMap("allowReplay", Boolean.TRUE);

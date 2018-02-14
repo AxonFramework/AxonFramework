@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +23,9 @@ import java.util.Objects;
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
  * messages that are redelivered ass part of a replay.
+ *
+ * @author Allard Buijze
+ * @since 3.2
  */
 public class ReplayToken implements TrackingToken, WrappedToken {
 
@@ -101,8 +103,14 @@ public class ReplayToken implements TrackingToken, WrappedToken {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         ReplayToken that = (ReplayToken) o;
         return Objects.equals(tokenAtReset, that.tokenAtReset) &&
                 Objects.equals(currentToken, that.currentToken);
