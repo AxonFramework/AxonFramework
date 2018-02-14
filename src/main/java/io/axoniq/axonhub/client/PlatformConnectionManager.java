@@ -44,9 +44,9 @@ public class PlatformConnectionManager {
     private volatile ScheduledFuture<?> reconnectTask;
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
-    private final AxonIQPlatformConfiguration connectInformation;
+    private final AxonHubConfiguration connectInformation;
 
-    public PlatformConnectionManager(AxonIQPlatformConfiguration connectInformation) {
+    public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
         this.connectInformation = connectInformation;
     }
 

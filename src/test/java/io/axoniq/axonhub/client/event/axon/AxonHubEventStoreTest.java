@@ -15,7 +15,7 @@
 
 package io.axoniq.axonhub.client.event.axon;
 
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.StubServer;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -44,7 +44,7 @@ public class AxonHubEventStoreTest {
     public void setUp() throws Exception {
         server = new StubServer(6123);
         server.start();
-        AxonIQPlatformConfiguration config = AxonIQPlatformConfiguration.newBuilder("localhost:6123", "JUNIT", "JUNIT")
+        AxonHubConfiguration config = AxonHubConfiguration.newBuilder("localhost:6123", "JUNIT", "JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
         PlatformConnectionManager platformConnectionManager = new PlatformConnectionManager(config);

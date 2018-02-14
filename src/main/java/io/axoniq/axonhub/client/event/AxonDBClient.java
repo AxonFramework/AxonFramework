@@ -17,7 +17,7 @@ package io.axoniq.axonhub.client.event;
 
 import io.axoniq.axondb.Event;
 import io.axoniq.axondb.grpc.*;
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.util.EventCipher;
 import io.axoniq.axonhub.client.event.util.GrpcExceptionParser;
@@ -47,7 +47,7 @@ public class AxonDBClient {
 
     private boolean shutdown;
 
-    public AxonDBClient(AxonIQPlatformConfiguration eventStoreConfiguration, PlatformConnectionManager platformConnectionManager) {
+    public AxonDBClient(AxonHubConfiguration eventStoreConfiguration, PlatformConnectionManager platformConnectionManager) {
         this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
         this.platformConnectionManager = platformConnectionManager;

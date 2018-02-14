@@ -20,8 +20,8 @@ import io.axoniq.axondb.Event;
 import io.axoniq.axondb.grpc.EventWithToken;
 import io.axoniq.axondb.grpc.GetAggregateEventsRequest;
 import io.axoniq.axondb.grpc.GetEventsRequest;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.event.AppendEventTransaction;
@@ -69,7 +69,7 @@ public class AxonHubEventStore extends AbstractEventStore {
      * @param platformConnectionManager
      * @param serializer    The serializer to serialize Event payloads with
      */
-    public AxonHubEventStore(AxonIQPlatformConfiguration configuration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
+    public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
         this(configuration, platformConnectionManager, serializer, NoOpEventUpcaster.INSTANCE);
     }
 
@@ -83,7 +83,7 @@ public class AxonHubEventStore extends AbstractEventStore {
      * @param serializer    The serializer to serialize Event payloads with
      * @param upcasterChain The upcaster to modify received Event representations with
      */
-    public AxonHubEventStore(AxonIQPlatformConfiguration configuration, PlatformConnectionManager platformConnectionManager,
+    public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager,
                              Serializer serializer, EventUpcaster upcasterChain) {
         super(new AxonIQEventStorageEngine(serializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
     }
@@ -104,13 +104,13 @@ public class AxonHubEventStore extends AbstractEventStore {
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
 
         private final EventUpcaster upcasterChain;
-        private final AxonIQPlatformConfiguration configuration;
+        private final AxonHubConfiguration configuration;
         private final AxonDBClient eventStoreClient;
         private final GrpcMetaDataConverter converter;
 
         private AxonIQEventStorageEngine(Serializer serializer,
                                          EventUpcaster upcasterChain,
-                                         AxonIQPlatformConfiguration configuration,
+                                         AxonHubConfiguration configuration,
                                          AxonDBClient eventStoreClient) {
             super(serializer, upcasterChain, null, serializer);
             this.upcasterChain = upcasterChain;

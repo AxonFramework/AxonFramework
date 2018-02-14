@@ -17,7 +17,7 @@ package io.axoniq.axonhub.client.command;
 
 import com.google.protobuf.ByteString;
 import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.grpc.CommandProviderInbound;
 import io.axoniq.axonhub.grpc.CommandProviderOutbound;
@@ -46,17 +46,17 @@ import static org.mockito.Mockito.mock;
 /**
  * Author: marc
  */
-public class AxonIQCommandBusTest {
-    private AxonIQCommandBus testSubject;
+public class AxonHubCommandBusTest {
+    private AxonHubCommandBus testSubject;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
-    private AxonIQPlatformConfiguration conf;
+    private AxonHubConfiguration conf;
     private XStreamSerializer ser;
     private SimpleCommandBus localSegment;
 
 
     @Before
     public void setup() throws Exception {
-        conf = new AxonIQPlatformConfiguration();
+        conf = new AxonHubConfiguration();
         conf.setRoutingServers("localhost:4343");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
@@ -65,7 +65,7 @@ public class AxonIQCommandBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = new SimpleCommandBus();
         ser = new XStreamSerializer();
-        testSubject = new AxonIQCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
+        testSubject = new AxonHubCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
@@ -155,7 +155,7 @@ public class AxonIQCommandBusTest {
                 }
             };
         }).when(mockPlatformConnectionManager).getCommandStream(any(), any());
-        AxonIQCommandBus testSubject2 = new AxonIQCommandBus(mockPlatformConnectionManager, conf, localSegment, ser,
+        AxonHubCommandBus testSubject2 = new AxonHubCommandBus(mockPlatformConnectionManager, conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
         testSubject2.subscribe(String.class.getName(), c -> c.getMetaData().get("test1"));
 

@@ -15,9 +15,9 @@
 
 package io.axoniq.axonhub.client.query;
 
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.command.AxonIQRegistration;
+import io.axoniq.axonhub.client.command.AxonHubRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
@@ -50,9 +50,9 @@ import java.util.stream.StreamSupport;
  * AxonHub implementation for the QueryBus. Delegates incoming queries to the specified localSegment.
  * @author Marc Gathier
  */
-public class AxonIQQueryBus implements QueryBus {
-    private final Logger logger = LoggerFactory.getLogger(AxonIQQueryBus.class);
-    private final AxonIQPlatformConfiguration configuration;
+public class AxonHubQueryBus implements QueryBus {
+    private final Logger logger = LoggerFactory.getLogger(AxonHubQueryBus.class);
+    private final AxonHubConfiguration configuration;
     private final QueryBus localSegment;
     private final QuerySerializer serializer;
     private final QueryPriorityCalculator priorityCalculator;
@@ -62,15 +62,15 @@ public class AxonIQQueryBus implements QueryBus {
 
 
     /**
-     * Creates an instance of the AxonIQQueryBus
+     * Creates an instance of the AxonHubQueryBus
      * @param platformConnectionManager creates connection to AxonHub platform
      * @param configuration contains client and component names used to identify the application in AxonHub
      * @param localSegment handles incoming query requests
      * @param serializer serializer/deserializer for query requests and responses
      * @param priorityCalculator calculates the request priority based on the content and adds it to the request
      */
-    public AxonIQQueryBus(PlatformConnectionManager platformConnectionManager, AxonIQPlatformConfiguration configuration, QueryBus localSegment,
-                          Serializer serializer, QueryPriorityCalculator priorityCalculator) {
+    public AxonHubQueryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration, QueryBus localSegment,
+                           Serializer serializer, QueryPriorityCalculator priorityCalculator) {
         this.configuration = configuration;
         this.localSegment = localSegment;
         this.serializer = new QuerySerializer(serializer);
@@ -87,7 +87,7 @@ public class AxonIQQueryBus implements QueryBus {
 
     @Override
     public <R> Registration subscribe(String queryName, Class<R> responseType, MessageHandler<? super QueryMessage<?, R>> handler) {
-        return new AxonIQRegistration(queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
+        return new AxonHubRegistration(queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
                 () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName()));
     }
 

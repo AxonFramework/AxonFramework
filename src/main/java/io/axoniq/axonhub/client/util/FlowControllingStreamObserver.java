@@ -15,7 +15,7 @@
 
 package io.axoniq.axonhub.client.util;
 
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
     private final static Logger logger = LoggerFactory.getLogger(FlowControllingStreamObserver.class);
     private final AtomicLong remainingPermits;
     private final long newPermits;
-    private final AxonIQPlatformConfiguration configuration;
+    private final AxonHubConfiguration configuration;
     private final T newPermitsRequest;
     private final Predicate<T> isConfirmationMessage;
     private final Function<FlowControl, T> requestWrapper;
@@ -48,7 +48,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
      * @param requestWrapper Function to create a new permits request
      * @param isConfirmationMessage predicate to test if the message sent to AxonHub is a confirmation message
      */
-    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonIQPlatformConfiguration configuration,
+    public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonHubConfiguration configuration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
         this.wrappedStreamObserver = wrappedStreamObserver;
         this.configuration = configuration;

@@ -22,11 +22,11 @@ import org.axonframework.common.Registration;
  * Wrapper around standard Axon framework registration.
  * Notifies messaging server when registration is cancelled or closed, and delegates the close/cancel to the normal registration.
  */
-public class AxonIQRegistration implements Registration {
+public class AxonHubRegistration implements Registration {
     private final Registration wrappedRegistration;
     private final Runnable closeCallback;
 
-    public AxonIQRegistration(Registration wrappedRegistration, Runnable closeCallback) {
+    public AxonHubRegistration(Registration wrappedRegistration, Runnable closeCallback) {
         this.wrappedRegistration = wrappedRegistration;
         this.closeCallback = closeCallback;
     }

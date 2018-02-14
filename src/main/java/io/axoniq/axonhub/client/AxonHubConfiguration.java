@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * Author: marc
  */
 
-public class AxonIQPlatformConfiguration {
+public class AxonHubConfiguration {
     @Value("${axoniq.axonhub.servers}")
     private String routingServers;
 
@@ -55,10 +55,10 @@ public class AxonIQPlatformConfiguration {
     private EventCipher eventCipher = new EventCipher();
 
 
-    public AxonIQPlatformConfiguration() {
+    public AxonHubConfiguration() {
     }
 
-    private AxonIQPlatformConfiguration(String routingServers, String clientName, String componentName) {
+    private AxonHubConfiguration(String routingServers, String clientName, String componentName) {
         this.routingServers = routingServers;
         this.clientName = clientName;
         this.componentName = componentName;
@@ -167,9 +167,9 @@ public class AxonIQPlatformConfiguration {
 
     @SuppressWarnings("unused")
     public static class Builder {
-        private AxonIQPlatformConfiguration instance;
+        private AxonHubConfiguration instance;
         public Builder(String servers, String componentName, String clientName) {
-            instance = new AxonIQPlatformConfiguration(servers, clientName, componentName);
+            instance = new AxonHubConfiguration(servers, clientName, componentName);
             instance.initialNrOfPermits = 100000;
             instance.nrOfNewPermits = 90000;
             instance.newPermitsThreshold = 10000;
@@ -208,7 +208,7 @@ public class AxonIQPlatformConfiguration {
             return this;
         }
 
-        public AxonIQPlatformConfiguration build() {
+        public AxonHubConfiguration build() {
             return instance;
         }
     }

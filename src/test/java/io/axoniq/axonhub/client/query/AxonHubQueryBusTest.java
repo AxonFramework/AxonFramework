@@ -17,7 +17,7 @@ package io.axoniq.axonhub.client.query;
 
 import com.google.protobuf.ByteString;
 import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.axonhub.client.AxonIQPlatformConfiguration;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
@@ -45,17 +45,17 @@ import static org.mockito.Mockito.mock;
 /**
  * Author: marc
  */
-public class AxonIQQueryBusTest {
-    private AxonIQQueryBus queryBus;
+public class AxonHubQueryBusTest {
+    private AxonHubQueryBus queryBus;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private XStreamSerializer ser;
-    private AxonIQPlatformConfiguration conf;
+    private AxonHubConfiguration conf;
     private SimpleQueryBus localSegment;
 
 
     @Before
     public void setup() throws Exception {
-        conf = new AxonIQPlatformConfiguration();
+        conf = new AxonHubConfiguration();
         conf.setRoutingServers("localhost:4343");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
@@ -64,7 +64,7 @@ public class AxonIQQueryBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = new SimpleQueryBus();
         ser = new XStreamSerializer();
-        queryBus = new AxonIQQueryBus(new PlatformConnectionManager(conf), conf, localSegment, ser, new QueryPriorityCalculator() {});
+        queryBus = new AxonHubQueryBus(new PlatformConnectionManager(conf), conf, localSegment, ser, new QueryPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
     }
@@ -116,7 +116,7 @@ public class AxonIQQueryBusTest {
             };
         }).when(platformConnectionManager).getQueryStream(any(), any());
 
-        AxonIQQueryBus queryBus2 = new AxonIQQueryBus(platformConnectionManager, conf, localSegment, ser, new QueryPriorityCalculator() {});
+        AxonHubQueryBus queryBus2 = new AxonHubQueryBus(platformConnectionManager, conf, localSegment, ser, new QueryPriorityCalculator() {});
         Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
         QueryProviderInbound inboundMessage = QueryProviderInbound.newBuilder()
                 .setQuery(QueryRequest.newBuilder()
