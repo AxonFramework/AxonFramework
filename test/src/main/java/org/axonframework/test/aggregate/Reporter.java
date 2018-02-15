@@ -26,10 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,7 +43,8 @@ public class Reporter {
 
     /**
      * Report a failed assertion due to a difference in the stored versus the published events.
-     *  @param storedEvents    The events that were stored
+     *
+     * @param storedEvents    The events that were stored
      * @param publishedEvents The events that were published
      * @param probableCause   An exception that might be the cause of the failure
      */
@@ -119,7 +117,7 @@ public class Reporter {
     public void reportUnexpectedException(Throwable actualException, Description expectation) {
         StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
         sb.append(NEWLINE)
-          .append(NEWLINE)
+                .append(NEWLINE)
                 .append("Expected <") //NOSONAR
                 .append(expectation.toString())
                 .append("> but got <exception of type [")
@@ -140,13 +138,13 @@ public class Reporter {
     public void reportWrongResult(Object actualReturnValue, Description expectation) {
         StringBuilder sb = new StringBuilder("The command handler returned an unexpected value");
         sb.append(NEWLINE)
-          .append(NEWLINE)
-          .append("Expected <"); //NOSONAR
+                .append(NEWLINE)
+                .append("Expected <"); //NOSONAR
         sb.append(expectation.toString());
         sb.append("> but got <");
         describe(actualReturnValue, sb);
         sb.append(">")
-          .append(NEWLINE);
+                .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -159,13 +157,13 @@ public class Reporter {
     public void reportUnexpectedReturnValue(Object actualReturnValue, Description description) {
         StringBuilder sb = new StringBuilder("The command handler returned normally, but an exception was expected");
         sb.append(NEWLINE)
-          .append(NEWLINE)
-          .append("Expected <"); //NOSONAR
+                .append(NEWLINE)
+                .append("Expected <"); //NOSONAR
         sb.append(description.toString());
         sb.append("> but returned with <");
         describe(actualReturnValue, sb);
         sb.append(">")
-          .append(NEWLINE);
+                .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -178,7 +176,7 @@ public class Reporter {
     public void reportWrongException(Throwable actualException, Description description) {
         StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type");
         sb.append(NEWLINE)
-          .append(NEWLINE)
+                .append(NEWLINE)
                 .append("Expected <") //NOSONAR
                 .append(description.toString())
                 .append("> but got <exception of type [")
@@ -202,26 +200,61 @@ public class Reporter {
                                              Object expected) {
         StringBuilder sb = new StringBuilder("One of the events contained different values than expected");
         sb.append(NEWLINE)
-          .append(NEWLINE)
-          .append("In an event of type [")
-          .append(eventType.getSimpleName())
-          .append("], the property [")
-          .append(field.getName())
-          .append("] ");
+                .append(NEWLINE)
+                .append("In an event of type [")
+                .append(eventType.getSimpleName())
+                .append("], the property [")
+                .append(field.getName())
+                .append("] ");
         if (!eventType.equals(field.getDeclaringClass())) {
             sb.append("(declared in [")
-              .append(field.getDeclaringClass().getSimpleName())
-              .append("]) ");
+                    .append(field.getDeclaringClass().getSimpleName())
+                    .append("]) ");
         }
 
         sb.append("was not as expected.")
-          .append(NEWLINE)
+                .append(NEWLINE)
                 .append("Expected <") //NOSONAR
                 .append(nullSafeToString(expected))
                 .append("> but got <")
                 .append(nullSafeToString(actual))
                 .append(">")
                 .append(NEWLINE);
+        throw new AxonAssertionError(sb.toString());
+    }
+
+    /**
+     * @param eventType         The (runtime) type of event the difference was found in
+     * @param missingEntries    The expected key-value pairs that where not present in the metadata
+     * @param additionalEntries Key-value pairs that where present in the metadata but not expected
+     */
+    public void reportDifferentMetaData(Class<?> eventType, Map<String, Object> missingEntries, Map<String, Object> additionalEntries) {
+        StringBuilder sb = new StringBuilder("One of the events contained different metadata than expected");
+        sb.append(NEWLINE)
+                .append(NEWLINE)
+                .append("In an event of type [")
+                .append(eventType.getSimpleName())
+                .append("], ");
+        if (!additionalEntries.isEmpty()) {
+            sb.append("metadata entries" + NEWLINE)
+                    .append("[");
+            for (Map.Entry<String, Object> entry : additionalEntries.entrySet()) {
+                sb.append(entryAsString(entry) + ",");
+            }
+            sb.deleteCharAt(sb.lastIndexOf(","));
+            sb.append("] " + NEWLINE);
+            sb.append("were not expected.");
+        }
+        if (!missingEntries.isEmpty()) {
+            sb.append("metadata entries " + NEWLINE)
+                    .append("[");
+            for (Map.Entry<String, Object> entry : missingEntries.entrySet()) {
+                sb.append(entryAsString(entry) + ",");
+            }
+            sb.deleteCharAt(sb.lastIndexOf(","));
+            sb.append("] " + NEWLINE);
+            sb.append("were expected but not seen.");
+        }
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -260,6 +293,14 @@ public class Reporter {
         }
     }
 
+    private String entryAsString(Map.Entry<?, ?> entry) {
+        if (entry == null) {
+            return "<null>=<null>";
+        } else {
+            return nullSafeToString(entry.getKey()) + "=" + nullSafeToString(entry.getValue());
+        }
+    }
+
     private void appendEventOverview(StringBuilder sb, Collection<?> leftColumnEvents,
                                      Collection<?> rightColumnEvents,
                                      String leftColumnName,
@@ -281,8 +322,8 @@ public class Reporter {
         sb.append(leftColumnName);
         pad(sb, leftColumnName.length(), largestExpectedSize, " ");
         sb.append("  |  ")
-          .append(rightColumnName)
-          .append(NEWLINE);
+                .append(rightColumnName)
+                .append(NEWLINE);
         pad(sb, 0, largestExpectedSize, "-");
         sb.append("--|--");
         pad(sb, 0, largestExpectedSize, "-");

@@ -19,17 +19,17 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
-import org.axonframework.test.matchers.NonStaticFieldsFilter;
+import org.axonframework.test.matchers.MapEntryMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.*;
 
@@ -71,7 +71,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
             if (EventMessage.class.isInstance(expectedEvent)) {
                 EventMessage<?> expectedEventMessage = (EventMessage<?>) expectedEvent;
                 if (!verifyEventEquality(expectedEventMessage.getPayload(), actualEvent.getPayload())
-                        || !verifyMetaDataEquality(expectedEventMessage.getMetaData(), actualEvent.getMetaData())) {
+                        || !verifyMetaDataEquality(expectedEventMessage.getPayloadType(), expectedEventMessage.getMetaData(), actualEvent.getMetaData())) {
                     reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
                 }
             } else if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
@@ -178,16 +178,10 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         return true;
     }
 
-    private boolean verifyMetaDataEquality(MetaData expectedMetaData, MetaData actualMetaData) {
-        if (!expectedMetaData.getClass().equals(actualMetaData.getClass())) {
-            return false;
-        }
-        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedMetaData, NonStaticFieldsFilter.instance());
+    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData, Map<String, Object> actualMetaData) {
+        MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
         if (!matcher.matches(actualMetaData)) {
-            reporter.reportDifferentEventContents(expectedMetaData.getClass(),
-                                                  matcher.getFailedField(),
-                                                  matcher.getFailedFieldActualValue(),
-                                                  matcher.getFailedFieldExpectedValue());
+            reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
         }
         return true;
     }
