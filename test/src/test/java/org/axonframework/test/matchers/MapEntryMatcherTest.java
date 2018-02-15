@@ -74,9 +74,8 @@ public class MapEntryMatcherTest {
 
     @Test
     public void testAnyOrder() {
-        TreeMap<String, Object> sortedMap = new TreeMap() {{
-            putAll(EXPECTED);
-        }};
+        TreeMap<String, Object> sortedMap = new TreeMap();
+        sortedMap.putAll(EXPECTED);
 
         assertTrue(matcher.matches(sortedMap));
         assertTrue(matcher.matches(sortedMap.descendingMap()));
