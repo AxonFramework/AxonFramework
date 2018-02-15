@@ -57,7 +57,7 @@ public class AxonHubCommandBusTest {
     @Before
     public void setup() throws Exception {
         conf = new AxonHubConfiguration();
-        conf.setRoutingServers("localhost:4343");
+        conf.setRoutingServers("localhost:4344");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
         conf.setInitialNrOfPermits(100);
@@ -67,7 +67,7 @@ public class AxonHubCommandBusTest {
         ser = new XStreamSerializer();
         testSubject = new AxonHubCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
-        dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
+        dummyMessagePlatformServer = new DummyMessagePlatformServer(4344);
         dummyMessagePlatformServer.start();
     }
 
