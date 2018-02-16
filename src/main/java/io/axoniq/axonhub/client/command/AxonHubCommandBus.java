@@ -15,9 +15,7 @@
 
 package io.axoniq.axonhub.client.command;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.CommandResponse;
-import io.axoniq.axonhub.CommandSubscription;
+import io.axoniq.axonhub.*;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
@@ -39,8 +37,11 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 
 /**
@@ -77,8 +78,8 @@ public class AxonHubCommandBus implements CommandBus {
         this.platformConnectionManager = platformConnectionManager;
         this.routingStrategy = routingStrategy;
         this.priorityCalculator = priorityCalculator;
-        this.commandRouterSubscriber = new CommandRouterSubscriber();
         this.configuration = configuration;
+        this.commandRouterSubscriber = new CommandRouterSubscriber();
         interceptors = new ClientInterceptor[]{ new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
     }
@@ -144,12 +145,33 @@ public class AxonHubCommandBus implements CommandBus {
 
     protected class CommandRouterSubscriber {
         private final CopyOnWriteArraySet<String> subscribedCommands = new CopyOnWriteArraySet<>();
+        private final PriorityBlockingQueue<Command> commandQueue;
+        private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getCommandThreads());
+
 
         private volatile StreamObserver<CommandProviderOutbound> subscriberStreamObserver;
 
         public CommandRouterSubscriber() {
             platformConnectionManager.addReconnectListener(this::resubscribe);
             platformConnectionManager.addDisconnectListener(this::unsubscribeAll);
+            commandQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
+            IntStream.range(0, configuration.getCommandThreads()).forEach( i -> executor.submit(this::commandExecutor));
+        }
+
+        private void commandExecutor() {
+            logger.debug("Starting command Executor");
+            while(true) {
+                Command command = null;
+                try {
+                    command = commandQueue.poll(10, TimeUnit.SECONDS);
+                    if( command != null) {
+                        logger.debug("Received command: {}", command);
+                        processCommand(command);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         private void resubscribe() {
@@ -184,12 +206,14 @@ public class AxonHubCommandBus implements CommandBus {
             }
         }
 
+
+
         private void processCommand(Command command) {
             StreamObserver<CommandProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
             try {
                 dispatchLocal(serializer.deserialize(command), subscriberStreamObserver);
             } catch (Throwable throwable) {
-                logger.error("Error while dispatching command {} - {}", command.getName(), throwable.getMessage());
+                logger.error("Error while dispatching command {} - {}", command.getName(), throwable.getMessage(), throwable);
                 CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                         CommandResponse.newBuilder().setMessageIdentifier(command.getMessageIdentifier())
                                 .setSuccess(false)
@@ -209,7 +233,7 @@ public class AxonHubCommandBus implements CommandBus {
                         logger.debug("Received from server: {}", commandToSubscriber);
                         switch (commandToSubscriber.getRequestCase()) {
                             case COMMAND:
-                                processCommand(commandToSubscriber.getCommand());
+                                commandQueue.add(commandToSubscriber.getCommand());
                                 break;
                         }
                     }
@@ -289,11 +313,10 @@ public class AxonHubCommandBus implements CommandBus {
 
                 @Override
                 public void onFailure(CommandMessage<? extends C> commandMessage, Throwable throwable) {
-
                     CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                             CommandResponse.newBuilder().setMessageIdentifier(command.getIdentifier())
                                     .setSuccess(false)
-                                    .setMessage(throwable.getMessage())
+                                    .setMessage(String.valueOf(throwable.getMessage()))
                                     .build()
                     ).build();
 
@@ -303,4 +326,17 @@ public class AxonHubCommandBus implements CommandBus {
             });
         }
     }
+
+    static long getProcessingInstructionNumber(List<ProcessingInstruction> processingInstructions, ProcessingKey key) {
+        return processingInstructions.stream()
+                .filter(pi -> key.equals(pi.getKey()))
+                .map(pi -> pi.getValue().getNumberValue())
+                .findFirst()
+                .orElse(0L);
+    }
+
+    static long priority(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
+    }
+
 }

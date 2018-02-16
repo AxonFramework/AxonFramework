@@ -15,14 +15,13 @@
 
 package io.axoniq.axonhub.client.query;
 
+import io.axoniq.axonhub.*;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
-import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.QuerySubscription;
 import io.axoniq.axonhub.grpc.QueryComplete;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
@@ -39,10 +38,9 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -163,6 +161,54 @@ public class AxonHubQueryBus implements QueryBus {
     class QueryProvider {
         private StreamObserver<QueryProviderOutbound> outboundStreamObserver;
         private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries = new ConcurrentHashMap<>();
+        private final PriorityBlockingQueue<QueryRequest> queryQueue;
+        private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getQueryThreads());
+
+        public QueryProvider() {
+            queryQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
+            IntStream.range(0, configuration.getQueryThreads()).forEach(i -> executor.submit(this::queryExecutor));
+        }
+
+        private void queryExecutor() {
+            logger.debug("Starting Query Executor");
+            while(true) {
+                QueryRequest command = null;
+                try {
+                    command = queryQueue.poll(10, TimeUnit.SECONDS);
+                    if( command != null) {
+                        logger.debug("Received command: {}", command);
+                        processQuery(command);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+
+        private void processQuery(QueryRequest query) {
+            String messageId = query.getMessageIdentifier();
+            try {
+                //noinspection unchecked
+                localSegment.queryAll(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
+                        .forEach(response -> outboundStreamObserver.onNext(
+                                        QueryProviderOutbound.newBuilder()
+                                        .setQueryResponse(serializer.serializeResponse(response, messageId))
+                                        .build()));
+
+                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
+                        QueryComplete.newBuilder().setMessageId(messageId)).build());
+            } catch( Exception ex) {
+                logger.warn("Received error from localSegment: {}", ex.getMessage());
+                outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
+                        .setQueryResponse(QueryResponse.newBuilder()
+                                .setMessageIdentifier(messageId)
+                                .setMessage(ex.getMessage())
+                                .setSuccess(false)
+                                .build())
+                        .build());
+            }
+        }
 
         @SuppressWarnings("unchecked")
         public <R> Registration subscribe(String queryName, Class<R> responseType, String componentName, MessageHandler<? super QueryMessage<?, R>> handler) {
@@ -195,28 +241,7 @@ public class AxonHubQueryBus implements QueryBus {
                             case CONFIRMATION:
                                 break;
                             case QUERY:
-                                String messageId = inboundRequest.getQuery().getMessageIdentifier();
-                                try {
-                                    //noinspection unchecked
-                                    localSegment.queryAll(serializer.deserializeRequest(inboundRequest.getQuery()), 0, TimeUnit.SECONDS).forEach(response ->
-                                            outboundStreamObserver.onNext(
-                                                    QueryProviderOutbound.newBuilder()
-                                                            .setQueryResponse(serializer.serializeResponse(response, messageId))
-                                                            .build()
-                                            )
-                                    );
-                                    outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
-                                            QueryComplete.newBuilder().setMessageId(messageId)).build());
-                                } catch( Exception ex) {
-                                    logger.warn("Received error from localSegment: {}", ex.getMessage());
-                                    outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
-                                            .setQueryResponse(QueryResponse.newBuilder()
-                                                    .setMessageIdentifier(messageId)
-                                                    .setMessage(ex.getMessage())
-                                                    .setSuccess(false)
-                                                    .build())
-                                            .build());
-                                }
+                                queryQueue.add(inboundRequest.getQuery());
                                 break;
                         }
                     }
@@ -319,4 +344,17 @@ public class AxonHubQueryBus implements QueryBus {
             }
         }
     }
+
+    static long getProcessingInstructionNumber(List<ProcessingInstruction> processingInstructions, ProcessingKey key) {
+        return processingInstructions.stream()
+                .filter(pi -> key.equals(pi.getKey()))
+                .map(pi -> pi.getValue().getNumberValue())
+                .findFirst()
+                .orElse(0L);
+    }
+
+    static long priority(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
+    }
+
 }

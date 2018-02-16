@@ -52,6 +52,12 @@ public class AxonHubConfiguration {
     private Integer nrOfNewPermits;
     @Value("${axoniq.axonhub.flowControl.newPermitsThreshold:10000}")
     private Integer newPermitsThreshold;
+
+    @Value("${axoniq.axonhub.commands.threads:10}")
+    private int commandThreads = 10;
+    @Value("${axoniq.axonhub.queries.threads:10}")
+    private int queryThreads = 10;
+
     private EventCipher eventCipher = new EventCipher();
 
 
@@ -164,6 +170,21 @@ public class AxonHubConfiguration {
         }
     }
 
+    public Integer getCommandThreads() {
+        return commandThreads;
+    }
+
+    public void setCommandThreads(Integer commandThreads) {
+        this.commandThreads = commandThreads;
+    }
+
+    public int getQueryThreads() {
+        return queryThreads;
+    }
+
+    public void setQueryThreads(int queryThreads) {
+        this.queryThreads = queryThreads;
+    }
 
     @SuppressWarnings("unused")
     public static class Builder {
