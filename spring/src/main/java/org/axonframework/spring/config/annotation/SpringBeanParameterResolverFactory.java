@@ -17,6 +17,7 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.common.Priority;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -33,6 +34,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * ParameterResolverFactory implementation that resolves parameters in the Spring Application Context. A parameter can
@@ -81,10 +83,12 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             if (beanFactory instanceof ConfigurableListableBeanFactory) {
                 final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
                 // find @Qualifier matching candidate
-                for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
-                    final Qualifier qualifier = parameters[parameterIndex].getAnnotation(Qualifier.class);
-                    if (qualifier != null && SpringUtils.isQualifierMatch(bean.getKey(), clBeanFactory, qualifier.value())) {
-                        return new SpringBeanParameterResolver(beanFactory, bean.getKey());
+                final Optional<Map<String, Object>> qualifier = AnnotationUtils.findAnnotationAttributes(parameters[parameterIndex], Qualifier.class);
+                if (qualifier.isPresent()) {
+                    for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
+                        if (SpringUtils.isQualifierMatch(bean.getKey(), clBeanFactory, (String) qualifier.get().get("qualifier"))) {
+                            return new SpringBeanParameterResolver(beanFactory, bean.getKey());
+                        }
                     }
                 }
                 // find @Primary matching candidate
