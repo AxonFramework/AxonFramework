@@ -95,7 +95,7 @@ public class KafkaMessageStream<K, V> implements TrackingEventStream {
             poll.partitions().forEach(tp -> {
                 LinkedList<MessageAndOffset> partitionList = buffer.computeIfAbsent(tp, x -> new LinkedList<>());
                 poll.records(tp).forEach(cr -> converter.readKafkaMessage(cr).ifPresent(em -> {
-                    partitionList.add(new MessageAndOffset(em, cr.offset()));
+                    partitionList.add(new MessageAndOffset(em, cr.offset(), cr.timestamp()));
                     consumer.pause(Collections.singletonList(tp));
                 }));
             });
@@ -104,7 +104,7 @@ public class KafkaMessageStream<K, V> implements TrackingEventStream {
         TopicPartition smallest = null;
         long smallestTimestamp = Long.MAX_VALUE;
         for (Map.Entry<TopicPartition, LinkedList<MessageAndOffset>> entry : buffer.entrySet()) {
-            long messageTimestamp = entry.getValue().peek().eventMessage.getTimestamp().toEpochMilli();
+            long messageTimestamp = entry.getValue().peek().timestamp;
             if (messageTimestamp < smallestTimestamp) {
                 smallest = entry.getKey();
                 smallestTimestamp = messageTimestamp;
@@ -156,11 +156,12 @@ public class KafkaMessageStream<K, V> implements TrackingEventStream {
 
         private final EventMessage<?> eventMessage;
         private final long offset;
+        private final long timestamp;
 
-        private MessageAndOffset(EventMessage<?> eventMessage, long offset) {
-
+        private MessageAndOffset(EventMessage<?> eventMessage, long offset, long timestamp) {
             this.eventMessage = eventMessage;
             this.offset = offset;
+            this.timestamp = timestamp;
         }
 
         @Override
