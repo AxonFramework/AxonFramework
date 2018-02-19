@@ -30,6 +30,7 @@
         <module>integrationtests</module>
         <module>mongo</module>
         <module>amqp</module>
+        <module>kafka</module>
         <module>metrics</module>
         <module>spring-boot-starter</module>
         <module>spring-boot-starter-jgroups</module>
