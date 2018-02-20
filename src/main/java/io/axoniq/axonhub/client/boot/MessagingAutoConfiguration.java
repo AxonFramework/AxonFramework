@@ -34,8 +34,11 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -47,10 +50,19 @@ import org.springframework.context.annotation.Primary;
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
-public class MessagingAutoConfiguration {
+public class MessagingAutoConfiguration implements ApplicationContextAware {
+    private ApplicationContext applicationContext;
+
     @Bean
     public AxonHubConfiguration axonHubConfiguration() {
-        return new AxonHubConfiguration();
+        AxonHubConfiguration configuration = new AxonHubConfiguration();
+        configuration.setComponentName(clientName(applicationContext.getId()));
+        return configuration;
+    }
+
+    private String clientName(String id) {
+        if( id.contains(":")) return id.substring(0, id.indexOf(":"));
+        return id;
     }
 
     @Bean
@@ -99,5 +111,9 @@ public class MessagingAutoConfiguration {
                 serializer, priorityCalculator);
     }
 
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
 }
 
