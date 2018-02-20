@@ -2,16 +2,13 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.Partitioner;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
@@ -25,15 +22,11 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.*;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
-import org.springframework.kafka.test.utils.KafkaTestUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -42,15 +35,16 @@ import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.WA
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class KafkaMessageStreamTest {
     private static final String SOME_TOPIC = "topicFoo";
 
+    private final int NUMBER_OF_BROKERS = 3;
+    private final int NUMBER_OF_PARTITIONS = 3;
     @Rule
-    public KafkaEmbedded embeddedKafka = new KafkaEmbedded(5, true, SOME_TOPIC);
+    public KafkaEmbedded embeddedKafka = new KafkaEmbedded(NUMBER_OF_BROKERS, true, NUMBER_OF_PARTITIONS, SOME_TOPIC);
 
     private KafkaPublisher<String, byte[]> kafkaPublisher;
     private SimpleEventBus eventBus;
@@ -102,15 +96,15 @@ public class KafkaMessageStreamTest {
     }
 
     @Test
-    public void hasNextAvailable() throws InterruptedException {
+    public void testMultipleMessageConsumptionOrdering() throws InterruptedException {
         List<GenericDomainEventMessage<String>> messages = Arrays.asList(domainMessage("0"),
                                                                                            domainMessage("3"),
-                                                                                           domainMessage("1")
-//                                                                                           domainMessage("4"),
-//                                                                                           domainMessage("6"),
-//                                                                                           domainMessage("2"),
-//                                                                                           domainMessage("9"),
-//                                                                                           domainMessage("5")
+                                                                                           domainMessage("1"),
+                                                                                           domainMessage("4"),
+                                                                                           domainMessage("6"),
+                                                                                           domainMessage("2"),
+                                                                                           domainMessage("9"),
+                                                                                           domainMessage("5")
         );
 
         messages.forEach(m -> {
@@ -124,27 +118,27 @@ public class KafkaMessageStreamTest {
         consumer.subscribe(Collections.singleton(SOME_TOPIC));
         KafkaMessageStream<String, byte[]> testSubject = new KafkaMessageStream<>(null, consumer, messageConverter);
 
+        testSubject.hasNextAvailable(100, TimeUnit.MILLISECONDS);
+
+        List<String> ids = new ArrayList<>();
         for (int i = 0; i < messages.size(); i++) {
-            if (testSubject.hasNextAvailable(2000, TimeUnit.MILLISECONDS)) {
-                System.out.println(testSubject.nextAvailable().getIdentifier());
+            if (testSubject.hasNextAvailable(1, TimeUnit.SECONDS)) {
+                String identifier = testSubject.nextAvailable().getPayload().toString();
+                ids.add(identifier);
             }
         }
 
-//        assertThat(message.getIdentifier(), CoreMatchers.is(testSubject.peek().get().getIdentifier()));
+        System.out.println(ids);
 
-    }
-
-    @Test
-    public void nextAvailable() {
-    }
-
-    @Test
-    public void close() {
+        assertEquals("kafka stream should fetch all messages", 8, ids.size());
+        assertThat(ids, IsIterableContainingInOrder.contains("0", "3", "1", "4", "6", "2", "9", "5"));
     }
 
 
 
+    //TODO: test when we exceed batch size
 
+    //TODO: integration test with TokenProcessor (end2end)
 
     @After
     public void tearDown() throws Exception {
@@ -190,6 +184,6 @@ public class KafkaMessageStreamTest {
     }
 
     private GenericDomainEventMessage<String> domainMessage(String aggregateId) {
-        return new GenericDomainEventMessage<>("Stub", aggregateId, 1L, "Payload", MetaData.with("key", "value"));
+        return new GenericDomainEventMessage<>("Stub", aggregateId, 1L, aggregateId, MetaData.with("key", "value"));
     }
 }

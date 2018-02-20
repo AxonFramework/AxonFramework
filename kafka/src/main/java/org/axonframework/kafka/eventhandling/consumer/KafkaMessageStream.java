@@ -18,23 +18,23 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.common.TopicPartition;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.AbstractCollection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
+
+import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
  * Create message stream from a specific kafka topic. Messages are fetch in bulk and stored in an in-memory buffer. We
@@ -51,92 +51,50 @@ import java.util.concurrent.TimeUnit;
  * @since 3.0
  */
 public class KafkaMessageStream<K, V> implements TrackingEventStream {
+    private static final Logger logger = LoggerFactory.getLogger(KafkaMessageStream.class);
 
     private KafkaTrackingToken kafkaTrackingToken;
     private final Consumer<K, V> consumer;
     private final KafkaMessageConverter<K, V> converter;
-    private TrackedEventMessage<?> peeked;
-    private final Map<TopicPartition, LinkedList<MessageAndOffset>> buffer;
 
-    public KafkaMessageStream(KafkaTrackingToken kafkaTrackingToken, Consumer<K, V> consumer,
-                              KafkaMessageConverter<K, V> converter) {
+    private BufferedEventStream eventConsumer;
+
+    public KafkaMessageStream(KafkaTrackingToken kafkaTrackingToken, Consumer<K, V> consumer, KafkaMessageConverter<K, V> converter) {
         Assert.isTrue(consumer != null, () -> "Consumer cannot be null ");
         Assert.isTrue(converter != null, () -> "Converter cannot be null ");
         this.kafkaTrackingToken = kafkaTrackingToken;
         this.converter = converter;
         this.consumer = consumer;
-        buffer = new HashMap<>();
+        eventConsumer = new BufferedEventStream(1_000);
     }
 
     @Override
     public Optional<TrackedEventMessage<?>> peek() {
-        if (peeked != null || hasNextAvailable(0, TimeUnit.MILLISECONDS)) {
-            return Optional.ofNullable(peeked);
-        }
-        return Optional.empty();
+        return eventConsumer.peek();
     }
+
+
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit unit) {
-        if (peeked != null) {
-            return true;
-        }
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
 
-        ConsumerRecords<K, V> poll;
-        if (buffer.isEmpty()) {
-            poll = consumer.poll(unit.toMillis(timeout));
-        } else if (buffer.values().stream().anyMatch(AbstractCollection::isEmpty)) {
-            poll = consumer.poll(0);
-        } else {
-            poll = null;
-        }
-        if (poll != null) {
-            poll.partitions().forEach(tp -> {
-                LinkedList<MessageAndOffset> partitionList = buffer.computeIfAbsent(tp, x -> new LinkedList<>());
-                poll.records(tp).forEach(cr -> converter.readKafkaMessage(cr).ifPresent(em -> {
-                    partitionList.add(new MessageAndOffset(em, cr.offset(), cr.timestamp()));
-                    consumer.pause(Collections.singletonList(tp));
-                }));
-            });
+        if (!eventConsumer.hasNextAvailable(1, TimeUnit.MICROSECONDS)) {
+            ConsumerRecords<K, V> poll = consumer.poll(unit.toMillis(timeout));
+
+            StreamSupport.stream(Spliterators.spliteratorUnknownSize(poll.iterator(), Spliterator.ORDERED), false)
+                    .map(cr -> converter.readKafkaMessage(cr)
+                            //TODO: add proper tracking token instead of null
+                            .map(em -> new MessageAndOffset((asTrackedEventMessage(em, null)), cr.offset(), cr.timestamp())))
+                    .forEach(e -> eventConsumer.addEvent(e.get()));
         }
 
-        TopicPartition smallest = null;
-        long smallestTimestamp = Long.MAX_VALUE;
-        for (Map.Entry<TopicPartition, LinkedList<MessageAndOffset>> entry : buffer.entrySet()) {
-            long messageTimestamp = entry.getValue().peek().timestamp;
-            if (messageTimestamp < smallestTimestamp) {
-                smallest = entry.getKey();
-                smallestTimestamp = messageTimestamp;
-            }
-        }
-        if (smallest != null) {
-            LinkedList<MessageAndOffset> records = buffer.get(smallest);
-            MessageAndOffset message = records.poll();
-            KafkaTrackingToken newTrackingToken = kafkaTrackingToken == null
-                    ? KafkaTrackingToken.newInstance(Collections.singletonMap(smallest.partition(), message.offset + 1))
-                    : kafkaTrackingToken.advancedTo(smallest.partition(), message.offset + 1);
-            if (message.eventMessage instanceof DomainEventMessage) {
-                peeked = new GenericTrackedDomainEventMessage<>(newTrackingToken,
-                                                                (DomainEventMessage<?>) message.eventMessage);
-            } else {
-                peeked = new GenericTrackedEventMessage<>(newTrackingToken, message.eventMessage);
-            }
-            if (records.isEmpty()) {
-                consumer.resume(Collections.singletonList(smallest));
-            }
-        }
-        return peeked != null;
+        return eventConsumer.hasNextAvailable(timeout, unit);
+
     }
 
     @Override
     public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
-        while (peeked == null) {
-            hasNextAvailable(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
-        }
-        TrackedEventMessage<?> nextMessage = peeked;
-        peeked = null;
-        return nextMessage;
+        return eventConsumer.nextAvailable();
     }
 
     @Override
@@ -154,11 +112,11 @@ public class KafkaMessageStream<K, V> implements TrackingEventStream {
 
     private class MessageAndOffset {
 
-        private final EventMessage<?> eventMessage;
+        private final TrackedEventMessage<?> eventMessage;
         private final long offset;
-        private final long timestamp;
+        final long timestamp;
 
-        private MessageAndOffset(EventMessage<?> eventMessage, long offset, long timestamp) {
+        private MessageAndOffset(TrackedEventMessage<?> eventMessage, long offset, long timestamp) {
             this.eventMessage = eventMessage;
             this.offset = offset;
             this.timestamp = timestamp;
@@ -171,29 +129,77 @@ public class KafkaMessageStream<K, V> implements TrackingEventStream {
                     ", offset=" + offset +
                     '}';
         }
+
+        long getTimestamp() {
+            return timestamp;
+        }
     }
 
 
-    class MyTrackingStream<K, V> implements TrackingEventStream {
+    private class BufferedEventStream implements TrackingEventStream {
+
+        private final BlockingQueue<MessageAndOffset> eventQueue;
+        private MessageAndOffset peekEvent;
+
+        private BufferedEventStream(int queueCapacity) {
+            eventQueue = new PriorityBlockingQueue<>(queueCapacity, Comparator.comparingLong(MessageAndOffset::getTimestamp));
+        }
+
+        private void addEvent(MessageAndOffset event) {
+
+            try {
+                eventQueue.put(event);
+            } catch (InterruptedException e) {
+                logger.warn("Event producer thread was interrupted. Shutting down.", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+//TODO: remove if not sued
+//        private void addEvents(List<? extends MessageAndOffset> events) {
+//            //add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
+//            events.forEach(eventMessage -> {
+//                try {
+//                    eventQueue.put(eventMessage);
+//                } catch (InterruptedException e) {
+//                    logger.warn("Event producer thread was interrupted. Shutting down.", e);
+//                    Thread.currentThread().interrupt();
+//                }
+//            });
+//        }
 
         @Override
         public Optional<TrackedEventMessage<?>> peek() {
-            return Optional.empty();
+            return Optional.ofNullable(peekEvent == null && !hasNextAvailable() ? null : peekEvent.eventMessage);
         }
 
         @Override
-        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
-            return false;
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+            try {
+                return peekEvent != null || (peekEvent = eventQueue.poll(timeout, unit)) != null;
+            } catch (InterruptedException e) {
+                logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+                Thread.currentThread().interrupt();
+                return false;
+            }
         }
 
         @Override
         public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
-            return null;
+            try {
+                return peekEvent == null ? eventQueue.take().eventMessage : peekEvent.eventMessage;
+            } catch (InterruptedException e) {
+                logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+                Thread.currentThread().interrupt();
+                return null;
+            } finally {
+                peekEvent = null;
+            }
         }
 
         @Override
         public void close() {
-
+//            eventStreams.remove(this);
         }
     }
+
 }

@@ -63,18 +63,18 @@ public class KafkaMessageSource<K, V> implements StreamableMessageSource<Tracked
         consumer.subscribe(Collections.singletonList(topic));
         Assert.isTrue(trackingToken == null || trackingToken instanceof KafkaTrackingToken, () -> "Invalid token type");
         KafkaTrackingToken kafkaToken = (KafkaTrackingToken) trackingToken;
-        if (trackingToken == null) {
-            consumer.seekToBeginning(consumer.assignment());
-        } else {
-            consumer.assignment().forEach(tp -> {
-                if (kafkaToken.getPartitionPositions().containsKey(tp.partition())) {
-                    consumer.seek(tp, kafkaToken.getPartitionPositions().get(tp.partition()));
-                } else {
-                    consumer.seekToBeginning(Collections.singleton(tp));
-                }
-            });
-
-        }
+//        if (trackingToken == null) {
+//            consumer.seekToBeginning(consumer.assignment());
+//        } else {
+////            consumer.assignment().forEach(tp -> {
+////                if (kafkaToken.getPartitionPositions().containsKey(tp.partition())) {
+////                    consumer.seek(tp, kafkaToken.getPartitionPositions().get(tp.partition()));
+////                } else {
+////                    consumer.seekToBeginning(Collections.singleton(tp));
+////                }
+////            });
+//
+//        }
 
         return new KafkaMessageStream<>(kafkaToken, consumer, converter);
     }
