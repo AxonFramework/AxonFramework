@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -255,7 +255,6 @@ public class ComplexAggregateStructureTest {
 
     public static class ParagraphCreatedEvent {
 
-        @TargetAggregateIdentifier
         private final String bookId;
         private final int pageNumber;
         private final int paragraphId;
