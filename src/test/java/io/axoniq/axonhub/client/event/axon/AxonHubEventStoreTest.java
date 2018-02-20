@@ -44,7 +44,7 @@ public class AxonHubEventStoreTest {
     public void setUp() throws Exception {
         server = new StubServer(6123);
         server.start();
-        AxonHubConfiguration config = AxonHubConfiguration.newBuilder("localhost:6123", "JUNIT", "JUNIT")
+        AxonHubConfiguration config = AxonHubConfiguration.newBuilder("localhost:6123", "JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
         PlatformConnectionManager platformConnectionManager = new PlatformConnectionManager(config);

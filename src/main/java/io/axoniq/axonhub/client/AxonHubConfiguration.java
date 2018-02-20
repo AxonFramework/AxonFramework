@@ -17,8 +17,9 @@ package io.axoniq.axonhub.client;
 
 import io.axoniq.axonhub.client.event.util.EventCipher;
 import io.axoniq.platform.grpc.NodeInfo;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -27,35 +28,23 @@ import java.util.stream.Collectors;
 /**
  * Author: marc
  */
-
+@ConfigurationProperties(prefix = "axoniq.axonhub")
 public class AxonHubConfiguration {
-    @Value("${axoniq.axonhub.servers}")
-    private String routingServers;
-
-    @Value("${axoniq.axonhub.clientName}")
-    private String clientName;
-    @Value("${axoniq.axonhub.componentName}")
+    private static final int DEFAULT_GRPC_PORT = 8124;
+    private String servers;
+    private String clientName = ManagementFactory.getRuntimeMXBean().getName();
     private String componentName;
 
-    @Value("${axoniq.axonhub.token:#{null}}")
     private String token;
-    @Value("${axoniq.axonhub.context:#{null}}")
     private String context;
-    @Value("${axoniq.axonhub.ssl.certChainFile:#{null}}")
     private String certFile;
-    @Value("${axoniq.axonhub.ssl.enabled:false}")
     private boolean sslEnabled;
 
-    @Value("${axoniq.axonhub.flowControl.initialNrOfPermits:100000}")
-    private Integer initialNrOfPermits;
-    @Value("${axoniq.axonhub.flowControl.nrOfNewPermits:90000}")
-    private Integer nrOfNewPermits;
-    @Value("${axoniq.axonhub.flowControl.newPermitsThreshold:10000}")
-    private Integer newPermitsThreshold;
+    private Integer initialNrOfPermits = 1000000;
+    private Integer nrOfNewPermits = 90000;
+    private Integer newPermitsThreshold = 100000;
 
-    @Value("${axoniq.axonhub.commands.threads:10}")
     private int commandThreads = 10;
-    @Value("${axoniq.axonhub.queries.threads:10}")
     private int queryThreads = 10;
 
     private EventCipher eventCipher = new EventCipher();
@@ -64,15 +53,14 @@ public class AxonHubConfiguration {
     public AxonHubConfiguration() {
     }
 
-    private AxonHubConfiguration(String routingServers, String clientName, String componentName) {
-        this.routingServers = routingServers;
-        this.clientName = clientName;
+    private AxonHubConfiguration(String routingServers,  String componentName) {
+        this.servers = routingServers;
         this.componentName = componentName;
     }
 
 
-    public String getRoutingServers() {
-        return routingServers;
+    public String getServers() {
+        return servers;
     }
 
     public String getClientName() {
@@ -91,8 +79,8 @@ public class AxonHubConfiguration {
         this.componentName = componentName;
     }
 
-    public void setRoutingServers(String routingServers) {
-        this.routingServers = routingServers;
+    public void setServers(String routingServers) {
+        this.servers = routingServers;
     }
 
     public String getToken() {
@@ -152,10 +140,13 @@ public class AxonHubConfiguration {
     }
 
     public List<NodeInfo> routingServers() {
-        String[] serverArr = routingServers.split(",");
+        String[] serverArr = servers.split(",");
         return Arrays.stream(serverArr).map(server -> {
             String[] s = server.trim().split(":");
-            return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(Integer.valueOf(s[1])).build();
+            if( s.length > 1) {
+                return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(Integer.valueOf(s[1])).build();
+            }
+            return NodeInfo.newBuilder().setHostName(s[0]).setGrpcPort(DEFAULT_GRPC_PORT).build();
         }).collect(Collectors.toList());
     }
 
@@ -163,7 +154,6 @@ public class AxonHubConfiguration {
         return eventCipher;
     }
 
-    @Value("${axoniq.axonhub.eventSecretKey:#{null}}")
     private void setEventSecretKey(String key) {
         if(key != null && key.length() > 0) {
             eventCipher = new EventCipher(key.getBytes(StandardCharsets.US_ASCII));
@@ -189,8 +179,8 @@ public class AxonHubConfiguration {
     @SuppressWarnings("unused")
     public static class Builder {
         private AxonHubConfiguration instance;
-        public Builder(String servers, String componentName, String clientName) {
-            instance = new AxonHubConfiguration(servers, clientName, componentName);
+        public Builder(String servers, String componentName) {
+            instance = new AxonHubConfiguration(servers, componentName);
             instance.initialNrOfPermits = 100000;
             instance.nrOfNewPermits = 90000;
             instance.newPermitsThreshold = 10000;
@@ -234,7 +224,7 @@ public class AxonHubConfiguration {
         }
     }
 
-    public static Builder newBuilder(String servers, String componentName, String clientName) {
-        return new Builder( servers, componentName, clientName);
+    public static Builder newBuilder(String servers, String componentName) {
+        return new Builder( servers, componentName);
     }
 }

@@ -198,6 +198,7 @@ public class AxonHubCommandBus implements CommandBus {
                         CommandSubscription.newBuilder()
                                 .setCommand(command)
                                 .setClientName(configuration.getClientName())
+                                .setComponentName(configuration.getComponentName())
                                 .setMessageId(UUID.randomUUID().toString())
                                 .build()
                 ).build());

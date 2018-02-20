@@ -56,7 +56,7 @@ public class AxonHubQueryBusTest {
     @Before
     public void setup() throws Exception {
         conf = new AxonHubConfiguration();
-        conf.setRoutingServers("localhost:4343");
+        conf.setServers("localhost:4343");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
         conf.setInitialNrOfPermits(100);
