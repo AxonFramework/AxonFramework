@@ -84,7 +84,7 @@ public class CurrentUnitOfWorkTest {
     }
 
     @Test
-    public void testAddMetaDataLoggingContext_SingleUnitOfWork_Ok() {
+    public void testAddMetaDataLoggingContextOnSingleUnitOfWork() {
         UUID eventId = UUID.randomUUID();
         Map<String, Object> entries = new HashMap<>();
         entries.put("eventId", eventId);
@@ -99,7 +99,7 @@ public class CurrentUnitOfWorkTest {
     }
 
     @Test
-    public void testAddMetaDataLoggingContext_MultipleUnitsOfWork_Ok() {
+    public void testAddMetaDataLoggingContextOnMultipleUnitsOfWork() {
         initializeMDC();
 
         Map<String, Object> entries1 = new HashMap<>();
@@ -136,7 +136,7 @@ public class CurrentUnitOfWorkTest {
     }
 
     @Test
-    public void testAddMetaDataLoggingContext_NullMessage_Ok() {
+    public void testAddMetaDataLoggingContextOnNullMessage() {
         UnitOfWork<Message<?>> uow = new DefaultUnitOfWork<>(null);
         uow.start();
 
@@ -145,7 +145,7 @@ public class CurrentUnitOfWorkTest {
     }
 
     @Test
-    public void testAddMetaDataLoggingContext_NullMetaData_Ok() {
+    public void testAddMetaDataLoggingContextOnNullMetaData() {
         UnitOfWork<Message<?>> uow = new DefaultUnitOfWork<>(mockMessage(null));
         uow.start();
 
