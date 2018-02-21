@@ -183,7 +183,65 @@ public class EventHandlingConfigurationTest {
     }
 
     @Test
+    public void testConfigureDefaultListenerInvocationErrorHandler() throws Exception {
+        GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
+
+        int expectedListenerInvocationErrorHandlerCalls = 2;
+
+        StubErrorHandler errorHandler = new StubErrorHandler(2);
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
+                .configureListenerInvocationErrorHandler(config -> errorHandler);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        //noinspection Duplicates
+        try {
+            config.eventBus().publish(errorThrowingEventMessage);
+            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+
+            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
+            assertEquals(expectedListenerInvocationErrorHandlerCalls, errorHandler.getErrorCounter());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    public void testConfigureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
+        GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
+
+        int expectedErrorHandlerCalls = 1;
+
+        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
+        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
+                .configureListenerInvocationErrorHandler("subscribing", config -> subscribingErrorHandler)
+                .configureListenerInvocationErrorHandler("tracking", config -> trackingErrorHandler);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        //noinspection Duplicates
+        try {
+            config.eventBus().publish(errorThrowingEventMessage);
+
+            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
+
+            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
+            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
     public void testConfigureDefaultErrorHandler() throws Exception {
+        GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
+
         int expectedErrorHandlerCalls = 2;
 
         StubErrorHandler errorHandler = new StubErrorHandler(2);
@@ -194,8 +252,9 @@ public class EventHandlingConfigurationTest {
         configurer.registerModule(module);
         Configuration config = configurer.start();
 
+        //noinspection Duplicates
         try {
-            config.eventBus().publish(new GenericEventMessage<>(1000));
+            config.eventBus().publish(failingEventMessage);
             assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
 
             assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
@@ -221,6 +280,7 @@ public class EventHandlingConfigurationTest {
         configurer.registerModule(module);
         Configuration config = configurer.start();
 
+        //noinspection Duplicates
         try {
             config.eventBus().publish(failingEventMessage);
 
@@ -324,6 +384,11 @@ public class EventHandlingConfigurationTest {
         public void handle(Integer event, UnitOfWork unitOfWork) {
             unitOfWork.rollback(new IllegalStateException());
         }
+
+        @EventHandler
+        public void handle(Boolean event) {
+            throw new IllegalStateException();
+        }
     }
 
     @SuppressWarnings("unused")
@@ -339,9 +404,14 @@ public class EventHandlingConfigurationTest {
         public void handle(Integer event, UnitOfWork unitOfWork) {
             unitOfWork.rollback(new IllegalStateException());
         }
+
+        @EventHandler
+        public void handle(Boolean event) {
+            throw new IllegalStateException();
+        }
     }
 
-    private class StubErrorHandler implements ErrorHandler {
+    private class StubErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
 
         private long errorCounter = 0;
         private final CountDownLatch latch;
@@ -352,6 +422,12 @@ public class EventHandlingConfigurationTest {
 
         @Override
         public void handleError(ErrorContext errorContext) {
+            errorCounter++;
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
             errorCounter++;
             latch.countDown();
         }
