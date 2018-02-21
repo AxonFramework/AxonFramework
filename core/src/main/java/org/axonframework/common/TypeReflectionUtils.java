@@ -4,12 +4,7 @@ package org.axonframework.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +18,8 @@ import java.util.stream.IntStream;
  * has remained. The private functions used by {@code getExactSuperType(Type, Class)} have also been tailored to our
  * exact needs.
  * </p>
- * The credits for creating this functionality however go to Wouter Coekaerts.
+ * The credits for creating this functionality however go to Wouter Coekaerts, which created this functionality in the
+ * 'com.googlecode.gentyref' library with group id 'gentyref'.
  *
  * @author Wouter Coekaerts <wouter@coekaerts.be>
  * @author Steven van Beelen

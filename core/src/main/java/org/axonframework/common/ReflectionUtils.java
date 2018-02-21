@@ -16,21 +16,9 @@
 
 package org.axonframework.common;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.security.AccessController;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -215,23 +203,6 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Utility function which returns a {@link java.lang.reflect.Method} matching the given {@code methodName} in the
-     * {@code clazz}. Does not take parameters into consideration.
-     *
-     * @param clazz      The {@link java.lang.Class} to return a method for
-     * @param methodName A {@link java.lang.String} for the simple name of the method to return
-     * @return a {@link java.lang.reflect.Method} object from the given {@code clazz} matching the specified
-     * {@code methodName}
-     *
-     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found matching the {@code methodName}
-     *                               in {@code clazz}
-     */
-    public static Method methodOf(Class<?> clazz, String methodName)
-            throws NoSuchMethodException {
-        return methodOf(clazz, methodName, new Class[0]);
-    }
-
-    /**
      * Utility function which returns a {@link java.lang.reflect.Method} matching the given {@code methodName} and
      * {@code parameterTypes} in the {@code clazz}.
      *
@@ -245,7 +216,7 @@ public abstract class ReflectionUtils {
      * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found matching the {@code methodName}
      *                               in {@code clazz}
      */
-    public static Method methodOf(Class<?> clazz, String methodName, Class... parameterTypes)
+    public static Method methodOf(Class<?> clazz, String methodName, Class<?>... parameterTypes)
             throws NoSuchMethodException {
         return clazz.getMethod(methodName, parameterTypes);
     }
