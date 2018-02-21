@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -52,7 +54,7 @@ public class SegmentTest {
 
         // segment 0, mask 0;
         final long count = identifiers.stream().filter(Segment.ROOT_SEGMENT::matches).count();
-        assertThat(count, is((long)identifiers.size()));
+        assertThat(count, is((long) identifiers.size()));
 
         final Segment[] splitSegment = Segment.ROOT_SEGMENT.split();
 
@@ -262,6 +264,16 @@ public class SegmentTest {
         assertThat(splitSegment[1].getMask(), is(Integer.MAX_VALUE));
     }
 
+    @Test
+    public void testItemsAssignedToOnlyOneSegment() {
+        for (int j = 0; j < 10; j++) {
+            List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, ThreadLocalRandom.current().nextInt(50) + 1);
+            for (int i = 0; i < 100_000; i++) {
+                String value = UUID.randomUUID().toString();
+                assertEquals(1, segments.stream().filter(s -> s.matches(value)).count());
+            }
+        }
+    }
 
     private List<DomainEventMessage> produceEvents() {
         final ArrayList<DomainEventMessage> events = new ArrayList<>();
@@ -276,6 +288,6 @@ public class SegmentTest {
 
     private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
         return new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
-                new Object(), MetaData.emptyInstance());
+                                               new Object(), MetaData.emptyInstance());
     }
 }

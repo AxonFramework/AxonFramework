@@ -37,11 +37,11 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
     private transient int counter;
     private Integer lastNumber;
     @AggregateIdentifier
-    private Object identifier;
+    private String identifier;
     private MyEntity entity;
 
     public AnnotatedAggregate(Object identifier) {
-        this.identifier = identifier;
+        this.identifier = identifier.toString();
     }
 
     public AnnotatedAggregate() {
@@ -71,7 +71,7 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
 
     @EventSourcingHandler
     public void handleMyEvent(MyEvent event) {
-        identifier = event.getAggregateIdentifier();
+        identifier = event.getAggregateIdentifier() == null ? null : event.getAggregateIdentifier().toString();
         lastNumber = event.getSomeValue();
         if (entity == null) {
             entity = new MyEntity();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,21 @@ public interface EventListener {
      * @return {@code true} if this listener can handle the event, otherwise {@code false}
      */
     default boolean canHandle(EventMessage<?> event) {
+        return true;
+    }
+
+    /**
+     * Performs any activities that are required to reset the state managed by handlers assigned to this invoker.
+     */
+    default void prepareReset() {
+    }
+
+    /**
+     * Indicates whether the handlers managed by this invoker support a reset.
+     *
+     * @return {@code true} if a reset is supported, otherwise {@code false}
+     */
+    default boolean supportsReset() {
         return true;
     }
 }

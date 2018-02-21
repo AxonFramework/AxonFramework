@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,5 +179,22 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean supportsReset() {
+        for (EventListener eventListener : eventListeners) {
+            if (!eventListener.supportsReset()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void performReset() {
+        for (EventListener eventListener : eventListeners) {
+            eventListener.prepareReset();
+        }
     }
 }

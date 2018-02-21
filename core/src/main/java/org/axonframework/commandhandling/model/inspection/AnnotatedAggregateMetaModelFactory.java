@@ -20,6 +20,8 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.AggregateRoot;
 import org.axonframework.commandhandling.model.AggregateVersion;
 import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
@@ -147,7 +149,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         private void inspectAggregateType() {
             aggregateType = AnnotationUtils.findAnnotationAttributes(inspectedType, AggregateRoot.class)
-                                           .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
+                    .map(map -> (String) map.get("type")).filter(i -> i.length() > 0).orElse(inspectedType.getSimpleName());
         }
 
         private void inspectFields() {
@@ -173,8 +175,14 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                         routingKey = field.getName();
                     });
                 }
+                if (identifierField != null) {
+                    final Class<?> idClazz = identifierField.getType();
+                    if (!IdentifierValidator.getInstance().isValidIdentifier(idClazz)) {
+                        throw new AxonConfigurationException(format("Aggregate identifier type [%s] should override Object.toString()", idClazz.getName()));
+                    }
+                }
                 AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
-                               .ifPresent(attributes -> versionField = field);
+                        .ifPresent(attributes -> versionField = field);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of a {@link TokenStore} that stores tracking tokens in memory. This implementation is thread-safe.
@@ -53,10 +55,10 @@ public class InMemoryTokenStore implements TokenStore {
     public void storeToken(TrackingToken token, String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(uow -> {
-                tokens.put(new ProcessAndSegment(processorName, segment), token);
+                tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
             });
         } else {
-            tokens.put(new ProcessAndSegment(processorName, segment), token);
+            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
         }
     }
 

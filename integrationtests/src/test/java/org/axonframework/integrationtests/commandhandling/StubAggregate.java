@@ -29,7 +29,7 @@ public class StubAggregate {
     private int changeCounter;
 
     @AggregateIdentifier
-    private Object identifier;
+    private String identifier;
 
     public StubAggregate(Object aggregateId) {
         apply(new StubAggregateCreatedEvent(aggregateId));
@@ -48,7 +48,7 @@ public class StubAggregate {
 
     @EventSourcingHandler
     private void onCreated(StubAggregateCreatedEvent event) {
-        this.identifier = event.getAggregateIdentifier();
+        this.identifier = event.getAggregateIdentifier().toString();
         changeCounter = 0;
     }
 

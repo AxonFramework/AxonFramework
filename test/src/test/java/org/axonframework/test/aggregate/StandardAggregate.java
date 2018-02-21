@@ -35,10 +35,11 @@ class StandardAggregate {
     private transient int counter;
     private Integer lastNumber;
     @AggregateIdentifier
-    private Object identifier;
+    private String identifier;
     private MyEntity entity;
 
     public StandardAggregate(Object aggregateIdentifier) {
+        identifier = aggregateIdentifier.toString();
     }
 
     public StandardAggregate(int initialValue, Object aggregateIdentifier) {
@@ -59,7 +60,7 @@ class StandardAggregate {
 
     @EventSourcingHandler
     public void handleMyEvent(MyEvent event) {
-        identifier = event.getAggregateIdentifier();
+        identifier = event.getAggregateIdentifier().toString();
         lastNumber = event.getSomeValue();
         if (entity == null) {
             entity = new MyEntity();
