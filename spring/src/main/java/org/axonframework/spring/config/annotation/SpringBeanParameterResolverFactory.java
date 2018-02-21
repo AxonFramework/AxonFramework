@@ -89,12 +89,12 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             }
             if (logger.isWarnEnabled()) {
                 logger.warn("{} beans of type {} found, but none was marked as primary and parameter lacks @Qualifier. Ignoring this parameter.",
-                            beansFound.size(), parameterType.getSimpleName());
+                        beansFound.size(), parameterType.getSimpleName());
             }
             return null;
         } else {
             return new SpringBeanParameterResolver(applicationContext.getAutowireCapableBeanFactory(),
-                                                   beansFound.keySet().iterator().next());
+                    beansFound.keySet().iterator().next());
         }
     }
 
