@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,11 +59,15 @@ public class DefaultConflictResolver implements ConflictResolver {
     }
 
     @Override
-    public <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate,
-                                                      ConflictExceptionSupplier<T> exceptionSupplier) throws T {
+    public <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate, ContextAwareConflictExceptionSupplier<T> exceptionSupplier) throws T {
         conflictsResolved = true;
-        if (predicate.test(unexpectedEvents())) {
-            throw exceptionSupplier.supplyException(aggregateIdentifier, expectedVersion, actualVersion);
+        List<DomainEventMessage<?>> unexpectedEvents = unexpectedEvents();
+        if (predicate.test(unexpectedEvents)) {
+            T exception = exceptionSupplier.supplyException(new DefaultConflictDescription(aggregateIdentifier, expectedVersion,
+                                                                                           actualVersion, unexpectedEvents));
+            if (exception != null) {
+                throw exception;
+            }
         }
     }
 
@@ -82,8 +87,9 @@ public class DefaultConflictResolver implements ConflictResolver {
                 return Collections.emptyList();
             }
             events = eventStore.readEvents(aggregateIdentifier, expectedVersion + 1).asStream()
-                    .filter(event -> event.getSequenceNumber() <= actualVersion).collect(toList());
+                               .filter(event -> event.getSequenceNumber() <= actualVersion).collect(toList());
         }
         return events;
     }
+
 }

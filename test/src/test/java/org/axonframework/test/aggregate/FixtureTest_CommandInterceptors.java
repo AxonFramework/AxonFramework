@@ -203,13 +203,14 @@ public class FixtureTest_CommandInterceptors {
         private transient int counter;
         private Integer lastNumber;
         @AggregateIdentifier
-        private Object identifier;
+        private String identifier;
         private MyEntity entity;
 
         public InterceptorAggregate() {
         }
 
         public InterceptorAggregate(Object aggregateIdentifier) {
+            identifier = aggregateIdentifier.toString();
         }
 
         @CommandHandler
@@ -225,7 +226,7 @@ public class FixtureTest_CommandInterceptors {
 
         @EventHandler
         public void handle(StandardAggregateCreatedEvent event) {
-            this.identifier = event.getAggregateIdentifier();
+            this.identifier = event.getAggregateIdentifier().toString();
         }
 
     }

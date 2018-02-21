@@ -16,10 +16,7 @@
 
 package org.axonframework.common;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -106,4 +103,26 @@ public abstract class CollectionUtils {
         return Collections.singletonList((R) potentialCollection);
     }
 
+    /**
+     * Returns a collection containing the elements that are in both given collections {@code collection1} and
+     * {@code collection2}, using the given {@code collectionBuilder} to create an instance for the new collection. The
+     * items are added to the resulting collection in the order as found in collection2.
+     *
+     * @param collection1       The first collection
+     * @param collection2       The second collection
+     * @param collectionBuilder The factory for the returned collection instance
+     * @param <T>               The type of element contained in the resuling collection
+     * @param <C>               The type of collection to return
+     * @return a collection containing the elements that were found in both given collections
+     */
+    public static <T, C extends Collection<T>> C intersect(Collection<? extends T> collection1, Collection<? extends T> collection2, Supplier<C> collectionBuilder) {
+        C result = collectionBuilder.get();
+        HashSet<T> items = new HashSet<>(collection2);
+        for (T next : collection1) {
+            if (!items.add(next)) {
+                result.add(next);
+            }
+        }
+        return result;
+    }
 }

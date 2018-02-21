@@ -17,12 +17,15 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.common.Priority;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.spring.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -31,12 +34,15 @@ import org.springframework.context.ApplicationContextAware;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * ParameterResolverFactory implementation that resolves parameters in the Spring Application Context. A parameter can
  * be resolved as a Spring bean if there is exactly one bean assignable to the parameter type. If multiple beans are
- * available and one is marked as primary, that bean is chosen. Note that when multiple beans are marked as primary,
- * either one can be selected as parameter value.
+ * available the desired one can be designated with a {@link org.springframework.beans.factory.annotation.Qualifier}
+ * annotation on the parameter. By absence of a {@link org.springframework.beans.factory.annotation.Qualifier}
+ * annotation the bean marked as primary will be chosen.
+ * Note that when multiple beans are marked as primary, either one can be selected as parameter value.
  *
  * @author Allard Buijze
  * @since 2.1
@@ -76,23 +82,41 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
         } else if (beansFound.size() > 1) {
             final AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
             if (beanFactory instanceof ConfigurableListableBeanFactory) {
-                for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
-                    final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
-                    if (clBeanFactory.containsBeanDefinition(bean.getKey())
-                            && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
-                        return new SpringBeanParameterResolver(beanFactory, bean.getKey());
-                    }
+                Optional<ParameterResolver> resolver = findQualifiedBean(beansFound, (ConfigurableListableBeanFactory) beanFactory, parameters, parameterIndex);
+                if (resolver.isPresent()) {
+                    return resolver.get();
                 }
             }
             if (logger.isWarnEnabled()) {
-                logger.warn("{} beans of type {} found, but none was marked as primary. Ignoring this parameter.",
-                            beansFound.size(), parameterType.getSimpleName());
+                logger.warn("{} beans of type {} found, but none was marked as primary and parameter lacks @Qualifier. Ignoring this parameter.",
+                        beansFound.size(), parameterType.getSimpleName());
             }
             return null;
         } else {
             return new SpringBeanParameterResolver(applicationContext.getAutowireCapableBeanFactory(),
-                                                   beansFound.keySet().iterator().next());
+                    beansFound.keySet().iterator().next());
         }
+    }
+
+    private Optional<ParameterResolver> findQualifiedBean(Map<String, ?> beansFound, ConfigurableListableBeanFactory clBeanFactory, Parameter[] parameters, int parameterIndex) {
+        final Parameter parameter = parameters[parameterIndex];
+        // find @Qualifier matching candidate
+        final Optional<Map<String, Object>> qualifier = AnnotationUtils.findAnnotationAttributes(parameter, Qualifier.class);
+        if (qualifier.isPresent()) {
+            for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
+                if (SpringUtils.isQualifierMatch(bean.getKey(), clBeanFactory, (String) qualifier.get().get("qualifier"))) {
+                    return Optional.of(new SpringBeanParameterResolver(clBeanFactory, bean.getKey()));
+                }
+            }
+        }
+        // find @Primary matching candidate
+        for (Map.Entry<String, ?> bean : beansFound.entrySet()) {
+            if (clBeanFactory.containsBeanDefinition(bean.getKey())
+                    && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
+                return Optional.of(new SpringBeanParameterResolver(clBeanFactory, bean.getKey()));
+            }
+        }
+        return Optional.empty();
     }
 
     @Override

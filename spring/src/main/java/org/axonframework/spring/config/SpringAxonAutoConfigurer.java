@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
- *
+ * Copyright (c) 2010-2018. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +24,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.*;
+import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
@@ -156,8 +156,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(ListenerInvocationErrorHandler.class).ifPresent(
                 handler -> configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c))
         );
-        findComponent(ListenerInvocationErrorHandler.class).ifPresent(handler -> configurer
-                .registerComponent(ListenerInvocationErrorHandler.class, c -> getBean(handler, c)));
+        findComponent(ErrorHandler.class).ifPresent(
+                handler -> configurer.registerComponent(ErrorHandler.class, c -> getBean(handler, c))
+        );
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)
