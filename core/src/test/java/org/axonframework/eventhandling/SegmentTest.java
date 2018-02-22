@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -127,10 +128,28 @@ public class SegmentTest {
 
     @Test
     public void testSegmentSplitNTimes() {
+        {
+            //
+            final List<Segment> segmentMasks = Segment.splitBalanced(Segment.ROOT_SEGMENT, 5);
+            assertThat(segmentMasks.size(), is(6));
+            assertThat(segmentMasks.get(5), equalTo(new Segment(5, 0x7)));
+            assertThat(segmentMasks.get(0), equalTo(new Segment(0, 0x7)));
+            assertThat(segmentMasks.get(1), equalTo(new Segment(1, 0x7)));
+            assertThat(segmentMasks.get(2), equalTo(new Segment(2, 0x3)));
+            assertThat(segmentMasks.get(3), equalTo(new Segment(3, 0x3)));
+            assertThat(segmentMasks.get(4), equalTo(new Segment(4, 0x7)));
+        }
+    }
 
-        final List<Segment> splits = Segment.splitBalanced(Segment.ROOT_SEGMENT, 10);
-
-        assertThat(splits.size(), is(11));
+    @Test
+    public void testSplitFromRootSegmentAlwaysYieldsSequentialSegmentIds() {
+        for (int i = 0; i < 500; i++) {
+            List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, i);
+            assertEquals(i + 1, segments.size());
+            for (int j = 0; j < i; j++) {
+                assertEquals(j, segments.get(j).getSegmentId());
+            }
+        }
     }
 
     @Test
@@ -243,6 +262,19 @@ public class SegmentTest {
             assertThat(segmentMasks[2].getMask(), is(0x3));
             assertThat(segmentMasks[3].getMask(), is(0x7));
             assertThat(segmentMasks[4].getMask(), is(0x7));
+        }
+
+        {
+            //
+            final int[] segments = {0, 1, 2, 3, 4, 5};
+            final Segment[] segmentMasks = Segment.computeSegments(segments);
+            assertThat(segmentMasks.length, is(6));
+            assertThat(segmentMasks[0], equalTo(new Segment(0, 0x7)));
+            assertThat(segmentMasks[1], equalTo(new Segment(1, 0x7)));
+            assertThat(segmentMasks[2], equalTo(new Segment(2, 0x3)));
+            assertThat(segmentMasks[3], equalTo(new Segment(3, 0x3)));
+            assertThat(segmentMasks[4], equalTo(new Segment(4, 0x7)));
+            assertThat(segmentMasks[5], equalTo(new Segment(5, 0x7)));
         }
     }
 
