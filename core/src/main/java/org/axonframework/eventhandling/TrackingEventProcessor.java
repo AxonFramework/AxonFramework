@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -493,16 +493,17 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         public void run() {
             while (getState().isRunning()) {
                 String processorName = TrackingEventProcessor.this.getName();
-                final int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
+                int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
 
                 // When in an initial stage, split segments to the requested number.
-                if (tokenStoreCurrentSegments.length == 0 && segments.length == 1 && segments.length < segmentsSize) {
-                    segments = Segment.splitBalanced(segments[0], segmentsSize - 1).toArray(new Segment[segmentsSize]);
-                    transactionManager.executeInTransaction(() -> {
-                        tokenStore.initializeTokenSegments(processorName, segmentsSize);
-                    });
+                if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
+                    tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                            () -> {
+                                tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                                return tokenStore.fetchSegments(processorName);
+                            });
                 }
+                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
 
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...

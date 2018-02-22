@@ -112,8 +112,21 @@ public class TrackingEventProcessorTest_MultiThreaded {
         assertArrayEquals(new int[]{0, 1, 2, 3}, actual);
     }
 
+    // Reproduce issue #508 (https://github.com/AxonFramework/AxonFramework/issues/508)
     @Test
-    public void testProcessorWorkerCountWithMultipleSegments() throws InterruptedException {
+    public void testProcessorInitializesAndUsesSameTokens() {
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(6)
+                                                              .andInitialSegmentsCount(6));
+        testSubject.start();
+
+        assertWithin(5, SECONDS, () -> {assertThat(testSubject.activeProcessorThreads(), is(6));});
+        int[] actual = tokenStore.fetchSegments(testSubject.getName());
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5}, actual);
+    }
+
+    @Test
+    public void testProcessorWorkerCountWithMultipleSegments() {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
