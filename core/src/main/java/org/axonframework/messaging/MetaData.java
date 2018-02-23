@@ -286,6 +286,9 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     @Override
     public String toString() {
+        if (values.isEmpty()) {
+            return "MetaData[]";
+        }
         StringBuilder sb = new StringBuilder();
         values.forEach((k, v) -> {
             sb.append(", '")
@@ -294,7 +297,7 @@ public class MetaData implements Map<String, Object>, Serializable {
               .append(v)
               .append('\'');
         });
-        return sb.substring(2);
+        return "MetaData[" + sb.substring(2) + "]";
     }
 
     /**
