@@ -69,13 +69,14 @@ public class ConcatenatingDomainEventStreamTest {
     }
 
     @Test
-    public void testForEachRemainingKeepsDuplicateSequenceIdEventsInInitialStream() {
+    public void testForEachRemainingKeepsDuplicateSequenceIdEventsInSameStream() {
         List<DomainEventMessage> expectedMessages =
                 Arrays.asList(event1, event1, event2, event3, event4, event4, event5);
 
         DomainEventStream concat = new ConcatenatingDomainEventStream(
                 DomainEventStream.of(event1, event1, event2),
                 DomainEventStream.of(event2, event3),
+                DomainEventStream.empty(),
                 DomainEventStream.of(event3, event3),
                 DomainEventStream.of(event3, event4, event4),
                 DomainEventStream.of(event4, event5)
