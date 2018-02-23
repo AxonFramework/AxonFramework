@@ -86,4 +86,14 @@ public class GenericCommandMessageTest {
         assertEquals(1, message2.getMetaData().size());
         assertEquals("otherValue", message2.getMetaData().get("key"));
     }
+
+    @Test
+    public void testToString() {
+        String actual = GenericCommandMessage.asCommandMessage("MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
+        assertTrue("Wrong output: " + actual, actual.startsWith("GenericCommandMessage{payload={MyPayload}, metadata={"));
+        assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
+        assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
+        assertTrue("Wrong output: " + actual, actual.endsWith("', commandName='java.lang.String'}"));
+        assertEquals("Wrong output: " + actual, 173, actual.length());
+    }
 }

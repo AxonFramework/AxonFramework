@@ -138,4 +138,16 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         }
         return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestampSupplier);
     }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", timestamp='")
+                .append(getTimestamp().toString());
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericEventMessage";
+    }
 }
