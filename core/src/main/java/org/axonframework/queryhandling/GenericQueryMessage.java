@@ -94,4 +94,20 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
     public QueryMessage<T, R> andMetaData(Map<String, ?> metaData) {
         return new GenericQueryMessage<>(getDelegate().andMetaData(metaData), queryName, responseType);
     }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", queryName='")
+                     .append(getQueryName())
+                     .append('\'')
+                     .append(", expectedResponseType='")
+                     .append(getResponseType().getName())
+                     .append('\'');
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericQueryMessage";
+    }
 }

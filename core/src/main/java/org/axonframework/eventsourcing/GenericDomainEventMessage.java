@@ -149,4 +149,21 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
         return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
                                                getDelegate().andMetaData(metaData), getTimestamp());
     }
+
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append('\'').append(", aggregateType='")
+                     .append(getType()).append('\'')
+                     .append(", aggregateIdentifier='")
+                     .append(getAggregateIdentifier()).append('\'')
+                     .append(", sequenceNumber=")
+                     .append(getSequenceNumber());
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericDomainEventMessage";
+    }
 }

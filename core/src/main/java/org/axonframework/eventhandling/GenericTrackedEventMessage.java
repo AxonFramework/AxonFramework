@@ -68,4 +68,17 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
     public TrackingToken trackingToken() {
         return trackingToken;
     }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", trackingToken={")
+                     .append(trackingToken())
+                     .append('}');
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericTrackedEventMessage";
+    }
 }
