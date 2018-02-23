@@ -150,7 +150,6 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
                                                getDelegate().andMetaData(metaData), getTimestamp());
     }
 
-
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
