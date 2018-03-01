@@ -508,6 +508,21 @@ public class TrackingEventProcessorTest {
         }
         verify(tokenStore, never()).storeToken(isNull(TrackingToken.class), anyString(), anyInt());
     }
+    
+    @Test
+    public void testWhenFailureDuringInit() throws InterruptedException {
+      
+      when(tokenStore.fetchSegments(anyString()))
+              .thenThrow(new RuntimeException("Faking issue while fetching segments"))
+              .thenReturn(new int[]{1, 2, 3});
+      
+      testSubject.start();
+      
+      Thread.sleep(1500);
+      
+      assertTrue(testSubject.activeProcessorThreads() == 1);
+      
+    }
 
     private static class StubTrackingEventStream implements TrackingEventStream {
         private final Queue<TrackedEventMessage<?>> eventMessages;

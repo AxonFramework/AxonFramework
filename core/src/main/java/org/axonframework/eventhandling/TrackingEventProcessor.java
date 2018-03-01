@@ -541,10 +541,20 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private class WorkerLauncher implements Runnable {
         @Override
         public void run() {
+            int waitTime = 1;
             while (getState().isRunning()) {
                 String processorName = TrackingEventProcessor.this.getName();
-                int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-
+                int[] tokenStoreCurrentSegments;
+                try {
+                  tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+                } catch(Exception e) {
+                  logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s", 
+                          processorName, e.getMessage(), waitTime);
+                  waitFor(Math.min(waitTime, 60));
+                  waitTime = waitTime * 2;
+                  
+                  continue;
+                }
                 // When in an initial stage, split segments to the requested number.
                 if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
                     tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
