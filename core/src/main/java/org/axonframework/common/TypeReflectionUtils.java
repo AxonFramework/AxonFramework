@@ -52,7 +52,7 @@ public abstract class TypeReflectionUtils {
         if (type instanceof ParameterizedType || type instanceof Class || type instanceof GenericArrayType) {
             Class<?> clazz = erase(type);
 
-            if (searchClass == clazz) {
+            if (searchClass.equals(clazz)) {
                 return type;
             }
 
@@ -103,7 +103,7 @@ public abstract class TypeReflectionUtils {
         } else if (type instanceof GenericArrayType) {
             return getExactDirectSuperTypes(((GenericArrayType) type).getGenericComponentType());
         } else if (type == null) {
-            throw new NullPointerException();
+            throw new IllegalArgumentException("Cannot handle given Type of null");
         }
 
         logger.debug(
@@ -221,12 +221,12 @@ public abstract class TypeReflectionUtils {
         /**
          * Creates a VarMap mapping the type parameters of the class used in <tt>type</tt> to their actual value.
          */
-        void addAll(TypeVariable<?>[] variables, Type[] values) {
+        private void addAll(TypeVariable<?>[] variables, Type[] values) {
             assert variables.length == values.length;
             IntStream.range(0, variables.length).forEach(i -> map.put(variables[i], values[i]));
         }
 
-        Type map(Type type) {
+        private Type map(Type type) {
             if (type instanceof Class) {
                 return type;
             } else if (type instanceof TypeVariable) {
@@ -247,7 +247,7 @@ public abstract class TypeReflectionUtils {
             return type;
         }
 
-        Type[] map(Type[] types) {
+        private Type[] map(Type[] types) {
             return Arrays.stream(types).map(this::map).toArray(Type[]::new);
         }
 
