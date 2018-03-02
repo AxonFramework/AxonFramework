@@ -103,4 +103,14 @@ public class GenericEventMessageTest {
         assertEquals(GenericEventMessage.class, read.getClass());
         assertNotNull(((GenericEventMessage<?>) read).getTimestamp());
     }
+
+    @Test
+    public void testToString() {
+        String actual = GenericEventMessage.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
+        assertTrue("Wrong output: " + actual, actual.startsWith("GenericEventMessage{payload={MyPayload}, metadata={"));
+        assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
+        assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
+        assertTrue("Wrong output: " + actual, actual.contains("', timestamp='"));
+        assertTrue("Wrong output: " + actual, actual.endsWith("}"));
+    }
 }

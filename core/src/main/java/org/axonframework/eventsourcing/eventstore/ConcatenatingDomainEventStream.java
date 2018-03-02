@@ -66,12 +66,22 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
 
     @Override
     public boolean hasNext() {
+        // check if there is anything to read in the current stream first
+        if (!streams.isEmpty() && streams.peekFirst().hasNext()) {
+            return true;
+        }
+
+        // consume any empty streams
         while (!streams.isEmpty() && !streams.peekFirst().hasNext()) {
             streams.pollFirst();
         }
+
+        // quick exit if we have emptied the streams
         if (streams.isEmpty()) {
             return false;
         }
+
+        // potentially switch to a next stream, taking sequence numbers into account
         DomainEventMessage<?> peeked = streams.peekFirst().peek();
         while (lastSequenceNumber != null && peeked.getSequenceNumber() <= lastSequenceNumber) {
             // consume

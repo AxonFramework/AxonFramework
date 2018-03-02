@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,9 +88,9 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the class on which the method with name "{@code getter}" and parameters of type
+     * Returns the class on which the method with given {@code methodName} and parameters of type
      * {@code parameterTypes} is declared. The given {@code instanceClass} is the instance on which the
-     * method cn be called. If the method is not available on the given {@code instanceClass}, {@code null}
+     * method can be called. If the method is not available on the given {@code instanceClass}, {@code null}
      * is returned.
      *
      * @param instanceClass  The class on which to look for the method
