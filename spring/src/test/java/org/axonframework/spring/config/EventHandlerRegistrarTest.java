@@ -2,8 +2,6 @@ package org.axonframework.spring.config;
 
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventHandlingConfiguration;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -40,18 +38,9 @@ public class EventHandlerRegistrarTest {
     }
 
     private Function<Configuration, Object> returns(Class<?> type) {
-        return argThat(new TypeSafeMatcher<Function<Configuration,Object>>() {
-            @Override
-            protected boolean matchesSafely(Function<Configuration, Object> item) {
-                Object actual = item.apply(axonConfig);
-                return type.isInstance(actual);
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a function returning a ")
-                        .appendValue(type.getSimpleName());
-            }
+        return argThat(x -> {
+            Object actual = x.apply(axonConfig);
+            return type.isInstance(actual);
         });
     }
 
