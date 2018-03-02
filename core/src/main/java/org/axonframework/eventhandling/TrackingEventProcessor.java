@@ -545,24 +545,29 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             while (getState().isRunning()) {
                 String processorName = TrackingEventProcessor.this.getName();
                 int[] tokenStoreCurrentSegments;
+
                 try {
-                  tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-                } catch(Exception e) {
-                  logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s", 
-                          processorName, e.getMessage(), waitTime);
-                  waitFor(Math.min(waitTime, 60));
-                  waitTime = waitTime * 2;
-                  
-                  continue;
+                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+                    waitTime = 1;
+
+                  // When in an initial stage, split segments to the requested number.
+                  if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
+                      tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                              () -> {
+                                  tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                                  return tokenStore.fetchSegments(processorName);
+                              });
+                  }
+
+                 } catch(Exception e) {
+                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s", 
+                            processorName, e.getMessage(), waitTime);
+                    waitFor(Math.min(waitTime, 60));
+                    waitTime = waitTime * 2;
+
+                    continue;
                 }
-                // When in an initial stage, split segments to the requested number.
-                if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
-                    tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
-                            () -> {
-                                tokenStore.initializeTokenSegments(processorName, segmentsSize);
-                                return tokenStore.fetchSegments(processorName);
-                            });
-                }
+
                 Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
 
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
