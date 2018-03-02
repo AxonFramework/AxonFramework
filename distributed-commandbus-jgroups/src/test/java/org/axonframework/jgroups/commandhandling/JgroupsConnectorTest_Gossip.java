@@ -29,13 +29,12 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.*;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -132,16 +131,7 @@ public class JgroupsConnectorTest_Gossip {
 
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
-        doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat(new TypeSafeMatcher<SerializedObject<byte[]>>() {
-            @Override
-            protected boolean matchesSafely(SerializedObject<byte[]> item) {
-                return Arrays.equals("<string>Try this!</string>".getBytes(Charset.forName("UTF-8")), item.getData());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-            }
-        }));
+        doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat((ArgumentMatcher<SerializedObject<byte[]>>) x -> Arrays.equals("<string>Try this!</string>".getBytes(Charset.forName("UTF-8")), x.getData())));
 
         try {
             gateway1.sendAndWait("Try this!");

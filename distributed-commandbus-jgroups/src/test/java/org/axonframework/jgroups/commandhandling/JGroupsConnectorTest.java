@@ -35,7 +35,6 @@ import org.jgroups.stack.IpAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,12 +100,7 @@ public class JGroupsConnectorTest {
         futureCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
         //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
-        verify(mockCommandBus1).dispatch(argThat(new ArgumentMatcher<CommandMessage<Object>>() {
-            @Override
-            public boolean matches(Object argument) {
-                return argument instanceof CommandMessage && ((CommandMessage) argument).getPayload().equals(mockPayload);
-            }
-        }), any(CommandCallback.class));
+        verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)), any(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
