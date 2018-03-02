@@ -23,8 +23,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -54,17 +52,7 @@ public class SpringAMQPMessageSourceTest {
         message.getProperties().getHeaders().forEach(messageProperties::setHeader);
         testSubject.onMessage(new Message(message.getBody(), messageProperties), mock(Channel.class));
 
-        verify(eventProcessor).accept(argThat(new TypeSafeMatcher<List<? extends EventMessage<?>>>() {
-            @Override
-            public boolean matchesSafely(List<? extends EventMessage<?>> item) {
-                return item.size() == 1 && item.get(0).getPayload().equals("test");
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("EventMessage with String payload");
-            }
-        }));
+        verify(eventProcessor).accept(argThat(item -> item.size() == 1 && item.get(0).getPayload().equals("test")));
     }
 
     @Test
