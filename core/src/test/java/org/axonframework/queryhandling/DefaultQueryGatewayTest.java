@@ -18,9 +18,9 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -58,17 +58,7 @@ public class DefaultQueryGatewayTest {
         CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertEquals("answer", actual.get());
 
-        verify(mockBus).query(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
-            @Override
-            protected boolean matchesSafely(QueryMessage<String, String> item) {
-                return "query".equals(item.getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a QueryMessage containing the 'query' payload");
-            }
-        }));
+        verify(mockBus).query(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())));
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -81,18 +71,8 @@ public class DefaultQueryGatewayTest {
                 "query", ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS
         );
         assertEquals("answer", actual.findFirst().get());
-
-        verify(mockBus).scatterGather(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
-            @Override
-            protected boolean matchesSafely(QueryMessage<String, String> item) {
-                return "query".equals(item.getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a QueryMessage containing the 'query' payload");
-            }
-        }), eq(1L), eq(TimeUnit.SECONDS));
+        verify(mockBus).scatterGather(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
+                                      eq(1L), eq(TimeUnit.SECONDS));
     }
 
     @SuppressWarnings("unused")

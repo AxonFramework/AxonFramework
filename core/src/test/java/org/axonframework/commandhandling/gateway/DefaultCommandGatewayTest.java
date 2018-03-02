@@ -24,10 +24,10 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -242,12 +242,7 @@ public class DefaultCommandGatewayTest {
         unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>("header correlationId") {
-            @Override
-            protected boolean matchesSafely(CommandMessage<Object> item) {
-                return "test".equals(item.getMetaData().get("correlationId"));
-            }
-        }), isA(CommandCallback.class));
+        verify(mockCommandBus).dispatch(argThat(x -> "test".equals(x.getMetaData().get("correlationId"))), isA(CommandCallback.class));
 
         CurrentUnitOfWork.clear(unitOfWork);
     }
@@ -262,14 +257,8 @@ public class DefaultCommandGatewayTest {
         unitOfWork.registerCorrelationDataProvider(message -> data);
         testSubject.send(new GenericCommandMessage<>("Hello", Collections.singletonMap("header", "value")));
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>(
-                "header 'correlationId' and 'header'") {
-            @Override
-            protected boolean matchesSafely(CommandMessage<Object> item) {
-                return "test".equals(item.getMetaData().get("correlationId"))
-                        && "value".equals(item.getMetaData().get("header"));
-            }
-        }), isA(CommandCallback.class));
+        verify(mockCommandBus).dispatch(argThat(x -> "test".equals(x.getMetaData().get("correlationId"))
+                && "value".equals(x.getMetaData().get("header"))), isA(CommandCallback.class));
 
         CurrentUnitOfWork.clear(unitOfWork);
     }

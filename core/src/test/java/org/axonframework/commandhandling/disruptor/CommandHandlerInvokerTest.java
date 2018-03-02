@@ -28,8 +28,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -37,7 +35,6 @@ import org.mockito.Matchers;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.function.Function;
@@ -71,7 +68,7 @@ public class CommandHandlerInvokerTest {
             try {
                 new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(invocation.getArguments()[1]);
             } catch (Exception e) {
-                fail("Attempt to add a non-serializable instance to the cache: " + invocation.getArgumentAt(1, Object.class));
+                fail("Attempt to add a non-serializable instance to the cache: " + invocation.getArgument(1));
             }
             return null;
         }).when(mockCache).put(anyString(), any());
@@ -94,17 +91,7 @@ public class CommandHandlerInvokerTest {
         testSubject.createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                      snapshotTriggerDefinition, parameterResolverFactory);
 
-        verify(parameterResolverFactory).createInstance(argThat(new TypeSafeMatcher<Executable>() {
-            @Override
-            protected boolean matchesSafely(Executable item) {
-                return "handle".equals(item.getName());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a method called handle");
-            }
-        }), isA(Parameter[].class), anyInt());
+        verify(parameterResolverFactory).createInstance(argThat(item -> "handle".equals(item.getName())), isA(Parameter[].class), anyInt());
         verifyNoMoreInteractions(parameterResolverFactory);
     }
 

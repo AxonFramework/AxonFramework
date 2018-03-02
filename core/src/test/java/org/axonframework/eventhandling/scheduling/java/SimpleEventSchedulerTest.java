@@ -26,6 +26,7 @@ import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.quartz.SchedulerException;
 
 import java.io.*;
@@ -104,7 +105,9 @@ public class SimpleEventSchedulerTest {
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
-        verify(eventBus).publish(argThat(new EqualPayloadMatcher(event2)));
+        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
+                && event2.getPayload().equals(item.getPayload())
+                && event2.getMetaData().equals(item.getMetaData())));
         executorService.shutdown();
         assertTrue("Executor refused to shutdown within a second",
                    executorService.awaitTermination(1, TimeUnit.SECONDS));
@@ -112,29 +115,5 @@ public class SimpleEventSchedulerTest {
 
     private EventMessage<Object> createEvent() {
         return new GenericEventMessage<>(new Object());
-    }
-
-    private static class EqualPayloadMatcher extends BaseMatcher<EventMessage> {
-
-        private final EventMessage<Object> event2;
-
-        public EqualPayloadMatcher(EventMessage<Object> event2) {
-            this.event2 = event2;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            return (o instanceof EventMessage)
-                    && event2.getPayload().equals(((EventMessage) o).getPayload())
-                    && event2.getMetaData().equals(((EventMessage) o).getMetaData());
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("an EventMessage with payload equal to ")
-                       .appendValue(event2.getPayload())
-                       .appendText(" and MetaData equal to")
-                       .appendValue(event2.getMetaData());
-        }
     }
 }

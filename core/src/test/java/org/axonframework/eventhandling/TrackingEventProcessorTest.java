@@ -421,7 +421,7 @@ public class TrackingEventProcessorTest {
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
         doAnswer(i -> {
-            EventMessage message = i.getArgumentAt(0, EventMessage.class);
+            EventMessage message = i.getArgument(0);
             handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
@@ -458,7 +458,7 @@ public class TrackingEventProcessorTest {
         List<TrackingToken> firstRun = new CopyOnWriteArrayList<>();
         List<TrackingToken> replayRun = new CopyOnWriteArrayList<>();
         doAnswer(i -> {
-            firstRun.add(i.getArgumentAt(0, TrackedEventMessage.class).trackingToken());
+            firstRun.add(i.<TrackedEventMessage>getArgument(0).trackingToken());
             return null;
         }).when(eventHandlerInvoker).handle(any(), any());
 
@@ -467,7 +467,7 @@ public class TrackingEventProcessorTest {
         testSubject.shutDown();
 
         doAnswer(i -> {
-            replayRun.add(i.getArgumentAt(0, TrackedEventMessage.class).trackingToken());
+            replayRun.add(i.<TrackedEventMessage>getArgument(0).trackingToken());
             return null;
         }).when(eventHandlerInvoker).handle(any(), any());
 
