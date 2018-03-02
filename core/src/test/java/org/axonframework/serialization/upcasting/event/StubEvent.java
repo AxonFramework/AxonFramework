@@ -13,11 +13,15 @@
 
 package org.axonframework.serialization.upcasting.event;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class StubEvent {
 
     private final String name;
 
-    public StubEvent(String name) {
+    @JsonCreator
+    public StubEvent(@JsonProperty("name") String name) {
         this.name = name;
     }
 
