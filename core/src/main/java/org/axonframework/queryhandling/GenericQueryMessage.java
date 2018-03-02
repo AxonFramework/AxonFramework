@@ -105,7 +105,7 @@ public class GenericQueryMessage<T, R> extends MessageDecorator<T> implements Qu
                      .append(getQueryName())
                      .append('\'')
                      .append(", expectedResponseType='")
-                     .append(getResponseType().getName())
+                     .append(getResponseType())
                      .append('\'');
     }
 
