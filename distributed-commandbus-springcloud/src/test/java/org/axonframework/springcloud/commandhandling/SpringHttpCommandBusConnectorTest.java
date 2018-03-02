@@ -172,7 +172,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void tesSendWithCallbackThrowsExceptionForMissingDestinationURI() throws Exception {
+    public void testSendWithCallbackThrowsExceptionForMissingDestinationURI() throws Exception {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE, new NoOpCallback());
     }
@@ -267,7 +267,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test
-    public void tesSendWithCallbackToLocalMember() throws Exception {
+    public void testSendWithCallbackToLocalMember() throws Exception {
         SimpleMember<String> localDestination = new SimpleMember<>(MEMBER_NAME, null, true, null);
         testSubject.send(localDestination, COMMAND_MESSAGE, new NoOpCallback());
 
@@ -276,7 +276,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test
-    public void tesSendWithoutCallbackToLocalMember() throws Exception {
+    public void testSendWithoutCallbackToLocalMember() throws Exception {
         SimpleMember<String> localDestination = new SimpleMember<>(MEMBER_NAME, null, true, null);
         testSubject.send(localDestination, COMMAND_MESSAGE);
 
