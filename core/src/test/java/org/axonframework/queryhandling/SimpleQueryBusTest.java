@@ -28,15 +28,10 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -146,7 +141,7 @@ public class SimpleQueryBusTest {
 
         testSubject.subscribe(String.class.getName(),
                               methodOf(this.getClass(), "stringListQueryHandler").getGenericReturnType(),
-                              q -> Arrays.asList(q.getPayload() + "1234", q.getPayload() + "567"));
+                              q -> asList(q.getPayload() + "1234", q.getPayload() + "567"));
 
         QueryMessage<String, List<String>> testQueryMessage =
                 new GenericQueryMessage<>("hello", ResponseTypes.multipleInstancesOf(String.class));
