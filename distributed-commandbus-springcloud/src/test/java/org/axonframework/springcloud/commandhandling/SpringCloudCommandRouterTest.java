@@ -21,13 +21,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -47,7 +45,7 @@ import static org.axonframework.common.ReflectionUtils.setFieldValue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class SpringCloudCommandRouterTest {
 
     private static final String LOAD_FACTOR_KEY = "loadFactor";
@@ -143,20 +141,10 @@ public class SpringCloudCommandRouterTest {
         assertEquals(CommandNameFilter.class.getName(),
                      serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
-        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(new TypeSafeMatcher<ConsistentHash>() {
-            @Override
-            protected boolean matchesSafely(ConsistentHash item) {
-                return item.getMembers()
-                           .stream()
-                           .map(Member::name)
-                           .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID));
-            }
-
-            @Override
-            public void describeTo(Description description) {
-
-            }
-        }));
+        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(item -> item.getMembers()
+                                                                                 .stream()
+                                                                                 .map(Member::name)
+                                                                                 .anyMatch(memberName -> memberName.equals(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]"))));
     }
 
     @Test
