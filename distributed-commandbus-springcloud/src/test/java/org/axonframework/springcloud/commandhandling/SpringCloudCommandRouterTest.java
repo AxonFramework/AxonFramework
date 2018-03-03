@@ -45,7 +45,7 @@ import static org.axonframework.common.ReflectionUtils.setFieldValue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+@RunWith(MockitoJUnitRunner.class)
 public class SpringCloudCommandRouterTest {
 
     private static final String LOAD_FACTOR_KEY = "loadFactor";
@@ -235,7 +235,6 @@ public class SpringCloudCommandRouterTest {
         assertEquals(2, resultMemberSet.size());
 
         // Evict remote service instance from discovery client and update router memberships
-        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of());
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
