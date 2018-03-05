@@ -18,7 +18,6 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -29,30 +28,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 3.2
  */
-public interface QueryResponseMessage<T> extends Message<Collection<T>> {
-
-    /**
-     * Returns the collection of results reported by the Query Handler. This may, or may not be the same collection
-     * type as returned by the handler. An iterator on this collection will return the instances in the same order as
-     * any collection returned by the handler would have.
-     *
-     * @return a collection containing the results provided by the Query Handler
-     */
-    default Collection<T> getResults() {
-        return getPayload();
-    }
-
-    /**
-     * Returns the first result reported by the handler.
-     * <p>
-     * This method is considered a convenience method in cases Query Handler return a single response.
-     *
-     * @return the first (or sole) result reported by the Query Handler
-     */
-    default T getFirstResult() {
-        Collection<T> results = getResults();
-        return results == null || results.isEmpty() ? null : results.iterator().next();
-    }
+public interface QueryResponseMessage<T> extends Message<T> {
 
     /**
      * Returns a copy of this QueryResponseMessage with the given {@code metaData}. The payload remains unchanged.
