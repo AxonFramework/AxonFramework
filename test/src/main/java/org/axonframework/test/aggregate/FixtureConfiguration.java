@@ -95,7 +95,7 @@ public interface FixtureConfiguration<T> {
      * @param repository The repository to use in the test case
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
+    FixtureConfiguration<T> registerRepository(Repository<T> repository);
 
     /**
      * Registers the given {@code aggregateFactory} with the fixture. The repository used by the fixture will use

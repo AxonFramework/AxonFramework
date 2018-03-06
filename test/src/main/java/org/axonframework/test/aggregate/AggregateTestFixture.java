@@ -98,7 +98,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
+    public FixtureConfiguration<T> registerRepository(Repository<T> eventSourcingRepository) {
         this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository);
         return this;
     }
