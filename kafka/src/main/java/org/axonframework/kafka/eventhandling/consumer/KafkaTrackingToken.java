@@ -18,12 +18,15 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.kafka.common.TopicPartition;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Use to track messages consumed from kafka partitions.
@@ -49,16 +52,25 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
         return partitionPositions;
     }
 
+    public static Collection<TopicPartition> partitions(String topic, KafkaTrackingToken token) {
+        return token.partitionPositions.keySet().stream().map(i -> new org.apache.kafka.common.TopicPartition(topic, i))
+                                       .collect(Collectors.toList());
+    }
+
+    public static TopicPartition partition(String topic, int partition) {
+        return new TopicPartition(topic, partition);
+    }
+
+    public KafkaTrackingToken advancedTo(int partition, long offset) {
+        HashMap<Integer, Long> newPositions = new HashMap<>(partitionPositions);
+        newPositions.put(partition, offset);
+        return new KafkaTrackingToken(newPositions);
+    }
+
     @Override
     public String toString() {
         return "KafkaTrackingToken{" +
                 "partitionPositions=" + partitionPositions +
                 '}';
-    }
-
-    public KafkaTrackingToken advancedTo(int partition, long position) {
-        HashMap<Integer, Long> newPositions = new HashMap<>(partitionPositions);
-        newPositions.put(partition, position);
-        return new KafkaTrackingToken(newPositions);
     }
 }
