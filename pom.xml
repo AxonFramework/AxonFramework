@@ -102,6 +102,7 @@
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jgroups.version>4.0.6.Final</jgroups.version>
+        <kafka.version>1.0.0</kafka.version>
     </properties>
 
     <dependencies>
