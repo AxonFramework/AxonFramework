@@ -66,11 +66,11 @@ public class KafkaMessageSource<K, V> implements StreamableMessageSource<Tracked
 
 
     class Streamer {
-        private final BlockingQueue<MessageAndOffset> buffer;
+        private final BlockingQueue<MessageAndTimestamp> buffer;
 
         Streamer() {
             this.buffer = new PriorityBlockingQueue<>(DEFAULT_BUFFER_SIZE,
-                                                      Comparator.comparingLong(MessageAndOffset::getTimestamp));
+                                                      Comparator.comparingLong(MessageAndTimestamp::getTimestamp));
         }
 
         MessageStream<TrackedEventMessage<?>> openStream(KafkaTrackingToken token) {

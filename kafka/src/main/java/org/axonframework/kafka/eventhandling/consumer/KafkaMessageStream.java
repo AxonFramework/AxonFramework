@@ -43,7 +43,7 @@ public class KafkaMessageStream<K, V> implements TrackingEventStream {
     private final BufferedEventStream<K, V> eventConsumer;
     private final ExecutorService fetcher;
 
-    public KafkaMessageStream(Consumer<K, V> consumer, BlockingQueue<MessageAndOffset> buffer,
+    public KafkaMessageStream(Consumer<K, V> consumer, BlockingQueue<MessageAndTimestamp> buffer,
                               ExecutorService fetcher) {
         this.eventConsumer = new BufferedEventStream<>(consumer, buffer);
         this.fetcher = fetcher;

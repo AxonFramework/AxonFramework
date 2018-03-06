@@ -22,12 +22,12 @@ class FetchEventsTask<K, V> implements Runnable {
     private static final long DEFAULT_TIMEOUT = 3000;
 
     private final Consumer<K, V> consumer;
-    private final BlockingQueue<MessageAndOffset> channel;
+    private final BlockingQueue<MessageAndTimestamp> channel;
     private final KafkaMessageConverter<K, V> converter;
     private KafkaTrackingToken start;
 
     FetchEventsTask(Consumer<K, V> consumer,
-                    KafkaTrackingToken start, BlockingQueue<MessageAndOffset> channel,
+                    KafkaTrackingToken start, BlockingQueue<MessageAndTimestamp> channel,
                     KafkaMessageConverter<K, V> converter) {
         Assert.isTrue(consumer != null, () -> "Consumer may not be null");
         Assert.isTrue(channel != null, () -> "Buffer may not be null");
@@ -40,14 +40,15 @@ class FetchEventsTask<K, V> implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             ConsumerRecords<K, V> records = consumer.poll(DEFAULT_TIMEOUT);
+            logger.debug("Records fetched: {}", records.count());
             for (ConsumerRecord<K, V> record : records) {
                 converter.readKafkaMessage(record).ifPresent(m -> {
                     try {
                         start = start.advancedTo(record.partition(), record.offset());
                         TrackedEventMessage<?> msg = asTrackedEventMessage(m, start);
-                        channel.put(new MessageAndOffset(msg, record.offset(), record.timestamp()));
+                        channel.put(new MessageAndTimestamp(msg, record.timestamp()));
                     } catch (InterruptedException e) {
                         logger.warn("Event producer thread was interrupted. Shutting down.", e);
                         Thread.currentThread().interrupt();

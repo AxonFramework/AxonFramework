@@ -33,11 +33,11 @@ class BufferedEventStream<K, V> {
 
     private static final Logger logger = LoggerFactory.getLogger(BufferedEventStream.class);
     private final Consumer<K, V> consumer;
-    private final BlockingQueue<MessageAndOffset> eventQueue;
-    private MessageAndOffset peekEvent;
+    private final BlockingQueue<MessageAndTimestamp> eventQueue;
+    private MessageAndTimestamp peekEvent;
 
     BufferedEventStream(Consumer<K, V> consumer,
-                        BlockingQueue<MessageAndOffset> buffer) {
+                        BlockingQueue<MessageAndTimestamp> buffer) {
         Assert.isTrue(consumer != null, () -> "Consumer cannot be null");
         Assert.isTrue(buffer != null, () -> "Buffer cannot be null");
         this.consumer = consumer;

@@ -1,16 +1,13 @@
 package org.axonframework.kafka.eventhandling.consumer;
 
 import org.axonframework.eventhandling.TrackedEventMessage;
-
-class MessageAndOffset {
+class MessageAndTimestamp {
 
     private final TrackedEventMessage<?> eventMessage;
-    private final long offset;
     private final long timestamp;
 
-    MessageAndOffset(TrackedEventMessage<?> eventMessage, long offset, long timestamp) {
+    MessageAndTimestamp(TrackedEventMessage<?> eventMessage, long timestamp) {
         this.eventMessage = eventMessage;
-        this.offset = offset;
         this.timestamp = timestamp;
     }
 
@@ -18,15 +15,10 @@ class MessageAndOffset {
         return eventMessage;
     }
 
-    public long getOffset() {
-        return offset;
-    }
-
     @Override
     public String toString() {
-        return "MessageAndOffset{" +
+        return "MessageAndTimestamp{" +
                 "eventMessage=" + eventMessage +
-                ", offset=" + offset +
                 '}';
     }
 
