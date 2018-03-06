@@ -98,4 +98,17 @@ public class GenericDomainEventMessageTest {
         assertEquals(1, message2.getMetaData().size());
         assertEquals("otherValue", message2.getMetaData().get("key"));
     }
+
+    @Test
+    public void testToString() {
+        String actual = new GenericDomainEventMessage<>("AggregateType", "id1", 1, "MyPayload").andMetaData(MetaData.with("key", "value").and("key2", 13)).toString();
+        assertTrue("Wrong output: " + actual, actual.startsWith("GenericDomainEventMessage{payload={MyPayload}, metadata={"));
+        assertTrue("Wrong output: " + actual, actual.contains("'key'->'value'"));
+        assertTrue("Wrong output: " + actual, actual.contains("'key2'->'13'"));
+        assertTrue("Wrong output: " + actual, actual.contains("', timestamp='"));
+        assertTrue("Wrong output: " + actual, actual.contains("', aggregateIdentifier='id1'"));
+        assertTrue("Wrong output: " + actual, actual.contains("', aggregateType='AggregateType'"));
+        assertTrue("Wrong output: " + actual, actual.contains("', sequenceNumber=1"));
+        assertTrue("Wrong output: " + actual, actual.endsWith("}"));
+    }
 }

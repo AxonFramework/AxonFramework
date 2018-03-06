@@ -40,6 +40,21 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     private final Map<String, Object> values;
 
+    private MetaData() {
+        values = Collections.emptyMap();
+    }
+
+    /**
+     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied
+     * into the MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa.
+     * Modifications in the items themselves <em>are</em> reflected in the MetaData.
+     *
+     * @param items the items to populate the MetaData with
+     */
+    public MetaData(Map<String, ?> items) {
+        values = Collections.unmodifiableMap(new HashMap<>(items));
+    }
+
     /**
      * Returns an empty MetaData instance.
      *
@@ -76,21 +91,6 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     public static MetaData with(String key, Object value) {
         return MetaData.from(Collections.singletonMap(key, value));
-    }
-
-    private MetaData() {
-        values = Collections.emptyMap();
-    }
-
-    /**
-     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied
-     * into the MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa.
-     * Modifications in the items themselves <em>are</em> reflected in the MetaData.
-     *
-     * @param items the items to populate the MetaData with
-     */
-    public MetaData(Map<String, ?> items) {
-        values = Collections.unmodifiableMap(new HashMap<>(items));
     }
 
     /**
@@ -282,6 +282,19 @@ public class MetaData implements Map<String, Object>, Serializable {
             return MetaData.emptyInstance();
         }
         return this;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        values.forEach((k, v) -> sb.append(", '")
+                                   .append(k)
+                                   .append("'->'")
+                                   .append(v)
+                                   .append('\''));
+        int skipInitialListingAppendString = 2;
+        // Only skip if the StringBuilder actual has a field, as otherwise we'll receive an IndexOutOfBoundsException
+        return values.isEmpty() ? sb.toString() : sb.substring(skipInitialListingAppendString);
     }
 
     /**

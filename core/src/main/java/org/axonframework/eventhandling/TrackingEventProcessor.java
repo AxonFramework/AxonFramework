@@ -541,17 +541,34 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private class WorkerLauncher implements Runnable {
         @Override
         public void run() {
+            int waitTime = 1;
             while (getState().isRunning()) {
                 String processorName = TrackingEventProcessor.this.getName();
-                final int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
+                int[] tokenStoreCurrentSegments;
 
-                // When in an initial stage, split segments to the requested number.
-                if (tokenStoreCurrentSegments.length == 0 && segments.length == 1 && segments.length < segmentsSize) {
-                    segments = Segment.splitBalanced(segments[0], segmentsSize - 1).toArray(new Segment[segmentsSize]);
-                    transactionManager.executeInTransaction(
-                            () -> tokenStore.initializeTokenSegments(processorName, segmentsSize));
+                try {
+                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+                    waitTime = 1;
+
+                  // When in an initial stage, split segments to the requested number.
+                  if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
+                      tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                              () -> {
+                                  tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                                  return tokenStore.fetchSegments(processorName);
+                              });
+                  }
+
+                 } catch(Exception e) {
+                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s", 
+                            processorName, e.getMessage(), waitTime);
+                    waitFor(Math.min(waitTime, 60));
+                    waitTime = waitTime * 2;
+
+                    continue;
                 }
+
+                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
 
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ public abstract class ReflectionUtils {
      * @param field  The field containing the value
      * @param object The object to retrieve the field's value from
      * @return the value of the {@code field} in the {@code object}
+     *
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
@@ -72,10 +73,10 @@ public abstract class ReflectionUtils {
      * Set the {@code field} of {@code object} to a certain {@code value}. If necessary, the field is made accessible,
      * assuming the security manager allows it.
      *
-     * @param field The field to set {@code value} on
+     * @param field  The field to set {@code value} on
      * @param object The object to set the {@code value} on {@code field}
-     * @param value The value to set on {@code field}
-     * @param <T> The type of the {@code value}
+     * @param value  The value to set on {@code field}
+     * @param <T>    The type of the {@code value}
      */
     public static <T> void setFieldValue(Field field, Object object, T value) {
         ensureAccessible(field);
@@ -87,9 +88,9 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the class on which the method with name "{@code getter}" and parameters of type
+     * Returns the class on which the method with given {@code methodName} and parameters of type
      * {@code parameterTypes} is declared. The given {@code instanceClass} is the instance on which the
-     * method cn be called. If the method is not available on the given {@code instanceClass}, {@code null}
+     * method can be called. If the method is not available on the given {@code instanceClass}, {@code null}
      * is returned.
      *
      * @param instanceClass  The class on which to look for the method
@@ -146,6 +147,7 @@ public abstract class ReflectionUtils {
      * @param member The member (field, method, constructor, etc) to make accessible
      * @param <T>    The type of member to make accessible
      * @return the given {@code member}, for easier method chaining
+     *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
@@ -173,6 +175,7 @@ public abstract class ReflectionUtils {
      *
      * @param member The member to check
      * @return {@code true} if the member is public and non-final, otherwise {@code false}.
+     *
      * @see #isAccessible(java.lang.reflect.AccessibleObject)
      * @see #ensureAccessible(java.lang.reflect.AccessibleObject)
      */
@@ -200,6 +203,25 @@ public abstract class ReflectionUtils {
     }
 
     /**
+     * Utility function which returns a {@link java.lang.reflect.Method} matching the given {@code methodName} and
+     * {@code parameterTypes} in the {@code clazz}.
+     *
+     * @param clazz          The {@link java.lang.Class} to return a method for
+     * @param methodName     A {@link java.lang.String} for the simple name of the method to return
+     * @param parameterTypes An array of type {@link java.lang.Class} for all the parameters which are part  of the
+     *                       {@link java.lang.reflect.Method} being searched for
+     * @return a {@link java.lang.reflect.Method} object from the given {@code clazz} matching the specified
+     * {@code methodName}
+     *
+     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found matching the {@code methodName}
+     *                               in {@code clazz}
+     */
+    public static Method methodOf(Class<?> clazz, String methodName, Class<?>... parameterTypes)
+            throws NoSuchMethodException {
+        return clazz.getMethod(methodName, parameterTypes);
+    }
+
+    /**
      * Returns an {@link Iterable} of all the methods declared on the given class and its super classes. The iterator
      * will always return methods declared in a subtype before returning methods declared in a super type.
      *
@@ -222,6 +244,7 @@ public abstract class ReflectionUtils {
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
      * @return the boxed wrapper type for the given {@code primitiveType}
+     *
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {

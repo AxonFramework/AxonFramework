@@ -27,11 +27,15 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -46,12 +50,14 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  *
  * @author Marc Gathier
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 3.1
  */
 public class SimpleQueryBus implements QueryBus {
+
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    private final ConcurrentMap<QueryDefinition, CopyOnWriteArrayList<MessageHandler<? super QueryMessage<?, ?>>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
@@ -93,13 +99,27 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <R> Registration subscribe(String queryName, Class<R> responseType, MessageHandler<? super QueryMessage<?, R>> handler) {
-        QueryDefinition registrationKey = new QueryDefinition(queryName, responseType);
-        CopyOnWriteArrayList<MessageHandler<? super QueryMessage<?, ?>>> handlers = subscriptions.computeIfAbsent(registrationKey, (k) -> new CopyOnWriteArrayList<>());
-        handlers.addIfAbsent((MessageHandler<? super QueryMessage<?, ?>>) handler);
-        return () -> unsubscribe(registrationKey, (MessageHandler<? super QueryMessage<?, ?>>) handler);
+    public <R> Registration subscribe(String queryName,
+                                      Type responseType,
+                                      MessageHandler<? super QueryMessage<?, R>> handler) {
+        CopyOnWriteArrayList<QuerySubscription> handlers =
+                subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
+        QuerySubscription<R> querySubscription = new QuerySubscription<>(responseType, handler);
+        handlers.addIfAbsent(querySubscription);
+
+        return () -> unsubscribe(queryName, querySubscription);
+    }
+
+    private <R> boolean unsubscribe(String queryName, QuerySubscription<R> querySubscription) {
+        subscriptions.computeIfPresent(queryName, (key, handlers) -> {
+            handlers.remove(querySubscription);
+            if (handlers.isEmpty()) {
+                return null;
+            }
+            return handlers;
+        });
+        return true;
     }
 
     @Override
@@ -120,10 +140,12 @@ public class SimpleQueryBus implements QueryBus {
             while (!invocationSuccess && handlerIterator.hasNext()) {
                 try {
                     DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    result = GenericQueryResponseMessage.asResponseMessage(interceptAndInvoke(uow, handlerIterator.next()));
+                    result = GenericQueryResponseMessage.asResponseMessage(
+                            interceptAndInvoke(uow, handlerIterator.next())
+                    );
                     invocationSuccess = true;
                 } catch (NoHandlerForQueryException e) {
-                    // otherwise we ignore this one, as we may have another handler that is suitable
+                    // Ignore this Query Handler, as we may have another one which is suitable
                 }
             }
             if (!invocationSuccess) {
@@ -167,9 +189,14 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @SuppressWarnings("unchecked")
-    private <Q, R> QueryResponseMessage<R> interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow, MessageHandler<? super QueryMessage<?, ?>> handler) throws Exception {
-        return uow.executeWithResult(() -> GenericQueryResponseMessage.asResponseMessage(
-                new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed()));
+    private <Q, R> QueryResponseMessage<R> interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow,
+                                                              MessageHandler<? super QueryMessage<?, R>> handler)
+            throws Exception {
+        return uow.executeWithResult(() -> {
+            ResponseType<R> responseType = uow.getMessage().getResponseType();
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            return GenericQueryResponseMessage.asResponseMessage(responseType.convert(queryResponse));
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -181,24 +208,13 @@ public class SimpleQueryBus implements QueryBus {
         return intercepted;
     }
 
-    private boolean unsubscribe(QueryDefinition registrationKey, MessageHandler<? super QueryMessage<?, ?>> handler) {
-        subscriptions.computeIfPresent(registrationKey, (key, handlers) -> {
-            handlers.remove(handler);
-            if (handlers.isEmpty()) {
-                return null;
-            }
-            return handlers;
-        });
-        return true;
-    }
-
     /**
      * Returns the subscriptions for this query bus. While the returned map is unmodifiable, it may or may not reflect
      * changes made to the subscriptions after the call was made.
      *
      * @return the subscriptions for this query bus
      */
-    protected Map<QueryDefinition, Collection<MessageHandler<? super QueryMessage<?, ?>>>> getSubscriptions() {
+    protected Map<String, Collection<QuerySubscription>> getSubscriptions() {
         return Collections.unmodifiableMap(subscriptions);
     }
 
@@ -226,36 +242,15 @@ public class SimpleQueryBus implements QueryBus {
         return () -> dispatchInterceptors.remove(interceptor);
     }
 
-    private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(QueryMessage<Q, R> queryMessage) {
-        return subscriptions.getOrDefault(new QueryDefinition(queryMessage.getQueryName(), queryMessage.getResponseType()),
-                                          new CopyOnWriteArrayList<>());
-    }
-
-    private static class QueryDefinition {
-        private final String queryName;
-        private final Class<?> responseType;
-
-        private QueryDefinition(String queryName, Class<?> responseType) {
-            this.queryName = queryName;
-            this.responseType = responseType;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof QueryDefinition)) {
-                return false;
-            }
-            QueryDefinition that = (QueryDefinition) o;
-            return Objects.equals(queryName, that.queryName) &&
-                    Objects.equals(responseType, that.responseType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(queryName, responseType);
-        }
+    @SuppressWarnings("unchecked") // Suppresses 'queryHandler' cast to `MessageHandler<? super QueryMessage<?, ?>>`
+    private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(
+            QueryMessage<Q, R> queryMessage) {
+        ResponseType<R> responseType = queryMessage.getResponseType();
+        return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
+                            .stream()
+                            .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
+                            .map((Function<QuerySubscription, MessageHandler>) QuerySubscription::getQueryHandler)
+                            .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
+                            .collect(Collectors.toList());
     }
 }

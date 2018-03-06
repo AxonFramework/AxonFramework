@@ -95,4 +95,17 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
     public GenericCommandMessage<T> andMetaData(Map<String, ?> metaData) {
         return new GenericCommandMessage<>(getDelegate().andMetaData(metaData), commandName);
     }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", commandName='")
+                     .append(getCommandName())
+                     .append('\'');
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericCommandMessage";
+    }
 }

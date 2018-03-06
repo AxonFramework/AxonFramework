@@ -48,6 +48,7 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.cre
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 import static org.mockito.Mockito.*;
 
+
 /**
  * @author Rene de Waele
  */
@@ -507,6 +508,27 @@ public class TrackingEventProcessorTest {
             // expected
         }
         verify(tokenStore, never()).storeToken(isNull(TrackingToken.class), anyString(), anyInt());
+    }
+    
+    @Test
+    public void testWhenFailureDuringInit() throws InterruptedException {
+      
+        when(tokenStore.fetchSegments(anyString()))
+                .thenThrow(new RuntimeException("Faking issue during fetchSegments"))
+                .thenReturn(new int[]{})
+                .thenReturn(new int[]{0});
+
+        doThrow(new RuntimeException("Faking issue during initializeTokenSegments"))
+                // and on further calls
+                .doNothing()
+                .when(tokenStore).initializeTokenSegments(anyString(), anyInt());
+
+        testSubject.start();
+
+        Thread.sleep(2500);
+
+        assertTrue(testSubject.activeProcessorThreads() == 1);
+
     }
 
     private static class StubTrackingEventStream implements TrackingEventStream {
