@@ -238,14 +238,14 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     private Optional<ConsistentHash> updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                                         AtomicReference<ConsistentHash> atomicConsistentHash) {
-        SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
+        Member member = buildMember(serviceInstance);
 
         Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
 
         if (optionalMessageRoutingInfo.isPresent()) {
             MessageRoutingInformation messageRoutingInfo = optionalMessageRoutingInfo.get();
             return Optional.of(atomicConsistentHash.updateAndGet(
-                    consistentHash -> consistentHash.with(simpleMember,
+                    consistentHash -> consistentHash.with(member,
                                                           messageRoutingInfo.getLoadFactor(),
                                                           messageRoutingInfo.getCommandFilter(serializer))
             ));
@@ -261,14 +261,13 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     /**
-     * Instantiate a {@link SimpleMember} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
-     * This SimpleMember is later used to send, for example, Command messages to.
+     * Instantiate a {@link Member} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
+     * This Member is later used to send, for example, Command messages to.
      *
-     * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to build a {@link SimpleMember}
-     *                        for.
-     * @return A {@link SimpleMember} based on the contents of the provided {@code serviceInstance}.
+     * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to build a {@link Member} for
+     * @return A {@link Member} based on the contents of the provided {@code serviceInstance}
      */
-    protected SimpleMember<URI> buildSimpleMember(ServiceInstance serviceInstance) {
+    protected Member buildMember(ServiceInstance serviceInstance) {
         URI serviceUri = serviceInstance.getUri();
         String serviceId = serviceInstance.getServiceId();
 
@@ -283,7 +282,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
         );
     }
 
-    private ConsistentHash suspect(SimpleMember<URI> member) {
+    private ConsistentHash suspect(Member member) {
         ConsistentHash newConsistentHash =
                 atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member));
         consistentHashChangeListener.onConsistentHashChanged(newConsistentHash);

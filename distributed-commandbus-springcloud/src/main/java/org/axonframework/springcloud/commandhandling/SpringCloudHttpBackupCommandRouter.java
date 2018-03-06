@@ -17,8 +17,8 @@ package org.axonframework.springcloud.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,17 +230,17 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     }
 
     private Optional<MessageRoutingInformation> requestMessageRoutingInformation(ServiceInstance serviceInstance) {
-        SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
-        if (simpleMember.local()) {
+        Member member = buildMember(serviceInstance);
+        if (member.local()) {
             return Optional.of(getLocalMessageRoutingInformation());
         }
 
-        URI endpoint = simpleMember.getConnectionEndpoint(URI.class)
-                                   .orElseThrow(() -> new IllegalArgumentException(String.format(
-                                           "No Connection Endpoint found in Member [%s] for protocol [%s] to send a " +
-                                                   "%s request to", simpleMember,
-                                           URI.class, MessageRoutingInformation.class.getSimpleName()
-                                   )));
+        URI endpoint = member.getConnectionEndpoint(URI.class)
+                             .orElseThrow(() -> new IllegalArgumentException(String.format(
+                                     "No Connection Endpoint found in Member [%s] for protocol [%s] to send a " +
+                                             "%s request to", member,
+                                     URI.class, MessageRoutingInformation.class.getSimpleName()
+                             )));
         URI destinationUri = buildURIForPath(endpoint, messageRoutingInformationEndpoint);
 
         try {
