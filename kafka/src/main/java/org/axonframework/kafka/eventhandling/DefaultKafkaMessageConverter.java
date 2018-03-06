@@ -33,6 +33,8 @@ import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -58,7 +60,7 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  * @since 3.0
  */
 public class DefaultKafkaMessageConverter implements KafkaMessageConverter<String, byte[]> {
-
+    private static final Logger logger = LoggerFactory.getLogger(KafkaMessageConverter.class);
     private final Serializer serializer;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private final BiFunction<String, Object, RecordHeader> headerValueMapper;
@@ -132,30 +134,36 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
     @Override
     public Optional<EventMessage<?>> readKafkaMessage(ConsumerRecord<String, byte[]> consumerRecord) {
         org.apache.kafka.common.header.Headers headers = consumerRecord.headers();
-        if (!keys(headers).containsAll(Arrays.asList(Headers.MESSAGE_ID, Headers.MESSAGE_TYPE))) {
-            return Optional.empty();
+        try {
+            if (!keys(headers).containsAll(Arrays.asList(Headers.MESSAGE_ID, Headers.MESSAGE_TYPE))) {
+                return Optional.empty();
+            }
+
+            byte[] messageBody = consumerRecord.value();
+            SimpleSerializedObject<byte[]> serializedMessage = new SimpleSerializedObject<>(messageBody, byte[].class,
+                                                                                            asString(headers.lastHeader(
+                                                                                                    Headers.MESSAGE_TYPE)
+                                                                                                            .value()),
+                                                                                            Objects.toString(asString(
+                                                                                                    headers.lastHeader(
+                                                                                                            Headers.MESSAGE_REVISION)
+                                                                                                           .value()),
+                                                                                                             null));
+            SerializedMessage<?> message = new SerializedMessage<>(asString(headers.lastHeader(Headers.MESSAGE_ID).value()),
+                                                                   new LazyDeserializingObject<>(serializedMessage,
+                                                                                                 serializer),
+                                                                   new LazyDeserializingObject<>(MetaData.from(
+                                                                           extractAxonMetadata(headers))));
+            long timestamp = asLong(headers.lastHeader(Headers.MESSAGE_TIMESTAMP).value());
+
+            return headers.lastHeader(Headers.AGGREGATE_ID) != null ? domainEvent(headers, message, timestamp) : event(
+                    message,
+                    timestamp);
+        } catch (Exception e) {
+            logger.error("Error converting message from kafka to axon {}", e);
         }
 
-        byte[] messageBody = consumerRecord.value();
-        SimpleSerializedObject<byte[]> serializedMessage = new SimpleSerializedObject<>(messageBody, byte[].class,
-                                                                                        asString(headers.lastHeader(
-                                                                                                Headers.MESSAGE_TYPE)
-                                                                                                        .value()),
-                                                                                        Objects.toString(asString(
-                                                                                                headers.lastHeader(
-                                                                                                        Headers.MESSAGE_REVISION)
-                                                                                                       .value()),
-                                                                                                         null));
-        SerializedMessage<?> message = new SerializedMessage<>(asString(headers.lastHeader(Headers.MESSAGE_ID).value()),
-                                                               new LazyDeserializingObject<>(serializedMessage,
-                                                                                             serializer),
-                                                               new LazyDeserializingObject<>(MetaData.from(
-                                                                       extractAxonMetadata(headers))));
-        long timestamp = asLong(headers.lastHeader(Headers.MESSAGE_TIMESTAMP).value());
-
-        return headers.lastHeader(Headers.AGGREGATE_ID) != null ? domainEvent(headers, message, timestamp) : event(
-                message,
-                timestamp);
+        return Optional.empty();
     }
 
     private Optional<EventMessage<?>> domainEvent(org.apache.kafka.common.header.Headers headers,
