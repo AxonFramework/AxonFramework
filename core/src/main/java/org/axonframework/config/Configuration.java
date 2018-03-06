@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -162,6 +163,22 @@ public interface Configuration {
     default Serializer serializer() {
         return getComponent(Serializer.class);
     }
+
+    /**
+     * Returns the {@link Serializer} defined in this Configuration to be used for serializing Event Message payload
+     * and their metadata.
+     *
+     * @return the event serializer defined in this Configuration.
+     */
+    Serializer eventSerializer();
+
+    /**
+     * Returns the {@link Serializer} defined in this Configuration to be used for serializing Message payloads and
+     * metadata.
+     *
+     * @return the message serializer defined in this Configuration.
+     */
+    Serializer messageSerializer();
 
     /**
      * Starts this configuration. All components defined in this Configuration will be started.

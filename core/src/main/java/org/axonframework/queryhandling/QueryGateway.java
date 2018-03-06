@@ -15,6 +15,9 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -24,66 +27,183 @@ import java.util.stream.Stream;
  * the query bus.
  *
  * @author Marc Gathier
+ * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 3.1
  */
 public interface QueryGateway {
 
     /**
-     * sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with
+     * the given {@code responseType} from a single source. The query name will be derived from the provided
+     * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
-     * @param query        the query
-     * @param responseType the expected result type
-     * @param <R>          The type of result expected from query execution
+     * @param query        The {@code query} to be sent
+     * @param responseType A {@link java.lang.Class} describing the desired response type
+     * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return a completable future that contains the first result of the query.
-     * @throws NullPointerException when query is null
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
+     * {@code responseType}
      */
-    default <R, Q> CompletableFuture<R> send(Q query, Class<R> responseType) {
-        return send(query, query.getClass().getName(), responseType);
+    default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
+        return query(query.getClass().getName(), query, responseType);
     }
 
     /**
-     * sends given query to the query bus and expects a result with name resultName. Execution may be asynchronous.
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with
+     * the given {@code responseType} from a single source. Execution may be asynchronous, depending on the QueryBus
+     * implementation.
      *
-     * @param query        the query
-     * @param queryName    the name of the query
-     * @param responseType the expected response type
-     * @param <R>          The type of result expected from query execution
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
+     * @param query        The {@code query} to be sent
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
+     * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return a completable future that contains the first result of the query.
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
+     * {@code responseType}
      */
-    <R, Q> CompletableFuture<R> send(Q query, String queryName, Class<R> responseType);
-
+    default <R, Q> CompletableFuture<R> query(String queryName, Q query, Class<R> responseType) {
+        return query(queryName, query, ResponseTypes.instanceOf(responseType));
+    }
 
     /**
-     * sends given query to the query bus and expects a stream of results with name resultName. The stream is completed when a timeout occurs
-     * or when all results are received.
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
+     * form of {@code responseType} from a single source. The query name will be derived from the provided
+     * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
-     * @param query       the query
-     * @param queryName   the name of the query
-     * @param resultClass type type of result
-     * @param timeout     timeout for the request
-     * @param timeUnit    unit for the timeout
-     * @param <R>         The type of result expected from query execution
-     * @param <Q>         The query class
-     * @return a stream of results
+     * @param query        The {@code query} to be sent
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
+     * {@code responseType}
      */
-    <R, Q> Stream<R> send(Q query, String queryName, Class<R> resultClass, long timeout, TimeUnit timeUnit);
+    default <R, Q> CompletableFuture<R> query(Q query, ResponseType<R> responseType) {
+        return query(query.getClass().getName(), query, responseType);
+    }
 
     /**
-     * sends given query to the query bus and expects a stream of results with type responseType. The stream is completed when a timeout occurs
-     * or when all results are received.
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
+     * form of {@code responseType} from a single source. Execution may be asynchronous, depending on the QueryBus
+     * implementation.
      *
-     * @param query        the query
-     * @param responseType the expected result type
-     * @param timeout      timeout for the request
-     * @param timeUnit     unit for the timeout
-     * @param <R>          The type of result expected from query execution
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
+     * @param query        The {@code query} to be sent
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
+     * @param <R>          The response class contained in the given {@code responseType}
      * @param <Q>          The query class
-     * @return a stream of results
-     * @throws NullPointerException when query is null
+     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
+     * {@code responseType}
      */
+    <R, Q> CompletableFuture<R> query(String queryName, Q query, ResponseType<R> responseType);
+
+    /**
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
+     * form of {@code responseType} from several sources. The stream is completed when a {@code timeout} occurs or when
+     * all results are received. The query name will be derived from the provided {@code query}. Execution may be
+     * asynchronous, depending on the QueryBus implementation.
+     *
+     * @param query        The {@code query} to be sent
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
+     * @param timeout      A timeout of {@code long} for the query
+     * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A stream of results.
+     */
+    default <R, Q> Stream<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
+        return scatterGather(query.getClass().getName(), query, responseType, timeout, timeUnit);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
+     * form of {@code responseType} from several sources. The stream is completed when a {@code timeout} occurs or when
+     * all results are received. Execution may be asynchronous, depending on the QueryBus implementation.
+     *
+     * @param queryName    A {@link java.lang.String} describing the query to be executed
+     * @param query        The {@code query} to be sent
+     * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
+     * @param timeout      A timeout of {@code long} for the query
+     * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}
+     * @param <R>          The response class contained in the given {@code responseType}
+     * @param <Q>          The query class
+     * @return A stream of results.
+     */
+    <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
+                                   TimeUnit timeUnit);
+
+    /**
+     * Sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.
+     *
+     * @param query        The query.
+     * @param queryName    The name of the query.
+     * @param responseType The expected result type.
+     * @param <R>          The type of result expected from query execution.
+     * @param <Q>          The query class.
+     * @return A completable future that contains the first result of the query..
+     *
+     * @throws NullPointerException when query is null.
+     * @deprecated Use {@link #query(String, Object, Class)} instead.
+     */
+    @Deprecated
+    default <R, Q> CompletableFuture<R> send(String queryName, Q query, Class<R> responseType) {
+        return query(queryName, query, responseType);
+    }
+
+    /**
+     * Sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.
+     *
+     * @param query        The query.
+     * @param responseType The expected result type.
+     * @param <R>          The type of result expected from query execution.
+     * @param <Q>          The query class.
+     * @return A completable future that contains the first result of the query.
+     *
+     * @throws NullPointerException when query is null.
+     * @deprecated Use {@link #query(Object, Class)} instead.
+     */
+    @Deprecated
+    default <R, Q> CompletableFuture<R> send(Q query, Class<R> responseType) {
+        return query(query.getClass().getName(), query, responseType);
+    }
+
+    /**
+     * Sends given query to the query bus and expects a stream of results with type responseType. The stream is
+     * completed when a timeout occurs or when all results are received.
+     *
+     * @param query        The query.
+     * @param responseType The expected result type.
+     * @param timeout      Timeout for the request.
+     * @param timeUnit     Unit for the timeout.
+     * @param <R>          The type of result expected from query execution.
+     * @param <Q>          The query class.
+     * @return A stream of results.
+     *
+     * @throws NullPointerException when query is null.
+     * @deprecated Use {@link #scatterGather(Object, ResponseType, long, TimeUnit)} instead.
+     */
+    @Deprecated
     default <R, Q> Stream<R> send(Q query, Class<R> responseType, long timeout, TimeUnit timeUnit) {
-        return send(query, query.getClass().getName(), responseType, timeout, timeUnit);
+        return scatterGather(query, ResponseTypes.instanceOf(responseType), timeout, timeUnit);
+    }
+
+    /**
+     * Sends given query to the query bus and expects a stream of results with name resultName. The stream is completed
+     * when a timeout occurs or when all results are received.
+     *
+     * @param query       The query.
+     * @param queryName   The name of the query.
+     * @param resultClass Type type of result.
+     * @param timeout     Timeout for the request.
+     * @param timeUnit    Unit for the timeout.
+     * @param <R>         The type of result expected from query execution.
+     * @param <Q>         The query class.
+     * @return A stream of results.
+     *
+     * @deprecated Use {@link #scatterGather(String, Object, ResponseType, long, TimeUnit)} instead.
+     */
+    @Deprecated
+    default <R, Q> Stream<R> send(Q query, String queryName, Class<R> resultClass, long timeout, TimeUnit timeUnit) {
+        return scatterGather(queryName, query, ResponseTypes.instanceOf(resultClass), timeout, timeUnit);
     }
 }

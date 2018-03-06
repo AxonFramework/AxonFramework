@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,8 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -40,13 +38,12 @@ import static org.mockito.Mockito.mock;
 public class DisruptorRepositoryTest {
 
     private final EventStore eventStore = mock(EventStore.class);
-    private final EventBus eventBus = mock(EventBus.class);
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus();
         Repository<TestAggregate> repository = commandBus
-                .createRepository(new GenericAggregateFactory<>(TestAggregate.class));
+                .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));
 
         AggregateAnnotationCommandHandler<TestAggregate> handler
                 = new AggregateAnnotationCommandHandler<>(TestAggregate.class, repository);
@@ -60,7 +57,7 @@ public class DisruptorRepositoryTest {
         // Load the aggregate from the repository -- from "worker" thread
         UnitOfWork<CommandMessage<?>> uow = DefaultUnitOfWork.startAndGet(null);
         try {
-            Aggregate<TestAggregate> aggregate = repository.load(aggregateId);
+            repository.load(aggregateId);
             fail("Expected IllegalStateException");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().contains("DisruptorCommandBus"));

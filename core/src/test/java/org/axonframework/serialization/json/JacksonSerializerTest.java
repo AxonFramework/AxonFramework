@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
- *
+ * Copyright (c) 2010-2017. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -61,7 +60,6 @@ public class JacksonSerializerTest {
 
         SerializedObject<String> serialized = testSubject.serialize(toSerialize, String.class);
 
-        System.out.println(serialized.getData());
         SimpleSerializableType actual = testSubject.deserialize(serialized);
         assertEquals(toSerialize.getValue(), actual.getValue());
         assertEquals(toSerialize.getNested().getValue(), actual.getNested().getValue());
@@ -166,7 +164,6 @@ public class JacksonSerializerTest {
 
         MetaData metaData = MetaData.with("myKey", new ComplexObject("String1", "String2", 3));
         SerializedObject<byte[]> serialized = testSubject.serialize(metaData, byte[].class);
-        System.out.println(new String(serialized.getData()));
         MetaData actual = testSubject.deserialize(serialized);
 
         assertEquals(metaData, actual);

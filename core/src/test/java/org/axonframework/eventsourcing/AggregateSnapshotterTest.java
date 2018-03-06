@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import java.util.UUID;
 
 import static java.util.Collections.singletonList;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.markDeleted;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
@@ -87,17 +89,36 @@ public class AggregateSnapshotterTest {
         verify(mockAggregateFactory).createAggregateRoot(any(), any(DomainEventMessage.class));
     }
 
+    @Test
+    @SuppressWarnings({"unchecked"})
+    public void testCreateSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
+        String aggregateIdentifier = UUID.randomUUID().toString();
+        DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
+                                                                        "Mock contents", MetaData.emptyInstance());
+        DomainEventMessage secondEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
+                                                                         "deleted", MetaData.emptyInstance());
+        DomainEventStream eventStream = DomainEventStream.of(firstEvent, secondEvent);
+        StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
+        when(mockAggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
+
+        DomainEventMessage snapshot = testSubject.createSnapshot(StubAggregate.class,
+                                                                 aggregateIdentifier, eventStream);
+
+        verify(mockAggregateFactory).createAggregateRoot(aggregateIdentifier, firstEvent);
+        assertNull("Snapshotter shouldn't have created snapshot of deleted aggregate", snapshot);
+    }
+
     public static class StubAggregate {
 
         @AggregateIdentifier
-        private Object identifier;
+        private String identifier;
 
         public StubAggregate() {
-            identifier = UUID.randomUUID();
+            identifier = UUID.randomUUID().toString();
         }
 
         public StubAggregate(Object identifier) {
-            this.identifier = identifier;
+            this.identifier = identifier.toString();
         }
 
         public void doSomething() {
@@ -113,7 +134,10 @@ public class AggregateSnapshotterTest {
             identifier = ((DomainEventMessage) event).getAggregateIdentifier();
             // See Issue #
             if ("Mock contents".equals(event.getPayload().toString())) {
-                    apply("Another");
+                apply("Another");
+            }
+            if ("deleted".equals(event.getPayload().toString())) {
+                markDeleted();
             }
         }
 

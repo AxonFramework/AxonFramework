@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,7 @@ import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.MockException;
-import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -38,7 +36,6 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.junit.After;
@@ -48,9 +45,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertEquals;
@@ -87,7 +82,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     @Test//(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         testSubject = new DisruptorCommandBus(
-                inMemoryEventStore, new DisruptorConfiguration().setBufferSize(4)
+                new DisruptorConfiguration().setBufferSize(4)
                         .setProducerType(ProducerType.MULTI)
                         .setWaitStrategy(new SleepingWaitStrategy())
                         .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
@@ -96,9 +91,9 @@ public class DisruptorCommandBusTest_MultiThreaded {
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
-        Repository<StubAggregate> spiedRepository = spy(testSubject
-                                                                .createRepository(new GenericAggregateFactory<>(
-                                                                        StubAggregate.class)));
+        Repository<StubAggregate> spiedRepository = spy(testSubject.createRepository(
+                inMemoryEventStore,
+                new GenericAggregateFactory<>(StubAggregate.class)));
         stubHandler.setRepository(spiedRepository);
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
         doAnswer(invocation -> {
@@ -281,31 +276,6 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
         public void setRepository(Repository<StubAggregate> repository) {
             this.repository = repository;
-        }
-    }
-
-    private static class CountingEventBus implements EventBus {
-
-        private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
-
-        @Override
-        public void publish(List<? extends EventMessage<?>> events) {
-            publisherCountDown.countDown();
-        }
-
-        @Override
-        public TrackingEventStream openStream(TrackingToken trackingToken) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
-            throw new UnsupportedOperationException();
         }
     }
 

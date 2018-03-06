@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -26,16 +27,18 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import static java.text.MessageFormat.format;
+import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -46,12 +49,15 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * method will invoke one of these handlers. Which one is unspecified.
  *
  * @author Marc Gathier
+ * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 3.1
  */
 public class SimpleQueryBus implements QueryBus {
+
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
@@ -61,7 +67,8 @@ public class SimpleQueryBus implements QueryBus {
      * Initialize the query bus without monitoring on messages and a {@link LoggingQueryInvocationErrorHandler}.
      */
     public SimpleQueryBus() {
-        this(NoOpMessageMonitor.INSTANCE, null, null);
+        this(NoOpMessageMonitor.INSTANCE, NoTransactionManager.instance(),
+             new LoggingQueryInvocationErrorHandler(logger));
     }
 
     /**
@@ -72,7 +79,7 @@ public class SimpleQueryBus implements QueryBus {
      * @param transactionManager The transaction manager to manage transactions around query execution with
      */
     public SimpleQueryBus(TransactionManager transactionManager) {
-        this(NoOpMessageMonitor.INSTANCE, transactionManager, null);
+        this(NoOpMessageMonitor.INSTANCE, transactionManager, new LoggingQueryInvocationErrorHandler(logger));
     }
 
     /**
@@ -85,35 +92,68 @@ public class SimpleQueryBus implements QueryBus {
     public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
                           TransactionManager transactionManager,
                           QueryInvocationErrorHandler errorHandler) {
-        this.messageMonitor = messageMonitor;
+        this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.instance();
         this.errorHandler = getOrDefault(errorHandler, () -> new LoggingQueryInvocationErrorHandler(logger));
         if (transactionManager != null) {
             registerHandlerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <R> Registration subscribe(String queryName, Class<R> responseType, MessageHandler<? super QueryMessage<?, R>> handler) {
-        QueryDefinition registrationKey = new QueryDefinition(queryName, responseType);
-        subscriptions.computeIfAbsent(registrationKey, (k) -> new CopyOnWriteArraySet<>()).add((MessageHandler<? super QueryMessage<?, ?>>) handler);
-        return () -> unsubscribe(registrationKey, (MessageHandler<? super QueryMessage<?, ?>>) handler);
+    public <R> Registration subscribe(String queryName,
+                                      Type responseType,
+                                      MessageHandler<? super QueryMessage<?, R>> handler) {
+        CopyOnWriteArrayList<QuerySubscription> handlers =
+                subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
+        QuerySubscription<R> querySubscription = new QuerySubscription<>(responseType, handler);
+        handlers.addIfAbsent(querySubscription);
+
+        return () -> unsubscribe(queryName, querySubscription);
+    }
+
+    private <R> boolean unsubscribe(String queryName, QuerySubscription<R> querySubscription) {
+        subscriptions.computeIfPresent(queryName, (key, handlers) -> {
+            handlers.remove(querySubscription);
+            if (handlers.isEmpty()) {
+                return null;
+            }
+            return handlers;
+        });
+        return true;
     }
 
     @Override
-    public <Q, R> CompletableFuture<R> query(QueryMessage<Q, R> query) {
+    public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
-        CompletableFuture<R> completableFuture = new CompletableFuture<>();
-        Set<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
+        CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
+        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         try {
             if (handlers.isEmpty()) {
-                throw new NoHandlerForQueryException(format("No handler found for %s with response name %s",
+                throw new NoHandlerForQueryException(format("No handler found for %s with response type %s",
                                                             interceptedQuery.getQueryName(),
                                                             interceptedQuery.getResponseType()));
             }
-            DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-            completableFuture.complete(interceptAndInvoke(uow, handlers.iterator().next()));
+            Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
+            boolean invocationSuccess = false;
+            QueryResponseMessage<R> result = null;
+            while (!invocationSuccess && handlerIterator.hasNext()) {
+                try {
+                    DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
+                    result = GenericQueryResponseMessage.asResponseMessage(
+                            interceptAndInvoke(uow, handlerIterator.next())
+                    );
+                    invocationSuccess = true;
+                } catch (NoHandlerForQueryException e) {
+                    // Ignore this Query Handler, as we may have another one which is suitable
+                }
+            }
+            if (!invocationSuccess) {
+                throw new NoHandlerForQueryException(format("No suitable handler was found for %s with response type %s",
+                                                            interceptedQuery.getQueryName(),
+                                                            interceptedQuery.getResponseType()));
+            }
+            completableFuture.complete(result);
             monitorCallback.reportSuccess();
         } catch (Exception e) {
             completableFuture.completeExceptionally(e);
@@ -123,34 +163,29 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> Stream<R> queryAll(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
+    public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         QueryMessage<Q, R> interceptedQuery = intercept(query);
-        Set<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
+        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         if (handlers.isEmpty()) {
             monitorCallback.reportIgnored();
             return Stream.empty();
         }
 
-        return StreamSupport.stream(new Spliterators.AbstractSpliterator<R>(handlers.size(), Spliterator.SIZED) {
-            final Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
-
-            @SuppressWarnings("unchecked")
-            public boolean tryAdvance(Consumer<? super R> action) {
-                while (handlerIterator.hasNext()) {
-                    MessageHandler<? super QueryMessage<?, ?>> handler = handlerIterator.next();
-                    try {
-                        action.accept(interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery), handler));
-                        monitorCallback.reportSuccess();
-                        return true;
-                    } catch (Exception e) {
-                        monitorCallback.reportFailure(e);
-                        errorHandler.onError(e, interceptedQuery, handler);
-                    }
-                }
-                return false;
-            }
-        }, false);
+        return handlers.stream()
+                       .map(mh -> {
+                           QueryResponseMessage<R> result = null;
+                           try {
+                               result = interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery), mh);
+                               monitorCallback.reportSuccess();
+                               return result;
+                           } catch (Exception e) {
+                               monitorCallback.reportFailure(e);
+                               errorHandler.onError(e, interceptedQuery, mh);
+                           }
+                           return result;
+                       })
+                       .filter(Objects::nonNull);
     }
 
     @Override
@@ -159,8 +194,14 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @SuppressWarnings("unchecked")
-    private <Q, R> R interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow, MessageHandler<? super QueryMessage<?, ?>> handler) throws Exception {
-        return uow.executeWithResult(() -> (R) new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed());
+    private <Q, R> QueryResponseMessage<R> interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow,
+                                                              MessageHandler<? super QueryMessage<?, R>> handler)
+            throws Exception {
+        return uow.executeWithResult(() -> {
+            ResponseType<R> responseType = uow.getMessage().getResponseType();
+            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            return GenericQueryResponseMessage.asResponseMessage(responseType.convert(queryResponse));
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -172,24 +213,13 @@ public class SimpleQueryBus implements QueryBus {
         return intercepted;
     }
 
-    private boolean unsubscribe(QueryDefinition registrationKey, MessageHandler<? super QueryMessage<?, ?>> handler) {
-        subscriptions.computeIfPresent(registrationKey, (key, handlers) -> {
-            handlers.remove(handler);
-            if (handlers.isEmpty()) {
-                return null;
-            }
-            return handlers;
-        });
-        return true;
-    }
-
     /**
      * Returns the subscriptions for this query bus. While the returned map is unmodifiable, it may or may not reflect
      * changes made to the subscriptions after the call was made.
      *
      * @return the subscriptions for this query bus
      */
-    protected Map<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> getSubscriptions() {
+    protected Map<String, Collection<QuerySubscription>> getSubscriptions() {
         return Collections.unmodifiableMap(subscriptions);
     }
 
@@ -198,9 +228,11 @@ public class SimpleQueryBus implements QueryBus {
      * respective handlers. The interceptor is invoked separately for each handler instance (in a separate unit of work).
      *
      * @param interceptor the interceptor to invoke before passing a Query to the handler
+     * @return handle to unregister the interceptor
      */
-    public void registerHandlerInterceptor(MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor) {
-        this.handlerInterceptors.add(interceptor);
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor) {
+        handlerInterceptors.add(interceptor);
+        return () -> handlerInterceptors.remove(interceptor);
     }
 
     /**
@@ -208,41 +240,22 @@ public class SimpleQueryBus implements QueryBus {
      * once, regardless of the type of query (point-to-point or scatter-gather) executed.
      *
      * @param interceptor the interceptor to invoke when sending a Query
+     * @return handle to unregister the interceptor
      */
-    public void registerDispatchInterceptor(MessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
-        this.dispatchInterceptors.add(interceptor);
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<QueryMessage<?, ?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
     }
 
-    private <Q, R> Set<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(QueryMessage<Q, R> queryMessage) {
-        return subscriptions.getOrDefault(new QueryDefinition(queryMessage.getQueryName(), queryMessage.getResponseType()),
-                                          Collections.emptySet());
-    }
-
-    private static class QueryDefinition {
-        private final String queryName;
-        private final Class<?> responseType;
-
-        private QueryDefinition(String queryName, Class<?> responseType) {
-            this.queryName = queryName;
-            this.responseType = responseType;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof QueryDefinition)) {
-                return false;
-            }
-            QueryDefinition that = (QueryDefinition) o;
-            return Objects.equals(queryName, that.queryName) &&
-                    Objects.equals(responseType, that.responseType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(queryName, responseType);
-        }
+    @SuppressWarnings("unchecked") // Suppresses 'queryHandler' cast to `MessageHandler<? super QueryMessage<?, ?>>`
+    private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>>> getHandlersForMessage(
+            QueryMessage<Q, R> queryMessage) {
+        ResponseType<R> responseType = queryMessage.getResponseType();
+        return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
+                            .stream()
+                            .filter(querySubscription -> responseType.matches(querySubscription.getResponseType()))
+                            .map((Function<QuerySubscription, MessageHandler>) QuerySubscription::getQueryHandler)
+                            .map(queryHandler -> (MessageHandler<? super QueryMessage<?, ?>>) queryHandler)
+                            .collect(Collectors.toList());
     }
 }

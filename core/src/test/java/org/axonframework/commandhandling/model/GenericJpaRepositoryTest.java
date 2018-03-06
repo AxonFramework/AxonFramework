@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,11 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.After;
@@ -31,6 +36,8 @@ import javax.persistence.Version;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -76,6 +83,83 @@ public class GenericJpaRepositoryTest {
         when(identifierConverter.apply("original")).thenAnswer(new Returns(aggregateId));
         Aggregate<StubJpaAggregate> actualResult = testSubject.load("original");
         assertSame(aggregate, actualResult.invoke(Function.identity()));
+    }
+
+    @Test
+    public void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingEventStore() throws Exception {
+        EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
+                                                 StubJpaAggregate.class, mockEventStore, identifierConverter);
+
+        DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+            Aggregate<StubJpaAggregate> agg = testSubject.newInstance(() -> new StubJpaAggregate("id", "test1", "test2"));
+            agg.execute(e -> e.doSomething("test3"));
+            return null;
+        });
+        CurrentUnitOfWork.commit();
+
+        DomainEventStream events = mockEventStore.readEvents("id");
+        assertTrue(events.hasNext());
+        DomainEventMessage<?> next1 = events.next();
+        assertEquals("test1", next1.getPayload());
+        assertEquals(0, next1.getSequenceNumber());
+        assertEquals("id", next1.getAggregateIdentifier());
+
+        DomainEventMessage<?> next2 = events.next();
+        assertEquals("test2", next2.getPayload());
+        assertEquals(1, next2.getSequenceNumber());
+        assertEquals("id", next2.getAggregateIdentifier());
+
+        DomainEventMessage<?> next3 = events.next();
+        assertEquals("test3", next3.getPayload());
+        assertEquals(2, next3.getSequenceNumber());
+        assertEquals("id", next3.getAggregateIdentifier());
+    }
+
+    @Test
+    public void testAggregateCreatesSequenceNumbersForExistingAggregatesWithEventsInEventStore() throws Exception {
+        EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        mockEventStore.publish(createEvent("123", 0), createEvent("123", 1));
+        testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
+                                                 StubJpaAggregate.class, mockEventStore, identifierConverter);
+
+        DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+            Aggregate<StubJpaAggregate> agg = testSubject.load("123");
+            agg.execute(e -> e.doSomething("test2"));
+            return null;
+        });
+
+        CurrentUnitOfWork.commit();
+
+        DomainEventStream events = mockEventStore.readEvents("123");
+        // first the two we added ourselves
+        assertNotNull(events.next());
+        assertNotNull(events.next());
+
+        assertTrue(events.hasNext());
+        DomainEventMessage<?> next = events.next();
+        assertEquals("test2", next.getPayload());
+        assertEquals(2, next.getSequenceNumber());
+    }
+
+    @Test
+    public void testAggregateDoesNotCreateSequenceNumbersWhenNoEventsInStore() throws Exception {
+        EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
+                                                 StubJpaAggregate.class, mockEventStore, identifierConverter);
+
+        DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+            Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);
+            agg.execute(e -> e.doSomething("test2"));
+            return null;
+        });
+
+        CurrentUnitOfWork.commit();
+
+        DomainEventStream events = mockEventStore.readEvents(aggregateId);
+        assertFalse(events.hasNext());
+        assertTrue(mockEventStore.openStream(null).hasNextAvailable());
+        assertEquals("test2", mockEventStore.openStream(null).nextAvailable().getPayload());
     }
 
     @Test
@@ -134,6 +218,17 @@ public class GenericJpaRepositoryTest {
 
         private StubJpaAggregate(String identifier) {
             this.identifier = identifier;
+        }
+
+        private StubJpaAggregate(String identifier, String... payloads) {
+            this(identifier);
+            for (String payload : payloads) {
+                apply(payload);
+            }
+        }
+
+        public void doSomething(String newValue) {
+            apply(newValue);
         }
 
         public String getIdentifier() {

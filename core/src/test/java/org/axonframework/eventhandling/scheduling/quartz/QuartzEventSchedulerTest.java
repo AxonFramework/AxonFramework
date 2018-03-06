@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.common.AssertUtils;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.junit.After;
@@ -100,21 +100,24 @@ public class QuartzEventSchedulerTest {
         doAnswer(invocation -> {
             latch.countDown();
             return null;
-        }).when(eventBus).publish(isA(EventMessage.class));
+        }).when(mockTransaction).commit();
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), new StubEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
+
+        AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> verify(mockTransaction).commit());
         InOrder inOrder = inOrder(transactionManager, eventBus, mockTransaction);
         inOrder.verify(transactionManager).startTransaction();
         inOrder.verify(eventBus).publish(isA(EventMessage.class));
         inOrder.verify(mockTransaction).commit();
+        inOrder.verifyNoMoreInteractions();
     }
 
     @Test
-    public void testCancelJob() throws SchedulerException, InterruptedException {
+    public void testCancelJob() throws SchedulerException {
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(1000), new StubEvent());
@@ -123,10 +126,6 @@ public class QuartzEventSchedulerTest {
         assertEquals(0, scheduler.getJobKeys(GroupMatcher.groupEquals(GROUP_ID)).size());
         scheduler.shutdown(true);
         verify(eventBus, never()).publish(isA(EventMessage.class));
-    }
-
-    private EventMessage newStubEvent() {
-        return new GenericEventMessage<>(new StubEvent());
     }
 
     private class StubEvent {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
@@ -40,7 +38,6 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
     private final SnapshotTrigger snapshotTrigger;
     private boolean initializing = false;
-    private long lastEventSequenceNumber;
 
     /**
      * Initializes an EventSourcedAggregate instance for the given {@code aggregateRoot}, based on the given {@code
@@ -102,7 +99,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
                                                            boolean isDeleted, EventBus eventBus,
                                                            SnapshotTrigger snapshotTrigger) {
         EventSourcedAggregate<T> aggregate = initialize(aggregateRoot, model, eventBus, snapshotTrigger);
-        aggregate.lastEventSequenceNumber = seqNo;
+        aggregate.initSequence(seqNo);
         if (isDeleted) {
             aggregate.doMarkDeleted();
         }
@@ -121,7 +118,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
                                     SnapshotTrigger snapshotTrigger) {
         super(aggregateRoot, model, eventBus);
-        this.lastEventSequenceNumber = -1;
+        this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }
 
@@ -136,7 +133,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      */
     protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, SnapshotTrigger snapshotTrigger) {
         super(model, eventBus);
-        this.lastEventSequenceNumber = -1;
+        this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }
 
@@ -151,29 +148,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
     @Override
     protected void publish(EventMessage<?> msg) {
-        if (msg instanceof DomainEventMessage) {
-            lastEventSequenceNumber = ((DomainEventMessage) msg).getSequenceNumber();
-        }
-        snapshotTrigger.eventHandled(msg);
         super.publish(msg);
+        snapshotTrigger.eventHandled(msg);
         if (identifierAsString() == null) {
             throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying an event. " +
                                                              "Make sure the aggregate identifier is initialized at " +
                                                              "the latest when handling the creation event.");
         }
-    }
-
-    @Override
-    protected <P> DomainEventMessage<P> createMessage(P payload, MetaData metaData) {
-        String id = identifierAsString();
-        long seq = nextSequence();
-        if (id == null) {
-            Assert.state(seq == 0,
-                         () -> "The aggregate identifier has not been set. It must be set at the latest by the " +
-                                 "event sourcing handler of the creation event");
-            return new LazyIdentifierDomainEventMessage<>(type(), seq, payload, metaData);
-        }
-        return new GenericDomainEventMessage<>(type(), identifierAsString(), nextSequence(), payload, metaData);
     }
 
     @Override
@@ -186,18 +167,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
     @Override
     public Long version() {
-        return lastEventSequenceNumber < 0 ? null : lastEventSequenceNumber;
-    }
-
-    /**
-     * Returns the sequence number to be used for the next event applied by this Aggregate instance. The first
-     * event of an aggregate receives sequence number 0.
-     *
-     * @return the sequence number to be used for the next event
-     */
-    protected long nextSequence() {
-        Long currentSequence = version();
-        return currentSequence == null ? 0 : currentSequence + 1L;
+        return lastSequence();
     }
 
     /**
@@ -210,7 +180,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             this.initializing = true;
             try {
                 eventStream.forEachRemaining(this::publish);
-                lastEventSequenceNumber = eventStream.getLastSequenceNumber();
+                initSequence(eventStream.getLastSequenceNumber());
             } finally {
                 this.initializing = false;
                 snapshotTrigger.initializationFinished();
@@ -247,39 +217,4 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         }
     }
 
-    private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {
-        public LazyIdentifierDomainEventMessage(String type, long seq, P payload, MetaData metaData) {
-            super(type, null, seq, payload, metaData);
-        }
-
-        @Override
-        public String getAggregateIdentifier() {
-            return identifierAsString();
-        }
-
-        @Override
-        public GenericDomainEventMessage<P> withMetaData(Map<String, ?> newMetaData) {
-            String identifier = identifierAsString();
-            if (identifier != null) {
-                return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp());
-            } else {
-                return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
-                                                              MetaData.from(newMetaData));
-            }
-        }
-
-        @Override
-        public GenericDomainEventMessage<P> andMetaData(Map<String, ?> additionalMetaData) {
-            String identifier = identifierAsString();
-            if (identifier != null) {
-                return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp())
-                        .andMetaData(additionalMetaData);
-            } else {
-                return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
-                                                              getMetaData().mergedWith(additionalMetaData));
-            }
-        }
-    }
 }

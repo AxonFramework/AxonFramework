@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.function.Consumer;
@@ -34,7 +35,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga<T> {
+public interface Saga<T> extends EventListener {
 
     /**
      * Returns the unique identifier of this saga.
@@ -69,16 +70,6 @@ public interface Saga<T> {
 
 
     /**
-     * Handle the given event. The actual result of processing depends on the implementation of the saga.
-     * <p/>
-     * Implementations are highly discouraged from throwing exceptions.
-     *
-     * @param event the event to handle
-     * @return {@code true} if the event was handled by the Saga, otherwise {@code false}
-     */
-    boolean handle(EventMessage<?> event);
-
-    /**
      * Indicates whether or not this saga is active. A Saga is active when its life cycle has not been ended.
      *
      * @return {@code true} if this saga is active, {@code false} otherwise.
@@ -93,4 +84,14 @@ public interface Saga<T> {
      * @return the TrackingToken of the last processed EventMessage, if present.
      */
     TrackingToken trackingToken();
+
+    @Override
+    default boolean supportsReset() {
+        return false;
+    }
+
+    @Override
+    default void prepareReset() {
+        throw new ResetNotSupportedException("Sagas do not support reset");
+    }
 }

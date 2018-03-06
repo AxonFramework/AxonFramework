@@ -16,7 +16,6 @@
 
 package org.axonframework.common.io;
 
-import java.io.Closeable;
 import java.nio.charset.Charset;
 
 /**

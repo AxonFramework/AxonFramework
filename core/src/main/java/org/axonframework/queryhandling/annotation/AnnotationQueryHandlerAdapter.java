@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Adapter that turns any {@link @QueryHandler} annotated bean into a {@link
+ * Adapter that turns any {@link QueryHandler @QueryHandler} annotated bean into a {@link
  * MessageHandler} implementation. Each annotated method is subscribed
  * as a QueryHandler at the {@link QueryBus} for the query type specified by the parameter/return type of that method.
  *
@@ -92,6 +92,6 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
             return null;
         }
         QueryHandlingMember qhm = unwrap.get();
-        return queryBus.subscribe(qhm.getQueryName(), qhm.getReturnType(), this);
+        return queryBus.subscribe(qhm.getQueryName(), qhm.getResultType(), this);
     }
 }

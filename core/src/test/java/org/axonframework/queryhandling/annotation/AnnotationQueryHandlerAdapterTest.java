@@ -23,75 +23,85 @@ import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
-/**
- * Author: marc
- */
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationQueryHandlerAdapterTest {
+
     private AnnotationQueryHandlerAdapter<?> testSubject;
 
     @Mock
     private QueryBus queryBus;
-    private MySecondQueryHandler mockTarget2;
 
     @Before
     public void setUp() throws Exception {
-        mockTarget2 = new MySecondQueryHandler();
         testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
         when(queryBus.subscribe(anyObject(), anyObject(), anyObject())).thenReturn(() -> true);
     }
 
     @Test
-    public void subscribe() throws Exception {
-
+    public void subscribe() {
         Registration registration = testSubject.subscribe(queryBus);
-        verify(queryBus, times(1)).subscribe(eq(String.class.getName()),
-                                             eq(String.class),
-                                             anyObject());
 
-        verify(queryBus, times(1)).subscribe(eq("Hello"),
-                                             eq(String.class),
-                                             anyObject());
+        verify(queryBus, times(1)).subscribe(eq(String.class.getName()), eq(String.class), anyObject());
+        verify(queryBus, times(1)).subscribe(eq("Hello"), eq(String.class), anyObject());
 
         assertTrue(registration.cancel());
     }
 
     @Test(expected = UnsupportedHandlerException.class)
-    public void subscribeInvalidParameters() throws Exception {
-        new AnnotationQueryHandlerAdapter<>(mockTarget2);
+    public void subscribeFailsForHandlerWithInvalidParameters() {
+        new AnnotationQueryHandlerAdapter<>(new MySecondQueryHandler());
     }
 
     @Test(expected = UnsupportedHandlerException.class)
-    public void subscribeVoidMethod() throws Exception {
+    public void subscribeFailsForHandlerWithVoidReturnType() {
         new AnnotationQueryHandlerAdapter<>(new MyThirdQueryHandler());
     }
 
     @Test
     public void testRunQuery() throws Exception {
-        QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("hello", String.class);
-        Object result = testSubject.handle(queryMessage);
-        assertEquals("hello", result);
+        String testResponse = "hello";
+        QueryMessage<String, String> testQueryMessage =
+                new GenericQueryMessage<>(testResponse, ResponseTypes.instanceOf(String.class));
+        Object result = testSubject.handle(testQueryMessage);
+
+        assertEquals(testResponse, result);
     }
 
     @Test(expected = MockException.class)
     public void testRunQueryWithException() throws Exception {
-        QueryMessage<String, Integer> queryMessage = new GenericQueryMessage<>("hello", Integer.class);
-        testSubject.handle(queryMessage);
+        testSubject.handle(new GenericQueryMessage<>("hello", ResponseTypes.instanceOf(Integer.class)));
     }
 
-    public class MyQueryHandler {
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testRunQueryForCollection() throws Exception {
+        int testResponse = 5;
+        QueryMessage<Integer, List<String>> testQueryMessage =
+                new GenericQueryMessage<>(testResponse, ResponseTypes.multipleInstancesOf(String.class));
+
+        Collection<String> result = (Collection<String>) testSubject.handle(testQueryMessage);
+
+        assertEquals(testResponse, result.size());
+    }
+
+    @SuppressWarnings("unused")
+    private class MyQueryHandler {
+
         @QueryHandler
         public String echo(String echo) {
             return echo;
@@ -106,16 +116,29 @@ public class AnnotationQueryHandlerAdapterTest {
         public Integer echo3(String echo) {
             throw new MockException("Mock");
         }
+
+        @QueryHandler
+        public List<? extends String> echo4(Integer count) {
+            List<String> value = new ArrayList<>();
+            for (int i = 0; i < count; i++) {
+                value.add("echo");
+            }
+            return value;
+        }
     }
 
-    public class MySecondQueryHandler {
+    @SuppressWarnings("unused")
+    private class MySecondQueryHandler {
+
         @QueryHandler
         public String echo(MetaData metaData, String echo) {
             return echo;
         }
     }
 
-    public class MyThirdQueryHandler {
+    @SuppressWarnings("unused")
+    private class MyThirdQueryHandler {
+
         @QueryHandler
         public void echo(String echo) {
         }

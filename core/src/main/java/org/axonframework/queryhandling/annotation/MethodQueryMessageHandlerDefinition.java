@@ -23,10 +23,10 @@ import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.UpdateHandler;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -39,49 +39,46 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(QueryHandler.class)
-                .map(attr -> (MessageHandlingMember<T>) new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(original, attr))
-                .orElse(original);
+                       .map(attr -> (MessageHandlingMember<T>)
+                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(original, attr))
+                       .orElse(original);
     }
 
     private class MethodQueryMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements QueryHandlingMember<T> {
 
         private final String queryName;
-        private final Class<?> returnType;
+        private final Type resultType;
 
         public MethodQueryMessageHandlingMember(MessageHandlingMember<T> original, Map<String, Object> attr) {
             super(original);
-            String qn = (String) attr.get("queryName");
-            if ("".equals(qn)) {
-                qn = original.payloadType().getName();
+
+            String queryNameAttribute = (String) attr.get("queryName");
+            if ("".equals(queryNameAttribute)) {
+                queryNameAttribute = original.payloadType().getName();
             }
-            queryName = qn;
-            returnType = original.unwrap(Method.class).map(Method::getReturnType)
-                    .orElseThrow(() -> new UnsupportedHandlerException("@QueryHandler annotation can only be put on methods.",
-                                                                       original.unwrap(Member.class).orElse(null)));
-            //noinspection ConstantConditions
-            boolean isSubscriptionHandler = hasUpdateHandlerParameter(original.unwrap(Method.class).get());
-            if (isSubscriptionHandler && !AutoCloseable.class.isAssignableFrom(returnType)) {
-                throw new UnsupportedHandlerException("@QueryHandler annotated methods with UpdateHandler parameter must return an AutoCloseable (e.g. a Registration)",
-                                                      original.unwrap(Member.class).orElse(null));
-            } else if (Void.TYPE.equals(returnType)) {
-                throw new UnsupportedHandlerException("@QueryHandler annotated methods must not declare void return type",
-                                                      original.unwrap(Member.class).orElse(null));
+            queryName = queryNameAttribute;
+
+            resultType = original.unwrap(Method.class)
+                                 .map(this::queryResultType)
+                                 .orElseThrow(() -> new UnsupportedHandlerException(
+                                         "@QueryHandler annotation can only be put on methods.",
+                                         original.unwrap(Member.class).orElse(null)
+                                 ));
+            if (Void.TYPE.equals(resultType)) {
+                throw new UnsupportedHandlerException(
+                        "@QueryHandler annotated methods must not declare void return type",
+                        original.unwrap(Member.class).orElse(null)
+                );
             }
         }
 
-        private boolean hasUpdateHandlerParameter(Method method) {
-            for (Class<?> param : method.getParameterTypes()) {
-                if (UpdateHandler.class.isAssignableFrom(param)) {
-                    return true;
-                }
+        private Type queryResultType(Method method) {
+            if (Void.class.equals(method.getReturnType())) {
+                throw new UnsupportedHandlerException(
+                        "@QueryHandler annotated methods must not declare void return type", method
+                );
             }
-            return false;
-        }
-
-        @Override
-        public Object handle(Message<?> message, T target) throws Exception {
-
-            return super.handle(message, target);
+            return method.getGenericReturnType();
         }
 
         @SuppressWarnings("unchecked")
@@ -90,7 +87,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             return super.canHandle(message)
                     && message instanceof QueryMessage
                     && queryName.equals(((QueryMessage) message).getQueryName())
-                    && ((QueryMessage) message).getResponseType().isAssignableFrom(returnType);
+                    && ((QueryMessage) message).getResponseType().matches(resultType);
         }
 
         @Override
@@ -98,8 +95,8 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
             return queryName;
         }
 
-        public Class<?> getReturnType() {
-            return returnType;
+        public Type getResultType() {
+            return resultType;
         }
     }
 }

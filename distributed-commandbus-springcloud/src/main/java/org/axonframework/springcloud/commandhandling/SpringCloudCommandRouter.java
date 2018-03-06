@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,11 +17,7 @@
 package org.axonframework.springcloud.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.CommandRouter;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.Member;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -33,11 +30,7 @@ import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.context.event.EventListener;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -59,11 +52,11 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private static final String LOAD_FACTOR = "loadFactor";
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
-
+    protected final XStreamSerializer serializer = new XStreamSerializer();
     private final DiscoveryClient discoveryClient;
     private final RoutingStrategy routingStrategy;
-    protected final XStreamSerializer serializer = new XStreamSerializer();
     private final Predicate<ServiceInstance> serviceInstanceFilter;
+    private final ConsistentHashChangeListener consistentHashChangeListener;
     private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
     private final Set<ServiceInstance> blackListedServiceInstances = new HashSet<>();
 
@@ -134,6 +127,51 @@ public class SpringCloudCommandRouter implements CommandRouter {
         this.discoveryClient = discoveryClient;
         this.routingStrategy = routingStrategy;
         this.serviceInstanceFilter = serviceInstanceFilter;
+        this.consistentHashChangeListener = h -> {/*noop*/};
+    }
+
+    /**
+     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
+     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
+     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
+     * org.axonframework.commandhandling.distributed.ConsistentHash}. The given {@code consistentHashChangeListener} is
+     * notified about changes in membership that affect routing of messages.
+     * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
+     * respective handler nodes.
+     * A {@code Predicate<ServiceInstance>} to filter a {@link org.springframework.cloud.client.ServiceInstance} from
+     * the membership update loop.
+     *
+     * @param discoveryClient              The {@code DiscoveryClient} used to discovery and notify other nodes
+     * @param routingStrategy              The strategy for routing Commands to a Node
+     * @param serviceInstanceFilter        The {@code Predicate<ServiceInstance>} used to filter {@link
+     *                                     org.springframework.cloud.client.ServiceInstance} from the update membership
+     *                                     loop.
+     * @param consistentHashChangeListener The callback to invoke when there is a change in the ConsistentHash
+     */
+    public SpringCloudCommandRouter(DiscoveryClient discoveryClient,
+                                    RoutingStrategy routingStrategy,
+                                    Predicate<ServiceInstance> serviceInstanceFilter,
+                                    ConsistentHashChangeListener consistentHashChangeListener) {
+        this.discoveryClient = discoveryClient;
+        this.routingStrategy = routingStrategy;
+        this.serviceInstanceFilter = serviceInstanceFilter;
+        this.consistentHashChangeListener = consistentHashChangeListener;
+    }
+
+    /**
+     * Boolean check if the metadata {@link java.util.Map} of the given
+     * {@link org.springframework.cloud.client.ServiceInstance} contains any of the expected message routing info keys.
+     *
+     * @param serviceInstance The {@link org.springframework.cloud.client.ServiceInstance} to check its metadata keys
+     *                        from
+     * @return true if the given {@code serviceInstance} contains all expected message routing info keys; false if one
+     * of the expected message routing info keys is missing.
+     */
+    public static boolean serviceInstanceMetadataContainsMessageRoutingInformation(ServiceInstance serviceInstance) {
+        Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
+        return serviceInstanceMetadata.containsKey(LOAD_FACTOR) &&
+                serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER) &&
+                serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
     }
 
     @Override
@@ -152,7 +190,8 @@ public class SpringCloudCommandRouter implements CommandRouter {
                 SERIALIZED_COMMAND_FILTER_CLASS_NAME, serializedCommandFilter.getType().getName()
         );
 
-        updateMembershipForServiceInstance(localServiceInstance, atomicConsistentHash);
+        updateMembershipForServiceInstance(localServiceInstance, atomicConsistentHash)
+                .ifPresent(consistentHashChangeListener::onConsistentHashChanged);
     }
 
     @EventListener
@@ -168,26 +207,55 @@ public class SpringCloudCommandRouter implements CommandRouter {
                        .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
                                                                                       updatedConsistentHash));
 
-        atomicConsistentHash.set(updatedConsistentHash.get());
+        ConsistentHash newConsistentHash = updatedConsistentHash.get();
+        atomicConsistentHash.set(newConsistentHash);
+        consistentHashChangeListener.onConsistentHashChanged(newConsistentHash);
     }
 
     private boolean ifNotBlackListed(ServiceInstance serviceInstance) {
-        return !blackListedServiceInstances.contains(serviceInstance);
+        return blackListedServiceInstances.stream()
+                                          .noneMatch(blackListedServiceInstance -> equals(serviceInstance,
+                                                                                          blackListedServiceInstance));
     }
 
-    private void updateMembershipForServiceInstance(ServiceInstance serviceInstance,
-                                                    AtomicReference<ConsistentHash> atomicConsistentHash) {
+    /**
+     * Implementation of the {@link org.springframework.cloud.client.ServiceInstance} in some cases do no have an
+     * {@code equals()} implementation. Thus we provide our own {@code equals()} function to match a given
+     * {@code blackListedServiceInstance} with another given {@code serviceInstance}.
+     * The match is done on the service id, host and port.
+     *
+     * @param serviceInstance            A {@link org.springframework.cloud.client.ServiceInstance} to compare with the
+     *                                   given {@code blackListedServiceInstance}
+     * @param blackListedServiceInstance A {@link org.springframework.cloud.client.ServiceInstance} to compare with the
+     *                                   given {@code serviceInstance}
+     * @return True if both instances match on the service id, host and port, and false if they do not
+     */
+    @SuppressWarnings("SimplifiableIfStatement")
+    private boolean equals(ServiceInstance serviceInstance, ServiceInstance blackListedServiceInstance) {
+        if (serviceInstance == blackListedServiceInstance) {
+            return true;
+        }
+        if (blackListedServiceInstance == null) {
+            return false;
+        }
+        return Objects.equals(serviceInstance.getServiceId(), blackListedServiceInstance.getServiceId())
+                && Objects.equals(serviceInstance.getHost(), blackListedServiceInstance.getHost())
+                && Objects.equals(serviceInstance.getPort(), blackListedServiceInstance.getPort());
+    }
+
+    private Optional<ConsistentHash> updateMembershipForServiceInstance(ServiceInstance serviceInstance,
+                                                                        AtomicReference<ConsistentHash> atomicConsistentHash) {
         SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
 
         Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
 
         if (optionalMessageRoutingInfo.isPresent()) {
             MessageRoutingInformation messageRoutingInfo = optionalMessageRoutingInfo.get();
-            atomicConsistentHash.updateAndGet(
+            return Optional.of(atomicConsistentHash.updateAndGet(
                     consistentHash -> consistentHash.with(simpleMember,
                                                           messageRoutingInfo.getLoadFactor(),
                                                           messageRoutingInfo.getCommandFilter(serializer))
-            );
+            ));
         } else {
             logger.info(
                     "Black listed ServiceInstance [{}] under host [{}] and port [{}] since we could not retrieve the "
@@ -196,6 +264,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
             );
             blackListedServiceInstances.add(serviceInstance);
         }
+        return Optional.empty();
     }
 
     /**
@@ -214,12 +283,19 @@ public class SpringCloudCommandRouter implements CommandRouter {
         URI localServiceUri = localServiceInstance.getUri();
         boolean local = localServiceUri.equals(serviceUri);
 
-            return new SimpleMember<>(
-                    serviceId.toUpperCase() + "[" + serviceUri + "]",
-                    serviceUri,
-                    local,
-                    member -> atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member))
-            );}
+        return new SimpleMember<>(
+                serviceId.toUpperCase() + "[" + serviceUri + "]",
+                serviceUri,
+                local,
+                this::suspect
+        );
+    }
+
+    private ConsistentHash suspect(SimpleMember<URI> member) {
+        ConsistentHash newConsistentHash = atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member));
+        consistentHashChangeListener.onConsistentHashChanged(newConsistentHash);
+        return newConsistentHash;
+    }
 
     /**
      * Retrieve the {@link MessageRoutingInformation} of the provided {@code serviceInstance}. If the
@@ -244,21 +320,5 @@ public class SpringCloudCommandRouter implements CommandRouter {
                 serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME), null
         );
         return Optional.of(new MessageRoutingInformation(loadFactor, serializedCommandFilter));
-    }
-
-    /**
-     * Boolean check if the metadata {@link java.util.Map} of the given
-     * {@link org.springframework.cloud.client.ServiceInstance} contains any of the expected message routing info keys.
-     *
-     * @param serviceInstance The {@link org.springframework.cloud.client.ServiceInstance} to check its metadata keys
-     *                        from
-     * @return true if the given {@code serviceInstance} contains all expected message routing info keys; false if one
-     * of the expected message routing info keys is missing.
-     */
-    public static boolean serviceInstanceMetadataContainsMessageRoutingInformation(ServiceInstance serviceInstance) {
-        Map<String, String> serviceInstanceMetadata = serviceInstance.getMetadata();
-        return serviceInstanceMetadata.containsKey(LOAD_FACTOR) &&
-                serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER) &&
-                serviceInstanceMetadata.containsKey(SERIALIZED_COMMAND_FILTER_CLASS_NAME);
     }
 }

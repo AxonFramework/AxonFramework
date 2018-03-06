@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public abstract class AbstractMongoTemplate {
      * name "axonframework". The given {@code userName} and {@code password}, when not {@code null}, are
      * used to authenticate against the database.
      *
-     * @param mongo    The Mongo instance configured to connect to the Mongo Server
+     * @param mongo The Mongo instance configured to connect to the Mongo Server
      */
     protected AbstractMongoTemplate(MongoClient mongo) { // NOSONAR
         this(mongo, DEFAULT_AXONFRAMEWORK_DATABASE);
@@ -45,14 +45,22 @@ public abstract class AbstractMongoTemplate {
 
     /**
      * Initializes the MongoTemplate to connect using the given {@code mongo} instance and the database with given
-     * {@code databaseName}. The given {@code userName} and {@code password}, when not {@code null},
-     * are used to authenticate against the database.
+     * {@code databaseName}.
      *
      * @param mongo        The Mongo instance configured to connect to the Mongo Server
      * @param databaseName The name of the database containing the data
      */
     protected AbstractMongoTemplate(MongoClient mongo, String databaseName) { // NOSONAR
         database = mongo.getDatabase(databaseName);
+    }
+
+    /**
+     * Initializes the MongoTemplate to connect using the given {@code database} instance.
+     *
+     * @param database The database instance to open collections in
+     */
+    protected AbstractMongoTemplate(MongoDatabase database) {
+        this.database = database;
     }
 
     /**

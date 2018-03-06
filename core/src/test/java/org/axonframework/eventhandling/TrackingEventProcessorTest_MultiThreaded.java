@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,20 +31,19 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.*;
 import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -75,11 +75,14 @@ public class TrackingEventProcessorTest_MultiThreaded {
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
         // A processor config, with a policy which guarantees segmenting by using the sequence number.
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
+    }
 
+    private void configureProcessor(TrackingEventProcessorConfiguration processorConfiguration) {
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE,
                                                  NoOpMessageMonitor.INSTANCE, RollbackConfigurationType.ANY_THROWABLE,
                                                  PropagatingErrorHandler.INSTANCE,
-                                                 TrackingEventProcessorConfiguration.forParallelProcessing(2));
+                                                 processorConfiguration);
     }
 
     @After
@@ -97,7 +100,33 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    public void testProcessorWorkerCountWithMultipleSegments() throws InterruptedException {
+    public void testProcessorInitializesMoreTokensThanWorkerCount() throws InterruptedException {
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                              .andInitialSegmentsCount(4));
+        testSubject.start();
+        // give it some time to split segments from the store and submit to executor service.
+        Thread.sleep(200);
+        assertThat(testSubject.activeProcessorThreads(), is(2));
+        int[] actual = tokenStore.fetchSegments(testSubject.getName());
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3}, actual);
+    }
+
+    // Reproduce issue #508 (https://github.com/AxonFramework/AxonFramework/issues/508)
+    @Test
+    public void testProcessorInitializesAndUsesSameTokens() {
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(6)
+                                                              .andInitialSegmentsCount(6));
+        testSubject.start();
+
+        assertWithin(5, SECONDS, () -> {assertThat(testSubject.activeProcessorThreads(), is(6));});
+        int[] actual = tokenStore.fetchSegments(testSubject.getName());
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5}, actual);
+    }
+
+    @Test
+    public void testProcessorWorkerCountWithMultipleSegments() {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
@@ -133,13 +162,28 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
+    public void testProcessorExtendsClaimOnSegment() throws InterruptedException {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+
+        testSubject.start();
+        // give it some time to split segments from the store and submit to executor service.
+        Thread.sleep(200);
+
+        eventBus.publish(createEvents(10));
+
+        assertWithin(200, MILLISECONDS, () -> verify(tokenStore, atLeast(1)).extendClaim("test", 0));
+        assertWithin(200, MILLISECONDS, () -> verify(tokenStore, atLeast(1)).extendClaim("test", 1));
+        assertWithin(1, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
+    }
+
+    @Test
     public void testProcessorWorkerCountWithMultipleSegmentsWithOneThread() throws InterruptedException {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
 
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                                                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing());
+        configureProcessor(TrackingEventProcessorConfiguration.forSingleThreadedProcessing());
         testSubject.start();
 
         // give it some time to split segments from the store and submit to executor service.
@@ -149,9 +193,8 @@ public class TrackingEventProcessorTest_MultiThreaded {
 
     @Test
     public void testMultiThreadSegmentsExceedsWorkerCount() throws Exception {
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                                                 TrackingEventProcessorConfiguration.forParallelProcessing(2)
-                                                                                    .andInitialSegmentsCount(3));
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)
+                                                              .andInitialSegmentsCount(3));
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
         final AcknowledgeByThread acknowledgeByThread = new AcknowledgeByThread();
@@ -219,8 +262,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE, RollbackConfigurationType.ANY_THROWABLE, PropagatingErrorHandler.INSTANCE,
-                                                 TrackingEventProcessorConfiguration.forParallelProcessing(2));
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2));
         testSubject.start();
 
         assertTrue("Expected 9 invocations on event listener by now, missing " + countDownLatch.getCount(), countDownLatch.await(60, SECONDS));
@@ -252,7 +294,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         assertWithin(1, SECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1), tokenStore.fetchToken("test", 0)));
         assertWithin(1, SECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1), tokenStore.fetchToken("test", 1)));
 
-        testSubject.pause();
+        testSubject.shutDown();
         // The thread may block for 1 second waiting for a next event to pop up
         while (testSubject.activeProcessorThreads() > 0) {
             Thread.sleep(1);

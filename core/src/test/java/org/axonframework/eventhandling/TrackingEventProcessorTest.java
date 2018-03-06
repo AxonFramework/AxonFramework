@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,33 +19,35 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.serialization.SerializationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySortedSet;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
+import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 import static org.mockito.Mockito.*;
+
 
 /**
  * @author Rene de Waele
@@ -56,6 +59,7 @@ public class TrackingEventProcessorTest {
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
+    private List<Long> sleepInstructions;
 
     static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
         return new TrackingEventStream() {
@@ -102,9 +106,18 @@ public class TrackingEventProcessorTest {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        when(mockListener.supportsReset()).thenReturn(true);
+        eventHandlerInvoker = spy(new SimpleEventHandlerInvoker(mockListener));
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
+        sleepInstructions = new ArrayList<>();
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE) {
+            @Override
+            protected void doSleepFor(long millisToSleep) {
+                if (isRunning()) {
+                    sleepInstructions.add(millisToSleep);
+                }
+            }
+        };
     }
 
     @After
@@ -121,8 +134,44 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testProcessorStopsOnNonTransientExceptionWhenLoadingToken() {
+        when(tokenStore.fetchToken("test", 0)).thenThrow(new SerializationException("Faking a serialization issue"));
+
+        testSubject.start();
+
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse("Expected processor to have stopped", testSubject.isRunning()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertTrue("Expected processor to set the error flag", testSubject.isError()));
+        assertEquals(Collections.emptyList(), sleepInstructions);
+    }
+
+    @Test
+    public void testProcessorRetriesOnTransientExceptionWhenLoadingToken() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+
+        when(tokenStore.fetchToken("test", 0)).thenThrow(new RuntimeException("Faking a recoverable issue"))
+                                              .thenCallRealMethod();
+
+        testSubject.start();
+
+        // give it a bit of time to start
+        Thread.sleep(200);
+        eventBus.publish(createEvent());
+
+        assertTrue("Expected listener to have received published event", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(testSubject.isRunning());
+        assertFalse(testSubject.isError());
+        assertEquals(Collections.singletonList(5000L), sleepInstructions);
     }
 
     @Test
@@ -133,6 +182,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore).extendClaim(eq(testSubject.getName()), anyInt());
@@ -153,6 +204,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected Unit of Work to have reached clean up phase for 2 messages",
                    countDownLatch.await(5, TimeUnit.SECONDS));
@@ -177,6 +230,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
@@ -202,6 +257,8 @@ public class TrackingEventProcessorTest {
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
     }
@@ -217,13 +274,15 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
 
         eventBus.publish(createEvents(2));
 
         assertTrue("Expected 2 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(2, ackedEvents.size());
 
-        testSubject.pause();
+        testSubject.shutDown();
         // The thread may block for 1 second waiting for a next event to pop up
         while (testSubject.activeProcessorThreads() > 0) {
             Thread.sleep(1);
@@ -242,6 +301,8 @@ public class TrackingEventProcessorTest {
         assertEquals(2, countDownLatch2.getCount());
 
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         assertTrue("Expected 4 invocations on event listener by now", countDownLatch2.await(5, TimeUnit.SECONDS));
         assertEquals(4, ackedEvents.size());
     }
@@ -265,6 +326,8 @@ public class TrackingEventProcessorTest {
 
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         assertTrue("Expected 5 invocations on event listener by now", countDownLatch.await(10, TimeUnit.SECONDS));
         assertEquals(5, ackedEvents.size());
         verify(eventBus, times(2)).openStream(any());
@@ -287,6 +350,8 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
         eventBus.publish(events);
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
@@ -323,6 +388,8 @@ public class TrackingEventProcessorTest {
         }));
 
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
 
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
@@ -336,6 +403,9 @@ public class TrackingEventProcessorTest {
         testSubject.shutDown();
 
         testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+
         CountDownLatch countDownLatch2 = new CountDownLatch(2);
         doAnswer(invocation -> {
             countDownLatch2.countDown();
@@ -345,4 +415,155 @@ public class TrackingEventProcessorTest {
         assertTrue("Expected listener to have received 2 published events", countDownLatch2.await(5, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void testResetCausesEventsToBeReplayed() throws Exception {
+        when(mockListener.supportsReset()).thenReturn(true);
+        final List<String> handled = new CopyOnWriteArrayList<>();
+        final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            EventMessage message = i.getArgumentAt(0, EventMessage.class);
+            handled.add(message.getIdentifier());
+            if (ReplayToken.isReplay(message)) {
+                handledInRedelivery.add(message.getIdentifier());
+            }
+            return null;
+        }).when(mockListener).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        testSubject.shutDown();
+        testSubject.resetTokens();
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
+        assertEquals(handled.subList(0, 3), handled.subList(4, 7));
+        assertEquals(handled.subList(4, 7), handledInRedelivery);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testReplayFlagAvailableWhenReplayInDifferentOrder() throws Exception {
+        StreamableMessageSource<TrackedEventMessage<?>> stubSource = mock(StreamableMessageSource.class);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, stubSource, tokenStore, NoTransactionManager.INSTANCE);
+
+        when(stubSource.openStream(any())).thenReturn(new StubTrackingEventStream(0, 1, 2, 5))
+                                          .thenReturn(new StubTrackingEventStream(0, 1, 2, 3, 4, 5, 6, 7));
+
+
+        when(eventHandlerInvoker.supportsReset()).thenReturn(true);
+        doReturn(true).when(eventHandlerInvoker).canHandle(any(), any());
+        List<TrackingToken> firstRun = new CopyOnWriteArrayList<>();
+        List<TrackingToken> replayRun = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            firstRun.add(i.getArgumentAt(0, TrackedEventMessage.class).trackingToken());
+            return null;
+        }).when(eventHandlerInvoker).handle(any(), any());
+
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> {assertEquals(4, firstRun.size());});
+        testSubject.shutDown();
+
+        doAnswer(i -> {
+            replayRun.add(i.getArgumentAt(0, TrackedEventMessage.class).trackingToken());
+            return null;
+        }).when(eventHandlerInvoker).handle(any(), any());
+
+        testSubject.resetTokens();
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> {assertEquals(8, replayRun.size());});
+
+        assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), firstRun.get(3));
+        assertTrue(replayRun.get(0) instanceof ReplayToken);
+        assertTrue(replayRun.get(5) instanceof ReplayToken);
+        assertEquals(GapAwareTrackingToken.newInstance(6, emptySortedSet()), replayRun.get(6));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testResetRejectedWhileRunning() {
+        testSubject.start();
+        testSubject.resetTokens();
+    }
+
+    @Test
+    public void testResetNotSupportedWhenInvokerDoesNotSupportReset() {
+        when(mockListener.supportsReset()).thenReturn(false);
+        assertFalse(testSubject.supportsReset());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testResetRejectedWhenInvokerDoesNotSupportReset() {
+        when(mockListener.supportsReset()).thenReturn(false);
+        testSubject.resetTokens();
+    }
+
+    @Test
+    public void testResetRejectedIfNotAllTokensCanBeClaimed() {
+        tokenStore.initializeTokenSegments("test", 4);
+        when(tokenStore.fetchToken("test", 3)).thenThrow(new UnableToClaimTokenException("Mock"));
+
+        try {
+            testSubject.resetTokens();
+            fail("Expected exception");
+        } catch (UnableToClaimTokenException e) {
+            // expected
+        }
+        verify(tokenStore, never()).storeToken(isNull(TrackingToken.class), anyString(), anyInt());
+    }
+    
+    @Test
+    public void testWhenFailureDuringInit() throws InterruptedException {
+      
+        when(tokenStore.fetchSegments(anyString()))
+                .thenThrow(new RuntimeException("Faking issue during fetchSegments"))
+                .thenReturn(new int[]{})
+                .thenReturn(new int[]{0});
+
+        doThrow(new RuntimeException("Faking issue during initializeTokenSegments"))
+                // and on further calls
+                .doNothing()
+                .when(tokenStore).initializeTokenSegments(anyString(), anyInt());
+
+        testSubject.start();
+
+        Thread.sleep(2500);
+
+        assertTrue(testSubject.activeProcessorThreads() == 1);
+
+    }
+
+    private static class StubTrackingEventStream implements TrackingEventStream {
+        private final Queue<TrackedEventMessage<?>> eventMessages;
+
+        public StubTrackingEventStream(long... tokens) {
+            GapAwareTrackingToken lastToken = GapAwareTrackingToken.newInstance(-1, emptySortedSet());
+            eventMessages = new LinkedList<>();
+            for (Long seq : tokens) {
+                lastToken = lastToken.advanceTo(seq, 1000, true);
+                eventMessages.add(new GenericTrackedEventMessage<>(lastToken, createEvent(seq)));
+            }
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            if (eventMessages.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(eventMessages.peek());
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+            return !eventMessages.isEmpty();
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() {
+            return eventMessages.poll();
+        }
+
+        @Override
+        public void close() {
+
+        }
+    }
 }

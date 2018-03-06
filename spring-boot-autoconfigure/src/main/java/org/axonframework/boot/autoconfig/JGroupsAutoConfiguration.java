@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +20,8 @@ import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.jgroups.stack.GossipRouter;
@@ -72,9 +75,10 @@ public class JGroupsAutoConfiguration {
 
     @ConditionalOnMissingBean({CommandRouter.class, CommandBusConnector.class})
     @Bean
-    public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(Serializer serializer,
-                                                                   @Qualifier("localSegment") CommandBus
-                                                                           localSegment) {
+    public JGroupsConnectorFactoryBean jgroupsConnectorFactoryBean(@Qualifier("messageSerializer") Serializer messageSerializer,
+                                                                   @Qualifier("localSegment") CommandBus localSegment,
+                                                                   RoutingStrategy routingStrategy,
+                                                                   @Autowired(required = false) ConsistentHashChangeListener consistentHashChangeListener) {
         System.setProperty("jgroups.tunnel.gossip_router_hosts", properties.getJgroups().getGossip().getHosts());
         System.setProperty("jgroups.bind_addr", String.valueOf(properties.getJgroups().getBindAddr()));
         System.setProperty("jgroups.bind_port", String.valueOf(properties.getJgroups().getBindPort()));
@@ -82,8 +86,12 @@ public class JGroupsAutoConfiguration {
         JGroupsConnectorFactoryBean jGroupsConnectorFactoryBean = new JGroupsConnectorFactoryBean();
         jGroupsConnectorFactoryBean.setClusterName(properties.getJgroups().getClusterName());
         jGroupsConnectorFactoryBean.setLocalSegment(localSegment);
-        jGroupsConnectorFactoryBean.setSerializer(serializer);
+        jGroupsConnectorFactoryBean.setSerializer(messageSerializer);
         jGroupsConnectorFactoryBean.setConfiguration(properties.getJgroups().getConfigurationFile());
+        if (consistentHashChangeListener != null) {
+            jGroupsConnectorFactoryBean.setConsistentHashChangeListener(consistentHashChangeListener);
+        }
+        jGroupsConnectorFactoryBean.setRoutingStrategy(routingStrategy);
         return jGroupsConnectorFactoryBean;
     }
 

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -66,7 +67,7 @@ public class JdbcTokenStore implements TokenStore {
      */
     public JdbcTokenStore(ConnectionProvider connectionProvider, Serializer serializer) {
         this(connectionProvider, serializer, new TokenSchema(), Duration.ofSeconds(10),
-                ManagementFactory.getRuntimeMXBean().getName(), byte[].class);
+             ManagementFactory.getRuntimeMXBean().getName(), byte[].class);
     }
 
     /**
@@ -108,20 +109,41 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
+    public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        Connection connection = getConnection();
+        try {
+            executeQuery(connection,
+                         c -> selectForUpdate(c, processorName, 0),
+                         resultSet -> {
+                             for (int segment = 0; segment < segmentCount; segment++) {
+                                 insertTokenEntry(resultSet, null, processorName, segment);
+                             }
+                             if (!connection.getAutoCommit()) {
+                                 connection.commit();
+                             }
+                             return null;
+                         },
+                         e -> new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.", e));
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    @Override
     public void storeToken(TrackingToken token, String processorName, int segment) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             executeQuery(connection,
-                    c -> selectForUpdate(c, processorName, segment),
-                    resultSet -> {
-                        insertOrUpdateToken(resultSet, token, processorName, segment);
-                        if (!connection.getAutoCommit()) {
-                            connection.commit();
-                        }
-                        return null;
-                    },
-                    e -> new JdbcException(format("Could not store token [%s] for processor [%s] and segment [%d]",
-                            token, processorName, segment), e));
+                         c -> selectForUpdate(c, processorName, segment),
+                         resultSet -> {
+                             insertOrUpdateToken(resultSet, token, processorName, segment);
+                             if (!connection.getAutoCommit()) {
+                                 connection.commit();
+                             }
+                             return null;
+                         },
+                         e -> new JdbcException(format("Could not store token [%s] for processor [%s] and segment [%d]",
+                                                       token, processorName, segment), e));
         } finally {
             closeQuietly(connection);
         }
@@ -149,11 +171,11 @@ public class JdbcTokenStore implements TokenStore {
         Connection connection = getConnection();
         try {
             int[] result = executeUpdates(connection, e -> {
-                        throw new JdbcException(
-                                format("Could not load token for processor [%s] and segment " + "[%d]",
-                                        processorName, segment), e);
-                    },
-                    c -> releaseClaim(c, processorName, segment));
+                                              throw new JdbcException(
+                                                      format("Could not load token for processor [%s] and segment " + "[%d]",
+                                                             processorName, segment), e);
+                                          },
+                                          c -> releaseClaim(c, processorName, segment));
             try {
                 if (!connection.isClosed() && !connection.getAutoCommit()) {
                     connection.commit();
@@ -174,7 +196,7 @@ public class JdbcTokenStore implements TokenStore {
         Connection connection = getConnection();
         try {
             List<Integer> integers = executeQuery(connection, c -> selectForSegments(c, processorName),
-                    listResults(rs -> rs.getInt(schema.segmentColumn())), e -> new JdbcException(
+                                                  listResults(rs -> rs.getInt(schema.segmentColumn())), e -> new JdbcException(
                             format("Could not load segments for processor [%s]", processorName), e));
             return integers.stream().mapToInt(i -> i).toArray();
         } finally {
@@ -213,7 +235,7 @@ public class JdbcTokenStore implements TokenStore {
                                                 int segment) throws SQLException {
         final String sql = "SELECT " +
                 String.join(", ", schema.processorNameColumn(), schema.segmentColumn(), schema.tokenColumn(),
-                        schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColum()) + " FROM " +
+                            schema.tokenTypeColumn(), schema.timestampColumn(), schema.ownerColum()) + " FROM " +
                 schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? AND " + schema.segmentColumn() +
                 " = ? FOR UPDATE";
         PreparedStatement preparedStatement =
@@ -262,7 +284,7 @@ public class JdbcTokenStore implements TokenStore {
         if (!entry.claim(nodeId, claimTimeout)) {
             throw new UnableToClaimTokenException(
                     format("Unable to claim token '%s[%s]'. It is owned by '%s'", entry.getProcessorName(),
-                            entry.getSegment(), entry.getOwner()));
+                           entry.getSegment(), entry.getOwner()));
         }
         resultSet.updateString(schema.ownerColum(), entry.getOwner());
         resultSet.updateString(schema.timestampColumn(), entry.timestampAsString());
@@ -310,7 +332,7 @@ public class JdbcTokenStore implements TokenStore {
         resultSet.moveToInsertRow();
         resultSet.updateObject(schema.tokenColumn(), token == null ? null : entry.getSerializedToken().getData());
         resultSet.updateString(schema.tokenTypeColumn(),
-                token == null ? null : entry.getSerializedToken().getType().getName());
+                               token == null ? null : entry.getSerializedToken().getType().getName());
         resultSet.updateString(schema.timestampColumn(), entry.timestampAsString());
         resultSet.updateString(schema.ownerColum(), entry.getOwner());
         resultSet.updateString(schema.processorNameColumn(), processorName);
@@ -328,11 +350,11 @@ public class JdbcTokenStore implements TokenStore {
      */
     protected AbstractTokenEntry<?> readTokenEntry(ResultSet resultSet) throws SQLException {
         return new GenericTokenEntry<>(readSerializedData(resultSet, schema.tokenColumn()),
-                resultSet.getString(schema.tokenTypeColumn()),
-                resultSet.getString(schema.timestampColumn()),
-                resultSet.getString(schema.ownerColum()),
-                resultSet.getString(schema.processorNameColumn()),
-                resultSet.getInt(schema.segmentColumn()), contentType);
+                                       resultSet.getString(schema.tokenTypeColumn()),
+                                       resultSet.getString(schema.timestampColumn()),
+                                       resultSet.getString(schema.ownerColum()),
+                                       resultSet.getString(schema.processorNameColumn()),
+                                       resultSet.getInt(schema.segmentColumn()), contentType);
     }
 
     /**

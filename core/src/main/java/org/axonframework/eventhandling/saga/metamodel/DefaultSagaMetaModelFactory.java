@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,21 @@
 
 package org.axonframework.eventhandling.saga.metamodel;
 
-
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.saga.AssociationValue;
-import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Default implementation of a {@link SagaMetaModelFactory}.
+ *
+ * @deprecated in favor of {@link AnnotationSagaMetaModelFactory}.
  */
-public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
-
-    private final Map<Class<?>, SagaModel<?>> registry = new ConcurrentHashMap<>();
-
-    private final ParameterResolverFactory parameterResolverFactory;
+@Deprecated
+public class DefaultSagaMetaModelFactory extends AnnotationSagaMetaModelFactory {
 
     /**
      * Initializes a {@link DefaultSagaMetaModelFactory} with {@link ClasspathParameterResolverFactory}.
      */
     public DefaultSagaMetaModelFactory() {
-        parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(getClass().getClassLoader());
     }
 
     /**
@@ -51,63 +39,6 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
      * @param parameterResolverFactory factory for event handler parameter resolvers
      */
     public DefaultSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
-        this.parameterResolverFactory = parameterResolverFactory;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> SagaModel<T> modelOf(Class<T> sagaType) {
-        return (SagaModel<T>) registry.computeIfAbsent(sagaType, this::doCreateModel);
-    }
-
-    private <T> SagaModel<T> doCreateModel(Class<T> sagaType) {
-        AnnotatedHandlerInspector<T> handlerInspector =
-                AnnotatedHandlerInspector.inspectType(sagaType, parameterResolverFactory);
-
-        return new InspectedSagaModel<>(handlerInspector.getHandlers());
-    }
-
-    private class InspectedSagaModel<T> implements SagaModel<T> {
-        private final List<MessageHandlingMember<? super T>> handlers;
-
-        public InspectedSagaModel(List<MessageHandlingMember<? super T>> handlers) {
-            this.handlers = handlers;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage) {
-            for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage)) {
-                    return handler.unwrap(SagaMethodMessageHandlingMember.class)
-                                  .map(mh -> mh.getAssociationValue(eventMessage));
-                }
-            }
-            return Optional.empty();
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> eventMessage) {
-            return handlers.stream().filter(h -> h.canHandle(eventMessage))
-                           .map(h -> (SagaMethodMessageHandlingMember<T>) h.unwrap(SagaMethodMessageHandlingMember.class)
-                                                                           .orElse(null))
-                           .filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
-        }
-
-        @Override
-        public boolean hasHandlerMethod(EventMessage<?> eventMessage) {
-            for (MessageHandlingMember<? super T> handler : handlers) {
-                if (handler.canHandle(eventMessage)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public SagaMetaModelFactory modelFactory() {
-            return DefaultSagaMetaModelFactory.this;
-        }
+        super(parameterResolverFactory);
     }
 }

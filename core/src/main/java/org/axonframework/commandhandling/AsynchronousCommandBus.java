@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Assert;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
@@ -78,8 +79,8 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     @Override
-    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
-        executor.execute(new DispatchCommand<>(command, callback));
+    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, R> callback) {
+        executor.execute(() -> super.handle(command, handler, callback));
     }
 
     /**
@@ -98,19 +99,4 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         }
     }
 
-    private final class DispatchCommand<C, R> implements Runnable {
-
-        private final CommandMessage<C> command;
-        private final CommandCallback<? super C, R> callback;
-
-        public DispatchCommand(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
-            this.command = command;
-            this.callback = callback;
-        }
-
-        @Override
-        public void run() {
-            AsynchronousCommandBus.super.doDispatch(command, callback);
-        }
-    }
 }

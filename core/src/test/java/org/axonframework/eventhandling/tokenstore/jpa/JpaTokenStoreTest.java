@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,6 +50,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
@@ -86,15 +88,46 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
+    public void testUpdateNullToken() {
+        jpaTokenStore.storeToken(null, "test", 0);
+        List<TokenEntry> tokens = entityManager.createQuery("SELECT t FROM TokenEntry t " +
+                                                                    "WHERE t.processorName = :processorName",
+                                                            TokenEntry.class)
+                                               .setParameter("processorName", "test")
+                                               .getResultList();
+        assertEquals(1, tokens.size());
+        assertNotNull(tokens.get(0).getOwner());
+        assertNull(tokens.get(0).getToken(new XStreamSerializer()));
+    }
+
+    @Transactional
+    @Test
+    public void testInitializeTokens() throws Exception {
+        jpaTokenStore.initializeTokenSegments("test1", 7);
+
+        int[] actual = jpaTokenStore.fetchSegments("test1");
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+    }
+
+    @Transactional
+    @Test(expected = UnableToClaimTokenException.class)
+    public void testInitializeTokensWhileAlreadyPresent() throws Exception {
+        jpaTokenStore.fetchToken("test1", 1);
+        jpaTokenStore.initializeTokenSegments("test1", 7);
+    }
+
+    @Transactional
+    @Test
     public void testClaimAndUpdateToken() throws Exception {
         assertNull(jpaTokenStore.fetchToken("test", 0));
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
 
         List<TokenEntry> tokens = entityManager.createQuery("SELECT t FROM TokenEntry t " +
-                        "WHERE t.processorName = :processorName",
-                TokenEntry.class)
-                .setParameter("processorName", "test")
-                .getResultList();
+                                                                    "WHERE t.processorName = :processorName",
+                                                            TokenEntry.class)
+                                               .setParameter("processorName", "test")
+                                               .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
         jpaTokenStore.releaseClaim("test", 0);
@@ -282,13 +315,13 @@ public class JpaTokenStoreTest {
         @Bean
         public JpaTokenStore concurrentJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(2),
-                    "concurrent");
+                                     "concurrent");
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(-1),
-                    "stealing");
+                                     "stealing");
         }
 
         @Bean

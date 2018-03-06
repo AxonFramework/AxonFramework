@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,6 +45,7 @@ import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Arrays;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -93,6 +95,24 @@ public class JdbcTokenStoreTest {
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         transactionManager.executeInTransaction(() -> tokenStore.storeToken(token, "test", 0));
         transactionManager.executeInTransaction(() -> assertEquals(token, tokenStore.fetchToken("test", 0)));
+    }
+
+
+    @Transactional
+    @Test
+    public void testInitializeTokens() throws Exception {
+        tokenStore.initializeTokenSegments("test1", 7);
+
+        int[] actual = tokenStore.fetchSegments("test1");
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+    }
+
+    @Transactional
+    @Test(expected = UnableToClaimTokenException.class)
+    public void testInitializeTokensWhileAlreadyPresent() throws Exception {
+        tokenStore.fetchToken("test1", 1);
+        tokenStore.initializeTokenSegments("test1", 7);
     }
 
     @Transactional

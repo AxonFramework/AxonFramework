@@ -153,12 +153,11 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     public PreparedStatement sql_updateSaga(Connection connection, String sagaIdentifier, byte[] serializedSaga,
                                             String sagaType, String revision) throws SQLException {
         final String sql = "UPDATE " + sagaSchema.sagaEntryTable()
-                + " SET serializedSaga = ?, revision = ? WHERE sagaId = ? AND sagaType = ?";
+                + " SET serializedSaga = ?, revision = ? WHERE sagaId = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setBytes(1, serializedSaga);
         preparedStatement.setString(2, revision);
         preparedStatement.setString(3, sagaIdentifier);
-        preparedStatement.setString(4, sagaType);
         return preparedStatement;
     }
 

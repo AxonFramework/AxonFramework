@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,13 @@ public class XStreamSerializerTest {
         assertArrayEquals(SPECIAL__CHAR__STRING.getBytes(), deserialized.getName().getBytes());
     }
 
+    @Test
+    public void testSerializeNullValue() {
+        SerializedObject<byte[]> serialized = testSubject.serialize(null, byte[].class);
+        String deserialized = testSubject.deserialize(serialized);
+        assertNull(deserialized);
+    }
+
     /**
      * Tests the scenario as described in <a href="http://code.google.com/p/axonframework/issues/detail?id=150">issue
      * #150</a>.
@@ -188,11 +195,7 @@ public class XStreamSerializerTest {
             if (name != null ? !name.equals(testEvent.name) : testEvent.name != null) {
                 return false;
             }
-            if (period != null ? !period.equals(testEvent.period) : testEvent.period != null) {
-                return false;
-            }
-
-            return true;
+            return period != null ? period.equals(testEvent.period) : testEvent.period == null;
         }
 
         @Override

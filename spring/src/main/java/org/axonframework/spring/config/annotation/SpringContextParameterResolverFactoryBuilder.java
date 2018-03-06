@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,13 +62,14 @@ public final class SpringContextParameterResolverFactoryBuilder {
                     BeanDefinitionBuilder.genericBeanDefinition(ApplicationContextLookupParameterResolverFactory.class)
                                          .addConstructorArgValue(factories)
                                          .getBeanDefinition();
+            def.setPrimary(true);
             registry.registerBeanDefinition(PARAMETER_RESOLVER_FACTORY_BEAN_NAME, def);
         }
         return new RuntimeBeanReference(PARAMETER_RESOLVER_FACTORY_BEAN_NAME);
     }
 
     private static class ClasspathParameterResolverFactoryBean implements BeanClassLoaderAware, InitializingBean,
-            FactoryBean<ParameterResolverFactory> {
+                                                                          FactoryBean<ParameterResolverFactory> {
 
         private ClassLoader classLoader;
         private ParameterResolverFactory factory;

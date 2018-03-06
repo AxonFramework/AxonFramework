@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2017. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +31,9 @@ import static java.util.stream.StreamSupport.stream;
  */
 public abstract class StreamUtils {
 
+    private StreamUtils() {
+    }
+
     /**
      * Convert the given {@code messageStream} to a regular java {@link Stream} of messages. Note that the returned
      * stream will block during iteration if the end of the stream is reached so take heed of this in production code.
@@ -53,9 +57,4 @@ public abstract class StreamUtils {
                 };
         return stream(spliterator, false);
     }
-
-    private StreamUtils() {
-    }
-
-
 }

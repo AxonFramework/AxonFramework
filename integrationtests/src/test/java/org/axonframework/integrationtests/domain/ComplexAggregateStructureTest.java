@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -42,10 +42,10 @@ public class ComplexAggregateStructureTest {
 
     @Test
     public void testCommandsAreRoutedToCorrectEntity() throws Exception {
-        AggregateModel<Book> bookAggregateModel = ModelInspector.inspectAggregate(Book.class);
+        AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
         EventBus mockEventBus = new SimpleEventBus();
         mockEventBus.subscribe(m -> m.forEach(i -> System.out.println(i.getPayloadType().getName())));
-        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book)null, bookAggregateModel, mockEventBus);
+        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book) null, bookAggregateModel, mockEventBus);
         bookAggregate.handle(command(new CreateBookCommand("book1")));
         bookAggregate.handle(command(new CreatePageCommand("book1")));
         bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));
@@ -255,7 +255,6 @@ public class ComplexAggregateStructureTest {
 
     public static class ParagraphCreatedEvent {
 
-        @TargetAggregateIdentifier
         private final String bookId;
         private final int pageNumber;
         private final int paragraphId;

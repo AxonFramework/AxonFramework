@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 
 import java.util.Map;
 
@@ -42,10 +43,22 @@ public interface QueryMessage<T, R> extends Message<T> {
      *
      * @return the type of response expected by the sender of the query
      */
-    Class<R> getResponseType();
+    ResponseType<R> getResponseType();
 
+    /**
+     * Returns a copy of this QueryMessage with the given {@code metaData}. The payload remains unchanged.
+     *
+     * @param metaData The new MetaData for the QueryMessage
+     * @return a copy of this message with the given MetaData
+     */
     QueryMessage<T, R> withMetaData(Map<String, ?> metaData);
 
+    /**
+     * Returns a copy of this QueryMessage with its MetaData merged with given {@code metaData}. The payload
+     * remains unchanged.
+     *
+     * @param additionalMetaData The MetaData to merge into the QueryMessage
+     * @return a copy of this message with the given additional MetaData
+     */
     QueryMessage<T, R> andMetaData(Map<String, ?> additionalMetaData);
-
 }

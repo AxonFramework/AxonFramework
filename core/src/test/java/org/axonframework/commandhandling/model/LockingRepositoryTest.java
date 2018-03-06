@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -186,7 +186,7 @@ public class LockingRepositoryTest {
         public InMemoryLockingRepository(LockFactory lockManager, EventStore eventStore) {
             super(StubAggregate.class, lockManager);
             this.eventStore = eventStore;
-            aggregateModel = ModelInspector.inspectAggregate(StubAggregate.class);
+            aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ import static org.axonframework.messaging.annotation.MultiParameterResolverFacto
 public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
     private final StubEventScheduler eventScheduler;
-    private final List<Object> registeredResources = new LinkedList<>();
+    private final LinkedList<Object> registeredResources = new LinkedList<>();
     private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
@@ -123,8 +123,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                              new TransienceValidatingResourceInjector(),
                                                                              parameterResolverFactory);
-            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory);
-            sagaManager.setSuppressExceptions(false);
+            sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory,
+                                                     new LoggingErrorHandler());
         }
     }
 
@@ -161,7 +161,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public void registerResource(Object resource) {
-        registeredResources.add(resource);
+        registeredResources.addFirst(resource);
     }
 
     @Override
@@ -209,7 +209,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState andThenAPublished(Object event) throws Exception {
+    public ContinuedGivenState andThenAPublished(Object event) {
         handleInSaga(timeCorrectedEventMessage(event));
         return this;
     }

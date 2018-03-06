@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,5 +38,10 @@ public @interface Saga {
      * global Axon Configuration.
      */
     String sagaStore() default "";
+
+    /**
+     * Defines the name of the bean that configures this Saga type. When defined, a bean of type {@link org.axonframework.config.SagaConfiguration} with such name must exist. If not defined, Axon will attempt to locate a bean named `&lt;sagaSimpleClassName&gt;Configuration`, creating a default configuration if none is found.
+     */
+    String configurationBean() default "";
 
 }

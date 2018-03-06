@@ -13,8 +13,6 @@
 
 package org.axonframework.serialization.upcasting;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -38,9 +36,9 @@ public interface Upcaster<T> {
      * Apply this upcaster to a stream of {@code intermediateRepresentations} and return the altered stream.
      * <p>
      * To upcast an object an upcaster should apply a mapping function to the input stream ({@link
-     * Stream#map(Function)}). To remove an object from the stream the upcaster should filter the input stream ({@link
-     * Stream#filter(Predicate)}). To split an input object into more than one objects use {@link
-     * Stream#flatMap(Function)}.
+     * Stream#map(java.util.function.Function)}). To remove an object from the stream the upcaster should filter the
+     * input stream ({@link Stream#filter(java.util.function.Predicate)}). To split an input object into more than one
+     * objects use {@link Stream#flatMap(java.util.function.Function)}.
      * <p>
      * In some cases the upcasting result of an Upcaster may depend on more than one input object. In that case an
      * Upcaster may store state in the method during upcasting or even read ahead in the stream.

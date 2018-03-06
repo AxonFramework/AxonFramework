@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -50,7 +51,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
      *
      * @param monitorSupplier A Supplier of MessageMonitors of type {@code T} for every encountered payload type
      */
-    PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier) {
+    public PayloadTypeMessageMonitorWrapper(Supplier<T> monitorSupplier) {
         this(monitorSupplier, Class::getName);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 
 /**
@@ -50,6 +53,7 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.cre
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_doc_per_commit.xml"})
 public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStorageEngineTest {
+
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStorageEngineTest_DocPerCommit.class);
 
     private static MongodExecutable mongoExe;
@@ -78,6 +82,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
 
     private DefaultMongoTemplate mongoTemplate;
 
+    @SuppressWarnings("Duplicates")
     @Before
     public void setUp() {
         MongoClient mongoClient = null;
@@ -101,6 +106,15 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
     @Override
     public void testUniqueKeyConstraintOnEventIdentifier() {
         logger.info("Unique event identifier is not currently guaranteed in the Mongo Event Storage Engine");
+    }
+
+    @Test
+    public void testFetchHighestSequenceNumber() {
+        testSubject.appendEvents(createEvent(0), createEvent(1));
+        testSubject.appendEvents(createEvent(2), createEvent(3));
+
+        assertEquals(3, (long) testSubject.lastSequenceNumberFor(AGGREGATE).get());
+        assertFalse(testSubject.lastSequenceNumberFor("notexist").isPresent());
     }
 
     @Test(expected = ConcurrencyException.class)
@@ -127,8 +141,10 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
 
     @Override
     protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
-                                           persistenceExceptionResolver, 100, mongoTemplate,
-                                           new DocumentPerCommitStorageStrategy());
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new MongoEventStorageEngine(
+                serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, serializer, 100, mongoTemplate,
+                new DocumentPerCommitStorageStrategy()
+        );
     }
 }

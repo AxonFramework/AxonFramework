@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 import java.util.stream.LongStream;
-import java.util.stream.StreamSupport;
 
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.junit.Assert.assertFalse;
@@ -87,7 +87,6 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
         entityManager.flush();
         entityManager.clear();
-
     }
 
     @After
@@ -103,15 +102,29 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Test
+    public void testLoadLastSequenceNumber() {
+        testSubject.appendEvents(createEvents(2));
+        entityManager.clear();
+        assertEquals(1L, (long) testSubject.lastSequenceNumberFor(AGGREGATE).orElse(-1L));
+        assertFalse(testSubject.lastSequenceNumberFor(UUID.randomUUID().toString()).isPresent());
+    }
+
+    @Test
     public void testGapsForVeryOldEventsAreNotIncluded() {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
 
-        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-1), createEvent(0));
-        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
+
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-2), createEvent(1));
-        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
+
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-3), createEvent(2));
+
         GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
         testSubject.appendEvents(createEvent(-4), createEvent(3));
 
@@ -119,10 +132,8 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee WHERE dee.sequenceNumber < 0").executeUpdate();
 
         testSubject.fetchTrackedEvents(null, 100).stream()
-                .map(i -> (GapAwareTrackingToken) i.trackingToken())
-                .forEach(i -> {
-                    assertTrue(!i.hasGaps() || i.getGaps().first() >= 5L);
-                });
+                   .map(i -> (GapAwareTrackingToken) i.trackingToken())
+                   .forEach(i -> assertTrue(!i.hasGaps() || i.getGaps().first() >= 5L));
     }
 
     @DirtiesContext
@@ -141,27 +152,36 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         testSubject.appendEvents(createEvent(-4), createEvent("aggregateId", 3));
 
         entityManager.clear();
-        entityManager.createQuery("DELETE FROM DomainEventEntry dee WHERE dee.aggregateIdentifier <> :aggregateIdentifier")
-                .setParameter("aggregateIdentifier", "aggregateId")
-                .executeUpdate();
+        entityManager.createQuery(
+                "DELETE FROM DomainEventEntry dee WHERE dee.aggregateIdentifier <> :aggregateIdentifier")
+                     .setParameter("aggregateIdentifier", "aggregateId")
+                     .executeUpdate();
 
         // some "magic" because sequences aren't reset between tests. Finding the sequence positions to use in assertions
-        List<Long> sequences = entityManager.createQuery("SELECT e.globalIndex FROM DomainEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier", Long.class)
-                .setParameter("aggregateIdentifier", "aggregateId").getResultList();
+        List<Long> sequences = entityManager.createQuery(
+                "SELECT e.globalIndex FROM DomainEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier",
+                Long.class
+        )
+                                            .setParameter("aggregateIdentifier", "aggregateId").getResultList();
         Long largestIndex = sequences.stream().max(Long::compareTo).get();
         Long secondLastEventIndex = largestIndex - 2;
         // create a lot of gaps most of them fake (< 0), but some of them real
         List<Long> gaps = LongStream.range(-50, largestIndex).boxed()
-                .filter(g -> !sequences.contains(g))
-                .filter(g -> g < secondLastEventIndex)
-                .collect(Collectors.toList());
-        List<? extends TrackedEventData<?>> events = testSubject.fetchTrackedEvents(GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps), 100);
+                                    .filter(g -> !sequences.contains(g))
+                                    .filter(g -> g < secondLastEventIndex)
+                                    .collect(toList());
+        List<? extends TrackedEventData<?>> events = testSubject.fetchTrackedEvents(
+                GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps), 100
+        );
         assertEquals(1, events.size());
 
         // we expect the gap before the last event we had read previously
-        assertEquals(secondLastEventIndex - 1, (long)((GapAwareTrackingToken)events.get(0).trackingToken()).getGaps().first());
+        assertEquals(
+                secondLastEventIndex - 1,
+                (long) ((GapAwareTrackingToken) events.get(0).trackingToken()).getGaps().first()
+        );
         // and we've got a new gap in this batch
-        assertEquals(2, ((GapAwareTrackingToken)events.get(0).trackingToken()).getGaps().size());
+        assertEquals(2, ((GapAwareTrackingToken) events.get(0).trackingToken()).getGaps().size());
     }
 
     @Test
@@ -175,17 +195,19 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     public void testUnknownSerializedTypeCausesException() {
         testSubject.appendEvents(createEvent());
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
-                .executeUpdate();
+                     .executeUpdate();
         testSubject.readEvents(AGGREGATE).peek();
     }
 
     @Test
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
-    public void testStoreEventsWithCustomEntity() throws Exception {
-        testSubject = new JpaEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
-                                                defaultPersistenceExceptionResolver, 100,
-                                                entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, false) {
+    public void testStoreEventsWithCustomEntity() {
+        XStreamSerializer serializer = new XStreamSerializer();
+        testSubject = new JpaEventStorageEngine(
+                serializer, NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, serializer, 100,
+                entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, false
+        ) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -219,6 +241,37 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().getPayload());
     }
 
+    @Test
+    public void testEventsWithUnknownPayloadTypeAreSkipped() throws InterruptedException {
+        String expectedPayloadOne = "Payload3";
+        String expectedPayloadTwo = "Payload4";
+        List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
+
+        int testBatchSize = 2;
+        testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, testBatchSize);
+        EmbeddedEventStore testEventStore = new EmbeddedEventStore(testSubject);
+
+        testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
+                                 createEvent(AGGREGATE, 2, "Payload2"));
+        // Update events which will be part of the first batch to an unknown payload type
+        entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type").setParameter("type", "unknown")
+                     .executeUpdate();
+        testSubject.appendEvents(createEvent(AGGREGATE, 3, expectedPayloadOne),
+                                 createEvent(AGGREGATE, 4, expectedPayloadTwo));
+
+        List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
+                                                           .map(m -> (String) m.getPayload())
+                                                           .collect(toList());
+        assertEquals(expected, eventStorageEngineResult);
+
+        TrackingEventStream eventStoreResult = testEventStore.openStream(null);
+
+        assertTrue(eventStoreResult.hasNextAvailable());
+        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
+        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
+        assertFalse(eventStoreResult.hasNextAvailable());
+    }
+
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
@@ -231,7 +284,17 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
-                                         entityManagerProvider, NoTransactionManager.INSTANCE, 1L, 10000, true);
+        return createEngine(upcasterChain, persistenceExceptionResolver, 100);
     }
+
+    protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
+                                                 PersistenceExceptionResolver persistenceExceptionResolver,
+                                                 int batchSize) {
+        XStreamSerializer serializer = new XStreamSerializer();
+        return new JpaEventStorageEngine(
+                serializer, upcasterChain, persistenceExceptionResolver, serializer, batchSize, entityManagerProvider,
+                NoTransactionManager.INSTANCE, 1L, 10000, true
+        );
+    }
+
 }

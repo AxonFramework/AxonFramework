@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,6 +17,7 @@
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -21,6 +25,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Implementation of a {@link TokenStore} that stores tracking tokens in memory. This implementation is thread-safe.
@@ -35,13 +41,24 @@ public class InMemoryTokenStore implements TokenStore {
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
 
     @Override
+    public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        if (fetchSegments(processorName).length > 0) {
+            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
+        }
+        for (int segment = 0; segment < segmentCount; segment++) {
+            tokens.put(new ProcessAndSegment(processorName, segment), NULL_TOKEN);
+        }
+    }
+
+
+    @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(uow -> {
-                tokens.put(new ProcessAndSegment(processorName, segment), token);
+                tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
             });
         } else {
-            tokens.put(new ProcessAndSegment(processorName, segment), token);
+            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
         }
     }
 

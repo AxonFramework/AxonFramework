@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2017. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -59,7 +58,7 @@ public interface EntityModel<T> {
 
     /**
      * Get a mapping of {@link MessageHandlingMember} to command name (obtained via {@link
-     * CommandMessage#getCommandName()}).
+     * org.axonframework.commandhandling.CommandMessage#getCommandName()}).
      *
      * @return Map of message handler to command name
      */
@@ -67,8 +66,8 @@ public interface EntityModel<T> {
 
     /**
      * Get the {@link MessageHandlingMember} capable of handling commands with given {@code commandName} (see {@link
-     * CommandMessage#getCommandName()}). If the entity is not capable of handling such commands an exception is
-     * raised.
+     * org.axonframework.commandhandling.CommandMessage#getCommandName()}). If the entity is not capable of handling
+     * such commands an exception is raised.
      *
      * @param commandName The name of the command
      * @return The handler for the command
@@ -86,8 +85,15 @@ public interface EntityModel<T> {
      * Get the EntityModel of an entity of type {@code childEntityType} in case it is the child of the modeled entity.
      *
      * @param childEntityType The class instance of the child entity type
-     * @param <C> the type of the child entity
+     * @param <C>             the type of the child entity
      * @return An EntityModel for the child entity
      */
     <C> EntityModel<C> modelOf(Class<? extends C> childEntityType);
+
+    /**
+     * Returns the class this model describes
+     *
+     * @return the class this model describes
+     */
+    Class<? extends T> entityClass();
 }

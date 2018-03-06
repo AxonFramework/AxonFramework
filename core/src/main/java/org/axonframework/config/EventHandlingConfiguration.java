@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,16 +28,10 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -57,8 +51,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final List<EventProcessor> initializedProcessors = new ArrayList<>();
+    private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
+    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
+    private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
+    private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
-
     // Set up the default selector that determines the processing group by inspecting the @ProcessingGroup annotation;
     // if no annotation is present, the package name is used
     private Function<Object, String> fallback = (o) -> o.getClass().getPackage().getName();
@@ -71,10 +68,15 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                 return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
                                           .orElse(fallback.apply(o)));
             });
-
-    private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
-
     private Configuration config;
+    private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
+            () -> config,
+            "listenerInvocationErrorHandler",
+            c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new)
+    );
+    private final Component<ErrorHandler> defaultErrorHandler = new Component<>(
+            () -> config, "errorHandler", c -> c.getComponent(ErrorHandler.class, PropagatingErrorHandler::instance)
+    );
 
     /**
      * Creates a default configuration for an Event Handling module that creates a {@link SubscribingEventProcessor}
@@ -94,14 +96,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private SubscribingEventProcessor subscribingEventProcessor(Configuration conf, String name, List<?> eh,
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         return new SubscribingEventProcessor(name,
-                                             new SimpleEventHandlerInvoker(eh,
-                                                                           conf.parameterResolverFactory(),
-                                                                           conf.getComponent(
-                                                                                   ListenerInvocationErrorHandler.class,
-                                                                                   LoggingErrorHandler::new)),
+                                             new SimpleEventHandlerInvoker(
+                                                     eh,
+                                                     conf.parameterResolverFactory(),
+                                                     getListenerInvocationErrorHandler(conf, name)
+                                             ),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
-                                             PropagatingErrorHandler.INSTANCE,
+                                             getErrorHandler(conf, name),
                                              getMessageMonitor(conf, SubscribingEventProcessor.class, name));
     }
 
@@ -111,6 +113,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param configuration The main configuration
      * @param processorName The name of the processor to retrieve interceptors for
      * @return a list of Interceptors
+     *
      * @see EventHandlingConfiguration#registerHandlerInterceptor(BiFunction)
      * @see EventHandlingConfiguration#registerHandlerInterceptor(String, Function)
      */
@@ -162,8 +165,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param sequencingPolicy The policy for processing events sequentially
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration usingTrackingProcessors(Function<Configuration, TrackingEventProcessorConfiguration> config,
-                                                              Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
+    public EventHandlingConfiguration usingTrackingProcessors(
+            Function<Configuration, TrackingEventProcessorConfiguration> config,
+            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return registerEventProcessorFactory(
                 (conf, name, handlers) -> buildTrackingEventProcessor(conf, name, handlers, config,
                                                                       Configuration::eventBus,
@@ -193,10 +197,15 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     @SuppressWarnings("unchecked")
-    public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
-        return registerTrackingProcessor(name, source,
-                                         c -> c.getComponent(TrackingEventProcessorConfiguration.class, TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
-                                         c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new));
+    public EventHandlingConfiguration registerTrackingProcessor(String name,
+                                                                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source) {
+        return registerTrackingProcessor(
+                name,
+                source,
+                c -> c.getComponent(TrackingEventProcessorConfiguration.class,
+                                    TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
+                c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new)
+        );
     }
 
     /**
@@ -226,7 +235,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration registerTrackingProcessor(String name, Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
+    public EventHandlingConfiguration registerTrackingProcessor(String name,
+                                                                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
                                                                 Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration,
                                                                 Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         return registerEventProcessor(name, (conf, n, handlers) ->
@@ -240,25 +250,41 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         return new TrackingEventProcessor(name,
                                           new SimpleEventHandlerInvoker(handlers,
                                                                         conf.parameterResolverFactory(),
-                                                                        conf.getComponent(
-                                                                                ListenerInvocationErrorHandler.class,
-                                                                                LoggingErrorHandler::new),
-                                                                              sequencingPolicy.apply(conf)),
+                                                                        getListenerInvocationErrorHandler(conf, name),
+                                                                        sequencingPolicy.apply(conf)),
                                           source.apply(conf),
-                                          conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                                          tokenStore.getOrDefault(
+                                                  name,
+                                                  c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
+                                          ).apply(conf),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                           getMessageMonitor(conf, EventProcessor.class, name),
                                           RollbackConfigurationType.ANY_THROWABLE,
-                                          PropagatingErrorHandler.instance(),
+                                          getErrorHandler(conf, name),
                                           config.apply(conf));
     }
 
-    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration, Class<?> componentType, String componentName) {
+    private ListenerInvocationErrorHandler getListenerInvocationErrorHandler(Configuration config,
+                                                                             String componentName) {
+        return listenerInvocationErrorHandlers.containsKey(componentName)
+                ? listenerInvocationErrorHandlers.get(componentName).apply(config)
+                : defaultListenerInvocationErrorHandler.get();
+    }
+
+    private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration,
+                                                                 Class<?> componentType,
+                                                                 String componentName) {
         if (messageMonitorFactories.containsKey(componentName)) {
             return messageMonitorFactories.get(componentName).create(configuration, componentType, componentName);
         } else {
             return configuration.messageMonitor(componentType, componentName);
         }
+    }
+
+    private ErrorHandler getErrorHandler(Configuration config, String componentName) {
+        return errorHandlers.containsKey(componentName)
+                ? errorHandlers.get(componentName).apply(config)
+                : defaultErrorHandler.get();
     }
 
     /**
@@ -333,7 +359,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param interceptorBuilder The builder function that provides an interceptor for each available processor
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration registerHandlerInterceptor(BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+    public EventHandlingConfiguration registerHandlerInterceptor(
+            BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         defaultHandlerInterceptors.add(interceptorBuilder);
         return this;
     }
@@ -472,6 +499,22 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * Register the TokenStore to use for a processor of given {@code name}.
+     * <p>
+     * If no explicit TokenStore implementation is available for a Processor, it is taken from the main Configuration.
+     * <p>
+     * Note that this configuration is ignored if the processor with given name isn't a Tracking Processor.
+     *
+     * @param name       The name of the processor to configure the token store for
+     * @param tokenStore The function providing the TokenStore based on a given Configuration
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTokenStore(String name, Function<Configuration, TokenStore> tokenStore) {
+        this.tokenStore.put(name, tokenStore);
+        return this;
+    }
+
+    /**
      * Returns a list of Event Processors that have been initialized. Note that an empty list may be returned if this
      * configuration hasn't been {@link #initialize(Configuration) initialized} yet.
      *
@@ -495,6 +538,53 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}. This
+     * method also returns an empty optional if the Processor was configured, but it hasn't been assigned any Event
+     * Handlers.
+     *
+     * @param name         The name of the processor to return
+     * @param expectedType The type of processor expected
+     * @param <T>          The type of processor expected
+     * @return an Optional referencing the processor, if present and of expected type.
+     */
+    public <T extends EventProcessor> Optional<T> getProcessor(String name, Class<T> expectedType) {
+        return getProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
+    }
+
+    /**
+     * Configures the default {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for any
+     * {@link org.axonframework.eventhandling.EventProcessor}. This can be overridden per EventProcessor by calling the
+     * {@link EventHandlingConfiguration#configureListenerInvocationErrorHandler(String, Function)} function.
+     *
+     * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
+     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
+     *                                              with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureListenerInvocationErrorHandler(
+            Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+        defaultListenerInvocationErrorHandler.update(listenerInvocationErrorHandlerBuilder);
+        return this;
+    }
+
+    /**
+     * Configures a {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for the
+     * {@link org.axonframework.eventhandling.EventProcessor} of the given {@code name}. This overrides the default
+     * ListenerInvocationErrorHandler configured through the {@link org.axonframework.config.Configurer}.
+     *
+     * @param name                                  The name of the event processor
+     * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
+     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
+     *                                              with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureListenerInvocationErrorHandler(String name,
+                                                                              Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+        listenerInvocationErrorHandlers.put(name, listenerInvocationErrorHandlerBuilder);
+        return this;
+    }
+
+    /**
      * Configures the builder function to create the Message Monitor for the {@link EventProcessor} of the given name.
      * This overrides any Message Monitor configured through {@link Configurer}.
      *
@@ -502,9 +592,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param messageMonitorBuilder The builder function to use
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration configureMessageMonitor(String name, Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
-        return configureMessageMonitor(name,
-                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration));
+    public EventHandlingConfiguration configureMessageMonitor(String name,
+                                                              Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+        return configureMessageMonitor(
+                name,
+                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
+        );
     }
 
     /**
@@ -515,8 +608,39 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param messageMonitorFactory The factory to use
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory) {
+    public EventHandlingConfiguration configureMessageMonitor(String name,
+                                                              MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactories.put(name, messageMonitorFactory);
+        return this;
+    }
+
+    /**
+     * Configures the default {@link org.axonframework.eventhandling.ErrorHandler} for any
+     * {@link org.axonframework.eventhandling.EventProcessor}. This can be overridden per EventProcessor by calling the
+     * {@link EventHandlingConfiguration#configureErrorHandler(String, Function)} function.
+     *
+     * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
+     *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureErrorHandler(Function<Configuration, ErrorHandler> errorHandlerBuilder) {
+        defaultErrorHandler.update(errorHandlerBuilder);
+        return this;
+    }
+
+    /**
+     * Configures a {@link org.axonframework.eventhandling.ErrorHandler} for the
+     * {@link org.axonframework.eventhandling.EventProcessor} of the given {@code name}. This
+     * overrides the default ErrorHandler configured through the {@link org.axonframework.config.Configurer}.
+     *
+     * @param name                The name of the event processor
+     * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
+     *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureErrorHandler(String name,
+                                                            Function<Configuration, ErrorHandler> errorHandlerBuilder) {
+        errorHandlers.put(name, errorHandlerBuilder);
         return this;
     }
 
@@ -537,7 +661,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
          * @return a fully initialized Event Processor
          */
         EventProcessor createEventProcessor(Configuration configuration, String name, List<?> eventHandlers);
-
     }
 
     private static class ProcessorSelector {
