@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 
 import java.util.Map;
 
@@ -24,17 +25,17 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
 
     private final Class<U> updateResponseType;
 
-    public GenericSubscriptionQueryMessage(Q payload, Class<I> responseType, Class<U> updateResponseType) {
+    public GenericSubscriptionQueryMessage(Q payload, ResponseType<I> responseType, Class<U> updateResponseType) {
         super(payload, responseType);
         this.updateResponseType = updateResponseType;
     }
 
-    public GenericSubscriptionQueryMessage(Q payload, String queryName, Class<I> responseType, Class<U> updateResponseType) {
+    public GenericSubscriptionQueryMessage(Q payload, String queryName, ResponseType<I> responseType, Class<U> updateResponseType) {
         super(payload, queryName, responseType);
         this.updateResponseType = updateResponseType;
     }
 
-    public GenericSubscriptionQueryMessage(Message<Q> delegate, String queryName, Class<I> responseType, Class<U> updateResponseType) {
+    public GenericSubscriptionQueryMessage(Message<Q> delegate, String queryName, ResponseType<I> responseType, Class<U> updateResponseType) {
         super(delegate, queryName, responseType);
         this.updateResponseType = updateResponseType;
     }
