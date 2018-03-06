@@ -263,23 +263,24 @@ public class SpringCloudCommandRouter implements CommandRouter {
     /**
      * Instantiate a {@link Member} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
      * This Member is later used to send, for example, Command messages to.
+     * </p>
+     * An early check is performed to match the given {@code serviceInstance} with the global
+     * {@code localServiceInstance}, which in that scenario will not store the URI in the Member.
+     * We take this route because we've identified that several Spring Cloud implementation do not contain any URI
+     * information during the start up phase and as a side effect will throw exception if the URI is requested from it.
+     * We thus return a simplified Member for the {@code localServiceInstance} to not trigger this exception.
      *
      * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to build a {@link Member} for
      * @return A {@link Member} based on the contents of the provided {@code serviceInstance}
      */
     protected Member buildMember(ServiceInstance serviceInstance) {
-        URI serviceUri = serviceInstance.getUri();
         String serviceId = serviceInstance.getServiceId();
+        if (serviceInstance == localServiceInstance) {
+            return new SimpleMember<>(serviceId.toUpperCase() + "[local-instance]", null, true, this::suspect);
+        }
 
-        URI localServiceUri = localServiceInstance.getUri();
-        boolean local = localServiceUri.equals(serviceUri);
-
-        return new SimpleMember<>(
-                serviceId.toUpperCase() + "[" + serviceUri + "]",
-                serviceUri,
-                local,
-                this::suspect
-        );
+        URI serviceUri = serviceInstance.getUri();
+        return new SimpleMember<>(serviceId.toUpperCase() + "[" + serviceUri + "]", serviceUri, false, this::suspect);
     }
 
     private ConsistentHash suspect(Member member) {
