@@ -60,6 +60,8 @@ public class SpringCloudCommandRouterTest {
     private static final String SERVICE_INSTANCE_ID = "SERVICEID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
     private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+    private static final boolean LOCAL_MEMBER = true;
+    private static final boolean REMOTE_MEMBER = false;
 
     private SpringCloudCommandRouter testSubject;
 
@@ -75,8 +77,6 @@ public class SpringCloudCommandRouterTest {
     private String serializedCommandFilterClassName;
     private HashMap<String, String> serviceInstanceMetadata;
     @Mock
-    private ServiceInstance serviceInstance;
-    @Mock
     private ConsistentHashChangeListener consistentHashChangeListener;
 
     @Before
@@ -88,16 +88,13 @@ public class SpringCloudCommandRouterTest {
         atomicConsistentHashField = SpringCloudCommandRouter.class.getDeclaredField(atomicConsistentHashFieldName);
 
         serviceInstanceMetadata = new HashMap<>();
-        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
-        when(serviceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
-
         when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(localServiceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
         when(localServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
 
         when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
-        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(Collections.singletonList(localServiceInstance));
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
 
@@ -130,7 +127,7 @@ public class SpringCloudCommandRouterTest {
         assertTrue(resultOptional.isPresent());
         Member resultMember = resultOptional.orElseThrow(IllegalStateException::new);
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMember);
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, REMOTE_MEMBER, resultMember);
 
         verify(routingStrategy).getRoutingKey(TEST_COMMAND);
     }
@@ -152,7 +149,7 @@ public class SpringCloudCommandRouterTest {
                 return item.getMembers()
                            .stream()
                            .map(Member::name)
-                           .anyMatch(i -> i.equals(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]"));
+                           .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID));
             }
 
             @Override
@@ -172,7 +169,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, LOCAL_MEMBER, resultMemberSet.iterator().next());
     }
 
     @Test
@@ -189,7 +186,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, LOCAL_MEMBER, resultMemberSet.iterator().next());
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
@@ -259,7 +256,10 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
         assertEquals(1, resultMemberSetAfterVanish.size());
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSetAfterVanish.iterator().next());
+        assertMember(SERVICE_INSTANCE_ID,
+                     SERVICE_INSTANCE_URI,
+                     LOCAL_MEMBER,
+                     resultMemberSetAfterVanish.iterator().next());
     }
 
     @Test
@@ -277,7 +277,7 @@ public class SpringCloudCommandRouterTest {
         when(discoveryClient.getServices())
                 .thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, expectedServiceInstanceId));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(ImmutableList.of(serviceInstance, nonCommandRouterServiceInstance));
+                .thenReturn(ImmutableList.of(localServiceInstance, nonCommandRouterServiceInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -375,7 +375,7 @@ public class SpringCloudCommandRouterTest {
 
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+                .thenReturn(ImmutableList.of(localServiceInstance, remoteInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -386,15 +386,24 @@ public class SpringCloudCommandRouterTest {
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
     }
 
-    private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
+    private void assertMember(String expectedMemberName, URI expectedEndpoint, boolean localMember,
+                              Member resultMember) {
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
+        if (localMember) {
+            assertTrue(result.name().contains(expectedMemberName));
+        } else {
+            assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
+        }
         assertEquals(LOAD_FACTOR, result.segmentCount());
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
-        assertTrue(connectionEndpointOptional.isPresent());
-        URI resultEndpoint = connectionEndpointOptional.orElseThrow(IllegalStateException::new);
-        assertEquals(resultEndpoint, expectedEndpoint);
+        if (localMember) {
+            assertFalse(connectionEndpointOptional.isPresent());
+        } else {
+            assertTrue(connectionEndpointOptional.isPresent());
+            URI resultEndpoint = connectionEndpointOptional.orElseThrow(IllegalStateException::new);
+            assertEquals(resultEndpoint, expectedEndpoint);
+        }
     }
 }

@@ -18,6 +18,7 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
@@ -54,7 +55,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
     private static final int LOAD_FACTOR = 1;
     private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
 
     private SpringCloudHttpBackupCommandRouter testSubject;
 
@@ -67,8 +68,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @Mock
     private RestTemplate restTemplate;
     private String messageRoutingInformationEndpoint = "/message-routing-information";
-    @Mock
-    private ServiceInstance serviceInstance;
 
     private URI testRemoteUri = URI.create("http://remote");
     private MessageRoutingInformation expectedMessageRoutingInfo;
@@ -78,16 +77,13 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
-        when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
-
         when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(localServiceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
         when(localServiceInstance.getMetadata()).thenReturn(new HashMap<>());
 
         when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
-        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(Collections.singletonList(localServiceInstance));
 
         expectedMessageRoutingInfo =
                 new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
@@ -123,14 +119,9 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
     @Test
     public void testGetMessageRoutingInformationReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal() {
-        ServiceInstance serviceInstance = mock(ServiceInstance.class);
-        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
-        when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
-
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
-        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(serviceInstance);
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(localServiceInstance);
 
         assertTrue(result.isPresent());
         assertEquals(expectedMessageRoutingInfo, result.get());
@@ -261,7 +252,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+                .thenReturn(ImmutableList.of(localServiceInstance, remoteInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
