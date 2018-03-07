@@ -19,20 +19,49 @@ import org.apache.kafka.common.TopicPartition;
 import org.assertj.core.util.Lists;
 import org.junit.*;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotSame;
 
 /**
+ * Tests for {@link KafkaTrackingToken}
+ *
  * @author Nakul Mishra
  */
 public class KafkaTrackingTokenTest {
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void testNullTokenShouldBeEmpty() {
+        assertTrue(KafkaTrackingToken.isEmpty(null));
+    }
+
+    @Test
+    public void testTokenWithEmptyPartitions() {
+        assertTrue(KafkaTrackingToken.isEmpty(emptyToken()));
+    }
+
+    @Test
+    public void testTokenWithPartitions() {
+        assertTrue(KafkaTrackingToken.isNotEmpty(nonEmptyToken()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAdvanceToInvalidPartition() {
+        KafkaTrackingToken.newInstance(Collections.emptyMap()).advancedTo(-1, 1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAdvanceToInvalidOffset() {
+        KafkaTrackingToken.newInstance(Collections.emptyMap()).advancedTo(0, -1);
+    }
 
     @Test
     public void testAdvanceToLaterTimestamp() {
@@ -72,6 +101,16 @@ public class KafkaTrackingTokenTest {
         Collection<TopicPartition> expected = Lists.newArrayList(new TopicPartition("bar", 0),
                                                                  new TopicPartition("bar", 2));
         assertEquals(expected, KafkaTrackingToken.partitions("bar", existingToken));
+    }
+
+    private KafkaTrackingToken emptyToken() {
+        return KafkaTrackingToken.newInstance(Collections.emptyMap());
+    }
+
+    private KafkaTrackingToken nonEmptyToken() {
+        return KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+        }});
     }
 
     private static void assertKnownEventIds(KafkaTrackingToken token, Integer... expectedKnownIds) {

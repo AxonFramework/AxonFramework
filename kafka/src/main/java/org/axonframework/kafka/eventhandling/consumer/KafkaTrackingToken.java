@@ -19,6 +19,7 @@ package org.axonframework.kafka.eventhandling.consumer;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.kafka.common.TopicPartition;
+import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.io.Serializable;
@@ -53,7 +54,9 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
     }
 
     public static Collection<TopicPartition> partitions(String topic, KafkaTrackingToken token) {
-        return token.partitionPositions.keySet().stream().map(i -> new org.apache.kafka.common.TopicPartition(topic, i))
+        return token.partitionPositions.keySet()
+                                       .stream()
+                                       .map(i -> new org.apache.kafka.common.TopicPartition(topic, i))
                                        .collect(Collectors.toList());
     }
 
@@ -62,9 +65,19 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
     }
 
     public KafkaTrackingToken advancedTo(int partition, long offset) {
+        Assert.isTrue(partition >= 0, () -> "Partition may not be negative");
+        Assert.isTrue(offset >= 0, () -> "Offset may not be negative");
         HashMap<Integer, Long> newPositions = new HashMap<>(partitionPositions);
         newPositions.put(partition, offset);
         return new KafkaTrackingToken(newPositions);
+    }
+
+    public static boolean isEmpty(KafkaTrackingToken token) {
+        return token == null || token.partitionPositions.isEmpty();
+    }
+
+    public static boolean isNotEmpty(KafkaTrackingToken token) {
+        return !isEmpty(token);
     }
 
     @Override
