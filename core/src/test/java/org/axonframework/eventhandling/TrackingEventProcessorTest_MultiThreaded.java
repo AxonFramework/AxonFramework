@@ -92,11 +92,15 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @Test
-    public void testProcessorWorkerCount() throws InterruptedException {
+    public void testProcessorWorkerCount() {
         testSubject.start();
         // give it some time to split segments from the store and submit to executor service.
-        Thread.sleep(200);
-        assertThat(testSubject.activeProcessorThreads(), is(2));
+        assertWithin(1, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
+        assertThat(testSubject.processingStatus().size(), is(2));
+        assertTrue(testSubject.processingStatus().containsKey(0));
+        assertTrue(testSubject.processingStatus().containsKey(1));
+        assertWithin(1, SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
+        assertWithin(1, SECONDS, () -> assertTrue(testSubject.processingStatus().get(1).isCaughtUp()));
     }
 
     @Test
@@ -134,6 +138,11 @@ public class TrackingEventProcessorTest_MultiThreaded {
         testSubject.start();
 
         assertWithin(20, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
+        assertThat(testSubject.processingStatus().size(), is(2));
+        assertTrue(testSubject.processingStatus().containsKey(0));
+        assertTrue(testSubject.processingStatus().containsKey(1));
+        assertWithin(10, MILLISECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1L), testSubject.processingStatus().get(0).getTrackingToken()));
+        assertWithin(10, MILLISECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(2L), testSubject.processingStatus().get(1).getTrackingToken()));
     }
 
     /**

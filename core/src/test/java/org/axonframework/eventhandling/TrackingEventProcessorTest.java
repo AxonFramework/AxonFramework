@@ -438,6 +438,9 @@ public class TrackingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, handled.size()));
         assertEquals(handled.subList(0, 3), handled.subList(4, 7));
         assertEquals(handled.subList(4, 7), handledInRedelivery);
+        assertTrue(testSubject.processingStatus().get(0).isReplaying());
+        eventBus.publish(createEvents(1));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
     }
 
     @SuppressWarnings("unchecked")
