@@ -255,9 +255,9 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                 + "as requesting message routing information from it resulted in an exception.", e);
             return Optional.empty();
         } catch (Exception e) {
-            logger.info("Failed to receive message routing information from Service [" +
-                                serviceInstance.getServiceId() + "] due to in an exception. "
-                                + "Will temporarily set that this instance denies all incoming messages", e);
+            logger.info("Failed to receive message routing information from Service ["
+                                + serviceInstance.getServiceId() + "] due to an exception. "
+                                + "Will temporarily set this instance to deny all incoming messages", e);
             return Optional.of(unreachableService);
         }
     }
