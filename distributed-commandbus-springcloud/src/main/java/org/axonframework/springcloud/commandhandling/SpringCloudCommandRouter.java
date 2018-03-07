@@ -275,7 +275,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
      */
     protected Member buildMember(ServiceInstance serviceInstance) {
         String serviceId = serviceInstance.getServiceId();
-        if (serviceInstance == localServiceInstance) {
+        if (serviceInstance.equals(localServiceInstance)) {
             return new SimpleMember<>(serviceId.toUpperCase() + "[local-instance]", null, true, this::suspect);
         }
 
