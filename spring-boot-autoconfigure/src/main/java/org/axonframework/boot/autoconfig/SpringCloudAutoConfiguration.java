@@ -57,13 +57,13 @@ public class SpringCloudAutoConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(CommandRouter.class)
     @ConditionalOnBean(DiscoveryClient.class)
     @ConditionalOnProperty(value = "axon.distributed.spring-cloud.fallback-to-http-get", matchIfMissing = true)
-    public CommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
-                                                            Registration localServiceInstance,
-                                                            RestTemplate restTemplate,
-                                                            RoutingStrategy routingStrategy) {
+    public SpringCloudHttpBackupCommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
+                                                                                 Registration localServiceInstance,
+                                                                                 RestTemplate restTemplate,
+                                                                                 RoutingStrategy routingStrategy) {
         return new SpringCloudHttpBackupCommandRouter(discoveryClient,
                                                       localServiceInstance,
                                                       routingStrategy,
@@ -81,10 +81,11 @@ public class SpringCloudAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
-                                                             RestTemplate restTemplate,
-                                                             @Qualifier("messageSerializer") Serializer serializer) {
+    @ConditionalOnMissingBean(CommandBusConnector.class)
+    public SpringHttpCommandBusConnector springHttpCommandBusConnector(
+            @Qualifier("localSegment") CommandBus localSegment,
+            RestTemplate restTemplate,
+            @Qualifier("messageSerializer") Serializer serializer) {
         return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
     }
 
