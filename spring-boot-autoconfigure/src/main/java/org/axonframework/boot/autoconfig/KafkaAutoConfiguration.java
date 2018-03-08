@@ -16,14 +16,13 @@
 
 package org.axonframework.boot.autoconfig;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.consumer.ConsumerFactory;
 import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.Fetcher;
 import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
 import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
 import org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory;
@@ -40,6 +39,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Map;
+
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for Apache Kafka.
  *
@@ -54,61 +55,57 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaAutoConfiguration {
 
     private final KafkaProperties properties;
-    private final KafkaMessageConverter<String, byte[]> messageConverter;
 
-    public KafkaAutoConfiguration(KafkaProperties properties,
-                                  KafkaMessageConverter<String, byte[]> messageConverter) {
+    public KafkaAutoConfiguration(KafkaProperties properties) {
         this.properties = properties;
-        this.messageConverter = messageConverter;
     }
 
     @ConditionalOnMissingBean
     @Bean
-    public DefaultProducerFactory.Builder<String, byte[]> producerBuilder() {
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
+    public ProducerFactory<String, byte[]> producerFactory() {
+        Map<String, Object> producer = properties.buildProducerProperties();
+        String transactionIdPrefix = properties.getProducer().getTransactionIdPrefix();
+        if (transactionIdPrefix == null) {
+            throw new IllegalStateException("transactionalIdPrefix cannot be empty");
+        }
         return DefaultProducerFactory.<String, byte[]>builder()
                 .withConfirmationMode(ConfirmationMode.TRANSACTIONAL)
-                .withConfigs(properties.buildProducerProperties());
-    }
-
-    @ConditionalOnMissingBean
-    @Bean
-    public ProducerFactory<String, byte[]> producerFactory(DefaultProducerFactory.Builder<String, byte[]> builder) {
-        return builder.build();
+                .withTransactionalIdPrefix(transactionIdPrefix)
+                .withConfigs(producer).build();
     }
 
     @ConditionalOnMissingBean
     @Bean
     public ConsumerFactory<String, byte[]> consumerFactory() {
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                    "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         return new DefaultConsumerFactory<>(properties.buildConsumerProperties());
     }
 
     @ConditionalOnMissingBean
     @Bean(initMethod = "start", destroyMethod = "shutDown")
-    public KafkaPublisher<String, byte[]> publisher(KafkaPublisherConfiguration<String, byte[]> config) {
-        return new KafkaPublisher<>(config);
-    }
-
-    @ConditionalOnMissingBean
-    @Bean
-    public KafkaPublisherConfiguration<String, byte[]> publisherConfig(ProducerFactory<String, byte[]> producerFactory,
-                                                                       EventBus eventBus,
-                                                                       AxonConfiguration configuration) {
-        return KafkaPublisherConfiguration.<String, byte[]>builder()
+    public KafkaPublisher<String, byte[]> publisher(ProducerFactory<String, byte[]> producerFactory,
+                                                    EventBus eventBus,
+                                                    KafkaMessageConverter<String, byte[]> messageConverter,
+                                                    AxonConfiguration configuration) {
+        return new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
                 .withTopic(properties.getDefaultTopic())
                 .withMessageConverter(messageConverter)
                 .withProducerFactory(producerFactory)
                 .withMessageSource(eventBus)
                 .withMessageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
-                .build();
+                .build());
     }
 
     @ConditionalOnMissingBean
     @Bean
-    public KafkaMessageSource<String, byte[]> kafkaMessageSource(ConsumerFactory<String, byte[]> consumerFactory) {
-        return new KafkaMessageSource<>(consumerFactory, messageConverter, properties.getDefaultTopic());
+    public Fetcher<String, byte[]> fetcher(ConsumerFactory<String, byte[]> consumerFactory,
+                                           KafkaMessageConverter<String, byte[]> messageConverter) {
+        return new Fetcher<>(1000, consumerFactory, messageConverter, properties.getDefaultTopic());
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public KafkaMessageSource<String, byte[]> kafkaMessageSource(Fetcher<String, byte[]> fetcher) {
+        return new KafkaMessageSource<>(fetcher);
     }
 
     @ConditionalOnMissingBean
