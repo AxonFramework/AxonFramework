@@ -264,8 +264,11 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * Instantiate a {@link Member} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
      * This Member is later used to send, for example, Command messages to.
      * </p>
-     * An early check is performed to match the given {@code serviceInstance} with the global
-     * {@code localServiceInstance}, which in that scenario will not store the URI in the Member.
+     * A deviation is made between a local and a remote member, since if local is selected to handle the command, the
+     * local CommandBus may be leveraged. The check if a {@link org.springframework.cloud.client.ServiceInstance} is
+     * local is based on two potential situations: 1) the given {@code serviceInstance} is identical to the
+     * {@code localServiceInstance} thus making it local or 2) the URI of the given {@code serviceInstance} is identical
+     * to the URI of the {@code localServiceInstance}.
      * We take this route because we've identified that several Spring Cloud implementation do not contain any URI
      * information during the start up phase and as a side effect will throw exception if the URI is requested from it.
      * We thus return a simplified Member for the {@code localServiceInstance} to not trigger this exception.
@@ -275,12 +278,30 @@ public class SpringCloudCommandRouter implements CommandRouter {
      */
     protected Member buildMember(ServiceInstance serviceInstance) {
         String serviceId = serviceInstance.getServiceId();
-        if (serviceInstance.equals(localServiceInstance)) {
-            return new SimpleMember<>(serviceId.toUpperCase() + "[local-instance]", null, true, this::suspect);
-        }
+        return isLocalServiceInstance(serviceInstance)
+                ? buildLocalMember(serviceId)
+                : buildRemoteMember(serviceId, serviceInstance.getUri());
+    }
 
-        URI serviceUri = serviceInstance.getUri();
-        return new SimpleMember<>(serviceId.toUpperCase() + "[" + serviceUri + "]", serviceUri, false, this::suspect);
+    private boolean isLocalServiceInstance(ServiceInstance serviceInstance) {
+        return serviceInstance.equals(localServiceInstance)
+                || Objects.equals(serviceInstance.getUri(), localServiceInstance.getUri());
+    }
+
+    private Member buildLocalMember(String serviceId) {
+        URI emptyEndpoint = null;
+        //noinspection ConstantConditions | added null variable for clarity
+        return new SimpleMember<>(serviceId.toUpperCase() + "[LOCAL]",
+                                  emptyEndpoint,
+                                  SimpleMember.LOCAL_MEMBER,
+                                  this::suspect);
+    }
+
+    private Member buildRemoteMember(String serviceId, URI serviceUri) {
+        return new SimpleMember<>(serviceId.toUpperCase() + "[" + serviceUri + "]",
+                                  serviceUri,
+                                  SimpleMember.REMOTE_MEMBER,
+                                  this::suspect);
     }
 
     private ConsistentHash suspect(Member member) {
