@@ -476,6 +476,11 @@ public class KafkaProperties {
         private String compressionType;
 
         /**
+         * When non empty, enables transaction support for producer.
+         */
+        private String transactionIdPrefix;
+
+        /**
          * Serializer class for keys.
          */
         private Class<?> keySerializer = StringSerializer.class;
@@ -540,6 +545,14 @@ public class KafkaProperties {
 
         public void setCompressionType(String compressionType) {
             this.compressionType = compressionType;
+        }
+
+        public String getTransactionIdPrefix() {
+            return transactionIdPrefix;
+        }
+
+        public void setTransactionIdPrefix(String transactionIdPrefix) {
+            this.transactionIdPrefix = transactionIdPrefix;
         }
 
         public Class<?> getKeySerializer() {
