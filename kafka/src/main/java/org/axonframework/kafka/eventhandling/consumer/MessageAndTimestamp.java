@@ -1,7 +1,7 @@
 package org.axonframework.kafka.eventhandling.consumer;
 
 import org.axonframework.eventhandling.TrackedEventMessage;
-class MessageAndTimestamp {
+class MessageAndTimestamp implements Comparable<MessageAndTimestamp> {
 
     private final TrackedEventMessage<?> eventMessage;
     private final long timestamp;
@@ -15,6 +15,10 @@ class MessageAndTimestamp {
         return eventMessage;
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
     @Override
     public String toString() {
         return "MessageAndTimestamp{" +
@@ -22,7 +26,8 @@ class MessageAndTimestamp {
                 '}';
     }
 
-    long getTimestamp() {
-        return timestamp;
+    @Override
+    public int compareTo(MessageAndTimestamp o) {
+        return Long.compare(this.timestamp, o.timestamp);
     }
 }

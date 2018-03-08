@@ -16,13 +16,12 @@
 
 package org.axonframework.kafka.eventhandling.consumer;
 
-import org.apache.kafka.clients.consumer.Consumer;
+import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,33 +39,34 @@ import java.util.concurrent.TimeUnit;
  * @since 3.0
  */
 public class KafkaMessageStream<K, V> implements TrackingEventStream {
-    private final BufferedEventStream<K, V> eventConsumer;
-    private final ExecutorService fetcher;
+    private final BufferedEventStream<K, V> eventStream;
+    private final Fetcher<K, V> fetcher;
 
-    public KafkaMessageStream(Consumer<K, V> consumer, BlockingQueue<MessageAndTimestamp> buffer,
-                              ExecutorService fetcher) {
-        this.eventConsumer = new BufferedEventStream<>(consumer, buffer);
+    public KafkaMessageStream(BlockingQueue<MessageAndTimestamp> buffer,
+                              Fetcher<K, V> fetcher) {
+        Assert.notNull(buffer, () -> "Buffer may not be null");
+        Assert.notNull(fetcher, () -> "Fetcher may not be null");
+        this.eventStream = new BufferedEventStream<>(buffer);
         this.fetcher = fetcher;
     }
 
     @Override
     public Optional<TrackedEventMessage<?>> peek() {
-        return eventConsumer.peek();
+        return eventStream.peek();
     }
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit unit) {
-        return eventConsumer.hasNextAvailable(timeout, unit);
+        return eventStream.hasNextAvailable(timeout, unit);
     }
 
     @Override
-    public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
-        return eventConsumer.nextAvailable();
+    public TrackedEventMessage<?> nextAvailable() {
+        return eventStream.nextAvailable();
     }
 
     @Override
     public void close() {
-        eventConsumer.close();
-        this.fetcher.shutdownNow();
+        fetcher.shutdown();
     }
 }

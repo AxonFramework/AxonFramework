@@ -32,15 +32,11 @@ import java.util.concurrent.TimeUnit;
 class BufferedEventStream<K, V> {
 
     private static final Logger logger = LoggerFactory.getLogger(BufferedEventStream.class);
-    private final Consumer<K, V> consumer;
     private final BlockingQueue<MessageAndTimestamp> eventQueue;
     private MessageAndTimestamp peekEvent;
 
-    BufferedEventStream(Consumer<K, V> consumer,
-                        BlockingQueue<MessageAndTimestamp> buffer) {
-        Assert.isTrue(consumer != null, () -> "Consumer cannot be null");
+    BufferedEventStream(BlockingQueue<MessageAndTimestamp> buffer) {
         Assert.isTrue(buffer != null, () -> "Buffer cannot be null");
-        this.consumer = consumer;
         this.eventQueue = buffer;
     }
 
@@ -69,9 +65,5 @@ class BufferedEventStream<K, V> {
         } finally {
             peekEvent = null;
         }
-    }
-
-    void close() {
-        consumer.close();
     }
 }
