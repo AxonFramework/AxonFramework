@@ -20,6 +20,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.Metric;
@@ -38,6 +39,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The {@link ProducerFactory} implementation to produce a {@code singleton} shared {@link Producer}
@@ -64,6 +66,9 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     private final BlockingQueue<CloseLazyProducer<K, V>> cache;
     private final Map<String, Object> configs;
     private final ConfirmationMode confirmationMode;
+    private final String transactionIdPrefix;
+
+    private final AtomicInteger transactionIdSuffix = new AtomicInteger();
 
     private volatile CloseLazyProducer<K, V> producer;
 
@@ -73,6 +78,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         this.configs = new HashMap<>(builder.configs);
         this.cache = new ArrayBlockingQueue<>(builder.producerCacheSize);
         this.confirmationMode = builder.confirmationMode;
+        this.transactionIdPrefix = builder.transactionIdPrefix;
     }
 
     /**
@@ -103,7 +109,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         if (this.producer == null) {
             synchronized (this) {
                 if (this.producer == null) {
-                    this.producer = new CloseLazyProducer<>(createKafkaProducer(), cache, closeTimeout, timeoutUnit);
+                    this.producer = new CloseLazyProducer<>(createKafkaProducer(configs), cache, closeTimeout, timeoutUnit);
                 }
             }
         }
@@ -115,7 +121,10 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         if (producer != null) {
             return producer;
         }
-        producer = new CloseLazyProducer<>(createKafkaProducer(), cache, closeTimeout, timeoutUnit);
+        Map<String, Object> configs = new HashMap<>(this.configs);
+        configs.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG,
+                    this.transactionIdPrefix + this.transactionIdSuffix.getAndIncrement());
+        producer = new CloseLazyProducer<>(createKafkaProducer(configs), cache, closeTimeout, timeoutUnit);
         producer.initTransactions();
         return producer;
     }
@@ -128,7 +137,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         return new Builder<>();
     }
 
-    private Producer<K, V> createKafkaProducer() {
+    private Producer<K, V> createKafkaProducer(Map<String, Object> configs) {
         return new KafkaProducer<>(configs);
     }
 
@@ -224,6 +233,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         private int closeTimeout = 30;
         private TimeUnit timeoutUnit = TimeUnit.SECONDS;
         private ConfirmationMode confirmationMode = ConfirmationMode.NONE;
+        private String transactionIdPrefix;
 
         /**
          * Kafka properties for creating a producer(s)
@@ -270,6 +280,17 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          */
         public Builder<K, V> withConfirmationMode(ConfirmationMode mode) {
             this.confirmationMode = mode;
+            return this;
+        }
+
+        /**
+         * Transactional id prefix
+         *
+         * @param transactionalIdPrefix prefix to generate transactional id
+         * @return Builder
+         */
+        public Builder<K, V> withTransactionalIdPrefix(String transactionalIdPrefix) {
+            this.transactionIdPrefix = transactionalIdPrefix;
             return this;
         }
 
