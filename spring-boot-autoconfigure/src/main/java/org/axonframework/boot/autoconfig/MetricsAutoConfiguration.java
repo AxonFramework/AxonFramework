@@ -1,11 +1,10 @@
 package org.axonframework.boot.autoconfig;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.config.Configurer;
 import org.axonframework.metrics.GlobalMetricRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +17,18 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
+@ConditionalOnClass(name = {
+        "com.codahale.metrics.MetricRegistry",
+        "org.axonframework.metrics.GlobalMetricRegistry"
+})
 public class MetricsAutoConfiguration {
+
+    // TODO Should we instantiate a `MetricRegistry` as well?
+    @Bean
+    @ConditionalOnMissingBean
+    public MetricRegistry metricRegistry() {
+        return new MetricRegistry();
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -27,8 +37,9 @@ public class MetricsAutoConfiguration {
         return new GlobalMetricRegistry(metricRegistry);
     }
 
-    @Autowired
-    public void configureMetrics(GlobalMetricRegistry globalMetricRegistry, Configurer configurer) {
-        globalMetricRegistry.registerWithConfigurer(configurer);
-    }
+//    @Autowired
+//    public void configureMetrics(GlobalMetricRegistry globalMetricRegistry, Configurer configurer) {
+//        globalMetricRegistry.registerWithConfigurer(configurer);
+//    }
 }
+
