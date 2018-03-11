@@ -26,7 +26,6 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureAfter(TransactionAutoConfiguration.class)
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @Configuration
-
 public class NoOpTransactionAutoConfiguration {
 
     @Bean
@@ -34,5 +33,4 @@ public class NoOpTransactionAutoConfiguration {
     public TransactionManager axonTransactionManager() {
         return NoTransactionManager.INSTANCE;
     }
-
 }
