@@ -14,6 +14,9 @@ service PlatformService {
 message PlatformInboundInstruction {
     oneof request {
         ClientIdentification register = 1;
+        EventProcessorInfo processor_notification = 2;
+        EventProcessorPaused event_processor_paused = 3;
+        EventProcessorStarted event_processor_started = 4;
     }
 }
 
@@ -22,6 +25,8 @@ message PlatformOutboundInstruction {
         NodeInfo node_notification = 1;
         RequestReconnect request_reconnect = 3;
         RequestReleaseTracker request_release_tracker = 4;
+        PauseEventProcessor pause_event_processor = 5;
+        StartEventProcessor star_event_processor = 6;
     }
 }
 
@@ -48,3 +53,23 @@ message ClientIdentification {
     string component_name = 2;
 }
 
+message EventProcessorInfo {
+    string processor_name = 1;
+    string mode = 2;
+}
+
+message PauseEventProcessor {
+    string processor_name = 1;
+}
+
+message StartEventProcessor {
+    string processor_name = 1;
+}
+
+message EventProcessorStarted {
+    string processor_name = 1;
+}
+
+message EventProcessorPaused {
+    string processor_name = 1;
+}
