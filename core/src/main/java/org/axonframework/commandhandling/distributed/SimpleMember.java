@@ -24,7 +24,6 @@ import java.util.function.Consumer;
  * An endpoint in the network for a command handling service.
  *
  * @param <E> The type of the identifier of this entry in the set of nodes
- *
  */
 public class SimpleMember<E> implements Member {
 
