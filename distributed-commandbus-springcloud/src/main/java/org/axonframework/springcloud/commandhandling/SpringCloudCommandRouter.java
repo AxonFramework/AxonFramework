@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +18,6 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
@@ -27,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.context.event.EventListener;
 
 import java.net.URI;
@@ -52,8 +51,10 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private static final String LOAD_FACTOR = "loadFactor";
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
+
     protected final XStreamSerializer serializer = new XStreamSerializer();
     private final DiscoveryClient discoveryClient;
+    private final Registration localServiceInstance;
     private final RoutingStrategy routingStrategy;
     private final Predicate<ServiceInstance> serviceInstanceFilter;
     private final ConsistentHashChangeListener consistentHashChangeListener;
@@ -67,41 +68,22 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * org.axonframework.commandhandling.distributed.ConsistentHash}.
      * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
      * respective handler nodes.
-     * The {@code serializer} is used to serialize this node its set of Commands it can handle to be added as meta data
-     * to this {@link org.springframework.cloud.client.ServiceInstance}.
      * Uses a default {@code Predicate<ServiceInstance>} filter function to remove any
      * {@link org.springframework.cloud.client.ServiceInstance} which miss message routing information key-value pairs
      * in their metadata. This is thus the
      * {@link #serviceInstanceMetadataContainsMessageRoutingInformation(ServiceInstance serviceInstance)} function.
      *
-     * @param discoveryClient The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param routingStrategy The strategy for routing Commands to a Node
-     * @param serializer      The serializer used to serialize this node its set of Commands it can handle
-     * @deprecated {@code serializer} is no longer customizable
+     * @param discoveryClient      The {@code DiscoveryClient} used to discovery and notify other nodes
+     * @param localServiceInstance A {@link org.springframework.cloud.client.serviceregistry.Registration} representing
+     *                             the local Service Instance of this application. Necessary to differentiate between
+     *                             other instances for correct message routing
+     * @param routingStrategy      The strategy for routing Commands to a Node
      */
-    @Deprecated
-    public SpringCloudCommandRouter(DiscoveryClient discoveryClient, RoutingStrategy routingStrategy,
-                                    Serializer serializer) {
-        this(discoveryClient, routingStrategy);
-    }
-
-    /**
-     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
-     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
-     * org.axonframework.commandhandling.distributed.ConsistentHash}.
-     * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
-     * respective handler nodes.
-     * Uses a default {@code Predicate<ServiceInstance>} filter function to remove any
-     * {@link org.springframework.cloud.client.ServiceInstance} which miss message routing information key-value pairs
-     * in their metadata. This is thus the
-     * {@link #serviceInstanceMetadataContainsMessageRoutingInformation(ServiceInstance serviceInstance)} function.
-     *
-     * @param discoveryClient The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param routingStrategy The strategy for routing Commands to a Node
-     */
-    public SpringCloudCommandRouter(DiscoveryClient discoveryClient, RoutingStrategy routingStrategy) {
+    public SpringCloudCommandRouter(DiscoveryClient discoveryClient,
+                                    Registration localServiceInstance,
+                                    RoutingStrategy routingStrategy) {
         this(discoveryClient,
+             localServiceInstance,
              routingStrategy,
              SpringCloudCommandRouter::serviceInstanceMetadataContainsMessageRoutingInformation);
     }
@@ -117,17 +99,22 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * the membership update loop.
      *
      * @param discoveryClient       The {@code DiscoveryClient} used to discovery and notify other nodes
+     * @param localServiceInstance  A {@link org.springframework.cloud.client.serviceregistry.Registration} representing
+     *                              the local Service Instance of this application. Necessary to differentiate between
+     *                              other instances for correct message routing
      * @param routingStrategy       The strategy for routing Commands to a Node
      * @param serviceInstanceFilter The {@code Predicate<ServiceInstance>} used to filter {@link
      *                              org.springframework.cloud.client.ServiceInstance} from the update membership loop.
      */
     public SpringCloudCommandRouter(DiscoveryClient discoveryClient,
+                                    Registration localServiceInstance,
                                     RoutingStrategy routingStrategy,
                                     Predicate<ServiceInstance> serviceInstanceFilter) {
-        this.discoveryClient = discoveryClient;
-        this.routingStrategy = routingStrategy;
-        this.serviceInstanceFilter = serviceInstanceFilter;
-        this.consistentHashChangeListener = h -> {/*noop*/};
+        this(discoveryClient,
+             localServiceInstance,
+             routingStrategy,
+             serviceInstanceFilter,
+             ConsistentHashChangeListener.noOp());
     }
 
     /**
@@ -142,6 +129,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * the membership update loop.
      *
      * @param discoveryClient              The {@code DiscoveryClient} used to discovery and notify other nodes
+     * @param localServiceInstance         A {@link org.springframework.cloud.client.serviceregistry.Registration}
+     *                                     representing the local Service Instance of this application. Necessary to
+     *                                     differentiate between other instances for correct message routing
      * @param routingStrategy              The strategy for routing Commands to a Node
      * @param serviceInstanceFilter        The {@code Predicate<ServiceInstance>} used to filter {@link
      *                                     org.springframework.cloud.client.ServiceInstance} from the update membership
@@ -149,10 +139,12 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * @param consistentHashChangeListener The callback to invoke when there is a change in the ConsistentHash
      */
     public SpringCloudCommandRouter(DiscoveryClient discoveryClient,
+                                    Registration localServiceInstance,
                                     RoutingStrategy routingStrategy,
                                     Predicate<ServiceInstance> serviceInstanceFilter,
                                     ConsistentHashChangeListener consistentHashChangeListener) {
         this.discoveryClient = discoveryClient;
+        this.localServiceInstance = localServiceInstance;
         this.routingStrategy = routingStrategy;
         this.serviceInstanceFilter = serviceInstanceFilter;
         this.consistentHashChangeListener = consistentHashChangeListener;
@@ -181,7 +173,6 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     @Override
     public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
-        ServiceInstance localServiceInstance = this.discoveryClient.getLocalServiceInstance();
         Map<String, String> localServiceInstanceMetadata = localServiceInstance.getMetadata();
         localServiceInstanceMetadata.put(LOAD_FACTOR, Integer.toString(loadFactor));
         SerializedObject<String> serializedCommandFilter = serializer.serialize(commandFilter, String.class);
@@ -245,14 +236,14 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     private Optional<ConsistentHash> updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                                         AtomicReference<ConsistentHash> atomicConsistentHash) {
-        SimpleMember<URI> simpleMember = buildSimpleMember(serviceInstance);
+        Member member = buildMember(serviceInstance);
 
         Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
 
         if (optionalMessageRoutingInfo.isPresent()) {
             MessageRoutingInformation messageRoutingInfo = optionalMessageRoutingInfo.get();
             return Optional.of(atomicConsistentHash.updateAndGet(
-                    consistentHash -> consistentHash.with(simpleMember,
+                    consistentHash -> consistentHash.with(member,
                                                           messageRoutingInfo.getLoadFactor(),
                                                           messageRoutingInfo.getCommandFilter(serializer))
             ));
@@ -268,31 +259,52 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     /**
-     * Instantiate a {@link SimpleMember} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
-     * This SimpleMember is later used to send, for example, Command messages to.
+     * Instantiate a {@link Member} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
+     * This Member is later used to send, for example, Command messages to.
+     * </p>
+     * A deviation is made between a local and a remote member, since if local is selected to handle the command, the
+     * local CommandBus may be leveraged. The check if a {@link org.springframework.cloud.client.ServiceInstance} is
+     * local is based on two potential situations: 1) the given {@code serviceInstance} is identical to the
+     * {@code localServiceInstance} thus making it local or 2) the URI of the given {@code serviceInstance} is identical
+     * to the URI of the {@code localServiceInstance}.
+     * We take this route because we've identified that several Spring Cloud implementation do not contain any URI
+     * information during the start up phase and as a side effect will throw exception if the URI is requested from it.
+     * We thus return a simplified Member for the {@code localServiceInstance} to not trigger this exception.
      *
-     * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to build a {@link SimpleMember}
-     *                        for.
-     * @return A {@link SimpleMember} based on the contents of the provided {@code serviceInstance}.
+     * @param serviceInstance A {@link org.springframework.cloud.client.ServiceInstance} to build a {@link Member} for
+     * @return A {@link Member} based on the contents of the provided {@code serviceInstance}
      */
-    protected SimpleMember<URI> buildSimpleMember(ServiceInstance serviceInstance) {
-        URI serviceUri = serviceInstance.getUri();
+    protected Member buildMember(ServiceInstance serviceInstance) {
         String serviceId = serviceInstance.getServiceId();
-
-        ServiceInstance localServiceInstance = discoveryClient.getLocalServiceInstance();
-        URI localServiceUri = localServiceInstance.getUri();
-        boolean local = localServiceUri.equals(serviceUri);
-
-        return new SimpleMember<>(
-                serviceId.toUpperCase() + "[" + serviceUri + "]",
-                serviceUri,
-                local,
-                this::suspect
-        );
+        return isLocalServiceInstance(serviceInstance)
+                ? buildLocalMember(serviceId)
+                : buildRemoteMember(serviceId, serviceInstance.getUri());
     }
 
-    private ConsistentHash suspect(SimpleMember<URI> member) {
-        ConsistentHash newConsistentHash = atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member));
+    private boolean isLocalServiceInstance(ServiceInstance serviceInstance) {
+        return serviceInstance.equals(localServiceInstance)
+                || Objects.equals(serviceInstance.getUri(), localServiceInstance.getUri());
+    }
+
+    private Member buildLocalMember(String serviceId) {
+        URI emptyEndpoint = null;
+        //noinspection ConstantConditions | added null variable for clarity
+        return new SimpleMember<>(serviceId.toUpperCase() + "[LOCAL]",
+                                  emptyEndpoint,
+                                  SimpleMember.LOCAL_MEMBER,
+                                  this::suspect);
+    }
+
+    private Member buildRemoteMember(String serviceId, URI serviceUri) {
+        return new SimpleMember<>(serviceId.toUpperCase() + "[" + serviceUri + "]",
+                                  serviceUri,
+                                  SimpleMember.REMOTE_MEMBER,
+                                  this::suspect);
+    }
+
+    private ConsistentHash suspect(Member member) {
+        ConsistentHash newConsistentHash =
+                atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(member));
         consistentHashChangeListener.onConsistentHashChanged(newConsistentHash);
         return newConsistentHash;
     }

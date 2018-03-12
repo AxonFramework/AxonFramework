@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +16,7 @@
 package org.axonframework.commandhandling.distributed;
 
 /**
- * Represents a listener that is notified when a ConsistentHash instance of the component it is regisered with has
+ * Represents a listener that is notified when a ConsistentHash instance of the component it is registered with has
  * changed.
  *
  * @author Allard Buijze
@@ -36,4 +35,14 @@ public interface ConsistentHashChangeListener {
      */
     void onConsistentHashChanged(ConsistentHash newConsistentHash);
 
+    /**
+     * Returns a No-op version of the functional interface {@link ConsistentHashChangeListener}.
+     *
+     * @return a no-op lambda taking a {@link org.axonframework.commandhandling.distributed.ConsistentHash} as its only
+     * parameter.
+     */
+    static ConsistentHashChangeListener noOp() {
+        return newConsistentHash -> {
+        };
+    }
 }
