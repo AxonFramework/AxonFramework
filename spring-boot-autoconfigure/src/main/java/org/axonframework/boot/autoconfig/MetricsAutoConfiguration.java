@@ -3,7 +3,6 @@ package org.axonframework.boot.autoconfig;
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsModuleConfigurer;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -18,7 +17,6 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.2
  */
 @Configuration
-@AutoConfigureAfter(name = "org.springframework.boot.actuate.autoconfigure.MetricsDropwizardAutoConfiguration")
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "com.codahale.metrics.MetricRegistry",
