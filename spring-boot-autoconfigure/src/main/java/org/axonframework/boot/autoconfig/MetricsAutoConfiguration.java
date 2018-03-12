@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Configuration;
 })
 public class MetricsAutoConfiguration {
 
-    // TODO Should we instantiate a `MetricRegistry` as well?
     @Bean
     @ConditionalOnMissingBean
     public MetricRegistry metricRegistry() {
@@ -36,10 +35,5 @@ public class MetricsAutoConfiguration {
     public GlobalMetricRegistry globalMetricRegistry(MetricRegistry metricRegistry) {
         return new GlobalMetricRegistry(metricRegistry);
     }
-
-//    @Autowired
-//    public void configureMetrics(GlobalMetricRegistry globalMetricRegistry, Configurer configurer) {
-//        globalMetricRegistry.registerWithConfigurer(configurer);
-//    }
 }
 
