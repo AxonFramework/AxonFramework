@@ -27,7 +27,14 @@ import java.util.function.Consumer;
  */
 public class SimpleMember<E> implements Member {
 
+    /**
+     * Denotes that a {@link SimpleMember} is a representation of a Local Member, thus a representation of the instance
+     * itself.
+     */
     public static final Boolean LOCAL_MEMBER = true;
+    /**
+     * Denotes that a {@link SimpleMember} is a representation of a Remote Member.
+     */
     public static final Boolean REMOTE_MEMBER = false;
 
     private final Consumer<SimpleMember<E>> suspectHandler;
