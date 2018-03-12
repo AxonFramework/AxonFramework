@@ -66,7 +66,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                 Optional<Map<String, Object>> annAttr = AnnotationUtils.findAnnotationAttributes(handlerType,
                                                                                                  ProcessingGroup.class);
                 return Optional.of(annAttr.map(attr -> (String) attr.get("processingGroup"))
-                                          .orElse(fallback.apply(o)));
+                                          .orElseGet(() -> fallback.apply(o)));
             });
     private Configuration config;
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
@@ -447,7 +447,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
             String processor =
                     selectors.stream().map(s -> s.select(handler)).filter(Optional::isPresent).map(Optional::get)
                              .findFirst()
-                             .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
+                             .orElseGet(() -> defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
             assignments.computeIfAbsent(processor, k -> new ArrayList<>()).add(handler);
         });
 
