@@ -29,8 +29,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
 import java.io.File;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 /**
  * @author Marc Gathier
@@ -122,6 +127,9 @@ public class PlatformConnectionManager {
                 .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
+                        handlers.getOrDefault(messagePlatformOutboundInstruction.getRequestCase(), new ArrayDeque<>())
+                                .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
+
                         switch (messagePlatformOutboundInstruction.getRequestCase()) {
                             case NODE_NOTIFICATION:
                                 logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
@@ -197,5 +205,16 @@ public class PlatformConnectionManager {
         return QueryServiceGrpc.newStub(getChannel())
                 .withInterceptors(interceptors)
                 .openStream(queryProviderInboundStreamObserver);
+    }
+
+    private final Map<PlatformOutboundInstruction.RequestCase, Deque<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
+
+    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer){
+        Deque<Consumer<PlatformOutboundInstruction>> consumers = this.handlers.computeIfAbsent(requestCase, (rc) -> new ArrayDeque<>());
+        consumers.add(consumer);
+    }
+
+    public void send(PlatformInboundInstruction instruction){
+        inputStream.onNext(instruction);
     }
 }
