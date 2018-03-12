@@ -80,7 +80,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private final ActivityCountingThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
-    private final ConcurrentMap<Integer, SegmentStatus> activeSegments = new ConcurrentSkipListMap<>();
+    private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final int maxThreadCount;
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
@@ -420,7 +420,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      *
      * @return the status for each of the Segments processed by the current processor
      */
-    public Map<Integer, SegmentStatus> processingStatus() {
+    public Map<Integer, EventTrackerStatus> processingStatus() {
         return Collections.unmodifiableMap(activeSegments);
     }
 
@@ -551,77 +551,53 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    /**
-     * Object indicating the status of a Segment of a TrackingProcessor.
-     */
-    public static final class SegmentStatus {
+    private static final class TrackerStatus implements EventTrackerStatus {
 
         private final Segment segment;
         private final boolean caughtUp;
         private final TrackingToken trackingToken;
 
-        private SegmentStatus(Segment segment, TrackingToken trackingToken) {
+        private TrackerStatus(Segment segment, TrackingToken trackingToken) {
             this(segment, false, trackingToken);
         }
 
-        private SegmentStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken) {
+        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken) {
             this.segment = segment;
             this.caughtUp = caughtUp;
             this.trackingToken = trackingToken;
         }
 
-        private SegmentStatus caughtUp() {
+        private TrackerStatus caughtUp() {
             if (caughtUp) {
                 return this;
             }
-            return new SegmentStatus(segment, true, trackingToken);
+            return new TrackerStatus(segment, true, trackingToken);
         }
 
-        private SegmentStatus advancedTo(TrackingToken trackingToken) {
+        private TrackerStatus advancedTo(TrackingToken trackingToken) {
             if (Objects.equals(this.trackingToken, trackingToken)) {
                 return this;
             }
-            return new SegmentStatus(segment, caughtUp, trackingToken);
+            return new TrackerStatus(segment, caughtUp, trackingToken);
         }
 
-        /**
-         * The segment for which this status is valid.
-         *
-         * @return segment for which this status is valid
-         */
+
+        @Override
         public Segment getSegment() {
             return segment;
         }
 
-        /**
-         * Whether the Segment of this status has caught up with the head of the event stream. Note that this is no
-         * guarantee that this segment is still processing at (or near) real-time events. It merely indicates that this
-         * segment has been at the head of the stream since it started processing. It may have fallen back since then.
-         *
-         * @return whether the Segment of this status has caught up with the head of the event stream
-         */
+        @Override
         public boolean isCaughtUp() {
             return caughtUp;
         }
 
-        /**
-         * Indicates whether this Segment is still replaying previously processed Events.
-         * <p>
-         * Note that this method will only recognize a replay if the tokens have been reset using
-         * {@link #resetTokens()}. Removing tokens directly from the underlying {@link TokenStore} will not be
-         * recognized as a replay.
-         *
-         * @return {@code true} if this segment is replaying historic events after a {@link #resetTokens() reset}, otherwise {@code false}
-         */
+        @Override
         public boolean isReplaying() {
             return trackingToken instanceof ReplayToken;
         }
 
-        /**
-         * The tracking token of the last event that has been seen by this Segment
-         *
-         * @return tracking token of the last event that has been seen by this Segment
-         */
+        @Override
         public TrackingToken getTrackingToken() {
             if (trackingToken instanceof ReplayToken) {
                 return ((ReplayToken) trackingToken).unwrap();
@@ -703,7 +679,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         try {
                             transactionManager.executeInTransaction(() -> {
                                 TrackingToken token = tokenStore.fetchToken(processorName, segment.getSegmentId());
-                                activeSegments.putIfAbsent(segment.getSegmentId(), new SegmentStatus(segment, token));
+                                activeSegments.putIfAbsent(segment.getSegmentId(), new TrackerStatus(segment, token));
                             });
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
