@@ -20,6 +20,8 @@ import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubCommandBus;
 import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
+import io.axoniq.axonhub.client.event.axon.EventProcessorController;
+import io.axoniq.axonhub.client.event.EventProcessorControlService;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
@@ -27,6 +29,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -115,5 +118,17 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
+
+    @Bean
+    public EventProcessorController eventProcessorController(EventHandlingConfiguration configuration){
+        return new EventProcessorController(configuration);
+    }
+
+    @Bean
+    public EventProcessorControlService eventProcessorService(PlatformConnectionManager platformConnectionManager,
+                                                              EventProcessorController eventProcessorController){
+        return new EventProcessorControlService(platformConnectionManager, eventProcessorController);
+    }
+
 }
 
