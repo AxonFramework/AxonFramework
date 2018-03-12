@@ -6,6 +6,7 @@ package org.axonframework.config;
  *
  * @author Steven van Beelen
  * @since 3.2
+ *
  */
 public interface ConfigurerModule {
 
