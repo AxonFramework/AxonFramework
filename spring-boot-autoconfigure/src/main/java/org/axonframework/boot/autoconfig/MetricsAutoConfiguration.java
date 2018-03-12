@@ -2,6 +2,7 @@ package org.axonframework.boot.autoconfig;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
+import org.axonframework.metrics.MetricsModuleConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.2
  */
 @Configuration
+//TODO search for the Spring Factory creating the MetricRegistry bean
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "com.codahale.metrics.MetricRegistry",
@@ -34,6 +36,13 @@ public class MetricsAutoConfiguration {
     @ConditionalOnBean(MetricRegistry.class)
     public GlobalMetricRegistry globalMetricRegistry(MetricRegistry metricRegistry) {
         return new GlobalMetricRegistry(metricRegistry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(GlobalMetricRegistry.class)
+    public MetricsModuleConfigurer metricsModuleConfigurer(GlobalMetricRegistry globalMetricRegistry) {
+        return new MetricsModuleConfigurer(globalMetricRegistry);
     }
 }
 
