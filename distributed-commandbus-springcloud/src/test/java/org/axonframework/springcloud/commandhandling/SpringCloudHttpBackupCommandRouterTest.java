@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,15 +18,20 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.runners.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -50,19 +55,19 @@ public class SpringCloudHttpBackupCommandRouterTest {
     private static final int LOAD_FACTOR = 1;
     private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
-    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+    private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = AcceptAll.INSTANCE;
 
     private SpringCloudHttpBackupCommandRouter testSubject;
 
     @Mock
     private DiscoveryClient discoveryClient;
     @Mock
+    private Registration localServiceInstance;
+    @Mock
     private RoutingStrategy routingStrategy;
     @Mock
     private RestTemplate restTemplate;
     private String messageRoutingInformationEndpoint = "/message-routing-information";
-    @Mock
-    private ServiceInstance serviceInstance;
 
     private URI testRemoteUri = URI.create("http://remote");
     private MessageRoutingInformation expectedMessageRoutingInfo;
@@ -72,13 +77,13 @@ public class SpringCloudHttpBackupCommandRouterTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
-        when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
+        when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(localServiceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
+        when(localServiceInstance.getMetadata()).thenReturn(new HashMap<>());
 
         when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
-        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
-        when(discoveryClient.getLocalServiceInstance()).thenReturn(serviceInstance);
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(Collections.singletonList(localServiceInstance));
 
         expectedMessageRoutingInfo =
                 new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
@@ -92,6 +97,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
         )).thenReturn(responseEntity);
 
         testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient,
+                                                             localServiceInstance,
                                                              routingStrategy,
                                                              restTemplate,
                                                              messageRoutingInformationEndpoint);
@@ -113,14 +119,9 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
     @Test
     public void testGetMessageRoutingInformationReturnsLocalMessageRoutingInformationIfSimpleMemberIsLocal() {
-        ServiceInstance serviceInstance = mock(ServiceInstance.class);
-        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
-        when(serviceInstance.getMetadata()).thenReturn(new HashMap<>());
-
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
 
-        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(serviceInstance);
+        Optional<MessageRoutingInformation> result = testSubject.getMessageRoutingInformation(localServiceInstance);
 
         assertTrue(result.isPresent());
         assertEquals(expectedMessageRoutingInfo, result.get());
@@ -251,7 +252,7 @@ public class SpringCloudHttpBackupCommandRouterTest {
 
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+                .thenReturn(ImmutableList.of(localServiceInstance, remoteInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 

@@ -26,6 +26,17 @@ import java.util.function.Consumer;
  * @param <E> The type of the identifier of this entry in the set of nodes
  */
 public class SimpleMember<E> implements Member {
+
+    /**
+     * Denotes that a {@link SimpleMember} is a representation of a Local Member, thus a representation of the instance
+     * itself.
+     */
+    public static final Boolean LOCAL_MEMBER = true;
+    /**
+     * Denotes that a {@link SimpleMember} is a representation of a Remote Member.
+     */
+    public static final Boolean REMOTE_MEMBER = false;
+
     private final Consumer<SimpleMember<E>> suspectHandler;
     private final String name;
     private final E endpoint;
@@ -33,6 +44,7 @@ public class SimpleMember<E> implements Member {
 
     /**
      * Create the service member
+     *
      * @param name           the member name
      * @param endpoint       The object describing the endpoint
      * @param local          True if the member is local. False if the member is remote or if this information is unknown.
