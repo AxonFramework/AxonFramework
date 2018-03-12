@@ -7,7 +7,7 @@ package org.axonframework.config;
  * @author Steven van Beelen
  * @since 3.2
  */
-public interface ModuleConfigurer {
+public interface ConfigurerModule {
 
     /**
      * Configure this module to the given global {@link org.axonframework.config.Configurer}.

@@ -7,22 +7,22 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class MetricsModuleConfigurerTest {
+public class MetricsConfigurerModuleTest {
 
     private GlobalMetricRegistry globalMetricRegistry;
-    private MetricsModuleConfigurer metricsModuleConfigurer;
+    private MetricsConfigurerModule metricsConfigurerModule;
 
     @Before
     public void setUp() {
         globalMetricRegistry = mock(GlobalMetricRegistry.class);
-        metricsModuleConfigurer = new MetricsModuleConfigurer(globalMetricRegistry);
+        metricsConfigurerModule = new MetricsConfigurerModule(globalMetricRegistry);
     }
 
     @Test
     public void testConfigureModuleCallsGlobalMetricRegistry() {
         Configurer configurerMock = mock(Configurer.class);
 
-        metricsModuleConfigurer.configureModule(configurerMock);
+        metricsConfigurerModule.configureModule(configurerMock);
 
         verify(globalMetricRegistry).registerWithConfigurer(configurerMock);
     }

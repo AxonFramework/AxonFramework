@@ -234,10 +234,10 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerModuleConfigurers(Configurer configurer) {
-        String[] moduleConfigurers = beanFactory.getBeanNamesForType(ModuleConfigurer.class);
-        for (String moduleConfigurerBeanName : moduleConfigurers) {
-            ModuleConfigurer moduleConfigurer = beanFactory.getBean(moduleConfigurerBeanName, ModuleConfigurer.class);
-            moduleConfigurer.configureModule(configurer);
+        String[] configurerModules = beanFactory.getBeanNamesForType(ConfigurerModule.class);
+        for (String configurerModuleBeanName : configurerModules) {
+            ConfigurerModule configurerModule = beanFactory.getBean(configurerModuleBeanName, ConfigurerModule.class);
+            configurerModule.configureModule(configurer);
         }
     }
 

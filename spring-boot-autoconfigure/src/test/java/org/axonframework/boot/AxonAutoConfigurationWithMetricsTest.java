@@ -17,7 +17,7 @@ package org.axonframework.boot;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
-import org.axonframework.metrics.MetricsModuleConfigurer;
+import org.axonframework.metrics.MetricsConfigurerModule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,7 @@ public class AxonAutoConfigurationWithMetricsTest {
     @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
     @Autowired
-    private MetricsModuleConfigurer metricsModuleConfigurer;
+    private MetricsConfigurerModule metricsConfigurerModule;
 
     @Test
     public void testContextInitialization() {
@@ -62,7 +62,7 @@ public class AxonAutoConfigurationWithMetricsTest {
         assertNotNull(applicationContext.getBean(GlobalMetricRegistry.class));
         assertEquals(GlobalMetricRegistry.class, globalMetricRegistry.getClass());
 
-        assertNotNull(applicationContext.getBean(MetricsModuleConfigurer.class));
-        assertEquals(MetricsModuleConfigurer.class, metricsModuleConfigurer.getClass());
+        assertNotNull(applicationContext.getBean(MetricsConfigurerModule.class));
+        assertEquals(MetricsConfigurerModule.class, metricsConfigurerModule.getClass());
     }
 }

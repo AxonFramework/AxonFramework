@@ -1,21 +1,21 @@
 package org.axonframework.metrics;
 
 import org.axonframework.config.Configurer;
-import org.axonframework.config.ModuleConfigurer;
+import org.axonframework.config.ConfigurerModule;
 
 /**
- * Implementation of the {@link org.axonframework.config.ModuleConfigurer} which uses the
+ * Implementation of the {@link ConfigurerModule} which uses the
  * {@link org.axonframework.metrics.GlobalMetricRegistry} to register several Metrics Modules to the given
  * {@link org.axonframework.config.Configurer}.
  *
  * @author Steven van Beelen
  * @since 3.2
  */
-public class MetricsModuleConfigurer implements ModuleConfigurer {
+public class MetricsConfigurerModule implements ConfigurerModule {
 
     private final GlobalMetricRegistry globalMetricRegistry;
 
-    public MetricsModuleConfigurer(GlobalMetricRegistry globalMetricRegistry) {
+    public MetricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
         this.globalMetricRegistry = globalMetricRegistry;
     }
 
