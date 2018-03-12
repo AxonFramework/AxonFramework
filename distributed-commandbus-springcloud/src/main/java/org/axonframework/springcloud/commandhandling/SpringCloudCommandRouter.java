@@ -33,8 +33,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static org.axonframework.commandhandling.distributed.ConsistentHashChangeListener.NO_OP_CONSISTENT_HASH_CHANGE_LISTENER;
-
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's
  * {@link org.springframework.cloud.client.discovery.DiscoveryClient}s to propagate its CommandMessage Routing
@@ -116,7 +114,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
              localServiceInstance,
              routingStrategy,
              serviceInstanceFilter,
-             NO_OP_CONSISTENT_HASH_CHANGE_LISTENER);
+             ConsistentHashChangeListener.noOp());
     }
 
     /**

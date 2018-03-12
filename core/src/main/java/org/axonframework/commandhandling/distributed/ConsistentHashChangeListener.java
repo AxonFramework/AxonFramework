@@ -16,7 +16,7 @@
 package org.axonframework.commandhandling.distributed;
 
 /**
- * Represents a listener that is notified when a ConsistentHash instance of the component it is regisered with has
+ * Represents a listener that is notified when a ConsistentHash instance of the component it is registered with has
  * changed.
  *
  * @author Allard Buijze
@@ -24,8 +24,6 @@ package org.axonframework.commandhandling.distributed;
  */
 @FunctionalInterface
 public interface ConsistentHashChangeListener {
-
-    ConsistentHashChangeListener NO_OP_CONSISTENT_HASH_CHANGE_LISTENER = newConsistentHash -> { };
 
     /**
      * Notification that a consistent hash has changed. Implementations should take into account that this listener
@@ -37,4 +35,14 @@ public interface ConsistentHashChangeListener {
      */
     void onConsistentHashChanged(ConsistentHash newConsistentHash);
 
+    /**
+     * Returns a No-op version of the functional interface {@link ConsistentHashChangeListener}.
+     *
+     * @return a no-op lambda taking a {@link org.axonframework.commandhandling.distributed.ConsistentHash} as its only
+     * parameter.
+     */
+    static ConsistentHashChangeListener noOp() {
+        return newConsistentHash -> {
+        };
+    }
 }
