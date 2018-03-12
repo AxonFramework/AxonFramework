@@ -17,7 +17,6 @@ package org.axonframework.boot;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
-import org.axonframework.metrics.MetricsConfigurerModule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +27,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
@@ -37,8 +37,9 @@ import static org.junit.Assert.*;
         JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
         DataSourceAutoConfiguration.class
 })
+@TestPropertySource("classpath:test.metrics.application.properties")
 @RunWith(SpringRunner.class)
-public class AxonAutoConfigurationWithMetricsTest {
+public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -47,8 +48,6 @@ public class AxonAutoConfigurationWithMetricsTest {
     private MetricRegistry metricRegistry;
     @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
-    @Autowired
-    private MetricsConfigurerModule metricsConfigurerModule;
 
     @Test
     public void testContextInitialization() {
@@ -62,8 +61,6 @@ public class AxonAutoConfigurationWithMetricsTest {
         assertNotNull(applicationContext.getBean(GlobalMetricRegistry.class));
         assertEquals(GlobalMetricRegistry.class, globalMetricRegistry.getClass());
 
-        assertTrue(applicationContext.containsBean("metricsConfigurerModule"));
-        assertNotNull(applicationContext.getBean(MetricsConfigurerModule.class));
-        assertEquals(MetricsConfigurerModule.class, metricsConfigurerModule.getClass());
+        assertFalse(applicationContext.containsBean("metricsConfigurerModule"));
     }
 }
