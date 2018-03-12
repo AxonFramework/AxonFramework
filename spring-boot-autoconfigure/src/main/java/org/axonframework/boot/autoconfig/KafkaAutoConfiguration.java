@@ -31,6 +31,7 @@ import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguratio
 import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -110,7 +111,7 @@ public class KafkaAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    public KafkaMessageConverter<String, byte[]> messageConverter(Serializer eventSerializer) {
+    public KafkaMessageConverter<String, byte[]> messageConverter(@Qualifier("eventSerializer") Serializer eventSerializer) {
         return new DefaultKafkaMessageConverter(eventSerializer);
     }
 }

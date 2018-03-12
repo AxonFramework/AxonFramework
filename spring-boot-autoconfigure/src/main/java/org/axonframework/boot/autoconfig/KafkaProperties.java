@@ -19,6 +19,8 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
@@ -260,7 +262,7 @@ public class KafkaProperties {
         /**
          * Deserializer class for values.
          */
-        private Class<?> valueDeserializer = StringDeserializer.class;
+        private Class<?> valueDeserializer = ByteArrayDeserializer.class;
 
         /**
          * Maximum number of records returned in a single call to poll().
@@ -488,7 +490,7 @@ public class KafkaProperties {
         /**
          * Serializer class for values.
          */
-        private Class<?> valueSerializer = StringSerializer.class;
+        private Class<?> valueSerializer = ByteArraySerializer.class;
 
         /**
          * When greater than zero, enables retrying of failed sends.
