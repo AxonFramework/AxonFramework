@@ -40,7 +40,6 @@ import static org.junit.Assert.*;
 })
 @TestPropertySource("classpath:test.metrics.application.properties")
 @RunWith(SpringRunner.class)
-
 public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
 
     @Autowired

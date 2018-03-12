@@ -39,7 +39,6 @@ import static org.junit.Assert.*;
         DataSourceAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
-
 public class AxonAutoConfigurationWithMetricsTest {
 
     @Autowired

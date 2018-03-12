@@ -26,7 +26,6 @@ import org.axonframework.config.ConfigurerModule;
  *
  * @author Steven van Beelen
  * @since 3.2
- *
  */
 public class MetricsConfigurerModule implements ConfigurerModule {
 

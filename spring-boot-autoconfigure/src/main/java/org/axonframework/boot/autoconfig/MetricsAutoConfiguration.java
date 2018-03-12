@@ -39,7 +39,6 @@ import org.springframework.context.annotation.Configuration;
         "com.codahale.metrics.MetricRegistry",
         "org.axonframework.metrics.GlobalMetricRegistry"
 })
-
 public class MetricsAutoConfiguration {
 
     @Bean
