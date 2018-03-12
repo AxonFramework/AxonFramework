@@ -173,7 +173,6 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     @Override
     public void updateMembership(int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
-        ServiceInstance localServiceInstance = this.discoveryClient.getLocalServiceInstance();
         Map<String, String> localServiceInstanceMetadata = localServiceInstance.getMetadata();
         localServiceInstanceMetadata.put(LOAD_FACTOR, Integer.toString(loadFactor));
         SerializedObject<String> serializedCommandFilter = serializer.serialize(commandFilter, String.class);

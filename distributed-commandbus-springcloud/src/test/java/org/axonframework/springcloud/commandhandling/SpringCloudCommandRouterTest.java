@@ -144,7 +144,7 @@ public class SpringCloudCommandRouterTest {
         verify(consistentHashChangeListener).onConsistentHashChanged(argThat(item -> item.getMembers()
                                                                                  .stream()
                                                                                  .map(Member::name)
-                                                                                 .anyMatch(memberName -> memberName.equals(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]"))));
+                                                                                 .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID))));
     }
 
     @Test
