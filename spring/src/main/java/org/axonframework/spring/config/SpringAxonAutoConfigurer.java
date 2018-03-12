@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -144,8 +145,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(Serializer.class, "eventSerializer")
                 .ifPresent(eventSerializer -> configurer.configureEventSerializer(c -> getBean(eventSerializer, c)));
         findComponent(Serializer.class, "messageSerializer").ifPresent(
-                messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)))
-        ;
+                messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)));
         findComponent(TokenStore.class)
                 .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
         try {
@@ -229,11 +229,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerModules(Configurer configurer) {
-        registerModuleConfigurers(configurer);
+        registerConfigurerModules(configurer);
         registerModuleConfigurations(configurer);
     }
 
-    private void registerModuleConfigurers(Configurer configurer) {
+    private void registerConfigurerModules(Configurer configurer) {
         String[] configurerModules = beanFactory.getBeanNamesForType(ConfigurerModule.class);
         for (String configurerModuleBeanName : configurerModules) {
             ConfigurerModule configurerModule = beanFactory.getBean(configurerModuleBeanName, ConfigurerModule.class);
