@@ -16,8 +16,26 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.queryhandling.responsetypes.ResponseType;
+
+/**
+ * Message type that carries a Subscription Query: a request for information. Besides a payload, Subscription Query
+ * Messages also carry the expected response type and update type. The response type is the type of result expected by
+ * the caller. The update type is type of incremental updates.
+ * <p>
+ * Handlers should only answer a query if they can respond with the appropriate response type and update type.
+ *
+ * @param <Q> the type of payload
+ * @param <I> the type of initial response
+ * @param <U> the type of incremental responses
+ * @since 3.3
+ */
 public interface SubscriptionQueryMessage<Q, I, U> extends QueryMessage<Q, I> {
 
-    Class<U> getUpdateResponseType();
-
+    /**
+     * Returns the type of incremental responses.
+     *
+     * @return the type of incremental responses
+     */
+    ResponseType<U> getUpdateResponseType();
 }

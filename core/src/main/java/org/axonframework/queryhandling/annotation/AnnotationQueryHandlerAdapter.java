@@ -35,7 +35,8 @@ import java.util.stream.Collectors;
  * @author Marc Gathier
  * @since 3.1
  */
-public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>> {
+public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
+    MessageHandler<QueryMessage<?, ?>>, SubscriptionQueryMessageHandler<QueryMessage<?, Object>, Object, Object> { // ouch!!! check whether we can improve approach with generics
 
     private static final Registration NULL = () -> false;
     private final T target;
@@ -84,14 +85,27 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
                                                      + message.getPayloadType().getName());
     }
 
+    @Override
+    public Object handle(QueryMessage<?, Object> message, QueryUpdateEmitter<Object> emitter) throws Exception {
+        QueryUpdateEmitterResolverFactory.initialize(emitter);
+        return handle(message);
+    }
+
     @SuppressWarnings("unchecked")
     private Registration subscribe(QueryBus queryBus, MessageHandlingMember<? super T> m) {
-        Optional<QueryHandlingMember> unwrap = m.unwrap(QueryHandlingMember.class);
-        // for some reason, map orElse didn't work here
-        if (!unwrap.isPresent()) {
-            return null;
+        Optional<SubscriptionQueryHandlingMember> unwrappedSubscriptionQueryMember = m.unwrap(
+                SubscriptionQueryHandlingMember.class);
+        if (unwrappedSubscriptionQueryMember.isPresent()) {
+            SubscriptionQueryHandlingMember sqhm = unwrappedSubscriptionQueryMember.get();
+            return queryBus.subscribe(sqhm.getQueryName(), sqhm.getResultType(), sqhm.getUpdateType(), this);
         }
-        QueryHandlingMember qhm = unwrap.get();
-        return queryBus.subscribe(qhm.getQueryName(), qhm.getResultType(), this);
+
+        Optional<QueryHandlingMember> unwrappedQueryMember = m.unwrap(QueryHandlingMember.class);
+        if (unwrappedQueryMember.isPresent()) {
+            QueryHandlingMember qhm = unwrappedQueryMember.get();
+            return queryBus.subscribe(qhm.getQueryName(), qhm.getResultType(), this);
+        }
+
+        return null;
     }
 }
