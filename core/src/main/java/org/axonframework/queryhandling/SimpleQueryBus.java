@@ -379,7 +379,7 @@ public class SimpleQueryBus implements QueryBus {
             readLockSafe(() -> updateHandler.onError(error));
         }
 
-        void unsubscribeUpdateHandler() {
+        private void unsubscribeUpdateHandler() {
             lock.writeLock().lock();
             updateHandler = null;
             lock.writeLock().unlock();

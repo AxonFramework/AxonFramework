@@ -51,14 +51,17 @@ class SubscribableQuerySubscription<I, U> extends QuerySubscription<I> {
             QueryUpdateEmitter<U> emitter = new QueryUpdateEmitter<U>() {
                 @Override
                 public void emit(U update) {
+                    // this is empty implementation, since regular query handler will not invoke it
                 }
 
                 @Override
                 public void complete() {
+                    // this is empty implementation, since regular query handler will not invoke it
                 }
 
                 @Override
                 public void error(Throwable error) {
+                    // this is empty implementation, since regular query handler will not invoke it
                 }
             };
             return queryHandler.handle(m, emitter);

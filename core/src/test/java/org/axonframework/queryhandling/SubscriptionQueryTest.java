@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 /**
@@ -103,7 +102,7 @@ public class SubscriptionQueryTest {
         chatQueryHandler.emitter.complete();
         try {
             chatQueryHandler.emitter.emit("Update2");
-            Assert.fail("Once you close emitter, it shouldn't be possible to emit messages");
+            fail("Once you close emitter, it shouldn't be possible to emit messages");
         } catch (CompletedEmitterException e) {
             // we want this to happen
         }
@@ -132,7 +131,7 @@ public class SubscriptionQueryTest {
         registration.cancel();
         try {
             chatQueryHandler.emitter.emit("Update");
-            Assert.fail("It should not be possible to emit after registration for subscription query is canceled.");
+            fail("It should not be possible to emit after registration for subscription query is canceled.");
         } catch (NoUpdateHandlerForEmitterException e) {
             // we want this to happen
         }
