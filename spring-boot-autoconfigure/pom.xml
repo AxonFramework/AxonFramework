@@ -51,6 +51,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-metrics</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
             <version>${jgroups.version}</version>
@@ -93,7 +99,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-commons</artifactId>
-            <version>1.1.5.RELEASE</version>
+            <version>1.3.2.RELEASE</version>
             <optional>true</optional>
         </dependency>
         <dependency>

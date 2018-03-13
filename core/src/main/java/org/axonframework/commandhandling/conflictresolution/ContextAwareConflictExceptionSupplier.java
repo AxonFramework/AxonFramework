@@ -20,7 +20,10 @@ package org.axonframework.commandhandling.conflictresolution;
  * ConflictExceptionSupplier that is provided with more details of a version conflict.
  *
  * @param <T> The type of exception supplied
+ * @author Allard Buijze
+ * @since 3.2
  */
+@FunctionalInterface
 public interface ContextAwareConflictExceptionSupplier<T> {
 
     /**

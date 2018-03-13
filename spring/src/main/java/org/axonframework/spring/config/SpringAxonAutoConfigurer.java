@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -96,18 +97,22 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  * Furthermore, all beans with an {@link Aggregate @Aggregate} or {@link Saga @Saga} annotation are inspected and
  * required components to operate the Aggregate or Saga are registered.
  *
+ * @author Allard Buijze
  * @see EnableAxon
+ * @since 3.0
  */
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
     /**
      * Name of the {@link AxonConfiguration} bean.
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String AXON_CONFIGURATION_BEAN = "org.axonframework.spring.config.AxonConfiguration";
 
     /**
      * Name of the {@link Configurer} bean.
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String AXON_CONFIGURER_BEAN = "org.axonframework.config.Configurer";
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
@@ -139,8 +144,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
         findComponent(Serializer.class, "eventSerializer")
                 .ifPresent(eventSerializer -> configurer.configureEventSerializer(c -> getBean(eventSerializer, c)));
-        findComponent(Serializer.class, "messageSerializer")
-                .ifPresent(messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)));
+        findComponent(Serializer.class, "messageSerializer").ifPresent(
+                messageSerializer -> configurer.configureMessageSerializer(c -> getBean(messageSerializer, c)));
         findComponent(TokenStore.class)
                 .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
         try {
@@ -224,11 +229,24 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerModules(Configurer configurer) {
-        // find all modules. If none, create standard event handler module
-        String[] modules = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
-        for (String module : modules) {
-            configurer.registerModule(
-                    new LazyRetrievedModuleConfiguration(() -> beanFactory.getBean(module, ModuleConfiguration.class)));
+        registerConfigurerModules(configurer);
+        registerModuleConfigurations(configurer);
+    }
+
+    private void registerConfigurerModules(Configurer configurer) {
+        String[] configurerModules = beanFactory.getBeanNamesForType(ConfigurerModule.class);
+        for (String configurerModuleBeanName : configurerModules) {
+            ConfigurerModule configurerModule = beanFactory.getBean(configurerModuleBeanName, ConfigurerModule.class);
+            configurerModule.configureModule(configurer);
+        }
+    }
+
+    private void registerModuleConfigurations(Configurer configurer) {
+        String[] moduleConfigurations = beanFactory.getBeanNamesForType(ModuleConfiguration.class);
+        for (String moduleConfiguration : moduleConfigurations) {
+            configurer.registerModule(new LazyRetrievedModuleConfiguration(
+                    () -> beanFactory.getBean(moduleConfiguration, ModuleConfiguration.class)
+            ));
         }
     }
 
@@ -373,7 +391,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         private final Supplier<ModuleConfiguration> delegateSupplier;
         private ModuleConfiguration delegate;
 
-        public LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier) {
+        LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier) {
             this.delegateSupplier = delegateSupplier;
         }
 

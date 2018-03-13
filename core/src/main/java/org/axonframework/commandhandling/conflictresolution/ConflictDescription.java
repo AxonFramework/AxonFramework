@@ -22,6 +22,9 @@ import java.util.List;
 
 /**
  * Descries a conflict between expected and actual version of an aggregate.
+ *
+ * @author Allard Buijze
+ * @since 3.2
  */
 public interface ConflictDescription {
 
