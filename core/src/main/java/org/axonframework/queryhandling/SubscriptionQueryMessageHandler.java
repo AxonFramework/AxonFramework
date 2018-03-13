@@ -30,12 +30,14 @@ package org.axonframework.queryhandling;
 public interface SubscriptionQueryMessageHandler<Q extends QueryMessage<?, I>, I, U> {
 
     /**
+     * Delegates handling of given message to the query handler and injects given emitter to it.
+     *
      * @param message the message to be handled
-     * @param emitter used to informs the caller about initial query result, incremental updates, when there are no more
+     * @param emitter used to inform the caller about initial query result, incremental updates, when there are no more
      *                updates and when an error occurred
      * @return the initial request for the information
      *
-     * @throws Exception propagated from the handler
+     * @throws Exception propagated from the query handler
      */
     I handle(Q message, QueryUpdateEmitter<U> emitter) throws Exception;
 }

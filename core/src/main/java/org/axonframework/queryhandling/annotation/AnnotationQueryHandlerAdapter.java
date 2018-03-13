@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * @since 3.1
  */
 public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
-    MessageHandler<QueryMessage<?, ?>>, SubscriptionQueryMessageHandler<QueryMessage<?, Object>, Object, Object> { // ouch!!! check whether we can improve approach with generics
+    MessageHandler<QueryMessage<?, ?>>, SubscriptionQueryMessageHandler<QueryMessage<?, Object>, Object, Object> {
 
     private static final Registration NULL = () -> false;
     private final T target;

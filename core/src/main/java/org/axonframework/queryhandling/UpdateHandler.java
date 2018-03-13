@@ -16,13 +16,38 @@
 
 package org.axonframework.queryhandling;
 
+/**
+ * Defines update handler callbacks for subscription query.
+ *
+ * @param <I> the type of initial result
+ * @param <U> the type of incremental updates
+ * @since 3.3
+ */
 public interface UpdateHandler<I, U> {
 
+    /**
+     * Will be invoked when query handler process the query request.
+     *
+     * @param initial the initial response
+     */
     void onInitialResult(I initial);
 
+    /**
+     * Will be invoked when query handler emits the update on queried topic.
+     *
+     * @param update the incremental update
+     */
     void onUpdate(U update);
 
+    /**
+     * Will be invoked when there are no more updates on queried topic.
+     */
     void onCompleted();
 
+    /**
+     * Will be invoked when there is an error in query processing or when emitter invokes it explicitly.
+     *
+     * @param error the error which occurred
+     */
     void onError(Throwable error);
 }
