@@ -236,6 +236,7 @@ public class SimpleQueryBus implements QueryBus {
             }
             Iterator<QuerySubscription> subsIterator = subs.iterator();
             boolean invocationSuccess = false;
+            SimpleQueryUpdateEmitter emitter = new SimpleQueryUpdateEmitter(updateHandler);
             while (!invocationSuccess && subsIterator.hasNext()) {
                 try {
                     QuerySubscription subscription = subsIterator.next();
@@ -245,7 +246,6 @@ public class SimpleQueryBus implements QueryBus {
                         if (interceptedQuery.getUpdateResponseType()
                                             .matches(((SubscribableQuerySubscription) subscription).getUpdateType())) {
 
-                            SimpleQueryUpdateEmitter emitter = new SimpleQueryUpdateEmitter(updateHandler);
                             registration = () -> {
                                 emitter.unsubscribeUpdateHandler();
                                 return true;
