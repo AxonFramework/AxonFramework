@@ -22,7 +22,6 @@ import org.axonframework.queryhandling.UpdateHandler;
 import org.junit.*;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
