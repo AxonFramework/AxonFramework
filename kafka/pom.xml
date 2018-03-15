@@ -30,7 +30,7 @@
         message broker.
     </description>
     <properties>
-        <spring-kafka-test.version>2.1.2.RELEASE</spring-kafka-test.version>
+        <spring-kafka-test.version>2.1.4.RELEASE</spring-kafka-test.version>
         <assertj-core.version>3.9.0</assertj-core.version>
         <hamcrest-library.version>1.3</hamcrest-library.version>
     </properties>
