@@ -16,33 +16,35 @@ import static org.junit.Assert.*;
 
 public class ConsumerUtilTests {
 
-    private static final String SOME_TOPIC = "consumerSeekerTest";
+    private static final String TOPIC_1 = "testSeekConsumerWithNullToken";
+    private static final String TOPIC_2 = "testSeekConsumerWithAnEmptyToken";
+    private static final String TOPIC_3 = "testSeekConsumerWithAnExistingToken";
 
-    @Rule
-    public KafkaEmbedded embeddedKafka = new KafkaEmbedded(3, true,5, SOME_TOPIC);
+    @ClassRule
+    public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(3, true, 5, TOPIC_1, TOPIC_2, TOPIC_3);
 
     @Test
     public void testSeekConsumerWithNullToken() {
-        Consumer<String, byte[]> consumer = consumer();
-        seek(consumer, null);
-        assertOffsets(consumer, 0L);
+        Consumer<String, byte[]> consumer = consumer(TOPIC_1);
+        ConsumerUtil.seek(TOPIC_1, consumer, null);
+        assertOffsets(TOPIC_1, consumer, 0L);
     }
 
     @Test
     public void testSeekConsumerWithAnEmptyToken() {
-        Consumer<String, byte[]> consumer = consumer();
-        seek(consumer, KafkaTrackingToken.newInstance(Collections.emptyMap()));
-        assertOffsets(consumer, 0L);
+        Consumer<String, byte[]> consumer = consumer(TOPIC_2);
+        ConsumerUtil.seek(TOPIC_2, consumer, KafkaTrackingToken.newInstance(Collections.emptyMap()));
+        assertOffsets(TOPIC_2, consumer, 0L);
     }
 
     @Test
     public void testSeekConsumerWithAnExistingToken() {
-        Consumer<String, byte[]> consumer = consumer();
+        Consumer<String, byte[]> consumer = consumer(TOPIC_3);
         KafkaTrackingToken token = tokensPerTopic();
-        seek(consumer, token);
+        ConsumerUtil.seek(TOPIC_3, consumer, token);
 
-        consumer.partitionsFor(SOME_TOPIC).forEach(x -> assertThat(consumer.position(KafkaTrackingToken.partition(
-                SOME_TOPIC,
+        consumer.partitionsFor(TOPIC_3).forEach(x -> assertThat(consumer.position(KafkaTrackingToken.partition(
+                TOPIC_3,
                 x.partition())), CoreMatchers.is(token.getPartitionPositions().get(x.partition()) + 1)));
     }
 
@@ -55,31 +57,25 @@ public class ConsumerUtilTests {
         return token;
     }
 
-    private void seek(Consumer<String, byte[]> consumer, KafkaTrackingToken token) {
-        ConsumerUtil.seek(SOME_TOPIC, consumer, token);
-        consumer.poll(1L);
-    }
-
-    private void assertOffsets(Consumer<String, byte[]> consumer, long expectedPosition) {
-        consumer.partitionsFor(SOME_TOPIC)
+    private void assertOffsets(String topic, Consumer<String, byte[]> consumer, long expectedPosition) {
+        consumer.partitionsFor(topic)
                 .forEach(x -> {
-                    long currentPosition = consumer.position(KafkaTrackingToken.partition(SOME_TOPIC, x.partition()));
+                    long currentPosition = consumer.position(KafkaTrackingToken.partition(topic, x.partition()));
                     assertThat(currentPosition, CoreMatchers.is(expectedPosition));
                 });
     }
 
-    private Consumer<String, byte[]> consumer() {
-        return new DefaultConsumerFactory<String, byte[]>(senderConfigs(embeddedKafka
-                                                                                .getBrokersAsString()))
+    private Consumer<String, byte[]> consumer(String groupName) {
+        return new DefaultConsumerFactory<String, byte[]>(senderConfigs(embeddedKafka.getBrokersAsString(), groupName))
                 .createConsumer();
     }
 
-    private static Map<String, Object> senderConfigs(String brokers) {
+    private static Map<String, Object> senderConfigs(String brokers, String groupName) {
         Map<String, Object> properties = new HashMap<>();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "consumerSeek");
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupName);
         return properties;
     }
 }
