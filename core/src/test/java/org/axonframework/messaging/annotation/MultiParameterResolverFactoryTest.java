@@ -74,7 +74,7 @@ public class MultiParameterResolverFactoryTest {
         inOrder.verify(mockFactory1).createInstance(Matchers.any(Executable.class),
                                                     Matchers.<Parameter[]>any(),
                                                     Matchers.anyInt());
-        inOrder.verify(mockResolver1).matches(any(Message.class));
+        inOrder.verify(mockResolver1).matches(any());
 
         verify(mockFactory2, never()).createInstance(Matchers.any(Executable.class),
                                                      Matchers.<Parameter[]>any(),

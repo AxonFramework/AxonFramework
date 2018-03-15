@@ -29,6 +29,9 @@
     <description>This module contains implementations of several components, connecting them to an AMQP compatible
         message broker.
     </description>
+    <properties>
+        <spring-rabbit.version>2.0.2.RELEASE</spring-rabbit.version>
+    </properties>
 
     <packaging>bundle</packaging>
 
@@ -93,7 +96,7 @@
         <dependency>
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-rabbit</artifactId>
-            <version>1.7.4.RELEASE</version>
+            <version>${spring-rabbit.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -105,7 +108,7 @@
 
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito</artifactId>
+            <artifactId>powermock-api-mockito2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

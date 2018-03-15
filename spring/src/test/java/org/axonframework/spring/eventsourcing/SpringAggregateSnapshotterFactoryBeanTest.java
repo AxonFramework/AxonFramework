@@ -21,8 +21,6 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.spring.config.annotation.StubAggregate;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -157,19 +155,8 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     private DomainEventMessage eventSequence(final long sequenceNumber) {
-        return argThat(new BaseMatcher<DomainEventMessage>() {
-            @Override
-            public boolean matches(Object o) {
-                return o instanceof DomainEventMessage &&
-                        ((DomainEventMessage) o).getSequenceNumber() == sequenceNumber;
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("expected event with sequence number: ");
-                description.appendValue(sequenceNumber);
-            }
-        });
+        return argThat(o -> o != null &&
+                o.getSequenceNumber() == sequenceNumber);
     }
 
     public static class MockExecutor implements Executor {

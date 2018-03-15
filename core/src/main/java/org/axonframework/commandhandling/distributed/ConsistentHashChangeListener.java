@@ -25,6 +25,8 @@ package org.axonframework.commandhandling.distributed;
 @FunctionalInterface
 public interface ConsistentHashChangeListener {
 
+    ConsistentHashChangeListener NO_OP_CONSISTENT_HASH_CHANGE_LISTENER = newConsistentHash -> { };
+
     /**
      * Notification that a consistent hash has changed. Implementations should take into account that this listener
      * my be called concurrently, and that multiple invocations do not necessarily reflect the order in which changes

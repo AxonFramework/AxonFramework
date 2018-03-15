@@ -70,9 +70,9 @@ public class LoggingInterceptorTest {
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubMessage]"),
-                                         any(Throwable.class));
+                                         any());
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubMessage]"),
-                                                                           contains("[null]")), any(Throwable.class));
+                                                                           contains("[null]")), any());
         verifyNoMoreInteractions(mockLogger);
     }
 
@@ -85,9 +85,9 @@ public class LoggingInterceptorTest {
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubMessage]"),
-                                         any(Throwable.class));
+                                         any());
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubMessage]"),
-                                                                           contains("[null]")), any(Throwable.class));
+                                                                           contains("[null]")), any());
         verifyNoMoreInteractions(mockLogger);
     }
 
@@ -99,9 +99,9 @@ public class LoggingInterceptorTest {
         testSubject.handle(unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
-        verify(mockLogger).log(any(String.class), eq(Level.INFO),
+        verify(mockLogger).log(anyString(), eq(Level.INFO),
                                and(contains("[StubMessage]"), contains("[StubResponse]")),
-                               any(Throwable.class));
+                               any());
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})

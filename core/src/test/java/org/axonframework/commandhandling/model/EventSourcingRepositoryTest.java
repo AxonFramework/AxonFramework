@@ -51,11 +51,11 @@ public class EventSourcingRepositoryTest {
     public void setUp() throws Exception {
         eventStore = Mockito.mock(EventStore.class);
         Mockito.when(eventStore.readEvents(Matchers.anyString())).thenAnswer(invocationOnMock -> DomainEventStream
-                .of(new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 1,
+                .of(new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgument(0), 1,
                                                           "Test1"),
-                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 2,
+                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgument(0), 2,
                                                           "Test2"),
-                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 3,
+                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgument(0), 3,
                                                           "Test3")));
         repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         DefaultUnitOfWork.startAndGet(asCommandMessage("Stub"));

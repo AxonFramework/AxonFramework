@@ -61,16 +61,6 @@ public class DefaultInterceptorChainTest {
         String actual = (String) testSubject.proceed();
 
         assertSame("Result", actual);
-        verify(mockHandler).handle(argThat(new BaseMatcher<Message<?>>() {
-            @Override
-            public boolean matches(Object o) {
-                return (o instanceof Message<?>) && ((Message<?>) o).getPayload().equals("testing");
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Message with 'testing' payload");
-            }
-        }));
+        verify(mockHandler).handle(argThat(x -> (x != null) && x.getPayload().equals("testing")));
     }
 }

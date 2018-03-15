@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
@@ -72,11 +71,6 @@ public class OutboundEventMessageChannelAdapterTest {
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {
-        return argThat(new ArgumentMatcher<Message<?>>() {
-            @Override
-            public boolean matches(Object argument) {
-                return event.equals(((Message) argument).getPayload());
-            }
-        });
+        return argThat(x -> event.equals(((Message) x).getPayload()));
     }
 }

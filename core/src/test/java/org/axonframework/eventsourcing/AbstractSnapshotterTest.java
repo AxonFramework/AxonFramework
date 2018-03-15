@@ -24,7 +24,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
-import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -124,18 +123,9 @@ public class AbstractSnapshotterTest {
         inOrder.verify(mockTransaction).commit();
     }
 
-    private Matcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
-        return new ArgumentMatcher<DomainEventMessage>() {
-            @Override
-            public boolean matches(Object argument) {
-                if (!(argument instanceof DomainEventMessage)) {
-                    return false;
-                }
-                DomainEventMessage event = (DomainEventMessage) argument;
-                return aggregateIdentifier.equals(event.getAggregateIdentifier())
-                        && event.getSequenceNumber() == i;
-            }
-        };
+    private ArgumentMatcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
+        return x -> aggregateIdentifier.equals(x.getAggregateIdentifier())
+                && x.getSequenceNumber() == i;
     }
 
     private long getLastIdentifierFrom(DomainEventStream eventStream) {

@@ -21,13 +21,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -143,20 +141,10 @@ public class SpringCloudCommandRouterTest {
         assertEquals(CommandNameFilter.class.getName(),
                      serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
-        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(new TypeSafeMatcher<ConsistentHash>() {
-            @Override
-            protected boolean matchesSafely(ConsistentHash item) {
-                return item.getMembers()
-                           .stream()
-                           .map(Member::name)
-                           .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID));
-            }
-
-            @Override
-            public void describeTo(Description description) {
-
-            }
-        }));
+        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(item -> item.getMembers()
+                                                                                 .stream()
+                                                                                 .map(Member::name)
+                                                                                 .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID))));
     }
 
     @Test
@@ -247,7 +235,6 @@ public class SpringCloudCommandRouterTest {
         assertEquals(2, resultMemberSet.size());
 
         // Evict remote service instance from discovery client and update router memberships
-        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of());
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 

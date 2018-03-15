@@ -9,14 +9,13 @@ import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.*;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.ArgumentMatcher;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -233,7 +232,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Test
     public void testReceiveCommandHandlesCommandWithCallbackFails() throws Exception {
-        doThrow(Exception.class).when(localCommandBus).dispatch(any(), any());
+        doThrow(RuntimeException.class).when(localCommandBus).dispatch(any(), any());
 
         SpringHttpReplyMessage result =
                 (SpringHttpReplyMessage) testSubject.receiveCommand(buildDispatchMessage(true)).get();
@@ -255,7 +254,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Test
     public void testReceiveCommandHandlesCommandWithoutCallbackThrowsException() throws Exception {
-        doThrow(Exception.class).when(localCommandBus).dispatch(any());
+        doThrow(RuntimeException.class).when(localCommandBus).dispatch(any());
 
         SpringHttpReplyMessage result =
                 (SpringHttpReplyMessage) testSubject.receiveCommand(buildDispatchMessage(false)).get();
@@ -289,23 +288,18 @@ public class SpringHttpCommandBusConnectorTest {
         return new SpringHttpDispatchMessage<>(COMMAND_MESSAGE, serializer, expectReply);
     }
 
-    private class ParameterizedTypeReferenceMatcher<R> extends BaseMatcher<ParameterizedTypeReference<SpringHttpReplyMessage<R>>> {
+    private class ParameterizedTypeReferenceMatcher<R> implements
+            ArgumentMatcher<ParameterizedTypeReference<SpringHttpReplyMessage<R>>> {
 
         private ParameterizedTypeReference<SpringHttpReplyMessage<R>> expected =
                 new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() { };
 
         @Override
-        public boolean matches(Object actual) {
-            return actual instanceof ParameterizedTypeReference &&
-                    ((ParameterizedTypeReference) actual).getType().getTypeName()
-                            .equals(expected.getType().getTypeName());
+        public boolean matches(ParameterizedTypeReference<SpringHttpReplyMessage<R>> actual) {
+            return actual != null &&
+                    actual.getType().getTypeName()
+                          .equals(expected.getType().getTypeName());
         }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("Failed to match expected ParameterizedTypeReference [" + expected + "]");
-        }
-
     }
 
 }

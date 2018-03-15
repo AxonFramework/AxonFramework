@@ -106,7 +106,7 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testAggregateCommandHandlerThrowsException() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(eq(aggregateIdentifier), anyLong()))
+        when(mockRepository.load(eq(aggregateIdentifier), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
                             new VoidCallback<Object>() {
@@ -179,7 +179,7 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testCommandHandlerUpdatesAggregateInstance_AnnotatedMethod() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
+        when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
                             new CommandCallback<Object, Object>() {
@@ -235,7 +235,7 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testCommandHandlerUpdatesAggregateInstanceWithNullVersion_AnnotatedMethod() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
+        when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
@@ -259,7 +259,7 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testCommandHandlerUpdatesAggregateInstance_AnnotatedField() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
+        when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
                             new CommandCallback<Object, Object>() {
@@ -330,7 +330,7 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testCommandForEntityRejectedWhenNoInstanceIsAvailable() {
         String aggregateIdentifier = "abc123";
-        when(mockRepository.load(any(String.class), anyLong()))
+        when(mockRepository.load(any(String.class), any()))
                 .thenAnswer(i -> createAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityStateCommand("abc123")),
@@ -357,7 +357,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         aggregate.initializeEntity("1");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(aggregate));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(aggregate));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityStateCommand("abc123")),
                             new CommandCallback<Object, Object>() {
@@ -384,7 +384,7 @@ public class AggregateAnnotationCommandHandlerTest {
         root.initializeEntity("1");
         root.initializeEntity("2");
         root.initializeEntity("3");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
@@ -409,7 +409,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
@@ -433,7 +433,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromCollectionStateCommand("abc123", null)),
                             new CommandCallback<Object, Object>() {
@@ -458,7 +458,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         root.initializeEntity("2");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(new UpdateNestedEntityStateCommand("abc123")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -490,7 +490,7 @@ public class AggregateAnnotationCommandHandlerTest {
         root.initializeEntity("1");
         root.initializeEntity("2");
         root.initializeEntity("3");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromMapStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
@@ -515,7 +515,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(any(String.class), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromMapStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
@@ -539,7 +539,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
-        when(mockRepository.load(any(String.class), anyLong())).thenAnswer(i -> createAggregate(root));
+        when(mockRepository.load(anyString(), any())).thenAnswer(i -> createAggregate(root));
         commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", null)),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -889,9 +889,6 @@ public class AggregateAnnotationCommandHandlerTest {
         private UpdateEntityStateCommand(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
-    }
-
-    private static class CommandWithoutRequiredRoutingProperty {
     }
 
     private static class UpdateEntityFromMapStateCommand {
