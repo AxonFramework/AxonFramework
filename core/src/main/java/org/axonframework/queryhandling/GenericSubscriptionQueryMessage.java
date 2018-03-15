@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package org.axonframework.queryhandling;
@@ -30,6 +28,7 @@ import org.axonframework.queryhandling.responsetypes.ResponseType;
  * @param <Q> The type of payload expressing the query in this message
  * @param <I> The type of initial response expected from this query
  * @param <U> The type of incremental updates expected from this query
+ * @author Allard Buijze
  * @since 3.3
  */
 public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessage<Q, I>
