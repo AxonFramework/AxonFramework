@@ -101,6 +101,7 @@
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jgroups.version>4.0.6.Final</jgroups.version>
+        <mockito.version>2.15.0</mockito.version>
     </properties>
 
     <dependencies>
@@ -253,12 +254,12 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
-                <version>1.10.19</version>
+                <version>${mockito.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>1.10.19</version>
+                <version>${mockito.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
