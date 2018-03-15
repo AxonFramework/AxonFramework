@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package org.axonframework.queryhandling;
  *
  * @param <I> the type of initial result
  * @param <U> the type of incremental updates
+ * @author Allard Buijze
  * @since 3.3
  */
 public interface UpdateHandler<I, U> {

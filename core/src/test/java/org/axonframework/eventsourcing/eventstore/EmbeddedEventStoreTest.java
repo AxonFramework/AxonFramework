@@ -220,10 +220,12 @@ public class EmbeddedEventStoreTest {
         when(mockIterator.hasNext()).thenReturn(false, true);
         when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1), createEvent()));
         TrackingEventStream stream = testSubject.openStream(null);
-        assertFalse(stream.hasNextAvailable(10, MILLISECONDS));
+        assertFalse(stream.hasNextAvailable());
         testSubject.publish(createEvent());
+        // give some time consumer to consume the event
+        Thread.sleep(200);
         // if the stream correctly updates the token internally, it should not find events anymore
-        assertFalse(stream.hasNextAvailable(10, MILLISECONDS));
+        assertFalse(stream.hasNextAvailable());
     }
 
     @Test

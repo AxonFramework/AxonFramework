@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.queryhandling.responsetypes.ResponseType;
  * @param <Q> the type of payload
  * @param <I> the type of initial response
  * @param <U> the type of incremental responses
+ * @author Allard Buijze
  * @since 3.3
  */
 public interface SubscriptionQueryMessage<Q, I, U> extends QueryMessage<Q, I> {

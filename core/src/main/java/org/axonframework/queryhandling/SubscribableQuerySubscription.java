@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package org.axonframework.queryhandling;
@@ -47,25 +45,7 @@ class SubscribableQuerySubscription<I, U> extends QuerySubscription<I> {
     SubscribableQuerySubscription(Type responseType,
                                   Type updateType,
                                   SubscriptionQueryMessageHandler<? super QueryMessage<?, I>, I, U> queryHandler) {
-        super(responseType, m -> {
-            QueryUpdateEmitter<U> emitter = new QueryUpdateEmitter<U>() {
-                @Override
-                public void emit(U update) {
-                    // this is empty implementation, since regular query handler will not invoke it
-                }
-
-                @Override
-                public void complete() {
-                    // this is empty implementation, since regular query handler will not invoke it
-                }
-
-                @Override
-                public void error(Throwable error) {
-                    // this is empty implementation, since regular query handler will not invoke it
-                }
-            };
-            return queryHandler.handle(m, emitter);
-        });
+        super(responseType, m -> queryHandler.handle(m, new NoOpQueryUpdateEmitter<>()));
         this.updateType = updateType;
         this.subscriptionQueryMessageHandler = queryHandler;
     }

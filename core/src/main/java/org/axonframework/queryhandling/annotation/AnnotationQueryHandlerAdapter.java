@@ -87,7 +87,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
 
     @Override
     public Object handle(QueryMessage<?, Object> message, QueryUpdateEmitter<Object> emitter) throws Exception {
-        QueryUpdateEmitterResolverFactory.initialize(emitter);
+        QueryUpdateEmitterParameterResolverFactory.initialize(emitter);
         return handle(message);
     }
 

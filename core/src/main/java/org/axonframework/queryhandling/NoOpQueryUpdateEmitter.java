@@ -16,23 +16,28 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.AxonNonTransientException;
-
 /**
- * Exception indicating that {@link QueryUpdateEmitter} does not have a {@link UpdateHandler} in order to emit messages
- * to it. Usually, {@link UpdateHandler} un-subscribed from receiving updates.
+ * Query update emitter implementation with empty methods.
  *
+ * @param <U> the type of incremental updates
  * @author Milan Savic
  * @since 3.3
  */
-public class NoUpdateHandlerForEmitterException extends AxonNonTransientException {
+public class NoOpQueryUpdateEmitter<U> implements QueryUpdateEmitter<U> {
 
-    /**
-     * Initializes the exception with given {@code message}.
-     *
-     * @param message the message
-     */
-    public NoUpdateHandlerForEmitterException(String message) {
-        super(message);
+    @Override
+    public void emit(U update) {
+        // this is empty implementation, since regular query handler will not invoke it
     }
+
+    @Override
+    public void complete() {
+        // this is empty implementation, since regular query handler will not invoke it
+    }
+
+    @Override
+    public void error(Throwable error) {
+        // this is empty implementation, since regular query handler will not invoke it
+    }
+
 }
