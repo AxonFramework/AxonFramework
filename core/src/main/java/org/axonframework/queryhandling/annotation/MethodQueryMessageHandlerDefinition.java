@@ -41,7 +41,6 @@ import java.util.Optional;
  */
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<Method> unwrappedMethod = original.unwrap(Method.class);
@@ -49,20 +48,33 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
                                                    .filter(parameter -> parameter.getType()
                                                                                  .equals(QueryUpdateEmitter.class))
                                                    .findFirst()
-                                                   .map(parameter -> original.annotationAttributes(QueryHandler.class)
-                                                                             .map(attr -> (MessageHandlingMember<T>)
-                                                                                     new MethodQueryMessageHandlerDefinition.MethodSubscriptionQueryMessageHandlingMember(
-                                                                                             original,
-                                                                                             attr,
-                                                                                             parameter))
-                                                                             .orElse(original))
-                                                   .orElse(original.annotationAttributes(QueryHandler.class)
-                                                                   .map(attr -> (MessageHandlingMember<T>)
-                                                                           new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(
-                                                                                   original,
-                                                                                   attr))
-                                                                   .orElse(original)))
+                                                   .map(parameter -> wrapToSubscriptionQueryMessageHandlingMember(
+                                                           original,
+                                                           parameter))
+                                                   .orElse(wrapToQueryMessageHandlingMember(original)))
                               .orElse(original);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> MessageHandlingMember<T> wrapToSubscriptionQueryMessageHandlingMember(MessageHandlingMember<T> original,
+                                                                                      Parameter queryUpdateEmitterParameter) {
+        return original.annotationAttributes(QueryHandler.class)
+                       .map(attr -> (MessageHandlingMember<T>)
+                               new MethodQueryMessageHandlerDefinition.MethodSubscriptionQueryMessageHandlingMember(
+                                       original,
+                                       attr,
+                                       queryUpdateEmitterParameter))
+                       .orElse(original);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> MessageHandlingMember<T> wrapToQueryMessageHandlingMember(MessageHandlingMember<T> original) {
+        return original.annotationAttributes(QueryHandler.class)
+                       .map(attr -> (MessageHandlingMember<T>)
+                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(
+                                       original,
+                                       attr))
+                       .orElse(original);
     }
 
     private class MethodSubscriptionQueryMessageHandlingMember<T>

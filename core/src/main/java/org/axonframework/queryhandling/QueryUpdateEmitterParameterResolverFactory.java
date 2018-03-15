@@ -28,12 +28,13 @@ import java.lang.reflect.Parameter;
 /**
  * Parameter resolver factory that enables injection of {@link QueryUpdateEmitter} to query handlers.
  * <p>
- * Injection of correct {@link QueryUpdateEmitter} is achieved using {@link QueryUpdateEmitterResolverFactory#initialize(QueryUpdateEmitter)}.
+ * Injection of correct {@link QueryUpdateEmitter} is achieved using
+ * {@link QueryUpdateEmitterParameterResolverFactory#initialize(QueryUpdateEmitter)}.
  *
  * @author Milan Savic
  * @since 3.3
  */
-public class QueryUpdateEmitterResolverFactory
+public class QueryUpdateEmitterParameterResolverFactory
         implements ParameterResolverFactory, ParameterResolver<QueryUpdateEmitter> {
 
     private static final String QUERY_UPDATE_EMITTER_KEY = QueryUpdateEmitter.class.getName();

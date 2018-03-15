@@ -46,8 +46,7 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
      */
     public GenericSubscriptionQueryMessage(Q payload, ResponseType<I> responseType,
                                            ResponseType<U> updateResponseType) {
-        super(payload, responseType);
-        this.updateResponseType = updateResponseType;
+        this(payload, payload.getClass().getName(), responseType, updateResponseType);
     }
 
     /**

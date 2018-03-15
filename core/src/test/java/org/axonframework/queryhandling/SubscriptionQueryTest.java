@@ -37,9 +37,9 @@ import static org.mockito.Mockito.*;
  */
 public class SubscriptionQueryTest {
 
-    private SimpleQueryBus queryBus = new SimpleQueryBus();
-    private ChatQueryHandler chatQueryHandler = new ChatQueryHandler();
-    private AnnotationQueryHandlerAdapter<ChatQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
+    private final SimpleQueryBus queryBus = new SimpleQueryBus();
+    private final ChatQueryHandler chatQueryHandler = new ChatQueryHandler();
+    private final AnnotationQueryHandlerAdapter<ChatQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             chatQueryHandler);
 
     @Before

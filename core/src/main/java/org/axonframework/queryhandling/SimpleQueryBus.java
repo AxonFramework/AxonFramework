@@ -240,9 +240,8 @@ public class SimpleQueryBus implements QueryBus {
             while (!invocationSuccess && subsIterator.hasNext()) {
                 try {
                     QuerySubscription subscription = subsIterator.next();
+                    DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
                     if (subscription instanceof SubscribableQuerySubscription) {
-                        DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(
-                                interceptedQuery);
                         if (interceptedQuery.getUpdateResponseType()
                                             .matches(((SubscribableQuerySubscription) subscription).getUpdateType())) {
 
@@ -259,11 +258,8 @@ public class SimpleQueryBus implements QueryBus {
                             updateHandler.onInitialResult(initialResult);
                         }
                     } else {
-                        DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                        I initialResult = (I) interceptAndInvoke(uow, subscription.getQueryHandler()).getPayload();
+                        invokeRegularQueryHandler(uow, subscription.getQueryHandler(), updateHandler);
                         invocationSuccess = true;
-                        updateHandler.onInitialResult(initialResult);
-                        updateHandler.onCompleted();
                     }
                 } catch (NoHandlerForQueryException e) {
                     // Ignore this Query Handler, as we may have another one which is suitable
@@ -282,6 +278,26 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         return registration;
+    }
+
+    /**
+     * Invokes regular query handler and completes the update handler right afterwards.
+     *
+     * @param uow           the Unit of Work in which the query handler will be invoked
+     * @param queryHandler  the query handler to be invoked
+     * @param updateHandler the update handler to be invoked with result of query handler
+     * @param <Q>           the query type
+     * @param <I>           the initial result type
+     * @param <U>           the incremental update type
+     * @throws Exception propagated from query handler
+     */
+    @SuppressWarnings("unchecked")
+    private <Q, I, U> void invokeRegularQueryHandler(UnitOfWork<QueryMessage<Q, I>> uow,
+                                                     MessageHandler<? super QueryMessage<?, I>> queryHandler,
+                                                     UpdateHandler<I, U> updateHandler) throws Exception {
+        I initialResult = interceptAndInvoke(uow, queryHandler).getPayload();
+        updateHandler.onInitialResult(initialResult);
+        updateHandler.onCompleted();
     }
 
     @SuppressWarnings("unchecked")
@@ -354,7 +370,7 @@ public class SimpleQueryBus implements QueryBus {
 
         private UpdateHandler<?, U> updateHandler;
         private volatile boolean active;
-        private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
         SimpleQueryUpdateEmitter(UpdateHandler<?, U> updateHandler) {
             this.updateHandler = updateHandler;
@@ -389,7 +405,8 @@ public class SimpleQueryBus implements QueryBus {
             lock.readLock().lock();
             try {
                 if (updateHandler == null) {
-                    throw new NoUpdateHandlerForEmitterException("No update handler");
+                    throw new NoUpdateHandlerForEmitterException(
+                            "There is no update handler attached to this emitter. Probably was un-subscribed.");
                 }
                 r.run();
             } finally {
@@ -399,7 +416,8 @@ public class SimpleQueryBus implements QueryBus {
 
         private void ensureActive() {
             if (!active) {
-                throw new CompletedEmitterException("This emitter has completed");
+                throw new CompletedEmitterException("This emitter has already completed emitting updates. "
+                                + "There should be no interaction with emitter after calling QueryUpdateEmitter#complete.");
             }
         }
     }
