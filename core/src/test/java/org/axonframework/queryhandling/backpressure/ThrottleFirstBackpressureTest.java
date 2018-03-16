@@ -32,15 +32,14 @@ import static org.mockito.Mockito.*;
  */
 public class ThrottleFirstBackpressureTest {
 
-    private UpdateHandler<String, String> updateHandler;
-    private ThrottleFirstBackpressure<String, String> throttleFirstBackpressure;
-
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
-        updateHandler = mock(UpdateHandler.class);
-        throttleFirstBackpressure = new ThrottleFirstBackpressure<>(updateHandler, 0, 200, TimeUnit.MILLISECONDS);
-    }
+    private final UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
+    @SuppressWarnings("unchecked")
+    private final ThrottleFirstBackpressure<String, String> throttleFirstBackpressure = new ThrottleFirstBackpressure<>(
+            updateHandler,
+            0,
+            200,
+            TimeUnit.MILLISECONDS);
 
     @Test
     public void testThrottleFirstBackpressure() throws InterruptedException {

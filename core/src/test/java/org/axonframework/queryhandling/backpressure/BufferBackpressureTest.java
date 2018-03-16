@@ -33,15 +33,9 @@ import static org.mockito.Mockito.*;
  */
 public class BufferBackpressureTest {
 
-    private UpdateHandler<String, List<String>> updateHandler;
-    private BufferBackpressure<String, String> bufferBackpressure;
-
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
-        updateHandler = mock(UpdateHandler.class);
-        bufferBackpressure = new BufferBackpressure(updateHandler, 2);
-    }
+    private final UpdateHandler<String, List<String>> updateHandler = mock(UpdateHandler.class);
+    private final BufferBackpressure<String, String> bufferBackpressure = new BufferBackpressure<>(updateHandler, 2);
 
     @Test
     public void testBufferBackpressure() {
@@ -64,5 +58,4 @@ public class BufferBackpressureTest {
         verify(updateHandler).onError(exception);
         verify(updateHandler).onCompleted();
     }
-
 }

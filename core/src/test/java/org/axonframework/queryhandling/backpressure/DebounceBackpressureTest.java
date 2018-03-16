@@ -23,8 +23,7 @@ import org.junit.*;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link DebounceBackpressure}.
@@ -33,15 +32,12 @@ import static org.mockito.Mockito.verify;
  */
 public class DebounceBackpressureTest {
 
-    private UpdateHandler<String, String> updateHandler;
-    private DebounceBackpressure<String, String> sampleBackpressure;
-
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() {
-        updateHandler = mock(UpdateHandler.class);
-        sampleBackpressure = new DebounceBackpressure(updateHandler, 200, TimeUnit.MILLISECONDS);
-    }
+    private final UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
+    @SuppressWarnings("unchecked")
+    private final DebounceBackpressure<String, String> sampleBackpressure = new DebounceBackpressure(updateHandler,
+                                                                                                     200,
+                                                                                                     TimeUnit.MILLISECONDS);
 
     @Test
     public void testDebounceBackpressure() throws InterruptedException {
