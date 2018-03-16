@@ -30,18 +30,29 @@ public interface QueryUpdateEmitter<U> {
      * Emits a single update.
      *
      * @param update the update
+     * @return {@code true} if emit was successful
      */
-    void emit(U update);
+    boolean emit(U update);
 
     /**
      * Informs query side that there are no more updates.
+     *
+     * @return {@code true} if completion was successful
      */
-    void complete();
+    boolean complete();
 
     /**
      * Informs query side that error occurred.
      *
      * @param error the error
+     * @return {@code true} if error reporting was successful
      */
-    void error(Throwable error);
+    boolean error(Throwable error);
+
+    /**
+     * Registers a handler to be invoked when query cancels the registration.
+     *
+     * @param r the handler to be invoked
+     */
+    void onRegistrationCanceled(Runnable r);
 }

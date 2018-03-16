@@ -94,10 +94,10 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit("Update1");
+        assertTrue(chatQueryHandler.emitter.emit("Update1"));
         Exception exception = new Exception("blah");
-        chatQueryHandler.emitter.error(exception);
-        chatQueryHandler.emitter.complete();
+        assertTrue(chatQueryHandler.emitter.error(exception));
+        assertTrue(chatQueryHandler.emitter.complete());
         try {
             chatQueryHandler.emitter.emit("Update2");
             fail("Once you close emitter, it shouldn't be possible to emit messages");
@@ -123,20 +123,18 @@ public class SubscriptionQueryTest {
                                                       ResponseTypes.multipleInstancesOf(String.class),
                                                       ResponseTypes.instanceOf(String.class));
         UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
+        Runnable registrationCanceledHandler = mock(Runnable.class);
 
         // when
         Registration registration = queryBus.subscriptionQuery(queryMessage, updateHandler);
+        chatQueryHandler.emitter.onRegistrationCanceled(registrationCanceledHandler);
         registration.cancel();
-        try {
-            chatQueryHandler.emitter.emit("Update");
-            fail("It should not be possible to emit after registration for subscription query is canceled.");
-        } catch (NoUpdateHandlerForEmitterException e) {
-            // we want this to happen
-        }
+        assertFalse(chatQueryHandler.emitter.emit("Update"));
 
         // then
         verify(updateHandler, times(1)).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
         verify(updateHandler, times(0)).onUpdate("Update");
+        verify(registrationCanceledHandler).run();
     }
 
     @SuppressWarnings("unchecked")
@@ -171,7 +169,7 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit("Update");
+        assertTrue(chatQueryHandler.emitter.emit("Update"));
 
         // then
         verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));

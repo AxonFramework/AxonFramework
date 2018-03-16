@@ -26,18 +26,25 @@ package org.axonframework.queryhandling;
 public class NoOpQueryUpdateEmitter<U> implements QueryUpdateEmitter<U> {
 
     @Override
-    public void emit(U update) {
+    public boolean emit(U update) {
         // this is empty implementation, since regular query handler will not invoke it
+        return true;
     }
 
     @Override
-    public void complete() {
+    public boolean complete() {
         // this is empty implementation, since regular query handler will not invoke it
+        return true;
     }
 
     @Override
-    public void error(Throwable error) {
+    public boolean error(Throwable error) {
         // this is empty implementation, since regular query handler will not invoke it
+        return true;
     }
 
+    @Override
+    public void onRegistrationCanceled(Runnable r) {
+        // this is empty implementation, since regular query handler will not invoke it
+    }
 }
