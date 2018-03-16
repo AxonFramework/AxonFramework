@@ -21,11 +21,13 @@ import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
+import org.mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -204,6 +206,31 @@ public class SubscriptionQueryTest {
         verify(updateHandler).onInitialResult(interceptedResponse);
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testOrderingOfOperationOnUpdateHandler() throws InterruptedException {
+        // given
+        SubscriptionQueryMessage<String, String, String> queryMessage =
+                new GenericSubscriptionQueryMessage<>("axonFrameworkCR",
+                                                      "emitFirstThenReturnInitial",
+                                                      ResponseTypes.instanceOf(String.class),
+                                                      ResponseTypes.instanceOf(String.class));
+        UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
+
+        // when
+        queryBus.subscriptionQuery(queryMessage, updateHandler);
+        // give emitter some time to finish its job
+        Thread.sleep(200);
+
+        // then
+        InOrder inOrder = inOrder(updateHandler);
+        inOrder.verify(updateHandler).onInitialResult("Initial");
+        inOrder.verify(updateHandler).onUpdate("Update1");
+        inOrder.verify(updateHandler).onUpdate("Update2");
+        inOrder.verify(updateHandler).onError(chatQueryHandler.toBeThrown);
+        inOrder.verify(updateHandler).onCompleted();
+    }
+
     @SuppressWarnings("unused")
     private class ChatQueryHandler {
 
@@ -224,6 +251,18 @@ public class SubscriptionQueryTest {
         @QueryHandler(queryName = "failingQuery")
         public String failingQuery(String criteria, QueryUpdateEmitter<String> emitter) {
             throw toBeThrown;
+        }
+
+        @QueryHandler(queryName = "emitFirstThenReturnInitial")
+        public String emitFirstThenReturnInitial(String criteria, QueryUpdateEmitter<String> emitter) {
+            Executors.newSingleThreadExecutor().submit(() -> {
+                emitter.emit("Update1");
+                emitter.emit("Update2");
+                emitter.error(toBeThrown);
+                emitter.complete();
+            });
+
+            return "Initial";
         }
     }
 }
