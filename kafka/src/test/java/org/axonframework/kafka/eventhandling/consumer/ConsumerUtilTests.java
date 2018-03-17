@@ -14,6 +14,11 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
+/***
+ * Tests for {@link ConsumerUtil}
+ *
+ * @author Nakul Mishra
+ */
 public class ConsumerUtilTests {
 
     private static final String TOPIC_1 = "testSeekConsumerWithNullToken";

@@ -34,7 +34,7 @@ public interface ProducerFactory<K, V> {
     Producer<K, V> createProducer();
 
     /**
-     * Which approch producer should follow while publishing messages to kafka
+     * Which approach producer should follow while publishing messages to kafka
      *
      * @return configured confirmation mode
      */
