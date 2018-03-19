@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageHandler;
 
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 /**
  * Defines the necessary info for {@link QueryBus} in order to keep subscriptions for subscribable query handlers. Those
@@ -66,5 +67,27 @@ class SubscribableQuerySubscription<I, U> extends QuerySubscription<I> {
      */
     public Type getUpdateType() {
         return updateType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        SubscribableQuerySubscription<?, ?> that = (SubscribableQuerySubscription<?, ?>) o;
+        return Objects.equals(updateType, that.updateType) &&
+                Objects.equals(subscriptionQueryMessageHandler, that.subscriptionQueryMessageHandler);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(super.hashCode(), updateType, subscriptionQueryMessageHandler);
     }
 }
