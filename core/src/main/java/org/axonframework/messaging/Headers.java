@@ -53,7 +53,7 @@ public class Headers {
      * @return headers
      */
     public static Map<String, Object> defaultHeaders(EventMessage<?> message,
-                                                     SerializedObject<byte[]> serializedObject) {
+                                                     SerializedObject<?> serializedObject) {
         Assert.notNull(message, () -> "Event message cannot be null");
         Assert.notNull(serializedObject, () -> "Serialized Object cannot be null");
         Assert.notNull(serializedObject.getType(), () -> "SerializedObject Type cannot be null");

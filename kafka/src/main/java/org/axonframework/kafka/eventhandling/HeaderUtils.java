@@ -112,13 +112,31 @@ public class HeaderUtils {
     public static Map<String, Object> extractAxonMetadata(Headers headers) {
         Map<String, Object> metaData = new HashMap<>();
         headers.forEach((header) -> {
-            String k = header.key();
-            byte[] v = header.value();
-            if (k.startsWith(org.axonframework.messaging.Headers.MESSAGE_METADATA + "-")) {
-                metaData.put(k.substring((org.axonframework.messaging.Headers.MESSAGE_METADATA + "-").length()),
-                             asString(v));
+            String key = header.key();
+            if (isValidMetadataKey(key)) {
+                metaData.put(extractKey(key), asString(header.value()));
             }
         });
         return metaData;
+    }
+
+    /**
+     * Extracts metadata key name.
+     *
+     * @param validKey represents valid metadata. E.g.<code>"axon-metadata-foo"</code>.
+     * @return key name E.g. <code>foo</code>.
+     */
+    private static String extractKey(String validKey) {
+        return validKey.substring((org.axonframework.messaging.Headers.MESSAGE_METADATA + "-").length());
+    }
+
+    /**
+     * Whether a key represents metadata.
+     *
+     * @param key text
+     * @return boolean
+     */
+    private static boolean isValidMetadataKey(String key) {
+        return key.startsWith(org.axonframework.messaging.Headers.MESSAGE_METADATA + "-");
     }
 }
