@@ -286,10 +286,9 @@ public class SimpleQueryBus implements QueryBus {
      * @param <I>           the initial result type
      * @throws Exception propagated from query handler
      */
-    @SuppressWarnings("unchecked")
     private <Q, I> void invokeRegularQueryHandler(UnitOfWork<QueryMessage<Q, I>> uow,
-                                                     MessageHandler<? super QueryMessage<?, I>> queryHandler,
-                                                     UpdateHandler<I, ?> updateHandler) throws Exception {
+                                                  MessageHandler<? super QueryMessage<?, I>> queryHandler,
+                                                  UpdateHandler<I, ?> updateHandler) throws Exception {
         I initialResult = interceptAndInvoke(uow, queryHandler).getPayload();
         updateHandler.onInitialResult(initialResult);
         updateHandler.onCompleted();
@@ -308,14 +307,15 @@ public class SimpleQueryBus implements QueryBus {
      *
      * @throws Exception propagated from query handler
      */
-    @SuppressWarnings("unchecked")
     private <Q, I, U> Registration invokeSubscriptionQueryHandler(UnitOfWork<QueryMessage<Q, I>> uow,
-                                                                  SubscriptionQueryMessageHandler queryHandler,
+                                                                  SubscriptionQueryMessageHandler<? super QueryMessage<?, I>, I, U> queryHandler,
                                                                   UpdateHandler<I, U> updateHandler)
             throws Exception {
         ReentrantLock initialLock = new ReentrantLock(true);
         Condition initialCondition = initialLock.newCondition();
-        SimpleQueryUpdateEmitter emitter = new SimpleQueryUpdateEmitter(updateHandler, initialLock, initialCondition);
+        SimpleQueryUpdateEmitter<U> emitter = new SimpleQueryUpdateEmitter<>(updateHandler,
+                                                                             initialLock,
+                                                                             initialCondition);
         I initialResult = interceptAndInvoke(uow, m -> queryHandler.handle(m, emitter)).getPayload();
         initialLock.lock();
         try {
