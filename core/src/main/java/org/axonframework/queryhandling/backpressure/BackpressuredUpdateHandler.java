@@ -27,6 +27,6 @@ import org.axonframework.queryhandling.UpdateHandler;
  * @author Milan Savic
  * @since 3.3
  */
-public interface Backpressure<I, U> extends UpdateHandler<I, U> {
+public interface BackpressuredUpdateHandler<I, U> extends UpdateHandler<I, U> {
 
 }

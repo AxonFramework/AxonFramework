@@ -18,6 +18,9 @@ package org.axonframework.queryhandling.backpressure;
 
 import org.axonframework.queryhandling.UpdateHandler;
 import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -33,22 +35,19 @@ import static org.mockito.Mockito.verify;
  *
  * @author Milan Savic
  */
+@RunWith(MockitoJUnitRunner.class)
 public class WindowBackpressureTest {
 
-    @SuppressWarnings("unchecked")
-    private final UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
-    @SuppressWarnings("unchecked")
-    private final Function<List<String>, String> reductionFunction = mock(Function.class);
-    @SuppressWarnings("unchecked")
-    private final WindowBackpressure<String, String> windowBackpressure = new WindowBackpressure<>(updateHandler,
-                                                                                                   reductionFunction,
-                                                                                                   0,
-                                                                                                   200,
-                                                                                                   TimeUnit.MILLISECONDS);
+    @Mock
+    private UpdateHandler<String, String> updateHandler;
+    @Mock
+    private Function<List<String>, String> reductionFunction;
+    private WindowBackpressure<String, String> windowBackpressure;
 
     @Before
     public void setUp() {
         given(reductionFunction.apply(Arrays.asList("Update1", "Update2", "Update3"))).willReturn("UpdateReduction");
+        windowBackpressure = new WindowBackpressure<>(updateHandler, reductionFunction, 0, 200, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -63,7 +62,7 @@ public class WindowBackpressureTest {
         windowBackpressure.onUpdate("Update1");
         windowBackpressure.onUpdate("Update2");
         windowBackpressure.onUpdate("Update3");
-        Thread.sleep(210);
+        Thread.sleep(220);
         windowBackpressure.onUpdate("Update4");
         verify(reductionFunction).apply(Arrays.asList("Update1", "Update2", "Update3"));
         verify(updateHandler).onUpdate("UpdateReduction");

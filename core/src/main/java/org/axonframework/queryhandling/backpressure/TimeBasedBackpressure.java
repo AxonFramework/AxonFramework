@@ -29,24 +29,25 @@ import java.util.concurrent.TimeUnit;
  * @author Milan Savic
  * @since 3.3
  */
-public abstract class TimeBasedBackpressure<I, U> implements Backpressure<I, U> {
+public abstract class TimeBasedBackpressure<I, U> implements BackpressuredUpdateHandler<I, U> {
 
-    private final UpdateHandler<I, U> original;
+    private final UpdateHandler<I, U> delegateUpdateHandler;
     private final ScheduledExecutorService scheduledExecutorService;
     private final long period;
     private final TimeUnit unit;
 
     /**
-     * Initializes {@link TimeBasedBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link TimeBasedBackpressure} with delegateUpdateHandler update handler and parameters for
+     * scheduling.
      *
-     * @param original                 the original update handler
+     * @param delegateUpdateHandler    the delegateUpdateHandler update handler
      * @param period                   the period on which to schedule updates
      * @param unit                     time unit
      * @param scheduledExecutorService scheduled executor service
      */
-    public TimeBasedBackpressure(UpdateHandler<I, U> original, long period, TimeUnit unit,
+    public TimeBasedBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long period, TimeUnit unit,
                                  ScheduledExecutorService scheduledExecutorService) {
-        this.original = original;
+        this.delegateUpdateHandler = delegateUpdateHandler;
         this.scheduledExecutorService = scheduledExecutorService;
         this.period = period;
         this.unit = unit;
@@ -54,12 +55,12 @@ public abstract class TimeBasedBackpressure<I, U> implements Backpressure<I, U> 
 
     @Override
     public void onInitialResult(I initial) {
-        original.onInitialResult(initial);
+        delegateUpdateHandler.onInitialResult(initial);
     }
 
     @Override
     public void onCompleted() {
-        original.onCompleted();
+        delegateUpdateHandler.onCompleted();
         try {
             // await for the last update
             scheduledExecutorService.awaitTermination(period, unit);
@@ -71,11 +72,11 @@ public abstract class TimeBasedBackpressure<I, U> implements Backpressure<I, U> 
 
     @Override
     public void onError(Throwable error) {
-        original.onError(error);
+        delegateUpdateHandler.onError(error);
     }
 
-    protected UpdateHandler<I, U> getOriginal() {
-        return original;
+    protected UpdateHandler<I, U> getDelegateUpdateHandler() {
+        return delegateUpdateHandler;
     }
 
     protected ScheduledExecutorService getScheduledExecutorService() {

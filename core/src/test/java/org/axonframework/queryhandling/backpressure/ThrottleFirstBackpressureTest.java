@@ -18,6 +18,9 @@ package org.axonframework.queryhandling.backpressure;
 
 import org.axonframework.queryhandling.UpdateHandler;
 import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,16 +31,17 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ThrottleFirstBackpressureTest {
 
-    @SuppressWarnings("unchecked")
-    private final UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
-    @SuppressWarnings("unchecked")
-    private final ThrottleFirstBackpressure<String, String> throttleFirstBackpressure = new ThrottleFirstBackpressure<>(
-            updateHandler,
-            0,
-            200,
-            TimeUnit.MILLISECONDS);
+    @Mock
+    private UpdateHandler<String, String> updateHandler;
+    private ThrottleFirstBackpressure<String, String> throttleFirstBackpressure;
+
+    @Before
+    public void setUp() {
+        throttleFirstBackpressure = new ThrottleFirstBackpressure<>(updateHandler, 0, 200, TimeUnit.MILLISECONDS);
+    }
 
     @Test
     public void testThrottleFirstBackpressure() throws InterruptedException {
@@ -50,10 +54,10 @@ public class ThrottleFirstBackpressureTest {
 
         throttleFirstBackpressure.onUpdate("Update1");
         throttleFirstBackpressure.onUpdate("Update2");
-        Thread.sleep(210);
+        Thread.sleep(220);
         throttleFirstBackpressure.onUpdate("Update3");
         throttleFirstBackpressure.onUpdate("Update4");
-        Thread.sleep(210);
+        Thread.sleep(220);
         verify(updateHandler).onUpdate("Update1");
         verify(updateHandler).onUpdate("Update3");
 

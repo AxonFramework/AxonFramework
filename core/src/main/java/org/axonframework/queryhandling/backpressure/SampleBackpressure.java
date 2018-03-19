@@ -24,9 +24,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Sample (Throttle Last) backpressure mechanism - the {@code original} {@link UpdateHandler} will be invoked after
- * given period of time with last update received. If there were no updates within given period, {@code original} will
- * not be invoked. Do note that invocation of {@code original} will be done in separate (worker) thread.
+ * Sample (Throttle Last) backpressure mechanism - the {@code delegateUpdateHandler} {@link UpdateHandler} will be
+ * invoked after given period of time with last update received. If there were no updates within given period, {@code
+ * delegateUpdateHandler} will not be invoked. Do note that invocation of {@code delegateUpdateHandler} will be done in
+ * separate (worker) thread.
+ * <p>
+ * Deliberate choice has to be made whether losing some updates is fine by the specific use case.
  *
  * @param <I> type of initial result
  * @param <U> type of incremental updates
@@ -38,33 +41,34 @@ public class SampleBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
     private final AtomicReference<U> lastUpdate = new AtomicReference<>();
 
     /**
-     * Initializes {@link SampleBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link SampleBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
      *
-     * @param original     the original update handler
-     * @param initialDelay the delay after which to start scheduling of updates
-     * @param period       the period on which to schedule updates
-     * @param unit         time unit
+     * @param delegateUpdateHandler the delegateUpdateHandler update handler
+     * @param initialDelay          the delay after which to start scheduling of updates
+     * @param period                the period on which to schedule updates
+     * @param unit                  time unit
      */
-    public SampleBackpressure(UpdateHandler<I, U> original, long initialDelay, long period, TimeUnit unit) {
-        this(original, initialDelay, period, unit, Executors.newSingleThreadScheduledExecutor());
+    public SampleBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long initialDelay, long period,
+                              TimeUnit unit) {
+        this(delegateUpdateHandler, initialDelay, period, unit, Executors.newSingleThreadScheduledExecutor());
     }
 
     /**
-     * Initializes {@link SampleBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link SampleBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
      *
-     * @param original                 the original update handler
+     * @param delegateUpdateHandler    the delegateUpdateHandler update handler
      * @param initialDelay             the delay after which to start scheduling of updates
      * @param period                   the period on which to schedule updates
      * @param unit                     time unit
      * @param scheduledExecutorService scheduled executor service
      */
-    public SampleBackpressure(UpdateHandler<I, U> original, long initialDelay, long period, TimeUnit unit,
+    public SampleBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long initialDelay, long period, TimeUnit unit,
                               ScheduledExecutorService scheduledExecutorService) {
-        super(original, period, unit, scheduledExecutorService);
+        super(delegateUpdateHandler, period, unit, scheduledExecutorService);
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             U current = lastUpdate.getAndSet(null);
             if (current != null) {
-                original.onUpdate(current);
+                delegateUpdateHandler.onUpdate(current);
             }
         }, initialDelay, period, unit);
     }

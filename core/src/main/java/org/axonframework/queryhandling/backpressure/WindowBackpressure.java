@@ -27,9 +27,9 @@ import java.util.function.Function;
 
 /**
  * Window backpressure mechanism - accumulates updates within given time frame. After time frame passes, {@code
- * original} {@link UpdateHandler} will be invoked. Before this invocation reduction function will be called in order to
- * reduce accumulated updates to a single update. If there are no accumulated updates, {@code original} will not be
- * invoked.
+ * delegateUpdateHandler} {@link UpdateHandler} will be invoked. Before this invocation reduction function will be
+ * called in order to reduce accumulated updates to a single update. If there are no accumulated updates, {@code
+ * delegateUpdateHandler} will not be invoked.
  *
  * @author Milan Savic
  * @since 3.3
@@ -39,37 +39,43 @@ public class WindowBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
     private final List<U> buffer;
 
     /**
-     * Initializes {@link WindowBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link WindowBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
      *
-     * @param original          the original update handler
-     * @param reductionFunction the function which will take a buffered updates and reduce them to single update
-     * @param initialDelay      the delay after which to start scheduling of updates
-     * @param period            the period on which to schedule updates
-     * @param unit              time unit
+     * @param delegateUpdateHandler the delegateUpdateHandler update handler
+     * @param reductionFunction     the function which will take a buffered updates and reduce them to single update
+     * @param initialDelay          the delay after which to start scheduling of updates
+     * @param period                the period on which to schedule updates
+     * @param unit                  time unit
      */
-    public WindowBackpressure(UpdateHandler<I, U> original, Function<List<U>, U> reductionFunction, long initialDelay,
-                              long period, TimeUnit unit) {
-        this(original, reductionFunction, initialDelay, period, unit, Executors.newSingleThreadScheduledExecutor());
+    public WindowBackpressure(UpdateHandler<I, U> delegateUpdateHandler, Function<List<U>, U> reductionFunction,
+                              long initialDelay, long period, TimeUnit unit) {
+        this(delegateUpdateHandler,
+             reductionFunction,
+             initialDelay,
+             period,
+             unit,
+             Executors.newSingleThreadScheduledExecutor());
     }
 
     /**
-     * Initializes {@link WindowBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link WindowBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
      *
-     * @param original                 the original update handler
+     * @param delegateUpdateHandler    the delegateUpdateHandler update handler
      * @param reductionFunction        the function which will take a buffered updates and reduce them to single update
      * @param initialDelay             the delay after which to start scheduling of updates
      * @param period                   the period on which to schedule updates
      * @param unit                     time unit
      * @param scheduledExecutorService scheduled executor service
      */
-    public WindowBackpressure(UpdateHandler<I, U> original, Function<List<U>, U> reductionFunction, long initialDelay,
-                              long period, TimeUnit unit, ScheduledExecutorService scheduledExecutorService) {
-        super(original, period, unit, scheduledExecutorService);
+    public WindowBackpressure(UpdateHandler<I, U> delegateUpdateHandler, Function<List<U>, U> reductionFunction,
+                              long initialDelay, long period, TimeUnit unit,
+                              ScheduledExecutorService scheduledExecutorService) {
+        super(delegateUpdateHandler, period, unit, scheduledExecutorService);
         buffer = new ArrayList<>();
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             synchronized (buffer) {
                 if (buffer.size() > 0) {
-                    original.onUpdate(reductionFunction.apply(new ArrayList<>(buffer)));
+                    delegateUpdateHandler.onUpdate(reductionFunction.apply(new ArrayList<>(buffer)));
                     buffer.clear();
                 }
             }

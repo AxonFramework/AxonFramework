@@ -18,6 +18,9 @@ package org.axonframework.queryhandling.backpressure;
 
 import org.axonframework.queryhandling.UpdateHandler;
 import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,15 +31,17 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
+@RunWith(MockitoJUnitRunner.class)
 public class SampleBackpressureTest {
 
-    @SuppressWarnings("unchecked")
-    private final UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
-    @SuppressWarnings("unchecked")
-    private final SampleBackpressure<String, String> sampleBackpressure = new SampleBackpressure(updateHandler,
-                                                                                                 0,
-                                                                                                 200,
-                                                                                                 TimeUnit.MILLISECONDS);
+    @Mock
+    private UpdateHandler<String, String> updateHandler;
+    private SampleBackpressure<String, String> sampleBackpressure;
+
+    @Before
+    public void setUp() {
+        sampleBackpressure = new SampleBackpressure<>(updateHandler, 0, 200, TimeUnit.MILLISECONDS);
+    }
 
     @Test
     public void testSampleBackpressure() throws InterruptedException {
@@ -53,7 +58,7 @@ public class SampleBackpressureTest {
         Thread.sleep(80);
         sampleBackpressure.onUpdate("Update3");
         sampleBackpressure.onUpdate("Update4");
-        Thread.sleep(210);
+        Thread.sleep(220);
         verify(updateHandler).onUpdate("Update2");
         verify(updateHandler).onUpdate("Update4");
 

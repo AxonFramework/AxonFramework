@@ -23,38 +23,39 @@ import java.util.List;
 
 /**
  * Buffer backpressure mechanism - updates will be stored in internal buffer, and when {@code bufferLimit} is reached
- * {@code original} {@link UpdateHandler} will be invoked with list of previously collected updates. {@code original}
- * {@link UpdateHandler} may choose which updates to process. Updates are sorted in arrival order.
+ * {@code delegateUpdateHandler} {@link UpdateHandler} will be invoked with list of previously collected updates. {@code
+ * delegateUpdateHandler} {@link UpdateHandler} may choose which updates to process. Updates are sorted in arrival
+ * order.
  *
  * @param <I> type of initial result
- * @param <U> type of incremental update. Do note that incremental update type of {@code original} {@link UpdateHandler}
- *            is {@code List<U>}
+ * @param <U> type of incremental update. Do note that incremental update type of {@code delegateUpdateHandler} {@link
+ *            UpdateHandler} is {@code List<U>}
  * @author Milan Savic
  * @since 3.3
  */
-public class BufferBackpressure<I, U> implements Backpressure<I, U> {
+public class BufferBackpressure<I, U> implements BackpressuredUpdateHandler<I, U> {
 
-    private final UpdateHandler<I, List<U>> original;
+    private final UpdateHandler<I, List<U>> delegateUpdateHandler;
     private final List<U> buffer;
     private final int bufferLimit;
 
     /**
-     * Initializes buffer backpressure mechanism with {@code original} {@link UpdateHandler} and {@code bufferLimit}.
-     * When {@code bufferLimit} is reached {@code original} {@link UpdateHandler} will be invoked with accumulated list
-     * of updates.
+     * Initializes buffer backpressure mechanism with {@code delegateUpdateHandler} {@link UpdateHandler} and {@code
+     * bufferLimit}. When {@code bufferLimit} is reached {@code delegateUpdateHandler} {@link UpdateHandler} will be
+     * invoked with accumulated list of updates.
      *
-     * @param original    original update handler
-     * @param bufferLimit buffer limit
+     * @param delegateUpdateHandler delegateUpdateHandler update handler
+     * @param bufferLimit           buffer limit
      */
-    public BufferBackpressure(UpdateHandler<I, List<U>> original, int bufferLimit) {
-        this.original = original;
+    public BufferBackpressure(UpdateHandler<I, List<U>> delegateUpdateHandler, int bufferLimit) {
+        this.delegateUpdateHandler = delegateUpdateHandler;
         this.bufferLimit = bufferLimit;
         this.buffer = new ArrayList<>(bufferLimit);
     }
 
     @Override
     public void onInitialResult(I initial) {
-        original.onInitialResult(initial);
+        delegateUpdateHandler.onInitialResult(initial);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class BufferBackpressure<I, U> implements Backpressure<I, U> {
             buffer.add(update);
 
             if (buffer.size() == bufferLimit) {
-                original.onUpdate(new ArrayList<>(buffer));
+                delegateUpdateHandler.onUpdate(new ArrayList<>(buffer));
                 buffer.clear();
             }
         }
@@ -71,11 +72,11 @@ public class BufferBackpressure<I, U> implements Backpressure<I, U> {
 
     @Override
     public void onCompleted() {
-        original.onCompleted();
+        delegateUpdateHandler.onCompleted();
     }
 
     @Override
     public void onError(Throwable error) {
-        original.onError(error);
+        delegateUpdateHandler.onError(error);
     }
 }

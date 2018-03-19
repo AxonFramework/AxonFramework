@@ -18,6 +18,9 @@ package org.axonframework.queryhandling.backpressure;
 
 import org.axonframework.queryhandling.UpdateHandler;
 import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,11 +32,17 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
+@RunWith(MockitoJUnitRunner.class)
 public class BufferBackpressureTest {
 
-    @SuppressWarnings("unchecked")
-    private final UpdateHandler<String, List<String>> updateHandler = mock(UpdateHandler.class);
-    private final BufferBackpressure<String, String> bufferBackpressure = new BufferBackpressure<>(updateHandler, 2);
+    @Mock
+    private UpdateHandler<String, List<String>> updateHandler;
+    private BufferBackpressure<String, String> bufferBackpressure;
+
+    @Before
+    public void setUp() {
+        bufferBackpressure = new BufferBackpressure<>(updateHandler, 2);
+    }
 
     @Test
     public void testBufferBackpressure() {

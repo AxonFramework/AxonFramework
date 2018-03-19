@@ -24,9 +24,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Debounce (Throttle With Timeout) backpressure mechanism - the {@code original} {@link UpdateHandler} will be invoked
- * with the last received update after which given timeout passed and there were no updates. Do note that invocation of
- * {@code original} will be done in separate (worker) thread.
+ * Debounce (Throttle With Timeout) backpressure mechanism - the {@code delegateUpdateHandler} {@link UpdateHandler}
+ * will be invoked with the last received update after which given timeout passed and there were no updates. Do note
+ * that invocation of {@code delegateUpdateHandler} will be done in separate (worker) thread.
+ * <p>
+ * Deliberate choice has to be made whether losing some updates is fine by the specific use case.
  *
  * @param <I> type of initial result
  * @param <U> type of incremental updates
@@ -35,32 +37,34 @@ import java.util.concurrent.TimeUnit;
  */
 public class DebounceBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
 
+    private static final boolean INTERRUPT_RUNNING_UPDATE = false;
+
     private U lastUpdate;
     private ScheduledFuture<?> schedule;
     private final Object scheduleLock = new Object();
 
     /**
-     * Initializes {@link DebounceBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link DebounceBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
      *
-     * @param original the original update handler
-     * @param period   the period on which to schedule updates
-     * @param unit     time unit
+     * @param delegateUpdateHandler the delegateUpdateHandler update handler
+     * @param period                the period on which to schedule updates
+     * @param unit                  time unit
      */
-    public DebounceBackpressure(UpdateHandler<I, U> original, long period, TimeUnit unit) {
-        this(original, period, unit, Executors.newSingleThreadScheduledExecutor());
+    public DebounceBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long period, TimeUnit unit) {
+        this(delegateUpdateHandler, period, unit, Executors.newSingleThreadScheduledExecutor());
     }
 
     /**
-     * Initializes {@link DebounceBackpressure} with original update handler and parameters for scheduling.
+     * Initializes {@link DebounceBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
      *
-     * @param original                 the original update handler
+     * @param delegateUpdateHandler    the delegateUpdateHandler update handler
      * @param period                   the period on which to schedule updates
      * @param unit                     time unit
      * @param scheduledExecutorService scheduled executor service
      */
-    public DebounceBackpressure(UpdateHandler<I, U> original, long period, TimeUnit unit,
+    public DebounceBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long period, TimeUnit unit,
                                 ScheduledExecutorService scheduledExecutorService) {
-        super(original, period, unit, scheduledExecutorService);
+        super(delegateUpdateHandler, period, unit, scheduledExecutorService);
     }
 
     @Override
@@ -68,9 +72,9 @@ public class DebounceBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
         synchronized (scheduleLock) {
             lastUpdate = update;
             if (schedule != null) {
-                schedule.cancel(false);
+                schedule.cancel(INTERRUPT_RUNNING_UPDATE);
             }
-            schedule = getScheduledExecutorService().schedule(() -> getOriginal().onUpdate(lastUpdate),
+            schedule = getScheduledExecutorService().schedule(() -> getDelegateUpdateHandler().onUpdate(lastUpdate),
                                                               getPeriod(),
                                                               getUnit());
         }
