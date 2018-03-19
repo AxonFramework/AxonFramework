@@ -76,7 +76,7 @@ public class EventProcessorProperties {
         /**
          * The maximum number of threads the processor should process events with.
          */
-        private int threadCount = 1;
+        private int threadCount = -1;
 
         /**
          * The maximum number of events a processor should process as part of a single batch.
@@ -147,7 +147,7 @@ public class EventProcessorProperties {
          * @return the number of threads to use to process Events.
          */
         public int getThreadCount() {
-            return threadCount;
+            return threadCount == -1 ? initialSegmentCount : threadCount;
         }
 
         /**
