@@ -26,33 +26,33 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Utility for Kafka headers
+ * Utility for dealing with {@link Headers}.
  *
  * @author Nakul Mishra
  * @since 3.0
  */
 public class HeaderUtils {
 
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private HeaderUtils() {
     }
 
     /**
-     * Converts bytes to String
+     * Converts bytes to String.
      *
-     * @param value bytes representing string
-     * @return the String
+     * @param value bytes representing string.
+     * @return the String.
      */
     public static String asString(byte[] value) {
         return value != null ? new String(value, UTF_8) : null;
     }
 
     /**
-     * Converts long to bytes
+     * Converts long to bytes.
      *
-     * @param value long
-     * @return the bytes
+     * @param value long.
+     * @return the bytes.
      */
     public static byte[] toBytes(long value) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
@@ -61,10 +61,10 @@ public class HeaderUtils {
     }
 
     /**
-     * Converts bytes to long
+     * Converts bytes to long.
      *
-     * @param bytes representing long
-     * @return the long
+     * @param bytes representing long.
+     * @return the long.
      */
     public static long asLong(byte[] bytes) {
         return ByteBuffer.wrap(bytes).getLong();
@@ -73,9 +73,9 @@ public class HeaderUtils {
     /**
      * Adds a new {@link org.apache.kafka.common.header.internals.RecordHeader}
      *
-     * @param target destination header
-     * @param key    header name
-     * @param value  header value (sent in bytes)
+     * @param target parent header.
+     * @param key    header name.
+     * @param value  header value (sent in bytes).
      */
     public static void addBytes(Headers target, String key, Object value) {
         if (value instanceof Instant) {
@@ -92,10 +92,10 @@ public class HeaderUtils {
     }
 
     /**
-     * Extract keys from kafka header
+     * Extract keys from {@link Headers}.
      *
-     * @param headers kafka header
-     * @return all keys present in {@link Headers}
+     * @param headers Kafka header.
+     * @return all keys present in {@link Headers}.
      */
     public static Set<String> keys(Headers headers) {
         Set<String> keys = new HashSet<>();
@@ -104,10 +104,10 @@ public class HeaderUtils {
     }
 
     /**
-     * Extract axon metadata(if any) attached with {@link Headers}
+     * Extract axon metadata(if any) attached with {@link Headers}.
      *
-     * @param headers kafka header
-     * @return Map containing  metadata
+     * @param headers Kafka header.
+     * @return Map containing  metadata.
      */
     public static Map<String, Object> extractAxonMetadata(Headers headers) {
         Map<String, Object> metaData = new HashMap<>();
