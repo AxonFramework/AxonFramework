@@ -18,6 +18,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 
+import java.util.Map;
+
 /**
  * Message type that carries a Subscription Query: a request for information. Besides a payload, Subscription Query
  * Messages also carry the expected response type and update type. The response type is the type of result expected by
@@ -39,4 +41,23 @@ public interface SubscriptionQueryMessage<Q, I, U> extends QueryMessage<Q, I> {
      * @return the type of incremental responses
      */
     ResponseType<U> getUpdateResponseType();
+
+    /**
+     * Returns a copy of this SubscriptionQueryMessage with the given {@code metaData}. The payload remains unchanged.
+     *
+     * @param metaData The new MetaData for the SubscriptionQueryMessage
+     * @return a copy of this message with the given MetaData
+     */
+    @Override
+    SubscriptionQueryMessage<Q, I, U> withMetaData(Map<String, ?> metaData);
+
+    /**
+     * Returns a copy of this SubscriptionQueryMessage with its MetaData merged with given {@code metaData}. The payload
+     * remains unchanged.
+     *
+     * @param additionalMetaData The MetaData to merge into the SubscriptionQueryMessage
+     * @return a copy of this message with the given additional MetaData
+     */
+    @Override
+    SubscriptionQueryMessage<Q, I, U> andMetaData(Map<String, ?> additionalMetaData);
 }

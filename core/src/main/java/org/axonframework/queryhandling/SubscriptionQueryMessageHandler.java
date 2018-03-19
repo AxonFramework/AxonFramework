@@ -25,6 +25,7 @@ package org.axonframework.queryhandling;
  * @author Milan Savic
  * @since 3.3
  */
+@FunctionalInterface
 public interface SubscriptionQueryMessageHandler<Q extends QueryMessage<?, I>, I, U> {
 
     /**

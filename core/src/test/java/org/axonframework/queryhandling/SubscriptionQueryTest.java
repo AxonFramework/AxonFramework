@@ -97,9 +97,28 @@ public class SubscriptionQueryTest {
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
         assertTrue(chatQueryHandler.emitter.emit("Update1"));
-        Exception exception = new Exception("blah");
-        assertTrue(chatQueryHandler.emitter.error(exception));
-        assertTrue(chatQueryHandler.emitter.complete());
+
+        // then
+        verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
+        verify(updateHandler).onUpdate("Update1");
+        verify(updateHandler, times(0)).onUpdate("Update2");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testNoEmitShouldHappenAfterEmitterIsClosed() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage =
+                new GenericSubscriptionQueryMessage<>("axonFrameworkCR",
+                                                      "subscribableChatMessages",
+                                                      ResponseTypes.multipleInstancesOf(String.class),
+                                                      ResponseTypes.instanceOf(String.class));
+        UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
+
+        // when
+        queryBus.subscriptionQuery(queryMessage, updateHandler);
+        assertTrue(chatQueryHandler.emitter.emit("Update1"));
+        chatQueryHandler.emitter.complete();
         try {
             chatQueryHandler.emitter.emit("Update2");
             fail("Once you close emitter, it shouldn't be possible to emit messages");
@@ -112,6 +131,35 @@ public class SubscriptionQueryTest {
         verify(updateHandler).onUpdate("Update1");
         verify(updateHandler, times(0)).onUpdate("Update2");
         verify(updateHandler).onCompleted();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testNoEmitShouldHappenAfterErrorHasBeenReported() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage =
+                new GenericSubscriptionQueryMessage<>("axonFrameworkCR",
+                                                      "subscribableChatMessages",
+                                                      ResponseTypes.multipleInstancesOf(String.class),
+                                                      ResponseTypes.instanceOf(String.class));
+        UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
+
+        // when
+        queryBus.subscriptionQuery(queryMessage, updateHandler);
+        assertTrue(chatQueryHandler.emitter.emit("Update1"));
+        Exception exception = new Exception("blah");
+        chatQueryHandler.emitter.error(exception);
+        try {
+            chatQueryHandler.emitter.emit("Update2");
+            fail("Once you report an error, it shouldn't be possible to emit messages");
+        } catch (CompletedEmitterException e) {
+            // we want this to happen
+        }
+
+        // then
+        verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
+        verify(updateHandler).onUpdate("Update1");
+        verify(updateHandler, times(0)).onUpdate("Update2");
         verify(updateHandler).onError(exception);
     }
 

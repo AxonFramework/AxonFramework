@@ -36,18 +36,15 @@ public interface QueryUpdateEmitter<U> {
 
     /**
      * Informs query side that there are no more updates.
-     *
-     * @return {@code true} if completion was successful
      */
-    boolean complete();
+    void complete();
 
     /**
      * Informs query side that error occurred.
      *
      * @param error the error
-     * @return {@code true} if error reporting was successful
      */
-    boolean error(Throwable error);
+    void error(Throwable error);
 
     /**
      * Registers a handler to be invoked when query cancels the registration.

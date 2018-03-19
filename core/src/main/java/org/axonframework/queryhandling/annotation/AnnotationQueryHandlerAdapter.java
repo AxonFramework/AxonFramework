@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.*;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -38,7 +39,6 @@ import java.util.stream.Collectors;
 public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
     MessageHandler<QueryMessage<?, ?>>, SubscriptionQueryMessageHandler<QueryMessage<?, Object>, Object, Object> {
 
-    private static final Registration NULL = () -> false;
     private final T target;
     private AnnotatedHandlerInspector<T> model;
 
@@ -67,7 +67,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
     public Registration subscribe(QueryBus queryBus) {
         Collection<Registration> registrationList = model.getHandlers().stream()
                 .map(m -> subscribe(queryBus, m))
-                .filter(m -> !NULL.equals(m))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return () -> registrationList.stream().map(Registration::cancel)
                 .reduce(Boolean::logicalOr)

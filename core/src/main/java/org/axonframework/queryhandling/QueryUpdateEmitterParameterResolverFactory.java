@@ -53,7 +53,8 @@ public class QueryUpdateEmitterParameterResolverFactory
     @Override
     public QueryUpdateEmitter resolveParameterValue(Message<?> message) {
         return CurrentUnitOfWork.map(uow -> (QueryUpdateEmitter) uow.getResource(QUERY_UPDATE_EMITTER_KEY))
-                                .orElse(null);
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "QueryUpdateEmitter should have been injected"));
     }
 
     @Override

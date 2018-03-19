@@ -28,23 +28,21 @@ public class NoOpQueryUpdateEmitter<U> implements QueryUpdateEmitter<U> {
     @Override
     public boolean emit(U update) {
         // this is empty implementation, since regular query handler will not invoke it
-        return true;
+        return false;
     }
 
     @Override
-    public boolean complete() {
+    public void complete() {
         // this is empty implementation, since regular query handler will not invoke it
-        return true;
     }
 
     @Override
-    public boolean error(Throwable error) {
+    public void error(Throwable error) {
         // this is empty implementation, since regular query handler will not invoke it
-        return true;
     }
 
     @Override
     public void onRegistrationCanceled(Runnable r) {
-        // this is empty implementation, since regular query handler will not invoke it
+        r.run();
     }
 }
