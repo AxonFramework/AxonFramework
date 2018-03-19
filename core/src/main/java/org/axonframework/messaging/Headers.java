@@ -26,15 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * Default headers to include when publishing a message on a broker.
+ *
  * @author Nakul Mishra
  * @since 3.0
  */
 public class Headers {
-
-    private Headers() {
-    }
 
     public static final String MESSAGE_ID = "axon-message-id";
     public static final String MESSAGE_TYPE = "axon-message-type";
@@ -45,7 +42,18 @@ public class Headers {
     public static final String AGGREGATE_TYPE = "axon-message-aggregate-type";
     public static final String MESSAGE_METADATA = "axon-metadata";
 
-    public static Map<String, Object> defaultHeaders(EventMessage<?> message, SerializedObject<byte[]> serializedObject) {
+    private Headers() {
+    }
+
+    /**
+     * Generate defaults headers to recognise an event message.
+     *
+     * @param message          event message.
+     * @param serializedObject payload.
+     * @return headers
+     */
+    public static Map<String, Object> defaultHeaders(EventMessage<?> message,
+                                                     SerializedObject<byte[]> serializedObject) {
         Assert.notNull(message, () -> "Event message cannot be null");
         Assert.notNull(serializedObject, () -> "Serialized Object cannot be null");
         Assert.notNull(serializedObject.getType(), () -> "SerializedObject Type cannot be null");
@@ -57,6 +65,12 @@ public class Headers {
         }});
     }
 
+    /**
+     * Generate defaults headers to recognise a domain message.
+     *
+     * @param message domain message.
+     * @return headers.
+     */
     public static Map<String, Object> domainHeaders(DomainEventMessage<?> message) {
         Assert.notNull(message, () -> "Domain message cannot be null");
         return Collections.unmodifiableMap(new HashMap<String, Object>() {{
