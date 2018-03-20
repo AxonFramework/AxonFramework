@@ -214,6 +214,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
+    protected Long doGetVersion() {
+        return version();
+    }
+
+    @Override
     public <R> R invoke(Function<T, R> invocation) {
         try {
             return executeWithResult(() -> invocation.apply(aggregateRoot));
