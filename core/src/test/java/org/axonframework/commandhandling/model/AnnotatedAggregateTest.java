@@ -31,14 +31,15 @@ public class AnnotatedAggregateTest {
     @Before
     public void setUp() {
         eventBus = mock(EventStore.class);
-        repository = new StubRepository(eventBus);
+        repository = new StubRepository(eventBus, mock(RepositoryProvider.class));
     }
 
     @Test
     public void testApplyingEventInHandlerPublishesInRightOrder() throws Exception {
         Command command = new Command(ID);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
-        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository.newInstance(() -> new AggregateRoot(command)));
+        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
+                .newInstance(() -> new AggregateRoot(command)));
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
@@ -108,15 +109,17 @@ public class AnnotatedAggregateTest {
 
     private class StubRepository extends AbstractRepository<AggregateRoot, Aggregate<AggregateRoot>> {
         private final EventBus eventBus;
+        private final RepositoryProvider repositoryProvider;
 
-        public StubRepository(EventBus eventBus) {
+        public StubRepository(EventBus eventBus, RepositoryProvider repositoryProvider) {
             super(AggregateRoot.class);
             this.eventBus = eventBus;
+            this.repositoryProvider = repositoryProvider;
         }
 
         @Override
         protected Aggregate<AggregateRoot> doCreateNew(Callable<AggregateRoot> factoryMethod) throws Exception {
-            return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), eventBus);
+            return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), eventBus, repositoryProvider);
         }
 
         @Override

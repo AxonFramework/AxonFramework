@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
@@ -75,6 +76,7 @@ public class DisruptorCommandBusTest {
     private static final int COMMAND_COUNT = 100 * 1000;
     private StubHandler stubHandler;
     private InMemoryEventStore eventStore;
+    private RepositoryProvider repositoryProvider;
     private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
     private TransactionManager mockTransactionManager;
@@ -87,6 +89,7 @@ public class DisruptorCommandBusTest {
         eventStore = new InMemoryEventStore();
         eventStore.publish(Collections.singletonList(
                 new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent())));
+        repositoryProvider = mock(RepositoryProvider.class);
         parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(DisruptorCommandBusTest.class));
     }
 
@@ -109,7 +112,10 @@ public class DisruptorCommandBusTest {
                 .setExecutor(customExecutor).setInvokerThreadCount(2).setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         GenericAggregateFactory<StubAggregate> aggregateFactory = new GenericAggregateFactory<>(StubAggregate.class);
-        stubHandler.setRepository(testSubject.createRepository(eventStore, aggregateFactory, parameterResolverFactory));
+        stubHandler.setRepository(testSubject.createRepository(eventStore,
+                                                               aggregateFactory,
+                                                               parameterResolverFactory,
+                                                               repositoryProvider));
         Consumer<UnitOfWork<CommandMessage<?>>> mockPrepareCommitConsumer = mock(Consumer.class);
         Consumer<UnitOfWork<CommandMessage<?>>> mockAfterCommitConsumer = mock(Consumer.class);
         Consumer<UnitOfWork<CommandMessage<?>>> mockCleanUpConsumer = mock(Consumer.class);
@@ -175,7 +181,7 @@ public class DisruptorCommandBusTest {
 
         stubHandler.setRepository(
                 testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class),
-                                             snapshotTriggerDefinition));
+                                             snapshotTriggerDefinition, repositoryProvider));
 
         CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
         CommandCallback mockCallback = mock(CommandCallback.class);
@@ -198,7 +204,7 @@ public class DisruptorCommandBusTest {
     public void usesProvidedParameterResolverFactoryToResolveParameters() throws Exception {
         testSubject = new DisruptorCommandBus();
         testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class),
-                                     parameterResolverFactory);
+                                     parameterResolverFactory, repositoryProvider);
 
         verify(parameterResolverFactory, atLeastOnce()).createInstance(isA(Executable.class), isA(java.lang.reflect.Parameter[].class), anyInt());
         verifyNoMoreInteractions(parameterResolverFactory);
@@ -266,7 +272,8 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject.createRepository(eventStore,
-                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+                                                               new GenericAggregateFactory<>(StubAggregate.class),
+                                                               repositoryProvider));
         when(mockInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
         testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
@@ -296,7 +303,8 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject.createRepository(eventStore,
-                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+                                                               new GenericAggregateFactory<>(StubAggregate.class),
+                                                               repositoryProvider));
 
 
         testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
@@ -339,7 +347,8 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject.createRepository(eventStore,
-                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+                                                               new GenericAggregateFactory<>(StubAggregate.class),
+                                                               repositoryProvider));
 
         String aggregateIdentifier2 = UUID.randomUUID().toString();
         testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
@@ -372,7 +381,9 @@ public class DisruptorCommandBusTest {
     public void testCommandRejectedAfterShutdown() throws InterruptedException {
         testSubject = new DisruptorCommandBus();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(testSubject.createRepository(eventStore, new GenericAggregateFactory<>(StubAggregate.class)));
+        stubHandler.setRepository(testSubject.createRepository(eventStore,
+                                                               new GenericAggregateFactory<>(StubAggregate.class),
+                                                               repositoryProvider));
 
         testSubject.stop();
         testSubject.dispatch(asCommandMessage(new Object()));
@@ -383,7 +394,8 @@ public class DisruptorCommandBusTest {
         testSubject = new DisruptorCommandBus();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject.createRepository(eventStore,
-                                                               new GenericAggregateFactory<>(StubAggregate.class)));
+                                                               new GenericAggregateFactory<>(StubAggregate.class),
+                                                               repositoryProvider));
 
         for (int i = 0; i < COMMAND_COUNT; i++) {
             CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));

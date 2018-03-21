@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -60,7 +61,8 @@ public class EventSourcingRepositoryTest {
         snapshotTrigger = mock(SnapshotTrigger.class);
         triggerDefinition = mock(SnapshotTriggerDefinition.class);
         when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
-        testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore, triggerDefinition);
+        testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore, triggerDefinition,
+                                                    mock(RepositoryProvider.class));
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
 

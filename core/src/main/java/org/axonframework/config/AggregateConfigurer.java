@@ -82,13 +82,17 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                  "Store to use, or configure a specific repository implementation for " +
                                  aggregate.toString());
             if (c.commandBus() instanceof DisruptorCommandBus) {
-                return ((DisruptorCommandBus) c.commandBus())
-                        .createRepository(c.eventStore(), aggregateFactory.get(),
-                                          snapshotTriggerDefinition.get(),
-                                          c.parameterResolverFactory());
+                return ((DisruptorCommandBus) c.commandBus()).createRepository(c.eventStore(),
+                                                                               aggregateFactory.get(),
+                                                                               snapshotTriggerDefinition.get(),
+                                                                               c.parameterResolverFactory(),
+                                                                               c::repository);
             }
-            return new EventSourcingRepository<>(metaModel.get(), aggregateFactory.get(), c.eventStore(),
-                                                 snapshotTriggerDefinition.get());
+            return new EventSourcingRepository<>(metaModel.get(),
+                                                 aggregateFactory.get(),
+                                                 c.eventStore(),
+                                                 snapshotTriggerDefinition.get(),
+                                                 c::repository);
         });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
                                          c -> new AggregateAnnotationCommandHandler<>(repository.get(),
@@ -131,7 +135,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                                                aggregateType.getSimpleName()));
 
                                                                }),
-                                                configurer.metaModel.get(), c.eventBus()));
+                                                configurer.metaModel.get(), c.eventBus(), c::repository));
     }
 
     /**
@@ -148,7 +152,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                     EntityManagerProvider entityManagerProvider) {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
         return configurer.configureRepository(
-                c -> new GenericJpaRepository<>(entityManagerProvider, configurer.metaModel.get(), c.eventBus()));
+                c -> new GenericJpaRepository<>(entityManagerProvider, configurer.metaModel.get(), c.eventBus(), c::repository));
     }
 
     private String name(String prefix) {

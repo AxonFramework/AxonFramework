@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.AbstractRepository;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -64,7 +65,10 @@ public class CommandHandlingBenchmark {
 
             @Override
             protected AnnotatedAggregate<MyAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
-                return AnnotatedAggregate.initialize(myAggregate, aggregateModel(), eventStore);
+                return AnnotatedAggregate.initialize(myAggregate,
+                                                     aggregateModel(),
+                                                     eventStore,
+                                                     new StubRepositoryProvider());
             }
 
             @Override
@@ -119,6 +123,14 @@ public class CommandHandlingBenchmark {
         @Override
         public Object handle(CommandMessage<?> command) throws Exception {
             repository.load(aggregateIdentifier.toString()).execute(MyAggregate::doSomething);
+            return null;
+        }
+    }
+
+    private static class StubRepositoryProvider implements RepositoryProvider {
+
+        @Override
+        public <T> Repository<T> repositoryFor(Class<T> aggregateType) {
             return null;
         }
     }

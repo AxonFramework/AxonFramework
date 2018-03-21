@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -35,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  *
@@ -48,7 +50,7 @@ public class CommandHandlingTest {
     @Before
     public void setUp() {
         stubEventStore = new StubEventStore();
-        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore);
+        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore, mock(RepositoryProvider.class));
         aggregateIdentifier = "testAggregateIdentifier";
     }
 

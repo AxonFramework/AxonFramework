@@ -19,9 +19,7 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.concurrent.Callable;
 
@@ -37,8 +35,9 @@ public class AbstractRepositoryTest {
         testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(JpaAggregate.class) {
 
             @Override
-            protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod) throws Exception {
-                return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), null);
+            protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
+                    throws Exception {
+                return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), null, null);
             }
 
             @Override
@@ -53,7 +52,7 @@ public class AbstractRepositoryTest {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
-                return AnnotatedAggregate.initialize(new JpaAggregate(), aggregateModel(), null);
+                return AnnotatedAggregate.initialize(new JpaAggregate(), aggregateModel(), null, null);
             }
         };
         DefaultUnitOfWork.startAndGet(null);

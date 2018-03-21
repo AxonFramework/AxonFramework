@@ -1,5 +1,6 @@
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
@@ -25,11 +26,12 @@ public class AggregateCacheEntry<T> implements Serializable {
     }
 
     public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
+                                                      RepositoryProvider repositoryProvider,
                                                       SnapshotTriggerDefinition snapshotTriggerDefinition) {
         if (aggregate != null) {
             return aggregate;
         }
-        return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore,
+        return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore, repositoryProvider,
                                                  snapshotTriggerDefinition
                                                          .reconfigure(aggregateRoot.getClass(), snapshotTrigger));
     }

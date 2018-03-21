@@ -24,10 +24,15 @@
         <constructor-arg ref="entityManagerProvider"/>
         <constructor-arg value="org.axonframework.commandhandling.model.JpaAggregate"/>
         <constructor-arg ref="eventBus"/>
+        <constructor-arg ref="mockRepositoryProvider" />
     </bean>
 
     <bean id="mockEventStore" class="org.mockito.Mockito" factory-method="mock">
         <constructor-arg value="org.axonframework.eventsourcing.eventstore.EventStore"/>
+    </bean>
+
+    <bean id="mockRepositoryProvider" class="org.mockito.Mockito" factory-method="mock">
+        <constructor-arg value="org.axonframework.commandhandling.model.RepositoryProvider"/>
     </bean>
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>

@@ -68,6 +68,23 @@ public abstract class AggregateLifecycle {
     }
 
     /**
+     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be
+     * available to the current aggregate. {@link Repository} of an aggregate to be created is exposed to the current
+     * aggregate via {@link RepositoryProvider}.
+     *
+     * @param factoryMethod factory method which creates new aggregate
+     * @param aggregateType type of new aggregate to be created
+     * @param <T>           type of new aggregate to be created
+     * @return a new aggregate instance
+     *
+     * @throws Exception thrown if something goes wrong during instantiation of new aggregate
+     */
+    public static <T> Aggregate<T> spawnNewAggregate(Callable<T> factoryMethod, Class<T> aggregateType)
+            throws Exception {
+        return getInstance().doSpawnNewAggregate(factoryMethod, aggregateType);
+    }
+
+    /**
      * Indicates whether this Aggregate instance is 'live'. Events applied to a 'live' Aggregate represent events that
      * are currently happening, as opposed to events representing historic decisions used to reconstruct the
      * Aggregate's state.
@@ -150,6 +167,21 @@ public abstract class AggregateLifecycle {
      * @see ApplyMore
      */
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
+
+    /**
+     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be
+     * available to the current aggregate. {@link Repository} of an aggregate to be created is exposed to the current
+     * aggregate via {@link RepositoryProvider}.
+     *
+     * @param factoryMethod factory method which creates new aggregate
+     * @param aggregateType type of new aggregate to be created
+     * @param <T>           type of new aggregate to be created
+     * @return a new aggregate instance
+     *
+     * @throws Exception thrown if something goes wrong during instantiation of new aggregate
+     */
+    protected abstract <T> Aggregate<T> doSpawnNewAggregate(Callable<T> factoryMethod, Class<T> aggregateType)
+            throws Exception;
 
     /**
      * Executes the given task and returns the result of the task. While the task is being executed the current

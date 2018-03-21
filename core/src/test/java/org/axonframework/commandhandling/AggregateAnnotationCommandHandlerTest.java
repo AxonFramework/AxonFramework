@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -33,13 +34,21 @@ import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -67,9 +76,11 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.newInstance(any()))
                 .thenAnswer(
                         invocation ->
-                                EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
+                                EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation
+                                                                         .getArguments()[0],
                                                                  aggregateModel,
                                                                  mock(EventStore.class),
+                                                                 mock(RepositoryProvider.class),
                                                                  NoSnapshotTriggerDefinition.TRIGGER));
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
@@ -226,11 +237,11 @@ public class AggregateAnnotationCommandHandlerTest {
 
     protected AnnotatedAggregate<StubCommandAnnotatedAggregate> createAggregate(String aggregateIdentifier) {
         return AnnotatedAggregate.initialize(new StubCommandAnnotatedAggregate(aggregateIdentifier),
-                                             aggregateModel, null);
+                                             aggregateModel, null, null);
     }
 
     protected AnnotatedAggregate<StubCommandAnnotatedAggregate> createAggregate(StubCommandAnnotatedAggregate root) {
-        return AnnotatedAggregate.initialize(root, aggregateModel, null);
+        return AnnotatedAggregate.initialize(root, aggregateModel, null, null);
     }
 
     @Test

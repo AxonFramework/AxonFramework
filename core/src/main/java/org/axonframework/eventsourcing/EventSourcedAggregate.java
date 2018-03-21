@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ApplyMore;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
@@ -43,17 +44,19 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Initializes an EventSourcedAggregate instance for the given {@code aggregateRoot}, based on the given {@code
      * inspector}, which publishes events to the given {@code eventBus}.
      *
-     * @param aggregateRoot   The aggregate root instance
-     * @param inspector       The inspector describing the aggregate structure
-     * @param eventBus        The event bus to send generated events to
-     * @param snapshotTrigger The trigger to notify of events and initialization
-     * @param <T>             the aggregate root type
+     * @param aggregateRoot      The aggregate root instance
+     * @param inspector          The inspector describing the aggregate structure
+     * @param eventBus           The event bus to send generated events to
+     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param snapshotTrigger    The trigger to notify of events and initialization
+     * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
      */
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
-                                                          EventBus eventBus, SnapshotTrigger snapshotTrigger) {
+                                                          EventBus eventBus, RepositoryProvider repositoryProvider,
+                                                          SnapshotTrigger snapshotTrigger) {
         EventSourcedAggregate<T> aggregate =
-                new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, snapshotTrigger);
+                new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, repositoryProvider, snapshotTrigger);
         aggregate.registerWithUnitOfWork();
         return aggregate;
     }
@@ -63,18 +66,23 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * inspector}, which publishes events to the given {@code eventBus} and stores events in the given {@code
      * eventStore}.
      *
-     * @param aggregateFactory The aggregate root factory
-     * @param inspector        The inspector describing the aggregate structure
-     * @param eventBus         The event bus to send generated events to
-     * @param snapshotTrigger  The trigger to notify of events and initialization
-     * @param <T>              the aggregate root type
+     * @param aggregateFactory   The aggregate root factory
+     * @param inspector          The inspector describing the aggregate structure
+     * @param eventBus           The event bus to send generated events to
+     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param snapshotTrigger    The trigger to notify of events and initialization
+     * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
+     *
      * @throws Exception if the aggregate cannot be initialized
      */
     public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
-                                                          EventBus eventBus,
+                                                          EventBus eventBus, RepositoryProvider repositoryProvider,
                                                           SnapshotTrigger snapshotTrigger) throws Exception {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector, eventBus, snapshotTrigger);
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector,
+                                                                         eventBus,
+                                                                         repositoryProvider,
+                                                                         snapshotTrigger);
         aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);
         return aggregate;
@@ -86,19 +94,25 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * <p>
      * Use this method to initialize an EventSourcedAggregate without having to replay the aggregate from events.
      *
-     * @param aggregateRoot   The aggregate root instance
-     * @param model           The model describing the aggregate structure
-     * @param seqNo           The last event sequence number of the aggregate
-     * @param isDeleted       Flag to indicate whether or not the aggregate is deleted
-     * @param eventBus        The event bus to send generated events to
-     * @param snapshotTrigger The trigger to notify of events and initialization
-     * @param <T>             the aggregate root type
+     * @param aggregateRoot      The aggregate root instance
+     * @param model              The model describing the aggregate structure
+     * @param seqNo              The last event sequence number of the aggregate
+     * @param isDeleted          Flag to indicate whether or not the aggregate is deleted
+     * @param eventBus           The event bus to send generated events to
+     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param snapshotTrigger    The trigger to notify of events and initialization
+     * @param <T>                the aggregate root type
      * @return the reconstructed EventSourcedAggregate instance
      */
     public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
                                                            boolean isDeleted, EventBus eventBus,
+                                                           RepositoryProvider repositoryProvider,
                                                            SnapshotTrigger snapshotTrigger) {
-        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot, model, eventBus, snapshotTrigger);
+        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot,
+                                                        model,
+                                                        eventBus,
+                                                        repositoryProvider,
+                                                        snapshotTrigger);
         aggregate.initSequence(seqNo);
         if (isDeleted) {
             aggregate.doMarkDeleted();
@@ -110,14 +124,15 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Initializes an Aggregate instance for the given {@code aggregateRoot}, based on the given {@code model}, which
      * publishes events to the given {@code eventBus}.
      *
-     * @param aggregateRoot   The aggregate root instance
-     * @param model           The model describing the aggregate structure
-     * @param eventBus        The event store to store generated events in
-     * @param snapshotTrigger The trigger to notify of events and initialization
+     * @param aggregateRoot      The aggregate root instance
+     * @param model              The model describing the aggregate structure
+     * @param eventBus           The event store to store generated events in
+     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param snapshotTrigger    The trigger to notify of events and initialization
      */
     protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
-                                    SnapshotTrigger snapshotTrigger) {
-        super(aggregateRoot, model, eventBus);
+                                    RepositoryProvider repositoryProvider, SnapshotTrigger snapshotTrigger) {
+        super(aggregateRoot, model, eventBus, repositoryProvider);
         this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }
@@ -126,13 +141,15 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Creates a new EventSourcedAggregate instance based on the given {@code model}, which publishes events to the
      * given {@code eventBus}. This aggregate is not assigned a root instance yet.
      *
-     * @param model           The model describing the aggregate structure
-     * @param eventBus        The event store to store generated events in
-     * @param snapshotTrigger The trigger to notify of events and initialization
+     * @param model              The model describing the aggregate structure
+     * @param eventBus           The event store to store generated events in
+     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param snapshotTrigger    The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
-    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, SnapshotTrigger snapshotTrigger) {
-        super(model, eventBus);
+    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, RepositoryProvider repositoryProvider,
+                                    SnapshotTrigger snapshotTrigger) {
+        super(model, eventBus, repositoryProvider);
         this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }

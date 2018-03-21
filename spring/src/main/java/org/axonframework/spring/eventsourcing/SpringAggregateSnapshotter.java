@@ -15,6 +15,7 @@
 
 package org.axonframework.spring.eventsourcing;
 
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 /**
  * Snapshotter implementation that uses the AggregateRoot as state for the snapshot. Unlike the
@@ -55,8 +57,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * @param txManager                The transaction manager to manage the persistence transactions with
      * @see ClasspathParameterResolverFactory
      */
-    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory, Executor executor, TransactionManager txManager) {
-        super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager);
+    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory, Executor executor, TransactionManager txManager, RepositoryProvider repositoryProvider) {
+        super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager, repositoryProvider);
     }
 
     @Override
@@ -69,10 +71,10 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
                     .findFirst();
             if (!factory.isPresent()) {
                 factory = applicationContext.getBeansOfType(EventSourcingRepository.class)
-                        .values().stream()
-                        .map(EventSourcingRepository::getAggregateFactory)
-                        .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
-                        .findFirst();
+                                            .values().stream()
+                                            .map((Function<EventSourcingRepository, AggregateFactory>) EventSourcingRepository::getAggregateFactory)
+                                            .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
+                                            .findFirst();
                 if (factory.isPresent()) {
                     aggregateFactory = factory.get();
                     registerAggregateFactory(aggregateFactory);

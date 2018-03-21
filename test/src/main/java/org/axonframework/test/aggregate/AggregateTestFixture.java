@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
@@ -69,6 +70,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final EventStore eventStore;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
+    private RepositoryProvider repositoryProvider;
     private Repository<T> repository;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage<?>> givenEvents;
@@ -104,13 +106,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider) {
+        this.repositoryProvider = repositoryProvider;
+        return this;
+    }
+
+    @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
         return registerRepository(new EventSourcingRepository<>(
                 aggregateFactory, eventStore,
                 MultiParameterResolverFactory.ordered(
                         new SimpleResourceParameterResolverFactory(resources),
                         ClasspathParameterResolverFactory.forClass(aggregateType)),
-                NoSnapshotTriggerDefinition.INSTANCE));
+                NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider));
     }
 
     @Override
@@ -266,9 +274,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<T>(aggregateType),
+            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
                                                              eventStore, parameterResolverFactory,
-                                                             NoSnapshotTriggerDefinition.INSTANCE));
+                                                             NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider));
         }
     }
 

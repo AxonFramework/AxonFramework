@@ -16,9 +16,11 @@
 
 package org.axonframework.spring.eventsourcing;
 
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.Configuration;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -52,6 +54,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     private EventStore eventStore;
+    private RepositoryProvider repositoryProvider;
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
@@ -68,6 +71,10 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
             eventStore = applicationContext.getBean(EventStore.class);
         }
 
+        if (repositoryProvider == null) {
+            repositoryProvider = applicationContext.getBean(Configuration.class)::repository;
+        }
+
         if (parameterResolverFactory == null) {
             parameterResolverFactory = MultiParameterResolverFactory
                     .ordered(ClasspathParameterResolverFactory.forClass(getObjectType()),
@@ -78,7 +85,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
         SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore, parameterResolverFactory,
-                                                                                executor, txManager);
+                                                                                executor, txManager, repositoryProvider);
         snapshotter.setApplicationContext(applicationContext);
         return snapshotter;
     }
@@ -121,6 +128,10 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
      */
     public void setEventStore(EventStore eventStore) {
         this.eventStore = eventStore;
+    }
+
+    public void setRepositoryProvider(RepositoryProvider repositoryProvider) {
+        this.repositoryProvider = repositoryProvider;
     }
 
     @Override

@@ -16,23 +16,33 @@
 
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.ThrowingListenerErrorHandler;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -53,6 +63,7 @@ public class SynchronousLoopbackTest {
     private CommandBus commandBus;
     private String aggregateIdentifier;
     private EventStore eventStore;
+    private RepositoryProvider repositoryProvider;
     private VoidCallback reportErrorCallback;
     private CommandCallback<Object, Object> expectErrorCallback;
 
@@ -64,6 +75,7 @@ public class SynchronousLoopbackTest {
         eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
+        repositoryProvider = mock(RepositoryProvider.class);
 
         reportErrorCallback = new VoidCallback<Object>() {
             @Override
@@ -90,8 +102,11 @@ public class SynchronousLoopbackTest {
 
     protected void initializeRepository(LockFactory lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository =
-                new EventSourcingRepository<>(new GenericAggregateFactory<>(CountingAggregate.class), eventStore,
-                                              lockingStrategy, NoSnapshotTriggerDefinition.INSTANCE);
+                new EventSourcingRepository<>(new GenericAggregateFactory<>(CountingAggregate.class),
+                                              eventStore,
+                                              lockingStrategy,
+                                              NoSnapshotTriggerDefinition.INSTANCE,
+                                              repositoryProvider);
         new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 

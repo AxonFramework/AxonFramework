@@ -47,6 +47,7 @@ import static org.mockito.Mockito.*;
 public class GenericJpaRepositoryTest {
 
     private EntityManager mockEntityManager;
+    private RepositoryProvider mockRepositoryProvider;
     private GenericJpaRepository<StubJpaAggregate> testSubject;
     private String aggregateId;
     private StubJpaAggregate aggregate;
@@ -55,10 +56,14 @@ public class GenericJpaRepositoryTest {
     @Before
     public void setUp() {
         mockEntityManager = mock(EntityManager.class);
+        mockRepositoryProvider = mock(RepositoryProvider.class);
         identifierConverter = mock(Function.class);
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
-                                                 StubJpaAggregate.class, null, identifierConverter);
+                                                 StubJpaAggregate.class,
+                                                 null,
+                                                 null,
+                                                 identifierConverter);
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
@@ -89,7 +94,10 @@ public class GenericJpaRepositoryTest {
     public void testAggregateCreatesSequenceNumbersForNewAggregatesWhenUsingEventStore() throws Exception {
         EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
-                                                 StubJpaAggregate.class, mockEventStore, identifierConverter);
+                                                 StubJpaAggregate.class,
+                                                 mockEventStore,
+                                                 mockRepositoryProvider,
+                                                 identifierConverter);
 
         DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg = testSubject.newInstance(() -> new StubJpaAggregate("id", "test1", "test2"));
@@ -121,7 +129,10 @@ public class GenericJpaRepositoryTest {
         EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         mockEventStore.publish(createEvent("123", 0), createEvent("123", 1));
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
-                                                 StubJpaAggregate.class, mockEventStore, identifierConverter);
+                                                 StubJpaAggregate.class,
+                                                 mockEventStore,
+                                                 mockRepositoryProvider,
+                                                 identifierConverter);
 
         DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg = testSubject.load("123");
@@ -146,7 +157,10 @@ public class GenericJpaRepositoryTest {
     public void testAggregateDoesNotCreateSequenceNumbersWhenNoEventsInStore() throws Exception {
         EventStore mockEventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
-                                                 StubJpaAggregate.class, mockEventStore, identifierConverter);
+                                                 StubJpaAggregate.class,
+                                                 mockEventStore,
+                                                 mockRepositoryProvider,
+                                                 identifierConverter);
 
         DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);

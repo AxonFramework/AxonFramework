@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -42,6 +43,7 @@ import java.util.concurrent.Callable;
 public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T> {
 
     private final EventStore eventStore;
+    private final RepositoryProvider repositoryProvider;
     private final Cache cache;
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
 
@@ -51,13 +53,20 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * <p>
      * A repository initialized using this constructor does not create snapshots for aggregates.
      *
-     * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore       The event store that holds the event streams for this repository
-     * @param cache            The cache in which entries will be stored
+     * @param aggregateFactory   The factory for new aggregate instances
+     * @param eventStore         The event store that holds the event streams for this repository
+     * @param cache              The cache in which entries will be stored
+     * @param repositoryProvider Provides repositories for given aggregate types
      * @see LockingRepository#LockingRepository(Class)
      */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache) {
-        this(aggregateFactory, eventStore, new PessimisticLockFactory(), cache, NoSnapshotTriggerDefinition.INSTANCE);
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache,
+                                          RepositoryProvider repositoryProvider) {
+        this(aggregateFactory,
+             eventStore,
+             new PessimisticLockFactory(),
+             cache,
+             NoSnapshotTriggerDefinition.INSTANCE,
+             repositoryProvider);
     }
 
     /**
@@ -67,11 +76,18 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param eventStore                The event store that holds the event streams for this repository
      * @param cache                     The cache in which entries will be stored
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     * @param repositoryProvider        Provides repositories for given aggregate types
      * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache,
-                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory, eventStore, new PessimisticLockFactory(), cache, snapshotTriggerDefinition);
+                                          SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                          RepositoryProvider repositoryProvider) {
+        this(aggregateFactory,
+             eventStore,
+             new PessimisticLockFactory(),
+             cache,
+             snapshotTriggerDefinition,
+             repositoryProvider);
     }
 
     /**
@@ -85,14 +101,17 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param cache                     The cache in which entries will be stored
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
      *                                  LockingRepository#LockingRepository(Class)
+     * @param repositoryProvider        Provides repositories for given aggregate types
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
-                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        super(aggregateFactory, eventStore, lockFactory, snapshotTriggerDefinition);
+                                          SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                          RepositoryProvider repositoryProvider) {
+        super(aggregateFactory, eventStore, lockFactory, snapshotTriggerDefinition, repositoryProvider);
         this.cache = cache;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+        this.repositoryProvider = repositoryProvider;
     }
 
     /**
@@ -107,15 +126,23 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
      *                                  LockingRepository#LockingRepository(Class)
+     * @param repositoryProvider        Provides repositories for given aggregate types
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
                                           ParameterResolverFactory parameterResolverFactory,
-                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        super(aggregateFactory, eventStore, lockFactory, parameterResolverFactory, snapshotTriggerDefinition);
+                                          SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                          RepositoryProvider repositoryProvider) {
+        super(aggregateFactory,
+              eventStore,
+              lockFactory,
+              parameterResolverFactory,
+              snapshotTriggerDefinition,
+              repositoryProvider);
         this.cache = cache;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+        this.repositoryProvider = repositoryProvider;
     }
 
     @Override
@@ -158,7 +185,10 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         EventSourcedAggregate<T> aggregate = null;
         AggregateCacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
         if (cacheEntry != null) {
-            aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventStore, snapshotTriggerDefinition);
+            aggregate = cacheEntry.recreateAggregate(aggregateModel(),
+                                                     eventStore,
+                                                     repositoryProvider,
+                                                     snapshotTriggerDefinition);
         }
         if (aggregate == null) {
             aggregate = super.doLoadWithLock(aggregateIdentifier, expectedVersion);

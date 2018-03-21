@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.MockException;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
@@ -60,7 +61,8 @@ public class CachingEventSourcingRepositoryTest {
         ehCache = cacheManager.getCache("testCache");
         cache = spy(new EhCacheAdapter(ehCache));
 
-        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, cache);
+        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, cache,
+                                                           mock(RepositoryProvider.class));
     }
 
     @After

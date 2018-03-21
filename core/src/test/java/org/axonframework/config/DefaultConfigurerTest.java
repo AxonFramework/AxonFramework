@@ -166,6 +166,7 @@ public class DefaultConfigurerTest {
                                                         defaultConfiguration(StubAggregate.class)
                                                                 .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
                                                                                                                      StubAggregate.class, c.eventBus(),
+                                                                                                                     c::repository,
                                                                                                                      c.parameterResolverFactory())))
                                                 .buildConfiguration();
 
@@ -232,6 +233,7 @@ public class DefaultConfigurerTest {
                                                         defaultConfiguration(StubAggregate.class)
                                                                 .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
                                                                                                                      StubAggregate.class, c.eventBus(),
+                                                                                                                     c::repository,
                                                                                                                      c.parameterResolverFactory())))
                                                 .buildConfiguration();
 

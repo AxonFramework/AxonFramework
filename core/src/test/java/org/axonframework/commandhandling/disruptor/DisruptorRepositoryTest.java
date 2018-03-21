@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -38,12 +39,13 @@ import static org.mockito.Mockito.mock;
 public class DisruptorRepositoryTest {
 
     private final EventStore eventStore = mock(EventStore.class);
+    private final RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
         DisruptorCommandBus commandBus = new DisruptorCommandBus();
         Repository<TestAggregate> repository = commandBus
-                .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));
+                .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class), repositoryProvider);
 
         AggregateAnnotationCommandHandler<TestAggregate> handler
                 = new AggregateAnnotationCommandHandler<>(TestAggregate.class, repository);

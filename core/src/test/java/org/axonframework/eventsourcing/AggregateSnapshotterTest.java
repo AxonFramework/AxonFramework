@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -40,14 +41,16 @@ public class AggregateSnapshotterTest {
 
     private AggregateSnapshotter testSubject;
     private AggregateFactory mockAggregateFactory;
+    private RepositoryProvider mockRepositoryProvider;
 
     @Before
     @SuppressWarnings({"unchecked"})
     public void setUp() throws Exception {
         EventStore mockStorageEngine = mock(EventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
+        mockRepositoryProvider = mock(RepositoryProvider.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
-        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory));
+        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory), mockRepositoryProvider);
     }
 
     @Test

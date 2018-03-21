@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.AbstractEventBus;
@@ -60,6 +61,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     private static final int AGGREGATE_COUNT = 10;
     private StubHandler stubHandler;
     private InMemoryEventStore inMemoryEventStore;
+    private RepositoryProvider repositoryProvider;
     private DisruptorCommandBus testSubject;
     private String[] aggregateIdentifier;
 
@@ -71,6 +73,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
         stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
+        repositoryProvider = mock(RepositoryProvider.class);
     }
 
     @After
@@ -93,7 +96,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         Repository<StubAggregate> spiedRepository = spy(testSubject.createRepository(
                 inMemoryEventStore,
-                new GenericAggregateFactory<>(StubAggregate.class)));
+                new GenericAggregateFactory<>(StubAggregate.class),
+                repositoryProvider));
         stubHandler.setRepository(spiedRepository);
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
         doAnswer(invocation -> {

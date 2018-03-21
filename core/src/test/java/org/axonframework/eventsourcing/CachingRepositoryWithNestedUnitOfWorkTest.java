@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing;
 import net.sf.ehcache.CacheManager;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
@@ -44,6 +45,7 @@ import java.util.function.Function;
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Minimal test cases triggering an issue with the NestedUnitOfWork and the CachingEventSourcingRepository, see <a
@@ -94,6 +96,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     private Cache realCache;
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
+    private RepositoryProvider repositoryProvider;
 
     @Before
     public void setUp() throws Exception {
@@ -102,6 +105,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
 
         eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        repositoryProvider = mock(RepositoryProvider.class);
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(new LoggingEventListener(events)),
                                               eventStore);
@@ -112,25 +116,31 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory,
+                                                          eventStore,
+                                                          NoCache.INSTANCE,
+                                                          repositoryProvider);
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     public void testWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache, repositoryProvider);
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     public void testMinimalScenarioWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory,
+                                                          eventStore,
+                                                          NoCache.INSTANCE,
+                                                          repositoryProvider);
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     public void testMinimalScenarioWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache, repositoryProvider);
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
