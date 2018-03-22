@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -50,7 +51,7 @@ import static org.mockito.Mockito.*;
 public class SpawningNewAggregateTest {
 
     @Spy
-    private SimpleCommandBus commandBus = new SimpleCommandBus();
+    private SimpleCommandBus commandBus;
     @Mock
     private Repository<Aggregate1> aggregate1Repository;
     @Mock
@@ -59,23 +60,24 @@ public class SpawningNewAggregateTest {
     private RepositoryProvider repositoryProvider;
     @Mock
     private EventStore eventStore;
+    private AggregateModel<Aggregate1> aggregate1Model;
 
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
+        commandBus = new SimpleCommandBus();
 
-        AggregateModel<Aggregate1> aggregate1Model = AnnotatedAggregateMetaModelFactory
-                .inspectAggregate(Aggregate1.class);
+        aggregate1Model = AnnotatedAggregateMetaModelFactory.inspectAggregate(Aggregate1.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
 
-        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
-                                                                         EventSourcedAggregate
-                                                                                 .initialize((Callable<Aggregate1>) invocation
-                                                                                                     .getArguments()[0],
-                                                                                             aggregate1Model,
-                                                                                             eventStore,
-                                                                                             repositoryProvider));
+//        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
+//                                                                         EventSourcedAggregate
+//                                                                                 .initialize((Callable<Aggregate1>) invocation
+//                                                                                                     .getArguments()[0],
+//                                                                                             aggregate1Model,
+//                                                                                             eventStore,
+//                                                                                             repositoryProvider));
         when(aggregate2Repository.newInstance(any())).thenAnswer(invocation ->
                                                                          EventSourcedAggregate
                                                                                  .initialize((Callable<Aggregate2>) invocation
@@ -99,6 +101,7 @@ public class SpawningNewAggregateTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSpawningNewAggregate() throws Exception {
+        initializeAggregate1Repository(repositoryProvider);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")));
 
         verify(aggregate1Repository).newInstance(any());
@@ -113,12 +116,14 @@ public class SpawningNewAggregateTest {
     }
 
     @Test
-    public void testSpawningNewAggregateWhenThereIsNoRepositoryForIt() {
+    public void testSpawningNewAggregateWhenThereIsNoRepositoryForIt() throws Exception {
+        initializeAggregate1Repository(repositoryProvider);
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
         commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
                             new VoidCallback<Object>() {
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                                    assertTrue(cause instanceof IllegalStateException);
                                     assertEquals(
                                             "There is no configured repository for org.axonframework.commandhandling.SpawningNewAggregateTest$Aggregate2",
                                             cause.getMessage());
@@ -129,6 +134,37 @@ public class SpawningNewAggregateTest {
                                     fail("Expected exception");
                                 }
                             });
+    }
+
+    @Test
+    public void testSpawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
+        initializeAggregate1Repository(null);
+        commandBus.dispatch(asCommandMessage(new CreateAggregate1Command("id", "aggregate2Id")),
+                            new VoidCallback<Object>() {
+                                @Override
+                                protected void onSuccess(CommandMessage<?> commandMessage) {
+                                    fail("Expected exception");
+                                }
+
+                                @Override
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                                    assertTrue(cause instanceof AxonConfigurationException);
+                                    assertEquals(
+                                            "Since repository provider is not provided, we cannot spawn a new aggregate for org.axonframework.commandhandling.SpawningNewAggregateTest$Aggregate2",
+                                            cause.getMessage());
+                                }
+                            });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initializeAggregate1Repository(RepositoryProvider repositoryProvider) throws Exception {
+        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
+                                                                         EventSourcedAggregate
+                                                                                 .initialize((Callable<Aggregate1>) invocation
+                                                                                                     .getArguments()[0],
+                                                                                             aggregate1Model,
+                                                                                             eventStore,
+                                                                                             repositoryProvider));
     }
 
     private static class CreateAggregate1Command {
@@ -207,13 +243,6 @@ public class SpawningNewAggregateTest {
         @Override
         public int hashCode() {
             return Objects.hash(id);
-        }
-
-        @Override
-        public String toString() {
-            return "Aggregate2CreatedEvent{" +
-                    "id='" + id + '\'' +
-                    '}';
         }
     }
 

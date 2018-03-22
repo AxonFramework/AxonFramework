@@ -130,6 +130,11 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
         this.eventStore = eventStore;
     }
 
+    /**
+     * Sets repository provider in order to have possibility to spawn new aggregates from THE aggregate.
+     *
+     * @param repositoryProvider Provides repositories for given aggregate types
+     */
     public void setRepositoryProvider(RepositoryProvider repositoryProvider) {
         this.repositoryProvider = repositoryProvider;
     }

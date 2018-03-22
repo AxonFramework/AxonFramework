@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -234,6 +235,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     @Override
     protected <R> Aggregate<R> doSpawnNewAggregate(Callable<R> factoryMethod, Class<R> aggregateType) throws Exception {
+        if (repositoryProvider == null) {
+            throw new AxonConfigurationException(format(
+                    "Since repository provider is not provided, we cannot spawn a new aggregate for %s",
+                    aggregateType.getName()));
+        }
         Repository<R> repository = repositoryProvider.repositoryFor(aggregateType);
         if (repository == null) {
             throw new IllegalStateException(format("There is no configured repository for %s",
