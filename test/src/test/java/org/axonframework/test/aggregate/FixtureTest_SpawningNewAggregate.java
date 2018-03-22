@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.junit.*;
 import org.junit.runner.*;
-import org.mockito.*;
 import org.mockito.junit.*;
 
 import java.util.Objects;
@@ -46,16 +45,25 @@ import static org.mockito.Mockito.*;
 public class FixtureTest_SpawningNewAggregate {
 
     private FixtureConfiguration<Aggregate1> fixture;
-    @Mock
-    private Repository<Aggregate2> aggregate2Repository;
-    @Mock
-    private RepositoryProvider repositoryProvider;
+
+    @Before
+    public void setUp() {
+        fixture = new AggregateTestFixture<>(Aggregate1.class);
+    }
+
+    @Test
+    public void testFixtureWithoutRepositoryProviderInjected() {
+        fixture.givenNoPriorActivity()
+               .when(new CreateAggregate1Command("id", "aggregate2Id"))
+               .expectEvents(new Aggregate2CreatedEvent("aggregate2Id"), new Aggregate1CreatedEvent("id"))
+               .expectSuccessfulHandlerExecution();
+    }
 
     @SuppressWarnings("unchecked")
-    @Before
-    public void setUp() throws Exception {
-        fixture = new AggregateTestFixture<>(Aggregate1.class);
-
+    @Test
+    public void testFixtureWithRepositoryProviderInjected() throws Exception {
+        RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
+        Repository<Aggregate2> aggregate2Repository = mock(Repository.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
 
@@ -68,15 +76,15 @@ public class FixtureTest_SpawningNewAggregate {
                                                                                              repositoryProvider));
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
-    }
 
-    @Test
-    public void testFixtureWithRepositoryProviderInjected() {
         fixture.registerRepositoryProvider(repositoryProvider)
                .givenNoPriorActivity()
                .when(new CreateAggregate1Command("id", "aggregate2Id"))
                .expectEvents(new Aggregate2CreatedEvent("aggregate2Id"), new Aggregate1CreatedEvent("id"))
                .expectSuccessfulHandlerExecution();
+
+        verify(repositoryProvider).repositoryFor(Aggregate2.class);
+        verify(aggregate2Repository).newInstance(any());
     }
 
     private static class CreateAggregate1Command {

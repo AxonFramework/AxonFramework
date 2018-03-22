@@ -21,6 +21,8 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
@@ -118,7 +120,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 MultiParameterResolverFactory.ordered(
                         new SimpleResourceParameterResolverFactory(resources),
                         ClasspathParameterResolverFactory.forClass(aggregateType)),
-                NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider));
+                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()));
     }
 
     @Override
@@ -275,9 +277,18 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
             registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
-                                                             eventStore, parameterResolverFactory,
-                                                             NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider));
+                                                             eventStore,
+                                                             parameterResolverFactory,
+                                                             NoSnapshotTriggerDefinition.INSTANCE,
+                                                             getRepositoryProvider()));
         }
+    }
+
+    private RepositoryProvider getRepositoryProvider() {
+        if (repositoryProvider == null) {
+            registerRepositoryProvider(new DefaultRepositoryProvider());
+        }
+        return repositoryProvider;
     }
 
     private void finalizeConfiguration() {
@@ -601,6 +612,44 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             if (exception != null) {
                 throw exception;
             }
+        }
+    }
+
+    private class DefaultRepositoryProvider implements RepositoryProvider {
+
+        @Override
+        public <R> Repository<R> repositoryFor(Class<R> aggregateType) {
+            return new CreationalRepository<>(aggregateType, this);
+        }
+    }
+
+    private class CreationalRepository<R> implements Repository<R> {
+
+        private final Class<R> aggregateType;
+        private final RepositoryProvider repositoryProvider;
+
+        private CreationalRepository(Class<R> aggregateType,
+                                     RepositoryProvider repositoryProvider) {
+            this.aggregateType = aggregateType;
+            this.repositoryProvider = repositoryProvider;
+        }
+
+        @Override
+        public Aggregate<R> load(String aggregateIdentifier) {
+            throw new UnsupportedOperationException(
+                    "Default repository does not mock loading of an aggregate, only creation of it");
+        }
+
+        @Override
+        public Aggregate<R> load(String aggregateIdentifier, Long expectedVersion) {
+            throw new UnsupportedOperationException(
+                    "Default repository does not mock loading of an aggregate, only creation of it");
+        }
+
+        @Override
+        public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
+            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }
     }
 }
