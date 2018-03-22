@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.spawnNewAggregate;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.createNew;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -170,7 +170,7 @@ public class FixtureTest_SpawningNewAggregate {
         @CommandHandler
         public Aggregate1(CreateAggregate1Command command) throws Exception {
             apply(new Aggregate1CreatedEvent(command.getId()));
-            spawnNewAggregate(() -> new Aggregate2(command.getAggregate2Id()), Aggregate2.class);
+            createNew(Aggregate2.class, () -> new Aggregate2(command.getAggregate2Id()));
         }
 
         @EventSourcingHandler

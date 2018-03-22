@@ -69,7 +69,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     }
 
     @Override
-    protected <T> Aggregate<T> doSpawnNewAggregate(Callable<T> factoryMethod, Class<T> aggregateType) throws Exception {
+    protected <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception {
         return null;
     }
 

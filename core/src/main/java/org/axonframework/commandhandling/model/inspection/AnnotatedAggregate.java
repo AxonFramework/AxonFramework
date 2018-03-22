@@ -234,7 +234,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
-    protected <R> Aggregate<R> doSpawnNewAggregate(Callable<R> factoryMethod, Class<R> aggregateType) throws Exception {
+    protected <R> Aggregate<R> doCreateNew(Class<R> aggregateType, Callable<R> factoryMethod) throws Exception {
         if (repositoryProvider == null) {
             throw new AxonConfigurationException(format(
                     "Since repository provider is not provided, we cannot spawn a new aggregate for %s",
