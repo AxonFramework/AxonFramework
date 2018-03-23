@@ -71,13 +71,6 @@ public class SpawningNewAggregateTest {
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
 
-//        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
-//                                                                         EventSourcedAggregate
-//                                                                                 .initialize((Callable<Aggregate1>) invocation
-//                                                                                                     .getArguments()[0],
-//                                                                                             aggregate1Model,
-//                                                                                             eventStore,
-//                                                                                             repositoryProvider));
         when(aggregate2Repository.newInstance(any())).thenAnswer(invocation ->
                                                                          EventSourcedAggregate
                                                                                  .initialize((Callable<Aggregate2>) invocation
@@ -263,7 +256,7 @@ public class SpawningNewAggregateTest {
         }
 
         @EventSourcingHandler
-        public void on(Aggregate1CreatedEvent event) throws Exception {
+        public void on(Aggregate1CreatedEvent event) {
             this.id = event.getId();
         }
     }

@@ -81,6 +81,10 @@ public abstract class AggregateLifecycle {
      */
     public static <T> Aggregate<T> createNew(Class<T> aggregateType, Callable<T> factoryMethod)
             throws Exception {
+        if (!isLive()) {
+            throw new UnsupportedOperationException(
+                    "Aggregate is still initializing its state, creation of new aggregates is not possible");
+        }
         return getInstance().doCreateNew(aggregateType, factoryMethod);
     }
 
