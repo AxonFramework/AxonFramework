@@ -67,7 +67,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     }
 
     @Override
-    protected Long doGetVersion() {
+    protected Long version() {
         return 0L;
     }
 
