@@ -1,4 +1,4 @@
-package io.axoniq.axonhub.client.event.axon;
+package io.axoniq.axonhub.client.processor;
 
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
@@ -30,7 +30,6 @@ public class EventProcessorController {
     }
 
     public void pauseProcessor(String processor){
-        //TODO check if it is intended only for tracking processor (pause method instead of shutDown)
         getEventProcessor(processor).shutDown();
         this.pauseHandlers.forEach(consumer -> consumer.accept(processor));
     }

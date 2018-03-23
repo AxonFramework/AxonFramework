@@ -1,7 +1,6 @@
-package io.axoniq.axonhub.client.event;
+package io.axoniq.axonhub.client.processor;
 
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.event.axon.EventProcessorController;
 import io.axoniq.platform.grpc.EventProcessorPaused;
 import io.axoniq.platform.grpc.EventProcessorStarted;
 import io.axoniq.platform.grpc.PauseEventProcessor;
@@ -26,7 +25,9 @@ public class EventProcessorControlService {
                                         EventProcessorController eventProcessorController) {
         this.platformConnectionManager = platformConnectionManager;
         this.eventProcessorController = eventProcessorController;
+    }
 
+    public void init(){
         this.platformConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.platformConnectionManager.onOutboundInstruction(STAR_EVENT_PROCESSOR, this::startProcessor);
 
@@ -34,19 +35,19 @@ public class EventProcessorControlService {
         this.eventProcessorController.onStart(this::notifyProcessorStarted);
     }
 
-    public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction){
+    public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
         PauseEventProcessor pauseEventProcessor = platformOutboundInstruction.getPauseEventProcessor();
         String processorName = pauseEventProcessor.getProcessorName();
         eventProcessorController.pauseProcessor(processorName);
     }
 
-    public void startProcessor(PlatformOutboundInstruction platformOutboundInstruction){
+    public void startProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
         StartEventProcessor starEventProcessor = platformOutboundInstruction.getStarEventProcessor();
         String processorName = starEventProcessor.getProcessorName();
         eventProcessorController.startProcessor(processorName);
     }
 
-    public void notifyProcessorStarted(String processorName){
+    public void notifyProcessorStarted(String processorName) {
         EventProcessorStarted.Builder message = EventProcessorStarted.newBuilder().setProcessorName(processorName);
         PlatformInboundInstruction instruction = PlatformInboundInstruction.newBuilder()
                                                                            .setEventProcessorStarted(message)
@@ -54,13 +55,14 @@ public class EventProcessorControlService {
         platformConnectionManager.send(instruction);
     }
 
-    public void notifyProcessorPaused(String processorName){
+    public void notifyProcessorPaused(String processorName) {
         EventProcessorPaused.Builder message = EventProcessorPaused.newBuilder().setProcessorName(processorName);
         PlatformInboundInstruction instruction = PlatformInboundInstruction.newBuilder()
                                                                            .setEventProcessorPaused(message)
                                                                            .build();
         platformConnectionManager.send(instruction);
     }
+
 
 
 }
