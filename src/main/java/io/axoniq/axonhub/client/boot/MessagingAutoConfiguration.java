@@ -20,8 +20,10 @@ import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubCommandBus;
 import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
-import io.axoniq.axonhub.client.event.axon.EventProcessorController;
-import io.axoniq.axonhub.client.event.EventProcessorControlService;
+import io.axoniq.axonhub.client.processor.EventProcessorController;
+import io.axoniq.axonhub.client.processor.EventProcessorControlService;
+import io.axoniq.axonhub.client.processor.grpc.GrpcEventProcessorInfoSource;
+import io.axoniq.axonhub.client.processor.schedule.ScheduledEventProcessorInfoSource;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
@@ -124,11 +126,19 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
         return new EventProcessorController(configuration);
     }
 
-    @Bean
+    @Bean(initMethod = "init")
     public EventProcessorControlService eventProcessorService(PlatformConnectionManager platformConnectionManager,
                                                               EventProcessorController eventProcessorController){
         return new EventProcessorControlService(platformConnectionManager, eventProcessorController);
     }
 
+    @Bean(initMethod = "start")
+    public ScheduledEventProcessorInfoSource eventProcessorInfoSource(
+            AxonHubConfiguration axonHubConfiguration,
+            PlatformConnectionManager connectionManager,
+            EventHandlingConfiguration configuration){
+        GrpcEventProcessorInfoSource grpcSource = new GrpcEventProcessorInfoSource(configuration, connectionManager);
+        return new ScheduledEventProcessorInfoSource(axonHubConfiguration.getProcessorsNotificationPeriod(), grpcSource);
+    }
 }
 
