@@ -21,24 +21,25 @@ import org.apache.kafka.clients.producer.Producer;
 /**
  * The strategy to produce a {@link Producer} instance(s).
  *
+ * @param <K> the key type.
+ * @param <V> the value type.
  * @author Nakul Mishra
  * @since 3.0
  */
+
 public interface ProducerFactory<K, V> {
 
-    /**
-     * Create a producer with the settings supplied in configuration properties.
-     *
-     * @return the producer.
-     */
     Producer<K, V> createProducer();
 
     /**
-     * Which approach producer should follow while publishing messages to kafka
+     * What sort of producers to generate. A producer must take confirmation mode into consideration while publishing
+     * messages to Kafka.
      *
-     * @return configured confirmation mode
+     * @return configured confirmation mode.
      */
-    default ConfirmationMode getConfirmationMode() {
+    default ConfirmationMode confirmationMode() {
         return ConfirmationMode.NONE;
     }
+
+    void shutDown();
 }

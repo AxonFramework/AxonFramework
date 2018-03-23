@@ -32,6 +32,7 @@ import org.axonframework.common.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,23 +68,57 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     private final Map<String, Object> configs;
     private final ConfirmationMode confirmationMode;
     private final String transactionIdPrefix;
-
-    private final AtomicInteger transactionIdSuffix = new AtomicInteger();
+    private final AtomicInteger transactionIdSuffix;
 
     private volatile CloseLazyProducer<K, V> producer;
 
     private DefaultProducerFactory(Builder<K, V> builder) {
         this.closeTimeout = builder.closeTimeout;
         this.timeoutUnit = builder.timeoutUnit;
-        this.configs = new HashMap<>(builder.configs);
         this.cache = new ArrayBlockingQueue<>(builder.producerCacheSize);
+        this.configs = new HashMap<>(builder.configs);
         this.confirmationMode = builder.confirmationMode;
         this.transactionIdPrefix = builder.transactionIdPrefix;
+        this.transactionIdSuffix = new AtomicInteger();
+    }
+
+    /**
+     * Create a producer with the settings supplied in configuration properties.
+     *
+     * @return the producer.
+     */
+    @Override
+    public Producer<K, V> createProducer() {
+        if (confirmationMode.isTransactional()) {
+            return createTransactionalProducer();
+        }
+        if (this.producer == null) {
+            synchronized (this) {
+                if (this.producer == null) {
+                    this.producer = new CloseLazyProducer<>(createKafkaProducer(configs),
+                                                            cache,
+                                                            closeTimeout,
+                                                            timeoutUnit);
+                }
+            }
+        }
+        return this.producer;
+    }
+
+    /**
+     * Confirmation mode for all producer instances.
+     *
+     * @return the confirmation mode.
+     */
+    @Override
+    public ConfirmationMode confirmationMode() {
+        return confirmationMode;
     }
 
     /**
      * Closes all producer instances.
      */
+    @Override
     public void shutDown() {
         CloseLazyProducer<K, V> producer = this.producer;
         this.producer = null;
@@ -101,21 +136,6 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         }
     }
 
-    @Override
-    public Producer<K, V> createProducer() {
-        if (confirmationMode.isTransactional()) {
-            return createTransactionalProducer();
-        }
-        if (this.producer == null) {
-            synchronized (this) {
-                if (this.producer == null) {
-                    this.producer = new CloseLazyProducer<>(createKafkaProducer(configs), cache, closeTimeout, timeoutUnit);
-                }
-            }
-        }
-        return this.producer;
-    }
-
     private Producer<K, V> createTransactionalProducer() {
         Producer<K, V> producer = this.cache.poll();
         if (producer != null) {
@@ -129,12 +149,14 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         return producer;
     }
 
-    public ConfirmationMode getConfirmationMode() {
-        return confirmationMode;
-    }
-
-    public static <K, V> Builder<K, V> builder() {
-        return new Builder<>();
+    /**
+     * @param configs Kafka properties for creating a producer(s).
+     * @param <K>     key type.
+     * @param <V>     value type.
+     * @return builder.
+     */
+    public static <K, V> Builder<K, V> builder(Map<String, Object> configs) {
+        return new Builder<>(configs);
     }
 
     private Producer<K, V> createKafkaProducer(Map<String, Object> configs) {
@@ -228,70 +250,71 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
 
     public static final class Builder<K, V> {
 
-        private Map<String, Object> configs;
+        private final Map<String, Object> configs;
+
+        private String transactionIdPrefix;
         private int producerCacheSize = 10;
         private int closeTimeout = 30;
         private TimeUnit timeoutUnit = TimeUnit.SECONDS;
         private ConfirmationMode confirmationMode = ConfirmationMode.NONE;
-        private String transactionIdPrefix;
 
         /**
-         * Kafka properties for creating a producer(s)
-         *
-         * @param configs kafka properties
-         * @return Builder
+         * @param configs Kafka properties for creating a producer(s).
          */
-        public Builder<K, V> withConfigs(Map<String, Object> configs) {
-            this.configs = configs;
-            return this;
+        private Builder(Map<String, Object> configs) {
+            Assert.notNull(configs, () -> "'configs' may not be null");
+            this.configs = Collections.unmodifiableMap(new HashMap<>(configs));
         }
 
         /**
-         * How many producer instances to cache. Default to 10
+         * How many producer instances to cache. Default to 10.
          *
-         * @param producerCacheSize cache size
-         * @return Builder
+         * @param producerCacheSize the cache size.
+         * @return the builder.
          */
         public Builder<K, V> withProducerCacheSize(int producerCacheSize) {
-            Assert.isTrue(producerCacheSize > 0, () -> "Cache size should be > 0");
+            Assert.isTrue(producerCacheSize > 0, () -> "'producerCacheSize should be > 0");
             this.producerCacheSize = producerCacheSize;
             return this;
         }
 
         /**
-         * How long to wait when {@link Producer#close(long, TimeUnit)} is invoked. Default is 30 seconds
+         * How long to wait when {@link Producer#close(long, TimeUnit)} is invoked. Default is 30 seconds.
          *
-         * @param closeTimeout timeout in seconds
-         * @return Builder
+         * @param closeTimeout timeout in seconds.
+         * @return the builder.
          */
         public Builder<K, V> withCloseTimeout(int closeTimeout, TimeUnit timeUnit) {
-            Assert.isTrue(closeTimeout > 0, () -> "timeout should be > 0");
-            Assert.isTrue(timeUnit != null, () -> "TimeUnit may not be null");
+            Assert.isTrue(closeTimeout > 0, () -> "'closeTimeout' should be > 0");
+            Assert.notNull(timeUnit, () -> "'timeUnit' may not be null");
             this.closeTimeout = closeTimeout;
             this.timeoutUnit = timeUnit;
             return this;
         }
 
         /**
-         * Mode for producing {@link Producer}
+         * Mode for producing {@link Producer}.
          *
-         * @param mode, default to {@link ConfirmationMode#NONE}
-         * @return Builder
+         * @param confirmationMode, default to {@link ConfirmationMode#NONE}.
+         * @return the builder.
          */
-        public Builder<K, V> withConfirmationMode(ConfirmationMode mode) {
-            this.confirmationMode = mode;
+        public Builder<K, V> withConfirmationMode(ConfirmationMode confirmationMode) {
+            Assert.notNull(confirmationMode, () -> "'confirmationMode' may not be null");
+            this.confirmationMode = confirmationMode;
             return this;
         }
 
         /**
-         * Transactional id prefix
+         * Transactional id prefix.
          *
-         * @param transactionalIdPrefix prefix to generate transactional id
-         * @return Builder
+         * @param transactionIdPrefix prefix to generate <code>transactional.id</code>. Required for transactional
+         *                            producers.
+         * @return the builder.
          */
-        public Builder<K, V> withTransactionalIdPrefix(String transactionalIdPrefix) {
-            this.transactionIdPrefix = transactionalIdPrefix;
-            return this;
+        public Builder<K, V> withTransactionalIdPrefix(String transactionIdPrefix) {
+            Assert.notNull(transactionIdPrefix, () -> "'transactionIdPrefix' cannot be null");
+            this.transactionIdPrefix = transactionIdPrefix;
+            return this.withConfirmationMode(ConfirmationMode.TRANSACTIONAL);
         }
 
         public DefaultProducerFactory<K, V> build() {
