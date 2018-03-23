@@ -125,7 +125,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
      * deserialization.
      *
-     * @param serializer                   Used to serialize and deserialize snapshots.
+     * @param aggregateSerializer          Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
@@ -134,17 +134,17 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param transactionManager           The instance managing transactions around fetching event data. Required by
      *                                     certain databases for reading blob data.
      */
-    public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
+    public JdbcEventStorageEngine(Serializer aggregateSerializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver, Serializer eventSerializer,
                                   ConnectionProvider connectionProvider, TransactionManager transactionManager) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null, connectionProvider,
+        this(aggregateSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null, connectionProvider,
              transactionManager, byte[].class, new EventSchema(), null, null);
     }
 
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events.
      *
-     * @param serializer                   Used to serialize and deserialize snapshots.
+     * @param aggregateSerializer          Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
@@ -166,12 +166,12 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
      *                                     is 1 unless the table has contained entries before.
      */
-    public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
+    public JdbcEventStorageEngine(Serializer aggregateSerializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                   Serializer eventSerializer, Integer batchSize, ConnectionProvider connectionProvider,
                                   TransactionManager transactionManager, Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
-        super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
+        super(aggregateSerializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
               eventSerializer, batchSize);
         this.connectionProvider = connectionProvider;
         this.transactionManager = transactionManager;
