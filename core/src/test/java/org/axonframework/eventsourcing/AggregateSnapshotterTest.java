@@ -41,16 +41,15 @@ public class AggregateSnapshotterTest {
 
     private AggregateSnapshotter testSubject;
     private AggregateFactory mockAggregateFactory;
-    private RepositoryProvider mockRepositoryProvider;
 
     @Before
     @SuppressWarnings({"unchecked"})
     public void setUp() throws Exception {
         EventStore mockStorageEngine = mock(EventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
-        mockRepositoryProvider = mock(RepositoryProvider.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
-        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory), mockRepositoryProvider);
+        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory),
+                                               mock(RepositoryProvider.class));
     }
 
     @Test
