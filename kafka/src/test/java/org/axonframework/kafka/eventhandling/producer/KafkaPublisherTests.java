@@ -17,247 +17,338 @@
 package org.axonframework.kafka.eventhandling.producer;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
-import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
+import org.axonframework.messaging.EventPublicationFailedException;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.CoreMatchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.runner.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.TRANSACTIONAL;
-import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.WAIT_FOR_ACK;
+import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.transactionalConsumerFactory;
+import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.ackProducerFactory;
+import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.txnProducerFactory;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
+ * Tests for {@link KafkaPublisher}
+ *
  * @author Nakul Mishra
- * @since 3.0
  */
+
+@RunWith(SpringRunner.class)
+@EmbeddedKafka(topics = {"testSendMessagesAck_NoUnitOfWork",
+        "testSendMessage_NoUnitOfWork",
+        "testSendMessagesAck_UnitOfWork",
+        "testSendMessage_UnitOfWork",
+        "testShouldNotPublishEventsWhenKafkaTransactionCannotBeStarted",
+        "testShouldNotPublishEventsWhenKafkaTransactionCannotBeCommitted",
+        "testSendMessage_WithKafkaTransactionRollback"}, count = 3)
 public class KafkaPublisherTests {
-    private static final String SOME_TOPIC = "topicFoo";
 
-    @Rule
-    public KafkaEmbedded embeddedKafka = new KafkaEmbedded(3, true, SOME_TOPIC);
-
-    private KafkaPublisher<String, byte[]> testSubject;
+    @Autowired
+    private KafkaEmbedded kafka;
+    private ProducerFactory<String, byte[]> txnProducerFactory;
+    private ProducerFactory<String, byte[]> ackProducerFactory;
     private SimpleEventBus eventBus;
-    private DefaultProducerFactory<String, byte[]> producerFactory;
     private DefaultKafkaMessageConverter messageConverter;
-    private DefaultConsumerFactory<String, byte[]> consumerFactory;
+    private MessageCollector messageMonitor;
 
     @Before
     public void setUp() {
-        this.producerFactory = DefaultProducerFactory.<String, byte[]>builder()
-                .withConfigs(senderConfigs(embeddedKafka.getBrokersAsString()))
-                .withConfirmationMode(WAIT_FOR_ACK)
-                .build();
+        this.txnProducerFactory = txnProducerFactory(kafka, "foo", ByteArraySerializer.class);
+        this.ackProducerFactory = ackProducerFactory(kafka, ByteArraySerializer.class);
         this.eventBus = new SimpleEventBus();
-        messageConverter = new DefaultKafkaMessageConverter(new XStreamSerializer());
-        this.testSubject = new KafkaPublisher<>(publisherConfig(messageConverter));
-        this.consumerFactory = new DefaultConsumerFactory<>(receiverConfigs(embeddedKafka.getBrokersAsString(), "foo", "false"));
-        this.testSubject.start();
+        this.messageConverter = new DefaultKafkaMessageConverter(new XStreamSerializer());
+        this.messageMonitor = new MessageCollector();
     }
 
-    private KafkaPublisherConfiguration<String, byte[]> publisherConfig(DefaultKafkaMessageConverter messageConverter) {
-        MessageMonitor<? super EventMessage<?>> messageMonitor = mock(MessageMonitor.class);
-        MessageMonitor.MonitorCallback monitorCallback = mock(MessageMonitor.MonitorCallback.class);
-        when(messageMonitor.onMessagesIngested(anyList())).thenReturn(Collections.singletonMap(mock(DomainEventMessage.class), monitorCallback));
+    @Test
+    public void testSendMessagesAck_NoUnitOfWork() {
+        String topic = "testSendMessagesAck_NoUnitOfWork";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, ackProducerFactory);
+        List<GenericDomainEventMessage<String>> messages = domainMessages("1234", 10);
+        eventBus.publish(messages);
+        Consumer<?, ?> consumer = consumer(topic);
+        assertMessageMonitor(messages, messages.size(), 0);
+        assertThat(KafkaTestUtils.getRecords(consumer).count(), is(messages.size()));
+        testSubject.shutDown();
+    }
 
-        return KafkaPublisherConfiguration.<String, byte[]>builder()
-                .withProducerFactory(producerFactory)
-                .withMessageMonitor(messageMonitor)
-                .withMessageSource(eventBus)
-                .withMessageConverter(messageConverter)
-                .withTopic(SOME_TOPIC)
-                .build();
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSendMessagesAck_NoUnitOfWorkWithTimeout() {
+        DefaultProducerFactory pf = mock(DefaultProducerFactory.class);
+        when(pf.confirmationMode()).thenReturn(ConfirmationMode.WAIT_FOR_ACK);
+
+        Producer producer = mock(Producer.class);
+        when(pf.createProducer()).thenReturn(producer);
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<RecordMetadata> timeoutFuture1 = executorService.submit(() -> {
+            //infinite loop for causing timeout exception
+            //noinspection InfiniteLoopStatement,StatementWithEmptyBody
+            for (; ; ) {
+            }
+        });
+        Future<RecordMetadata> timeoutFuture2 = executorService.submit(() -> {
+            //infinite loop for causing timeout exception
+            //noinspection InfiniteLoopStatement,StatementWithEmptyBody
+            for (; ; ) {
+            }
+        });
+        when(producer.send(any())).thenReturn(timeoutFuture1).thenReturn(timeoutFuture2);
+
+        String topic = "testSendMessagesAck_NoUnitOfWorkWithTimeout";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, pf);
+        List<GenericDomainEventMessage<String>> messages = domainMessages("98765", 2);
+        eventBus.publish(messages);
+        assertEquals(messages, messageMonitor.messages);
+        assertMessageMonitor(messages, 0, messages.size());
+        testSubject.shutDown();
+        executorService.shutdownNow();
     }
 
     @Test
     public void testSendMessage_NoUnitOfWork() {
+        String topic = "testSendMessage_NoUnitOfWork";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, txnProducerFactory);
         List<GenericDomainEventMessage<String>> messages = domainMessages("62457", 5);
         eventBus.publish(messages);
-        Consumer<String, byte[]> consumer = consumerFactory.createConsumer();
-        consumer.subscribe(Collections.singleton(SOME_TOPIC));
-        assertThat(messages.size(), CoreMatchers.is(KafkaTestUtils.getRecords(consumer).count()));
+        Consumer<?, ?> consumer = consumer(topic);
+        assertThat(KafkaTestUtils.getRecords(consumer).count(), is(messages.size()));
+        consumer.close();
+        testSubject.shutDown();
     }
 
+    @Test
+    public void testSendMessageAck_UnitOfWork() {
+        String topic = "testSendMessagesAck_UnitOfWork";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, ackProducerFactory);
+        GenericDomainEventMessage<String> message = domainMessage("1234");
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
+        eventBus.publish(message);
+        uow.commit();
+        assertEquals(message, messageMonitor.messages.get(0));
+        assertMessageMonitor(Collections.singletonList(message), 1, 0);
+        Consumer<?, ?> consumer = consumer(topic);
+        assertThat(KafkaTestUtils.getRecords(consumer).count(), is(1));
+        testSubject.shutDown();
+    }
 
     @Test
-    public void testSendMessage_WithTransactionalUnitOfWork() {
+    public void testSendMessage_UnitOfWork() {
+        String topic = "testSendMessage_WithTransactionalUnitOfWork";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, txnProducerFactory);
         GenericDomainEventMessage<String> message = domainMessage("121");
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
         eventBus.publish(message);
         uow.commit();
-        Consumer<String, byte[]> consumer = consumerFactory.createConsumer();
-        consumer.subscribe(Collections.singleton(SOME_TOPIC));
-
-        assertThat(1, CoreMatchers.is(KafkaTestUtils.getRecords(consumer).count()));
+        Consumer<?, ?> consumer = consumer(topic);
+        assertThat(KafkaTestUtils.getRecords(consumer).count(), is(1));
+        consumer.close();
+        testSubject.shutDown();
     }
 
     @Test
-    public void testSendMessage_WithUnitOfWorkRollback() throws Exception {
+    public void testSendMessage_UnitOfWorkRollback() {
+        String topic = "testSendMessage_WithUnitOfWorkRollback";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, txnProducerFactory);
         GenericDomainEventMessage<String> message = domainMessage("123456");
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
         eventBus.publish(message);
-        uow.onPrepareCommit(u -> {throw new RuntimeException();});
+        uow.onPrepareCommit(u -> {
+            throw new RuntimeException();
+        });
         try {
             uow.commit();
             fail("expected exception");
         } catch (Exception e) {
             //expected
         }
-        Consumer<String, byte[]> consumer = consumerFactory.createConsumer();
-        consumer.subscribe(Collections.singleton(SOME_TOPIC));
+        Consumer<?, ?> consumer = consumer(topic);
         assertTrue("Didn't expect any consumer records", KafkaTestUtils.getRecords(consumer, 100).isEmpty());
+        consumer.close();
+        testSubject.shutDown();
     }
 
-//    @Test
-//    public void testSendMessageWithPublisherAck_UnitOfWorkCommitted()
-//            throws InterruptedException, IOException, TimeoutException {
-//        testSubject.setTransactional(false);
-//        testSubject.setWaitForPublisherAck(true);
-//        testSubject.setPublisherAckTimeout(123);
-//
-//        Connection connection = mock(Connection.class);
-//        when(producerFactory.createConnection()).thenReturn(connection);
-//        Channel channel = mock(Channel.class);
-//
-//        when(channel.isOpen()).thenReturn(true);
-//        when(channel.waitForConfirms()).thenReturn(true);
-//        when(connection.createChannel(false)).thenReturn(channel);
-//        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
-//        when(serializer.serialize(message.getPayload(), byte[].class))
-//                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
-//        when(serializer.serialize(message.getMetaData(), byte[].class))
-//                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
-//
-//        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
-//
-//        eventBus.publish(message);
-//        verify(channel, never()).waitForConfirms();
-//
-//        uow.commit();
-//
-//        verify(channel).confirmSelect();
-//        verify(channel).basicPublish(eq("mockExchange"), eq("java.lang"),
-//                                     eq(false), eq(false),
-//                                     any(AMQP.BasicProperties.class), isA(byte[].class));
-//        verify(channel).waitForConfirmsOrDie(123);
-//        verify(channel, never()).txSelect();
-//        verify(channel, never()).txCommit();
-//        verify(channel, never()).txRollback();
-//    }
-//
-//    @Test(expected = IllegalArgumentException.class)
-//    public void testCannotSetPublisherAcksAfterTransactionalSetting() {
-//        testSubject.setTransactional(true);
-//        testSubject.setWaitForPublisherAck(true);
-//    }
-//
-//    @Test(expected = IllegalArgumentException.class)
-//    public void testCannotSetTransactionalBehaviorAfterPublisherAcks() {
-//        testSubject.setTransactional(false);
-//
-//        testSubject.setWaitForPublisherAck(true);
-//        testSubject.setTransactional(true);
-//    }
-//
-//    @Test
-//    public void testSendMessageWithPublisherAck_NoActiveUnitOfWork() throws InterruptedException, IOException {
-//        testSubject.setTransactional(false);
-//        testSubject.setWaitForPublisherAck(true);
-//
-//        Connection connection = mock(Connection.class);
-//        when(producerFactory.createConnection()).thenReturn(connection);
-//        Channel channel = mock(Channel.class);
-//
-//        when(channel.waitForConfirms()).thenReturn(true);
-//        when(connection.createChannel(false)).thenReturn(channel);
-//        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
-//        when(serializer.serialize(message.getPayload(), byte[].class))
-//                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
-//        when(serializer.serialize(message.getMetaData(), byte[].class))
-//                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
-//
-//        eventBus.publish(message);
-//        verify(channel).confirmSelect();
-//        verify(channel).basicPublish(eq("mockExchange"), eq("java.lang"),
-//                                     eq(false), eq(false),
-//                                     any(AMQP.BasicProperties.class), isA(byte[].class));
-//        verify(channel).waitForConfirmsOrDie();
-//    }
+    @SuppressWarnings("unchecked")
+    @Test(expected = EventPublicationFailedException.class)
+    public void testShouldNotPublishEventsWhenKafkaTransactionCannotBeStarted() {
+        DefaultProducerFactory pf = mock(DefaultProducerFactory.class);
+        Producer producer = mock(Producer.class);
+        when(pf.confirmationMode()).thenReturn(ConfirmationMode.TRANSACTIONAL);
+        when(pf.createProducer()).thenReturn(producer);
+        doThrow(ProducerFencedException.class).when(producer).beginTransaction();
+        String topic = "testShouldNotPublishEventsWhenKafkaTransactionCannotBeStarted";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, pf);
+        GenericDomainEventMessage<String> message = domainMessage("500");
+        publishWithException(topic, testSubject, message);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test(expected = EventPublicationFailedException.class)
+    public void testShouldNotPublishEventsWhenKafkaTransactionCannotBeCommitted() {
+        DefaultProducerFactory pf = mock(DefaultProducerFactory.class);
+        Producer producer = mock(Producer.class);
+        when(pf.confirmationMode()).thenReturn(ConfirmationMode.TRANSACTIONAL);
+        when(pf.createProducer()).thenReturn(producer);
+        doThrow(ProducerFencedException.class).when(producer).commitTransaction();
+        String topic = "testShouldNotPublishEventsWhenKafkaTransactionCannotBeCommitted";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, pf);
+        GenericDomainEventMessage<String> message = domainMessage("9000");
+        publishWithException(topic, testSubject, message);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSendMessage_WithKafkaTransactionRollback() {
+        DefaultProducerFactory pf = mock(DefaultProducerFactory.class);
+        Producer producer = mock(Producer.class);
+        when(pf.confirmationMode()).thenReturn(ConfirmationMode.TRANSACTIONAL);
+        when(pf.createProducer()).thenReturn(producer);
+        doThrow(Exception.class).when(producer).abortTransaction();
+        String topic = "testSendMessage_WithKafkaTransactionRollback";
+        KafkaPublisher<?, ?> testSubject = publisher(topic, pf);
+        GenericDomainEventMessage<String> message = domainMessage("76123");
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
+        eventBus.publish(message);
+        uow.onPrepareCommit(u -> {
+            throw new RuntimeException();
+        });
+        try {
+            uow.commit();
+            fail("expected exception");
+        } catch (Exception e) {
+            //expected
+        }
+
+        Consumer<?, ?> consumer = consumer(topic);
+        assertTrue("Didn't expect any consumer records", KafkaTestUtils.getRecords(consumer, 100).isEmpty());
+        consumer.close();
+        testSubject.shutDown();
+    }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-        testSubject.shutDown();
-        producerFactory.shutDown();
-        embeddedKafka.destroy();
+        this.messageMonitor.reset();
+        this.ackProducerFactory.shutDown();
+        this.txnProducerFactory.shutDown();
     }
 
-    private static Map<String, Object> receiverConfigs(String brokers, String group, String autoCommit) {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, group);
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, autoCommit);
-        props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "10");
-        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 60000);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_uncommitted");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return props;
+    private KafkaPublisher<?, ?> publisher(String topic, ProducerFactory<String, byte[]> pf) {
+        KafkaPublisher<?, ?> testSubject = new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
+                                                                        .withProducerFactory(pf)
+                                                                        .withPublisherAckTimeout(100)
+                                                                        .withMessageMonitor(messageMonitor)
+                                                                        .withMessageSource(eventBus)
+                                                                        .withMessageConverter(messageConverter)
+                                                                        .withTopic(topic)
+                                                                        .build());
+        testSubject.start();
+        return testSubject;
     }
 
-    private static Map<String, Object> senderConfigs(String brokers) {
-        Map<String, Object> properties = new HashMap<>();
-        properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-        properties.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
-        properties.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
-        properties.put(ProducerConfig.LINGER_MS_CONFIG, 1);
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        properties.put(ProducerConfig.RETRIES_CONFIG, 0);
-        return properties;
+    private Consumer<?, ?> consumer(String topic) {
+        Consumer<?, ?> consumer = transactionalConsumerFactory(
+                kafka, topic, ByteArrayDeserializer.class
+        ).createConsumer();
+        consumer.subscribe(Collections.singleton(topic));
+        return consumer;
     }
 
     private List<GenericDomainEventMessage<String>> domainMessages(String aggregateId, int limit) {
         return IntStream.range(0, limit)
-                .mapToObj(i -> domainMessage(aggregateId))
-                .collect(Collectors.toList());
+                        .mapToObj(i -> domainMessage(aggregateId))
+                        .collect(Collectors.toList());
     }
 
     private GenericDomainEventMessage<String> domainMessage(String aggregateId) {
         return new GenericDomainEventMessage<>("Stub", aggregateId, 1L, "Payload", MetaData.with("key", "value"));
+    }
+
+    private void assertMessageMonitor(List<?> messages, int expectedSuccess, int expectedFailures) {
+        assertEquals(messages, messageMonitor.messages);
+        assertThat(messageMonitor.successCounter.get(), is(expectedSuccess));
+        assertThat(messageMonitor.failureCounter.get(), is(expectedFailures));
+        assertThat(messageMonitor.ignoreCounter.get(), is(0));
+    }
+
+    private void publishWithException(String topic, KafkaPublisher<?, ?> testSubject,
+                                      GenericDomainEventMessage<String> message) {
+        try {
+            UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
+            eventBus.publish(message);
+            uow.commit();
+        } finally {
+            Consumer<?, ?> consumer = consumer(topic);
+            assertTrue("Didn't expect any consumer records", KafkaTestUtils.getRecords(consumer, 100).isEmpty());
+            consumer.close();
+            testSubject.shutDown();
+        }
+    }
+
+    private class MessageCollector implements MessageMonitor<Message<?>> {
+
+        private final List<Message<?>> messages = new ArrayList<>();
+        private final AtomicInteger successCounter = new AtomicInteger(0);
+        private final AtomicInteger failureCounter = new AtomicInteger(0);
+        private final AtomicInteger ignoreCounter = new AtomicInteger(0);
+
+        @Override
+        public MonitorCallback onMessageIngested(Message<?> message) {
+            messages.add(message);
+            return new MonitorCallback() {
+                @Override
+                public void reportSuccess() {
+                    successCounter.incrementAndGet();
+                }
+
+                @Override
+                public void reportFailure(Throwable cause) {
+                    failureCounter.incrementAndGet();
+                }
+
+                @Override
+                public void reportIgnored() {
+                    ignoreCounter.incrementAndGet();
+                }
+            };
+        }
+
+        void reset() {
+            messages.clear();
+        }
     }
 }

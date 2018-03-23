@@ -17,7 +17,6 @@
 package org.axonframework.kafka.eventhandling.producer;
 
 import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.axonframework.common.Registration;
@@ -47,6 +46,8 @@ import java.util.concurrent.TimeoutException;
  * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own Kafka
  * Topic.
  *
+ * @param <K> the key type.
+ * @param <V> the value type.
  * @author Nakul Mishra
  * @since 3.0
  */
@@ -91,42 +92,41 @@ public class KafkaPublisher<K, V> {
         if (eventBusRegistration != null) {
             eventBusRegistration.cancel();
             eventBusRegistration = null;
-            //TODO : Perhaps we, should we close all producers instances as well i.e. producerFactory.close() ???
         }
+        producerFactory.shutDown();
     }
 
     /**
-     * Sends the given {@code events} to the configured Kafka topic. It takes the current Unit of Work into account when
-     * available.
-     * If producer factory is configured to use:
-     * a) Transactions: it will use kafka transactions for sending events
-     * b) Ack: it will send messages and wait for kafka to acknowledge message publication (timeout configured via
-     * publisherAckTimeout).
-     * Furthermore, it will use {@link MessageMonitor} to notify whether a given message was published successfully or
-     * not.
-     * c) Otherwise, it simply publishes directly.
+     * Send {@code events} to the configured Kafka {@code topic}.
+     * It takes the current Unit of Work into account when available.
+     * <p>
+     * If {@link ProducerFactory} is configured to use:
+     * <ul>
+     * <li>Transactions: use kafka transactions for publishing events</li>
+     * <li>Ack: send messages and wait for acknowledgement from Kafka. Acknowledgement timeout can be
+     * configured via
+     * {@link KafkaPublisherConfiguration.Builder#withPublisherAckTimeout(long)}).</li>
+     * <li>None: fire and forget.</li>
+     * </ul>
      *
      * @param events the events to publish on the Kafka broker.
      */
     protected void send(List<? extends EventMessage<?>> events) {
-        final Map<? super EventMessage<?>, MonitorCallback> monitorCallbackMap = ingestMessages(events);
-
+        final Map<? super EventMessage<?>, MonitorCallback> monitorCallbacks = messageMonitor
+                .onMessagesIngested(events);
         Producer<K, V> producer = producerFactory.createProducer();
-        ConfirmationMode confirmationMode = producerFactory.getConfirmationMode();
-
+        ConfirmationMode cm = producerFactory.confirmationMode();
         try {
-            if (confirmationMode.isTransactional()) {
+            if (cm.isTransactional()) {
                 tryBeginTxn(producer);
             }
-
-            Map<Future<RecordMetadata>, ? super EventMessage<?>> kafkaFutures = publishEventsToKafka(events, producer);
-
+            Map<Future<RecordMetadata>, ? super EventMessage<?>> publishStatuses = publishToKafka(events, producer);
             if (CurrentUnitOfWork.isStarted()) {
-                handleActiveUnitOfWork(monitorCallbackMap, producer, confirmationMode, kafkaFutures);
-            } else if (confirmationMode.isTransactional()) {
+                handleActiveUnitOfWork(producer, publishStatuses, monitorCallbacks, cm);
+            } else if (cm.isTransactional()) {
                 tryCommit(producer);
-            } else if (confirmationMode.isWaitForAck()) {
-                waitForPublishAck(monitorCallbackMap, kafkaFutures);
+            } else if (cm.isWaitForAck()) {
+                waitForPublishAck(publishStatuses, monitorCallbacks);
             }
         } finally {
             if (!CurrentUnitOfWork.isStarted()) {
@@ -135,36 +135,31 @@ public class KafkaPublisher<K, V> {
         }
     }
 
-    private Map<? super EventMessage<?>, MonitorCallback> ingestMessages(List<? extends EventMessage<?>> events) {
-        return messageMonitor.onMessagesIngested(events);
-    }
-
     /**
-     * Send's event messages to kafka
+     * Send's event messages to Kafka.
      *
-     * @param events   list of event messages to publish
-     * @param producer Kafka producer used for publishing
+     * @param events   list of event messages to publish.
+     * @param producer Kafka producer used for publishing.
      * @return Map containing futures for each event that was published to kafka. You can interact with a specific
-     * future to check whether a given message was published successfully or not.
+     * {@link Future} to check whether a given message was published successfully or not.
      */
-    private Map<Future<RecordMetadata>, ? super EventMessage<?>> publishEventsToKafka(
-            List<? extends EventMessage<?>> events, Producer<K, V> producer) {
+    private Map<Future<RecordMetadata>, ? super EventMessage<?>> publishToKafka(List<? extends EventMessage<?>> events,
+                                                                                Producer<K, V> producer) {
         Map<Future<RecordMetadata>, ? super EventMessage<?>> results = new HashMap<>();
-        events.forEach(event -> {
-            results.put(doSendMessage(producer, messageConverter.createKafkaMessage(event, topic)), event);
-        });
+        events.forEach(event -> results.put(producer.send(messageConverter.createKafkaMessage(event, topic)), event));
         return results;
     }
 
     /**
-     * It will commit/rollback kafka work once a given unit of work is committed/rollback.
+     * Commit/rollback Kafka work once a given unit of work is committed/rollback.
      */
-    private void handleActiveUnitOfWork(Map<? super EventMessage<?>, MonitorCallback> monitorCallbackMap,
-                                        Producer<K, V> producer, ConfirmationMode confirmationMode,
-                                        Map<Future<RecordMetadata>, ? super EventMessage<?>> futures) {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-        unitOfWork.afterCommit(u -> completeKafkaWork(monitorCallbackMap, producer, confirmationMode, futures));
-        unitOfWork.onRollback(u -> rollbackKafkaWork(producer, confirmationMode));
+    private void handleActiveUnitOfWork(Producer<K, V> producer,
+                                        Map<Future<RecordMetadata>, ? super EventMessage<?>> futures,
+                                        Map<? super EventMessage<?>, MonitorCallback> monitorCallbacks,
+                                        ConfirmationMode confirmationMode) {
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        uow.afterCommit(u -> completeKafkaWork(monitorCallbacks, producer, confirmationMode, futures));
+        uow.onRollback(u -> rollbackKafkaWork(producer, confirmationMode));
     }
 
     private void completeKafkaWork(Map<? super EventMessage<?>, MonitorCallback> monitorCallbackMap,
@@ -173,7 +168,7 @@ public class KafkaPublisher<K, V> {
         if (confirmationMode.isTransactional()) {
             tryCommit(producer);
         } else if (confirmationMode.isWaitForAck()) {
-            waitForPublishAck(monitorCallbackMap, futures);
+            waitForPublishAck(futures, monitorCallbackMap);
         }
         tryClose(producer);
     }
@@ -186,30 +181,20 @@ public class KafkaPublisher<K, V> {
     }
 
     @SuppressWarnings("SuspiciousMethodCalls")
-    private void waitForPublishAck(Map<? super EventMessage<?>, MonitorCallback> monitorCallbackMap,
-                                   Map<Future<RecordMetadata>, ? super EventMessage<?>> futures) {
+    private void waitForPublishAck(Map<Future<RecordMetadata>, ? super EventMessage<?>> futures,
+                                   Map<? super EventMessage<?>, MonitorCallback> monitorCallbacks) {
         long deadline = System.currentTimeMillis() + publisherAckTimeout;
         futures.forEach((k, v) -> {
             try {
                 k.get(Math.max(0, deadline - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
-                if (monitorCallbackMap.containsKey(v)) {
-                    monitorCallbackMap.get(v).reportSuccess();
+                if (monitorCallbacks.containsKey(v)) {
+                    monitorCallbacks.get(v).reportSuccess();
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-                monitorCallbackMap.get(v).reportFailure(ex);
+                monitorCallbacks.get(v).reportFailure(ex);
                 logger.warn("Encountered error while waiting for event publication", ex);
             }
         });
-    }
-
-    /**
-     * Does the actual publishing of the given {@link ProducerRecord} on the given {@code kafka topic}.
-     *
-     * @param producer {@link org.apache.kafka.clients.producer.KafkaProducer} to send messages
-     * @param record   The {@link org.apache.kafka.clients.producer.ProducerRecord} to publish
-     */
-    protected Future<RecordMetadata> doSendMessage(Producer<K, V> producer, ProducerRecord<K, V> record) {
-        return producer.send(record);
     }
 
     private void tryBeginTxn(Producer<?, ?> producer) {
