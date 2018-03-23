@@ -17,11 +17,12 @@
 package org.axonframework.kafka.eventhandling.producer;
 
 /**
- * Various Modes for publishing messages to kafka
- * <p>
- * Transactional: use kafka transactions while sending messages
- * WAIT_FOR_ACK : send messages and wait for acknowledgment (timeout can be configured)
- * NONE: Fire and forget
+ * Modes for publishing messages from Axon to Kafka.
+ * <ul>
+ * <li>Transactional: use kafka transactions while sending messages.</li>
+ * <li>WAIT_FOR_ACK : send messages and wait for acknowledgment.</li>
+ * <li>NONE: Fire and forget.</li>
+ * </ul>
  *
  * @author Nakul Mishra
  * @since 3.0

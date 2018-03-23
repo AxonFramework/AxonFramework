@@ -16,13 +16,14 @@
 
 package org.axonframework.kafka.eventhandling.producer;
 
+import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.monitoring.MessageMonitor;
 
 /**
- * Configure settings used by {@link KafkaPublisher} for publishing messages to kafka
+ * Configures {@link KafkaPublisher}.
  *
  * @param <K> the key type.
  * @param <V> the value type.
@@ -84,41 +85,73 @@ public class KafkaPublisherConfiguration<K, V> {
         private String topic = "Axon.EventBus";
         private long publisherAckTimeout = 1000;
 
+        /**
+         * Configure {@link SubscribableMessageSource}.
+         *
+         * @param messageSource the message source.
+         * @return the builder.
+         */
         public Builder<K, V> withMessageSource(SubscribableMessageSource<EventMessage<?>> messageSource) {
+            Assert.notNull(messageSource, () -> "Message source may not be null");
             this.messageSource = messageSource;
             return this;
         }
 
+        /**
+         * Configure {@link ProducerFactory}.
+         *
+         * @param producerFactory the producer factory.
+         * @return the builder.
+         */
         public Builder<K, V> withProducerFactory(ProducerFactory<K, V> producerFactory) {
+            Assert.notNull(producerFactory, () -> "Producer factory may not be null");
             this.producerFactory = producerFactory;
             return this;
         }
 
+        /**
+         * Configure {@link KafkaMessageConverter}.
+         *
+         * @param messageConverter the message converter.
+         * @return the builder.
+         */
         public Builder<K, V> withMessageConverter(KafkaMessageConverter<K, V> messageConverter) {
+            Assert.notNull(messageConverter, () -> "Message converter may not be null");
             this.messageConverter = messageConverter;
             return this;
         }
 
+        /**
+         * Configure {@link MessageMonitor}.
+         *
+         * @param messageMonitor the message monitor.
+         * @return the builder.
+         */
         public Builder<K, V> withMessageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            Assert.notNull(messageMonitor, () -> "Message monitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;
         }
 
         /**
-         * @param topicName kafka topic to publish messages. By default it will try to create a topic Axon.EventBus
-         * @return Builder
+         * Configure Kafka topic for publishing messages, default to <code>Axon.EventBus</code>.
+         *
+         * @param topic the topic.
+         * @return the builder.
          */
-        public Builder<K, V> withTopic(String topicName) {
-            this.topic = topicName;
+        public Builder<K, V> withTopic(String topic) {
+            Assert.notNull(topic, () -> "Topic may not be null");
+            this.topic = topic;
             return this;
         }
 
         /**
          * @param timeoutInMillis how long to wait for publisher to acknowledge send, expressed in millis. Default to 1
-         *                        sec
-         * @return Builder
+         *                        sec.
+         * @return the builder.
          */
         public Builder<K, V> withPublisherAckTimeout(long timeoutInMillis) {
+            Assert.isTrue(timeoutInMillis >= 0, () -> "Timeout may not be negative");
             this.publisherAckTimeout = timeoutInMillis;
             return this;
         }
