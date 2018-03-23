@@ -14,7 +14,7 @@ service PlatformService {
 message PlatformInboundInstruction {
     oneof request {
         ClientIdentification register = 1;
-        EventProcessorInfo processor_notification = 2;
+        EventProcessorInfo event_processor_info = 2;
         EventProcessorPaused event_processor_paused = 3;
         EventProcessorStarted event_processor_started = 4;
     }
@@ -54,8 +54,21 @@ message ClientIdentification {
 }
 
 message EventProcessorInfo {
+    message EventTrackerInfo {
+        int32 segment_id = 1;
+        bool caught_up = 2;
+        bool replaying = 3;
+        string token_type = 4;
+        string token_index = 5;
+        int32 one_part_of = 6;
+    }
+
     string processor_name = 1;
     string mode = 2;
+    int32 activeThreads = 3;
+    bool running = 4;
+    bool error = 5;
+    repeated EventTrackerInfo event_trackers_info = 6;
 }
 
 message PauseEventProcessor {
