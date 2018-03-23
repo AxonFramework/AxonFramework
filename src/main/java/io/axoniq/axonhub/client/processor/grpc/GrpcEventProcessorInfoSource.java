@@ -6,7 +6,6 @@ import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 
 import java.util.List;
 

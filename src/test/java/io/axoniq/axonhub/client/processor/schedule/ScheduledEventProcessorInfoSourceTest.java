@@ -1,6 +1,5 @@
 package io.axoniq.axonhub.client.processor.schedule;
 
-import io.axoniq.axonhub.client.processor.AxonHubEventProcessorInfoSource;
 import io.axoniq.axonhub.client.processor.AxonHubEventProcessorInfoSource.Fake;
 import org.junit.*;
 

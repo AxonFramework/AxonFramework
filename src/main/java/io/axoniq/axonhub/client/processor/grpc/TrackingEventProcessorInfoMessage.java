@@ -5,7 +5,6 @@ import io.axoniq.platform.grpc.EventProcessorInfo.EventTrackerInfo;
 import io.axoniq.platform.grpc.PlatformInboundInstruction;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.TrackingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 
 import java.util.List;
 import java.util.Map;
