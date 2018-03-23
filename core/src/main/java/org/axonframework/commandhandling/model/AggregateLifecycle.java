@@ -85,7 +85,7 @@ public abstract class AggregateLifecycle {
      * @return the current version of the aggregate
      */
     public static Long getVersion() {
-        return getInstance().doGetVersion();
+        return getInstance().version();
     }
 
     /**
@@ -134,7 +134,7 @@ public abstract class AggregateLifecycle {
      *
      * @return the current version of the aggregate
      */
-    protected abstract Long doGetVersion();
+    protected abstract Long version();
 
     /**
      * Marks this aggregate as deleted. Implementations may react differently to aggregates marked for deletion.
