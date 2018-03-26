@@ -46,7 +46,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain}, {@code
      * persistenceExceptionResolver}, {@code eventSerializer} and {@code batchSize}.
      *
-     * @param aggregateSerializer          Used to serialize and deserialize snapshots. If {@code null}
+     * @param snapshotSerializer          Used to serialize and deserialize snapshots. If {@code null}
      *                                     a {@link XStreamSerializer} is instantiated by the
      *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
@@ -63,10 +63,10 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      *                                     and batch size such that a single batch will generally retrieve all events
      *                                     required to rebuild an aggregate's state.
      */
-    public BatchingEventStorageEngine(Serializer aggregateSerializer, EventUpcaster upcasterChain,
+    public BatchingEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                       PersistenceExceptionResolver persistenceExceptionResolver,
                                       Serializer eventSerializer, Integer batchSize) {
-        super(aggregateSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer);
+        super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer);
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);
     }
 

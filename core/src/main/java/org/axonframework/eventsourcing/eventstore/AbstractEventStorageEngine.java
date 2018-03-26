@@ -67,7 +67,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
      * persistenceExceptionResolver}.
      *
-     * @param aggregateSerializer          Used to serialize and deserialize snapshots. If {@code null}
+     * @param snapshotSerializer          Used to serialize and deserialize snapshots. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
      *                                     null} a {@link NoOpEventUpcaster} is used.
@@ -76,11 +76,11 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.
      */
-    protected AbstractEventStorageEngine(Serializer aggregateSerializer,
+    protected AbstractEventStorageEngine(Serializer snapshotSerializer,
                                          EventUpcaster upcasterChain,
                                          PersistenceExceptionResolver persistenceExceptionResolver,
                                          Serializer eventSerializer) {
-        this.serializer = getOrDefault(aggregateSerializer, XStreamSerializer::new);
+        this.serializer = getOrDefault(snapshotSerializer, XStreamSerializer::new);
         this.upcasterChain = getOrDefault(upcasterChain, () -> NoOpEventUpcaster.INSTANCE);
         this.persistenceExceptionResolver = persistenceExceptionResolver;
         this.eventSerializer = getOrDefault(eventSerializer, XStreamSerializer::new);

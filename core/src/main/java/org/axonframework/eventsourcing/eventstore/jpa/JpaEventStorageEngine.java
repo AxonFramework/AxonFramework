@@ -24,23 +24,33 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.DomainEventData;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.TrackedDomainEventData;
+import org.axonframework.eventsourcing.eventstore.TrackedEventData;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
@@ -104,7 +114,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. Events are fetched in batches of 100.
      *
-     * @param aggregateSerializer            Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer            Used to serialize and deserialize snapshots.
      * @param upcasterChain         Allows older revisions of serialized objects to be deserialized.
      * @param dataSource            Allows the EventStore to detect the database type and define the error codes that
      *                              represent concurrent access failures for most database types.
@@ -114,10 +124,10 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      *                              databases for reading blob data.
      * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
-    public JpaEventStorageEngine(Serializer aggregateSerializer, EventUpcaster upcasterChain, DataSource dataSource,
+    public JpaEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain, DataSource dataSource,
                                  Serializer eventSerializer, EntityManagerProvider entityManagerProvider,
                                  TransactionManager transactionManager) throws SQLException {
-        this(aggregateSerializer, upcasterChain, new SQLErrorCodesResolver(dataSource), eventSerializer,
+        this(snapshotSerializer, upcasterChain, new SQLErrorCodesResolver(dataSource), eventSerializer,
              entityManagerProvider, transactionManager);
     }
 
@@ -145,7 +155,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events. Events are fetched in batches of 100.
      *
-     * @param aggregateSerializer          Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer          Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
@@ -155,17 +165,17 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param transactionManager           The instance managing transactions around fetching event data. Required by
      *                                     certain databases for reading blob data.
      */
-    public JpaEventStorageEngine(Serializer aggregateSerializer, EventUpcaster upcasterChain,
+    public JpaEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                  PersistenceExceptionResolver persistenceExceptionResolver, Serializer eventSerializer,
                                  EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
-        this(aggregateSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null, entityManagerProvider,
-             transactionManager, null, null, true);
+        this(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer,
+             null, entityManagerProvider, transactionManager, null, null, true);
     }
 
     /**
      * Initializes an EventStorageEngine that uses JPA to store and load events.
      *
-     * @param aggregateSerializer                   Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer                   Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
@@ -193,12 +203,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
      *                                     is 1 unless the table has contained entries before.
      */
-    public JpaEventStorageEngine(Serializer aggregateSerializer, EventUpcaster upcasterChain,
+    public JpaEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                  PersistenceExceptionResolver persistenceExceptionResolver, Serializer eventSerializer,
                                  Integer batchSize, EntityManagerProvider entityManagerProvider,
                                  TransactionManager transactionManager, Long lowestGlobalSequence, Integer maxGapOffset,
                                  boolean explicitFlush) {
-        super(aggregateSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, batchSize);
+        super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, batchSize);
         this.entityManagerProvider = entityManagerProvider;
         this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
         this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
