@@ -54,6 +54,6 @@ public class ConsumerUtil {
             }
         });
         //necessary to populate consumer info
-        consumer.poll(1);
+        consumer.poll(0);
     }
 }

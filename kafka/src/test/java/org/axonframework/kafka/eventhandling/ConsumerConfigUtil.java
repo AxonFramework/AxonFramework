@@ -41,7 +41,6 @@ public class ConsumerConfigUtil {
     public static Map<String, Object> minimalTransactional(KafkaEmbedded kafka, String group, Class valueDeserializer) {
         Map<String, Object> configs = minimal(kafka, group, valueDeserializer);
         configs.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
-        configs.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return configs;
     }
 
@@ -50,6 +49,7 @@ public class ConsumerConfigUtil {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBrokersAsString());
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDeserializer);
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         config.put(ConsumerConfig.GROUP_ID_CONFIG, groupName);
         return config;
     }
