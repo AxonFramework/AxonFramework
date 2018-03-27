@@ -22,6 +22,7 @@ import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.consumer.ConsumerFactory;
 import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.DefaultFetcher;
 import org.axonframework.kafka.eventhandling.consumer.Fetcher;
 import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
 import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
@@ -69,10 +70,10 @@ public class KafkaAutoConfiguration {
         if (transactionIdPrefix == null) {
             throw new IllegalStateException("transactionalIdPrefix cannot be empty");
         }
-        return DefaultProducerFactory.<String, byte[]>builder()
+        return DefaultProducerFactory.<String, byte[]>builder(producer)
                 .withConfirmationMode(ConfirmationMode.TRANSACTIONAL)
                 .withTransactionalIdPrefix(transactionIdPrefix)
-                .withConfigs(producer).build();
+                .build();
     }
 
     @ConditionalOnMissingBean
@@ -100,7 +101,7 @@ public class KafkaAutoConfiguration {
     @Bean
     public Fetcher<String, byte[]> fetcher(ConsumerFactory<String, byte[]> consumerFactory,
                                            KafkaMessageConverter<String, byte[]> messageConverter) {
-        return new Fetcher<>(1000, consumerFactory, messageConverter, properties.getDefaultTopic());
+        return new DefaultFetcher(1000, consumerFactory, messageConverter, properties.getDefaultTopic());
     }
 
     @ConditionalOnMissingBean
