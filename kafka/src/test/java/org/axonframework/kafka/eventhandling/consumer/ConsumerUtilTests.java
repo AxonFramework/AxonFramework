@@ -1,17 +1,34 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.hamcrest.CoreMatchers;
 import org.junit.*;
+import org.junit.runner.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 
+import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.consumerFactory;
+import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.partition;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /***
@@ -19,42 +36,48 @@ import static org.junit.Assert.*;
  *
  * @author Nakul Mishra
  */
+@EmbeddedKafka(topics = {"testSeekConsumerWithNullToken",
+        "testSeekConsumerWithAnEmptyToken",
+        "testSeekConsumerWithAnExistingToken"}, count = 3, partitions = 5)
+@RunWith(SpringRunner.class)
 public class ConsumerUtilTests {
 
-    private static final String TOPIC_1 = "testSeekConsumerWithNullToken";
-    private static final String TOPIC_2 = "testSeekConsumerWithAnEmptyToken";
-    private static final String TOPIC_3 = "testSeekConsumerWithAnExistingToken";
-
-    @ClassRule
-    public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(3, true, 5, TOPIC_1, TOPIC_2, TOPIC_3);
+    @Autowired
+    private KafkaEmbedded kafka;
 
     @Test
     public void testSeekConsumerWithNullToken() {
-        Consumer<String, byte[]> consumer = consumer(TOPIC_1);
-        ConsumerUtil.seek(TOPIC_1, consumer, null);
-        assertOffsets(TOPIC_1, consumer, 0L);
+        String topic = "testSeekConsumerWithNullToken";
+        Consumer<?, ?> consumer = consumer(topic);
+        ConsumerUtil.seek(topic, consumer, null);
+        assertOffsets(topic, consumer, 0L);
+        consumer.close();
     }
 
     @Test
     public void testSeekConsumerWithAnEmptyToken() {
-        Consumer<String, byte[]> consumer = consumer(TOPIC_2);
-        ConsumerUtil.seek(TOPIC_2, consumer, KafkaTrackingToken.newInstance(Collections.emptyMap()));
-        assertOffsets(TOPIC_2, consumer, 0L);
+        String topic = "testSeekConsumerWithAnEmptyToken";
+        Consumer<?, ?> consumer = consumer(topic);
+        ConsumerUtil.seek(topic, consumer, KafkaTrackingToken.newInstance(Collections.emptyMap()));
+        assertOffsets(topic, consumer, 0L);
+        consumer.close();
     }
 
     @Test
     public void testSeekConsumerWithAnExistingToken() {
-        Consumer<String, byte[]> consumer = consumer(TOPIC_3);
+        String topic = "testSeekConsumerWithAnExistingToken";
+        Consumer<?, ?> consumer = consumer(topic);
         KafkaTrackingToken token = tokensPerTopic();
-        ConsumerUtil.seek(TOPIC_3, consumer, token);
+        ConsumerUtil.seek(topic, consumer, token);
 
-        consumer.partitionsFor(TOPIC_3).forEach(x -> assertThat(consumer.position(KafkaTrackingToken.partition(
-                TOPIC_3,
-                x.partition())), CoreMatchers.is(token.getPartitionPositions().get(x.partition()) + 1)));
+        consumer.partitionsFor(topic)
+                .forEach(x -> assertThat(consumer.position(partition(topic, x.partition())),
+                                         is(token.getPartitionPositions().get(x.partition()) + 1)));
+        consumer.close();
     }
 
     private KafkaTrackingToken tokensPerTopic() {
-        int partitionsPerTopic = embeddedKafka.getPartitionsPerTopic();
+        int partitionsPerTopic = kafka.getPartitionsPerTopic();
         KafkaTrackingToken token = KafkaTrackingToken.newInstance(new HashMap<>());
         for (int i = 0; i < partitionsPerTopic; i++) {
             token = token.advancedTo(i, i);
@@ -62,25 +85,15 @@ public class ConsumerUtilTests {
         return token;
     }
 
-    private void assertOffsets(String topic, Consumer<String, byte[]> consumer, long expectedPosition) {
+    private void assertOffsets(String topic, Consumer<?, ?> consumer, long expectedPosition) {
         consumer.partitionsFor(topic)
                 .forEach(x -> {
-                    long currentPosition = consumer.position(KafkaTrackingToken.partition(topic, x.partition()));
-                    assertThat(currentPosition, CoreMatchers.is(expectedPosition));
+                    long currentPosition = consumer.position(partition(topic, x.partition()));
+                    assertThat(currentPosition, is(expectedPosition));
                 });
     }
 
-    private Consumer<String, byte[]> consumer(String groupName) {
-        return new DefaultConsumerFactory<String, byte[]>(senderConfigs(embeddedKafka.getBrokersAsString(), groupName))
-                .createConsumer();
-    }
-
-    private static Map<String, Object> senderConfigs(String brokers, String groupName) {
-        Map<String, Object> properties = new HashMap<>();
-        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupName);
-        return properties;
+    private Consumer<?, ?> consumer(String groupName) {
+        return consumerFactory(kafka, groupName).createConsumer();
     }
 }
