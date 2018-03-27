@@ -63,7 +63,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     private static final Logger logger = LoggerFactory.getLogger(DefaultProducerFactory.class);
 
     private final int closeTimeout;
-    private final TimeUnit timeoutUnit;
+    private final TimeUnit unit;
     private final BlockingQueue<CloseLazyProducer<K, V>> cache;
     private final Map<String, Object> configs;
     private final ConfirmationMode confirmationMode;
@@ -74,7 +74,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
 
     private DefaultProducerFactory(Builder<K, V> builder) {
         this.closeTimeout = builder.closeTimeout;
-        this.timeoutUnit = builder.timeoutUnit;
+        this.unit = builder.unit;
         this.cache = new ArrayBlockingQueue<>(builder.producerCacheSize);
         this.configs = new HashMap<>(builder.configs);
         this.confirmationMode = builder.confirmationMode;
@@ -98,7 +98,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
                     this.producer = new CloseLazyProducer<>(createKafkaProducer(configs),
                                                             cache,
                                                             closeTimeout,
-                                                            timeoutUnit);
+                                                            unit);
                 }
             }
         }
@@ -123,12 +123,12 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         CloseLazyProducer<K, V> producer = this.producer;
         this.producer = null;
         if (producer != null) {
-            producer.delegate.close(this.closeTimeout, timeoutUnit);
+            producer.delegate.close(this.closeTimeout, unit);
         }
         producer = this.cache.poll();
         while (producer != null) {
             try {
-                producer.delegate.close(this.closeTimeout, timeoutUnit);
+                producer.delegate.close(this.closeTimeout, unit);
             } catch (Exception e) {
                 logger.error("Exception closing producer", e);
             }
@@ -144,7 +144,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         Map<String, Object> configs = new HashMap<>(this.configs);
         configs.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG,
                     this.transactionIdPrefix + this.transactionIdSuffix.getAndIncrement());
-        producer = new CloseLazyProducer<>(createKafkaProducer(configs), cache, closeTimeout, timeoutUnit);
+        producer = new CloseLazyProducer<>(createKafkaProducer(configs), cache, closeTimeout, unit);
         producer.initTransactions();
         return producer;
     }
@@ -168,14 +168,14 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         private final Producer<K, V> delegate;
         private final BlockingQueue<CloseLazyProducer<K, V>> cache;
         private final int closeTimeout;
-        private final TimeUnit timeoutUnit;
+        private final TimeUnit unit;
 
         CloseLazyProducer(Producer<K, V> delegate, BlockingQueue<CloseLazyProducer<K, V>> cache, int closeTimeout,
-                          TimeUnit timeoutUnit) {
+                          TimeUnit unit) {
             this.delegate = delegate;
             this.cache = cache;
             this.closeTimeout = closeTimeout;
-            this.timeoutUnit = timeoutUnit;
+            this.unit = unit;
         }
 
         @Override
@@ -231,7 +231,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
 
         @Override
         public void close() {
-            close(this.closeTimeout, timeoutUnit);
+            close(this.closeTimeout, unit);
         }
 
         @Override
@@ -255,7 +255,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         private String transactionIdPrefix;
         private int producerCacheSize = 10;
         private int closeTimeout = 30;
-        private TimeUnit timeoutUnit = TimeUnit.SECONDS;
+        private TimeUnit unit = TimeUnit.SECONDS;
         private ConfirmationMode confirmationMode = ConfirmationMode.NONE;
 
         /**
@@ -281,14 +281,17 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         /**
          * How long to wait when {@link Producer#close(long, TimeUnit)} is invoked. Default is 30 seconds.
          *
-         * @param closeTimeout timeout in seconds.
+         * @param timeout how long to wait before closing a producer, in units of
+         *                {@code unit}.
+         * @param unit    a {@code TimeUnit} determining how to interpret the
+         *                {@code timeout} parameter.
          * @return the builder.
          */
-        public Builder<K, V> withCloseTimeout(int closeTimeout, TimeUnit timeUnit) {
-            Assert.isTrue(closeTimeout > 0, () -> "'closeTimeout' should be > 0");
-            Assert.notNull(timeUnit, () -> "'timeUnit' may not be null");
-            this.closeTimeout = closeTimeout;
-            this.timeoutUnit = timeUnit;
+        public Builder<K, V> withCloseTimeout(int timeout, TimeUnit unit) {
+            Assert.isTrue(timeout > 0, () -> "'closeTimeout' should be > 0");
+            Assert.notNull(unit, () -> "'timeUnit' may not be null");
+            this.closeTimeout = timeout;
+            this.unit = unit;
             return this;
         }
 
