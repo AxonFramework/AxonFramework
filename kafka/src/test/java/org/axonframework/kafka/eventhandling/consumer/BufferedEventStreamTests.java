@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.kafka.eventhandling.consumer;
 
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
@@ -7,7 +22,6 @@ import org.junit.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonList;
@@ -29,31 +43,30 @@ public class BufferedEventStreamTests {
     }
 
     @Test
-    public void testPeekOnNonEmptyStream() {
+    public void testPeekOnNonEmptyStream() throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
-        BufferedEventStream<String, byte[]> testSubject = stream(Arrays.asList(firstMessage,
+        BufferedEventStream testSubject = stream(Arrays.asList(firstMessage,
                                                                                trackedDomainEvent("bar")));
         assertTrue(testSubject.peek().isPresent());
         assertThat(testSubject.peek().get(), is(firstMessage));
     }
 
     @Test
-    public void testPeekOnAProgressiveStream() {
+    public void testPeekOnAProgressiveStream() throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         GenericTrackedDomainEventMessage<String> secondMessage = trackedDomainEvent("bar");
-        BufferedEventStream<String, byte[]> testSubject = stream(Arrays.asList(firstMessage, secondMessage));
-        assertThat(testSubject.peek().get(), is(firstMessage));
+        BufferedEventStream testSubject = stream(Arrays.asList(firstMessage, secondMessage));
+        assertThat(testSubject.peek().get().getPayload(), is(firstMessage.getPayload()));
         testSubject.nextAvailable();
-        assertThat(testSubject.peek().get(), is(secondMessage));
-        assertThat(testSubject.peek().get(), is(secondMessage));
+        assertThat(testSubject.peek().get().getPayload(), is(secondMessage.getPayload()));
         testSubject.nextAvailable();
         assertFalse(testSubject.peek().isPresent());
     }
 
     @Test
-    public void testPeekOnAnInterruptedStream() {
+    public void testPeekOnAnInterruptedStream() throws InterruptedException {
         try {
-            BufferedEventStream<String, byte[]> testSubject = stream(
+            BufferedEventStream testSubject = stream(
                     singletonList(trackedDomainEvent("foo")));
             Thread.currentThread().interrupt();
             assertFalse(testSubject.peek().isPresent());
@@ -68,17 +81,16 @@ public class BufferedEventStreamTests {
     }
 
     @Test
-    public void testHasNextAvailableOnNonEmptyStream() {
-        BufferedEventStream<String, byte[]> testSubject = stream(singletonList(trackedDomainEvent("foo")));
+    public void testHasNextAvailableOnNonEmptyStream() throws InterruptedException {
+        BufferedEventStream testSubject = stream(singletonList(trackedDomainEvent("foo")));
         assertTrue(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
-        System.out.println("Thread.currentThread().isInterrupted() = " + Thread.currentThread().isInterrupted());
     }
 
     @Test
-    public void testHasNextAvailableOnAProgressiveStream() {
+    public void testHasNextAvailableOnAProgressiveStream() throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         GenericTrackedDomainEventMessage<String> secondMessage = trackedDomainEvent("bar");
-        BufferedEventStream<String, byte[]> testSubject = stream(Arrays.asList(firstMessage, secondMessage));
+        BufferedEventStream testSubject = stream(Arrays.asList(firstMessage, secondMessage));
         assertTrue(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
         testSubject.nextAvailable();
         assertTrue(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
@@ -87,9 +99,9 @@ public class BufferedEventStreamTests {
     }
 
     @Test
-    public void testHasNextOnAnInterruptedStream() {
+    public void testHasNextOnAnInterruptedStream() throws InterruptedException {
         try {
-            BufferedEventStream<String, byte[]> testSubject = stream(singletonList(trackedDomainEvent("foo")));
+            BufferedEventStream testSubject = stream(singletonList(trackedDomainEvent("foo")));
             Thread.currentThread().interrupt();
             assertFalse(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
         } finally {
@@ -98,18 +110,18 @@ public class BufferedEventStreamTests {
     }
 
     @Test
-    public void testNextAvailableOnAProgressiveStream() {
+    public void testNextAvailableOnAProgressiveStream() throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         GenericTrackedDomainEventMessage<String> secondMessage = trackedDomainEvent("bar");
-        BufferedEventStream<String, byte[]> testSubject = stream(Arrays.asList(firstMessage, secondMessage));
+        BufferedEventStream testSubject = stream(Arrays.asList(firstMessage, secondMessage));
         assertThat(testSubject.nextAvailable(), is(firstMessage));
         assertThat(testSubject.nextAvailable(), is(secondMessage));
     }
 
     @Test
-    public void testNextAvailableOnAnInterruptedStream() {
+    public void testNextAvailableOnAnInterruptedStream() throws InterruptedException {
         try {
-            BufferedEventStream<String, byte[]> testSubject = stream(singletonList(trackedDomainEvent("foo")));
+            BufferedEventStream testSubject = stream(singletonList(trackedDomainEvent("foo")));
             Thread.currentThread().interrupt();
             assertNull(testSubject.nextAvailable());
         } finally {
@@ -117,18 +129,21 @@ public class BufferedEventStreamTests {
         }
     }
 
-    private BufferedEventStream<String, byte[]> emptyStream() {
-        return new BufferedEventStream<>(new PriorityBlockingQueue<>());
+    private BufferedEventStream emptyStream() {
+        return new BufferedEventStream(new MessageBuffer<>());
     }
 
-    private BufferedEventStream<String, byte[]> stream(List<GenericTrackedDomainEventMessage<String>> messages) {
-        PriorityBlockingQueue<MessageAndTimestamp> buffer = new PriorityBlockingQueue<>(messages.size());
+    private BufferedEventStream stream(List<GenericTrackedDomainEventMessage<String>> messages)
+            throws InterruptedException {
+        MessageBuffer<MessageAndMetadata> buffer = new MessageBuffer<>(messages.size());
 
+        int time = 1;
+        int offset = 0;
         for (GenericTrackedDomainEventMessage<String> message : messages) {
-            buffer.add(new MessageAndTimestamp(message, 0));
+            buffer.put(new MessageAndMetadata(message, 0, offset++, time++));
         }
 
-        return new BufferedEventStream<>(buffer);
+        return new BufferedEventStream(buffer);
     }
 
     private GenericTrackedDomainEventMessage<String> trackedDomainEvent(String aggregateId) {

@@ -38,15 +38,16 @@ import java.util.concurrent.TimeUnit;
  * @author Nakul Mishra
  * @since 3.0
  */
-public class KafkaMessageStream<K, V> implements TrackingEventStream {
-    private final BufferedEventStream<K, V> eventStream;
-    private final Fetcher<K, V> fetcher;
+public class KafkaMessageStream implements TrackingEventStream {
 
-    public KafkaMessageStream(BlockingQueue<MessageAndTimestamp> buffer,
-                              Fetcher<K, V> fetcher) {
+    private final BufferedEventStream eventStream;
+    private final Fetcher fetcher;
+
+    public KafkaMessageStream(MessageBuffer<MessageAndMetadata> buffer,
+                              Fetcher fetcher) {
         Assert.notNull(buffer, () -> "Buffer may not be null");
         Assert.notNull(fetcher, () -> "Fetcher may not be null");
-        this.eventStream = new BufferedEventStream<>(buffer);
+        this.eventStream = new BufferedEventStream(buffer);
         this.fetcher = fetcher;
     }
 

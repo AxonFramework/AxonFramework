@@ -45,5 +45,4 @@ public class KafkaMessageSource<K, V> implements StreamableMessageSource<Tracked
         Assert.isTrue(trackingToken == null || trackingToken instanceof KafkaTrackingToken, () -> "Invalid token type");
         return fetcher.start((KafkaTrackingToken) trackingToken);
     }
-
 }
