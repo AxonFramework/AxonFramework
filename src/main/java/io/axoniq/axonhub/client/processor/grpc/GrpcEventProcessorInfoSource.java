@@ -39,7 +39,7 @@ public class GrpcEventProcessorInfoSource implements AxonHubEventProcessorInfoSo
             return new TrackingEventProcessorInfoMessage((TrackingEventProcessor) processor);
         if (processor instanceof SubscribingEventProcessor)
             return new SubscribingEventProcessorInfoMessage((SubscribingEventProcessor) processor);
-        return null;
+        throw new RuntimeException("Unknown instance of Event Processor detected.");
     }
 
 }
