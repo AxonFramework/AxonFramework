@@ -56,9 +56,7 @@ message EventProcessorInfo {
         int32 segment_id = 1;
         bool caught_up = 2;
         bool replaying = 3;
-        string token_type = 4;
-        string token_index = 5;
-        int32 one_part_of = 6;
+        int32 one_part_of = 4;
     }
 
     string processor_name = 1;
