@@ -16,9 +16,9 @@ public class ScheduledEventProcessorInfoSourceTest {
     @Test
     public void notifyInformation() throws InterruptedException {
         Fake delegate = new Fake();
-        ScheduledEventProcessorInfoSource scheduled = new ScheduledEventProcessorInfoSource(4,delegate);
+        ScheduledEventProcessorInfoSource scheduled = new ScheduledEventProcessorInfoSource(50,30,delegate);
         scheduled.start();
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.MILLISECONDS.sleep(90);
         assertEquals(2, delegate.notifyCalls());
     }
 

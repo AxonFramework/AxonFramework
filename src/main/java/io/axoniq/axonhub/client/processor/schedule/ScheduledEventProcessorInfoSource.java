@@ -14,18 +14,23 @@ public class ScheduledEventProcessorInfoSource implements AxonHubEventProcessorI
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+    private final int initialDelay;
+
     private final int schedulingPeriod;
 
     private final AxonHubEventProcessorInfoSource delegate;
 
     public ScheduledEventProcessorInfoSource(
-            int schedulingPeriod, AxonHubEventProcessorInfoSource delegate) {
+            int initialDelay,
+            int schedulingPeriod,
+            AxonHubEventProcessorInfoSource delegate) {
+        this.initialDelay = initialDelay;
         this.schedulingPeriod = schedulingPeriod;
         this.delegate = delegate;
     }
 
     public void start(){
-        scheduler.scheduleAtFixedRate(this::notifyInformation, 5,schedulingPeriod, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::notifyInformation, initialDelay,schedulingPeriod, TimeUnit.MILLISECONDS);
     }
 
     public void notifyInformation(){

@@ -47,7 +47,9 @@ public class AxonHubConfiguration {
     private int commandThreads = 10;
     private int queryThreads = 10;
 
-    private int processorsNotificationPeriod = 5;
+    private int processorsNotificationRate = 5000;
+
+    private int processorsNotificationInitialDelay = 5000;
 
     private EventCipher eventCipher = new EventCipher();
 
@@ -178,12 +180,20 @@ public class AxonHubConfiguration {
         this.queryThreads = queryThreads;
     }
 
-    public int getProcessorsNotificationPeriod() {
-        return processorsNotificationPeriod;
+    public int getProcessorsNotificationRate() {
+        return processorsNotificationRate;
     }
 
-    public void setProcessorsNotificationPeriod(int processorsNotificationPeriod) {
-        this.processorsNotificationPeriod = processorsNotificationPeriod;
+    public void setProcessorsNotificationRate(int processorsNotificationRate) {
+        this.processorsNotificationRate = processorsNotificationRate;
+    }
+
+    public int getProcessorsNotificationInitialDelay() {
+        return processorsNotificationInitialDelay;
+    }
+
+    public void setProcessorsNotificationInitialDelay(int processorsNotificationInitialDelay) {
+        this.processorsNotificationInitialDelay = processorsNotificationInitialDelay;
     }
 
     @SuppressWarnings("unused")
