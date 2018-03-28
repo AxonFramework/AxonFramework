@@ -15,8 +15,6 @@ message PlatformInboundInstruction {
     oneof request {
         ClientIdentification register = 1;
         EventProcessorInfo event_processor_info = 2;
-        EventProcessorPaused event_processor_paused = 3;
-        EventProcessorStarted event_processor_started = 4;
     }
 }
 
@@ -79,10 +77,3 @@ message StartEventProcessor {
     string processor_name = 1;
 }
 
-message EventProcessorStarted {
-    string processor_name = 1;
-}
-
-message EventProcessorPaused {
-    string processor_name = 1;
-}
