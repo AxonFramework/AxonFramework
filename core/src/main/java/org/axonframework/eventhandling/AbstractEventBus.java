@@ -182,7 +182,7 @@ public abstract class AbstractEventBus implements EventBus {
         }
         List<EventMessage<?>> messages = new ArrayList<>();
         for (UnitOfWork<?> uow = CurrentUnitOfWork.get(); uow != null; uow = uow.parent().orElse(null)) {
-            messages.addAll(uow.getOrDefaultResource(eventsKey, Collections.emptyList()));
+            messages.addAll(0, uow.getOrDefaultResource(eventsKey, Collections.emptyList()));
         }
         return messages;
     }
