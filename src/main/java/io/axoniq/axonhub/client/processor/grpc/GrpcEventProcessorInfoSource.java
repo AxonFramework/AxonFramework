@@ -34,7 +34,6 @@ public class GrpcEventProcessorInfoSource implements AxonHubEventProcessorInfoSo
         });
     }
 
-    //TODO Review
     private PlatformInboundMessage messageFor(EventProcessor processor){
         if (processor instanceof TrackingEventProcessor)
             return new TrackingEventProcessorInfoMessage((TrackingEventProcessor) processor);
