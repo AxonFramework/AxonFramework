@@ -138,7 +138,10 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
             PlatformConnectionManager connectionManager,
             EventHandlingConfiguration configuration){
         GrpcEventProcessorInfoSource grpcSource = new GrpcEventProcessorInfoSource(configuration, connectionManager);
-        return new ScheduledEventProcessorInfoSource(axonHubConfiguration.getProcessorsNotificationPeriod(), grpcSource);
+        return new ScheduledEventProcessorInfoSource(
+                axonHubConfiguration.getProcessorsNotificationInitialDelay(),
+                axonHubConfiguration.getProcessorsNotificationRate(),
+                grpcSource);
     }
 }
 
