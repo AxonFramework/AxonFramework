@@ -16,6 +16,20 @@
 
 package org.axonframework.spring.config;
 
+import static org.axonframework.common.ReflectionUtils.methodsOf;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.spring.SpringUtils.isQualifierMatch;
+import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
@@ -24,7 +38,14 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -35,11 +56,13 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.spring.config.annotation.SpringContextHandlerEnhancerDefinitionBuilder;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -62,20 +85,6 @@ import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static org.axonframework.common.ReflectionUtils.methodsOf;
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
-import static org.axonframework.spring.SpringUtils.isQualifierMatch;
-import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 /**
  * ImportBeanDefinitionRegistrar implementation that sets up an infrastructure Configuration based on beans available
@@ -132,6 +141,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 SpringContextParameterResolverFactoryBuilder.getBeanReference(registry);
         configurer.registerComponent(ParameterResolverFactory.class, c -> beanFactory
                 .getBean(parameterResolver.getBeanName(), ParameterResolverFactory.class));
+
+        RuntimeBeanReference handlerEnhancer =
+                SpringContextHandlerEnhancerDefinitionBuilder.getBeanReference(registry);
+        configurer.registerComponent(HandlerEnhancerDefinition.class, c -> beanFactory
+                .getBean(handlerEnhancer.getBeanName(), HandlerEnhancerDefinition.class));
 
         findComponent(CommandBus.class)
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
@@ -382,7 +396,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         @Override
         public String[] selectImports(AnnotationMetadata importingClassMetadata) {
-            return new String[]{SpringAxonAutoConfigurer.class.getName()};
+            return new String[]{ SpringAxonAutoConfigurer.class.getName() };
         }
     }
 

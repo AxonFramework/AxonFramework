@@ -16,35 +16,41 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.slf4j.LoggerFactory;
-
-import java.lang.ref.WeakReference;
-import java.util.*;
-
 import static java.util.ServiceLoader.load;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.WeakHashMap;
+
+import org.slf4j.LoggerFactory;
+
 /**
- * ParameterResolverFactory instance that locates other ParameterResolverFactory instances on the class path. It uses
+ * HandlerEnhancerDefinition instance that locates other HandlerEnhancerDefinition instances on the class path. It uses
  * the {@link ServiceLoader} mechanism to locate and initialize them.
  * <p/>
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
- * {@code META-INF/services/org.axonframework.messaging.annotation.ParameterResolverFactory}. For more details, see
+ * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerEnhancerDefinition}. For more details, see
  * {@link ServiceLoader}.
  *
  * @author Allard Buijze
  * @see ServiceLoader
  * @since 2.1
  */
-public final class ClasspathParameterResolverFactory {
+public final class ClasspathHandlerEnhancerDefinition {
 
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathParameterResolverFactory.class);
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
     private static final Object monitor = new Object();
-    private static final Map<ClassLoader, WeakReference<ParameterResolverFactory>> FACTORIES = new WeakHashMap<>();
+    private static final Map<ClassLoader, WeakReference<HandlerEnhancerDefinition>> FACTORIES = new WeakHashMap<>();
 
     /**
      * Private default constructor
      */
-    private ClasspathParameterResolverFactory() {
+    private ClasspathHandlerEnhancerDefinition() {
     }
 
     /**
@@ -54,7 +60,7 @@ public final class ClasspathParameterResolverFactory {
      * @param clazz The class for which the parameter resolver must be returned
      * @return a ClasspathParameterResolverFactory that can resolve parameters for the given class
      */
-    public static ParameterResolverFactory forClass(Class<?> clazz) {
+    public static HandlerEnhancerDefinition forClass(Class<?> clazz) {
         return forClassLoader(clazz == null ? null : clazz.getClassLoader());
     }
 
@@ -63,11 +69,11 @@ public final class ClasspathParameterResolverFactory {
      * loader.
      *
      * @param classLoader The class loader to locate the implementations with
-     * @return a ParameterResolverFactory instance using the given classLoader
+     * @return a HandlerEnhancerDefinition instance using the given classLoader
      */
-    public static ParameterResolverFactory forClassLoader(ClassLoader classLoader) {
+    public static HandlerEnhancerDefinition forClassLoader(ClassLoader classLoader) {
         synchronized (monitor) {
-            ParameterResolverFactory factory;
+            HandlerEnhancerDefinition factory;
             if (!FACTORIES.containsKey(classLoader)) {
                 factory = MultiParameterResolverFactory.ordered(findDelegates(classLoader));
                 FACTORIES.put(classLoader, new WeakReference<>(factory));
@@ -82,21 +88,21 @@ public final class ClasspathParameterResolverFactory {
         }
     }
 
-    private static List<ParameterResolverFactory> findDelegates(ClassLoader classLoader) {
-        Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class, classLoader == null ?
+    private static List<HandlerEnhancerDefinition> findDelegates(ClassLoader classLoader) {
+        Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
-        final List<ParameterResolverFactory> factories = new ArrayList<>();
+        final List<HandlerEnhancerDefinition> factories = new ArrayList<>();
         while (iterator.hasNext()) {
             try {
-                ParameterResolverFactory factory = iterator.next();
+                HandlerEnhancerDefinition factory = iterator.next();
                 factories.add(factory);
             } catch (ServiceConfigurationError e) {
                 logger.info(
-                        "ParameterResolverFactory instance ignored, as one of the required classes is not available" +
+                        "HandlerEnhancerDefinition instance ignored, as one of the required classes is not available" +
                                 "on the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
-                logger.info("ParameterResolverFactory instance ignored. It relies on a class that cannot be found: {}",
+                logger.info("HandlerEnhancerDefinition instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());
             }
         }

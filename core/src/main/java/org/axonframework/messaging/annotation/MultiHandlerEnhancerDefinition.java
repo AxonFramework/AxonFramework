@@ -16,24 +16,22 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.annotation.PriorityAnnotationComparator;
-
-import java.lang.reflect.Executable;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.axonframework.common.annotation.PriorityAnnotationComparator;
+
 /**
- * ParameterResolverFactory instance that delegates to multiple other instances, in the order provided.
+ * HandlerEnhancerDefinition instance that delegates to multiple other instances, in the order provided.
  *
  * @author Allard Buijze
  * @since 2.1
  */
-public class MultiParameterResolverFactory implements ParameterResolverFactory {
+public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
-    private final ParameterResolverFactory[] factories;
+    private final HandlerEnhancerDefinition[] factories;
 
     /**
      * Creates a MultiParameterResolverFactory instance with the given {@code delegates}, which are automatically
@@ -46,7 +44,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      * @param delegates The delegates to include in the factory
      * @return an instance delegating to the given {@code delegates}
      */
-    public static MultiParameterResolverFactory ordered(ParameterResolverFactory... delegates) {
+    public static MultiHandlerEnhancerDefinition ordered(HandlerEnhancerDefinition... delegates) {
         return ordered(Arrays.asList(delegates));
     }
 
@@ -61,8 +59,8 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      * @param delegates The delegates to include in the factory
      * @return an instance delegating to the given {@code delegates}
      */
-    public static MultiParameterResolverFactory ordered(List<ParameterResolverFactory> delegates) {
-        return new MultiParameterResolverFactory(flatten(delegates));
+    public static MultiHandlerEnhancerDefinition ordered(List<HandlerEnhancerDefinition> delegates) {
+        return new MultiHandlerEnhancerDefinition(flatten(delegates));
     }
 
     /**
@@ -71,7 +69,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      *
      * @param delegates The factories providing the parameter values to use
      */
-    public MultiParameterResolverFactory(ParameterResolverFactory... delegates) {
+    public MultiHandlerEnhancerDefinition(HandlerEnhancerDefinition... delegates) {
         this.factories = Arrays.copyOf(delegates, delegates.length);
     }
 
@@ -81,21 +79,21 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      *
      * @param delegates The list of factories providing the parameter values to use
      */
-    public MultiParameterResolverFactory(List<ParameterResolverFactory> delegates) {
-        this.factories = delegates.toArray(new ParameterResolverFactory[delegates.size()]);
+    public MultiHandlerEnhancerDefinition(List<HandlerEnhancerDefinition> delegates) {
+        this.factories = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
-    private static ParameterResolverFactory[] flatten(List<ParameterResolverFactory> factories) {
-        List<ParameterResolverFactory> flattened = new ArrayList<>(factories.size());
-        for (ParameterResolverFactory parameterResolverFactory : factories) {
-            if (parameterResolverFactory instanceof MultiParameterResolverFactory) {
-                flattened.addAll(((MultiParameterResolverFactory) parameterResolverFactory).getDelegates());
+    private static HandlerEnhancerDefinition[] flatten(List<HandlerEnhancerDefinition> factories) {
+        List<HandlerEnhancerDefinition> flattened = new ArrayList<>(factories.size());
+        for (HandlerEnhancerDefinition parameterResolverFactory : factories) {
+            if (parameterResolverFactory instanceof MultiHandlerEnhancerDefinition) {
+                flattened.addAll(((MultiHandlerEnhancerDefinition) parameterResolverFactory).getDelegates());
             } else {
                 flattened.add(parameterResolverFactory);
             }
         }
         Collections.sort(flattened, PriorityAnnotationComparator.getInstance());
-        return flattened.toArray(new ParameterResolverFactory[flattened.size()]);
+        return flattened.toArray(new HandlerEnhancerDefinition[flattened.size()]);
     }
 
     /**
@@ -103,19 +101,19 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      *
      * @return the delegates of this instance, in the order they are evaluated to resolve parameters
      */
-    public List<ParameterResolverFactory> getDelegates() {
+    public List<HandlerEnhancerDefinition> getDelegates() {
         return Arrays.asList(factories);
     }
 
-
     @Override
-    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        for (ParameterResolverFactory factory : factories) {
-            ParameterResolver resolver = factory.createInstance(executable, parameters, parameterIndex);
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        for (HandlerEnhancerDefinition factory : factories) {
+            MessageHandlingMember<T> resolver = factory.wrapHandler(original);
             if (resolver != null) {
                 return resolver;
             }
         }
         return null;
+
     }
 }

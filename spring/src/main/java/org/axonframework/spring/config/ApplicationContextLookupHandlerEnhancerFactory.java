@@ -16,44 +16,45 @@
 
 package org.axonframework.spring.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * FactoryBean implementation that create a ParameterResolverFactory, which auto-detects beans implementing
- * ParameterResolverFactory beans in the application context.
+ * FactoryBean implementation that create a HandlerEnhancerDefinition, which auto-detects beans implementing
+ * HandlerEnhancerDefinition beans in the application context.
  *
- * @author Allard Buijze
- * @since 2.1.2
+ * @author Allard Buijze, Tyler Thrailkill
+ * @since 3.3
  */
-public class ApplicationContextLookupParameterResolverFactory implements FactoryBean<ParameterResolverFactory>,
+public class ApplicationContextLookupHandlerEnhancerFactory implements FactoryBean<HandlerEnhancerDefinition>,
         ApplicationContextAware, InitializingBean {
 
-    private final List<ParameterResolverFactory> factories;
-    private volatile ParameterResolverFactory parameterResolverFactory;
+    private final List<HandlerEnhancerDefinition> factories;
+    private volatile HandlerEnhancerDefinition handlerEnhancerDefinition;
     private ApplicationContext applicationContext;
 
     /**
      * Creates an instance, using the given {@code defaultFactories}. These are added, regardless of the beans
      * discovered in the application context.
      *
-     * @param defaultFactories The ParameterResolverFactory instances to add by default
+     * @param defaultFactories The HandlerEnhancerDefinition instances to add by default
      */
-    public ApplicationContextLookupParameterResolverFactory(List<ParameterResolverFactory> defaultFactories) {
+    public ApplicationContextLookupHandlerEnhancerFactory(List<HandlerEnhancerDefinition> defaultFactories) {
         this.factories = new ArrayList<>(defaultFactories);
     }
 
     @Override
-    public ParameterResolverFactory getObject() throws Exception {
-        return parameterResolverFactory;
+    public HandlerEnhancerDefinition getObject() throws Exception {
+        return handlerEnhancerDefinition;
     }
 
     @Override
@@ -73,7 +74,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        factories.addAll(applicationContext.getBeansOfType(ParameterResolverFactory.class).values());
-        parameterResolverFactory = MultiParameterResolverFactory.ordered(factories);
+        factories.addAll(applicationContext.getBeansOfType(HandlerEnhancerDefinition.class).values());
+        handlerEnhancerDefinition = MultiParameterResolverFactory.ordered(factories);
     }
 }

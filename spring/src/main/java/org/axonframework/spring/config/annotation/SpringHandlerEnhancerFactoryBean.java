@@ -16,8 +16,13 @@
 
 package org.axonframework.spring.config.annotation;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -25,9 +30,6 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Spring factory bean that creates a ParameterResolverFactory instance that is capable of resolving parameter values
@@ -38,16 +40,16 @@ import java.util.List;
  * @see ClasspathParameterResolverFactory
  * @since 2.3.1
  */
-public class SpringParameterResolverFactoryBean implements FactoryBean<ParameterResolverFactory>,
+public class SpringHandlerEnhancerFactoryBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
-    private final List<ParameterResolverFactory> factories = new ArrayList<>();
+    private final List<HandlerEnhancerDefinition> factories = new ArrayList<>();
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 
     @Override
-    public ParameterResolverFactory getObject() throws Exception {
-        return MultiParameterResolverFactory.ordered(factories);
+    public HandlerEnhancerDefinition getObject() throws Exception {
+        return MultiHandlerEnhancerDefinition.ordered(factories);
     }
 
     @Override
@@ -62,8 +64,8 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        factories.add(ClasspathParameterResolverFactory.forClassLoader(classLoader));
-        final SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
+        factories.add(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader));
+        final SpringBeanHandlerEnhancerDefinition springBeanParameterResolverFactory = new SpringBeanHandlerEnhancerDefinition();
         springBeanParameterResolverFactory.setApplicationContext(applicationContext);
         factories.add(springBeanParameterResolverFactory);
     }
@@ -77,7 +79,7 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
      * @see SpringBeanParameterResolverFactory
      * @see ClasspathParameterResolverFactory
      */
-    public void setAdditionalFactories(List<ParameterResolverFactory> additionalFactories) {
+    public void setAdditionalFactories(List<HandlerEnhancerDefinition> additionalFactories) {
         this.factories.addAll(additionalFactories);
     }
 

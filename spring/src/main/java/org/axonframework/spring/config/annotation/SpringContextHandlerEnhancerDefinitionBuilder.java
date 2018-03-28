@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.spring.config.ApplicationContextLookupParameterResolverFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -31,30 +31,30 @@ import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.util.ClassUtils;
 
 /**
- * Creates and registers a bean definition for a Spring Context aware ParameterResolverFactory. It ensures that only
+ * Creates and registers a bean definition for a Spring Context aware HandlerEnhancerDefinition. It ensures that only
  * one such instance exists for each ApplicationContext.
  *
  * @author Allard Buijze
  * @since 2.1
  */
-public final class SpringContextParameterResolverFactoryBuilder {
+public final class SpringContextHandlerEnhancerDefinitionBuilder {
 
-    private static final String PARAMETER_RESOLVER_FACTORY_BEAN_NAME = "__axon-parameter-resolver-factory";
+    private static final String HANDLER_ENHANCER_DEFINITION_BEAN_NAME = "__axon-handler-enhancer-definition";
 
-    private SpringContextParameterResolverFactoryBuilder() {
+    private SpringContextHandlerEnhancerDefinitionBuilder() {
     }
 
     /**
-     * Create, if necessary, a bean definition for a ParameterResolverFactory and returns the reference to bean for use
+     * Create, if necessary, a bean definition for a HandlerEnhancerDefinition and returns the reference to bean for use
      * in other Bean Definitions.
      *
      * @param registry The registry in which to look for an already existing instance
-     * @return a BeanReference to the BeanDefinition for the ParameterResolverFactory
+     * @return a BeanReference to the BeanDefinition for the HandlerEnhancerDefinition
      */
     public static RuntimeBeanReference getBeanReference(BeanDefinitionRegistry registry) {
-        if (!registry.containsBeanDefinition(PARAMETER_RESOLVER_FACTORY_BEAN_NAME)) {
+        if (!registry.containsBeanDefinition(HANDLER_ENHANCER_DEFINITION_BEAN_NAME)) {
             final ManagedList<BeanDefinition> factories = new ManagedList<>();
-            factories.add(BeanDefinitionBuilder.genericBeanDefinition(ClasspathParameterResolverFactoryBean.class)
+            factories.add(BeanDefinitionBuilder.genericBeanDefinition(ClasspathHandlerEnhancerDefinitionBean.class)
                                                .getBeanDefinition());
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanParameterResolverFactory.class)
                                                .getBeanDefinition());
@@ -63,25 +63,25 @@ public final class SpringContextParameterResolverFactoryBuilder {
                                          .addConstructorArgValue(factories)
                                          .getBeanDefinition();
             def.setPrimary(true);
-            registry.registerBeanDefinition(PARAMETER_RESOLVER_FACTORY_BEAN_NAME, def);
+            registry.registerBeanDefinition(HANDLER_ENHANCER_DEFINITION_BEAN_NAME, def);
         }
-        return new RuntimeBeanReference(PARAMETER_RESOLVER_FACTORY_BEAN_NAME);
+        return new RuntimeBeanReference(HANDLER_ENHANCER_DEFINITION_BEAN_NAME);
     }
 
-    private static class ClasspathParameterResolverFactoryBean implements BeanClassLoaderAware, InitializingBean,
-                                                                          FactoryBean<ParameterResolverFactory> {
+    private static class ClasspathHandlerEnhancerDefinitionBean implements BeanClassLoaderAware, InitializingBean,
+                                                                          FactoryBean<HandlerEnhancerDefinition> {
 
         private ClassLoader classLoader;
-        private ParameterResolverFactory factory;
+        private HandlerEnhancerDefinition factory;
 
         @Override
-        public ParameterResolverFactory getObject() throws Exception {
+        public HandlerEnhancerDefinition getObject() throws Exception {
             return factory;
         }
 
         @Override
         public Class<?> getObjectType() {
-            return ParameterResolverFactory.class;
+            return HandlerEnhancerDefinition.class;
         }
 
         @Override
@@ -91,7 +91,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
 
         @Override
         public void afterPropertiesSet() throws Exception {
-            this.factory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
+            this.factory = ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader);
         }
 
         @Override

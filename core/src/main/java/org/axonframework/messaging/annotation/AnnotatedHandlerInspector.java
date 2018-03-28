@@ -104,6 +104,7 @@ public class AnnotatedHandlerInspector<T> {
         ServiceLoader.load(HandlerDefinition.class).forEach(definitions::add);
         List<HandlerEnhancerDefinition> wrapperDefinitions = new ArrayList<>();
         ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(wrapperDefinitions::add);
+
         for (Method method : inspectedType.getDeclaredMethods()) {
             definitions.forEach(definition -> definition.createHandler(inspectedType, method, parameterResolverFactory)
                     .ifPresent(handler -> registerHandler(wrapped(handler, wrapperDefinitions))));

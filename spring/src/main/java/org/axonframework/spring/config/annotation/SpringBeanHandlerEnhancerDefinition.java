@@ -50,16 +50,16 @@ import org.springframework.context.ApplicationContextAware;
  * @since 2.1
  */
 @Priority(Priority.LOW)
-public class SpringBeanHandlerEnhancerFactory implements HandlerEnhancerDefinition, ApplicationContextAware {
+public class SpringBeanHandlerEnhancerDefinition implements HandlerEnhancerDefinition, ApplicationContextAware {
 
-    private static final Logger logger = LoggerFactory.getLogger(SpringBeanHandlerEnhancerFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpringBeanHandlerEnhancerDefinition.class);
 
     private ApplicationContext applicationContext;
 
     /**
      * Default constructor, which relies on Spring to inject the application context.
      */
-    public SpringBeanHandlerEnhancerFactory() {
+    public SpringBeanHandlerEnhancerDefinition() {
     }
 
     /**
@@ -68,7 +68,7 @@ public class SpringBeanHandlerEnhancerFactory implements HandlerEnhancerDefiniti
      *
      * @param applicationContext The application context providing access to beans that may be used as parameters
      */
-    public SpringBeanHandlerEnhancerFactory(ApplicationContext applicationContext) {
+    public SpringBeanHandlerEnhancerDefinition(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
@@ -86,6 +86,7 @@ public class SpringBeanHandlerEnhancerFactory implements HandlerEnhancerDefiniti
             }
         }
         return wrappedHandler;
+        return new SpringBeanHandlerEnhancerDefinition(applicationContext);
     }
 
     private MessageHandlingMember<T> wrapped(MessageHandlingMember<T> handler,
