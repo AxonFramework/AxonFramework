@@ -43,13 +43,13 @@ import org.springframework.context.ApplicationContextAware;
 public class SpringHandlerEnhancerFactoryBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
-    private final List<HandlerEnhancerDefinition> factories = new ArrayList<>();
+    private final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 
     @Override
     public HandlerEnhancerDefinition getObject() throws Exception {
-        return MultiHandlerEnhancerDefinition.ordered(factories);
+        return MultiHandlerEnhancerDefinition.ordered(enhancers);
     }
 
     @Override
@@ -64,23 +64,19 @@ public class SpringHandlerEnhancerFactoryBean implements FactoryBean<HandlerEnha
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        factories.add(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader));
-        final SpringBeanHandlerEnhancerDefinition springBeanParameterResolverFactory = new SpringBeanHandlerEnhancerDefinition();
-        springBeanParameterResolverFactory.setApplicationContext(applicationContext);
-        factories.add(springBeanParameterResolverFactory);
+        enhancers.add(new ClasspathHandlerEnhancerDefinition(classLoader));
     }
 
     /**
-     * Defines any additional parameter resolver factories that need to be used to resolve parameters. By default,
-     * the ParameterResolverFactories found on the classpath, as well as a SpringBeanParameterResolverFactory are
-     * registered.
+     * Defines any additional handler enhancers that should be used. By default, the HandlerEnhancerDefinitions are
+     * found on the classpath, as well as a SpringBeanParameterResolverFactory are registered.
      *
-     * @param additionalFactories The extra factories to register
+     * @param additionalFactories The extra enhancers to register
      * @see SpringBeanParameterResolverFactory
      * @see ClasspathParameterResolverFactory
      */
     public void setAdditionalFactories(List<HandlerEnhancerDefinition> additionalFactories) {
-        this.factories.addAll(additionalFactories);
+        this.enhancers.addAll(additionalFactories);
     }
 
     @Override

@@ -18,7 +18,7 @@ package org.axonframework.spring.config.annotation;
 
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.spring.config.ApplicationContextLookupParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -56,10 +56,10 @@ public final class SpringContextHandlerEnhancerDefinitionBuilder {
             final ManagedList<BeanDefinition> factories = new ManagedList<>();
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(ClasspathHandlerEnhancerDefinitionBean.class)
                                                .getBeanDefinition());
-            factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanParameterResolverFactory.class)
+            factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringHandlerEnhancerFactoryBean.class)
                                                .getBeanDefinition());
             AbstractBeanDefinition def =
-                    BeanDefinitionBuilder.genericBeanDefinition(ApplicationContextLookupParameterResolverFactory.class)
+                    BeanDefinitionBuilder.genericBeanDefinition(MultiHandlerEnhancerDefinition.class)
                                          .addConstructorArgValue(factories)
                                          .getBeanDefinition();
             def.setPrimary(true);
@@ -91,7 +91,7 @@ public final class SpringContextHandlerEnhancerDefinitionBuilder {
 
         @Override
         public void afterPropertiesSet() throws Exception {
-            this.factory = ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader);
+            this.factory = new ClasspathHandlerEnhancerDefinition(classLoader);
         }
 
         @Override
