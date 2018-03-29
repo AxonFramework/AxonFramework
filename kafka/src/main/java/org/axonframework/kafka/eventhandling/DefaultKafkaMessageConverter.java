@@ -132,7 +132,7 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
                         event(message, timestamp);
             }
         } catch (Exception e) {
-            logger.error("Error converting {} to axon, {}", consumerRecord, e);
+            logger.trace("Error converting {} to axon, {}", consumerRecord, e);
         }
 
         return Optional.empty();
