@@ -85,11 +85,11 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
 
     private static HandlerEnhancerDefinition[] flatten(List<HandlerEnhancerDefinition> factories) {
         List<HandlerEnhancerDefinition> flattened = new ArrayList<>(factories.size());
-        for (HandlerEnhancerDefinition parameterResolverFactory : factories) {
-            if (parameterResolverFactory instanceof MultiHandlerEnhancerDefinition) {
-                flattened.addAll(((MultiHandlerEnhancerDefinition) parameterResolverFactory).getDelegates());
+        for (HandlerEnhancerDefinition handlerEnhancer : factories) {
+            if (handlerEnhancer instanceof MultiHandlerEnhancerDefinition) {
+                flattened.addAll(((MultiHandlerEnhancerDefinition) handlerEnhancer).getDelegates());
             } else {
-                flattened.add(parameterResolverFactory);
+                flattened.add(handlerEnhancer);
             }
         }
         Collections.sort(flattened, PriorityAnnotationComparator.getInstance());
@@ -107,13 +107,10 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        MessageHandlingMember<T> resolver = original;
         for (HandlerEnhancerDefinition factory : factories) {
-            MessageHandlingMember<T> resolver = factory.wrapHandler(original);
-            if (resolver != null) {
-                return resolver;
-            }
+            resolver = factory.wrapHandler(resolver);
         }
-        return null;
-
+        return resolver;
     }
 }
