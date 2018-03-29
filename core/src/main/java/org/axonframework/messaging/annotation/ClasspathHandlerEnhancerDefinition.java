@@ -41,62 +41,21 @@ import org.slf4j.LoggerFactory;
  * @see ServiceLoader
  * @since 2.1
  */
-public final class ClasspathHandlerEnhancerDefinition {
+public final class ClasspathHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
-    private static final Object monitor = new Object();
     private static final Map<ClassLoader, WeakReference<HandlerEnhancerDefinition>> FACTORIES = new WeakHashMap<>();
+    private HandlerEnhancerDefinition multiHandlerEnhancer;
 
-    /**
-     * Private default constructor
-     */
-    private ClasspathHandlerEnhancerDefinition() {
-    }
-
-    /**
-     * Creates an instance for the given {@code clazz}. Effectively, the class loader of the given class is used
-     * to locate implementations.
-     *
-     * @param clazz The class for which the parameter resolver must be returned
-     * @return a ClasspathParameterResolverFactory that can resolve parameters for the given class
-     */
-    public static HandlerEnhancerDefinition forClass(Class<?> clazz) {
-        return forClassLoader(clazz == null ? null : clazz.getClassLoader());
-    }
-
-    /**
-     * Creates an instance using the given {@code classLoader}. Implementations are located using this class
-     * loader.
-     *
-     * @param classLoader The class loader to locate the implementations with
-     * @return a HandlerEnhancerDefinition instance using the given classLoader
-     */
-    public static HandlerEnhancerDefinition forClassLoader(ClassLoader classLoader) {
-        synchronized (monitor) {
-            HandlerEnhancerDefinition factory;
-            if (!FACTORIES.containsKey(classLoader)) {
-                factory = MultiParameterResolverFactory.ordered(findDelegates(classLoader));
-                FACTORIES.put(classLoader, new WeakReference<>(factory));
-                return factory;
-            }
-            factory = FACTORIES.get(classLoader).get();
-            if (factory == null) {
-                factory = MultiParameterResolverFactory.ordered(findDelegates(classLoader));
-                FACTORIES.put(classLoader, new WeakReference<>(factory));
-            }
-            return factory;
-        }
-    }
-
-    private static List<HandlerEnhancerDefinition> findDelegates(ClassLoader classLoader) {
+    public ClasspathHandlerEnhancerDefinition(ClassLoader classLoader) {
         Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
-        final List<HandlerEnhancerDefinition> factories = new ArrayList<>();
+        final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
         while (iterator.hasNext()) {
             try {
                 HandlerEnhancerDefinition factory = iterator.next();
-                factories.add(factory);
+                enhancers.add(factory);
             } catch (ServiceConfigurationError e) {
                 logger.info(
                         "HandlerEnhancerDefinition instance ignored, as one of the required classes is not available" +
@@ -106,6 +65,28 @@ public final class ClasspathHandlerEnhancerDefinition {
                             e.getMessage());
             }
         }
-        return factories;
+        multiHandlerEnhancer = new MultiHandlerEnhancerDefinition(enhancers);
+    }
+
+    /**
+     * Creates an instance for the given {@code clazz}. Effectively, the class loader of the given class is used
+     * to locate implementations.
+     *
+     * @param clazz The class for which the parameter resolver must be returned
+     * @return a ClasspathParameterResolverFactory that can resolve parameters for the given class
+     */
+
+    /**
+     * Creates an instance using the given {@code classLoader}. Implementations are located using this class
+     * loader.
+     *
+     * @param classLoader The class loader to locate the implementations with
+     * @return a HandlerEnhancerDefinition instance using the given classLoader
+     */
+
+
+    @Override
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        return multiHandlerEnhancer.wrapHandler(original);
     }
 }
