@@ -22,16 +22,12 @@ message PlatformOutboundInstruction {
     oneof request {
         NodeInfo node_notification = 1;
         RequestReconnect request_reconnect = 3;
-        RequestReleaseTracker request_release_tracker = 4;
-        PauseEventProcessor pause_event_processor = 5;
-        StartEventProcessor star_event_processor = 6;
+        PauseEventProcessor pause_event_processor = 4;
+        StartEventProcessor start_event_processor = 5;
     }
 }
 
 message RequestReconnect {
-}
-
-message RequestReleaseTracker {
 }
 
 message PlatformInfo {
