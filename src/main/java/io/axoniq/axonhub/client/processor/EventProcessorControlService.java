@@ -6,7 +6,7 @@ import io.axoniq.platform.grpc.PlatformOutboundInstruction;
 import io.axoniq.platform.grpc.StartEventProcessor;
 
 import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.PAUSE_EVENT_PROCESSOR;
-import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.STAR_EVENT_PROCESSOR;
+import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.START_EVENT_PROCESSOR;
 
 
 
@@ -28,7 +28,7 @@ public class EventProcessorControlService {
 
     public void init(){
         this.platformConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
-        this.platformConnectionManager.onOutboundInstruction(STAR_EVENT_PROCESSOR, this::startProcessor);
+        this.platformConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
     }
 
     public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
@@ -38,8 +38,8 @@ public class EventProcessorControlService {
     }
 
     public void startProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
-        StartEventProcessor starEventProcessor = platformOutboundInstruction.getStarEventProcessor();
-        String processorName = starEventProcessor.getProcessorName();
+        StartEventProcessor startEventProcessor = platformOutboundInstruction.getStartEventProcessor();
+        String processorName = startEventProcessor.getProcessorName();
         eventProcessorController.startProcessor(processorName);
     }
 
