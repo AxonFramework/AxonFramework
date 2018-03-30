@@ -7,19 +7,4 @@ package io.axoniq.axonhub.client.processor;
 public interface AxonHubEventProcessorInfoSource {
 
     void notifyInformation();
-
-    class Fake implements AxonHubEventProcessorInfoSource {
-
-        private int notifyCalls;
-
-        @Override
-        public void notifyInformation() {
-            notifyCalls++;
-        }
-
-        public int notifyCalls() {
-            return notifyCalls;
-        }
-    }
-
 }
