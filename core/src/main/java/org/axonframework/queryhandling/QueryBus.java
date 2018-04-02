@@ -48,26 +48,6 @@ public interface QueryBus {
     <R> Registration subscribe(String queryName, Type responseType, MessageHandler<? super QueryMessage<?, R>> handler);
 
     /**
-     * Subscribe the given {@code handler} to queries with given {@code queryName}, {@code initialResponseType} and
-     * {@code updateResponseType}.
-     * <p>
-     * If during emitting of incremental updates there is no {@code updateHandler}, {@link
-     * NoUpdateHandlerForEmitterException} will be thrown.
-     *
-     * @param queryName           the name of the query request to subscribe
-     * @param initialResponseType the type of initial response the subscribed component answers with
-     * @param updateResponseType  the type of incremental responses the subscribed component answers with
-     * @param handler             a handler that implements the query
-     * @param <I>                 the type of initial response
-     * @param <U>                 the type of incremental responses
-     * @return a handle to un-subscribe the query handler
-     */
-    <I, U> Registration subscribe(String queryName,
-                                  Type initialResponseType,
-                                  Type updateResponseType,
-                                  SubscriptionQueryMessageHandler<? super QueryMessage<?, I>, I, U> handler);
-
-    /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName
      * and responseType. This method returns all values returned by the Query Handler as a Collection. This may or may
      * not be the exact collection as defined in the Query Handler.
@@ -118,5 +98,6 @@ public interface QueryBus {
      * @param <U>           the incremental response types of the query
      * @return a handle to un-subscribe {@code updateHandler}
      */
-    <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query, UpdateHandler<I, U> updateHandler);
+    <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query,
+                                             UpdateHandler<I, U> updateHandler);
 }
