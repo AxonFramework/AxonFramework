@@ -19,6 +19,8 @@ import io.axoniq.platform.MetaDataValue;
 import io.axoniq.axonhub.QueryRequest;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.responsetypes.InstanceResponseType;
+import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -48,12 +50,14 @@ public class GrpcBackedQueryMessage<T, R> implements QueryMessage<T, R> {
     }
 
     @Override
-    public Class<R> getResponseType() {
+    public ResponseType<R> getResponseType() {
 
         try {
-            if( "int".equals(query.getResultName())) return (Class<R>) int.class;
-            if( "float".equals(query.getResultName())) return (Class<R>) float.class;
-            return (Class<R>) Class.forName(query.getResultName());
+            Class<R> klass;
+            if( "int".equals(query.getResultName())) klass = (Class<R>) int.class;
+            else if( "float".equals(query.getResultName())) klass = (Class<R>) float.class;
+            else klass = (Class<R>) Class.forName(query.getResultName());
+            return new InstanceResponseType<>(klass);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Illegal response type", e);
         }

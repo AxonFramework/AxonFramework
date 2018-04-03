@@ -32,12 +32,15 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
@@ -84,14 +87,16 @@ public class AxonHubQueryBus implements QueryBus {
 
 
     @Override
-    public <R> Registration subscribe(String queryName, Class<R> responseType, MessageHandler<? super QueryMessage<?, R>> handler) {
+    public <R> Registration subscribe(String queryName, Type responseType,
+                                      MessageHandler<? super QueryMessage<?, R>> handler) {
         return new AxonHubRegistration(queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName()));
+                                       () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName()));
+
     }
 
     @Override
-    public <Q, R> CompletableFuture<R> query(QueryMessage<Q, R> queryMessage) {
-        CompletableFuture<R> completableFuture = new CompletableFuture<>();
+    public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
+        CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
         QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
                 .withInterceptors(interceptors)
                 .query(serializer.serializeRequest(queryMessage, 1,
@@ -101,7 +106,7 @@ public class AxonHubQueryBus implements QueryBus {
                     @SuppressWarnings("unchecked")
                     public void onNext(QueryResponse commandResponse) {
                         logger.debug("Received response: {}", commandResponse);
-                        completableFuture.complete((R)serializer.deserializeResponse(commandResponse));
+                        completableFuture.complete(new GenericQueryResponseMessage<>((R)serializer.deserializeResponse(commandResponse)));
                     }
 
                     @Override
@@ -121,8 +126,8 @@ public class AxonHubQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, R> Stream<R> queryAll(QueryMessage<Q, R> queryMessage, long timeout, TimeUnit timeUnit) {
-        QueueBackedSpliterator<R> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
+    public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage, long timeout, TimeUnit timeUnit) {
+        QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
         QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
                 .withInterceptors(interceptors)
                 .withDeadlineAfter(timeout, timeUnit)
@@ -133,7 +138,7 @@ public class AxonHubQueryBus implements QueryBus {
                         @SuppressWarnings("unchecked")
                         public void onNext(QueryResponse commandResponse) {
                             logger.debug("Received response: {}", commandResponse);
-                            resultSpliterator.put((R)serializer.deserializeResponse(commandResponse));
+                            resultSpliterator.put(new GenericQueryResponseMessage(serializer.deserializeResponse(commandResponse)));
                         }
 
                         @Override
@@ -191,7 +196,7 @@ public class AxonHubQueryBus implements QueryBus {
             String messageId = query.getMessageIdentifier();
             try {
                 //noinspection unchecked
-                localSegment.queryAll(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
+                localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
                         .forEach(response -> outboundStreamObserver.onNext(
                                         QueryProviderOutbound.newBuilder()
                                         .setQueryResponse(serializer.serializeResponse(response, messageId))
@@ -212,8 +217,8 @@ public class AxonHubQueryBus implements QueryBus {
         }
 
         @SuppressWarnings("unchecked")
-        public <R> Registration subscribe(String queryName, Class<R> responseType, String componentName, MessageHandler<? super QueryMessage<?, R>> handler) {
-            Set registrations = subscribedQueries.computeIfAbsent( new QueryDefinition(queryName, responseType.getName(), componentName), k -> new CopyOnWriteArraySet<>());
+        public <R> Registration subscribe(String queryName, Type responseType, String componentName, MessageHandler<? super QueryMessage<?, R>> handler) {
+            Set registrations = subscribedQueries.computeIfAbsent( new QueryDefinition(queryName, responseType.getTypeName(), componentName), k -> new CopyOnWriteArraySet<>());
             registrations.add( handler);
 
             try {
@@ -223,7 +228,7 @@ public class AxonHubQueryBus implements QueryBus {
                                 .setClientName(configuration.getClientName())
                                 .setComponentName(componentName)
                                 .setQuery(queryName)
-                                .setResultName(responseType.getName())
+                                .setResultName(responseType.getTypeName())
                                 .setNrOfHandlers(registrations.size())
                                 .build())
                         .build());
@@ -269,8 +274,8 @@ public class AxonHubQueryBus implements QueryBus {
             return outboundStreamObserver;
         }
 
-        public void unsubscribe(String queryName, Class responseType, String componentName) {
-            QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType.getName(), componentName);
+        public void unsubscribe(String queryName, Type responseType, String componentName) {
+            QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType.getTypeName(), componentName);
             subscribedQueries.remove(queryDefinition);
             try {
                 getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(

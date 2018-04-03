@@ -17,9 +17,24 @@ package io.axoniq.axonhub.client;
 
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
-import io.axoniq.axonhub.grpc.*;
-import io.axoniq.platform.grpc.*;
-import io.grpc.*;
+import io.axoniq.axonhub.grpc.CommandProviderInbound;
+import io.axoniq.axonhub.grpc.CommandProviderOutbound;
+import io.axoniq.axonhub.grpc.CommandServiceGrpc;
+import io.axoniq.axonhub.grpc.QueryProviderInbound;
+import io.axoniq.axonhub.grpc.QueryProviderOutbound;
+import io.axoniq.axonhub.grpc.QueryServiceGrpc;
+import io.axoniq.platform.grpc.ClientIdentification;
+import io.axoniq.platform.grpc.NodeInfo;
+import io.axoniq.platform.grpc.PlatformInboundInstruction;
+import io.axoniq.platform.grpc.PlatformInfo;
+import io.axoniq.platform.grpc.PlatformOutboundInstruction;
+import io.axoniq.platform.grpc.PlatformServiceGrpc;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -27,10 +42,20 @@ import io.netty.handler.ssl.SslContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.File;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import javax.net.ssl.SSLException;
 
 /**
  * @author Marc Gathier
@@ -45,6 +70,7 @@ public class PlatformConnectionManager {
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonHubConfiguration connectInformation;
+    private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
     public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
         this.connectInformation = connectInformation;
@@ -122,6 +148,9 @@ public class PlatformConnectionManager {
                 .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
+                        handlers.getOrDefault(messagePlatformOutboundInstruction.getRequestCase(), new ArrayDeque<>())
+                                .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
+
                         switch (messagePlatformOutboundInstruction.getRequestCase()) {
                             case NODE_NOTIFICATION:
                                 logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
@@ -130,8 +159,6 @@ public class PlatformConnectionManager {
                                 disconnectListeners.forEach(Runnable::run);
                                 inputStream.onCompleted();
                                 scheduleReconnect();
-                                break;
-                            case REQUEST_RELEASE_TRACKER:
                                 break;
                             case REQUEST_NOT_SET:
                                 break;
@@ -197,5 +224,14 @@ public class PlatformConnectionManager {
         return QueryServiceGrpc.newStub(getChannel())
                 .withInterceptors(interceptors)
                 .openStream(queryProviderInboundStreamObserver);
+    }
+
+    public void onOutboundInstruction(PlatformOutboundInstruction.RequestCase requestCase, Consumer<PlatformOutboundInstruction> consumer){
+        Collection<Consumer<PlatformOutboundInstruction>> consumers = this.handlers.computeIfAbsent(requestCase, (rc) -> new LinkedList<>());
+        consumers.add(consumer);
+    }
+
+    public void send(PlatformInboundInstruction instruction){
+        inputStream.onNext(instruction);
     }
 }

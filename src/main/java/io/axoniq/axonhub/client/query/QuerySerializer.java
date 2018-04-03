@@ -60,7 +60,7 @@ public class QuerySerializer extends MessagePlatformSerializer {
                 .setTimestamp(System.currentTimeMillis())
                 .setMessageIdentifier(UUID.randomUUID().toString())
                 .setQuery(queryMessage.getQueryName())
-                .setResultName(queryMessage.getResponseType().getName())
+                .setResultName(queryMessage.getResponseType().toString())
                 .setPayload(
                         io.axoniq.platform.SerializedObject.newBuilder()
                                 .setData(ByteString.copyFrom(serializedPayload.getData()))
