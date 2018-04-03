@@ -56,8 +56,8 @@ public class WindowBackpressureTest {
         verify(updateHandler).onInitialResult("Initial");
 
         RuntimeException exception = new RuntimeException("oops");
-        windowBackpressure.onError(exception);
-        verify(updateHandler).onError(exception);
+        windowBackpressure.onCompletedExceptionally(exception);
+        verify(updateHandler).onCompletedExceptionally(exception);
 
         windowBackpressure.onUpdate("Update1");
         windowBackpressure.onUpdate("Update2");

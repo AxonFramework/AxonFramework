@@ -55,14 +55,14 @@ public class BufferBackpressureTest {
         bufferBackpressure.onUpdate("Update2");
         bufferBackpressure.onUpdate("Update3");
         bufferBackpressure.onUpdate("Update4");
-        bufferBackpressure.onError(exception);
+        bufferBackpressure.onCompletedExceptionally(exception);
         bufferBackpressure.onCompleted();
 
         // then
         verify(updateHandler).onInitialResult("Initial");
         verify(updateHandler).onUpdate(Arrays.asList("Update1", "Update2"));
         verify(updateHandler).onUpdate(Arrays.asList("Update3", "Update4"));
-        verify(updateHandler).onError(exception);
+        verify(updateHandler).onCompletedExceptionally(exception);
         verify(updateHandler).onCompleted();
     }
 }

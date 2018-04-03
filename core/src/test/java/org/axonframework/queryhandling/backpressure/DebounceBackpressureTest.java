@@ -49,8 +49,8 @@ public class DebounceBackpressureTest {
         verify(updateHandler).onInitialResult("Initial");
 
         RuntimeException exception = new RuntimeException("oops");
-        sampleBackpressure.onError(exception);
-        verify(updateHandler).onError(exception);
+        sampleBackpressure.onCompletedExceptionally(exception);
+        verify(updateHandler).onCompletedExceptionally(exception);
 
         sampleBackpressure.onUpdate("Update1");
         Thread.sleep(150);

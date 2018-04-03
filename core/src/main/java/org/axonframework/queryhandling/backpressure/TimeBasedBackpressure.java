@@ -60,10 +60,18 @@ public abstract class TimeBasedBackpressure<I, U> implements BackpressuredUpdate
 
     @Override
     public void onCompleted() {
-        delegateUpdateHandler.onCompleted();
+        shutdown();
+    }
+
+    /**
+     * Shuts down the executor service, there will be no more updates scheduled.
+     */
+    public void shutdown() {
         try {
+            scheduledExecutorService.shutdown();
             // await for the last update
             scheduledExecutorService.awaitTermination(period, unit);
+            delegateUpdateHandler.onCompleted();
         } catch (InterruptedException e) {
             // we've been interrupted. Reset the interruption flag and continue
             Thread.currentThread().interrupt();
@@ -71,8 +79,8 @@ public abstract class TimeBasedBackpressure<I, U> implements BackpressuredUpdate
     }
 
     @Override
-    public void onError(Throwable error) {
-        delegateUpdateHandler.onError(error);
+    public void onCompletedExceptionally(Throwable error) {
+        delegateUpdateHandler.onCompletedExceptionally(error);
     }
 
     protected UpdateHandler<I, U> getDelegateUpdateHandler() {

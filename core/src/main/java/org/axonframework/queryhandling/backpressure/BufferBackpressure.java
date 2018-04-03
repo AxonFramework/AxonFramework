@@ -76,7 +76,7 @@ public class BufferBackpressure<I, U> implements BackpressuredUpdateHandler<I, U
     }
 
     @Override
-    public void onError(Throwable error) {
-        delegateUpdateHandler.onError(error);
+    public void onCompletedExceptionally(Throwable error) {
+        delegateUpdateHandler.onCompletedExceptionally(error);
     }
 }

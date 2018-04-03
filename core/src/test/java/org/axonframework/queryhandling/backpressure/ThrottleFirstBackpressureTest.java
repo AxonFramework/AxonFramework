@@ -49,8 +49,8 @@ public class ThrottleFirstBackpressureTest {
         verify(updateHandler).onInitialResult("Initial");
 
         RuntimeException exception = new RuntimeException("oops");
-        throttleFirstBackpressure.onError(exception);
-        verify(updateHandler).onError(exception);
+        throttleFirstBackpressure.onCompletedExceptionally(exception);
+        verify(updateHandler).onCompletedExceptionally(exception);
 
         throttleFirstBackpressure.onUpdate("Update1");
         throttleFirstBackpressure.onUpdate("Update2");
