@@ -180,7 +180,8 @@ public class AxonHubQueryBus implements QueryBus {
                         processQuery(command);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.warn("Interrupted queryExecutor", e);
+                    return;
                 }
             }
 

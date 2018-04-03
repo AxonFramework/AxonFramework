@@ -15,6 +15,9 @@
 
 package io.axoniq.axonhub.client.query;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,15 +30,16 @@ import java.util.function.Consumer;
  * @author Marc Gathier
  */
 public class QueueBackedSpliterator<R> implements Spliterator<R>{
+    private final static Logger logger = LoggerFactory.getLogger(QueueBackedSpliterator.class);
     private final long myTimeOut;
     private final BlockingQueue<WrappedElement<R>> blockingQueue = new LinkedBlockingQueue<>();
 
-    class WrappedElement<R> {
-        private final R wrapped;
+    class WrappedElement<W> {
+        private final W wrapped;
         private final boolean stop;
         private final Throwable exception;
 
-        WrappedElement(R wrapped) {
+        WrappedElement(W wrapped) {
             this.wrapped = wrapped;
             this.stop = false;
             this.exception = null;
@@ -65,7 +69,9 @@ public class QueueBackedSpliterator<R> implements Spliterator<R>{
                 }
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.warn("Interrupted tryAdvance", e);
+            return false;
+
         }
         return element != null;
     }
@@ -89,7 +95,8 @@ public class QueueBackedSpliterator<R> implements Spliterator<R>{
         try {
             blockingQueue.put(new WrappedElement<>(object));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.warn("Interrupted put", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -97,7 +104,7 @@ public class QueueBackedSpliterator<R> implements Spliterator<R>{
         try {
             blockingQueue.put(new WrappedElement<>(true, t));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.warn("Interrupted cancel", e);
         }
 
     }

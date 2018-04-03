@@ -169,7 +169,8 @@ public class AxonHubCommandBus implements CommandBus {
                         processCommand(command);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.warn("Interrupted queryExecutor", e);
+                    return;
                 }
             }
         }

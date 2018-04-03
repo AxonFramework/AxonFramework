@@ -28,6 +28,8 @@ import io.axoniq.axonhub.client.PlatformService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -39,12 +41,13 @@ import java.util.Set;
  * Author: marc
  */
 public class DummyMessagePlatformServer {
+    private final static Logger logger = LoggerFactory.getLogger(DummyMessagePlatformServer.class);
     private final int port;
     private Server server;
     private Map<QueryDefinition, Set<StreamObserver>> subscriptions = new HashMap<>();
 
 
-    public DummyMessagePlatformServer(int port) {
+    DummyMessagePlatformServer(int port) {
         this.port = port;
     }
 
@@ -121,7 +124,7 @@ public class DummyMessagePlatformServer {
                     try {
                         Thread.sleep(interval);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        logger.debug("Sleep interrupted");
                     }
                 }
             }
