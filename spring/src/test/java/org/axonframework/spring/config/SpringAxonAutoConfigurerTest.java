@@ -22,7 +22,11 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.config.SagaConfiguration;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
@@ -32,10 +36,17 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.UpdateHandler;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -57,6 +68,8 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -70,6 +83,9 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired(required = false)
     private CommandBus commandBus;
+
+    @Autowired(required = false)
+    private QueryBus queryBus;
 
     @Qualifier("customSagaStore")
     @Autowired(required = false)
@@ -169,6 +185,22 @@ public class SpringAxonAutoConfigurerTest {
         assertEquals("Ooops! I failed.", myListenerInvocationErrorHandler.received.get(0).getMessage());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testWiringOfQueryHandlerAndQueryUpdateEmitter() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonCR",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+        UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
+
+        queryBus.subscriptionQuery(queryMessage, updateHandler);
+        eventBus.publish(asEventMessage("New chat message"));
+
+        verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
+        verify(updateHandler).onUpdate("New chat message");
+    }
+
     @EnableAxon
     @Scope
     @Configuration
@@ -262,12 +294,14 @@ public class SpringAxonAutoConfigurerTest {
         @Component
         public static class MyEventHandler {
 
-            public List<String> received = new ArrayList<>();
-            private EventBus eventBus;
+            public final List<String> received = new ArrayList<>();
+            private final EventBus eventBus;
+            private final QueryUpdateEmitter queryUpdateEmitter;
 
             @Autowired
-            public MyEventHandler(EventBus eventBus) {
+            public MyEventHandler(EventBus eventBus, QueryUpdateEmitter queryUpdateEmitter) {
                 this.eventBus = eventBus;
+                this.queryUpdateEmitter = queryUpdateEmitter;
             }
 
             @EventHandler
@@ -275,6 +309,16 @@ public class SpringAxonAutoConfigurerTest {
                 assertNotNull(eventBus);
                 assertNotNull(beanInjectionCheck);
                 received.add(event);
+                queryUpdateEmitter.emit(String.class, chatRoom -> chatRoom.equals("axonCR"), event);
+            }
+        }
+
+        @Component
+        public static class MyQueryHandler {
+
+            @QueryHandler
+            public List<String> getChatMessages(String chatRoom) {
+                return Arrays.asList("Message1", "Message2", "Message3");
             }
         }
 

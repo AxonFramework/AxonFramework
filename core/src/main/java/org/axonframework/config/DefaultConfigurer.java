@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -120,6 +121,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter));
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
@@ -214,6 +216,22 @@ public class DefaultConfigurer implements Configurer {
         return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
                                   config.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                   config.getComponent(QueryInvocationErrorHandler.class));
+    }
+
+    /**
+     * Provides the default QueryUpdateEmitter implementation. Subclasses may override this method to provide their own
+     * default.
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return The default QueryUpdateEmitter to use
+     */
+    protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
+        QueryBus queryBus = config.getComponent(QueryBus.class);
+        if (!(queryBus instanceof QueryUpdateEmitter)) {
+            throw new AxonConfigurationException(
+                    "Implementation of query bus does not provide emitting functionality. Provide a query update emitter or query bus which supports emitting.");
+        }
+        return (QueryUpdateEmitter) queryBus;
     }
 
     /**

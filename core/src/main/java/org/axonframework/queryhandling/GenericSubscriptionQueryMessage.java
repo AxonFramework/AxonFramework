@@ -16,10 +16,10 @@
 
 package org.axonframework.queryhandling;
 
-import java.util.Map;
-
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
+
+import java.util.Map;
 
 /**
  * Generic implementation of the {@link SubscriptionQueryMessage}. Unless explicitly provided, it assumes the {@code
@@ -85,7 +85,7 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
     }
 
     @Override
-    public QueryMessage<Q, I> withMetaData(Map<String, ?> metaData) {
+    public GenericSubscriptionQueryMessage<Q, I, U> withMetaData(Map<String, ?> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
                                                      getQueryName(),
                                                      getResponseType(),
@@ -93,7 +93,7 @@ public class GenericSubscriptionQueryMessage<Q, I, U> extends GenericQueryMessag
     }
 
     @Override
-    public QueryMessage<Q, I> andMetaData(Map<String, ?> metaData) {
+    public GenericSubscriptionQueryMessage<Q, I, U> andMetaData(Map<String, ?> metaData) {
         return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
                                                      getQueryName(),
                                                      getResponseType(),

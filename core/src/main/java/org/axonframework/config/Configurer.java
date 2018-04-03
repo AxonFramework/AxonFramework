@@ -26,6 +26,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
@@ -282,6 +283,18 @@ public interface Configurer {
      */
     default Configurer configureQueryBus(Function<Configuration, QueryBus> queryBusBuilder) {
         return registerComponent(QueryBus.class, queryBusBuilder);
+    }
+
+    /**
+     * Configures the given Query Update Emitter to use in this configuration. The builder receives the Configuration as
+     * input and is expected to return a fully initialized {@link QueryUpdateEmitter} instance.
+     *
+     * @param queryUpdateEmitterBuilder The builder function for the {@link QueryUpdateEmitter}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default Configurer configureQueryUpdateEmitter(
+            Function<Configuration, QueryUpdateEmitter> queryUpdateEmitterBuilder) {
+        return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
     }
 
     /**

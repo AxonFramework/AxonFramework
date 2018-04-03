@@ -17,7 +17,9 @@
 package org.axonframework.queryhandling;
 
 /**
- * Defines update handler callbacks for subscription query.
+ * Defines update handler callbacks for subscription query. The guarantee which specific implementation of query bus
+ * should provide is that {@link UpdateHandler#onInitialResult(Object)} is always invoked before any other method in
+ * this interface. However, there are no guarantees for other ordering of methods within this interface.
  *
  * @param <I> the type of initial result
  * @param <U> the type of incremental updates
@@ -50,5 +52,5 @@ public interface UpdateHandler<I, U> {
      *
      * @param error the error which occurred
      */
-    void onError(Throwable error);
+    void onCompletedExceptionally(Throwable error);
 }
