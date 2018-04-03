@@ -143,8 +143,8 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        // give some time emits waiting on the lock to be emitted
-        Thread.sleep(200);
+        // give some time to emits waiting on the lock to be emitted
+        Thread.sleep(400);
 
         // then
         InOrder inOrder = inOrder(updateHandler);
