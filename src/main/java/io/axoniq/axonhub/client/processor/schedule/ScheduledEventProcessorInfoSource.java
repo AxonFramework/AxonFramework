@@ -37,6 +37,10 @@ public class ScheduledEventProcessorInfoSource implements AxonHubEventProcessorI
         delegate.notifyInformation();
     }
 
+    public void shutdown(){
+        scheduler.shutdown();
+    }
+
 
 
 }

@@ -26,7 +26,7 @@ public class EventProcessorControlService {
         this.eventProcessorController = eventProcessorController;
     }
 
-    public void init(){
+    public void start(){
         this.platformConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.platformConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
     }

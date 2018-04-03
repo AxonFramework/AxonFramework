@@ -43,10 +43,11 @@ public class AxonHubEvenProcessorInfoConfiguration implements ModuleConfiguratio
     @Override
     public void start() {
         processorInfoSource.start();
-        eventProcessorControlService.init();
+        eventProcessorControlService.start();
     }
 
     @Override
     public void shutdown() {
+        processorInfoSource.shutdown();
     }
 }
