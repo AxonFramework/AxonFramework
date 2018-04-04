@@ -31,7 +31,7 @@ import static org.junit.Assert.*;
 public class GenericDispatchInterceptorsTest {
 
     @Test
-    public void registerSingleInterceptor() {
+    public void registerInterceptors() {
         List<String> results = new ArrayList<>();
         GenericDispatchInterceptors<Message<?>> dispatchInterceptors = new GenericDispatchInterceptors<>();
         dispatchInterceptors.registerDispatchInterceptor(messages -> (a, b) -> {
