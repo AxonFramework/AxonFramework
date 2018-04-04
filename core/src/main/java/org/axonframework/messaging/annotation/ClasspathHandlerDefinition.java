@@ -18,54 +18,58 @@ package org.axonframework.messaging.annotation;
 
 import static java.util.ServiceLoader.load;
 
+import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import org.slf4j.LoggerFactory;
 
 /**
- * HandlerEnhancerDefinition instance that locates other HandlerEnhancerDefinition instances on the class path. It uses
+ * HandlerDefinition instance that locates other HandlerDefinition instances on the class path. It uses
  * the {@link ServiceLoader} mechanism to locate and initialize them.
  * <p/>
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
- * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerEnhancerDefinition}. For more details, see
+ * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerDefinition}. For more details, see
  * {@link ServiceLoader}.
  *
  * @author Allard Buijze
  * @see ServiceLoader
  * @since 2.1
  */
-public final class ClasspathHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
+public final class ClasspathHandlerDefinition implements HandlerDefinition {
 
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
-    private HandlerEnhancerDefinition multiHandlerEnhancer;
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerDefinition.class);
+    private HandlerDefinition multiHandlerEnhancer;
 
-    public ClasspathHandlerEnhancerDefinition(ClassLoader classLoader) {
-        Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class, classLoader == null ?
+    public ClasspathHandlerDefinition(ClassLoader classLoader) {
+        Iterator<HandlerDefinition> iterator = load(HandlerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
-        final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
+        final List<HandlerDefinition> enhancers = new ArrayList<>();
         while (iterator.hasNext()) {
             try {
-                HandlerEnhancerDefinition factory = iterator.next();
+                HandlerDefinition factory = iterator.next();
                 enhancers.add(factory);
             } catch (ServiceConfigurationError e) {
                 logger.info(
-                        "HandlerEnhancerDefinition instance ignored, as one of the required classes is not available" +
+                        "HandlerDefinition instance ignored, as one of the required classes is not available" +
                                 "on the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
-                logger.info("HandlerEnhancerDefinition instance ignored. It relies on a class that cannot be found: {}",
+                logger.info("HandlerDefinition instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());
             }
         }
-        multiHandlerEnhancer = new MultiHandlerEnhancerDefinition(enhancers);
+        multiHandlerEnhancer = new MultiHandlerDefinition(enhancers);
     }
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
-        return multiHandlerEnhancer.wrapHandler(original);
+    public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
+                                                                Executable executable,
+                                                                ParameterResolverFactory parameterResolverFactory) {
+        return multiHandlerEnhancer.createHandler(declaringType, executable, parameterResolverFactory);
     }
 }
