@@ -13,16 +13,18 @@
  * limitations under the License.
  */
 
-package io.axoniq.axonhub.client.processor.grpc;
+package io.axoniq.axonhub.client;
 
-import io.axoniq.platform.grpc.PlatformInboundInstruction;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 
 /**
- * Created by Sara Pellegrini on 15/03/2018.
+ * Created by Sara Pellegrini on 29/03/2018.
  * sara.pellegrini@gmail.com
  */
-public interface PlatformInboundMessage {
+public interface MessageHandlerInterceptorSupport<M extends Message<?>> {
 
-    PlatformInboundInstruction instruction();
+    Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super M> handlerInterceptor);
 
 }
