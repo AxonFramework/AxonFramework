@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -45,13 +44,7 @@ public class AnnotatedHandlerInspector<T> {
                                       List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
                                       ParameterResolverFactory parameterResolverFactory,
                                       Map<Class<?>, AnnotatedHandlerInspector> registry) {
-        this.inspectedType = inspectedType;
-        this.parameterResolverFactory = parameterResolverFactory;
-        this.registry = registry;
-        this.superClassInspectors = new ArrayList<>(superClassInspectors);
-        this.handlers = new ArrayList<>();
-        handlerDefinition = null;
-        handlerEnhancerDefinition = null;
+        this(inspectedType, superClassInspectors, parameterResolverFactory, new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()), new ClasspathHandlerEnhancerDefinition(Thread.currentThread().getContextClassLoader()), registry);
     }
 
     private AnnotatedHandlerInspector(Class<T> inspectedType,
@@ -110,14 +103,6 @@ public class AnnotatedHandlerInspector<T> {
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                Map<Class<?>, AnnotatedHandlerInspector> registry) {
-        return initialize(inspectedType, parameterResolverFactory, null, null, registry);
-    }
-
-    private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
-                                                               ParameterResolverFactory parameterResolverFactory,
-                                                               HandlerDefinition handlerDefinition,
-                                                               HandlerEnhancerDefinition handlerEnhancerDefinition,
-                                                               Map<Class<?>, AnnotatedHandlerInspector> registry) {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
             //noinspection unchecked
@@ -130,29 +115,26 @@ public class AnnotatedHandlerInspector<T> {
                 new AnnotatedHandlerInspector<>(inspectedType,
                                                 parents,
                                                 parameterResolverFactory,
-                                                handlerDefinition,
-                                                handlerEnhancerDefinition,
                                                 registry);
         inspector.initializeMessageHandlers(parameterResolverFactory);
         return inspector;
     }
 
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory) {
-        List<HandlerDefinition> definitions = new ArrayList<>();
-        ServiceLoader.load(HandlerDefinition.class).forEach(definitions::add);
+        //        List<HandlerDefinition> definitions = new ArrayList<>();
+        //        ServiceLoader.load(HandlerDefinition.class).forEach(definitions::add);
         List<HandlerEnhancerDefinition> wrapperDefinitions = new ArrayList<>();
-        ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(wrapperDefinitions::add);
+        //        ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(wrapperDefinitions::add);
+        wrapperDefinitions.add(handlerEnhancerDefinition);
+
 
         for (Method method : inspectedType.getDeclaredMethods()) {
-            definitions.forEach(definition -> definition.createHandler(inspectedType, method, parameterResolverFactory)
-                                                        .ifPresent(handler -> registerHandler(wrapped(handler,
-                                                                                                      wrapperDefinitions))));
+            handlerDefinition.createHandler(inspectedType, method, parameterResolverFactory)
+                             .ifPresent(handler -> registerHandler(wrapped(handler, wrapperDefinitions)));
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
-            definitions.forEach(
-                    definition -> definition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                                            .ifPresent(handler -> registerHandler(wrapped(handler,
-                                                                                          wrapperDefinitions))));
+            handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory)
+                             .ifPresent(handler -> registerHandler(wrapped(handler, wrapperDefinitions)));
         }
         superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
         Collections.sort(handlers, HandlerComparator.instance());
