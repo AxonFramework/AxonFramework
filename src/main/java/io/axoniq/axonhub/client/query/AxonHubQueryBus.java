@@ -17,6 +17,9 @@ package io.axoniq.axonhub.client.query;
 
 import io.axoniq.axonhub.*;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.DispatchInterceptors;
+import io.axoniq.axonhub.client.GenericDispatchInterceptors;
+import io.axoniq.axonhub.client.MessageHandlerInterceptorSupport;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
@@ -31,7 +34,9 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
@@ -55,11 +60,13 @@ public class AxonHubQueryBus implements QueryBus {
     private final Logger logger = LoggerFactory.getLogger(AxonHubQueryBus.class);
     private final AxonHubConfiguration configuration;
     private final QueryBus localSegment;
+    private final MessageHandlerInterceptorSupport<QueryMessage<?,?>> localHandlerInterceptorSupport;
     private final QuerySerializer serializer;
     private final QueryPriorityCalculator priorityCalculator;
     private final QueryProvider queryProvider;
     private final PlatformConnectionManager platformConnectionManager;
     private final ClientInterceptor[] interceptors;
+    private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new GenericDispatchInterceptors<>();
 
 
     /**
@@ -70,10 +77,12 @@ public class AxonHubQueryBus implements QueryBus {
      * @param serializer serializer/deserializer for query requests and responses
      * @param priorityCalculator calculates the request priority based on the content and adds it to the request
      */
-    public AxonHubQueryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration, QueryBus localSegment,
+    public <QB extends QueryBus & MessageHandlerInterceptorSupport<QueryMessage<?,?>>>
+    AxonHubQueryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration, QB localSegment,
                            Serializer serializer, QueryPriorityCalculator priorityCalculator) {
         this.configuration = configuration;
         this.localSegment = localSegment;
+        this.localHandlerInterceptorSupport = localSegment;
         this.serializer = new QuerySerializer(serializer);
         this.priorityCalculator = priorityCalculator;
         this.queryProvider = new QueryProvider();
@@ -96,11 +105,12 @@ public class AxonHubQueryBus implements QueryBus {
 
     @Override
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
+        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
         QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
                 .withInterceptors(interceptors)
-                .query(serializer.serializeRequest(queryMessage, 1,
-                TimeUnit.HOURS.toMillis(1), priorityCalculator.determinePriority(queryMessage)),
+                .query(serializer.serializeRequest(interceptedQuery, 1,
+                TimeUnit.HOURS.toMillis(1), priorityCalculator.determinePriority(interceptedQuery)),
                 new StreamObserver<QueryResponse>() {
                     @Override
                     @SuppressWarnings("unchecked")
@@ -127,12 +137,13 @@ public class AxonHubQueryBus implements QueryBus {
 
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage, long timeout, TimeUnit timeUnit) {
+        QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
         QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
                 .withInterceptors(interceptors)
                 .withDeadlineAfter(timeout, timeUnit)
-                .query(serializer.serializeRequest(queryMessage, -1, timeUnit.toMillis(timeout),
-                        priorityCalculator.determinePriority(queryMessage)),
+                .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
+                        priorityCalculator.determinePriority(interceptedQuery)),
                     new StreamObserver<QueryResponse>() {
                         @Override
                         @SuppressWarnings("unchecked")
@@ -361,6 +372,14 @@ public class AxonHubQueryBus implements QueryBus {
 
     static long priority(List<ProcessingInstruction> processingInstructions) {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
+    }
+
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?,?>> handlerInterceptor) {
+        return localHandlerInterceptorSupport.registerHandlerInterceptor(handlerInterceptor);
+    }
+
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super QueryMessage<?,?>> dispatchInterceptor) {
+        return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
 }

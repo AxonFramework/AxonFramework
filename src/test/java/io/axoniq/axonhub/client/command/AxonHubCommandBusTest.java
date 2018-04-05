@@ -34,6 +34,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,7 +53,7 @@ public class AxonHubCommandBusTest {
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private AxonHubConfiguration conf;
     private XStreamSerializer ser;
-    private SimpleCommandBus localSegment;
+    private EnhancedCommandBus localSegment;
 
 
     @Before
@@ -63,7 +65,7 @@ public class AxonHubCommandBusTest {
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        localSegment = new SimpleCommandBus();
+        localSegment = new EnhancedCommandBus();
         ser = new XStreamSerializer();
         testSubject = new AxonHubCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
@@ -180,6 +182,31 @@ public class AxonHubCommandBusTest {
         dummyMessagePlatformServer.start();
         Thread.sleep(3000);
         assertEquals(1, dummyMessagePlatformServer.subscriptions(String.class.getName()).size());
+    }
+
+    @Test
+    public void dispatchInterceptor(){
+        List<Object> results = new LinkedList<>();
+        testSubject.registerDispatchInterceptor(messages -> (a,b) -> {
+            results.add(b.getPayload());
+            return b;
+        });
+        testSubject.dispatch(new GenericCommandMessage<>("payload"));
+        assertEquals("payload", results.get(0));
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    public void handlerInterceptor(){
+        List<Boolean> results = new LinkedList<>();
+        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
+            results.add(true);
+            return interceptorChain.proceed();
+        });
+        localSegment.subscribe("java.lang.String", message -> message);
+        localSegment.dispatch(new GenericCommandMessage<>("payload"));
+        assertTrue(results.get(0));
+        assertEquals(1, results.size());
     }
 
 }
