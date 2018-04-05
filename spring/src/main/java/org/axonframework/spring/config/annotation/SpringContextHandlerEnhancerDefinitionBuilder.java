@@ -56,7 +56,7 @@ public final class SpringContextHandlerEnhancerDefinitionBuilder {
             final ManagedList<BeanDefinition> factories = new ManagedList<>();
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(ClasspathHandlerEnhancerDefinitionBean.class)
                                                .getBeanDefinition());
-            factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringHandlerEnhancerFactoryBean.class)
+            factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringHandlerEnhancerDefinitionBean.class)
                                                .getBeanDefinition());
             AbstractBeanDefinition def =
                     BeanDefinitionBuilder.genericBeanDefinition(MultiHandlerEnhancerDefinition.class)

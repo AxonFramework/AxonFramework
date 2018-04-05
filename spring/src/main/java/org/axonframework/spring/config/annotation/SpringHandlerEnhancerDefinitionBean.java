@@ -32,15 +32,14 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
- * Spring factory bean that creates a ParameterResolverFactory instance that is capable of resolving parameter values
+ * Spring factory bean that creates a HandlerEnhancerDefinition instance that is capable of resolving parameter values
  * as Spring Beans, in addition to the default behavior defined by Axon.
  *
  * @author Allard Buijze
- * @see SpringBeanParameterResolverFactory
- * @see ClasspathParameterResolverFactory
+ * @see ClasspathHandlerEnhancerDefinition
  * @since 2.3.1
  */
-public class SpringHandlerEnhancerFactoryBean implements FactoryBean<HandlerEnhancerDefinition>,
+public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
     private final List<HandlerEnhancerDefinition> enhancers = new ArrayList<>();
