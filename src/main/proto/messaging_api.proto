@@ -55,6 +55,7 @@ message FlowControl {
 
 message QueryComplete {
     string message_id = 1;
+    string request_id = 2;
 }
 
 message NodeNotification {
