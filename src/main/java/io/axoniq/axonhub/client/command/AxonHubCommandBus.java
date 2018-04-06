@@ -59,7 +59,7 @@ public class AxonHubCommandBus implements CommandBus {
     private final CommandSerializer serializer;
     private final AxonHubConfiguration configuration;
     private final ClientInterceptor[] interceptors;
-    private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors = new GenericDispatchInterceptors<>();
+    private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors = new DispatchInterceptors<>();
     private Logger logger = LoggerFactory.getLogger(AxonHubCommandBus.class);
 
     public <CB extends CommandBus & MessageHandlerInterceptorSupport<CommandMessage<?>>>

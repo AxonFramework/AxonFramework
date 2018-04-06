@@ -62,7 +62,7 @@ public class AxonHubQueryBus implements QueryBus {
     private final QueryProvider queryProvider;
     private final PlatformConnectionManager platformConnectionManager;
     private final ClientInterceptor[] interceptors;
-    private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new GenericDispatchInterceptors<>();
+    private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new DispatchInterceptors<>();
 
 
     /**

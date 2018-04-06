@@ -28,12 +28,12 @@ import static org.junit.Assert.*;
  * Created by Sara Pellegrini on 03/04/2018.
  * sara.pellegrini@gmail.com
  */
-public class GenericDispatchInterceptorsTest {
+public class DispatchInterceptorsTest {
 
     @Test
     public void registerInterceptors() {
         List<String> results = new ArrayList<>();
-        GenericDispatchInterceptors<Message<?>> dispatchInterceptors = new GenericDispatchInterceptors<>();
+        DispatchInterceptors<Message<?>> dispatchInterceptors = new DispatchInterceptors<>();
         dispatchInterceptors.registerDispatchInterceptor(messages -> (a, b) -> {
                                                              results.add("Interceptor One");
                                                              return b;

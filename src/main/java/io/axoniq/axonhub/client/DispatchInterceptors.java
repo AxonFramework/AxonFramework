@@ -18,14 +18,28 @@ package io.axoniq.axonhub.client;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Created by Sara Pellegrini on 29/03/2018.
  * sara.pellegrini@gmail.com
  */
-public interface DispatchInterceptors<M extends Message<?>>  {
+public class DispatchInterceptors<M extends Message<?>> {
 
-    Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super M> dispatchInterceptor);
+    private final List<MessageDispatchInterceptor<? super M>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
-    <T extends M> T intercept(T message);
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super M> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
 
+    public <T extends M> T intercept(T message) {
+        T messageToDispatch = message;
+        for (MessageDispatchInterceptor<? super M> interceptor : dispatchInterceptors) {
+            messageToDispatch = (T) interceptor.handle(messageToDispatch);
+        }
+        return messageToDispatch;
+    }
 }
