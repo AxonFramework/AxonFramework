@@ -114,6 +114,9 @@ public class MultiHandlerDefinition implements HandlerDefinition {
         Optional<MessageHandlingMember<T>> resolver = Optional.empty();
         for (HandlerDefinition factory : factories) {
             resolver = factory.createHandler(declaringType, executable, parameterResolverFactory);
+            if (resolver.isPresent()) {
+                return resolver;
+            }
         }
         return resolver;
     }
