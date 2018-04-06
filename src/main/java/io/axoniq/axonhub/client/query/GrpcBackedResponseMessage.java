@@ -15,12 +15,11 @@
 
 package io.axoniq.axonhub.client.query;
 
-import io.axoniq.axonhub.QueryRequest;
+import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.platform.MetaDataValue;
 import io.axoniq.platform.SerializedObject;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -33,19 +32,26 @@ import java.util.Map;
  *
  * @author Marc Gathier
  */
-public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
+public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
-    private final QueryRequest query;
+    private final QueryResponse queryResponse;
     private final Serializer messageSerializer;
-    private LazyDeserializingObject<Q> serializedPayload;
-    private LazyDeserializingObject<ResponseType<R>> serializedResponseType;
-    private MetaData metaData;
+    private final LazyDeserializingObject<R> serializedPayload;
+    private volatile MetaData metaData;
 
-    public GrpcBackedQueryMessage(QueryRequest query, Serializer messageSerializer, Serializer genericSerializer) {
-        this.query = query;
+    public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer) {
+        this.queryResponse = queryResponse;
         this.messageSerializer = messageSerializer;
-        this.serializedPayload = new LazyDeserializingObject<>(fromGrpcSerializedObject(query.getPayload()), messageSerializer);
-        this.serializedResponseType = new LazyDeserializingObject<>(fromGrpcSerializedObject(query.getResponseType()), genericSerializer);
+        this.serializedPayload = new LazyDeserializingObject<>(fromGrpcSerializedObject(queryResponse.getPayload()), messageSerializer);
+    }
+
+    private GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer, LazyDeserializingObject<R> serializedPayload,
+                                      MetaData metaData) {
+
+        this.queryResponse = queryResponse;
+        this.messageSerializer = messageSerializer;
+        this.serializedPayload = serializedPayload;
+        this.metaData = metaData;
     }
 
     private org.axonframework.serialization.SerializedObject<byte[]> fromGrpcSerializedObject(SerializedObject payload) {
@@ -56,46 +62,37 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     }
 
     @Override
-    public String getQueryName() {
-        return query.getQuery();
-    }
-
-    @Override
-    public ResponseType<R> getResponseType() {
-        return serializedResponseType.getObject();
-    }
-
-    @Override
     public String getIdentifier() {
-        return query.getMessageIdentifier();
+        return queryResponse.getMessageIdentifier();
     }
 
     @Override
     public MetaData getMetaData() {
         if (metaData == null) {
-            metaData = deserializeMetaData(query.getMetaDataMap());
+            metaData = deserializeMetaData(queryResponse.getMetaDataMap());
         }
         return metaData;
     }
 
     @Override
-    public Q getPayload() {
+    public R getPayload() {
         return serializedPayload.getObject();
     }
 
     @Override
-    public Class<Q> getPayloadType() {
+    public Class<R> getPayloadType() {
         return serializedPayload.getType();
     }
 
     @Override
-    public QueryMessage<Q, R> withMetaData(Map<String, ?> var1) {
-        return null;
+    public GrpcBackedResponseMessage<R> withMetaData(Map<String, ?> metaData) {
+        return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer, serializedPayload,
+                                               MetaData.from(metaData));
     }
 
     @Override
-    public QueryMessage<Q, R> andMetaData(Map<String, ?> var1) {
-        return null;
+    public QueryResponseMessage<R> andMetaData(Map<String, ?> var1) {
+        return withMetaData(getMetaData().mergedWith(var1));
     }
 
     private MetaData deserializeMetaData(Map<String, MetaDataValue> metaDataMap) {

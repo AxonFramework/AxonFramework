@@ -16,16 +16,15 @@
 package io.axoniq.axonhub.client.command;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonhub.client.util.MessagePlatformSerializer;
 import io.axoniq.axonhub.Command;
-import io.axoniq.platform.MetaDataValue;
 import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonhub.client.util.MessagePlatformSerializer;
+import io.axoniq.platform.MetaDataValue;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -42,7 +41,7 @@ public class CommandSerializer extends MessagePlatformSerializer {
     }
 
     public Command serialize(CommandMessage<?> commandMessage, String routingKey, int priority) {
-        SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(commandMessage, serializer, byte[].class);
+        SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(commandMessage, messageSerializer, byte[].class);
         return Command.newBuilder().setName(commandMessage.getCommandName())
                 .setMessageIdentifier(commandMessage.getIdentifier())
                 .setTimestamp(System.currentTimeMillis())
@@ -63,7 +62,7 @@ public class CommandSerializer extends MessagePlatformSerializer {
     }
 
     public CommandMessage<?> deserialize(Command request) {
-        return new GrpcBackedCommandMessage(request, serializer);
+        return new GrpcBackedCommandMessage(request, messageSerializer);
     }
 
 }

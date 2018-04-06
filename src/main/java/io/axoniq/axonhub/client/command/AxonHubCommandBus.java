@@ -15,16 +15,8 @@
 
 package io.axoniq.axonhub.client.command;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.CommandResponse;
-import io.axoniq.axonhub.CommandSubscription;
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
-import io.axoniq.axonhub.client.DispatchInterceptors;
-import io.axoniq.axonhub.client.GenericDispatchInterceptors;
-import io.axoniq.axonhub.client.MessageHandlerInterceptorSupport;
-import io.axoniq.axonhub.client.PlatformConnectionManager;
+import io.axoniq.axonhub.*;
+import io.axoniq.axonhub.client.*;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
@@ -37,7 +29,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -50,11 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 
@@ -127,7 +114,7 @@ public class AxonHubCommandBus implements CommandBus {
                         new StreamObserver<CommandResponse>() {
                             @Override
                             public void onNext(CommandResponse commandResponse) {
-                                if (commandResponse.getSuccess()) {
+                                if ("".equals(commandResponse.getErrorCode())) {
                                     logger.debug("response received - {}", commandResponse);
                                     R payload = null;
                                     if (commandResponse.hasPayload()) {
@@ -238,7 +225,7 @@ public class AxonHubCommandBus implements CommandBus {
                 logger.error("Error while dispatching command {} - {}", command.getName(), throwable.getMessage(), throwable);
                 CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                         CommandResponse.newBuilder().setMessageIdentifier(command.getMessageIdentifier())
-                                .setSuccess(false)
+                                .setErrorCode(ErrorCode.resolve(throwable).errorCode())
                                 .setMessage(throwable.getMessage())
                                 .build()
                 ).build();
@@ -321,8 +308,7 @@ public class AxonHubCommandBus implements CommandBus {
                 @Override
                 public void onSuccess(CommandMessage<? extends C> commandMessage, Object o) {
                     logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    CommandResponse.Builder responseBuilder = CommandResponse.newBuilder().setMessageIdentifier(command.getIdentifier())
-                            .setSuccess(true);
+                    CommandResponse.Builder responseBuilder = CommandResponse.newBuilder().setMessageIdentifier(command.getIdentifier());
                     if (o != null) {
                         responseBuilder.setPayload(serializer.serializePayload(o));
                     }
@@ -337,7 +323,7 @@ public class AxonHubCommandBus implements CommandBus {
                 public void onFailure(CommandMessage<? extends C> commandMessage, Throwable throwable) {
                     CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
                             CommandResponse.newBuilder().setMessageIdentifier(command.getIdentifier())
-                                    .setSuccess(false)
+                                    .setErrorCode(ErrorCode.resolve(throwable).errorCode())
                                     .setMessage(String.valueOf(throwable.getMessage()))
                                     .build()
                     ).build();
