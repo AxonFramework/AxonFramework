@@ -72,11 +72,11 @@ public final class SpringContextHandlerEnhancerDefinitionBuilder {
                                                                           FactoryBean<HandlerEnhancerDefinition> {
 
         private ClassLoader classLoader;
-        private HandlerEnhancerDefinition factory;
+        private HandlerEnhancerDefinition handlerEnhancer;
 
         @Override
         public HandlerEnhancerDefinition getObject() throws Exception {
-            return factory;
+            return handlerEnhancer;
         }
 
         @Override
@@ -91,7 +91,7 @@ public final class SpringContextHandlerEnhancerDefinitionBuilder {
 
         @Override
         public void afterPropertiesSet() throws Exception {
-            this.factory = new ClasspathHandlerEnhancerDefinition(classLoader);
+            this.handlerEnhancer = new ClasspathHandlerEnhancerDefinition(classLoader);
         }
 
         @Override
