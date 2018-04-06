@@ -27,6 +27,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.axonframework.serialization.xml.XStreamSerializer;
