@@ -16,7 +16,7 @@ message Command {
 message CommandResponse {
     /* A message id */
     string message_identifier = 1;
-    bool success = 2;
+    string error_code = 2;
     string message = 3;
     io.axoniq.platform.SerializedObject payload = 4;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
@@ -30,14 +30,14 @@ message QueryRequest {
     int64 timestamp = 3;
     io.axoniq.platform.SerializedObject payload = 4;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
-    string result_name = 6;
+    io.axoniq.platform.SerializedObject response_type = 6;
     repeated ProcessingInstruction processing_instructions = 7;
 }
 
 message QueryResponse {
     /* A message id */
     string message_identifier = 1;
-    bool success = 2;
+    string error_code = 2;
     string message = 3;
     io.axoniq.platform.SerializedObject payload = 4;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
