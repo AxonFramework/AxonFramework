@@ -33,7 +33,6 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,6 @@ import java.util.stream.IntStream;
  */
 public class AxonHubCommandBus implements CommandBus {
     private final CommandBus localSegment;
-    private final MessageHandlerInterceptorSupport<CommandMessage<?>> localHandlerInterceptorSupport;
     private final CommandRouterSubscriber commandRouterSubscriber;
     private final PlatformConnectionManager platformConnectionManager;
     private final RoutingStrategy routingStrategy;
@@ -62,9 +60,8 @@ public class AxonHubCommandBus implements CommandBus {
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors = new DispatchInterceptors<>();
     private Logger logger = LoggerFactory.getLogger(AxonHubCommandBus.class);
 
-    public <CB extends CommandBus & MessageHandlerInterceptorSupport<CommandMessage<?>>>
-    AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
-                             CB localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
+    public AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
+                             CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
         this( platformConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator(){});
     }
     /**
@@ -75,11 +72,9 @@ public class AxonHubCommandBus implements CommandBus {
      * @param routingStrategy determines routing key based on command message
      * @param priorityCalculator calculates the request priority based on the content and adds it to the request
      */
-    public <CB extends CommandBus & MessageHandlerInterceptorSupport<CommandMessage<?>>>
-    AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
-                             CB localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
+    public AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
+                             CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
         this.localSegment = localSegment;
-        this.localHandlerInterceptorSupport = localSegment;
         this.serializer = new CommandSerializer(serializer);
         this.platformConnectionManager = platformConnectionManager;
         this.routingStrategy = routingStrategy;
@@ -345,10 +340,6 @@ public class AxonHubCommandBus implements CommandBus {
 
     static long priority(List<ProcessingInstruction> processingInstructions) {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
-    }
-
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
-        return localHandlerInterceptorSupport.registerHandlerInterceptor(handlerInterceptor);
     }
 
     public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {

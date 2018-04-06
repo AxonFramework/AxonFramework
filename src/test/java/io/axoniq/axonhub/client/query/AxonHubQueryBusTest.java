@@ -24,10 +24,10 @@ import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.platform.SerializedObject;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -56,7 +56,7 @@ public class AxonHubQueryBusTest {
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private XStreamSerializer ser;
     private AxonHubConfiguration conf;
-    private EnhancedQueryBus localSegment;
+    private SimpleQueryBus localSegment;
 
 
     @Before
@@ -68,7 +68,7 @@ public class AxonHubQueryBusTest {
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        localSegment = new EnhancedQueryBus();
+        localSegment = new SimpleQueryBus();
         ser = new XStreamSerializer();
         queryBus = new AxonHubQueryBus(new PlatformConnectionManager(conf), conf, localSegment, ser, ser, new QueryPriorityCalculator() {});
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
@@ -174,17 +174,4 @@ public class AxonHubQueryBusTest {
         assertEquals(1, results.size());
     }
 
-    @Test
-    public void handlerInterceptor(){
-        List<Boolean> results = new LinkedList<>();
-        queryBus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-            results.add(true);
-            return interceptorChain.proceed();
-        });
-        MessageHandler<QueryMessage<?, String>> queryMessageMessageHandler = message -> "String";
-        localSegment.subscribe("java.lang.String", String.class, queryMessageMessageHandler);
-        localSegment.query(new GenericQueryMessage<>("payload",new InstanceResponseType<>(String.class)));
-        assertTrue(results.get(0));
-        assertEquals(1, results.size());
-    }
 }
