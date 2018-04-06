@@ -53,7 +53,7 @@ public class AxonHubCommandBusTest {
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private AxonHubConfiguration conf;
     private XStreamSerializer ser;
-    private EnhancedCommandBus localSegment;
+    private SimpleCommandBus localSegment;
 
 
     @Before
@@ -65,7 +65,7 @@ public class AxonHubCommandBusTest {
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        localSegment = new EnhancedCommandBus();
+        localSegment = new SimpleCommandBus();
         ser = new XStreamSerializer();
         testSubject = new AxonHubCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
@@ -196,17 +196,5 @@ public class AxonHubCommandBusTest {
         assertEquals(1, results.size());
     }
 
-    @Test
-    public void handlerInterceptor(){
-        List<Boolean> results = new LinkedList<>();
-        testSubject.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-            results.add(true);
-            return interceptorChain.proceed();
-        });
-        localSegment.subscribe("java.lang.String", message -> message);
-        localSegment.dispatch(new GenericCommandMessage<>("payload"));
-        assertTrue(results.get(0));
-        assertEquals(1, results.size());
-    }
 
 }

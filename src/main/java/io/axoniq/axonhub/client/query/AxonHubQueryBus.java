@@ -15,11 +15,14 @@
 
 package io.axoniq.axonhub.client.query;
 
-import io.axoniq.axonhub.*;
+import io.axoniq.axonhub.ProcessingInstruction;
+import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonhub.QueryRequest;
+import io.axoniq.axonhub.QueryResponse;
+import io.axoniq.axonhub.QuerySubscription;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.DispatchInterceptors;
 import io.axoniq.axonhub.client.GenericDispatchInterceptors;
-import io.axoniq.axonhub.client.MessageHandlerInterceptorSupport;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
@@ -36,7 +39,6 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
@@ -46,8 +48,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -60,7 +73,6 @@ public class AxonHubQueryBus implements QueryBus {
     private final Logger logger = LoggerFactory.getLogger(AxonHubQueryBus.class);
     private final AxonHubConfiguration configuration;
     private final QueryBus localSegment;
-    private final MessageHandlerInterceptorSupport<QueryMessage<?,?>> localHandlerInterceptorSupport;
     private final QuerySerializer serializer;
     private final QueryPriorityCalculator priorityCalculator;
     private final QueryProvider queryProvider;
@@ -77,12 +89,10 @@ public class AxonHubQueryBus implements QueryBus {
      * @param serializer serializer/deserializer for query requests and responses
      * @param priorityCalculator calculates the request priority based on the content and adds it to the request
      */
-    public <QB extends QueryBus & MessageHandlerInterceptorSupport<QueryMessage<?,?>>>
-    AxonHubQueryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration, QB localSegment,
+    public AxonHubQueryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration, QueryBus localSegment,
                            Serializer serializer, QueryPriorityCalculator priorityCalculator) {
         this.configuration = configuration;
         this.localSegment = localSegment;
-        this.localHandlerInterceptorSupport = localSegment;
         this.serializer = new QuerySerializer(serializer);
         this.priorityCalculator = priorityCalculator;
         this.queryProvider = new QueryProvider();
@@ -372,10 +382,6 @@ public class AxonHubQueryBus implements QueryBus {
 
     static long priority(List<ProcessingInstruction> processingInstructions) {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
-    }
-
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?,?>> handlerInterceptor) {
-        return localHandlerInterceptorSupport.registerHandlerInterceptor(handlerInterceptor);
     }
 
     public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super QueryMessage<?,?>> dispatchInterceptor) {
