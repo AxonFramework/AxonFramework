@@ -18,6 +18,7 @@ package org.axonframework.spring.config.annotation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -64,6 +65,8 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
     @Override
     public void afterPropertiesSet() throws Exception {
         enhancers.add(new ClasspathHandlerEnhancerDefinition(classLoader));
+        Map<String, HandlerEnhancerDefinition> beansFound = applicationContext.getBeansOfType(HandlerEnhancerDefinition.class);
+        enhancers.add(new MultiHandlerEnhancerDefinition(beansFound.values()));
     }
 
     /**

@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -79,7 +80,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
      *
      * @param delegates The list of factories providing the parameter values to use
      */
-    public MultiHandlerEnhancerDefinition(List<HandlerEnhancerDefinition> delegates) {
+    public MultiHandlerEnhancerDefinition(Collection<HandlerEnhancerDefinition> delegates) {
         this.factories = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
