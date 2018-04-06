@@ -22,10 +22,6 @@ import io.axoniq.axonhub.client.command.AxonHubCommandBus;
 import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
 import io.axoniq.axonhub.client.command.EnhancedCommandBus;
 import io.axoniq.axonhub.client.event.axon.AxonHubEvenProcessorInfoConfiguration;
-import io.axoniq.axonhub.client.processor.EventProcessorController;
-import io.axoniq.axonhub.client.processor.EventProcessorControlService;
-import io.axoniq.axonhub.client.processor.grpc.GrpcEventProcessorInfoSource;
-import io.axoniq.axonhub.client.processor.schedule.ScheduledEventProcessorInfoSource;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.EnhancedQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
@@ -41,6 +37,7 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
@@ -110,11 +107,13 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonHubQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration axonHubConfiguration,
-                             AxonConfiguration axonConfiguration,  TransactionManager txManager, Serializer serializer,
+                             AxonConfiguration axonConfiguration,  TransactionManager txManager,
+                                    @Qualifier("messageSerializer") Serializer messageSerializer,
+                                    Serializer genericSerializer,
                              QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
         return new AxonHubQueryBus(platformConnectionManager, axonHubConfiguration,
                 new EnhancedQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"), txManager, queryInvocationErrorHandler),
-                serializer, priorityCalculator);
+                messageSerializer, genericSerializer, priorityCalculator);
     }
 
     @Override
