@@ -35,12 +35,12 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public abstract class MessagePlatformSerializer {
 
-    protected final Serializer serializer;
+    protected final Serializer messageSerializer;
     protected final GrpcMetaDataConverter metaDataConverter;
 
-    protected MessagePlatformSerializer(Serializer serializer) {
-        this.serializer = serializer;
-        this.metaDataConverter = new GrpcMetaDataConverter(serializer);
+    protected MessagePlatformSerializer(Serializer messageSerializer) {
+        this.messageSerializer = messageSerializer;
+        this.metaDataConverter = new GrpcMetaDataConverter(messageSerializer);
     }
 
     public Map<String, MetaDataValue> serializeMetaData(MetaData metaData) {
@@ -49,10 +49,8 @@ public abstract class MessagePlatformSerializer {
         return metaDataValueMap;
     }
 
-
-
     public io.axoniq.platform.SerializedObject serializePayload(Object o) {
-        SerializedObject<byte[]> serializedPayload = new MessageSerializer(serializer).serialize(o, byte[].class);
+        SerializedObject<byte[]> serializedPayload = new MessageSerializer(messageSerializer).serialize(o, byte[].class);
         return io.axoniq.platform.SerializedObject.newBuilder()
                 .setData(ByteString.copyFrom(serializedPayload.getData()))
                 .setType(serializedPayload.getType().getName())
@@ -65,7 +63,7 @@ public abstract class MessagePlatformSerializer {
         SerializedObject object =  new SimpleSerializedObject<>(payload.getData().toByteArray(),
                 byte[].class, payload.getType(),
                 "".equals(revision) ? null : revision);
-        return new MessageSerializer(serializer).deserialize(object);
+        return new MessageSerializer(messageSerializer).deserialize(object);
     }
 
 }

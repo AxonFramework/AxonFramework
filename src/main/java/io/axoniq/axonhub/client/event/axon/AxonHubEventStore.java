@@ -21,11 +21,12 @@ import io.axoniq.axondb.grpc.EventWithToken;
 import io.axoniq.axondb.grpc.GetAggregateEventsRequest;
 import io.axoniq.axondb.grpc.GetEventsRequest;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
-import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.event.AppendEventTransaction;
 import io.axoniq.axonhub.client.event.AxonDBClient;
+import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
+import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
@@ -144,9 +145,9 @@ public class AxonHubEventStore extends AbstractEventStore {
             try {
                 appendEventTransaction.commit();
             } catch (ExecutionException e) {
-                throw AxonErrorMapping.convert(e.getCause());
+                throw ErrorCode.convert(e.getCause());
             } catch (TimeoutException | InterruptedException e) {
-                throw AxonErrorMapping.convert(e);
+                throw ErrorCode.convert(e);
             }
         }
 
@@ -184,7 +185,7 @@ public class AxonHubEventStore extends AbstractEventStore {
                     }
                 });
             } catch (Throwable e) {
-                throw AxonErrorMapping.convert(e);
+                throw ErrorCode.convert(e);
             }
         }
 
@@ -201,7 +202,7 @@ public class AxonHubEventStore extends AbstractEventStore {
             try {
                 return eventStoreClient.listAggregateEvents(request.build()).map(GrpcBackedDomainEventData::new);
             } catch (Exception e) {
-                throw AxonErrorMapping.convert(e);
+                throw ErrorCode.convert(e);
             }
         }
 

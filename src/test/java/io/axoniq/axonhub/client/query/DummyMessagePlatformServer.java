@@ -19,12 +19,12 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.axonhub.QuerySubscription;
+import io.axoniq.axonhub.client.PlatformService;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import io.axoniq.platform.MetaDataValue;
 import io.axoniq.platform.SerializedObject;
-import io.axoniq.axonhub.client.PlatformService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -113,7 +113,6 @@ public class DummyMessagePlatformServer {
             long interval = request.getMetaDataOrDefault("interval", MetaDataValue.newBuilder().setNumberValue(0).build()).getNumberValue();
             for( long r = 0 ; r < repeat; r++) {
                 responseObserver.onNext(QueryResponse.newBuilder()
-                        .setSuccess(true)
                         .setMessageIdentifier(request.getMessageIdentifier())
                         .setPayload(SerializedObject.newBuilder()
                                 .setData(ByteString.copyFromUtf8("<string>test</string>"))

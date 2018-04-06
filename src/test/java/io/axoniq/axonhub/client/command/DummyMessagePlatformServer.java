@@ -17,11 +17,12 @@ package io.axoniq.axonhub.client.command;
 
 import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.CommandResponse;
+import io.axoniq.axonhub.client.ErrorCode;
+import io.axoniq.axonhub.client.PlatformService;
 import io.axoniq.axonhub.grpc.CommandProviderInbound;
 import io.axoniq.axonhub.grpc.CommandProviderOutbound;
 import io.axoniq.axonhub.grpc.CommandServiceGrpc;
 import io.axoniq.platform.SerializedObject;
-import io.axoniq.axonhub.client.PlatformService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -105,14 +106,13 @@ public class DummyMessagePlatformServer {
             String data = request.getPayload().getData().toStringUtf8();
             if(data.contains("error")) {
                 responseObserver.onNext(CommandResponse.newBuilder()
-                        .setSuccess(false)
+                        .setErrorCode(ErrorCode.DATAFILE_READ_ERROR.errorCode())
                         .setMessageIdentifier(request.getMessageIdentifier())
                         .setMessage(data)
                         .build());
 
             } else {
                 responseObserver.onNext(CommandResponse.newBuilder()
-                        .setSuccess(true)
                         .setMessageIdentifier(request.getMessageIdentifier())
                         .setPayload(SerializedObject.newBuilder()
                                 .setData(request.getPayload().getData())

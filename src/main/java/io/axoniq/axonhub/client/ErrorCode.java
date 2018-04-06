@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package io.axoniq.axonhub.client.event.axon;
+package io.axoniq.axonhub.client;
 
 import io.axoniq.axonhub.client.event.util.EventStoreClientException;
 import org.axonframework.commandhandling.model.AggregateRolledBackException;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Converts an EventStoreClientException to the relevant Axon framework exception.
  */
-public enum AxonErrorMapping {
+public enum ErrorCode {
     // Generic errors processing client request
     AUTHENTICATION_TOKEN_MISSING("AXONIQ-1000", EventStoreException.class),
     AUTHENTICATION_INVALID_TOKEN("AXONIQ-1001", EventStoreException.class),
@@ -53,7 +53,7 @@ public enum AxonErrorMapping {
     private final String code;
     private final Class exceptionClass;
 
-    AxonErrorMapping(String code, Class<? extends AxonException> exceptionClass) {
+    ErrorCode(String code, Class<? extends AxonException> exceptionClass) {
         this.code = code;
         this.exceptionClass = exceptionClass;
     }
@@ -80,4 +80,11 @@ public enum AxonErrorMapping {
         return new EventStoreException(t.getMessage(), t);
     }
 
+    public static ErrorCode resolve(Throwable throwable) {
+        return OTHER;
+    }
+
+    public String errorCode() {
+        return code;
+    }
 }
