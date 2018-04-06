@@ -219,10 +219,11 @@ public class AxonHubCommandBus implements CommandBus {
             } catch (Throwable throwable) {
                 logger.error("Error while dispatching command {} - {}", command.getName(), throwable.getMessage(), throwable);
                 CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
-                        CommandResponse.newBuilder().setMessageIdentifier(command.getMessageIdentifier())
-                                .setErrorCode(ErrorCode.resolve(throwable).errorCode())
-                                .setMessage(throwable.getMessage())
-                                .build()
+                        CommandResponse.newBuilder()
+                                       .setMessageIdentifier(UUID.randomUUID().toString())
+                                       .setRequestIdentifier(command.getMessageIdentifier())
+                                       .setErrorCode(ErrorCode.resolve(throwable).errorCode())
+                                       .setMessage(throwable.getMessage())
                 ).build();
 
                 subscriberStreamObserver.onNext(response);
@@ -303,13 +304,14 @@ public class AxonHubCommandBus implements CommandBus {
                 @Override
                 public void onSuccess(CommandMessage<? extends C> commandMessage, Object o) {
                     logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    CommandResponse.Builder responseBuilder = CommandResponse.newBuilder().setMessageIdentifier(command.getIdentifier());
+                    CommandResponse.Builder responseBuilder = CommandResponse.newBuilder()
+                                                                             .setMessageIdentifier(UUID.randomUUID().toString())
+                                                                             .setRequestIdentifier(command.getIdentifier());
                     if (o != null) {
                         responseBuilder.setPayload(serializer.serializePayload(o));
                     }
-                    CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
-                            responseBuilder.build()
-                    ).build();
+                    CommandProviderOutbound response = CommandProviderOutbound.newBuilder()
+                                                                              .setCommandResponse(responseBuilder).build();
                     responseObserver.onNext(response);
 
                 }
@@ -317,10 +319,11 @@ public class AxonHubCommandBus implements CommandBus {
                 @Override
                 public void onFailure(CommandMessage<? extends C> commandMessage, Throwable throwable) {
                     CommandProviderOutbound response = CommandProviderOutbound.newBuilder().setCommandResponse(
-                            CommandResponse.newBuilder().setMessageIdentifier(command.getIdentifier())
-                                    .setErrorCode(ErrorCode.resolve(throwable).errorCode())
-                                    .setMessage(String.valueOf(throwable.getMessage()))
-                                    .build()
+                            CommandResponse.newBuilder()
+                                           .setMessageIdentifier(UUID.randomUUID().toString())
+                                           .setRequestIdentifier(command.getIdentifier())
+                                           .setErrorCode(ErrorCode.resolve(throwable).errorCode())
+                                           .setMessage(String.valueOf(throwable.getMessage()))
                     ).build();
 
                     responseObserver.onNext(response);

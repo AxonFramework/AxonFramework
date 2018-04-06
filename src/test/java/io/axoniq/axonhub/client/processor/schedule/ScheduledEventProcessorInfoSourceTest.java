@@ -33,7 +33,7 @@ public class ScheduledEventProcessorInfoSourceTest {
         FakeAxonHubEventProcessorInfoSource delegate = new FakeAxonHubEventProcessorInfoSource();
         ScheduledEventProcessorInfoSource scheduled = new ScheduledEventProcessorInfoSource(50,30,delegate);
         scheduled.start();
-        TimeUnit.MILLISECONDS.sleep(90);
+        TimeUnit.MILLISECONDS.sleep(105);
         assertEquals(2, delegate.notifyCalls());
     }
 

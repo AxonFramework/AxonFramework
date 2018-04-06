@@ -49,11 +49,12 @@ public class QuerySerializer extends MessagePlatformSerializer {
         return new GrpcBackedQueryMessage<>(query, messageSerializer, genericSerializer);
     }
 
-    public QueryResponse serializeResponse(QueryResponseMessage<?> response) {
+    public QueryResponse serializeResponse(QueryResponseMessage<?> response, String requestMessageId) {
         return QueryResponse.newBuilder()
-                            .setPayload(serializePayload(response))
+                            .setPayload(serializePayload(response.getPayload()))
                             .putAllMetaData(serializeMetaData(response.getMetaData()))
                             .setMessageIdentifier(response.getIdentifier())
+                            .setRequestIdentifier(requestMessageId)
                             .build();
     }
 

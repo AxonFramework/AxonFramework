@@ -24,7 +24,7 @@ import io.grpc.*;
  */
 public class TokenAddingInterceptor implements ClientInterceptor {
     static final Metadata.Key<String> ACCESS_TOKEN_KEY =
-            Metadata.Key.of("Access-Token", Metadata.ASCII_STRING_MARSHALLER);
+            Metadata.Key.of("AxonIQ-Access-Token", Metadata.ASCII_STRING_MARSHALLER);
 
     private final String token;
 

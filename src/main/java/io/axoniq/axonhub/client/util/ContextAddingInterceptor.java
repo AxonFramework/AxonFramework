@@ -24,7 +24,7 @@ import io.grpc.*;
  */
 public class ContextAddingInterceptor implements ClientInterceptor {
     static final Metadata.Key<String> CONTEXT_TOKEN_KEY =
-            Metadata.Key.of("Context", Metadata.ASCII_STRING_MARSHALLER);
+            Metadata.Key.of("AxonIQ-Context", Metadata.ASCII_STRING_MARSHALLER);
 
     private final String token;
 

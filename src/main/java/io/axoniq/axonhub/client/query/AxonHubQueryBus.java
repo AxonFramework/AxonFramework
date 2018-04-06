@@ -15,8 +15,15 @@
 
 package io.axoniq.axonhub.client.query;
 
-import io.axoniq.axonhub.*;
-import io.axoniq.axonhub.client.*;
+import io.axoniq.axonhub.ProcessingInstruction;
+import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonhub.QueryRequest;
+import io.axoniq.axonhub.QueryResponse;
+import io.axoniq.axonhub.QuerySubscription;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.DispatchInterceptors;
+import io.axoniq.axonhub.client.ErrorCode;
+import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
@@ -32,8 +39,6 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -163,10 +168,9 @@ public class AxonHubQueryBus implements QueryBus {
                                                            priorityCalculator.determinePriority(interceptedQuery)),
                                new StreamObserver<QueryResponse>() {
                                    @Override
-                                   @SuppressWarnings("unchecked")
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
-                                       resultSpliterator.put((QueryResponseMessage<R>) serializer.deserializeResponse(queryResponse));
+                                       resultSpliterator.put( serializer.deserializeResponse(queryResponse));
                                    }
 
                                    @Override
@@ -224,24 +228,25 @@ public class AxonHubQueryBus implements QueryBus {
         }
 
         private void processQuery(QueryRequest query) {
-            String messageId = query.getMessageIdentifier();
+            String requestId = query.getMessageIdentifier();
             try {
                 //noinspection unchecked
                 localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
                             .forEach(response -> outboundStreamObserver.onNext(
                                     QueryProviderOutbound.newBuilder()
-                                                         .setQueryResponse(serializer.serializeResponse(response))
+                                                         .setQueryResponse(serializer.serializeResponse(response, requestId))
                                                          .build()));
 
                 outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
-                        QueryComplete.newBuilder().setMessageId(messageId)).build());
+                        QueryComplete.newBuilder().setMessageId(UUID.randomUUID().toString()).setRequestId(requestId)).build());
             } catch (Exception ex) {
                 logger.warn("Received error from localSegment: {}", ex.getMessage(), ex);
                 outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder()
                                                                    .setQueryResponse(QueryResponse.newBuilder()
-                                                                                                  .setMessageIdentifier(messageId)
+                                                                                                  .setMessageIdentifier(UUID.randomUUID().toString())
+                                                                                                  .setRequestIdentifier(requestId)
                                                                                                   .setMessage(ex.getMessage())
-                                                                                                  .setErrorCode(ErrorCode.OTHER.errorCode())
+                                                                                                  .setErrorCode(ErrorCode.resolve(ex).errorCode())
                                                                                                   .build())
                                                                    .build());
             }
