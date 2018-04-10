@@ -191,6 +191,26 @@ public class Reporter {
     }
 
     /**
+     * Report an error due to a difference in exception message.
+     *
+     * @param actualException The actual exception
+     * @param description     A description describing the expected value
+     */
+    public void reportWrongExceptionMessage(Throwable actualException, Description description) {
+        StringBuilder sb = new StringBuilder("The command handler threw an exception, but not with expected message");
+        sb.append(NEWLINE)
+                .append(NEWLINE)
+                .append("Expected <") //NOSONAR
+                .append(description.toString())
+                .append("> but got <message [")
+                .append(actualException.getMessage())
+                .append("]>.")
+                .append(NEWLINE);
+        sb.append(NEWLINE);
+        throw new AxonAssertionError(sb.toString());
+    }
+
+    /**
      * Report an error due to a difference in on of the fields of an event.
      *
      * @param eventType The (runtime) type of event the difference was found in
