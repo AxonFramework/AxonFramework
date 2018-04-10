@@ -21,10 +21,6 @@ import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubCommandBus;
 import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
 import io.axoniq.axonhub.client.event.axon.AxonHubEvenProcessorInfoConfiguration;
-import io.axoniq.axonhub.client.processor.EventProcessorController;
-import io.axoniq.axonhub.client.processor.EventProcessorControlService;
-import io.axoniq.axonhub.client.processor.grpc.GrpcEventProcessorInfoSource;
-import io.axoniq.axonhub.client.processor.schedule.ScheduledEventProcessorInfoSource;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
@@ -38,12 +34,12 @@ import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -69,7 +65,7 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     }
 
     private String clientName(String id) {
-        if( id.contains(":")) return id.substring(0, id.indexOf(":"));
+        if (id.contains(":")) return id.substring(0, id.indexOf(":"));
         return id;
     }
 
@@ -81,26 +77,28 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     @Bean
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
-    public AxonHubCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration , AxonHubConfiguration axonHubConfiguration,
-                                 Serializer serializer, PlatformConnectionManager platformConnectionManager, CommandPriorityCalculator priorityCalculator) {
+    public AxonHubCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration, AxonHubConfiguration axonHubConfiguration,
+                                        Serializer serializer, PlatformConnectionManager platformConnectionManager, CommandPriorityCalculator priorityCalculator) {
 
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
 
         return new AxonHubCommandBus(platformConnectionManager, axonHubConfiguration, commandBus, serializer, new AnnotationRoutingStrategy(),
-                priorityCalculator);
+                                     priorityCalculator);
     }
 
     @Bean
     @ConditionalOnMissingBean
     public CommandPriorityCalculator commandPriorityCalculator() {
-        return new CommandPriorityCalculator() {};
+        return new CommandPriorityCalculator() {
+        };
     }
 
     @Bean
     @ConditionalOnMissingBean
     public QueryPriorityCalculator queryPriorityCalculator() {
-        return new QueryPriorityCalculator() {};
+        return new QueryPriorityCalculator() {
+        };
     }
 
     @Bean
@@ -110,14 +108,17 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
+    // The Axon Hub QueryBus requires Axon 3.2+
+    @ConditionalOnClass(name = {"org.axonframework.queryhandling.responsetypes.ResponseType"})
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonHubQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration axonHubConfiguration,
-                             AxonConfiguration axonConfiguration,  TransactionManager txManager,
+                                    AxonConfiguration axonConfiguration, TransactionManager txManager,
                                     @Qualifier("messageSerializer") Serializer messageSerializer,
                                     Serializer genericSerializer,
-                             QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
+                                    QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
         return new AxonHubQueryBus(platformConnectionManager, axonHubConfiguration,
-                new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"), txManager, queryInvocationErrorHandler),
+                                   new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
+                                                      txManager, queryInvocationErrorHandler),
                                    messageSerializer, genericSerializer, priorityCalculator);
     }
 
@@ -129,8 +130,8 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     @Bean
     public AxonHubEvenProcessorInfoConfiguration processorInfoConfiguration(EventHandlingConfiguration eventHandlingConfiguration,
                                                                             PlatformConnectionManager connectionManager,
-                                                                            AxonHubConfiguration configuration){
-        return new AxonHubEvenProcessorInfoConfiguration(eventHandlingConfiguration,connectionManager, configuration);
+                                                                            AxonHubConfiguration configuration) {
+        return new AxonHubEvenProcessorInfoConfiguration(eventHandlingConfiguration, connectionManager, configuration);
     }
 
 }
