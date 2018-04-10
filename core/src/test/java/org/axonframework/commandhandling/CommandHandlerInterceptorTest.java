@@ -658,6 +658,7 @@ public class CommandHandlerInterceptorTest {
 
         @CommandHandlerInterceptor
         public void intercept(InterceptorThrowingCommand command) {
+            //noinspection AvoidThrowingRawExceptionTypes
             throw new RuntimeException("oops");
         }
 
