@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.model.inspection;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,4 +44,10 @@ public interface ChildEntity<T> {
      */
     Map<String, MessageHandlingMember<? super T>> commandHandlers();
 
+    /**
+     * Returns the command interceptors and their respective handlers that this entity declares.
+     *
+     * @return a list of command handler interceptors
+     */
+    List<MessageHandlingMember<? super T>> commandHandlerInterceptors();
 }

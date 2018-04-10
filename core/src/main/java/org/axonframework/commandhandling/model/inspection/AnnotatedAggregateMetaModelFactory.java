@@ -32,7 +32,13 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
@@ -113,6 +119,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private final Class<? extends T> inspectedType;
         private final List<ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;
+        private final List<MessageHandlingMember<? super T>> commandHandlerInterceptors;
         private final Map<String, MessageHandlingMember<? super T>> commandHandlers;
         private final List<MessageHandlingMember<? super T>> eventHandlers;
 
@@ -123,6 +130,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         public AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
             this.inspectedType = aggregateType;
+            this.commandHandlerInterceptors = new ArrayList<>();
             this.commandHandlers = new HashMap<>();
             this.eventHandlers = new ArrayList<>();
             this.children = new ArrayList<>();
@@ -138,9 +146,14 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         @SuppressWarnings("unchecked")
         private void prepareHandlers() {
             for (MessageHandlingMember<? super T> handler : handlerInspector.getHandlers()) {
-                Optional<CommandMessageHandlingMember> commandHandler = handler.unwrap(CommandMessageHandlingMember.class);
+                Optional<CommandMessageHandlingMember> commandHandler = handler
+                        .unwrap(CommandMessageHandlingMember.class);
+                Optional<CommandHandlerInterceptorHandlingMember> unwrappedCommandHandlerInterceptor = handler.unwrap(
+                        CommandHandlerInterceptorHandlingMember.class);
                 if (commandHandler.isPresent()) {
                     commandHandlers.putIfAbsent(commandHandler.get().commandName(), handler);
+                } else if (unwrappedCommandHandlerInterceptor.isPresent()) {
+                    commandHandlerInterceptors.add(handler);
                 } else {
                     eventHandlers.add(handler);
                 }
@@ -159,6 +172,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
                     children.add(child);
                     child.commandHandlers().forEach(commandHandlers::putIfAbsent);
+                    commandHandlerInterceptors.addAll(child.commandHandlerInterceptors());
                 }));
 
                 AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {
@@ -245,6 +259,11 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 return (Long) ReflectionUtils.getFieldValue(versionField, target);
             }
             return null;
+        }
+
+        @Override
+        public List<MessageHandlingMember<? super T>> commandHandlerInterceptors() {
+            return Collections.unmodifiableList(commandHandlerInterceptors);
         }
 
         /**
