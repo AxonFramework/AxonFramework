@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.common.Assert.isTrue;
 import static org.junit.Assert.*;
 
 public class ComplexAggregateStructureTest {
@@ -158,7 +159,7 @@ public class ComplexAggregateStructureTest {
 
         @CommandHandler
         public void handle(UpdateParagraphCommand cmd) {
-            Assert.isTrue(cmd.getParagraphId() == paragraphId, () -> "UpdatePageCommand reached the wrong paragraph");
+            isTrue(cmd.getParagraphId() == paragraphId, () -> "UpdatePageCommand reached the wrong paragraph");
             apply(new ParagraphUpdatedEvent(cmd.getBookId(), cmd.getPageNumber(), paragraphId, cmd.getText()));
         }
 

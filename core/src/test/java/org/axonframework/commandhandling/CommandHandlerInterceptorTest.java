@@ -156,7 +156,7 @@ public class CommandHandlerInterceptorTest {
         try {
             commandGateway.sendAndWait(asCommandMessage(new InterceptorThrowingCommand("id")));
             fail("Expected exception");
-        } catch (RuntimeException e) {
+        } catch (InterceptorException e) {
             // we are expecting this
         }
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -658,8 +658,7 @@ public class CommandHandlerInterceptorTest {
 
         @CommandHandlerInterceptor
         public void intercept(InterceptorThrowingCommand command) {
-            //noinspection AvoidThrowingRawExceptionTypes
-            throw new RuntimeException("oops");
+            throw new InterceptorException();
         }
 
         @CommandHandler
@@ -737,5 +736,9 @@ public class CommandHandlerInterceptorTest {
         public Object intercept() {
             return new Object();
         }
+    }
+
+    private static class InterceptorException extends RuntimeException {
+
     }
 }
