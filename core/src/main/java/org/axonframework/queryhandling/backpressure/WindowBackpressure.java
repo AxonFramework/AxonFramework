@@ -27,9 +27,9 @@ import java.util.function.Function;
 
 /**
  * Window backpressure mechanism - accumulates updates within given time frame. After time frame passes, {@code
- * delegateUpdateHandler} {@link UpdateHandler} will be invoked. Before this invocation reduction function will be
- * called in order to reduce accumulated updates to a single update. If there are no accumulated updates, {@code
- * delegateUpdateHandler} will not be invoked.
+ * delegateUpdateHandler} will be invoked. Before this invocation reduction function will be called in order to reduce
+ * accumulated updates to a single update. If there are no accumulated updates, {@code delegateUpdateHandler} will not
+ * be invoked.
  *
  * @author Milan Savic
  * @since 3.3

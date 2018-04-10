@@ -21,13 +21,11 @@ import org.axonframework.queryhandling.UpdateHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Throttle First backpressure mechanism - the {@code delegateUpdateHandler} {@link UpdateHandler} will be invoked after
- * given period of time with first update received. If there were no updates within given period, {@code
- * delegateUpdateHandler} will not be invoked. Do note that invocation of {@code delegateUpdateHandler} will be done in
- * separate (worker) thread.
+ * Throttle First backpressure mechanism - the {@code delegateUpdateHandler} will be invoked after given period of time
+ * with first update received. If there were no updates within given period, {@code delegateUpdateHandler} will not be
+ * invoked. Do note that invocation of {@code delegateUpdateHandler} will be done in separate (worker) thread.
  * <p>
  * Deliberate choice has to be made whether losing some updates is fine by the specific use case.
  *
@@ -36,9 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Milan Savic
  * @since 3.3
  */
-public class ThrottleFirstBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
-
-    private final AtomicReference<U> firstUpdate = new AtomicReference<>();
+public class ThrottleFirstBackpressure<I, U> extends ThrottleBackpressure<I, U> {
 
     /**
      * Initializes {@link ThrottleFirstBackpressure} with delegateUpdateHandler update handler and parameters for
@@ -67,17 +63,6 @@ public class ThrottleFirstBackpressure<I, U> extends TimeBasedBackpressure<I, U>
     public ThrottleFirstBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long initialDelay, long period,
                                      TimeUnit unit,
                                      ScheduledExecutorService scheduledExecutorService) {
-        super(delegateUpdateHandler, period, unit, scheduledExecutorService);
-        scheduledExecutorService.scheduleAtFixedRate(() -> {
-            U current = firstUpdate.getAndSet(null);
-            if (current != null) {
-                delegateUpdateHandler.onUpdate(current);
-            }
-        }, initialDelay, period, unit);
-    }
-
-    @Override
-    public void onUpdate(U update) {
-        firstUpdate.compareAndSet(null, update);
+        super(delegateUpdateHandler, initialDelay, period, unit, (first, last) -> first, scheduledExecutorService);
     }
 }

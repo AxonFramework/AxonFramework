@@ -23,9 +23,8 @@ import java.util.List;
 
 /**
  * Buffer backpressure mechanism - updates will be stored in internal buffer, and when {@code bufferLimit} is reached
- * {@code delegateUpdateHandler} {@link UpdateHandler} will be invoked with list of previously collected updates. {@code
- * delegateUpdateHandler} {@link UpdateHandler} may choose which updates to process. Updates are sorted in arrival
- * order.
+ * {@code delegateUpdateHandler} will be invoked with list of previously collected updates. {@code
+ * delegateUpdateHandler} may choose which updates to process. Updates are sorted in arrival order.
  *
  * @param <I> type of initial result
  * @param <U> type of incremental update. Do note that incremental update type of {@code delegateUpdateHandler} {@link

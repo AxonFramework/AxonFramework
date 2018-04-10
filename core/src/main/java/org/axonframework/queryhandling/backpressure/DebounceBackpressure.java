@@ -22,11 +22,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Debounce (Throttle With Timeout) backpressure mechanism - the {@code delegateUpdateHandler} {@link UpdateHandler}
- * will be invoked with the last received update after which given timeout passed and there were no updates. Do note
- * that invocation of {@code delegateUpdateHandler} will be done in separate (worker) thread.
+ * Debounce (Throttle With Timeout) backpressure mechanism - the {@code delegateUpdateHandler}  will be invoked with the
+ * last received update after which given timeout passed and there were no updates. Do note that invocation of {@code
+ * delegateUpdateHandler} will be done in separate (worker) thread.
  * <p>
  * Deliberate choice has to be made whether losing some updates is fine by the specific use case.
  *
@@ -40,8 +41,7 @@ public class DebounceBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
     private static final boolean INTERRUPT_RUNNING_UPDATE = false;
 
     private U lastUpdate;
-    private ScheduledFuture<?> schedule;
-    private final Object scheduleLock = new Object();
+    private final AtomicReference<ScheduledFuture<?>> scheduleRef = new AtomicReference<>();
 
     /**
      * Initializes {@link DebounceBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
@@ -69,14 +69,13 @@ public class DebounceBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
 
     @Override
     public void onUpdate(U update) {
-        synchronized (scheduleLock) {
-            lastUpdate = update;
-            if (schedule != null) {
-                schedule.cancel(INTERRUPT_RUNNING_UPDATE);
-            }
-            schedule = getScheduledExecutorService().schedule(() -> getDelegateUpdateHandler().onUpdate(lastUpdate),
-                                                              getPeriod(),
-                                                              getUnit());
+        lastUpdate = update;
+        ScheduledFuture<?> schedule = scheduleRef.get();
+        if (schedule != null) {
+            schedule.cancel(INTERRUPT_RUNNING_UPDATE);
         }
+        // Schedule next update only if matches 'our' schedule. If someone else already scheduled it, it is fine.
+        scheduleRef.compareAndSet(schedule, getScheduledExecutorService().schedule(
+                () -> getDelegateUpdateHandler().onUpdate(lastUpdate), getPeriod(), getUnit()));
     }
 }

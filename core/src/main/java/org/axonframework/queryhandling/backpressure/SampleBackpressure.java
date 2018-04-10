@@ -21,13 +21,11 @@ import org.axonframework.queryhandling.UpdateHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Sample (Throttle Last) backpressure mechanism - the {@code delegateUpdateHandler} {@link UpdateHandler} will be
- * invoked after given period of time with last update received. If there were no updates within given period, {@code
- * delegateUpdateHandler} will not be invoked. Do note that invocation of {@code delegateUpdateHandler} will be done in
- * separate (worker) thread.
+ * Sample (Throttle Last) backpressure mechanism - the {@code delegateUpdateHandler} will be invoked after given period
+ * of time with last update received. If there were no updates within given period, {@code delegateUpdateHandler} will
+ * not be invoked. Do note that invocation of {@code delegateUpdateHandler} will be done in separate (worker) thread.
  * <p>
  * Deliberate choice has to be made whether losing some updates is fine by the specific use case.
  *
@@ -36,9 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Milan Savic
  * @since 3.3
  */
-public class SampleBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
-
-    private final AtomicReference<U> lastUpdate = new AtomicReference<>();
+public class SampleBackpressure<I, U> extends ThrottleBackpressure<I, U> {
 
     /**
      * Initializes {@link SampleBackpressure} with delegateUpdateHandler update handler and parameters for scheduling.
@@ -64,17 +60,6 @@ public class SampleBackpressure<I, U> extends TimeBasedBackpressure<I, U> {
      */
     public SampleBackpressure(UpdateHandler<I, U> delegateUpdateHandler, long initialDelay, long period, TimeUnit unit,
                               ScheduledExecutorService scheduledExecutorService) {
-        super(delegateUpdateHandler, period, unit, scheduledExecutorService);
-        scheduledExecutorService.scheduleAtFixedRate(() -> {
-            U current = lastUpdate.getAndSet(null);
-            if (current != null) {
-                delegateUpdateHandler.onUpdate(current);
-            }
-        }, initialDelay, period, unit);
-    }
-
-    @Override
-    public void onUpdate(U update) {
-        lastUpdate.set(update);
+        super(delegateUpdateHandler, initialDelay, period, unit, (first, last) -> last, scheduledExecutorService);
     }
 }
