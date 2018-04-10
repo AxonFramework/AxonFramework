@@ -552,7 +552,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             return () -> true;
         }
     }

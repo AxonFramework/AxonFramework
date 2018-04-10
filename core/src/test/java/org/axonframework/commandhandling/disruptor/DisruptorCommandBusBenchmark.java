@@ -120,7 +120,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }

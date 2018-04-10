@@ -15,12 +15,6 @@
 
 package org.axonframework.springcloud.commandhandling;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -28,6 +22,7 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +35,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/spring-command-bus-connector")
@@ -62,7 +62,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public <C> void send(Member destination, CommandMessage<? extends C> commandMessage) throws Exception {
+    public <C> void send(Member destination, CommandMessage<? extends C> commandMessage) {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage);
         } else {
@@ -72,7 +72,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     @Override
     public <C, R> void send(Member destination, CommandMessage<C> commandMessage,
-                            CommandCallback<? super C, R> callback) throws Exception {
+                            CommandCallback<? super C, R> callback) {
         if (destination.local()) {
             localCommandBus.dispatch(commandMessage, callback);
         } else {
@@ -133,7 +133,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     @PostMapping("/command")
     public <C, R> CompletableFuture<?> receiveCommand(
-            @RequestBody SpringHttpDispatchMessage<C> dispatchMessage) throws ExecutionException, InterruptedException {
+            @RequestBody SpringHttpDispatchMessage<C> dispatchMessage) {
         CommandMessage<C> commandMessage = dispatchMessage.getCommandMessage(serializer);
         if (dispatchMessage.isExpectReply()) {
             try {
@@ -162,6 +162,11 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             LOGGER.warn("Could not serialize command reply [{}]. Sending back NULL.", result, e);
             return new SpringHttpReplyMessage(commandMessage.getIdentifier(), success, null, serializer);
         }
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        return localCommandBus.registerHandlerInterceptor(handlerInterceptor);
     }
 
     public class SpringHttpReplyFutureCallback<C, R> extends CompletableFuture<SpringHttpReplyMessage>

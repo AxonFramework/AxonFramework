@@ -178,9 +178,9 @@ public class DisruptorCommandBus implements CommandBus {
             executorService = null;
         }
         rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
-        invokerInterceptors = new ArrayList<>(configuration.getInvokerInterceptors());
+        invokerInterceptors = new CopyOnWriteArrayList<>(configuration.getInvokerInterceptors());
         publisherInterceptors = new ArrayList<>(configuration.getPublisherInterceptors());
-        dispatchInterceptors = new ArrayList<>(configuration.getDispatchInterceptors());
+        dispatchInterceptors = new CopyOnWriteArrayList<>(configuration.getDispatchInterceptors());
         TransactionManager transactionManager = configuration.getTransactionManager();
         disruptor = new Disruptor<>(CommandHandlingEntry::new, configuration.getBufferSize(), executor,
                                     configuration.getProducerType(), configuration.getWaitStrategy());
@@ -473,6 +473,18 @@ public class DisruptorCommandBus implements CommandBus {
         if (executorService != null) {
             executorService.shutdown();
         }
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        invokerInterceptors.add(handlerInterceptor);
+        return () -> invokerInterceptors.remove(handlerInterceptor);
     }
 
     private static class FailureLoggingCommandCallback implements CommandCallback<Object, Object> {
