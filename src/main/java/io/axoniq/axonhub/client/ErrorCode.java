@@ -39,6 +39,8 @@ public enum ErrorCode {
     PAYLOAD_TOO_LARGE("AXONIQ-2001", EventStoreException.class),
     NO_MASTER_AVAILABLE("AXONIQ-2100", EventStoreException.class),
 
+    CONNECTION_TO_AXONDB_FAILED("AXONIQ-6000", EventStoreException.class),
+
     // Internal errors
     DATAFILE_READ_ERROR( "AXONIQ-9000", EventStoreException.class),
     INDEX_READ_ERROR( "AXONIQ-9001", EventStoreException.class),

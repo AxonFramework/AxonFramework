@@ -26,6 +26,7 @@ import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
+import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
 import io.axoniq.axonhub.grpc.QueryComplete;
@@ -245,9 +246,10 @@ public class AxonHubQueryBus implements QueryBus {
                                                                    .setQueryResponse(QueryResponse.newBuilder()
                                                                                                   .setMessageIdentifier(UUID.randomUUID().toString())
                                                                                                   .setRequestIdentifier(requestId)
-                                                                                                  .setMessage(ex.getMessage())
-                                                                                                  .setErrorCode(ErrorCode.resolve(ex).errorCode())
-                                                                                                  .build())
+                                                                                                  .setMessage(ExceptionSerializer
+                                                                                                                 .serialize(configuration.getClientName(), ex))
+                                                                                                    .setErrorCode(ErrorCode.resolve(ex).errorCode())
+                                                                                                    .build())
                                                                    .build());
             }
         }

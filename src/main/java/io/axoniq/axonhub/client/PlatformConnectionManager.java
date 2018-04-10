@@ -101,7 +101,7 @@ public class PlatformConnectionManager {
                     unavailable = false;
                     break;
                 } catch( StatusRuntimeException sre) {
-                    logger.warn("Connecting failed: {}", sre.getMessage());
+                    logger.warn("Connecting to AxonHub node {}:{} failed: {}", nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage());
                     if( sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
                         unavailable = true;
                     }
@@ -109,7 +109,7 @@ public class PlatformConnectionManager {
             }
             if( unavailable) {
                 scheduleReconnect();
-                throw new RuntimeException("No connection to MessagingPlatform available");
+                throw new RuntimeException("No connection to AxonHub available");
             }
         }
         return channel;

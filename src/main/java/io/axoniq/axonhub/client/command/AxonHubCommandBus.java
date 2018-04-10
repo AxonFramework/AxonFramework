@@ -18,6 +18,7 @@ package io.axoniq.axonhub.client.command;
 import io.axoniq.axonhub.*;
 import io.axoniq.axonhub.client.*;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
+import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
 import io.axoniq.axonhub.grpc.CommandProviderInbound;
@@ -223,7 +224,7 @@ public class AxonHubCommandBus implements CommandBus {
                                        .setMessageIdentifier(UUID.randomUUID().toString())
                                        .setRequestIdentifier(command.getMessageIdentifier())
                                        .setErrorCode(ErrorCode.resolve(throwable).errorCode())
-                                       .setMessage(throwable.getMessage())
+                                       .setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable))
                 ).build();
 
                 subscriberStreamObserver.onNext(response);
@@ -323,11 +324,11 @@ public class AxonHubCommandBus implements CommandBus {
                                            .setMessageIdentifier(UUID.randomUUID().toString())
                                            .setRequestIdentifier(command.getIdentifier())
                                            .setErrorCode(ErrorCode.resolve(throwable).errorCode())
-                                           .setMessage(String.valueOf(throwable.getMessage()))
+                                           .setMessage(ExceptionSerializer.serialize(configuration.getClientName(), throwable))
                     ).build();
 
                     responseObserver.onNext(response);
-                    logger.info("DispatchLocal: failure {} - {}", command.getCommandName(), throwable.getMessage());
+                    logger.info("DispatchLocal: failure {} - {}", command.getCommandName(), throwable.getMessage(), throwable);
                 }
             });
         }
