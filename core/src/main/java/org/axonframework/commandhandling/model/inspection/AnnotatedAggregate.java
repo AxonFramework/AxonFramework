@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -287,13 +286,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                              .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
                              .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
                              .collect(Collectors.toList());
-            UnitOfWork<CommandMessage<?>> unitOfWork = (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get();
             MessageHandlingMember<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
-            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork,
-                                                                   interceptors,
-                                                                   m -> handler.handle(msg, aggregateRoot));
-
-            Object result = chain.proceed();
+            Object result;
+            if (interceptors.isEmpty()) {
+                result = handler.handle(msg, aggregateRoot);
+            } else {
+                result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                                                       interceptors,
+                                                       m -> handler.handle(msg, aggregateRoot)).proceed();
+            }
 
             if (aggregateRoot == null) {
                 aggregateRoot = (T) result;

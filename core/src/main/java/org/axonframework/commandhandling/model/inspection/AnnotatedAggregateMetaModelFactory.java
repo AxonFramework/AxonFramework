@@ -172,7 +172,6 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
                     children.add(child);
                     child.commandHandlers().forEach(commandHandlers::putIfAbsent);
-                    commandHandlerInterceptors.addAll(child.commandHandlerInterceptors());
                 }));
 
                 AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {

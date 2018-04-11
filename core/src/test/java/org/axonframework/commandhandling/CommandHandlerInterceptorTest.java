@@ -134,14 +134,18 @@ public class CommandHandlerInterceptorTest {
         commandGateway.sendAndWait(asCommandMessage(new MyNestedNestedCommand("id", "state")));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(eventStore, times(4)).publish(eventCaptor.capture());
+        verify(eventStore, times(6)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).getPayload());
         assertEquals(new AnyCommandMatchingPatternInterceptedEvent(MyNestedNestedCommand.class.getName()),
                      eventCaptor.getAllValues().get(1).getPayload());
         assertEquals(new AnyCommandInterceptedEvent(MyNestedNestedCommand.class.getName()),
                      eventCaptor.getAllValues().get(2).getPayload());
-        assertEquals(new MyNestedNestedEvent("id", "state parent intercepted intercepted"),
+        assertEquals(new AnyCommandInterceptedEvent("StaticNestedNested" + MyNestedNestedCommand.class.getName()),
                      eventCaptor.getAllValues().get(3).getPayload());
+        assertEquals(new AnyCommandInterceptedEvent("NestedNested" + MyNestedNestedCommand.class.getName()),
+                     eventCaptor.getAllValues().get(4).getPayload());
+        assertEquals(new MyNestedNestedEvent("id", "state parent intercepted intercepted"),
+                     eventCaptor.getAllValues().get(5).getPayload());
     }
 
     @Test(expected = AxonConfigurationException.class)
@@ -708,6 +712,17 @@ public class CommandHandlerInterceptorTest {
         @EntityId
         private final String id;
         private String state;
+
+        @CommandHandlerInterceptor
+        public void interceptAll(Object command) {
+            apply(new AnyCommandInterceptedEvent("NestedNested" + command.getClass().getName()));
+        }
+
+        @CommandHandlerInterceptor
+        public static void interceptAll(Object command, InterceptorChain chain) throws Exception {
+            apply(new AnyCommandInterceptedEvent("StaticNestedNested" + command.getClass().getName()));
+            chain.proceed();
+        }
 
         private MyNestedNestedEntity(String id) {
             this.id = id;

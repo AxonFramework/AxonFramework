@@ -23,8 +23,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.Optional;
-
 /**
  * Annotated command handler interceptor on aggregate. Will invoke the delegate to the real interceptor method.
  *
@@ -54,13 +52,10 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
             throws Exception {
         InterceptorChainParameterResolverFactory.initialize(interceptorChain);
 
-        // we don't support shortcutting interceptors, that's why we don't expect a result
-        delegate.handle(unitOfWork.getMessage(), target);
+        Object result = delegate.handle(unitOfWork.getMessage(), target);
 
-        Optional<CommandHandlerInterceptorHandlingMember> unwrap = delegate.unwrap(
-                CommandHandlerInterceptorHandlingMember.class);
-        Object result = null;
-        if (unwrap.isPresent() && unwrap.get().shouldInvokeInterceptorChain()) {
+        if (delegate.unwrap(CommandHandlerInterceptorHandlingMember.class)
+                    .map(CommandHandlerInterceptorHandlingMember::shouldInvokeInterceptorChain).orElse(false)) {
             result = interceptorChain.proceed();
         }
 

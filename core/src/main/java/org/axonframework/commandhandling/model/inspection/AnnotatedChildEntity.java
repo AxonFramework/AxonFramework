@@ -19,9 +19,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -38,7 +36,6 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
     private final EntityModel<C> entityModel;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
-    private final List<MessageHandlingMember<? super P>> commandHandlerInterceptors;
     private final BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver;
 
     /**
@@ -58,20 +55,13 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         this.entityModel = entityModel;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
-        this.commandHandlerInterceptors = new ArrayList<>();
         if (forwardCommands) {
             entityModel.commandHandlers().forEach(
-                    (commandType, childHandler) -> commandHandlers.put(
-                            commandType,
-                            new ChildForwardingCommandMessageHandlingMember<>(childHandler, commandTargetResolver)
-                    )
-            );
-
-            commandHandlerInterceptors.addAll(
-                    entityModel.commandHandlerInterceptors()
-                               .stream()
-                               .map(ch -> new ChildForwardingCommandHandlerInterceptorHandlingMember<>(ch, commandTargetResolver))
-                               .collect(Collectors.toList()));
+                    (commandType, childHandler) -> commandHandlers
+                            .put(commandType, new ChildForwardingCommandMessageHandlingMember<>(
+                                    entityModel.commandHandlerInterceptors(),
+                                    childHandler,
+                                    commandTargetResolver)));
         }
     }
 
@@ -87,10 +77,5 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @Override
     public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
-    }
-
-    @Override
-    public List<MessageHandlingMember<? super P>> commandHandlerInterceptors() {
-        return commandHandlerInterceptors;
     }
 }
