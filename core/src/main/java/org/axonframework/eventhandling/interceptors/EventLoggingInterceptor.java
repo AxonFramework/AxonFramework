@@ -67,7 +67,7 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
     }
 
     @Override
-    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(List<EventMessage<?>> messages) {
+    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(List<? extends EventMessage<?>> messages) {
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
                                                            messages.stream().map(m -> m.getPayloadType().getSimpleName()).collect(Collectors.joining(", "))));
         CurrentUnitOfWork.ifStarted(unitOfWork -> {

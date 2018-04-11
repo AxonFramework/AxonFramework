@@ -101,6 +101,15 @@ public abstract class AggregateLifecycle {
     }
 
     /**
+     * Gets the version of the aggregate.
+     *
+     * @return the current version of the aggregate
+     */
+    public static Long getVersion() {
+        return getInstance().version();
+    }
+
+    /**
      * Marks this aggregate as deleted, instructing a repository to remove that aggregate at an appropriate time.
      * <p/>
      * Note that different repository implementations may react differently to aggregates marked for deletion.
@@ -140,6 +149,13 @@ public abstract class AggregateLifecycle {
      * historic events
      */
     protected abstract boolean getIsLive();
+
+    /**
+     * Gets the version of the aggregate.
+     *
+     * @return the current version of the aggregate
+     */
+    protected abstract Long version();
 
     /**
      * Marks this aggregate as deleted. Implementations may react differently to aggregates marked for deletion.

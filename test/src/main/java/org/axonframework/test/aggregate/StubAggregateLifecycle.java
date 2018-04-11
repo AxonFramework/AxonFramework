@@ -74,6 +74,11 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     }
 
     @Override
+    protected Long version() {
+        return 0L;
+    }
+
+    @Override
     protected void doMarkDeleted() {
         this.deleted = true;
     }

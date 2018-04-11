@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.jgroups.*;
 import org.slf4j.Logger;
@@ -466,6 +467,11 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     public Optional<Member> findDestination(CommandMessage<?> message) {
         String routingKey = routingStrategy.getRoutingKey(message);
         return consistentHash.get().getMember(routingKey, message);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
     private static final class JoinCondition {

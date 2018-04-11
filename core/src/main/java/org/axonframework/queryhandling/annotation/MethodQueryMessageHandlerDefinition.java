@@ -23,11 +23,17 @@ import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Definition of handlers that can handle QueryMessages. These handlers are wrapped with a QueryHandlingMember that
@@ -35,13 +41,77 @@ import java.util.Map;
  */
 public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        Optional<Method> unwrappedMethod = original.unwrap(Method.class);
+        return unwrappedMethod.map(method -> Arrays.stream(method.getParameters())
+                                                   .filter(parameter -> parameter.getType()
+                                                                                 .equals(QueryUpdateEmitter.class))
+                                                   .findFirst()
+                                                   .map(parameter -> wrapToSubscriptionQueryMessageHandlingMember(
+                                                           original,
+                                                           parameter))
+                                                   .orElse(wrapToQueryMessageHandlingMember(original)))
+                              .orElse(original);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> MessageHandlingMember<T> wrapToSubscriptionQueryMessageHandlingMember(MessageHandlingMember<T> original,
+                                                                                      Parameter queryUpdateEmitterParameter) {
         return original.annotationAttributes(QueryHandler.class)
                        .map(attr -> (MessageHandlingMember<T>)
-                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(original, attr))
+                               new MethodQueryMessageHandlerDefinition.MethodSubscriptionQueryMessageHandlingMember(
+                                       original,
+                                       attr,
+                                       queryUpdateEmitterParameter))
                        .orElse(original);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> MessageHandlingMember<T> wrapToQueryMessageHandlingMember(MessageHandlingMember<T> original) {
+        return original.annotationAttributes(QueryHandler.class)
+                       .map(attr -> (MessageHandlingMember<T>)
+                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember(
+                                       original,
+                                       attr))
+                       .orElse(original);
+    }
+
+    private class MethodSubscriptionQueryMessageHandlingMember<T>
+      extends MethodQueryMessageHandlingMember<T> implements SubscriptionQueryHandlingMember<T> {
+
+        private final Type updateType;
+
+        public MethodSubscriptionQueryMessageHandlingMember(MessageHandlingMember<T> original,
+                                                            Map<String, Object> attr,
+                                                            Parameter queryUpdateEmitterParameter) {
+            super(original, attr);
+
+            updateType = ((ParameterizedType) queryUpdateEmitterParameter.getParameterizedType())
+                    .getActualTypeArguments()[0];
+
+            if (Void.class.equals(updateType)) {
+                throw new UnsupportedHandlerException(
+                        "QueryUpdateEmitter parameter must not declare void generic type",
+                        original.unwrap(Member.class).orElse(null)
+                );
+            }
+        }
+
+        @Override
+        public Type getUpdateType() {
+            return updateType;
+        }
+
+        @Override
+        public boolean canHandle(Message<?> message) {
+            boolean queryMessageCanHandle = super.canHandle(message);
+            if (message instanceof SubscriptionQueryMessage) {
+                return queryMessageCanHandle
+                        && ((SubscriptionQueryMessage) message).getUpdateResponseType().matches(updateType);
+            }
+            return queryMessageCanHandle;
+        }
     }
 
     private class MethodQueryMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements QueryHandlingMember<T> {

@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * The mechanism that dispatches Query objects to their appropriate QueryHandlers. QueryHandlers can subscribe and
  * un-subscribe to specific queries (identified by their {@link QueryMessage#getQueryName()} and
  * {@link QueryMessage#getResponseType()} on the query bus. There may be multiple handlers for each combination of
- * queryName/responseName.
+ * queryName/responseType.
  *
  * @author Marc Gathier
  * @author Allard Buijze
@@ -37,8 +37,8 @@ import java.util.stream.Stream;
 public interface QueryBus {
 
     /**
-     * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseName}.
-     * Multiple handlers may subscribe to the same combination of queryName/responseName.
+     * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.
+     * Multiple handlers may subscribe to the same combination of queryName/responseType.
      *
      * @param queryName    the name of the query request to subscribe
      * @param responseType the type of response the subscribed component answers with
@@ -46,6 +46,26 @@ public interface QueryBus {
      * @return a handle to un-subscribe the query handler
      */
     <R> Registration subscribe(String queryName, Type responseType, MessageHandler<? super QueryMessage<?, R>> handler);
+
+    /**
+     * Subscribe the given {@code handler} to queries with given {@code queryName}, {@code initialResponseType} and
+     * {@code updateResponseType}.
+     * <p>
+     * If during emitting of incremental updates there is no {@code updateHandler}, {@link
+     * NoUpdateHandlerForEmitterException} will be thrown.
+     *
+     * @param queryName           the name of the query request to subscribe
+     * @param initialResponseType the type of initial response the subscribed component answers with
+     * @param updateResponseType  the type of incremental responses the subscribed component answers with
+     * @param handler             a handler that implements the query
+     * @param <I>                 the type of initial response
+     * @param <U>                 the type of incremental responses
+     * @return a handle to un-subscribe the query handler
+     */
+    <I, U> Registration subscribe(String queryName,
+                                  Type initialResponseType,
+                                  Type updateResponseType,
+                                  SubscriptionQueryMessageHandler<? super QueryMessage<?, I>, I, U> handler);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName
@@ -66,7 +86,7 @@ public interface QueryBus {
     <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> query);
 
     /**
-     * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s queryName/responseName.
+     * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s queryName/responseType.
      * Returns a stream of results which blocks until all handlers have processed the request or when the timeout occurs.
      * <p>
      * If no handlers are available to provide a result, or when all available handlers throw an exception while
@@ -83,4 +103,20 @@ public interface QueryBus {
      * @return stream of query results
      */
     <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> query, long timeout, TimeUnit unit);
+
+    /**
+     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
+     * queryName/initialResponseType/updateResponseType.
+     * <p>
+     * If no handler is found for the query, {@link NoHandlerForQueryException} will be thrown.
+     *
+     * @param query         the query
+     * @param updateHandler the handler to be invoked when query handler initially respond and whenever a query handling
+     *                      side emits a message
+     * @param <Q>           the payload type of the query
+     * @param <I>           the response type of the query
+     * @param <U>           the incremental response types of the query
+     * @return a handle to un-subscribe {@code updateHandler}
+     */
+    <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query, UpdateHandler<I, U> updateHandler);
 }

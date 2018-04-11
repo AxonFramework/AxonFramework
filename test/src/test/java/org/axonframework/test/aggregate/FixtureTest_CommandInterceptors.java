@@ -262,7 +262,7 @@ public class FixtureTest_CommandInterceptors {
     class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
         @Override
-        public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+        public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<? extends CommandMessage<?>> messages) {
             return (index, message) -> {
                 Map<String, Object> testMetaDataMap = new HashMap<>();
                 testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);

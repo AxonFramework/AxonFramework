@@ -90,7 +90,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         final Thread testThread = Thread.currentThread();
         commandBus.registerDispatchInterceptor(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
-            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<? extends CommandMessage<?>> messages) {
                 return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
                         return message; // ok
@@ -124,7 +124,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, new MessageDispatchInterceptor<CommandMessage<?>>() {
 
             @Override
-            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<? extends CommandMessage<?>> messages) {
                 return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
                         return message.andMetaData(
