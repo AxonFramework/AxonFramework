@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateMetaModelFactory;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -131,11 +132,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return configurer.configureRepository(
                 c -> new GenericJpaRepository<>(c.getComponent(EntityManagerProvider.class,
                                                                () -> {
-                                                                   throw new AxonConfigurationException(format("JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
-                                                                                                               aggregateType.getSimpleName()));
-
+                                                                   throw new AxonConfigurationException(format(
+                                                                           "JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
+                                                                           aggregateType.getSimpleName()));
                                                                }),
-                                                configurer.metaModel.get(), c.eventBus(), c::repository));
+                                                configurer.metaModel.get(),
+                                                c.eventBus(),
+                                                (RepositoryProvider) c::repository));
     }
 
     /**
@@ -152,7 +155,10 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                     EntityManagerProvider entityManagerProvider) {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
         return configurer.configureRepository(
-                c -> new GenericJpaRepository<>(entityManagerProvider, configurer.metaModel.get(), c.eventBus(), c::repository));
+                c -> new GenericJpaRepository<>(entityManagerProvider,
+                                                configurer.metaModel.get(),
+                                                c.eventBus(),
+                                                (RepositoryProvider) c::repository));
     }
 
     private String name(String prefix) {

@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -58,8 +57,7 @@ public class DisruptorCommandBusBenchmark {
         DisruptorCommandBus commandBus = new DisruptorCommandBus();
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(eventStore,
-                                                              new GenericAggregateFactory<>(StubAggregate.class),
-                                                              new StubRepositoryProvider()));
+                                                              new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
         eventStore.publish(new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent()));
 
@@ -181,13 +179,5 @@ public class DisruptorCommandBusBenchmark {
 
     private static class StubDomainEvent {
 
-    }
-
-    private static class StubRepositoryProvider implements RepositoryProvider {
-
-        @Override
-        public <T> Repository<T> repositoryFor(Class<T> aggregateType) {
-            return null;
-        }
     }
 }

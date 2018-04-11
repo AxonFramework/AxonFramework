@@ -55,8 +55,7 @@ public class EventCountSnapshotTriggerDefinitionTest {
         aggregateIdentifier = "aggregateIdentifier";
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
         aggregate = AnnotatedAggregate.initialize(new StubAggregate(aggregateIdentifier),
-                                                  AnnotatedAggregateMetaModelFactory
-                                                          .inspectAggregate(StubAggregate.class), null, null);
+                                                  AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class), null);
 
     }
 

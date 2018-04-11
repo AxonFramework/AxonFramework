@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -52,7 +51,7 @@ public class EventPublicationOrderTest {
         this.commandBus = new SimpleCommandBus();
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         EventSourcingRepository<StubAggregate> repository =
-                new EventSourcingRepository<>(StubAggregate.class, eventStore, mock(RepositoryProvider.class));
+                new EventSourcingRepository<>(StubAggregate.class, eventStore);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);

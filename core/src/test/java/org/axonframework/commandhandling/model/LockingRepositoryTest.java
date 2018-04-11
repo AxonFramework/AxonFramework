@@ -50,7 +50,6 @@ public class LockingRepositoryTest {
 
     private Repository<StubAggregate> testSubject;
     private EventStore mockEventStore;
-    private RepositoryProvider mockRepositoryProvider;
     private LockFactory lockFactory;
     private Lock lock;
     private static final Message<?> MESSAGE = new GenericMessage<Object>("test");
@@ -58,11 +57,10 @@ public class LockingRepositoryTest {
     @Before
     public void setUp() {
         mockEventStore = mock(EventStore.class);
-        mockRepositoryProvider = mock(RepositoryProvider.class);
         lockFactory = spy(new PessimisticLockFactory());
         when(lockFactory.obtainLock(anyString()))
                         .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
-        testSubject = new InMemoryLockingRepository(lockFactory, mockEventStore, mockRepositoryProvider);
+        testSubject = new InMemoryLockingRepository(lockFactory, mockEventStore);
         testSubject = spy(testSubject);
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -140,7 +138,7 @@ public class LockingRepositoryTest {
     @Test
     public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
         lockFactory = spy(new PessimisticLockFactory());
-        testSubject = new InMemoryLockingRepository(lockFactory, mockEventStore, mockRepositoryProvider);
+        testSubject = new InMemoryLockingRepository(lockFactory, mockEventStore);
         testSubject = spy(testSubject);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
@@ -181,17 +179,14 @@ public class LockingRepositoryTest {
     private static class InMemoryLockingRepository extends LockingRepository<StubAggregate, Aggregate<StubAggregate>> {
 
         private final EventStore eventStore;
-        private final RepositoryProvider repositoryProvider;
         private final AggregateModel<StubAggregate> aggregateModel;
         private Map<Object, Aggregate<StubAggregate>> store = new HashMap<>();
         private int saveCount;
 
-        public InMemoryLockingRepository(LockFactory lockManager, EventStore eventStore,
-                                         RepositoryProvider repositoryProvider) {
+        public InMemoryLockingRepository(LockFactory lockManager, EventStore eventStore) {
             super(StubAggregate.class, lockManager);
             this.eventStore = eventStore;
             aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class);
-            this.repositoryProvider = repositoryProvider;
         }
 
         @Override
@@ -213,7 +208,7 @@ public class LockingRepositoryTest {
 
         @Override
         protected Aggregate<StubAggregate> doCreateNewForLock(Callable<StubAggregate> factoryMethod) throws Exception {
-            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider,
+            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore,
                                                     NoSnapshotTriggerDefinition.TRIGGER);
         }
 

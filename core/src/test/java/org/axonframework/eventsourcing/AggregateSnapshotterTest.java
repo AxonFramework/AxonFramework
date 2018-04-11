@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -48,8 +47,7 @@ public class AggregateSnapshotterTest {
         EventStore mockStorageEngine = mock(EventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
-        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory),
-                                               mock(RepositoryProvider.class));
+        testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory));
     }
 
     @Test

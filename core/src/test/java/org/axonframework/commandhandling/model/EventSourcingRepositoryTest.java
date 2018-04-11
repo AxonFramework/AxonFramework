@@ -57,9 +57,7 @@ public class EventSourcingRepositoryTest {
                                                           "Test2"),
                     new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgument(0), 3,
                                                           "Test3")));
-        repository = new EventSourcingRepository<>(StubAggregate.class,
-                                                   eventStore,
-                                                   Mockito.mock(RepositoryProvider.class));
+        repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         DefaultUnitOfWork.startAndGet(asCommandMessage("Stub"));
     }
 

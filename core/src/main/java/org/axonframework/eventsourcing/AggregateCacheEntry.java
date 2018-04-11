@@ -26,6 +26,11 @@ public class AggregateCacheEntry<T> implements Serializable {
     }
 
     public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
+                                                      SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        return recreateAggregate(model, eventStore, null, snapshotTriggerDefinition);
+    }
+
+    public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
                                                       RepositoryProvider repositoryProvider,
                                                       SnapshotTriggerDefinition snapshotTriggerDefinition) {
         if (aggregate != null) {

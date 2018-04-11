@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
-import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -38,7 +37,6 @@ import java.util.List;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 public class ComplexAggregateStructureTest {
 
@@ -47,11 +45,7 @@ public class ComplexAggregateStructureTest {
         AggregateModel<Book> bookAggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(Book.class);
         EventBus mockEventBus = new SimpleEventBus();
         mockEventBus.subscribe(m -> m.forEach(i -> System.out.println(i.getPayloadType().getName())));
-        RepositoryProvider mockRepositoryProvider = mock(RepositoryProvider.class);
-        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book) null,
-                                                                               bookAggregateModel,
-                                                                               mockEventBus,
-                                                                               mockRepositoryProvider);
+        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book) null, bookAggregateModel, mockEventBus);
         bookAggregate.handle(command(new CreateBookCommand("book1")));
         bookAggregate.handle(command(new CreatePageCommand("book1")));
         bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));

@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ConcurrencyException;
-import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -72,9 +71,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository() throws Exception {
         eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(),
-                                                   eventStore,
-                                                   mock(RepositoryProvider.class));
+        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore);
         EventBus mockEventBus = mock(EventBus.class);
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
