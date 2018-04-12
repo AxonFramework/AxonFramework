@@ -26,6 +26,7 @@ import java.util.Map;
 
 /**
  * Test util for generating {@link ConsumerConfig}.
+ *
  * @author Nakul Mishra
  */
 public class ConsumerConfigUtil {
@@ -62,5 +63,4 @@ public class ConsumerConfigUtil {
                                                                                       Class valueDeserializer) {
         return new DefaultConsumerFactory<>(minimalTransactional(kafka, group, valueDeserializer));
     }
-
 }
