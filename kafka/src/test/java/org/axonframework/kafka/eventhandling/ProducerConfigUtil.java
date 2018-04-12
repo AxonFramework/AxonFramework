@@ -28,7 +28,9 @@ import org.springframework.kafka.test.rule.KafkaEmbedded;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.WAIT_FOR_ACK;
 
 /**
  * Test util for generating {@link ProducerConfig}.
@@ -78,6 +80,10 @@ public class ProducerConfigUtil {
     public static Map<String, Object> minimal(KafkaEmbedded kafka, Class valueSerializer) {
         Map<String, Object> configs = new HashMap<>();
         configs.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBrokersAsString());
+        configs.put(ProducerConfig.RETRIES_CONFIG, 0);
+        configs.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
+        configs.put(ProducerConfig.LINGER_MS_CONFIG, 1);
+        configs.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
         configs.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configs.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer);
         return configs;
@@ -110,11 +116,12 @@ public class ProducerConfigUtil {
     public static Map<String, Object> minimalTransactional(KafkaEmbedded kafka, Class valueSerializer) {
         Map<String, Object> configs = minimal(kafka, valueSerializer);
         configs.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        configs.put(ProducerConfig.RETRIES_CONFIG, 1);
         return configs;
     }
 
     /**
-     * Factory for generating {@link KafkaProducer} where:
+     * Factory for generating {@link KafkaProducer} with:
      * <ul>
      * <li><code>confirmationMode</code> - {@link ConfirmationMode#NONE}.</li>
      * <li><code>key.serializer</code> - {@link org.apache.kafka.common.serialization.StringSerializer}.</li>
@@ -127,12 +134,12 @@ public class ProducerConfigUtil {
     public static ProducerFactory<String, String> producerFactory(KafkaEmbedded kafka) {
         return DefaultProducerFactory
                 .<String, String>builder(minimal(kafka))
-                .withCloseTimeout(100, TimeUnit.MILLISECONDS)
+                .withCloseTimeout(100, MILLISECONDS)
                 .build();
     }
 
     /**
-     * Factory for generating {@link KafkaProducer} where:
+     * Factory for generating {@link KafkaProducer} with:
      * <ul>
      * <li><code>confirmationMode</code> - {@link ConfirmationMode#WAIT_FOR_ACK}.</li>
      * <li><code>key.serializer</code> - {@link org.apache.kafka.common.serialization.StringSerializer}.</li>
@@ -146,13 +153,13 @@ public class ProducerConfigUtil {
     public static <V> ProducerFactory<String, V> ackProducerFactory(KafkaEmbedded kafka, Class valueSerializer) {
         return DefaultProducerFactory
                 .<String, V>builder(minimal(kafka, valueSerializer))
-                .withConfirmationMode(ConfirmationMode.WAIT_FOR_ACK)
-                .withCloseTimeout(100, TimeUnit.MILLISECONDS)
+                .withConfirmationMode(WAIT_FOR_ACK)
+                .withCloseTimeout(100, MILLISECONDS)
                 .build();
     }
 
     /**
-     * Factory for generating transactional {@link KafkaProducer} where:
+     * Factory for generating transactional {@link KafkaProducer} with:
      * <ul>
      * <li><code>confirmationMode</code> - {@link ConfirmationMode#TRANSACTIONAL}.</li>
      * <li><code>key.serializer</code> - {@link org.apache.kafka.common.serialization.StringSerializer}.</li>
@@ -168,12 +175,12 @@ public class ProducerConfigUtil {
         return DefaultProducerFactory
                 .<String, String>builder(minimalTransactional(kafka))
                 .withTransactionalIdPrefix(transactionalIdPrefix)
-                .withCloseTimeout(100, TimeUnit.MILLISECONDS)
+                .withCloseTimeout(100, MILLISECONDS)
                 .build();
     }
 
     /**
-     * Factory for generating transactional {@link KafkaProducer} where:
+     * Factory for generating transactional {@link KafkaProducer} with:
      * <ul>
      * <li><code>confirmationMode</code> - {@link ConfirmationMode#TRANSACTIONAL}.</li>
      * <li><code>key.serializer</code> - {@link org.apache.kafka.common.serialization.StringSerializer}.</li>
@@ -190,7 +197,7 @@ public class ProducerConfigUtil {
         return DefaultProducerFactory
                 .<String, V>builder(minimalTransactional(kafka, valueSerializer))
                 .withTransactionalIdPrefix(transactionalIdPrefix)
-                .withCloseTimeout(100, TimeUnit.MILLISECONDS)
+                .withCloseTimeout(100, MILLISECONDS)
                 .build();
     }
 }
