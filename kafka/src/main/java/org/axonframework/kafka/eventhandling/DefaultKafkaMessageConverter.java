@@ -55,10 +55,12 @@ import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
- * Converts: {@link EventMessage} to {@link ProducerRecord} and {@link ConsumerRecord} to {@link EventMessage}.
+ * Converts: {@link EventMessage} to {@link ProducerRecord kafkaMessage} and {@link ConsumerRecord message read from
+ * Kafka} back
+ * to {@link EventMessage} (if possible).
  * <p>
  * During conversion it passes all meta-data entries with <code>'axon-metadata-'</code> prefix to {@link
- * Headers}.Other message-specific attributes are added as metadata. The payload is serialized using the
+ * Headers}. Other message-specific attributes are added as metadata. The payload is serialized using the
  * configured {@link Serializer} and passed as the message body.
  * <p>
  * This implementation will suffice in most cases.

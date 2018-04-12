@@ -32,23 +32,22 @@ import org.junit.*;
 import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
 import static org.apache.kafka.common.record.RecordBatch.NO_TIMESTAMP;
 import static org.apache.kafka.common.record.TimestampType.NO_TIMESTAMP_TYPE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertDomainHeaders;
+import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertEventHeaders;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.byteMapper;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.toHeaders;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
-import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertDomainHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderAssertUtils.assertEventHeaders;
 import static org.axonframework.messaging.Headers.MESSAGE_ID;
 import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
 import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link DefaultKafkaMessageConverter}
+ * Tests for {@link DefaultKafkaMessageConverter}.
  *
  * @author Nakul Mishra
  */
@@ -69,114 +68,135 @@ public class DefaultKafkaMessageConverterTests {
     }
 
     @Test
-    public void testWriteMessage_RoutingKeys() {
+    public void testKafkaKeyGeneration_EventMessage_ShouldBeNull() {
         ProducerRecord<String, byte[]> evt = testSubject.createKafkaMessage(eventMessage(), SOME_TOPIC);
-        assertThat(evt.key(), is(nullValue()));
 
-        ProducerRecord<String, byte[]> domainEvt = testSubject.createKafkaMessage(domainMessage(), SOME_TOPIC);
-        assertThat(domainEvt.key(), is(domainMessage().getAggregateIdentifier()));
+        assertThat(evt.key()).isNull();
     }
 
     @Test
-    public void testWriteMessage_EventHeaders() {
+    public void testKafkaKeyGeneration_DomainMessage_ShouldBeAggregateIdentifier() {
+        ProducerRecord<String, byte[]> domainEvt = testSubject.createKafkaMessage(domainMessage(), SOME_TOPIC);
+
+        assertThat(domainEvt.key()).isEqualTo((domainMessage().getAggregateIdentifier()));
+    }
+
+    @Test
+    public void testWriting_EventMessageAsKafkaMessage_ShouldAppendEventHeaders() {
         EventMessage<?> expected = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(expected, SOME_TOPIC);
         SerializedObject<byte[]> serializedObject = serializePayload(expected, serializer, byte[].class);
+
         assertEventHeaders("key", expected, serializedObject, senderMessage.headers());
     }
 
     @Test
-    public void testWriteMessage_DomainHeaders() {
+    public void testWriting_DomainMessageAsKafkaMessage_ShouldAppendDomainHeaders() {
         GenericDomainEventMessage<String> expected = domainMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(expected, SOME_TOPIC);
+
         assertDomainHeaders(expected, senderMessage.headers());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testReadingMessage_InvalidHeader() {
+    public void testReadingMessage_WhenKafkaReturnNullHeaders_ShouldReturnEmptyMessage() {
         ConsumerRecord source = mock(ConsumerRecord.class);
         when(source.headers()).thenReturn(null);
-        assertFalse(testSubject.readKafkaMessage(source).isPresent());
+
+        assertThat(testSubject.readKafkaMessage(source).isPresent()).isFalse();
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testReadingMessage_MissingAxonHeaders() {
+    public void testReadingMessage_MissingAxonHeader_ShouldReturnEmptyMessage() {
         ConsumerRecord msgWithoutHeaders = new ConsumerRecord("foo", 0, 0, "abc", 1);
-        assertFalse(testSubject.readKafkaMessage(msgWithoutHeaders).isPresent());
 
-        EventMessage<?> event = eventMessage();
-
-        ProducerRecord<String, byte[]> msg1 = testSubject.createKafkaMessage(event, SOME_TOPIC);
-        msg1.headers().remove(MESSAGE_ID);
-        assertFalse(testSubject.readKafkaMessage(toReceiverRecord(msg1)).isPresent());
-
-        ProducerRecord<String, byte[]> msg2 = testSubject.createKafkaMessage(event, SOME_TOPIC);
-        msg2.headers().remove(MESSAGE_TYPE);
-        assertFalse(testSubject.readKafkaMessage(toReceiverRecord(msg1)).isPresent());
+        assertThat(testSubject.readKafkaMessage(msgWithoutHeaders).isPresent()).isFalse();
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testReadingMessage_PayloadDifferentThanByte() {
+    public void testReadingMessage_WithoutId_ShouldReturnEmptyMessage() {
+        EventMessage<?> event = eventMessage();
+        ProducerRecord<String, byte[]> msg = testSubject.createKafkaMessage(event, SOME_TOPIC);
+        msg.headers().remove(MESSAGE_ID);
+
+        assertThat(testSubject.readKafkaMessage(toReceiverRecord(msg)).isPresent()).isFalse();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testReadingMessage_WithoutType_ShouldReturnEmptyMessage() {
+        EventMessage<?> event = eventMessage();
+        ProducerRecord<String, byte[]> msg = testSubject.createKafkaMessage(event, SOME_TOPIC);
+        msg.headers().remove(MESSAGE_TYPE);
+
+        assertThat(testSubject.readKafkaMessage(toReceiverRecord(msg)).isPresent()).isFalse();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testReadingMessage_PayloadDifferentThanByte_ShouldReturnEmptyMessage() {
         EventMessage<Object> eventMessage = eventMessage();
         SerializedObject serializedObject = mock(SerializedObject.class);
         when(serializedObject.getType()).thenReturn(new SimpleSerializedType("foo", null));
         Headers headers = toHeaders(eventMessage, serializedObject, byteMapper());
-
         ConsumerRecord payloadDifferentThanByte = new ConsumerRecord(
                 "foo", 0, 0, NO_TIMESTAMP, NO_TIMESTAMP_TYPE,
                 -1L, NULL_SIZE, NULL_SIZE, 1, "123", headers
         );
 
-        assertFalse(testSubject.readKafkaMessage(payloadDifferentThanByte).isPresent());
+        assertThat(testSubject.readKafkaMessage(payloadDifferentThanByte).isPresent()).isFalse();
     }
 
     @Test
-    public void testWriteAndRead_EventMessage() {
+    public void testWriting_EventMessage_ShouldBeReadAsEventMessage() {
         EventMessage<?> expected = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(expected, SOME_TOPIC);
         EventMessage<?> actual = receiverMessage(senderMessage);
+
         assertEventMessage(actual, expected);
     }
 
     @Test
-    public void testWriteAndRead_EventMessageWithNullRevision() {
+    public void testWriting_EventMessageWithNullRevision_ShouldWriteRevisionAsNull() {
         testSubject = new DefaultKafkaMessageConverter(new XStreamSerializer());
         EventMessage<?> eventMessage = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(eventMessage, SOME_TOPIC);
-        assertThat(valueAsString(senderMessage.headers(), MESSAGE_REVISION), is(nullValue()));
+
+        assertThat(valueAsString(senderMessage.headers(), MESSAGE_REVISION)).isNull();
     }
 
     @Test
-    public void testWriteAndRead_DomainEventMessage() {
+    public void testWriting_DomainEventMessage_ShouldBeReadAsDomainMessage() {
         DomainEventMessage<?> expected = domainMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(expected, SOME_TOPIC);
         EventMessage<?> actual = receiverMessage(senderMessage);
+
         assertEventMessage(actual, expected);
         assertDomainMessage((DomainEventMessage<?>) actual, expected);
     }
 
     private void assertDomainMessage(DomainEventMessage<?> actual, DomainEventMessage<?> expected) {
-        assertThat(actual.getAggregateIdentifier(), is(expected.getAggregateIdentifier()));
-        assertThat(actual.getSequenceNumber(), is(expected.getSequenceNumber()));
-        assertThat(actual.getType(), is(expected.getType()));
+        assertThat(actual.getAggregateIdentifier()).isEqualTo(expected.getAggregateIdentifier());
+        assertThat(actual.getSequenceNumber()).isEqualTo(expected.getSequenceNumber());
+        assertThat(actual.getType()).isEqualTo(expected.getType());
     }
 
     private static void assertEventMessage(EventMessage<?> actual, EventMessage<?> expected) {
-        assertThat(actual.getIdentifier(), is(expected.getIdentifier()));
+        assertThat(actual.getIdentifier()).isEqualTo(expected.getIdentifier());
         assertEquals(actual.getPayloadType(), (expected.getPayloadType()));
-        assertThat(actual.getMetaData(), is(expected.getMetaData()));
-        assertThat(actual.getPayload(), is(expected.getPayload()));
-        assertThat(actual.getTimestamp(), is(expected.getTimestamp()));
+        assertThat(actual.getMetaData()).isEqualTo(expected.getMetaData());
+        assertThat(actual.getPayload()).isEqualTo(expected.getPayload());
+        assertThat(actual.getTimestamp()).isEqualTo(expected.getTimestamp());
     }
 
-    private EventMessage<Object> eventMessage() {
+    private static EventMessage<Object> eventMessage() {
         return asEventMessage("SomePayload").withMetaData(MetaData.with("key", "value"));
     }
 
-    private GenericDomainEventMessage<String> domainMessage() {
+    private static GenericDomainEventMessage<String> domainMessage() {
         return new GenericDomainEventMessage<>("Stub",
                                                SOME_AGGREGATE_IDENTIFIER,
                                                1L,
@@ -190,7 +210,7 @@ public class DefaultKafkaMessageConverterTests {
         );
     }
 
-    private ConsumerRecord<String, byte[]> toReceiverRecord(ProducerRecord<String, byte[]> message) {
+    private static ConsumerRecord<String, byte[]> toReceiverRecord(ProducerRecord<String, byte[]> message) {
         ConsumerRecord<String, byte[]> receiverRecord = new ConsumerRecord<>(
                 SOME_TOPIC, SOME_PARTITION, SOME_OFFSET, message.key(), message.value()
         );
