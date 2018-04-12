@@ -16,84 +16,167 @@
 package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
+import scala.collection.Seq;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.emptyMap;
+import static kafka.utils.TestUtils.pollUntilAtLeastNumRecords;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.consumerFactory;
-import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.partition;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.producerFactory;
+import static org.axonframework.kafka.eventhandling.consumer.ConsumerUtil.seek;
+import static org.springframework.kafka.test.utils.KafkaTestUtils.getRecords;
 
 /***
  * Tests for {@link ConsumerUtil}
  *
  * @author Nakul Mishra
  */
-@EmbeddedKafka(topics = {"testSeekConsumerWithNullToken",
-        "testSeekConsumerWithAnEmptyToken",
-        "testSeekConsumerWithAnExistingToken"}, count = 3, partitions = 5)
 @RunWith(SpringRunner.class)
+@DirtiesContext
+@EmbeddedKafka(topics = {"testSeekUsing_NullToken_ConsumerStartsAtPositionZero",
+        "testSeekUsing_EmptyToken_ConsumerStartsAtPositionZero",
+        "testSeekUsing_ExistingToken_ConsumerStartsAtSpecificPosition",
+        "testSeekUsing_ExistingToken_ConsumerStartsAtSpecificPosition_AndCanContinueReadingNewRecords"}, partitions = 5)
 public class ConsumerUtilTests {
 
+    @SuppressWarnings("SpringJavaAutowiredMembersInspection")
     @Autowired
     private KafkaEmbedded kafka;
 
-    @Test
-    public void testSeekConsumerWithNullToken() {
-        String topic = "testSeekConsumerWithNullToken";
-        Consumer<?, ?> consumer = consumer(topic);
-        ConsumerUtil.seek(topic, consumer, null);
-        assertOffsets(topic, consumer, 0L);
-        consumer.close();
+    private ProducerFactory<String, String> pf;
+
+    @Before
+    public void setUp() {
+        pf = producerFactory(kafka);
     }
 
     @Test
-    public void testSeekConsumerWithAnEmptyToken() {
-        String topic = "testSeekConsumerWithAnEmptyToken";
-        Consumer<?, ?> consumer = consumer(topic);
-        ConsumerUtil.seek(topic, consumer, KafkaTrackingToken.newInstance(Collections.emptyMap()));
-        assertOffsets(topic, consumer, 0L);
-        consumer.close();
+    public void testSeekUsing_NullToken_ConsumerStartsAtPositionZero() {
+        String topic = "testSeekUsing_NullToken_ConsumerStartsAtPositionZero";
+        int noOfPartitions = kafka.getPartitionsPerTopic();
+        int recordsPerPartitions = 1;
+        AtomicInteger count = new AtomicInteger();
+        publishRecordsOnMultiplePartitions(topic, recordsPerPartitions);
+        Consumer<?, ?> testSubject = consumerFactory(kafka, topic).createConsumer();
+
+        seek(topic, testSubject, null);
+
+        getRecords(testSubject).forEach(r -> {
+            assertThat(r.offset()).isZero();
+            count.getAndIncrement();
+        });
+        assertThat(count.get()).isEqualTo(noOfPartitions * recordsPerPartitions);
+
+        testSubject.close();
     }
 
     @Test
-    public void testSeekConsumerWithAnExistingToken() {
-        String topic = "testSeekConsumerWithAnExistingToken";
-        Consumer<?, ?> consumer = consumer(topic);
-        KafkaTrackingToken token = tokensPerTopic();
-        ConsumerUtil.seek(topic, consumer, token);
+    public void testSeekUsing_EmptyToken_ConsumerStartsAtPositionZero() {
+        String topic = "testSeekUsing_EmptyToken_ConsumerStartsAtPositionZero";
+        int noOfPartitions = kafka.getPartitionsPerTopic();
+        int recordsPerPartitions = 1;
+        AtomicInteger count = new AtomicInteger();
+        publishRecordsOnMultiplePartitions(topic, recordsPerPartitions);
+        Consumer<?, ?> testSubject = consumerFactory(kafka, topic).createConsumer();
 
-        consumer.partitionsFor(topic)
-                .forEach(x -> assertThat(consumer.position(partition(topic, x.partition())),
-                                         is(token.getPartitionPositions().get(x.partition()) + 1)));
-        consumer.close();
+        seek(topic, testSubject, KafkaTrackingToken.newInstance(emptyMap()));
+
+        getRecords(testSubject).forEach(r -> {
+            assertThat(r.offset()).isZero();
+            count.getAndIncrement();
+        });
+        assertThat(count.get()).isEqualTo(noOfPartitions * recordsPerPartitions);
+
+        testSubject.close();
     }
 
-    private KafkaTrackingToken tokensPerTopic() {
-        int partitionsPerTopic = kafka.getPartitionsPerTopic();
-        KafkaTrackingToken token = KafkaTrackingToken.newInstance(new HashMap<>());
-        for (int i = 0; i < partitionsPerTopic; i++) {
-            token = token.advancedTo(i, i);
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSeekUsing_ExistingToken_ConsumerStartsAtSpecificPosition() {
+        String topic = "testSeekUsing_ExistingToken_ConsumerStartsAtSpecificPosition";
+        int recordsPerPartitions = 10;
+        publishRecordsOnMultiplePartitions(topic, recordsPerPartitions);
+        Map<Integer, Long> positions = new HashMap<>();
+        positions.put(0, 5L);
+        positions.put(1, 1L);
+        positions.put(2, 9L);
+        positions.put(3, 4L);
+        positions.put(4, 0L);
+        Consumer<?, ?> testSubject = consumerFactory(kafka, topic).createConsumer();
+
+        seek(topic, testSubject, KafkaTrackingToken.newInstance(positions));
+        Seq<ConsumerRecord<byte[], byte[]>> records = pollUntilAtLeastNumRecords((KafkaConsumer<byte[], byte[]>) testSubject,
+                                                                                 26);
+        records.foreach(r -> assertThat(r.offset()).isGreaterThan(positions.get(r.partition())));
+        assertThat(records.count(x -> true)).isEqualTo(26);
+
+        testSubject.close();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSeekUsing_ExistingToken_ConsumerStartsAtSpecificPosition_AndCanContinueReadingNewRecords() {
+        String topic = "testSeekUsing_ExistingToken_ConsumerStartsAtSpecificPosition_AndCanContinueReadingNewRecords";
+        int recordsPerPartitions = 10;
+        publishRecordsOnMultiplePartitions(topic, recordsPerPartitions);
+        Map<Integer, Long> positions = new HashMap<>();
+        positions.put(0, 5L);
+        positions.put(1, 1L);
+        positions.put(2, 9L);
+        positions.put(3, 4L);
+        positions.put(4, 0L);
+        Consumer<?, ?> testSubject = consumerFactory(kafka, topic).createConsumer();
+        seek(topic, testSubject, KafkaTrackingToken.newInstance(positions));
+        pollUntilAtLeastNumRecords((KafkaConsumer<byte[], byte[]>) testSubject, 26);
+
+        publishNewRecords(topic, pf);
+        Seq<ConsumerRecord<byte[], byte[]>> records = pollUntilAtLeastNumRecords((KafkaConsumer<byte[], byte[]>) testSubject,
+                                                                                 4);
+
+        records.foreach(x -> assertThat(x.offset()).isEqualTo(10));
+        assertThat(records.count(x -> true)).isEqualTo(4);
+
+        testSubject.close();
+    }
+
+    @After
+    public void tearDown() {
+        pf.shutDown();
+    }
+
+    private ProducerFactory<String, String> publishRecordsOnMultiplePartitions(String topic, int recordsPerPartitions) {
+        Producer<String, String> producer = pf.createProducer();
+        for (int i = 0; i < recordsPerPartitions; i++) {
+            for (int p = 0; p < kafka.getPartitionsPerTopic(); p++) {
+                producer.send(new ProducerRecord<>(topic, p, null, null, "foo"));
+            }
         }
-        return token;
+        producer.flush();
+        return pf;
     }
 
-    private void assertOffsets(String topic, Consumer<?, ?> consumer, long expectedPosition) {
-        consumer.partitionsFor(topic)
-                .forEach(x -> {
-                    long currentPosition = consumer.position(partition(topic, x.partition()));
-                    assertThat(currentPosition, is(expectedPosition));
-                });
-    }
-
-    private Consumer<?, ?> consumer(String groupName) {
-        return consumerFactory(kafka, groupName).createConsumer();
+    private static void publishNewRecords(String topic, ProducerFactory<String, String> pf) {
+        Producer<String, String> producer = pf.createProducer();
+        producer.send(new ProducerRecord<>(topic, 0, null, null, "bar"));
+        producer.send(new ProducerRecord<>(topic, 1, null, null, "bar"));
+        producer.send(new ProducerRecord<>(topic, 2, null, null, "bar"));
+        producer.send(new ProducerRecord<>(topic, 3, null, null, "bar"));
+        producer.flush();
     }
 }

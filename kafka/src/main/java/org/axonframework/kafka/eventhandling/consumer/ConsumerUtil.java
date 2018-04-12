@@ -17,27 +17,34 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Util for {@link Consumer}.
+ * Utility for {@link Consumer}.
  *
  * @author Nakul Mishra
  */
 public class ConsumerUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerUtil.class);
 
     private ConsumerUtil() {
         //private ctor
     }
 
     /**
-     * Update {@link Consumer} position
-     * @param topic the topic.
+     * Subscribes the {@link Consumer} to a particular {@link org.apache.kafka.common.internals.Topic} and uses {@link
+     * KafkaTrackingToken} to update the partitions whenever a re-balance happens.
+     *
+     * @param topic    the topic.
      * @param consumer the consumer.
-     * @param token the token.
+     * @param token    the token.
      */
     public static void seek(String topic, Consumer consumer, KafkaTrackingToken token) {
         consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceListener() {
@@ -48,12 +55,11 @@ public class ConsumerUtil {
             @Override
             public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
                 if (KafkaTrackingToken.isNotEmpty(token)) {
-                    token.getPartitionPositions().forEach((partition, offset) -> consumer
+                    logger.debug("Seeking consumer to {}", token);
+                    token.partitionPositions().forEach((partition, offset) -> consumer
                             .seek(KafkaTrackingToken.partition(topic, partition), offset + 1));
                 }
             }
         });
-        //necessary to populate consumer info
-        consumer.poll(0);
     }
 }
