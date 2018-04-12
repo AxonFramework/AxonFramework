@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serialization.SerializedObject;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.generateMetadataKey;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsLong;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
@@ -31,9 +32,6 @@ import static org.axonframework.messaging.Headers.MESSAGE_ID;
 import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
 import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
 import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.*;
 
 /**
  * Util for asserting Kafka headers sent via Axon.
@@ -48,18 +46,18 @@ class HeaderAssertUtils {
 
     static void assertEventHeaders(String metaKey, EventMessage<?> evt, SerializedObject<byte[]> so,
                                    Headers headers) {
-        assertThat(headers.toArray().length, greaterThanOrEqualTo(5));
-        assertThat(valueAsString(headers, MESSAGE_ID), is(evt.getIdentifier()));
-        assertThat(valueAsLong(headers, MESSAGE_TIMESTAMP), is(evt.getTimestamp().toEpochMilli()));
-        assertThat(valueAsString(headers, MESSAGE_TYPE), is(so.getType().getName()));
-        assertThat(valueAsString(headers, MESSAGE_REVISION), is(so.getType().getRevision()));
-        assertThat(valueAsString(headers, generateMetadataKey(metaKey)), is(evt.getMetaData().get(metaKey)));
+        assertThat(headers.toArray().length).isGreaterThanOrEqualTo(5);
+        assertThat(valueAsString(headers, MESSAGE_ID)).isEqualTo(evt.getIdentifier());
+        assertThat(valueAsLong(headers, MESSAGE_TIMESTAMP)).isEqualTo(evt.getTimestamp().toEpochMilli());
+        assertThat(valueAsString(headers, MESSAGE_TYPE)).isEqualTo(so.getType().getName());
+        assertThat(valueAsString(headers, MESSAGE_REVISION)).isEqualTo(so.getType().getRevision());
+        assertThat(valueAsString(headers, generateMetadataKey(metaKey))).isEqualTo(evt.getMetaData().get(metaKey));
     }
 
     static void assertDomainHeaders(DomainEventMessage<?> evt, Headers headers) {
-        assertThat(headers.toArray().length, greaterThanOrEqualTo(8));
-        assertThat(valueAsLong(headers, AGGREGATE_SEQ), is(evt.getSequenceNumber()));
-        assertThat(valueAsString(headers, AGGREGATE_ID), is(evt.getAggregateIdentifier()));
-        assertThat(valueAsString(headers, AGGREGATE_TYPE), is(evt.getType()));
+        assertThat(headers.toArray().length).isGreaterThanOrEqualTo(8);
+        assertThat(valueAsLong(headers, AGGREGATE_SEQ)).isEqualTo(evt.getSequenceNumber());
+        assertThat(valueAsString(headers, AGGREGATE_ID)).isEqualTo(evt.getAggregateIdentifier());
+        assertThat(valueAsString(headers, AGGREGATE_TYPE)).isEqualTo(evt.getType());
     }
 }

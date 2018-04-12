@@ -21,7 +21,6 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serialization.SerializedObject;
 
@@ -198,7 +197,7 @@ public class HeaderUtils {
     }
 
     /**
-     * Extracts real key name used to send Axon metadata.
+     * Extracts actual key name used to send Axon metadata.
      * E.g.<code>"axon-metadata-foo"</code> will extract <code>foo</code>
      *
      * @param metadataKey the generated metadata key.
