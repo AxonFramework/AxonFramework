@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,9 +91,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                  snapshotTriggerDefinition.get());
         });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
-                                         c -> new AggregateAnnotationCommandHandler<>(aggregate, repository.get(),
+                                         c -> new AggregateAnnotationCommandHandler<>(repository.get(),
                                                                                       commandTargetResolver.get(),
-                                                                                      c.parameterResolverFactory()));
+                                                                                      metaModel.get()));
     }
 
     /**

@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * @param <T> The type of payload contained in this Message
  */
 public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessage<T> implements
-        TrackedEventMessage<T> {
+                                                                                      TrackedEventMessage<T> {
     private final TrackingToken trackingToken;
 
     /**
@@ -91,5 +91,18 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
         return new GenericTrackedDomainEventMessage<>(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), getDelegate().andMetaData(metaData),
                                                       getTimestamp());
+    }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", trackingToken={")
+                     .append(trackingToken())
+                     .append('}');
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericTrackedDomainEventMessage";
     }
 }

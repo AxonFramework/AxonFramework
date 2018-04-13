@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -104,9 +105,17 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @param eventMessage The message for which to identify if the processor can handle it
      * @param segment      The segment for which the event should be processed
      * @return {@code true} if the event message should be handled, otherwise {@code false}
+     *
+     * @throws Exception if the {@code errorHandler} throws an Exception back on the
+     *                   {@link ErrorHandler#handleError(ErrorContext)} call
      */
-    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
-        return eventHandlerInvoker.canHandle(eventMessage, segment);
+    protected boolean canHandle(EventMessage<?> eventMessage, Segment segment) throws Exception {
+        try {
+            return eventHandlerInvoker.canHandle(eventMessage, segment);
+        } catch (Exception e) {
+            errorHandler.handleError(new ErrorContext(getName(), e, Collections.singletonList(eventMessage)));
+            return false;
+        }
     }
 
     /**
@@ -143,6 +152,16 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                 logger.info("Exception occurred while processing a message, but unit of work was committed. {}", e.getClass().getName());
             }
         }
+    }
+
+    /**
+     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * methods for any given message.
+     *
+     * @return the invoker assigned to this processor
+     */
+    protected EventHandlerInvoker eventHandlerInvoker() {
+        return eventHandlerInvoker;
     }
 
     /**

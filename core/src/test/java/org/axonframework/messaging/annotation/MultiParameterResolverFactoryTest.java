@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class MultiParameterResolverFactoryTest {
 
@@ -74,7 +75,7 @@ public class MultiParameterResolverFactoryTest {
         inOrder.verify(mockFactory1).createInstance(Matchers.any(Executable.class),
                                                     Matchers.<Parameter[]>any(),
                                                     Matchers.anyInt());
-        inOrder.verify(mockResolver1).matches(any(Message.class));
+        inOrder.verify(mockResolver1).matches(any());
 
         verify(mockFactory2, never()).createInstance(Matchers.any(Executable.class),
                                                      Matchers.<Parameter[]>any(),

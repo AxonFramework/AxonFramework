@@ -77,14 +77,17 @@ public class Segment implements Comparable<Segment> {
      * @return a collection of {@link Segment}'s.
      */
     public static List<Segment> splitBalanced(Segment segment, int numberOfTimes) {
-
-        final LinkedList<Segment> toBeSplit = new LinkedList<>();
+        final SortedSet<Segment> toBeSplit = new TreeSet<>(Comparator.comparing(Segment::getMask)
+                                                                     .thenComparing(Segment::getSegmentId));
         toBeSplit.add(segment);
         for (int i = 0; i < numberOfTimes; i++) {
-            final Segment workingSegment = toBeSplit.pollFirst();
+            final Segment workingSegment = toBeSplit.first();
+            toBeSplit.remove(workingSegment);
             toBeSplit.addAll(Arrays.asList(workingSegment.split()));
         }
-        return toBeSplit;
+        ArrayList<Segment> result = new ArrayList<>(toBeSplit);
+        result.sort(Comparator.comparing(Segment::getSegmentId));
+        return result;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,16 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
@@ -38,15 +36,15 @@ import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
 
-    private MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor;
     private QueryBus mockBus;
     private DefaultQueryGateway testSubject;
     private QueryResponseMessage<String> answer;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        answer = new GenericQueryResponseMessage<>(Collections.singleton("answer"));
-        mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
+        answer = new GenericQueryResponseMessage<>("answer");
+        MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
         testSubject = new DefaultQueryGateway(mockBus, mockDispatchInterceptor);
         when(mockDispatchInterceptor.handle(isA(QueryMessage.class))).thenAnswer(i -> i.getArguments()[0]);
@@ -54,45 +52,30 @@ public class DefaultQueryGatewayTest {
 
     @Test
     public void testDispatchSingleResultQuery() throws Exception {
-        when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(CompletableFuture.completedFuture(answer));
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(CompletableFuture.completedFuture(answer));
 
-        CompletableFuture<String> actual = testSubject.querySingle("query", String.class);
+        CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertEquals("answer", actual.get());
 
-        verify(mockBus).query(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
-            @Override
-            protected boolean matchesSafely(QueryMessage<String, String> item) {
-                return "query".equals(item.getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a QueryMessage containing the 'query' payload");
-            }
-        }));
+        verify(mockBus).query(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())));
     }
 
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testDispatchMultiResultQuery() {
-        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any())).thenReturn(Stream.of(answer));
+        when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
+                .thenReturn(Stream.of(answer));
 
-        Stream<Collection<String>> actual = testSubject.scatterGather("query", String.class, 1, TimeUnit.SECONDS);
-        assertEquals("answer", actual.findFirst().get().iterator().next());
-
-        verify(mockBus).scatterGather(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
-            @Override
-            protected boolean matchesSafely(QueryMessage<String, String> item) {
-                return "query".equals(item.getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a QueryMessage containing the 'query' payload");
-            }
-        }), eq(1L), eq(TimeUnit.SECONDS));
+        Stream<String> actual = testSubject.scatterGather(
+                "query", ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS
+        );
+        assertEquals("answer", actual.findFirst().get());
+        verify(mockBus).scatterGather(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
+                                      eq(1L), eq(TimeUnit.SECONDS));
     }
 
+    @SuppressWarnings("unused")
     private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
     }

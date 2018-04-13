@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,10 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+import org.mockito.ArgumentMatcher;
 
 import java.util.UUID;
 
@@ -40,6 +39,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class EventPublicationOrderTest {
 
@@ -77,16 +77,11 @@ public class EventPublicationOrderTest {
         inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
     }
 
-    private static class NotADomainEventMatcher extends BaseMatcher<EventMessage> {
+    private static class NotADomainEventMatcher implements ArgumentMatcher<EventMessage> {
 
         @Override
-        public boolean matches(Object o) {
+        public boolean matches(EventMessage o) {
             return !(o instanceof DomainEventMessage);
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("Not a DomainEventMessage");
         }
     }
 }

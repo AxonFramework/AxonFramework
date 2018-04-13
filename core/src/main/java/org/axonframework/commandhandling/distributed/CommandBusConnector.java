@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -27,7 +28,7 @@ import org.axonframework.messaging.MessageHandler;
  * @author Allard Buijze
  * @since 2.0
  */
-public interface CommandBusConnector {
+public interface CommandBusConnector extends MessageHandlerInterceptorSupport<CommandMessage<?>> {
 
     /**
      * Sends the given {@code command} to the node assigned to handle messages with the given

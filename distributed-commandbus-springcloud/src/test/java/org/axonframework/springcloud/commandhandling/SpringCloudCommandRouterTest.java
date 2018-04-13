@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,16 +21,15 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.serviceregistry.Registration;
 
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -60,11 +58,15 @@ public class SpringCloudCommandRouterTest {
     private static final String SERVICE_INSTANCE_ID = "SERVICEID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
     private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
+    private static final boolean LOCAL_MEMBER = true;
+    private static final boolean REMOTE_MEMBER = false;
 
     private SpringCloudCommandRouter testSubject;
 
     @Mock
     private DiscoveryClient discoveryClient;
+    @Mock
+    private Registration localServiceInstance;
     @Mock
     private RoutingStrategy routingStrategy;
     private Field atomicConsistentHashField;
@@ -72,8 +74,6 @@ public class SpringCloudCommandRouterTest {
     private String serializedCommandFilterData;
     private String serializedCommandFilterClassName;
     private HashMap<String, String> serviceInstanceMetadata;
-    @Mock
-    private ServiceInstance serviceInstance;
     @Mock
     private ConsistentHashChangeListener consistentHashChangeListener;
 
@@ -86,18 +86,21 @@ public class SpringCloudCommandRouterTest {
         atomicConsistentHashField = SpringCloudCommandRouter.class.getDeclaredField(atomicConsistentHashFieldName);
 
         serviceInstanceMetadata = new HashMap<>();
-        when(serviceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
-        when(serviceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
-        when(serviceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
+        when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+        when(localServiceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
+        when(localServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
 
-        when(discoveryClient.getLocalServiceInstance()).thenReturn(serviceInstance);
         when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
-        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(Collections.singletonList(serviceInstance));
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
+                .thenReturn(Collections.singletonList(localServiceInstance));
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
 
-        testSubject = new SpringCloudCommandRouter(discoveryClient, routingStrategy,
-                                                   s -> true, consistentHashChangeListener);
+        testSubject = new SpringCloudCommandRouter(discoveryClient,
+                                                   localServiceInstance,
+                                                   routingStrategy,
+                                                   s -> true,
+                                                   consistentHashChangeListener);
     }
 
     @Test
@@ -122,7 +125,7 @@ public class SpringCloudCommandRouterTest {
         assertTrue(resultOptional.isPresent());
         Member resultMember = resultOptional.orElseThrow(IllegalStateException::new);
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMember);
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, REMOTE_MEMBER, resultMember);
 
         verify(routingStrategy).getRoutingKey(TEST_COMMAND);
     }
@@ -138,18 +141,10 @@ public class SpringCloudCommandRouterTest {
         assertEquals(CommandNameFilter.class.getName(),
                      serviceInstanceMetadata.get(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY));
 
-        verify(discoveryClient, times(2)).getLocalServiceInstance();
-        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(new TypeSafeMatcher<ConsistentHash>() {
-            @Override
-            protected boolean matchesSafely(ConsistentHash item) {
-                return item.getMembers().stream().map(Member::name).anyMatch(i -> i.equals(SERVICE_INSTANCE_ID + "[" + SERVICE_INSTANCE_URI + "]"));
-            }
-
-            @Override
-            public void describeTo(Description description) {
-
-            }
-        }));
+        verify(consistentHashChangeListener).onConsistentHashChanged(argThat(item -> item.getMembers()
+                                                                                         .stream()
+                                                                                         .map(Member::name)
+                                                                                         .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID))));
     }
 
     @Test
@@ -162,9 +157,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
-
-        verify(discoveryClient, times(2)).getLocalServiceInstance();
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, LOCAL_MEMBER, resultMemberSet.iterator().next());
     }
 
     @Test
@@ -181,7 +174,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSet.iterator().next());
+        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, LOCAL_MEMBER, resultMemberSet.iterator().next());
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
@@ -242,7 +235,6 @@ public class SpringCloudCommandRouterTest {
         assertEquals(2, resultMemberSet.size());
 
         // Evict remote service instance from discovery client and update router memberships
-        when(discoveryClient.getInstances(remoteServiceId)).thenReturn(ImmutableList.of());
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -251,7 +243,10 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
         assertEquals(1, resultMemberSetAfterVanish.size());
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, resultMemberSetAfterVanish.iterator().next());
+        assertMember(SERVICE_INSTANCE_ID,
+                     SERVICE_INSTANCE_URI,
+                     LOCAL_MEMBER,
+                     resultMemberSetAfterVanish.iterator().next());
     }
 
     @Test
@@ -269,7 +264,7 @@ public class SpringCloudCommandRouterTest {
         when(discoveryClient.getServices())
                 .thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID, expectedServiceInstanceId));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(ImmutableList.of(serviceInstance, nonCommandRouterServiceInstance));
+                .thenReturn(ImmutableList.of(localServiceInstance, nonCommandRouterServiceInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -285,10 +280,10 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsOnHeartbeatEventBlackListsNonAxonInstances()
-            throws Exception {
-        SpringCloudCommandRouter testSubject =
-                new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstance -> true);
+    public void testUpdateMembershipsOnHeartbeatEventBlackListsNonAxonInstances() throws Exception {
+        SpringCloudCommandRouter testSubject = new SpringCloudCommandRouter(
+                discoveryClient, localServiceInstance, routingStrategy, serviceInstance -> true
+        );
 
         String blackListedInstancesFieldName = "blackListedServiceInstances";
         Field blackListedInstancesField =
@@ -324,8 +319,9 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance() {
-        SpringCloudCommandRouter testSubject =
-                new SpringCloudCommandRouter(discoveryClient, routingStrategy, serviceInstance -> true);
+        SpringCloudCommandRouter testSubject = new SpringCloudCommandRouter(
+                discoveryClient, localServiceInstance, routingStrategy, serviceInstance -> true
+        );
 
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
@@ -349,8 +345,6 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient, times(2)).getServices();
         verify(discoveryClient, times(2)).getInstances(nonAxonServiceInstanceId);
         verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
-        // Twice for the default serviceInstanceId, once for the nonAxonServiceInstanceId, as it's black listed.
-        verify(discoveryClient, times(3)).getLocalServiceInstance();
     }
 
     @Test
@@ -368,7 +362,7 @@ public class SpringCloudCommandRouterTest {
 
         when(discoveryClient.getServices()).thenReturn(ImmutableList.of(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(ImmutableList.of(serviceInstance, remoteInstance));
+                .thenReturn(ImmutableList.of(localServiceInstance, remoteInstance));
 
         testSubject.updateMemberships(mock(HeartbeatEvent.class));
 
@@ -379,15 +373,24 @@ public class SpringCloudCommandRouterTest {
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
     }
 
-    private void assertMember(String expectedMemberName, URI expectedEndpoint, Member resultMember) {
+    private void assertMember(String expectedMemberName, URI expectedEndpoint, boolean localMember,
+                              Member resultMember) {
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
+        if (localMember) {
+            assertTrue(result.name().contains(expectedMemberName));
+        } else {
+            assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
+        }
         assertEquals(LOAD_FACTOR, result.segmentCount());
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
-        assertTrue(connectionEndpointOptional.isPresent());
-        URI resultEndpoint = connectionEndpointOptional.orElseThrow(IllegalStateException::new);
-        assertEquals(resultEndpoint, expectedEndpoint);
+        if (localMember) {
+            assertFalse(connectionEndpointOptional.isPresent());
+        } else {
+            assertTrue(connectionEndpointOptional.isPresent());
+            URI resultEndpoint = connectionEndpointOptional.orElseThrow(IllegalStateException::new);
+            assertEquals(resultEndpoint, expectedEndpoint);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -33,9 +36,9 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,6 +46,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
@@ -66,6 +70,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
+    public static final int DEFAULT_BACKOFF_TIME_MILLIS = 5000;
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
@@ -75,7 +80,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private final ActivityCountingThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
-    private final CopyOnWriteArraySet<Integer> activeSegments = new CopyOnWriteArraySet<>();
+    private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
     private final int maxThreadCount;
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
@@ -207,8 +212,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (errorWaitTime == 1) {
                         logger.info("Token is owned by another node. Waiting for it to become available...");
                     }
-                    errorWaitTime = 5;
-                    waitFor(errorWaitTime);
+                    doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
@@ -218,23 +222,13 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     releaseToken(segment);
                     closeQuietly(eventStream);
                     eventStream = null;
-                    waitFor(errorWaitTime);
+                    doSleepFor(SECONDS.toMillis(errorWaitTime));
                     errorWaitTime = Math.min(errorWaitTime * 2, 60);
                 }
             }
         } finally {
             closeQuietly(eventStream);
             releaseToken(segment);
-        }
-    }
-
-    private void waitFor(long errorWaitTime) {
-        try {
-            Thread.sleep(errorWaitTime * 1000);
-        } catch (InterruptedException e1) {
-            shutDown();
-            Thread.currentThread().interrupt();
-            logger.warn("Thread interrupted. Preparing to shut down event processor");
         }
     }
 
@@ -249,8 +243,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private void processBatch(Segment segment, MessageStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
+            checkSegmentCaughtUp(segment, eventStream);
             TrackingToken lastToken = null;
-            if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
+            if (eventStream.hasNextAvailable(1, SECONDS)) {
                 for (int i = 0; i < batchSize * 10 && batch.size() < batchSize && eventStream.hasNextAvailable(); i++) {
                     final TrackedEventMessage<?> trackedEventMessage = eventStream.nextAvailable();
                     lastToken = trackedEventMessage.trackingToken();
@@ -286,10 +281,18 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, segment);
 
+            activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
+
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void checkSegmentCaughtUp(Segment segment, MessageStream<TrackedEventMessage<?>> eventStream) {
+        if (!eventStream.hasNextAvailable()) {
+            activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.caughtUp());
         }
     }
 
@@ -300,17 +303,63 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             final TrackingToken trackingToken = transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(getName(), segment.getSegmentId()));
             logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
             eventStream = transactionManager.fetchInTransaction(
-                    () -> messageSource.openStream(trackingToken));
+                    () -> doOpenStream(trackingToken));
         }
         return eventStream;
     }
 
+    private MessageStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
+        if (trackingToken instanceof ReplayToken) {
+            return new ReplayingMessageStream((ReplayToken) trackingToken,
+                                              messageSource.openStream(((ReplayToken) trackingToken).unwrap()));
+        }
+        return messageSource.openStream(trackingToken);
+    }
+
     /**
-     * Stops processing if it currently running, but doesn't stop free up the processing thread. If the processor is
-     * not running, the state isn't changed.
+     * Sets the paused flag, causing processor threads to shut down.
+     *
+     * @deprecated in favor of {@link #shutDown()}.
      */
+    @Deprecated
     public void pause() {
         this.state.updateAndGet(s -> s.isRunning() ? State.PAUSED : s);
+    }
+
+    /**
+     * Resets tokens to the initial state. This effectively causes a replay.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
+     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
+     * as a processor can only reset the tokens if it is able to claim them all.
+     */
+    public void resetTokens() {
+        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
+        Assert.state(!isRunning() && activeProcessorThreads() == 0,
+                     () -> "TrackingProcessor must be shut down before triggering a reset");
+        transactionManager.executeInTransaction(() -> {
+            int[] segments = tokenStore.fetchSegments(getName());
+            TrackingToken[] tokens = new TrackingToken[segments.length];
+            for (int i = 0; i < segments.length; i++) {
+                tokens[i] = tokenStore.fetchToken(getName(), segments[i]);
+            }
+            // we now have all tokens, hurray
+            eventHandlerInvoker().performReset();
+
+            for (int i = 0; i < tokens.length; i++) {
+                tokenStore.storeToken(new ReplayToken(tokens[i]), getName(), segments[i]);
+            }
+        });
+    }
+
+    /**
+     * Indicates whether this tracking processor supports a "reset". Generally, a reset is supported if at least one
+     * of the event handlers assigned to this processor supports it, and no handlers explicitly prevent the resets.
+     *
+     * @return {@code true} if resets are supported, {@code false} otherwise
+     */
+    public boolean supportsReset() {
+        return eventHandlerInvoker().supportsReset();
     }
 
     /**
@@ -326,7 +375,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Indicates whether the processor has been paused due to an error. In such case, the processor has forcefully
      * paused, as it wasn't able to automatically recover.
      * <p>
-     * Note that this method also returns {@code false} when the processor was paused using {@link #pause()}.
+     * Note that this method also returns {@code false} when the processor was stooped using {@link #shutDown()}.
      *
      * @return {@code true} when paused due to an error, otherwise {@code false}
      */
@@ -359,6 +408,20 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     public int activeProcessorThreads() {
         return this.activeSegments.size();
+    }
+
+    /**
+     * Returns the status for each of the Segments processed by the current processor. The key of the map represents
+     * the SegmentID processed by this instance. The values of the returned Map represent the last known status of that
+     * Segment.
+     * <p>
+     * Note that the returned Map in unmodifiable, but does reflect any changes made to the status as the processor
+     * is processing Events.
+     *
+     * @return the status for each of the Segments processed by the current processor
+     */
+    public Map<Integer, EventTrackerStatus> processingStatus() {
+        return Collections.unmodifiableMap(activeSegments);
     }
 
     /**
@@ -395,18 +458,47 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * the processor stops running, this method will return immediately (after detecting the state change).
      *
      * @param millisToSleep The number of milliseconds to sleep
-     * @throws InterruptedException whn the Thread is interrupted
      */
-    protected void doSleepFor(long millisToSleep) throws InterruptedException {
+    protected void doSleepFor(long millisToSleep) {
         long deadline = System.currentTimeMillis() + millisToSleep;
-        while (getState().isRunning() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(100);
+        try {
+            long timeLeft;
+            while (getState().isRunning() && (timeLeft = deadline - System.currentTimeMillis()) > 0) {
+                Thread.sleep(Math.min(timeLeft, 100));
+            }
+        } catch (InterruptedException e) {
+            logger.warn("Thread interrupted. Preparing to shut down event processor");
+            shutDown();
+            Thread.currentThread().interrupt();
         }
     }
 
+    /**
+     * Enum representing the possible states of the Processor
+     */
     protected enum State {
 
-        NOT_STARTED(false), STARTED(true), PAUSED(false), SHUT_DOWN(false), PAUSED_ERROR(false);
+        /**
+         * Indicates the processor has not been started yet.
+         */
+        NOT_STARTED(false),
+        /**
+         * Indicates that the processor has started and is (getting ready to) processing events
+         */
+        STARTED(true),
+        /**
+         * Indicates that the processor has been paused. It can be restarted to continue processing.
+         */
+        PAUSED(false),
+        /**
+         * Indicates that the processor has been shut down. It can be restarted to continue processing.
+         */
+        SHUT_DOWN(false),
+        /**
+         * Indicates that the processor has been paused due to an error that it was unable to recover from. Restarting
+         * is possible once the error has been resolved.
+         */
+        PAUSED_ERROR(false);
 
         private final boolean allowProcessing;
 
@@ -459,6 +551,61 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
+    private static final class TrackerStatus implements EventTrackerStatus {
+
+        private final Segment segment;
+        private final boolean caughtUp;
+        private final TrackingToken trackingToken;
+
+        private TrackerStatus(Segment segment, TrackingToken trackingToken) {
+            this(segment, false, trackingToken);
+        }
+
+        private TrackerStatus(Segment segment, boolean caughtUp, TrackingToken trackingToken) {
+            this.segment = segment;
+            this.caughtUp = caughtUp;
+            this.trackingToken = trackingToken;
+        }
+
+        private TrackerStatus caughtUp() {
+            if (caughtUp) {
+                return this;
+            }
+            return new TrackerStatus(segment, true, trackingToken);
+        }
+
+        private TrackerStatus advancedTo(TrackingToken trackingToken) {
+            if (Objects.equals(this.trackingToken, trackingToken)) {
+                return this;
+            }
+            return new TrackerStatus(segment, caughtUp, trackingToken);
+        }
+
+
+        @Override
+        public Segment getSegment() {
+            return segment;
+        }
+
+        @Override
+        public boolean isCaughtUp() {
+            return caughtUp;
+        }
+
+        @Override
+        public boolean isReplaying() {
+            return trackingToken instanceof ReplayToken;
+        }
+
+        @Override
+        public TrackingToken getTrackingToken() {
+            if (trackingToken instanceof ReplayToken) {
+                return ((ReplayToken) trackingToken).unwrap();
+            }
+            return trackingToken;
+        }
+    }
+
     private class TrackingSegmentWorker implements Runnable {
 
         private final Segment segment;
@@ -491,35 +638,52 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private class WorkerLauncher implements Runnable {
         @Override
         public void run() {
+            int waitTime = 1;
+            String processorName = TrackingEventProcessor.this.getName();
             while (getState().isRunning()) {
-                String processorName = TrackingEventProcessor.this.getName();
-                final int[] tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
-                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
+                int[] tokenStoreCurrentSegments;
 
-                // When in an initial stage, split segments to the requested number.
-                if (tokenStoreCurrentSegments.length == 0 && segments.length == 1 && segments.length < segmentsSize) {
-                    segments = Segment.splitBalanced(segments[0], segmentsSize - 1).toArray(new Segment[segmentsSize]);
-                    transactionManager.executeInTransaction(() -> {
-                        tokenStore.initializeTokenSegments(processorName, segmentsSize);
-                    });
+                try {
+                    tokenStoreCurrentSegments = tokenStore.fetchSegments(processorName);
+                    waitTime = 1;
+
+                    // When in an initial stage, split segments to the requested number.
+                    if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
+                        tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
+                                () -> {
+                                    tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                                    return tokenStore.fetchSegments(processorName);
+                                });
+                    }
+
+                } catch (Exception e) {
+                    logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
+                                processorName, e.getMessage(), waitTime);
+                    doSleepFor(SECONDS.toMillis(Math.min(waitTime, 60)));
+                    waitTime = waitTime * 2;
+
+                    continue;
                 }
+
+                Segment[] segments = Segment.computeSegments(tokenStoreCurrentSegments);
 
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                boolean attemptImmediateRetry = false;
                 for (int i = 0; i < segments.length
                         && activeSegments.size() < maxThreadCount; i++) {
                     Segment segment = segments[i];
 
-                    if (activeSegments.add(segment.getSegmentId())) {
+                    if (!activeSegments.containsKey(segment.getSegmentId())) {
                         try {
-                            transactionManager.executeInTransaction(() -> tokenStore.fetchToken(processorName, segment.getSegmentId()));
+                            transactionManager.executeInTransaction(() -> {
+                                TrackingToken token = tokenStore.fetchToken(processorName, segment.getSegmentId());
+                                activeSegments.putIfAbsent(segment.getSegmentId(), new TrackerStatus(segment, token));
+                            });
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
-                            attemptImmediateRetry = true;
                             continue;
                         } catch (Exception e) {
                             activeSegments.remove(segment.getSegmentId());
@@ -549,15 +713,59 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     workingInCurrentThread.run();
                     break;
                 }
+                doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
+            }
+        }
+    }
 
-                try {
-                    if (!attemptImmediateRetry) {
-                        doSleepFor(5000);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+    private class ReplayingMessageStream implements MessageStream<TrackedEventMessage<?>> {
+
+        private final MessageStream<TrackedEventMessage<?>> delegate;
+        private ReplayToken lastToken;
+
+        public ReplayingMessageStream(ReplayToken token, MessageStream<TrackedEventMessage<?>> delegate) {
+            this.delegate = delegate;
+            this.lastToken = token;
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return delegate.peek();
+        }
+
+        @Override
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            return delegate.hasNextAvailable(timeout, unit);
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            TrackedEventMessage<?> trackedEventMessage = alterToken(delegate.nextAvailable());
+            this.lastToken = trackedEventMessage.trackingToken() instanceof ReplayToken
+                    ? (ReplayToken) trackedEventMessage.trackingToken()
+                    : null;
+            return trackedEventMessage;
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public boolean hasNextAvailable() {
+            return delegate.hasNextAvailable();
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> TrackedEventMessage<T> alterToken(TrackedEventMessage<T> message) {
+            if (lastToken == null) {
+                return message;
+            }
+            if (message instanceof DomainEventMessage) {
+                return new GenericTrackedDomainEventMessage<>(lastToken.advancedTo(message.trackingToken()), (DomainEventMessage<T>) message);
+            } else {
+                return new GenericTrackedEventMessage<>(lastToken.advancedTo(message.trackingToken()), message);
             }
         }
     }

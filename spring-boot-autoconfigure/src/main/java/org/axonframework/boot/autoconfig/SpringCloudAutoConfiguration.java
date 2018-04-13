@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
- *
+ * Copyright (c) 2010-2018. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +33,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -57,13 +57,15 @@ public class SpringCloudAutoConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(CommandRouter.class)
     @ConditionalOnBean(DiscoveryClient.class)
     @ConditionalOnProperty(value = "axon.distributed.spring-cloud.fallback-to-http-get", matchIfMissing = true)
-    public CommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
-                                                            RestTemplate restTemplate,
-                                                            RoutingStrategy routingStrategy) {
+    public SpringCloudHttpBackupCommandRouter springCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
+                                                                                 Registration localServiceInstance,
+                                                                                 RestTemplate restTemplate,
+                                                                                 RoutingStrategy routingStrategy) {
         return new SpringCloudHttpBackupCommandRouter(discoveryClient,
+                                                      localServiceInstance,
                                                       routingStrategy,
                                                       restTemplate,
                                                       properties.getSpringCloud().getFallbackUrl());
@@ -72,15 +74,18 @@ public class SpringCloudAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(DiscoveryClient.class)
-    public CommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient, RoutingStrategy routingStrategy) {
-        return new SpringCloudCommandRouter(discoveryClient, routingStrategy);
+    public CommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient,
+                                                  Registration localServiceInstance,
+                                                  RoutingStrategy routingStrategy) {
+        return new SpringCloudCommandRouter(discoveryClient, localServiceInstance, routingStrategy);
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public CommandBusConnector springHttpCommandBusConnector(@Qualifier("localSegment") CommandBus localSegment,
-                                                             RestTemplate restTemplate,
-                                                             @Qualifier("messageSerializer") Serializer serializer) {
+    @ConditionalOnMissingBean(CommandBusConnector.class)
+    public SpringHttpCommandBusConnector springHttpCommandBusConnector(
+            @Qualifier("localSegment") CommandBus localSegment,
+            RestTemplate restTemplate,
+            @Qualifier("messageSerializer") Serializer serializer) {
         return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
     }
 

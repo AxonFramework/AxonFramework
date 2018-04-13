@@ -8,11 +8,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+import org.mockito.ArgumentMatcher;
 
 import java.util.concurrent.Callable;
 
@@ -43,8 +42,8 @@ public class AnnotatedAggregateTest {
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
-        inOrder.verify(eventBus).publish(argThat(new EventWithPayload(Event_1.class)));
-        inOrder.verify(eventBus).publish(argThat(new EventWithPayload(Event_2.class)));
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class.equals(x.getPayloadType())));
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class.equals(x.getPayloadType())));
     }
 
     private static class Command {
@@ -104,25 +103,6 @@ public class AnnotatedAggregateTest {
 
         @EventSourcingHandler
         public void on(Event_2 event) {
-        }
-    }
-
-    private static class EventWithPayload extends TypeSafeMatcher<EventMessage<?>> {
-
-        private final Class<?> payload;
-
-        public EventWithPayload(Class<?> payload) {
-            this.payload = payload;
-        }
-
-        @Override
-        protected boolean matchesSafely(EventMessage<?> item) {
-            return payload.equals(item.getPayloadType());
-        }
-
-        @Override
-        public void describeTo(Description description) {
-
         }
     }
 

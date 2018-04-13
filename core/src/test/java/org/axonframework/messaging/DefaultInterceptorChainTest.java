@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class DefaultInterceptorChainTest {
 
@@ -61,16 +62,6 @@ public class DefaultInterceptorChainTest {
         String actual = (String) testSubject.proceed();
 
         assertSame("Result", actual);
-        verify(mockHandler).handle(argThat(new BaseMatcher<Message<?>>() {
-            @Override
-            public boolean matches(Object o) {
-                return (o instanceof Message<?>) && ((Message<?>) o).getPayload().equals("testing");
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Message with 'testing' payload");
-            }
-        }));
+        verify(mockHandler).handle(argThat(x -> (x != null) && x.getPayload().equals("testing")));
     }
 }

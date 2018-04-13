@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,13 +22,14 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Implementation of a {@link ConflictResolver} that does nothing.
+ * Implementation of a {@link ConflictResolver} that does nothing. This implementation can be used in cases where
+ * no actual conflict is present.
  *
  * @author Rene de Waele
  */
 public enum NoConflictResolver implements ConflictResolver {
 
-    /**
+    /**`
      * Singleton {@link NoConflictResolver} instance
      */
     INSTANCE;
@@ -35,7 +37,19 @@ public enum NoConflictResolver implements ConflictResolver {
 
     @Override
     public <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate,
-                                                      ConflictExceptionSupplier<T> exceptionSupplier) throws T {
-        //no op
+                                                      ConflictExceptionSupplier<T> exceptionSupplier) {
+        // no op
     }
+
+    @Override
+    public void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate) {
+        // no op
+    }
+
+    @Override
+    public <T extends Exception> void detectConflicts(Predicate<List<DomainEventMessage<?>>> predicate, ContextAwareConflictExceptionSupplier<T> exceptionSupplier) {
+        // no op
+    }
+
+
 }
