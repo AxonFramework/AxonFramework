@@ -17,24 +17,37 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.axonframework.common.Assert;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
+
+import java.util.Comparator;
+
+import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
  * @author Nakul Mishra.
  */
-class MessageAndMetadata implements Comparable<MessageAndMetadata>, KafkaMetadataProvider<TrackedEventMessage<?>> {
+public class MessageAndMetadata
+        implements KafkaMetadataProvider<TrackedEventMessage<?>>, Comparable<MessageAndMetadata> {
 
     private final TrackedEventMessage<?> eventMessage;
     private final int partition;
     private final long offset;
     private final long timestamp;
 
-    MessageAndMetadata(TrackedEventMessage<?> eventMessage, int partition, long offset, long timestamp) {
+    public MessageAndMetadata(TrackedEventMessage<?> eventMessage, int partition, long offset, long timestamp) {
         Assert.notNull(eventMessage, () -> "Event may not be null");
         this.partition = partition;
         this.offset = offset;
         this.timestamp = timestamp;
         this.eventMessage = eventMessage;
+    }
+
+    public static MessageAndMetadata from(EventMessage<?> eventMessage, ConsumerRecord<?, ?> record,
+                                          KafkaTrackingToken token) {
+        return new MessageAndMetadata(
+                asTrackedEventMessage(eventMessage, token), record.partition(), record.offset(), record.timestamp()
+        );
     }
 
     @Override
@@ -59,19 +72,23 @@ class MessageAndMetadata implements Comparable<MessageAndMetadata>, KafkaMetadat
 
     /**
      * Compares {@link ConsumerRecord} based on timestamp.
-     * If two records belong to the same partition than it discards timestamp and compares based on offsets.
+     * If two records are published at the same time and belongs to:
+     * <ul>
+     * <li>a). The same partition; than return the one with smaller offset.</li>
+     * <li>b). Different partitions; than return any.</li>
+     * </ul>
      */
     @Override
-    public int compareTo(MessageAndMetadata o) {
+    public int compareTo(MessageAndMetadata other) {
         // @formatter:off
-        if (Long.compare(this.timestamp(), o.timestamp()) == 0) { // records on different partitions were published at the same time.
-            if (Integer.compare(this.partition(), o.partition()) == 0) { // belong to same partition.
-                return Long.compare(this.offset(), o.offset());// return the one with smaller offset.
+        //TODO : Improve readability Compartor.compareLong
+        if (Long.compare(this.timestamp(), other.timestamp()) == 0) { // records on different partitions were published at the same time.
+            if (Integer.compare(this.partition(), other.partition()) == 0) { // belong to same partition.
+                return Long.compare(this.offset(), other.offset());// return the one with smaller offset.
             }
-            return Long.compare(this.partition(), o.partition()); // we don't know which one was published first; best effort not loose the event.
+            return Long.compare(this.partition(), other.partition()); // we don't know which one was published first; best effort not loose the event.
         }
-
-        return Long.compare(this.timestamp(), o.timestamp());
+        return Long.compare(this.timestamp(), other.timestamp()); // published on different partitions, return the one with smaller timestamp.
         // @formatter:on
     }
 

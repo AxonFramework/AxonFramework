@@ -41,7 +41,7 @@ public class KafkaMessageSource<K, V> implements StreamableMessageSource<Tracked
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
+    public MessageStream<TrackedEventMessage<?>>  openStream(TrackingToken trackingToken) {
         Assert.isTrue(trackingToken == null || trackingToken instanceof KafkaTrackingToken, () -> "Invalid token type");
         return fetcher.start((KafkaTrackingToken) trackingToken);
     }

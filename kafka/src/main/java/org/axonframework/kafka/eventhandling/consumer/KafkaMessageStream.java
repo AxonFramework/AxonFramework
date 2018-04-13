@@ -19,9 +19,10 @@ package org.axonframework.kafka.eventhandling.consumer;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,30 +41,48 @@ import java.util.concurrent.TimeUnit;
  */
 public class KafkaMessageStream implements TrackingEventStream {
 
-    private final BufferedEventStream eventStream;
-    private final Fetcher fetcher;
+    private static final Logger logger = LoggerFactory.getLogger(KafkaMessageStream.class);
 
-    public KafkaMessageStream(MessageBuffer<MessageAndMetadata> buffer,
+    private final SortableBuffer<MessageAndMetadata> buffer;
+    private final Fetcher fetcher;
+    private MessageAndMetadata peekEvent;
+
+    public KafkaMessageStream(SortableBuffer<MessageAndMetadata> buffer,
                               Fetcher fetcher) {
         Assert.notNull(buffer, () -> "Buffer may not be null");
         Assert.notNull(fetcher, () -> "Fetcher may not be null");
-        this.eventStream = new BufferedEventStream(buffer);
+        this.buffer = buffer;
         this.fetcher = fetcher;
     }
 
     @Override
     public Optional<TrackedEventMessage<?>> peek() {
-        return eventStream.peek();
+        return Optional.ofNullable(
+                peekEvent == null && !hasNextAvailable(0, TimeUnit.NANOSECONDS) ? null : peekEvent.value());
     }
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit unit) {
-        return eventStream.hasNextAvailable(timeout, unit);
+        try {
+            return peekEvent != null || (peekEvent = buffer.poll(timeout, unit)) != null;
+        } catch (InterruptedException e) {
+            logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     @Override
     public TrackedEventMessage<?> nextAvailable() {
-        return eventStream.nextAvailable();
+        try {
+            return peekEvent == null ? buffer.take().value() : peekEvent.value();
+        } catch (InterruptedException e) {
+            logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            peekEvent = null;
+        }
     }
 
     @Override

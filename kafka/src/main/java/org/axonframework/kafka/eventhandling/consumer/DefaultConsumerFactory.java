@@ -18,6 +18,7 @@ package org.axonframework.kafka.eventhandling.consumer;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.axonframework.common.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,7 @@ public class DefaultConsumerFactory<K, V> implements ConsumerFactory<K, V> {
     private final Map<String, Object> configs;
 
     public DefaultConsumerFactory(Map<String, Object> configs) {
+        Assert.isTrue(configs != null, () -> "Config may not be null.");
         this.configs = new HashMap<>(configs);
     }
 
@@ -43,4 +45,5 @@ public class DefaultConsumerFactory<K, V> implements ConsumerFactory<K, V> {
     public Consumer<K, V> createConsumer() {
         return new KafkaConsumer<>(this.configs);
     }
+
 }

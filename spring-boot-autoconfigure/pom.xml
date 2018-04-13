@@ -107,6 +107,12 @@
             <artifactId>kafka_2.12</artifactId>
             <version>${kafka.version}</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

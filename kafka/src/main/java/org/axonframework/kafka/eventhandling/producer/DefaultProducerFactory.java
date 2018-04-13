@@ -153,7 +153,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
      * @param configs Kafka properties for creating a producer(s).
      * @param <K>     key type.
      * @param <V>     value type.
-     * @return builder.
+     * @return the builder.
      */
     public static <K, V> Builder<K, V> builder(Map<String, Object> configs) {
         return new Builder<>(configs);
@@ -320,7 +320,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
             return this.withConfirmationMode(ConfirmationMode.TRANSACTIONAL);
         }
 
-        public DefaultProducerFactory<K, V> build() {
+        public ProducerFactory<K, V> build() {
             return new DefaultProducerFactory<>(this);
         }
     }

@@ -25,6 +25,7 @@ import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.empty;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.minimal;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.minimalTransactional;
@@ -43,20 +45,16 @@ import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.txnProduc
 import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.NONE;
 import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.TRANSACTIONAL;
 import static org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory.builder;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link DefaultProducerFactory}
+ * Tests for {@link DefaultProducerFactory}.
  *
  * @author Nakul Mishra
  */
 @RunWith(SpringRunner.class)
+@DirtiesContext
 @EmbeddedKafka(topics = {
         "testProducerCreation",
         "testSendingMessagesUsingMultipleProducers",
@@ -70,26 +68,26 @@ public class DefaultProducerFactoryTests {
 
     @Test
     public void testDefaultConfirmationMode() {
-        assertThat(builder(empty()).build().confirmationMode(), is(NONE));
+        assertThat(builder(empty()).build().confirmationMode()).isEqualTo(NONE);
     }
 
     @Test
-    public void testDefaultConfirmationModeForTransactionalProducer() {
-        assertThat(txnProducerFactory(kafka, "foo").confirmationMode(), is(TRANSACTIONAL));
+    public void testDefaultConfirmationMode_ForTransactionalProducer() {
+        assertThat(txnProducerFactory(kafka, "foo").confirmationMode()).isEqualTo(TRANSACTIONAL);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidCacheSize() {
+    public void testConfiguring_InvalidCacheSize() {
         builder(minimal(kafka)).withProducerCacheSize(-1).build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidTimeout() {
+    public void testConfiguring_InvalidTimeout() {
         builder(minimal(kafka)).withCloseTimeout(-1, TimeUnit.SECONDS).build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidTimeoutUnit() {
+    public void testConfiguring_InvalidTimeoutUnit() {
         builder(minimal(kafka)).withCloseTimeout(1, null).build();
     }
 
@@ -97,27 +95,27 @@ public class DefaultProducerFactoryTests {
     public void testProducerCreation() {
         ProducerFactory<String, String> pf = producerFactory(kafka);
         Producer<String, String> producer = pf.createProducer();
-        assertThat(producer.metrics(), is(not(empty())));
-        assertThat(producer.partitionsFor("testProducerCreation"), is(not(empty())));
+        assertThat(producer.metrics()).isNotEmpty();
+        assertThat(producer.partitionsFor("testProducerCreation")).isNotEmpty();
         cleanup(pf, producer);
     }
 
     @Test
-    public void testCachingProducerInstances() {
+    public void testCaching_ProducerInstances() {
         ProducerFactory<String, String> pf = producerFactory(kafka);
         List<Producer<String, String>> producers = new ArrayList<>();
         producers.add(pf.createProducer());
         Producer<String, String> original = producers.get(0);
         IntStream.range(0, 10).forEach(x -> {
             Producer<String, String> copy = pf.createProducer();
-            assertThat(copy, equalTo(original));
+            assertThat(copy).isEqualTo(original);
             producers.add(copy);
         });
         cleanup(pf, producers);
     }
 
     @Test
-    public void testSendingMessagesUsingMultipleProducers() throws ExecutionException, InterruptedException {
+    public void testSendingMessages_UsingMultipleProducers() throws ExecutionException, InterruptedException {
         ProducerFactory<String, String> pf = producerFactory(kafka);
         List<Producer<String, String>> producers = new ArrayList<>();
         List<Future<RecordMetadata>> results = new ArrayList<>();
@@ -137,25 +135,25 @@ public class DefaultProducerFactoryTests {
         Producer<String, String> producer = pf.createProducer();
         producer.beginTransaction();
         producer.commitTransaction();
-        assertThat(producer.metrics(), is(not(empty())));
+        assertThat(producer.metrics()).isNotEmpty();
         cleanup(pf, producer);
     }
 
     @Test
-    public void testCachingTransactionalProducerInstances() {
+    public void testCaching_TransactionalProducerInstances() {
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "bar");
         List<Producer<String, String>> producers = new ArrayList<>();
         producers.add(pf.createProducer());
         Producer<String, String> original = producers.get(0);
         IntStream.range(0, 10).forEach(x -> {
             Producer<String, String> copy = pf.createProducer();
-            assertThat(copy, not(equalTo(original)));
+            assertThat(copy).isNotEqualTo(original);
         });
         cleanup(pf, producers);
     }
 
     @Test
-    public void testSendingMessagesUsingMultipleTransactionalProducers()
+    public void testSendingMessages_UsingMultipleTransactionalProducers()
             throws ExecutionException, InterruptedException {
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "xyz");
         List<Producer<String, String>> producers = new ArrayList<>();
@@ -173,7 +171,7 @@ public class DefaultProducerFactoryTests {
     }
 
     @Test(expected = KafkaException.class)
-    public void testTransactionalProducerBehaviorOnCommittingAnAbortedTransaction() {
+    public void testTransactionalProducerBehavior_OnCommittingAnAbortedTransaction() {
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "xyz");
         Producer<String, String> producer = pf.createProducer();
         try {
@@ -187,7 +185,7 @@ public class DefaultProducerFactoryTests {
     }
 
     @Test(expected = KafkaException.class)
-    public void testTransactionalProducerBehaviorOnSendingOffsetsWhenTransactionIsClosed() {
+    public void testTransactionalProducerBehavior_OnSendingOffsetsWhenTransactionIsClosed() {
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "xyz");
         Producer<String, String> producer = pf.createProducer();
         producer.beginTransaction();
@@ -198,7 +196,7 @@ public class DefaultProducerFactoryTests {
 
 
     @Test
-    public void testClosingAProducerShouldReturnItToCache() {
+    public void testClosingProducer_ShouldReturnItToCache() {
         ProducerFactory<Object, Object> pf = builder(minimalTransactional(kafka))
                 .withTransactionalIdPrefix("cache")
                 .withProducerCacheSize(2)
@@ -207,42 +205,38 @@ public class DefaultProducerFactoryTests {
         first.close();
         Producer<Object, Object> second = pf.createProducer();
         second.close();
-        assertThat(second, equalTo(first));
+        assertThat(second).isEqualTo(first);
         pf.shutDown();
     }
 
     @Test
-    public void testUsingCallbackWhilePublishingMessages() throws ExecutionException, InterruptedException {
+    public void testUsingCallback_WhilePublishingMessages() throws ExecutionException, InterruptedException {
         Callback cb = mock(Callback.class);
         ProducerFactory<String, String> pf = producerFactory(kafka);
         Producer<String, String> producer = pf.createProducer();
-        producer.send(msg("testUsingCallbackWhilePublishingMessages", "callback"), cb).get();
+        producer.send(new ProducerRecord<>("testUsingCallbackWhilePublishingMessages", "callback"), cb).get();
         verify(cb, only()).onCompletion(any(RecordMetadata.class), any(Exception.class));
         cleanup(pf, producer);
     }
 
-    private Future<RecordMetadata> send(Producer<String, String> producer, String topic, String message) {
-        Future<RecordMetadata> result = producer.send(msg(topic, message));
+    private static Future<RecordMetadata> send(Producer<String, String> producer, String topic, String message) {
+        Future<RecordMetadata> result = producer.send(new ProducerRecord<>(topic, message));
         producer.flush();
         return result;
     }
 
-    private ProducerRecord<String, String> msg(String topic, String message) {
-        return new ProducerRecord<>(topic, message);
-    }
-
-    private void cleanup(ProducerFactory<String, String> pf, Producer<String, String> producer) {
+    private static void cleanup(ProducerFactory<String, String> pf, Producer<String, String> producer) {
         cleanup(pf, Collections.singletonList(producer));
     }
 
-    private void cleanup(ProducerFactory<String, String> pf, List<Producer<String, String>> producers) {
+    private static void cleanup(ProducerFactory<String, String> pf, List<Producer<String, String>> producers) {
         producers.forEach(Producer::close);
         pf.shutDown();
     }
 
-    private void assertOffsets(List<Future<RecordMetadata>> results) throws InterruptedException, ExecutionException {
+    private static void assertOffsets(List<Future<RecordMetadata>> results) throws InterruptedException, ExecutionException {
         for (Future<RecordMetadata> result : results) {
-            assertThat(result.get().offset(), greaterThanOrEqualTo(0L));
+            assertThat(result.get().offset()).isGreaterThanOrEqualTo(0);
         }
     }
 }

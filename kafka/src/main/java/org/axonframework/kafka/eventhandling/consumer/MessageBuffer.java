@@ -25,15 +25,19 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Thread safe buffer for storing incoming Kafka messages.
+ * Thread safe buffer for storing incoming Kafka messages in sorted order defined via {@link Comparable}.
  *
  * @param <E> element type.
  * @author Nakul Mishra.
+ * @see {Me}
  */
-public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
+public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> implements SortableBuffer<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageBuffer.class);
 
+    /**
+     * Data structure
+     */
     private final ConcurrentSkipListSet<E> delegate;
 
     /**
@@ -85,6 +89,7 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
      * @throws InterruptedException
      * @throws NullPointerException
      */
+    @Override
     public void put(E e) throws InterruptedException {
         Assert.notNull(e, () -> "Element may not be empty");
         final ReentrantLock lock = this.lock;
@@ -95,7 +100,7 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
             }
             add(e);
             if (logger.isDebugEnabled()) {
-                logger.debug("buffer state after appending {}", e.value());
+                logger.debug("buffer state after appending {}", e);
                 for (E message : delegate) {
                     logger.debug("partition:{}, offset:{}, timestamp:{}, payload:{}",
                                  message.partition(),
@@ -122,6 +127,7 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
      *
      * @throws InterruptedException if interrupted while waiting
      */
+    @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
         final ReentrantLock lock = this.lock;
@@ -135,9 +141,9 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
             }
             E removed = remove();
             if (logger.isDebugEnabled()) {
-                logger.debug("buffer state after removing {}", removed.value());
+                logger.debug("buffer state after removing {}", removed);
                 for (E message : delegate) {
-                    logger.debug("partition:{}, offset:{}, payload:{}, timestamp:{}",
+                    logger.debug("partition:{}, offset:{}, timestamp:{}, payload:{}",
                                  message.partition(),
                                  message.offset(),
                                  message.value(),
@@ -158,6 +164,7 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
      *
      * @throws InterruptedException if interrupted while waiting
      */
+    @Override
     public E take() throws InterruptedException {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
@@ -176,11 +183,12 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
      *
      * @return the message.
      */
+    @Override
     public E peek() {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            return this.count != 0 ? this.delegate.first() : null;
+            return this.count > 0 ? this.delegate.first() : null;
         } finally {
             lock.unlock();
         }
@@ -191,9 +199,10 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
      * Call only when holding lock.
      */
     private void add(E x) {
-        delegate.add(x);
-        this.count++;
-        this.notEmpty.signal();
+        if (this.delegate.add(x)) {
+            this.count++;
+            this.notEmpty.signal();
+        }
     }
 
     /**
@@ -202,14 +211,78 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> {
      */
     private E remove() {
         E x = this.delegate.pollFirst();
-        this.count--;
-        this.notFull.signal();
-
+        if (x != null) {
+            this.count--;
+            this.notFull.signal();
+        }
         return x;
+    }
+
+    /**
+     * Returns the number of elements in this buffer.
+     *
+     * @return the number of elements in this buffer
+     */
+    @Override
+    public int size() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return this.count;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return this.count == 0;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Returns the number of additional elements that this buffer can ideally
+     * (in the absence of memory or resource constraints) accept without
+     * blocking. This is always equal to the initial capacity of this buffer
+     * less the current {@code size} of this buffer.
+     * <p>
+     * <p>Note that you <em>cannot</em> always tell if an attempt to insert
+     * an element will succeed by inspecting {@code remainingCapacity}
+     * because it may be the case that another thread is about to
+     * insert or remove an element.
+     */
+    @Override
+    public int remainingCapacity() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return this.capacity - count;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Removes all of the messages from this buffer.
+     */
+    @Override
+    public void clear() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            this.delegate.clear();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public String toString() {
-        return "MessageBuffer:" + delegate;
+        return "MessageBuffer:" + this.delegate;
     }
 }

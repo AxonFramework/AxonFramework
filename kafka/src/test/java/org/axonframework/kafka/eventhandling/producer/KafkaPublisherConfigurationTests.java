@@ -21,12 +21,11 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.*;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link KafkaPublisherConfiguration}
+ * Tests for {@link KafkaPublisherConfiguration}.
  *
  * @author Nakul Mishra
  */
@@ -34,7 +33,7 @@ public class KafkaPublisherConfigurationTests {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testGeneratingValidPublisherConfig() {
+    public void testGenerating_ValidPublisherConfig() {
         SubscribableMessageSource source = mock(SubscribableMessageSource.class);
         ProducerFactory factory = mock(ProducerFactory.class);
         KafkaMessageConverter converter = mock(KafkaMessageConverter.class);
@@ -50,42 +49,41 @@ public class KafkaPublisherConfigurationTests {
                 .withTopic(topic)
                 .withPublisherAckTimeout(timeout)
                 .build();
-
-        assertThat(conf.getMessageSource(), is(source));
-        assertThat(conf.getProducerFactory(), is(factory));
-        assertThat(conf.getMessageConverter(), is(converter));
-        assertThat(conf.getMessageMonitor(), is(monitor));
-        assertThat(conf.getTopic(), is(topic));
-        assertThat(conf.getPublisherAckTimeout(), is(timeout));
+        assertThat(conf.getMessageSource()).isEqualTo(source);
+        assertThat(conf.getProducerFactory()).isEqualTo(factory);
+        assertThat(conf.getMessageConverter()).isEqualTo(converter);
+        assertThat(conf.getMessageMonitor()).isEqualTo(monitor);
+        assertThat(conf.getTopic()).isEqualTo(topic);
+        assertThat(conf.getPublisherAckTimeout()).isEqualTo(timeout);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidMessageSource() {
+    public void testConfiguringInvalid_MessageSource() {
         KafkaPublisherConfiguration.builder().withMessageSource(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidProducerFactory() {
+    public void testConfiguringInvalid_ProducerFactory() {
         KafkaPublisherConfiguration.builder().withProducerFactory(null).build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidMessageConverter() {
+    public void testConfiguringInvalid_MessageConverter() {
         KafkaPublisherConfiguration.builder().withMessageConverter(null).build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidMessageMonitor() {
+    public void testConfiguringInvalid_MessageMonitor() {
         KafkaPublisherConfiguration.builder().withMessageMonitor(null).build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidKafkaTopic() {
+    public void testConfiguringInvalid_KafkaTopic() {
         KafkaPublisherConfiguration.builder().withTopic(null).build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConfiguringInvalidAckTimeout() {
+    public void testConfiguringInvalid_AckTimeout() {
         KafkaPublisherConfiguration.builder().withPublisherAckTimeout((long) -12);
     }
 }

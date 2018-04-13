@@ -124,7 +124,7 @@ public class KafkaPublisher<K, V> {
             if (CurrentUnitOfWork.isStarted()) {
                 handleActiveUnitOfWork(producer, publishStatuses, monitorCallbacks, cm);
             } else if (cm.isTransactional()) {
-                tryCommit(producer);
+                tryCommit(producer, monitorCallbacks);
             } else if (cm.isWaitForAck()) {
                 waitForPublishAck(publishStatuses, monitorCallbacks);
             }
@@ -166,7 +166,7 @@ public class KafkaPublisher<K, V> {
                                    Producer<K, V> producer, ConfirmationMode confirmationMode,
                                    Map<Future<RecordMetadata>, ? super EventMessage<?>> futures) {
         if (confirmationMode.isTransactional()) {
-            tryCommit(producer);
+            tryCommit(producer, monitorCallbackMap);
         } else if (confirmationMode.isWaitForAck()) {
             waitForPublishAck(futures, monitorCallbackMap);
         }
@@ -208,9 +208,11 @@ public class KafkaPublisher<K, V> {
         }
     }
 
-    private void tryCommit(Producer<?, ?> producer) {
+    private void tryCommit(Producer<?, ?> producer,
+                           Map<? super EventMessage<?>, MonitorCallback> monitorCallbacks) {
         try {
             producer.commitTransaction();
+            monitorCallbacks.forEach((k, v) -> v.reportSuccess());
         } catch (ProducerFencedException e) {
             logger.warn("Unable to commit transaction", e);
             throw new EventPublicationFailedException(

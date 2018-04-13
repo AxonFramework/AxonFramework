@@ -17,6 +17,7 @@ package org.axonframework.boot.autoconfig;
 
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -77,6 +78,8 @@ public class KafkaProperties {
 
     private final Producer producer = new Producer();
 
+    private final Fetcher fetcher = new Fetcher();
+
     private final Ssl ssl = new Ssl();
 
     public List<String> getBootstrapServers() {
@@ -117,6 +120,10 @@ public class KafkaProperties {
 
     public Producer getProducer() {
         return this.producer;
+    }
+
+    public Fetcher getFetcher() {
+        return fetcher;
     }
 
     public Ssl getSsl() {
@@ -437,6 +444,40 @@ public class KafkaProperties {
                                this.maxPollRecords);
             }
             return properties;
+        }
+    }
+
+    /**
+     * Fetches messages from Kafka
+     */
+    public static class Fetcher {
+
+        /**
+         * The time, in milliseconds, spent waiting in poll if data is not available in the buffer.
+         * If 0, returns immediately with any records that are available currently in the buffer, else returns empty.
+         * Must not be negative.
+         *
+         * @see KafkaConsumer#poll(long)
+         */
+        private long pollTimeout = 3000;
+
+
+        private int bufferSize = 10_000;
+
+        public long getPollTimeout() {
+            return pollTimeout;
+        }
+
+        public void setPollTimeout(long pollTimeout) {
+            this.pollTimeout = pollTimeout;
+        }
+
+        public int getBufferSize() {
+            return bufferSize;
+        }
+
+        public void setBufferSize(int bufferSize) {
+            this.bufferSize = bufferSize;
         }
     }
 

@@ -19,6 +19,7 @@ package org.axonframework.kafka.eventhandling.consumer;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.junit.*;
 
+import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.emptyToken;
 import static org.mockito.Mockito.*;
 
 /**
@@ -29,23 +30,41 @@ import static org.mockito.Mockito.*;
 public class KafkaMessageSourceTests {
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCreatingKafkaMessageSourceUsingInvalidFetcher() {
+    public void testCreatingMessageSource_UsingInvalidFetcher_ShouldThrowException() {
         new KafkaMessageSource<>(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testOpenMessageStreamWithInvalidTrackingToken() {
-        KafkaMessageSource<String, byte[]> messageSource = new KafkaMessageSource<>(fetcher());
-        messageSource.openStream(new TrackingToken() {});
+    public void testOpeningMessageStream_WithInvalidTypeOfTrackingToken_ShouldThrowException() {
+        KafkaMessageSource<String, byte[]> testSubject = new KafkaMessageSource<>(fetcher());
+        testSubject.openStream(incompatibleTokenType());
     }
 
     @Test
-    public void testOpenMessageStreamWithValidToken() {
-        throw new UnsupportedOperationException("test is not implemented yet");
+    public void testOpeningMessageStream_WithNullToken_ShouldInvokeFetcher() {
+        Fetcher<String, byte[]> fetcher = fetcher();
+        KafkaMessageSource<String, byte[]> testSubject = new KafkaMessageSource<>(fetcher);
+        testSubject.openStream(null);
+
+        verify(fetcher, times(1)).start(any());
+    }
+
+    @Test
+    public void testOpeningMessageStream_WithValidToken_ShouldStartTheFetcher() {
+        Fetcher<String, byte[]> fetcher = fetcher();
+        KafkaMessageSource<String, byte[]> testSubject = new KafkaMessageSource<>(fetcher);
+        testSubject.openStream(emptyToken());
+
+        verify(fetcher, times(1)).start(any());
+    }
+
+    private static TrackingToken incompatibleTokenType() {
+        return new TrackingToken() {
+        };
     }
 
     @SuppressWarnings("unchecked")
-    private Fetcher<String, byte[]> fetcher() {
+    private static Fetcher<String, byte[]> fetcher() {
         return (Fetcher<String, byte[]>) mock(Fetcher.class);
     }
 }

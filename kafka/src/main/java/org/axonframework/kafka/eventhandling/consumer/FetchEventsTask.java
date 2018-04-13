@@ -19,61 +19,119 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
+import java.util.function.BiFunction;
 
 /**
+ * Polls {@link Consumer} and inserts records on {@link SortableBuffer}.
+ *
  * @author Nakul Mishra
  */
 class FetchEventsTask<K, V> implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(FetchEventsTask.class);
-    private static final long DEFAULT_TIMEOUT = 3000;
-
     private final Consumer<K, V> consumer;
-    private final MessageBuffer<MessageAndMetadata> channel;
+    private final SortableBuffer<MessageAndMetadata> buffer;
     private final KafkaMessageConverter<K, V> converter;
-    private KafkaTrackingToken token;
+    private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
+    private final long timeout;
 
-    FetchEventsTask(Consumer<K, V> consumer,
-                    KafkaTrackingToken token, MessageBuffer<MessageAndMetadata> channel,
-                    KafkaMessageConverter<K, V> converter) {
-        Assert.isTrue(consumer != null, () -> "Consumer may not be null");
-        Assert.isTrue(channel != null, () -> "Buffer may not be null");
-        Assert.isTrue(converter != null, () -> "Converter may not be null");
-        Assert.isTrue(token != null, () -> "Token may not be null");
-        this.consumer = consumer;
-        this.token = token;
-        this.channel = channel;
-        this.converter = converter;
+    private KafkaTrackingToken currentToken;
+
+    private FetchEventsTask(Builder<K, V> config) {
+        this.consumer = config.consumer;
+        this.currentToken = config.currentToken;
+        this.buffer = config.buffer;
+        this.converter = config.converter;
+        this.callback = config.callback;
+        this.timeout = config.timeout;
     }
 
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            ConsumerRecords<K, V> records = consumer.poll(DEFAULT_TIMEOUT); //1000, max.poll.records
-            if (logger.isDebugEnabled()) {
-                logger.debug("Records fetched: {}", records.count());
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                ConsumerRecords<K, V> records = consumer.poll(timeout);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Fetched {} records", records.count());
+                }
+                for (ConsumerRecord<K, V> record : records) {
+                    converter.readKafkaMessage(record).ifPresent(eventMessage -> {
+                        try {
+                            KafkaTrackingToken nextToken = currentToken.advancedTo(record.partition(), record.offset());
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Updating token from {} -> {}", currentToken, nextToken);
+                            }
+                            currentToken = nextToken;
+                            buffer.put(MessageAndMetadata.from(eventMessage, record, currentToken));
+                            this.callback.apply(record, currentToken);
+                        } catch (InterruptedException e) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Event producer thread was interrupted. Shutting down.", e);
+                            }
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+                }
             }
-            for (ConsumerRecord<K, V> record : records) {
-                converter.readKafkaMessage(record).ifPresent(m -> {
-                    try {
-                        token = token.advancedTo(record.partition(), record.offset());
-                        TrackedEventMessage<?> msg = asTrackedEventMessage(m, token);
-                        channel.put(new MessageAndMetadata(msg, record.partition(),
-                                                           record.offset(),
-                                                           record.timestamp()
-                        ));
-                    } catch (InterruptedException e) {
-                        logger.warn("Event producer thread was interrupted. Shutting down.", e);
-                        Thread.currentThread().interrupt();
-                    }
-                });
-            }
+        } catch (Exception e) {
+            logger.error("Cannot proceed with Fetching, encountered {} ", e);
+        } finally {
+            consumer.close();
+        }
+    }
+
+    public static <K, V> Builder<K, V> builder(Consumer<K, V> consumer, KafkaTrackingToken token,
+                                               SortableBuffer<MessageAndMetadata> buffer,
+                                               KafkaMessageConverter<K, V> converter,
+                                               BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback,
+                                               long timeout) {
+        return new Builder<>(consumer, token, buffer, converter, callback, timeout);
+    }
+
+    public static class Builder<K, V> {
+
+        private final long timeout;
+        private final Consumer<K, V> consumer;
+        private final SortableBuffer<MessageAndMetadata> buffer;
+        private final KafkaMessageConverter<K, V> converter;
+        private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
+        private final KafkaTrackingToken currentToken;
+
+        public Builder(Consumer<K, V> consumer, KafkaTrackingToken token,
+                       SortableBuffer<MessageAndMetadata> buffer,
+                       KafkaMessageConverter<K, V> converter,
+                       BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback, long timeout) {
+            Assert.notNull(consumer, () -> "Consumer may not be null");
+            Assert.notNull(buffer, () -> "Buffer may not be null");
+            Assert.notNull(converter, () -> "Converter may not be null");
+            Assert.notNull(token, () -> "Token may not be null");
+            Assert.notNull(callback, () -> "Callback may not be null");
+            Assert.isFalse(timeout < 0, () -> "Timeout may not be < 0");
+            this.consumer = consumer;
+            this.currentToken = token;
+            this.buffer = buffer;
+            this.converter = converter;
+            this.callback = callback;
+            this.timeout = timeout;
+        }
+
+        @Override
+        public String toString() {
+            return "Config{" +
+                    "consumer=" + consumer +
+                    ", buffer=" + buffer +
+                    ", converter=" + converter +
+                    ", callback=" + callback +
+                    ", currentToken=" + currentToken +
+                    '}';
+        }
+
+        public FetchEventsTask<K, V> build() {
+            return new FetchEventsTask<>(this);
         }
     }
 }

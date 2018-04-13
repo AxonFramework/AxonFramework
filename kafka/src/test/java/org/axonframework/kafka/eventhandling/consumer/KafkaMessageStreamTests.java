@@ -25,132 +25,134 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link KafkaMessageStream}
+ *
  * @author Nakul Mishra
  */
 public class KafkaMessageStreamTests {
 
-    private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.NANOSECONDS;
+    private static final TimeUnit DEFAULT_TIMEOUT_UNIT = NANOSECONDS;
 
     @Test
-    public void testPeekOnAnEmptyStream() {
-        assertFalse(emptyStream().peek().isPresent());
+    public void testPeek_OnAnEmptyStream_ShouldContainNoElement() {
+        assertThat(emptyStream().peek().isPresent()).isFalse();
     }
 
     @Test
-    public void testPeekOnNonEmptyStream() throws InterruptedException {
+    public void testPeek_OnNonEmptyStream_ShouldContainSomeElement() throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         KafkaMessageStream testSubject = stream(Arrays.asList(firstMessage, trackedDomainEvent("bar")));
-        assertTrue(testSubject.peek().isPresent());
-        assertThat(testSubject.peek().get(), is(firstMessage));
+        assertThat(testSubject.peek().isPresent()).isTrue();
+        assertThat(testSubject.peek().get()).isEqualTo(firstMessage);
     }
 
     @Test
-    public void testPeekOnAProgressiveStream() throws InterruptedException {
+    public void testPeek_OnAProgressiveStream_ShouldContainElementsInCorrectOrder() throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         GenericTrackedDomainEventMessage<String> secondMessage = trackedDomainEvent("bar");
         KafkaMessageStream testSubject = stream(Arrays.asList(firstMessage, secondMessage));
-        assertThat(testSubject.peek().get().getPayload(), is(firstMessage.getPayload()));
+        assertThat(testSubject.peek().get().getPayload()).isEqualTo(firstMessage.getPayload());
         testSubject.nextAvailable();
-        assertThat(testSubject.peek().get(), is(secondMessage));
+        assertThat(testSubject.peek().get()).isEqualTo(secondMessage);
         testSubject.nextAvailable();
-        assertFalse(testSubject.peek().isPresent());
+        assertThat(testSubject.peek().isPresent()).isFalse();
     }
 
     @Test
-    public void testPeekOnAnInterruptedStream() throws InterruptedException {
+    public void testPeek_OnAnInterruptedStream_ShouldThrowException() throws InterruptedException {
         try {
             KafkaMessageStream testSubject = stream(
                     singletonList(trackedDomainEvent("foo")));
             Thread.currentThread().interrupt();
-            assertFalse(testSubject.peek().isPresent());
+            assertThat(testSubject.peek().isPresent()).isFalse();
         } finally {
             Thread.interrupted();
         }
     }
 
     @Test
-    public void testHasNextAvailableOnAnEmptyStream() {
-        assertFalse(emptyStream().hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
+    public void testHasNextAvailable_OnAnEmptyStream_ShouldContainNoElement() {
+        assertThat(emptyStream().hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT)).isFalse();
     }
 
     @Test
-    public void testHasNextAvailableOnNonEmptyStream() throws InterruptedException {
+    public void testHasNextAvailable_OnNonEmptyStream_ShouldContainSomeElement() throws InterruptedException {
         KafkaMessageStream testSubject = stream(singletonList(trackedDomainEvent("foo")));
-        assertTrue(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
+        assertThat(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT)).isTrue();
     }
 
     @Test
-    public void testHasNextAvailableOnAProgressiveStream() throws InterruptedException {
+    public void testHasNextAvailable_OnAProgressiveStream_ShouldContainElementsInCorrectOrder()
+            throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         GenericTrackedDomainEventMessage<String> secondMessage = trackedDomainEvent("bar");
         KafkaMessageStream testSubject = stream(Arrays.asList(firstMessage, secondMessage));
-        assertTrue(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
+        assertThat(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT)).isTrue();
         testSubject.nextAvailable();
-        assertTrue(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
+        assertThat(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT)).isTrue();
         testSubject.nextAvailable();
-        assertFalse(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
+        assertThat(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT)).isFalse();
     }
 
     @Test
-    public void testHasNextOnAnInterruptedStream() throws InterruptedException {
+    public void testHasNext_OnAnInterruptedStream_ShouldThrowAnException() throws InterruptedException {
         try {
             KafkaMessageStream testSubject = stream(singletonList(trackedDomainEvent("foo")));
             Thread.currentThread().interrupt();
-            assertFalse(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT));
+            assertThat(testSubject.hasNextAvailable(1, DEFAULT_TIMEOUT_UNIT)).isFalse();
         } finally {
             Thread.interrupted();
         }
     }
 
     @Test
-    public void testNextAvailableOnAProgressiveStream() throws InterruptedException {
+    public void testNextAvailable_OnAProgressiveStream_ShouldContainElementInCorrectOrder()
+            throws InterruptedException {
         GenericTrackedDomainEventMessage<String> firstMessage = trackedDomainEvent("foo");
         GenericTrackedDomainEventMessage<String> secondMessage = trackedDomainEvent("bar");
         KafkaMessageStream testSubject = stream(Arrays.asList(firstMessage, secondMessage));
-        assertThat(testSubject.nextAvailable(), is(firstMessage));
-        assertThat(testSubject.nextAvailable(), is(secondMessage));
+        assertThat(testSubject.nextAvailable()).isEqualTo(firstMessage);
+        assertThat(testSubject.nextAvailable()).isEqualTo(secondMessage);
     }
 
     @Test
-    public void testNextAvailableOnAnInterruptedStream() throws InterruptedException {
+    public void testNextAvailable_OnAnInterruptedStream_ShouldThrowAnException() throws InterruptedException {
         try {
             KafkaMessageStream testSubject = stream(singletonList(trackedDomainEvent("foo")));
             Thread.currentThread().interrupt();
-            assertNull(testSubject.nextAvailable());
+            assertThat(testSubject.nextAvailable()).isNull();
         } finally {
             Thread.interrupted();
         }
     }
 
-
     @Test
-    public void close() {
+    public void testClosing_MessageStream_ShouldShutdownTheFetcher() {
         Fetcher<String, byte[]> fetcher = fetcher();
         KafkaMessageStream mock = new KafkaMessageStream(new MessageBuffer<>(), fetcher);
         mock.close();
         verify(fetcher, times(1)).shutdown();
     }
 
-    private KafkaMessageStream emptyStream() {
+    private static KafkaMessageStream emptyStream() {
         return new KafkaMessageStream(new MessageBuffer<>(), fetcher());
     }
 
-    private GenericTrackedDomainEventMessage<String> trackedDomainEvent(String aggregateId) {
+    private static GenericTrackedDomainEventMessage<String> trackedDomainEvent(String aggregateId) {
         return new GenericTrackedDomainEventMessage<>(null,
                                                       domainMessage(aggregateId));
     }
 
-    private GenericDomainEventMessage<String> domainMessage(String aggregateId) {
+    private static GenericDomainEventMessage<String> domainMessage(String aggregateId) {
         return new GenericDomainEventMessage<>("Stub", aggregateId, 1L, "Payload", MetaData.with("key", "value"));
     }
 
-    private KafkaMessageStream stream(List<GenericTrackedDomainEventMessage<String>> messages)
+    private static KafkaMessageStream stream(List<GenericTrackedDomainEventMessage<String>> messages)
             throws InterruptedException {
         MessageBuffer<MessageAndMetadata> buffer = new MessageBuffer<>(messages.size());
 
@@ -162,7 +164,7 @@ public class KafkaMessageStreamTests {
     }
 
     @SuppressWarnings("unchecked")
-    private Fetcher<String, byte[]> fetcher() {
+    private static Fetcher<String, byte[]> fetcher() {
         return mock(Fetcher.class);
     }
 }

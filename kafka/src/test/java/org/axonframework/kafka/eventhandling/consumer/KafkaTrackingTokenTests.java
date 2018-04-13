@@ -27,31 +27,34 @@ import java.util.HashSet;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotSame;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.isEmpty;
+import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.isNotEmpty;
+import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.emptyToken;
 
 /**
  * Tests for {@link KafkaTrackingToken}
  *
  * @author Nakul Mishra
  */
-public class KafkaTrackingTokenTest {
+public class KafkaTrackingTokenTests {
 
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testNullTokenShouldBeEmpty() {
-        assertTrue(KafkaTrackingToken.isEmpty(null));
+        assertThat(isEmpty(null)).isTrue();
     }
 
     @Test
-    public void testTokenWithEmptyPartitions() {
-        assertTrue(KafkaTrackingToken.isEmpty(emptyToken()));
+    public void testTokensWithoutPartitionsShouldBeEmpty() {
+        assertThat(isEmpty(emptyToken())).isTrue();
     }
 
     @Test
-    public void testTokenWithPartitions() {
-        assertTrue(KafkaTrackingToken.isNotEmpty(nonEmptyToken()));
+    public void testTokensWithPartitionsShouldBeEmpty() {
+        assertThat(isNotEmpty(nonEmptyToken())).isTrue();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -65,6 +68,30 @@ public class KafkaTrackingTokenTest {
     }
 
     @Test
+    public void testCompareTokens() {
+        KafkaTrackingToken original = nonEmptyToken();
+
+        KafkaTrackingToken copy = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+        }});
+        KafkaTrackingToken forge = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 1L);
+        }});
+
+        assertThat(original).isEqualTo(original);
+        assertThat(copy).isEqualTo(original);
+        assertThat(copy.hashCode()).isEqualTo(original.hashCode());
+        assertThat(original).isNotEqualTo(forge);
+        assertThat(original.hashCode()).isNotEqualTo(forge.hashCode());
+        assertThat(original).isNotEqualTo("foo");
+    }
+
+    @Test
+    public void testTokenIsHumanReadable() {
+        assertThat(nonEmptyToken().toString()).isEqualTo("KafkaTrackingToken{partitionPositions={0=0}}");
+    }
+
+    @Test
     public void testAdvanceToLaterTimestamp() {
         KafkaTrackingToken start = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
             put(0, 0L);
@@ -72,7 +99,7 @@ public class KafkaTrackingTokenTest {
         }});
         KafkaTrackingToken subject = start.advancedTo(0, 1L);
         assertNotSame(subject, start);
-        assertEquals(Long.valueOf(1), subject.getPartitionPositions().get(0));
+        assertEquals(Long.valueOf(1), subject.partitionPositions().get(0));
         assertKnownEventIds(subject, 0, 1);
     }
 
@@ -84,7 +111,7 @@ public class KafkaTrackingTokenTest {
         }});
         KafkaTrackingToken subject = start.advancedTo(0, 0L);
         assertNotSame(subject, start);
-        assertEquals(Long.valueOf(0), subject.getPartitionPositions().get(0));
+        assertEquals(Long.valueOf(0), subject.partitionPositions().get(0));
         assertKnownEventIds(subject, 0, 1);
     }
 
@@ -104,11 +131,7 @@ public class KafkaTrackingTokenTest {
         assertEquals(expected, KafkaTrackingToken.partitions("bar", existingToken));
     }
 
-    private KafkaTrackingToken emptyToken() {
-        return KafkaTrackingToken.newInstance(Collections.emptyMap());
-    }
-
-    private KafkaTrackingToken nonEmptyToken() {
+    private static KafkaTrackingToken nonEmptyToken() {
         return KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
             put(0, 0L);
         }});
@@ -116,6 +139,6 @@ public class KafkaTrackingTokenTest {
 
     private static void assertKnownEventIds(KafkaTrackingToken token, Integer... expectedKnownIds) {
         assertEquals(Stream.of(expectedKnownIds).collect(toSet()),
-                     new HashSet<>(token.getPartitionPositions().keySet()));
+                     new HashSet<>(token.partitionPositions().keySet()));
     }
 }

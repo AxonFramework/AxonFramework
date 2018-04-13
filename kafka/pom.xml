@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>axon</artifactId>
         <groupId>org.axonframework</groupId>
@@ -26,13 +27,12 @@
     <artifactId>axon-kafka</artifactId>
 
     <name>Axon Kafka</name>
-    <description>This module contains implementations of several components, connecting them to an Kafka compatible
-        message broker.
+    <description>This module contains implementations of several components, connecting them to Kafka.
     </description>
     <properties>
         <spring-kafka-test.version>2.1.4.RELEASE</spring-kafka-test.version>
         <assertj-core.version>3.9.0</assertj-core.version>
-        <hamcrest-library.version>1.3</hamcrest-library.version>
+        <jmh-core.version>1.20</jmh-core.version>
     </properties>
 
     <packaging>bundle</packaging>
@@ -94,7 +94,16 @@
             <version>${kafka.version}</version>
             <optional>true</optional>
         </dependency>
-
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh-core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh-core.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka-test</artifactId>
@@ -108,7 +117,6 @@
             <version>${assertj-core.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
@@ -119,12 +127,5 @@
             <artifactId>powermock-module-junit4</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
-            <version>${hamcrest-library.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 </project>
