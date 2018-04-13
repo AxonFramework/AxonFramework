@@ -83,7 +83,7 @@ public class PlatformConnectionManager {
             for(NodeInfo nodeInfo : connectInformation.routingServers()) {
                 ManagedChannel candidate = createChannel( nodeInfo.getHostName(), nodeInfo.getGrpcPort());
                 PlatformServiceGrpc.PlatformServiceBlockingStub stub = PlatformServiceGrpc.newBlockingStub(candidate)
-                        .withInterceptors(new ContextAddingInterceptor(connectInformation.getToken()), new TokenAddingInterceptor(connectInformation.getToken()));
+                        .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()));
                 try {
                     PlatformInfo clusterInfo = stub.getPlatformServer(ClientIdentification.newBuilder()
                             .setClientName(connectInformation.getClientName())
@@ -144,7 +144,7 @@ public class PlatformConnectionManager {
     private synchronized void startInstructionStream() {
         logger.debug("Start instruction stream");
         inputStream = PlatformServiceGrpc.newStub(channel)
-                .withInterceptors(new ContextAddingInterceptor(connectInformation.getToken()), new TokenAddingInterceptor(connectInformation.getToken()))
+                .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
                 .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
