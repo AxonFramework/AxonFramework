@@ -40,8 +40,13 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
      *
      * @param result The result reported by the Query Handler
      */
+    @SuppressWarnings("unchecked")
     public GenericQueryResponseMessage(R result) {
-        this(result, MetaData.emptyInstance());
+        this((Class<R>) result.getClass(), result, MetaData.emptyInstance());
+    }
+
+    public GenericQueryResponseMessage(Class<R> declaredResultType, R result) {
+        this(declaredResultType, result, MetaData.emptyInstance());
     }
 
     /**
@@ -52,6 +57,10 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
      */
     public GenericQueryResponseMessage(R result, Map<String, ?> metaData) {
         super(new GenericMessage<>(result, metaData));
+    }
+
+    public GenericQueryResponseMessage(Class<R> declaredResultType, R result, Map<String, ?> metaData) {
+        super(new GenericMessage<>(declaredResultType, result, metaData));
     }
 
     /**
@@ -84,6 +93,22 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
             return (QueryResponseMessage<R>) result;
         } else {
             return new GenericQueryResponseMessage(result);
+        }
+    }
+
+    /**
+     *
+     * @param declaredType
+     * @param result
+     * @param <R>
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
+        if (result instanceof QueryResponseMessage) {
+            return (QueryResponseMessage<R>) result;
+        } else {
+            return new GenericQueryResponseMessage(declaredType, result);
         }
     }
 

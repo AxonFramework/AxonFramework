@@ -19,6 +19,7 @@ package org.axonframework.serialization.xml;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -80,6 +81,15 @@ public class XStreamSerializerTest {
         StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("axones"));
+    }
+
+    @Test
+    public void testDeserializeNullValue() {
+        SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
+        assertEquals("empty", serializedNull.getType().getName());
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        assertNull(testSubject.deserialize(serializedNull));
+        assertNull(testSubject.deserialize(serializedNullString));
     }
 
     @Test

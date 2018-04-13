@@ -52,8 +52,21 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      * @param payload  The payload for the message
      * @param metaData The meta data for the message
      */
+    @SuppressWarnings("unchecked")
     public GenericMessage(T payload, Map<String, ?> metaData) {
-        this(IdentifierFactory.getInstance().generateIdentifier(), payload,
+        this((Class<T>) payload.getClass(), payload, metaData);
+    }
+
+    /**
+     * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is
+     * merged with the MetaData from the correlation data of the current unit of work, if present.
+     *
+     * @param declaredPayloadType The declared type of message payload
+     * @param payload             The payload for the message
+     * @param metaData            The meta data for the message
+     */
+    public GenericMessage(Class<T> declaredPayloadType, T payload, Map<String, ?> metaData) {
+        this(IdentifierFactory.getInstance().generateIdentifier(), declaredPayloadType, payload,
              CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData)));
     }
 
@@ -65,13 +78,28 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      * @param identifier The identifier of the Message
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
+     * @throws NullPointerException when the given {@code payload} is {@code null}.
      */
     @SuppressWarnings("unchecked")
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
+        this(identifier, (Class<T>) payload.getClass(), payload, metaData);
+    }
+
+    /**
+     * Constructor to reconstruct a Message using existing data. Note that no correlation data
+     * from a UnitOfWork is attached when using this constructor. If you're constructing a new
+     * Message, use {@link #GenericMessage(Object, Map)} instead
+     *
+     * @param identifier          The identifier of the Message
+     * @param declaredPayloadType The declared type of message payload
+     * @param payload             The payload for the message
+     * @param metaData            The meta data for the message
+     */
+    public GenericMessage(String identifier, Class<T> declaredPayloadType, T payload, Map<String, ?> metaData) {
         super(identifier);
         this.metaData = MetaData.from(metaData);
         this.payload = payload;
-        this.payloadType = (Class<T>) payload.getClass();
+        this.payloadType = declaredPayloadType;
     }
 
     private GenericMessage(GenericMessage<T> original, MetaData metaData) {

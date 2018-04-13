@@ -44,4 +44,6 @@ public interface ResponseType<R> extends Serializable {
     default R convert(Object response) {
         return (R) response;
     }
+
+    Class<R> responseMessagePayloadType();
 }

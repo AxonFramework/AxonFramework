@@ -26,6 +26,7 @@ import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.Assert;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.AnnotatedSaga;
 import org.axonframework.eventhandling.saga.AssociationValue;
@@ -38,8 +39,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Abstract implementation for XStream based serializers. It provides some helper methods and configuration features
@@ -164,7 +163,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         T result = doSerialize(object, expectedType, xStream);
-        return new SimpleSerializedObject<>(result, expectedType, typeForClass(getOrDefault(object, new Object()).getClass()));
+        return new SimpleSerializedObject<>(result, expectedType, typeForClass(ObjectUtils.nullSafeTypeOf(object)));
     }
 
     /**
@@ -223,6 +222,9 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
     @Override
     public SerializedType typeForClass(Class type) {
+        if (type == null || Void.TYPE.equals(type) || Void.class.equals(type)) {
+            return SimpleSerializedType.emptyType();
+        }
         return new SimpleSerializedType(typeIdentifierOf(type), revisionOf(type));
     }
 
