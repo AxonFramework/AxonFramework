@@ -29,7 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @param <E> element type.
  * @author Nakul Mishra.
- * @see {Me}
  */
 public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> implements SortableBuffer<E> {
 
