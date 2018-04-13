@@ -342,6 +342,16 @@ public class EventHandlingConfigurationTest {
         }
 
         @Override
+        public void setEventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
+
+        }
+
+        @Override
+        public EventHandlerInvoker eventHandlerInvoker() {
+            return null;
+        }
+
+        @Override
         public void start() {
 
         }

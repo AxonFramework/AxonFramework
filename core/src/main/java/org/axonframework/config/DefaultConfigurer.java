@@ -123,6 +123,8 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(EventProcessorRegistry.class,
+                       new Component<>(config, "eventProcessorRegistry", c -> defaultEventProcessorRegistry()));
     }
 
     /**
@@ -250,6 +252,15 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ResourceInjector defaultResourceInjector(Configuration config) {
         return new ConfigurationResourceInjector(config);
+    }
+
+    /**
+     * Provides the default implementation of {@link EventProcessorRegistry}.
+     *
+     * @return the default implementation of {@link EventProcessorRegistry}
+     */
+    protected EventProcessorRegistry defaultEventProcessorRegistry() {
+        return new DefaultSagaEventProcessorRegistry();
     }
 
     /**

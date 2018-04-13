@@ -452,8 +452,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         });
 
         assignments.forEach((name, handlers) -> {
-            EventProcessor eventProcessor = eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
-                                                           .createEventProcessor(config, name, handlers);
+            EventProcessor eventProcessor = config.getComponent(EventProcessorRegistry.class)
+                                                  .registerProcessor(name, eventProcessors
+                                                          .getOrDefault(name, defaultEventProcessorBuilder)
+                                                          .createEventProcessor(config, name, handlers));
+
             interceptorsFor(config, name).forEach(eventProcessor::registerInterceptor);
             initializedProcessors.add(eventProcessor);
         });

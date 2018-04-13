@@ -16,6 +16,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
@@ -71,6 +72,22 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor (with
+     * provided name) to process incoming Events.
+     *
+     * @param sagaType      The type of Saga to handle events with
+     * @param processorName The name of the processor to be used for this saga
+     * @param <S>           The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType, String processorName) {
+        return subscribingSagaManager(sagaType,
+                                      processorName,
+                                      Configuration::eventBus,
+                                      c -> DirectEventProcessingStrategy.INSTANCE);
+    }
+
+    /**
      * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor to process
      * incoming Events from the message source provided by given {@code messageSourceBuilder}
      *
@@ -102,8 +119,37 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             Class<S> sagaType,
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
             Function<Configuration, EventProcessingStrategy> eventProcessingStrategy) {
-        return new SagaConfiguration<>(sagaType, SubscribingEventProcessor.class,
-                                       messageSourceBuilder, eventProcessingStrategy);
+        return subscribingSagaManager(sagaType,
+                                      eventProcessorName(sagaType),
+                                      messageSourceBuilder,
+                                      eventProcessingStrategy);
+    }
+
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor (with
+     * provided name) to process incoming Events from the message source provided by given {@code
+     * messageSourceBuilder}.
+     * <p>
+     * This methods allows a custom {@link EventProcessingStrategy} to be provided, in case handlers shouldn't be
+     * invoked in the thread that delivers the message.
+     *
+     * @param sagaType                The type of Saga to handle events with
+     * @param processorName           The name of the processor to be used for this saga
+     * @param messageSourceBuilder    The function providing the message source based on the configuration
+     * @param eventProcessingStrategy The strategy to use to invoke the event handlers.
+     * @param <S>                     The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> subscribingSagaManager(
+            Class<S> sagaType,
+            String processorName,
+            Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
+            Function<Configuration, EventProcessingStrategy> eventProcessingStrategy) {
+        return new SagaConfiguration<>(sagaType,
+                                       processorName,
+                                       SubscribingEventProcessor.class,
+                                       messageSourceBuilder,
+                                       eventProcessingStrategy);
     }
 
     /**
@@ -120,6 +166,20 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Tracking Event Processor (with provided
+     * name) to process incoming Events. Note that a Token Store should be configured in the global configuration, or
+     * the Saga Manager will default to an in-memory token store, which is not recommended for production environments.
+     *
+     * @param sagaType      The type of Saga to handle events with
+     * @param processorName The name of the processor to be used for this saga
+     * @param <S>           The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType, String processorName) {
+        return trackingSagaManager(sagaType, processorName, Configuration::eventBus);
+    }
+
+    /**
      * Initialize a configuration for a Saga of given {@code sagaType}, using a Tracking Event Processor to process
      * incoming Events from a Message Source provided by given {@code messageSourceBuilder}. Note that a Token Store
      * should be configured in the global configuration, or the Saga Manager will default to an in-memory token store,
@@ -133,20 +193,40 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public static <S> SagaConfiguration<S> trackingSagaManager(
             Class<S> sagaType,
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
-        SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, TrackingEventProcessor.class,
+        return trackingSagaManager(sagaType, eventProcessorName(sagaType), messageSourceBuilder);
+    }
+
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Tracking Event Processor (with provided
+     * name) to process incoming Events from a Message Source provided by given {@code messageSourceBuilder}. Note that
+     * a Token Store should be configured in the global configuration, or the Saga Manager will default to an in-memory
+     * token store, which is not recommended for production environments.
+     *
+     * @param sagaType             The type of Saga to handle events with
+     * @param processorName        The name of the processor to be used for this saga
+     * @param messageSourceBuilder The function providing the message source based on the configuration
+     * @param <S>                  The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
+    public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType,
+                                                               String processorName,
+                                                               Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
+        SagaConfiguration<S> sagaConfiguration = new SagaConfiguration<>(sagaType, processorName, TrackingEventProcessor.class,
                                                                          c -> null, c -> null);
-        String processorName = sagaType.getSimpleName() + "Processor";
+
         sagaConfiguration.processor.update(configuration -> {
-            TrackingEventProcessor processor = new TrackingEventProcessor(
-                    processorName,
-                    sagaConfiguration.sagaManager.get(),
-                    messageSourceBuilder.apply(sagaConfiguration.config),
-                    sagaConfiguration.tokenStore.get(),
-                    sagaConfiguration.transactionManager.get(),
-                    sagaConfiguration.messageMonitor.get(),
-                    sagaConfiguration.rollbackConfiguration.get(),
-                    sagaConfiguration.errorHandler.get(),
-                    sagaConfiguration.trackingEventProcessorConfiguration.get());
+            EventProcessor processor = configuration
+                    .getComponent(EventProcessorRegistry.class)
+                    .registerProcessor(processorName, new TrackingEventProcessor(
+                            processorName,
+                            sagaConfiguration.sagaManager.get(),
+                            messageSourceBuilder.apply(sagaConfiguration.config),
+                            sagaConfiguration.tokenStore.get(),
+                            sagaConfiguration.transactionManager.get(),
+                            sagaConfiguration.messageMonitor.get(),
+                            sagaConfiguration.rollbackConfiguration.get(),
+                            sagaConfiguration.errorHandler.get(),
+                            sagaConfiguration.trackingEventProcessorConfiguration.get()));
             processor.registerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
             return processor;
         });
@@ -154,11 +234,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     @SuppressWarnings("unchecked")
-    private SagaConfiguration(Class<S> sagaType, Class<? extends EventProcessor> eventProcessorType,
+    private SagaConfiguration(Class<S> sagaType, String processorName, Class<? extends EventProcessor> eventProcessorType,
                               Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
                               Function<Configuration, EventProcessingStrategy> processingStrategy) {
         String managerName = sagaType.getSimpleName() + "Manager";
-        String processorName = sagaType.getSimpleName() + "Processor";
         String repositoryName = sagaType.getSimpleName() + "Repository";
         transactionManager = new Component<>(() -> config, "transactionManager",
                                              c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance));
@@ -187,15 +266,25 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                                   TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
         processor = new Component<>(() -> config, processorName,
                                     c -> {
-                                        SubscribingEventProcessor processor = new SubscribingEventProcessor(processorName, sagaManager.get(),
-                                                                                                            rollbackConfiguration.get(),
-                                                                                                            messageSourceBuilder.apply(c),
-                                                                                                            processingStrategy.apply(c),
-                                                                                                            errorHandler.get(),
-                                                                                                            messageMonitor.get());
+                                        EventProcessor processor = config
+                                                .getComponent(EventProcessorRegistry.class)
+                                                .registerProcessor(processorName,
+                                                                   new SubscribingEventProcessor(processorName,
+                                                                                                 sagaManager.get(),
+                                                                                                 rollbackConfiguration.get(),
+                                                                                                 messageSourceBuilder.apply(c),
+                                                                                                 processingStrategy.apply(c),
+                                                                                                 errorHandler.get(),
+                                                                                                 messageMonitor.get()));
                                         processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
                                         return processor;
                                     });
+    }
+
+    private static String eventProcessorName(Class<?> sagaType) {
+        return AnnotationUtils.findAnnotationAttributes(sagaType, ProcessingGroup.class)
+                              .map(attrs -> (String) attrs.get("processingGroup"))
+                              .orElse(sagaType.getSimpleName() + "Processor");
     }
 
     /**
