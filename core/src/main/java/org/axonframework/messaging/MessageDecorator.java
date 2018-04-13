@@ -32,6 +32,8 @@ import org.axonframework.serialization.Serializer;
  */
 public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
 
+    private static final long serialVersionUID = 3969631713723578521L;
+
     private final Message<T> delegate;
     private transient volatile SerializedObjectHolder serializedObjectHolder;
 

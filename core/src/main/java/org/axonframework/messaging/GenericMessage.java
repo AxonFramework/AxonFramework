@@ -31,6 +31,7 @@ import java.util.Map;
  */
 public class GenericMessage<T> extends AbstractMessage<T> {
 
+    private static final long serialVersionUID = 7937214711724527316L;
     private final MetaData metaData;
     private final Class<T> payloadType;
     private final T payload;

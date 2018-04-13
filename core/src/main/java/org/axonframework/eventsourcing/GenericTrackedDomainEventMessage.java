@@ -28,6 +28,7 @@ import java.util.function.Supplier;
  */
 public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessage<T> implements
                                                                                       TrackedEventMessage<T> {
+    private static final long serialVersionUID = 6211645167637822558L;
     private final TrackingToken trackingToken;
 
     /**
