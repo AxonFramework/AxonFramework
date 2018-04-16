@@ -41,7 +41,11 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param tokenAtReset The token representing the position at which the reset was triggered.
      */
     public ReplayToken(TrackingToken tokenAtReset) {
-        this.tokenAtReset = tokenAtReset;
+        if (tokenAtReset instanceof ReplayToken) {
+            this.tokenAtReset = ((ReplayToken)tokenAtReset).tokenAtReset;
+        } else {
+            this.tokenAtReset = tokenAtReset;
+        }
         this.currentToken = null;
     }
 
@@ -95,9 +99,9 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
         if (other instanceof ReplayToken) {
-            return new ReplayToken(this, ((ReplayToken) other).currentToken);
+            return new ReplayToken(this.tokenAtReset, ((ReplayToken) other).currentToken);
         }
-        return new ReplayToken(this, other);
+        return new ReplayToken(this.tokenAtReset, other);
     }
 
     @Override
