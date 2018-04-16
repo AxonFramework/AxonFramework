@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.util.MessagePlatformSerializer;
 import io.axoniq.platform.MetaDataValue;
 import org.axonframework.commandhandling.CommandMessage;
@@ -36,8 +37,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class CommandSerializer extends MessagePlatformSerializer {
 
 
-    public CommandSerializer(Serializer serializer) {
-        super(serializer);
+    public CommandSerializer(Serializer serializer, AxonHubConfiguration configuration) {
+        super(serializer, configuration);
     }
 
     public Command serialize(CommandMessage<?> commandMessage, String routingKey, int priority) {
@@ -58,6 +59,8 @@ public class CommandSerializer extends MessagePlatformSerializer {
                 .addProcessingInstructions(ProcessingInstruction.newBuilder()
                         .setKey(ProcessingKey.PRIORITY)
                         .setValue(MetaDataValue.newBuilder().setNumberValue(priority)))
+                .setClientId(configuration.getComponentName())
+                .setComponentName(configuration.getComponentName())
                 .build();
     }
 

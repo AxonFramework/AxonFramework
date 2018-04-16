@@ -16,6 +16,7 @@
 package io.axoniq.axonhub.client.util;
 
 import com.google.protobuf.ByteString;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.platform.MetaDataValue;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.MessageSerializer;
@@ -37,10 +38,13 @@ public abstract class MessagePlatformSerializer {
 
     protected final Serializer messageSerializer;
     protected final GrpcMetaDataConverter metaDataConverter;
+    protected final AxonHubConfiguration configuration;
 
-    protected MessagePlatformSerializer(Serializer messageSerializer) {
+    protected MessagePlatformSerializer(Serializer messageSerializer,
+                                        AxonHubConfiguration configuration) {
         this.messageSerializer = messageSerializer;
         this.metaDataConverter = new GrpcMetaDataConverter(messageSerializer);
+        this.configuration = configuration;
     }
 
     public Map<String, MetaDataValue> serializeMetaData(MetaData metaData) {

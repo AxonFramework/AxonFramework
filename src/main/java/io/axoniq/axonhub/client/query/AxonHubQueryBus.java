@@ -97,7 +97,7 @@ public class AxonHubQueryBus implements QueryBus {
                            Serializer messageSerializer, Serializer genericSerializer, QueryPriorityCalculator priorityCalculator) {
         this.configuration = configuration;
         this.localSegment = localSegment;
-        this.serializer = new QuerySerializer(messageSerializer, genericSerializer);
+        this.serializer = new QuerySerializer(messageSerializer, genericSerializer, configuration);
         this.priorityCalculator = priorityCalculator;
         this.queryProvider = new QueryProvider();
         this.platformConnectionManager = platformConnectionManager;

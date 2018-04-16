@@ -15,6 +15,7 @@
 
 package io.axoniq.axonhub.client.command;
 
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.platform.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
@@ -30,7 +31,7 @@ public class CommandSerializerTest {
 
     @Before
     public void init() {
-        serializer = new CommandSerializer(new XStreamSerializer());
+        serializer = new CommandSerializer(new XStreamSerializer(), new AxonHubConfiguration());
     }
 
     @org.junit.Test

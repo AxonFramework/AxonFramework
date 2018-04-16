@@ -20,6 +20,7 @@ import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.util.MessagePlatformSerializer;
 import io.axoniq.platform.MetaDataValue;
 import org.axonframework.queryhandling.QueryMessage;
@@ -38,10 +39,12 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class QuerySerializer extends MessagePlatformSerializer {
 
+
     private final Serializer genericSerializer;
 
-    public QuerySerializer(Serializer messageSerializer, Serializer genericSerializer) {
-        super(messageSerializer);
+    public QuerySerializer(Serializer messageSerializer, Serializer genericSerializer,
+                           AxonHubConfiguration configuration) {
+        super(messageSerializer, configuration);
         this.genericSerializer = genericSerializer;
     }
 
@@ -65,6 +68,8 @@ public class QuerySerializer extends MessagePlatformSerializer {
                 .setTimestamp(System.currentTimeMillis())
                 .setMessageIdentifier(UUID.randomUUID().toString())
                 .setQuery(queryMessage.getQueryName())
+                .setClientId(configuration.getClientName())
+                .setComponentName(configuration.getComponentName())
                 .setResponseType(toGrpcSerializedObject(serializedResponseType))
                 .setPayload(toGrpcSerializedObject(serializedPayload))
                 .addProcessingInstructions(ProcessingInstruction.newBuilder()
