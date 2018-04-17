@@ -27,6 +27,8 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -45,6 +47,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
     private final Map<Class<?>, AnnotatedAggregateModel> registry;
     private final ParameterResolverFactory parameterResolverFactory;
+    private final Iterable<HandlerDefinition> handlerDefinitions;
+    private final Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions;
 
     /**
      * Initializes an instance which uses the default, classpath based, ParameterResolverFactory to detect parameters
@@ -61,7 +65,15 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
      * @param parameterResolverFactory to resolve parameter values of annotated handlers with
      */
     public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
+        this(parameterResolverFactory, null, null);
+    }
+
+    public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
+                                              Iterable<HandlerDefinition> handlerDefinitions,
+                                              Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
         this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinitions = handlerDefinitions;
+        this.handlerEnhancerDefinitions = handlerEnhancerDefinitions;
         registry = new ConcurrentHashMap<>();
     }
 
@@ -89,14 +101,29 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory).createModel(aggregateType);
     }
 
+    public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
+                                                         ParameterResolverFactory parameterResolverFactory,
+                                                         Iterable<HandlerDefinition> handlerDefinitions,
+                                                         Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory,
+                                                      handlerDefinitions,
+                                                      handlerEnhancerDefinitions).createModel(aggregateType);
+    }
+
     @Override
     public <T> AnnotatedAggregateModel<T> createModel(Class<? extends T> aggregateType) {
         if (!registry.containsKey(aggregateType)) {
             AnnotatedHandlerInspector<T> inspector;
             if (parameterResolverFactory == null) {
                 inspector = AnnotatedHandlerInspector.inspectType(aggregateType);
+            } else if (handlerDefinitions == null) {
+                inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
+                                                                  parameterResolverFactory);
             } else {
-                inspector = AnnotatedHandlerInspector.inspectType(aggregateType, parameterResolverFactory);
+                inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
+                                                                  parameterResolverFactory,
+                                                                  handlerDefinitions,
+                                                                  handlerEnhancerDefinitions);
             }
             AnnotatedAggregateModel<T> model = new AnnotatedAggregateModel<>(aggregateType, inspector);
             // Add the newly created inspector to the registry first to prevent a StackOverflowError:

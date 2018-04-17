@@ -19,6 +19,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.*;
@@ -26,6 +28,7 @@ import org.axonframework.queryhandling.*;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
 /**
@@ -58,9 +61,21 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
      * @param target                   The instance with {@link QueryHandler} annotated methods
      * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with
      */
-    @SuppressWarnings("unchecked")
     public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory) {
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) target.getClass(), parameterResolverFactory);
+        this(target,
+             parameterResolverFactory,
+             () -> ServiceLoader.load(HandlerDefinition.class).iterator(),
+             () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator());
+    }
+
+    @SuppressWarnings("unchecked")
+    public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory,
+                                         Iterable<HandlerDefinition> handlerDefinitions,
+                                         Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) target.getClass(),
+                                                           parameterResolverFactory,
+                                                           handlerDefinitions,
+                                                           handlerEnhancerDefinitions);
         this.target = target;
     }
 

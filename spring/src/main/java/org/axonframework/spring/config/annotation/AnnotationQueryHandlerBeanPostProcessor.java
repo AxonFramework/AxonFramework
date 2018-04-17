@@ -15,6 +15,8 @@
  */
 package org.axonframework.spring.config.annotation;
 
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
@@ -49,9 +51,16 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
         return result.get();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected AnnotationQueryHandlerAdapter initializeAdapterFor(Object o, ParameterResolverFactory parameterResolverFactory) {
-        return new AnnotationQueryHandlerAdapter(o, parameterResolverFactory);
+    protected AnnotationQueryHandlerAdapter initializeAdapterFor(Object o,
+                                                                 ParameterResolverFactory parameterResolverFactory,
+                                                                 Iterable<HandlerDefinition> handlerDefinitions,
+                                                                 Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        return new AnnotationQueryHandlerAdapter(o,
+                                                 parameterResolverFactory,
+                                                 handlerDefinitions,
+                                                 handlerEnhancerDefinitions);
     }
 
     private class HasQueryHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {

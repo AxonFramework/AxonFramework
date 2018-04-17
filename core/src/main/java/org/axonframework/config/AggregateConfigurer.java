@@ -67,7 +67,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
         metaModel = new Component<>(() -> parent, "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
                                     c -> c.getComponent(AggregateMetaModelFactory.class,
-                                                        () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory()))
+                                                        () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
+                                                                                                     c.handlerDefinitions(),
+                                                                                                     c.handlerEnhancerDefinitions()))
                                           .createModel(aggregate));
         commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
                                                 c -> c.getComponent(CommandTargetResolver.class,

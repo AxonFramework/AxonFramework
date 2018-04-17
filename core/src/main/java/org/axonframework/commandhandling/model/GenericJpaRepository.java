@@ -24,6 +24,8 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import javax.persistence.EntityManager;
@@ -112,6 +114,19 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         this(entityManagerProvider, aggregateType, eventBus, NullLockFactory.INSTANCE, parameterResolverFactory);
     }
 
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
+                                EventBus eventBus, ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this(entityManagerProvider,
+             aggregateType,
+             eventBus,
+             NullLockFactory.INSTANCE,
+             parameterResolverFactory,
+             handlerDefinitions,
+             handlerEnhancerDefinitions);
+    }
+
     /**
      * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
      * LockFactory}.
@@ -198,6 +213,20 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         this(entityManagerProvider, aggregateType, eventBus, lockFactory, parameterResolverFactory, Function.identity());
     }
 
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this(entityManagerProvider,
+             aggregateType,
+             eventBus,
+             lockFactory,
+             parameterResolverFactory,
+             handlerDefinitions,
+             handlerEnhancerDefinitions,
+             Function.identity());
+    }
+
     /**
      * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
      * LockFactory} and allowing for a custom {@code identifierConverter} to convert a String based identifier to an
@@ -215,6 +244,18 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                 LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory,
                                 Function<String, ?> identifierConverter) {
         super(aggregateType, lockFactory, parameterResolverFactory);
+        Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
+        this.entityManagerProvider = entityManagerProvider;
+        this.eventBus = eventBus;
+        this.identifierConverter = identifierConverter;
+    }
+
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                Function<String, ?> identifierConverter) {
+        super(aggregateType, lockFactory, parameterResolverFactory, handlerDefinitions, handlerEnhancerDefinitions);
         Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
         this.eventBus = eventBus;

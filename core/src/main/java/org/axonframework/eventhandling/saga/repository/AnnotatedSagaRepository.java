@@ -25,6 +25,8 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -97,6 +99,20 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
                                    ResourceInjector resourceInjector,
                                    ParameterResolverFactory parameterResolverFactory) {
         this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType), resourceInjector,
+             new PessimisticLockFactory());
+    }
+
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
+                                   ResourceInjector resourceInjector,
+                                   ParameterResolverFactory parameterResolverFactory,
+                                   Iterable<HandlerDefinition> handlerDefinitions,
+                                   Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this(sagaType,
+             sagaStore,
+             new AnnotationSagaMetaModelFactory(parameterResolverFactory,
+                                                handlerDefinitions,
+                                                handlerEnhancerDefinitions).modelOf(sagaType),
+             resourceInjector,
              new PessimisticLockFactory());
     }
 

@@ -22,6 +22,8 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -113,6 +115,24 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
                                           ParameterResolverFactory parameterResolverFactory,
                                           SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory, eventStore, lockFactory, parameterResolverFactory, snapshotTriggerDefinition);
+        this.cache = cache;
+        this.eventStore = eventStore;
+        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+    }
+
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
+                                          LockFactory lockFactory, Cache cache,
+                                          ParameterResolverFactory parameterResolverFactory,
+                                          Iterable<HandlerDefinition> handlerDefinitions,
+                                          Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        super(aggregateFactory,
+              eventStore,
+              lockFactory,
+              parameterResolverFactory,
+              handlerDefinitions,
+              handlerEnhancerDefinitions,
+              snapshotTriggerDefinition);
         this.cache = cache;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;

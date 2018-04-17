@@ -175,11 +175,18 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                 c -> c.getComponent(RollbackConfiguration.class,
                                                                     () -> RollbackConfigurationType.ANY_THROWABLE));
         sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
-        sagaRepository = new Component<>(() -> config, repositoryName,
-                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
-                                                                            c.parameterResolverFactory()));
+        sagaRepository = new Component<>(() -> config,
+                                         repositoryName,
+                                         c -> new AnnotatedSagaRepository<>(sagaType,
+                                                                            sagaStore.get(),
+                                                                            c.resourceInjector(),
+                                                                            c.parameterResolverFactory(),
+                                                                            c.handlerDefinitions(),
+                                                                            c.handlerEnhancerDefinitions()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
                                                                                                  c.parameterResolverFactory(),
+                                                                                                 c.handlerDefinitions(),
+                                                                                                 c.handlerEnhancerDefinitions(),
                                                                                                  listenerInvocationErrorHandler
                                                                                                          .get()));
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",

@@ -35,6 +35,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -174,6 +176,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer);
         registerModules(configurer);
+        registerHandlerDefinitions(configurer);
+        registerHandlerEnhancerDefinitions(configurer);
 
         Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
         String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
@@ -197,6 +201,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                  .map(n -> (CorrelationDataProvider) getBean(n, c))
                                  .collect(Collectors.toList());
                 });
+    }
+
+    private void registerHandlerDefinitions(Configurer configurer) {
+        Arrays.stream(beanFactory.getBeanNamesForType(HandlerDefinition.class))
+              .forEach(name -> configurer.registerHandlerDefinition(c -> getBean(name, c)));
+    }
+
+    private void registerHandlerEnhancerDefinitions(Configurer configurer) {
+        Arrays.stream(beanFactory.getBeanNamesForType(HandlerEnhancerDefinition.class))
+              .forEach(name -> configurer.registerHandlerEnhancerDefinition(c -> getBean(name, c)));
     }
 
     @SuppressWarnings("unchecked")
@@ -313,7 +327,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                         aggregateType,
                                         c.eventBus(),
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
-                                        c.parameterResolverFactory()));
+                                        c.parameterResolverFactory(),
+                                        c.handlerDefinitions(),
+                                        c.handlerEnhancerDefinitions()));
                     }
                 }
             } else {

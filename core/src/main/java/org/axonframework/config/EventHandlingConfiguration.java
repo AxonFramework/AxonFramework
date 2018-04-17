@@ -99,7 +99,10 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                              new SimpleEventHandlerInvoker(
                                                      eh,
                                                      conf.parameterResolverFactory(),
-                                                     getListenerInvocationErrorHandler(conf, name)
+                                                     conf.handlerDefinitions(),
+                                                     conf.handlerEnhancerDefinitions(),
+                                                     getListenerInvocationErrorHandler(conf, name),
+                                                     new SequentialPerAggregatePolicy()
                                              ),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
@@ -250,6 +253,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         return new TrackingEventProcessor(name,
                                           new SimpleEventHandlerInvoker(handlers,
                                                                         conf.parameterResolverFactory(),
+                                                                        conf.handlerDefinitions(),
+                                                                        conf.handlerEnhancerDefinitions(),
                                                                         getListenerInvocationErrorHandler(conf, name),
                                                                         sequencingPolicy.apply(conf)),
                                           source.apply(conf),

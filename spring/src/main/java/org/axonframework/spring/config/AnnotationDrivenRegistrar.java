@@ -16,12 +16,18 @@
 
 package org.axonframework.spring.config;
 
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.axonframework.spring.config.annotation.AnnotationQueryHandlerBeanPostProcessor;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder.getBeanReference;
 
@@ -58,6 +64,9 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationCommandHandlerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory", getBeanReference(registry));
+        beanDefinition.getPropertyValues().add("handlerDefinitions", findBeans(HandlerDefinition.class, registry));
+        beanDefinition.getPropertyValues().add("handlerEnhancerDefinitions",
+                                               findBeans(HandlerEnhancerDefinition.class, registry));
 
         registry.registerBeanDefinition(COMMAND_HANDLER_BEAN_NAME, beanDefinition);
     }
@@ -66,7 +75,19 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationQueryHandlerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory", getBeanReference(registry));
+        beanDefinition.getPropertyValues().add("handlerDefinitions", findBeans(HandlerDefinition.class, registry));
+        beanDefinition.getPropertyValues().add("handlerEnhancerDefinitions",
+                                               findBeans(HandlerEnhancerDefinition.class, registry));
 
         registry.registerBeanDefinition(QUERY_HANDLER_BEAN_NAME, beanDefinition);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> List<T> findBeans(Class<T> klass, BeanDefinitionRegistry registry) {
+        return Arrays.stream(registry.getBeanDefinitionNames())
+                     .map(registry::getBeanDefinition)
+                     .filter(bd -> klass.equals(bd.getClass()))
+                     .map(bd -> (T) bd)
+                     .collect(Collectors.toList());
     }
 }

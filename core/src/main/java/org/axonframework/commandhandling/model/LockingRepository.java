@@ -21,6 +21,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -82,6 +84,16 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
         this(aggregateType, new PessimisticLockFactory(), parameterResolverFactory);
     }
 
+    protected LockingRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this(aggregateType,
+             new PessimisticLockFactory(),
+             parameterResolverFactory,
+             handlerDefinitions,
+             handlerEnhancerDefinitions);
+    }
+
     /**
      * Initialize the repository with the given {@code LockFactory}.
      *
@@ -116,6 +128,15 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
                                 ParameterResolverFactory parameterResolverFactory) {
         super(aggregateType, parameterResolverFactory);
+        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
+        this.lockFactory = lockFactory;
+    }
+
+    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
+                                ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        super(aggregateType, parameterResolverFactory, handlerDefinitions, handlerEnhancerDefinitions);
         Assert.notNull(lockFactory, () -> "LockFactory may not be null");
         this.lockFactory = lockFactory;
     }

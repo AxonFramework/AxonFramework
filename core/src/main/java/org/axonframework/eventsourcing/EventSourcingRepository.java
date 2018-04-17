@@ -27,6 +27,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -157,6 +159,21 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.aggregateFactory = aggregateFactory;
     }
 
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
+                                   ParameterResolverFactory parameterResolverFactory,
+                                   Iterable<HandlerDefinition> handlerDefinitions,
+                                   Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        super(aggregateFactory.getAggregateType(),
+              parameterResolverFactory,
+              handlerDefinitions,
+              handlerEnhancerDefinitions);
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
+        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+        this.eventStore = eventStore;
+        this.aggregateFactory = aggregateFactory;
+    }
+
     /**
      * Initialize a repository with the given locking strategy.
      *
@@ -187,6 +204,22 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
                                    ParameterResolverFactory parameterResolverFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType(), lockFactory, parameterResolverFactory);
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
+        this.eventStore = eventStore;
+        this.aggregateFactory = aggregateFactory;
+        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+    }
+
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
+                                   ParameterResolverFactory parameterResolverFactory,
+                                   Iterable<HandlerDefinition> handlerDefinitions,
+                                   Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        super(aggregateFactory.getAggregateType(),
+              lockFactory,
+              parameterResolverFactory,
+              handlerDefinitions,
+              handlerEnhancerDefinitions);
         Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;

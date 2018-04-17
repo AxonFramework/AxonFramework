@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -66,6 +68,17 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
         this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
                                                                  nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")));
+    }
+
+    protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
+                                 Iterable<HandlerDefinition> handlerDefinitions,
+                                 Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this(AnnotatedAggregateMetaModelFactory
+                     .inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
+                                       nonNull(parameterResolverFactory,
+                                               () -> "parameterResolverFactory may not be null"),
+                                       handlerDefinitions,
+                                       handlerEnhancerDefinitions));
     }
 
     /**

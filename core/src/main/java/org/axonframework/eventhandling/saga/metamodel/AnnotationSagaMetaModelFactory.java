@@ -22,6 +22,8 @@ import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -37,12 +39,16 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
     private final Map<Class<?>, SagaModel<?>> registry = new ConcurrentHashMap<>();
 
     private final ParameterResolverFactory parameterResolverFactory;
+    private final Iterable<HandlerDefinition> handlerDefinitions;
+    private final Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions;
 
     /**
      * Initializes a {@link AnnotationSagaMetaModelFactory} with {@link ClasspathParameterResolverFactory}.
      */
     public AnnotationSagaMetaModelFactory() {
         parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(getClass().getClassLoader());
+        handlerDefinitions = () -> ServiceLoader.load(HandlerDefinition.class).iterator();
+        handlerEnhancerDefinitions = () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator();
     }
 
     /**
@@ -51,7 +57,17 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
      * @param parameterResolverFactory factory for event handler parameter resolvers
      */
     public AnnotationSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
+        this(parameterResolverFactory,
+             () -> ServiceLoader.load(HandlerDefinition.class).iterator(),
+             () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator());
+    }
+
+    public AnnotationSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
+                                          Iterable<HandlerDefinition> handlerDefinitions,
+                                          Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
         this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinitions = handlerDefinitions;
+        this.handlerEnhancerDefinitions = handlerEnhancerDefinitions;
     }
 
     @SuppressWarnings("unchecked")
@@ -62,7 +78,10 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
 
     private <T> SagaModel<T> doCreateModel(Class<T> sagaType) {
         AnnotatedHandlerInspector<T> handlerInspector =
-                AnnotatedHandlerInspector.inspectType(sagaType, parameterResolverFactory);
+                AnnotatedHandlerInspector.inspectType(sagaType,
+                                                      parameterResolverFactory,
+                                                      handlerDefinitions,
+                                                      handlerEnhancerDefinitions);
 
         return new InspectedSagaModel<>(handlerInspector.getHandlers());
     }

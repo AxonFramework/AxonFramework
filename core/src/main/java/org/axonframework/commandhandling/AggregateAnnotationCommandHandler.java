@@ -25,6 +25,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -88,6 +90,19 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
                                              ParameterResolverFactory parameterResolverFactory) {
         this(repository, commandTargetResolver,
              AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, parameterResolverFactory));
+    }
+
+    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
+                                             CommandTargetResolver commandTargetResolver,
+                                             Iterable<HandlerDefinition> handlerDefinitions,
+                                             Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                             ParameterResolverFactory parameterResolverFactory) {
+        this(repository,
+             commandTargetResolver,
+             AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType,
+                                                                 parameterResolverFactory,
+                                                                 handlerDefinitions,
+                                                                 handlerEnhancerDefinitions));
     }
 
     /**

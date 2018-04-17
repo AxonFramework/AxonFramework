@@ -29,6 +29,8 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -124,6 +126,21 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                                                            snapshotTriggerDefinition));
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
+                                              SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                              ParameterResolverFactory parameterResolverFactory,
+                                              Iterable<HandlerDefinition> handlerDefinitions,
+                                              Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        return repositories.computeIfAbsent(aggregateFactory.getAggregateType(),
+                                            k -> new DisruptorRepository<>(aggregateFactory, cache, eventStore,
+                                                                           parameterResolverFactory,
+                                                                           handlerDefinitions,
+                                                                           handlerEnhancerDefinitions,
+                                                                           snapshotTriggerDefinition));
+    }
+
     private void removeEntry(String aggregateIdentifier) {
         for (DisruptorRepository repository : repositories.values()) {
             repository.removeFromCache(aggregateIdentifier);
@@ -162,7 +179,23 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.cache = cache;
             this.eventStore = eventStore;
             this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(), parameterResolverFactory);
+            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
+                                                                             parameterResolverFactory);
+        }
+
+        private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
+                                    ParameterResolverFactory parameterResolverFactory,
+                                    Iterable<HandlerDefinition> handlerDefinitions,
+                                    Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
+            this.aggregateFactory = aggregateFactory;
+            this.cache = cache;
+            this.eventStore = eventStore;
+            this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
+                                                                             parameterResolverFactory,
+                                                                             handlerDefinitions,
+                                                                             handlerEnhancerDefinitions);
         }
 
         @Override

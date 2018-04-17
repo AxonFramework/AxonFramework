@@ -28,6 +28,8 @@ import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -79,6 +81,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private MultiParameterResolverFactory parameterResolverFactory;
+    private final List<HandlerDefinition> handlerDefinitions;
+    private final List<HandlerEnhancerDefinition> handlerEnhancerDefinitions;
 
     /**
      * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
@@ -95,6 +99,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 new SimpleResourceParameterResolverFactory(resources),
                 ClasspathParameterResolverFactory.forClass(aggregateType));
+        handlerDefinitions = new ArrayList<>();
+        ServiceLoader.load(HandlerDefinition.class).forEach(handlerDefinitions::add);
+        handlerEnhancerDefinitions = new ArrayList<>();
+        ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(handlerEnhancerDefinitions::add);
     }
 
     @Override
@@ -118,7 +126,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
-                annotatedCommandHandler, parameterResolverFactory);
+                annotatedCommandHandler, parameterResolverFactory, handlerDefinitions, handlerEnhancerDefinitions);
         adapter.subscribe(commandBus);
         return this;
     }
@@ -175,6 +183,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName) {
         return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        handlerDefinitions.add(handlerDefinition);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerHandlerEnhancerDefinition(
+            HandlerEnhancerDefinition handlerEnhancerDefinition) {
+        handlerEnhancerDefinitions.add(handlerEnhancerDefinition);
+        return this;
     }
 
     @Override

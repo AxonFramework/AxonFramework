@@ -18,12 +18,15 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.ServiceLoader;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -133,10 +136,24 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                      ParameterResolverFactory parameterResolverFactory,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        this(eventListeners,
+             parameterResolverFactory,
+             () -> ServiceLoader.load(HandlerDefinition.class).iterator(),
+             () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator(),
+             listenerInvocationErrorHandler,
+             sequencingPolicy);
+    }
+
+    public SimpleEventHandlerInvoker(List<?> eventListeners,
+                                     ParameterResolverFactory parameterResolverFactory,
+                                     Iterable<HandlerDefinition> handlerDefinitions,
+                                     Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                     ListenerInvocationErrorHandler listenerInvocationErrorHandler,
+                                     SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
         this.eventListeners = new ArrayList<>(eventListeners.stream()
                                                             .map(listener -> listener instanceof EventListener ?
                                                                     (EventListener) listener :
-                                                                    new AnnotationEventListenerAdapter(listener, parameterResolverFactory))
+                                                                    new AnnotationEventListenerAdapter(listener, parameterResolverFactory, handlerDefinitions, handlerEnhancerDefinitions))
                                                             .collect(toList()));
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;

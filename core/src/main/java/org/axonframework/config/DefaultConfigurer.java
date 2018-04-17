@@ -40,6 +40,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -101,6 +103,9 @@ public class DefaultConfigurer implements Configurer {
 
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
+    private final List<Component<HandlerDefinition>> handlerDefinitions = new ArrayList<>();
+    private final List<Component<HandlerEnhancerDefinition>> handlerEnhancerDefinitions = new ArrayList<>();
+
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private final List<Runnable> startHandlers = new ArrayList<>();
     private final List<Runnable> shutdownHandlers = new ArrayList<>();
@@ -123,6 +128,16 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        initializeHandlerDefinitions();
+        initializeHandlerEnhancerDefinitions();
+    }
+
+    private void initializeHandlerDefinitions() {
+        ServiceLoader.load(HandlerDefinition.class).forEach(hd -> registerHandlerDefinition(c -> hd));
+    }
+
+    private void initializeHandlerEnhancerDefinitions() {
+        ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(hed -> registerHandlerEnhancerDefinition(c -> hed));
     }
 
     /**
@@ -279,6 +294,21 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
+    public Configurer registerHandlerDefinition(Function<Configuration, HandlerDefinition> handlerDefinitionBuilder) {
+        handlerDefinitions.add(new Component<>(config, "handlerDefinition", handlerDefinitionBuilder));
+        return this;
+    }
+
+    @Override
+    public Configurer registerHandlerEnhancerDefinition(
+            Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerDefinitionBuilder) {
+        handlerEnhancerDefinitions.add(new Component<>(config,
+                                                       "handlerEnhancerDefinition",
+                                                       handlerEnhancerDefinitionBuilder));
+        return this;
+    }
+
+    @Override
     public Configurer configureMessageMonitor(
             Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
         messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
@@ -324,7 +354,9 @@ public class DefaultConfigurer implements Configurer {
         startHandlers.add(() -> {
             Registration registration =
                     new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config),
-                                                        config.parameterResolverFactory())
+                                                        config.parameterResolverFactory(),
+                                                        config.handlerDefinitions(),
+                                                        config.handlerEnhancerDefinitions())
                             .subscribe(config.commandBus());
             shutdownHandlers.add(registration::cancel);
         });
@@ -335,9 +367,11 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
         startHandlers.add(() -> {
-            Registration registration = new AnnotationQueryHandlerAdapter(
-                    annotatedQueryHandlerBuilder.apply(config), config.parameterResolverFactory()
-            ).subscribe(config.queryBus());
+            Registration registration = new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
+                                                                          config.parameterResolverFactory(),
+                                                                          config.handlerDefinitions(),
+                                                                          config.handlerEnhancerDefinitions())
+                    .subscribe(config.queryBus());
             shutdownHandlers.add(registration::cancel);
         });
         return this;
@@ -505,6 +539,16 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public void onStart(Runnable startHandler) {
             startHandlers.add(startHandler);
+        }
+
+        @Override
+        public List<HandlerDefinition> handlerDefinitions() {
+            return handlerDefinitions.stream().map(Component::get).collect(toList());
+        }
+
+        @Override
+        public List<HandlerEnhancerDefinition> handlerEnhancerDefinitions() {
+            return handlerEnhancerDefinitions.stream().map(Component::get).collect(toList());
         }
     }
 }

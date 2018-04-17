@@ -26,6 +26,8 @@ import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -67,6 +69,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
+    private final List<HandlerDefinition> handlerDefinitions;
+    private final List<HandlerEnhancerDefinition> handlerEnhancerDefinitions;
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
@@ -90,6 +94,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
                                                                   sagaType, fieldFilters);
+        handlerDefinitions = new ArrayList<>();
+        ServiceLoader.load(HandlerDefinition.class).forEach(handlerDefinitions::add);
+        handlerEnhancerDefinitions = new ArrayList<>();
+        ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(handlerEnhancerDefinitions::add);
     }
 
     /**
@@ -260,6 +268,18 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName) {
         return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        handlerDefinitions.add(handlerDefinition);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition) {
+        handlerEnhancerDefinitions.add(handlerEnhancerDefinition);
+        return this;
     }
 
     private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {

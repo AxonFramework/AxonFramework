@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -58,6 +60,18 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
         this.listenerType = annotatedEventListener.getClass();
         this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
                                                                parameterResolverFactory);
+    }
+
+    public AnnotationEventListenerAdapter(Object annotatedEventListener,
+                                          ParameterResolverFactory parameterResolverFactory,
+                                          Iterable<HandlerDefinition> handlerDefinitions,
+                                          Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        this.annotatedEventListener = annotatedEventListener;
+        this.listenerType = annotatedEventListener.getClass();
+        this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
+                                                               parameterResolverFactory,
+                                                               handlerDefinitions,
+                                                               handlerEnhancerDefinitions);
     }
 
     @Override

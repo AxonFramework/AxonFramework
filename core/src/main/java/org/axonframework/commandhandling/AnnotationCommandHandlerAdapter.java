@@ -22,6 +22,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayDeque;
@@ -64,6 +66,21 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
         Assert.notNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
         this.modelInspector = AnnotatedAggregateMetaModelFactory.inspectAggregate((Class<Object>)annotatedCommandHandler.getClass(),
                                                                                   parameterResolverFactory);
+
+        this.target = annotatedCommandHandler;
+    }
+
+    @SuppressWarnings("unchecked")
+    public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           Iterable<HandlerDefinition> handlerDefinitions,
+                                           Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        Assert.notNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
+        this.modelInspector = AnnotatedAggregateMetaModelFactory
+                .inspectAggregate((Class<Object>) annotatedCommandHandler.getClass(),
+                                  parameterResolverFactory,
+                                  handlerDefinitions,
+                                  handlerEnhancerDefinitions);
 
         this.target = annotatedCommandHandler;
     }

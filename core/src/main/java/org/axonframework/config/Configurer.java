@@ -23,6 +23,8 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
@@ -53,6 +55,10 @@ public interface Configurer {
      * @return the current instance of the Configurer, for chaining purposes
      */
     Configurer registerEventUpcaster(Function<Configuration, EventUpcaster> upcasterBuilder);
+
+    Configurer registerHandlerDefinition(Function<Configuration, HandlerDefinition> handlerDefinitionBuilder);
+
+    Configurer registerHandlerEnhancerDefinition(Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerDefinitionBuilder);
 
     /**
      * Configures the Message Monitor to use for the Message processing components in this configuration, unless more

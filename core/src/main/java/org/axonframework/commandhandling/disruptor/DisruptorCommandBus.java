@@ -34,6 +34,8 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.slf4j.Logger;
@@ -41,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.*;
 
 import static java.lang.String.format;
@@ -402,6 +405,18 @@ public class DisruptorCommandBus implements CommandBus {
                                 parameterResolverFactory);
     }
 
+    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+                                              ParameterResolverFactory parameterResolverFactory,
+                                              Iterable<HandlerDefinition> handlerDefinitions,
+                                              Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                NoSnapshotTriggerDefinition.INSTANCE,
+                                parameterResolverFactory,
+                                handlerDefinitions,
+                                handlerEnhancerDefinitions);
+    }
+
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
@@ -438,8 +453,26 @@ public class DisruptorCommandBus implements CommandBus {
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                snapshotTriggerDefinition,
+                                parameterResolverFactory,
+                                () -> ServiceLoader.load(HandlerDefinition.class).iterator(),
+                                () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator());
+    }
+
+    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+                                              SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                              ParameterResolverFactory parameterResolverFactory,
+                                              Iterable<HandlerDefinition> handlerDefinitions,
+                                              Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
-            invoker.createRepository(eventStore, aggregateFactory, snapshotTriggerDefinition, parameterResolverFactory);
+            invoker.createRepository(eventStore,
+                                     aggregateFactory,
+                                     snapshotTriggerDefinition,
+                                     parameterResolverFactory,
+                                     handlerDefinitions,
+                                     handlerEnhancerDefinitions);
         }
         return new DisruptorRepository<>(aggregateFactory.getAggregateType());
     }

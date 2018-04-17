@@ -21,6 +21,8 @@ import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -57,6 +59,19 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      */
     public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory, Executor executor, TransactionManager txManager) {
         super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager);
+    }
+
+    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
+                                      Iterable<HandlerDefinition> handlerDefinitions,
+                                      Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions, Executor executor,
+                                      TransactionManager txManager) {
+        super(eventStore,
+              Collections.emptyList(),
+              parameterResolverFactory,
+              handlerDefinitions,
+              handlerEnhancerDefinitions,
+              executor,
+              txManager);
     }
 
     @Override

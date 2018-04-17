@@ -22,6 +22,8 @@ import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
@@ -81,6 +83,20 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
              sagaRepository,
              () -> newInstance(sagaType),
              new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
+             listenerInvocationErrorHandler);
+    }
+
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
+                                ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        this(sagaType,
+             sagaRepository,
+             () -> newInstance(sagaType),
+             new AnnotationSagaMetaModelFactory(parameterResolverFactory,
+                                                handlerDefinitions,
+                                                handlerEnhancerDefinitions).modelOf(sagaType),
              listenerInvocationErrorHandler);
     }
 

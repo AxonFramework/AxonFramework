@@ -25,11 +25,14 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -47,6 +50,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
     private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
     private final ParameterResolverFactory parameterResolverFactory;
+    private final Iterable<HandlerDefinition> handlerDefinitions;
+    private final Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions;
 
     /**
      * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
@@ -86,9 +91,22 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory) {
+        this(eventStore,
+             aggregateFactories,
+             parameterResolverFactory,
+             () -> ServiceLoader.load(HandlerDefinition.class).iterator(),
+             () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator());
+    }
+
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
+                                ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
         super(eventStore);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinitions = handlerDefinitions;
+        this.handlerEnhancerDefinitions = handlerEnhancerDefinitions;
     }
 
     /**
@@ -105,9 +123,25 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory, Executor executor,
                                 TransactionManager transactionManager) {
+        this(eventStore,
+             aggregateFactories,
+             parameterResolverFactory,
+             () -> ServiceLoader.load(HandlerDefinition.class).iterator(),
+             () -> ServiceLoader.load(HandlerEnhancerDefinition.class).iterator(),
+             executor,
+             transactionManager);
+    }
+
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
+                                ParameterResolverFactory parameterResolverFactory,
+                                Iterable<HandlerDefinition> handlerDefinitions,
+                                Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                Executor executor, TransactionManager transactionManager) {
         super(eventStore, executor, transactionManager);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinitions = handlerDefinitions;
+        this.handlerEnhancerDefinitions = handlerEnhancerDefinitions;
     }
 
     @SuppressWarnings("unchecked")

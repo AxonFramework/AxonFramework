@@ -25,6 +25,8 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
@@ -241,4 +243,8 @@ public interface Configuration {
      * @return the EventUpcasterChain with all registered upcasters
      */
     EventUpcasterChain upcasterChain();
+
+    List<HandlerDefinition> handlerDefinitions();
+
+    List<HandlerEnhancerDefinition> handlerEnhancerDefinitions();
 }

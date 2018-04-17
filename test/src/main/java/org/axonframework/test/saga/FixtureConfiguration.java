@@ -16,6 +16,8 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
@@ -115,6 +117,10 @@ public interface FixtureConfiguration {
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName);
+
+    FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.
