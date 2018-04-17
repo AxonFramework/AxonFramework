@@ -42,6 +42,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.spring.config.annotation.SpringContextHandlerEnhancerDefinitionBuilder;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -134,6 +135,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 SpringContextParameterResolverFactoryBuilder.getBeanReference(registry);
         configurer.registerComponent(ParameterResolverFactory.class, c -> beanFactory
                 .getBean(parameterResolver.getBeanName(), ParameterResolverFactory.class));
+
+        RuntimeBeanReference handlerEnhancer =
+                SpringContextHandlerEnhancerDefinitionBuilder.getBeanReference(registry);
+        configurer.registerComponent(HandlerEnhancerDefinition.class, c -> beanFactory
+                .getBean(handlerEnhancer.getBeanName(), HandlerEnhancerDefinition.class));
 
         findComponent(CommandBus.class)
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
@@ -398,7 +404,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         @Override
         public String[] selectImports(AnnotationMetadata importingClassMetadata) {
-            return new String[]{SpringAxonAutoConfigurer.class.getName()};
+            return new String[]{ SpringAxonAutoConfigurer.class.getName() };
         }
     }
 
