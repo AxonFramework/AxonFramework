@@ -211,27 +211,22 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = intercept(query);
         ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
         subscriptionQueriesRegistering.put(interceptedQuery, rwLock);
-        List<QuerySubscription> subs = subscriptions
-                .computeIfAbsent(interceptedQuery.getQueryName(), k -> new CopyOnWriteArrayList<>())
-                .stream()
-                .filter(subscription -> interceptedQuery.getResponseType().matches(subscription.getResponseType()))
-                .collect(Collectors.toList());
+        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         rwLock.writeLock().lock();
         try {
-            if (subs.isEmpty()) {
+            if (handlers.isEmpty()) {
                 throw new NoHandlerForQueryException(
                         format("No handler found for %s with response type %s and update type %s",
                                interceptedQuery.getQueryName(),
                                interceptedQuery.getResponseType(),
                                interceptedQuery.getUpdateResponseType()));
             }
-            Iterator<QuerySubscription> subsIterator = subs.iterator();
+            Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
-            while (!invocationSuccess && subsIterator.hasNext()) {
+            while (!invocationSuccess && handlerIterator.hasNext()) {
                 try {
-                    QuerySubscription subscription = subsIterator.next();
                     DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    I initialResponse = (I) interceptAndInvoke(uow, subscription.getQueryHandler()).getPayload();
+                    I initialResponse = interceptAndInvoke(uow, handlerIterator.next()).getPayload();
 
                     updateHandler.onInitialResult(initialResponse);
 
