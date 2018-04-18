@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,34 +29,52 @@ import java.util.List;
  */
 public class MultiEventHandlerInvoker implements EventHandlerInvoker {
 
-    private final List<EventHandlerInvoker> invokers;
+    private final List<EventHandlerInvoker> delegates;
 
     /**
-     * Initializes multi invoker with different invokers.
+     * Initializes multi invoker with different invokers. Invokers of instance {@link MultiEventHandlerInvoker} will be
+     * flattened.
      *
-     * @param invokers which will be used to do the actual event handling
+     * @param delegates which will be used to do the actual event handling
      */
-    public MultiEventHandlerInvoker(EventHandlerInvoker... invokers) {
-        this(Arrays.asList(invokers));
+    public MultiEventHandlerInvoker(EventHandlerInvoker... delegates) {
+        this(Arrays.asList(delegates));
     }
 
     /**
-     * Initializes multi invoker with different invokers.
+     * Initializes multi invoker with different invokers. Invokers of instance {@link MultiEventHandlerInvoker} will be
+     * flattened.
      *
-     * @param invokers which will be used to do the actual event handling
+     * @param delegates which will be used to do the actual event handling
      */
-    public MultiEventHandlerInvoker(List<EventHandlerInvoker> invokers) {
-        this.invokers = invokers;
+    public MultiEventHandlerInvoker(List<EventHandlerInvoker> delegates) {
+        this.delegates = flatten(delegates);
+    }
+
+    private List<EventHandlerInvoker> flatten(List<EventHandlerInvoker> invokers) {
+        List<EventHandlerInvoker> flattened = new ArrayList<>();
+        for (EventHandlerInvoker invoker : invokers) {
+            if (invoker instanceof MultiEventHandlerInvoker) {
+                flattened.addAll(((MultiEventHandlerInvoker) invoker).delegates());
+            } else {
+                flattened.add(invoker);
+            }
+        }
+        return flattened;
+    }
+
+    public List<EventHandlerInvoker> delegates() {
+        return Collections.unmodifiableList(delegates);
     }
 
     @Override
     public boolean canHandle(EventMessage<?> eventMessage, Segment segment) {
-        return invokers.stream().anyMatch(i -> i.canHandle(eventMessage, segment));
+        return delegates.stream().anyMatch(i -> i.canHandle(eventMessage, segment));
     }
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        invokers.stream().filter(i -> i.canHandle(message, segment)).forEach(i -> {
+        delegates.stream().filter(i -> i.canHandle(message, segment)).forEach(i -> {
             try {
                 i.handle(message, segment);
             } catch (Exception e) {
