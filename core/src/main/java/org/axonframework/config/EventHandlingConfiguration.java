@@ -99,11 +99,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                              new SimpleEventHandlerInvoker(
                                                      eh,
                                                      conf.parameterResolverFactory(),
-                                                     conf.handlerDefinitions(),
-                                                     conf.handlerEnhancerDefinitions(),
+                                                     conf.handlerDefinition(),
                                                      getListenerInvocationErrorHandler(conf, name),
-                                                     new SequentialPerAggregatePolicy()
-                                             ),
+                                                     new SequentialPerAggregatePolicy()),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
                                              getErrorHandler(conf, name),
@@ -253,8 +251,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         return new TrackingEventProcessor(name,
                                           new SimpleEventHandlerInvoker(handlers,
                                                                         conf.parameterResolverFactory(),
-                                                                        conf.handlerDefinitions(),
-                                                                        conf.handlerEnhancerDefinitions(),
+                                                                        conf.handlerDefinition(),
                                                                         getListenerInvocationErrorHandler(conf, name),
                                                                         sequencingPolicy.apply(conf)),
                                           source.apply(conf),

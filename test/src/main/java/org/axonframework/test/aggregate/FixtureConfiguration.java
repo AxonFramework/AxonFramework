@@ -28,7 +28,6 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 
@@ -198,9 +197,13 @@ public interface FixtureConfiguration<T> {
      */
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
 
+    /**
+     * Registers handler definition within this fixture.
+     *
+     * @param handlerDefinition used to create concrete handlers
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
     FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
-
-    FixtureConfiguration<T> registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event

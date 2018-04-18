@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -36,24 +37,31 @@ import org.slf4j.LoggerFactory;
  * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerDefinition}. For more details, see
  * {@link ServiceLoader}.
  *
- * @author Allard Buijze
+ * @author Tyler Thrailkill
+ * @author Milan Savic
  * @see ServiceLoader
- * @since 2.1
+ * @since 3.3
  */
 public final class ClasspathHandlerDefinition implements HandlerDefinition {
 
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerDefinition.class);
-    private HandlerDefinition multiHandlerEnhancer;
+    private static final Logger logger = LoggerFactory.getLogger(ClasspathHandlerDefinition.class);
+    private MultiHandlerDefinition multiHandlerDefinition;
 
+    /**
+     * Initializes classpath handler definition with given class loader. Using this class loader, handler definitions
+     * are found on classpath.
+     *
+     * @param classLoader used to load handler definitions
+     */
     public ClasspathHandlerDefinition(ClassLoader classLoader) {
         Iterator<HandlerDefinition> iterator = load(HandlerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
-        final List<HandlerDefinition> enhancers = new ArrayList<>();
+        final List<HandlerDefinition> definitions = new ArrayList<>();
         while (iterator.hasNext()) {
             try {
                 HandlerDefinition factory = iterator.next();
-                enhancers.add(factory);
+                definitions.add(factory);
             } catch (ServiceConfigurationError e) {
                 logger.info(
                         "HandlerDefinition instance ignored, as one of the required classes is not available" +
@@ -63,13 +71,22 @@ public final class ClasspathHandlerDefinition implements HandlerDefinition {
                             e.getMessage());
             }
         }
-        multiHandlerEnhancer = new MultiHandlerDefinition(enhancers);
+        multiHandlerDefinition = new MultiHandlerDefinition(definitions);
+    }
+
+    /**
+     * Gets the handler definitions found on classpath.
+     *
+     * @return handler definitions found on classpath
+     */
+    public List<HandlerDefinition> handlerDefinitions() {
+        return multiHandlerDefinition.getDelegates();
     }
 
     @Override
     public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
                                                                 Executable executable,
                                                                 ParameterResolverFactory parameterResolverFactory) {
-        return multiHandlerEnhancer.createHandler(declaringType, executable, parameterResolverFactory);
+        return multiHandlerDefinition.createHandler(declaringType, executable, parameterResolverFactory);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.messaging.annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
@@ -27,19 +26,19 @@ import org.axonframework.common.annotation.PriorityAnnotationComparator;
 /**
  * HandlerEnhancerDefinition instance that delegates to multiple other instances, in the order provided.
  *
- * @author Allard Buijze
- * @since 2.1
+ * @author Tyler Thrailkill
+ * @since 3.3
  */
 public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
-    private final HandlerEnhancerDefinition[] factories;
+    private final HandlerEnhancerDefinition[] enhancers;
 
     /**
-     * Creates a MultiParameterResolverFactory instance with the given {@code delegates}, which are automatically
+     * Creates a MultiHandlerEnhancerDefinition instance with the given {@code delegates}, which are automatically
      * ordered based on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes.
      * Classes with the same Priority are kept in the order as provided in the {@code delegates}.
      * <p>
-     * If one of the delegates is a MultiParameterResolverFactory itself, that factory's delegates are 'mixed' with
+     * If one of the delegates is a MultiHandlerEnhancerDefinition itself, that factory's delegates are 'mixed' with
      * the given {@code delegates}, based on their respective order.
      *
      * @param delegates The delegates to include in the factory
@@ -50,11 +49,11 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
     }
 
     /**
-     * Creates a MultiParameterResolverFactory instance with the given {@code delegates}, which are automatically
+     * Creates a MultiHandlerEnhancerDefinition instance with the given {@code delegates}, which are automatically
      * ordered based on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes.
      * Classes with the same Priority are kept in the order as provided in the {@code delegates}.
      * <p>
-     * If one of the delegates is a MultiParameterResolverFactory itself, that factory's delegates are 'mixed' with
+     * If one of the delegates is a MultiHandlerEnhancerDefinition itself, that factory's delegates are 'mixed' with
      * the given {@code delegates}, based on their respective order.
      *
      * @param delegates The delegates to include in the factory
@@ -68,20 +67,20 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
      * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
      * the given array are not reflected in the created instance.
      *
-     * @param delegates The factories providing the parameter values to use
+     * @param delegates The enhancers providing the parameter values to use
      */
     public MultiHandlerEnhancerDefinition(HandlerEnhancerDefinition... delegates) {
-        this.factories = Arrays.copyOf(delegates, delegates.length);
+        this.enhancers = Arrays.copyOf(delegates, delegates.length);
     }
 
     /**
      * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
      * the given List are not reflected in the created instance.
      *
-     * @param delegates The list of factories providing the parameter values to use
+     * @param delegates The list of enhancers providing the parameter values to use
      */
     public MultiHandlerEnhancerDefinition(Collection<HandlerEnhancerDefinition> delegates) {
-        this.factories = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
+        this.enhancers = delegates.toArray(new HandlerEnhancerDefinition[delegates.size()]);
     }
 
     private static HandlerEnhancerDefinition[] flatten(List<HandlerEnhancerDefinition> factories) {
@@ -93,7 +92,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
                 flattened.add(handlerEnhancer);
             }
         }
-        Collections.sort(flattened, PriorityAnnotationComparator.getInstance());
+        flattened.sort(PriorityAnnotationComparator.getInstance());
         return flattened.toArray(new HandlerEnhancerDefinition[flattened.size()]);
     }
 
@@ -103,14 +102,14 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
      * @return the delegates of this instance, in the order they are evaluated to resolve parameters
      */
     public List<HandlerEnhancerDefinition> getDelegates() {
-        return Arrays.asList(factories);
+        return Arrays.asList(enhancers);
     }
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         MessageHandlingMember<T> resolver = original;
-        for (HandlerEnhancerDefinition factory : factories) {
-            resolver = factory.wrapHandler(resolver);
+        for (HandlerEnhancerDefinition enhancer : enhancers) {
+            resolver = enhancer.wrapHandler(resolver);
         }
         return resolver;
     }

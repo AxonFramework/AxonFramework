@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,22 @@ import org.slf4j.LoggerFactory;
  * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerEnhancerDefinition}. For more details, see
  * {@link ServiceLoader}.
  *
- * @author Allard Buijze
+ * @author Tyler Thrailkill
+ * @author Milan Savic
  * @see ServiceLoader
- * @since 2.1
+ * @since 3.3
  */
 public final class ClasspathHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
-    private HandlerEnhancerDefinition multiHandlerEnhancer;
+    private MultiHandlerEnhancerDefinition multiHandlerEnhancer;
 
+    /**
+     * Initializes classpath handler definition with given class loader. Using this class loader, handler definition
+     * enhancers are found on classpath.
+     *
+     * @param classLoader used to load handler definitions
+     */
     public ClasspathHandlerEnhancerDefinition(ClassLoader classLoader) {
         Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
@@ -62,6 +69,15 @@ public final class ClasspathHandlerEnhancerDefinition implements HandlerEnhancer
             }
         }
         multiHandlerEnhancer = new MultiHandlerEnhancerDefinition(enhancers);
+    }
+
+    /**
+     * Gets the handler definition enhancers found on classpath.
+     *
+     * @return handler definition enhancers found on classpath
+     */
+    public List<HandlerEnhancerDefinition> handlerEnhancerDefinitions() {
+        return multiHandlerEnhancer.getDelegates();
     }
 
     @Override

@@ -26,8 +26,6 @@ import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
@@ -154,16 +152,6 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public EventUpcasterChain upcasterChain() {
         return config.upcasterChain();
-    }
-
-    @Override
-    public List<HandlerDefinition> handlerDefinitions() {
-        return config.handlerDefinitions();
-    }
-
-    @Override
-    public List<HandlerEnhancerDefinition> handlerEnhancerDefinitions() {
-        return config.handlerEnhancerDefinitions();
     }
 
     @Override

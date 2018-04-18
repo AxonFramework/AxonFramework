@@ -34,7 +34,6 @@ public class AnnotatedHandlerInspector<T> {
     private final List<AnnotatedHandlerInspector<? super T>> superClassInspectors;
     private final List<MessageHandlingMember<? super T>> handlers;
     private final HandlerDefinition handlerDefinition;
-    private final HandlerEnhancerDefinition handlerEnhancerDefinition;
 
     private AnnotatedHandlerInspector(Class<T> inspectedType,
                                       List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
@@ -44,7 +43,6 @@ public class AnnotatedHandlerInspector<T> {
              superClassInspectors,
              parameterResolverFactory,
              new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()),
-             new ClasspathHandlerEnhancerDefinition(Thread.currentThread().getContextClassLoader()),
              registry);
     }
 
@@ -52,7 +50,6 @@ public class AnnotatedHandlerInspector<T> {
                                       List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
                                       ParameterResolverFactory parameterResolverFactory,
                                       HandlerDefinition handlerDefinition,
-                                      HandlerEnhancerDefinition handlerEnhancerDefinition,
                                       Map<Class<?>, AnnotatedHandlerInspector> registry) {
         this.inspectedType = inspectedType;
         this.parameterResolverFactory = parameterResolverFactory;
@@ -60,12 +57,11 @@ public class AnnotatedHandlerInspector<T> {
         this.superClassInspectors = new ArrayList<>(superClassInspectors);
         this.handlers = new ArrayList<>();
         this.handlerDefinition = handlerDefinition;
-        this.handlerEnhancerDefinition = handlerEnhancerDefinition;
     }
 
     /**
      * Create an inspector for given {@code handlerType} that uses a {@link ClasspathParameterResolverFactory} to
-     * resolve method parameters.
+     * resolve method parameters and {@link ClasspathHandlerDefinition} to create handlers.
      *
      * @param handlerType the target handler type
      * @param <T>         the handler's type
@@ -75,13 +71,20 @@ public class AnnotatedHandlerInspector<T> {
         return inspectType(handlerType, ClasspathParameterResolverFactory.forClass(handlerType));
     }
 
+    /**
+     * Create an inspector for given {@code handlerType} that uses a {@link ClasspathParameterResolverFactory} to
+     * resolve method parameters and given {@code handlerDefinition} to create handlers.
+     *
+     * @param handlerType       the target handler type
+     * @param handlerDefinition the handler definition used to create concrete handlers
+     * @param <T>               the handler's type
+     * @return a new inspector instance for the inspected class
+     */
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
-                                                               HandlerDefinition handlerDefinition,
-                                                               HandlerEnhancerDefinition handlerEnhancerDefinition) {
+                                                               HandlerDefinition handlerDefinition) {
         return inspectType(handlerType,
                            ClasspathParameterResolverFactory.forClass(handlerType),
-                           handlerDefinition,
-                           handlerEnhancerDefinition);
+                           handlerDefinition);
     }
 
     /**
@@ -97,18 +100,25 @@ public class AnnotatedHandlerInspector<T> {
                                                                ParameterResolverFactory parameterResolverFactory) {
         return inspectType(handlerType,
                            parameterResolverFactory,
-                           new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()),
-                           new ClasspathHandlerEnhancerDefinition(Thread.currentThread().getContextClassLoader()));
+                           new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
     }
 
+    /**
+     * Create an inspector for given {@code handlerType} that uses given {@code parameterResolverFactory} to resolve
+     * method parameters and given {@code handlerDefinition} to create handlers.
+     *
+     * @param handlerType              the target handler type
+     * @param parameterResolverFactory the resolver factory to use during detection
+     * @param handlerDefinition        the handler definition used to create concrete handlers
+     * @param <T>                      the handler's type
+     * @return a new inspector instance for the inspected class
+     */
     public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
                                                                ParameterResolverFactory parameterResolverFactory,
-                                                               HandlerDefinition handlerDefinition,
-                                                               HandlerEnhancerDefinition handlerEnhancerDefinition) {
+                                                               HandlerDefinition handlerDefinition) {
         return createInspector(handlerType,
                                parameterResolverFactory,
                                handlerDefinition,
-                               handlerEnhancerDefinition,
                                new HashMap<>());
     }
 
@@ -116,14 +126,12 @@ public class AnnotatedHandlerInspector<T> {
     private static <T> AnnotatedHandlerInspector<T> createInspector(Class<? extends T> inspectedType,
                                                                     ParameterResolverFactory parameterResolverFactory,
                                                                     HandlerDefinition handlerDefinition,
-                                                                    HandlerEnhancerDefinition handlerEnhancerDefinition,
                                                                     Map<Class<?>, AnnotatedHandlerInspector> registry) {
         if (!registry.containsKey(inspectedType)) {
             registry.put(inspectedType,
                          AnnotatedHandlerInspector.initialize(inspectedType,
                                                               parameterResolverFactory,
                                                               handlerDefinition,
-                                                              handlerEnhancerDefinition,
                                                               registry));
         }
         //noinspection unchecked
@@ -133,7 +141,6 @@ public class AnnotatedHandlerInspector<T> {
     private static <T> AnnotatedHandlerInspector<T> initialize(Class<T> inspectedType,
                                                                ParameterResolverFactory parameterResolverFactory,
                                                                HandlerDefinition handlerDefinition,
-                                                               HandlerEnhancerDefinition handlerEnhancerDefinition,
                                                                Map<Class<?>, AnnotatedHandlerInspector> registry) {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
@@ -141,48 +148,35 @@ public class AnnotatedHandlerInspector<T> {
             parents.add(createInspector(iFace,
                                         parameterResolverFactory,
                                         handlerDefinition,
-                                        handlerEnhancerDefinition,
                                         registry));
         }
         if (inspectedType.getSuperclass() != null && !Object.class.equals(inspectedType.getSuperclass())) {
             parents.add(createInspector(inspectedType.getSuperclass(),
                                         parameterResolverFactory,
                                         handlerDefinition,
-                                        handlerEnhancerDefinition,
                                         registry));
         }
         AnnotatedHandlerInspector<T> inspector = new AnnotatedHandlerInspector<>(inspectedType,
                                                                                  parents,
                                                                                  parameterResolverFactory,
                                                                                  handlerDefinition,
-                                                                                 handlerEnhancerDefinition,
                                                                                  registry);
-        inspector.initializeMessageHandlers(parameterResolverFactory, handlerDefinition, handlerEnhancerDefinition);
+        inspector.initializeMessageHandlers(parameterResolverFactory, handlerDefinition);
         return inspector;
     }
 
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory,
-                                           HandlerDefinition handlerDefinition,
-                                           HandlerEnhancerDefinition handlerEnhancerDefinition) {
+                                           HandlerDefinition handlerDefinition) {
         for (Method method : inspectedType.getDeclaredMethods()) {
             handlerDefinition.createHandler(inspectedType, method, parameterResolverFactory)
-                    .ifPresent(handler -> registerHandler(wrapped(handler, handlerEnhancerDefinition)));
+                             .ifPresent(this::registerHandler);
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
             handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory)
-                            .ifPresent(handler -> registerHandler(wrapped(handler, handlerEnhancerDefinition)));
+                            .ifPresent(this::registerHandler);
         }
         superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
-        Collections.sort(handlers, HandlerComparator.instance());
-    }
-
-    private MessageHandlingMember<T> wrapped(MessageHandlingMember<T> handler,
-                                             HandlerEnhancerDefinition wrapperDefinition) {
-        MessageHandlingMember<T> wrappedHandler = handler;
-        if (wrapperDefinition != null) {
-            wrappedHandler = wrapperDefinition.wrapHandler(wrappedHandler);
-        }
-        return wrappedHandler;
+        handlers.sort(HandlerComparator.instance());
     }
 
     private void registerHandler(MessageHandlingMember<T> handler) {
@@ -201,7 +195,6 @@ public class AnnotatedHandlerInspector<T> {
         return AnnotatedHandlerInspector.createInspector(entityType,
                                                          parameterResolverFactory,
                                                          handlerDefinition,
-                                                         handlerEnhancerDefinition,
                                                          registry);
     }
 

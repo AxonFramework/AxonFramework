@@ -28,7 +28,6 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -159,15 +158,24 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.aggregateFactory = aggregateFactory;
     }
 
+    /**
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
+     * create new aggregate instances.
+     *
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition         The handler definition used to create concrete handlers
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     * @see LockingRepository#LockingRepository(Class)
+     */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                    ParameterResolverFactory parameterResolverFactory,
-                                   Iterable<HandlerDefinition> handlerDefinitions,
-                                   Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                   HandlerDefinition handlerDefinition,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType(),
               parameterResolverFactory,
-              handlerDefinitions,
-              handlerEnhancerDefinitions);
+              handlerDefinition);
         Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
         this.eventStore = eventStore;
@@ -210,16 +218,24 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
     }
 
+    /**
+     * Initialize a repository with the given locking strategy and parameter resolver factory.
+     *
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param lockFactory               The locking strategy to apply to this repository
+     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition         The handler definition used to create concrete handlers
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
                                    ParameterResolverFactory parameterResolverFactory,
-                                   Iterable<HandlerDefinition> handlerDefinitions,
-                                   Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions,
+                                   HandlerDefinition handlerDefinition,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType(),
               lockFactory,
               parameterResolverFactory,
-              handlerDefinitions,
-              handlerEnhancerDefinitions);
+              handlerDefinition);
         Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;

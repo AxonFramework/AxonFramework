@@ -27,8 +27,9 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -47,33 +48,37 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
     private final Map<Class<?>, AnnotatedAggregateModel> registry;
     private final ParameterResolverFactory parameterResolverFactory;
-    private final Iterable<HandlerDefinition> handlerDefinitions;
-    private final Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions;
+    private final HandlerDefinition handlerDefinition;
 
     /**
      * Initializes an instance which uses the default, classpath based, ParameterResolverFactory to detect parameters
      * for annotated handlers.
      */
     public AnnotatedAggregateMetaModelFactory() {
-        this(null);
+        this(ClasspathParameterResolverFactory.forClassLoader(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
-     * Initializes an instance which uses the give {@code parameterResolverFactory} to detect parameters for
+     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
      * annotated handlers.
      *
      * @param parameterResolverFactory to resolve parameter values of annotated handlers with
      */
     public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
-        this(parameterResolverFactory, null, null);
+        this(parameterResolverFactory, new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
     }
 
+    /**
+     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
+     * annotated handlers and {@code handlerDefinition} to create concrete handlers.
+     *
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
     public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
-                                              Iterable<HandlerDefinition> handlerDefinitions,
-                                              Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+                                              HandlerDefinition handlerDefinition) {
         this.parameterResolverFactory = parameterResolverFactory;
-        this.handlerDefinitions = handlerDefinitions;
-        this.handlerEnhancerDefinitions = handlerEnhancerDefinitions;
+        this.handlerDefinition = handlerDefinition;
         registry = new ConcurrentHashMap<>();
     }
 
@@ -101,30 +106,30 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory).createModel(aggregateType);
     }
 
+    /**
+     * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType}, using given
+     * {@code parameterResolverFactory} to resolve parameter values for annotated handlers and {@code handlerDefinition}
+     * to create concrete handlers.
+     *
+     * @param aggregateType            The class of the aggregate to create the model for
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     * @param <T>                      The type of aggregate described in the model
+     * @return The model describing the structure of the aggregate
+     */
     public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
                                                          ParameterResolverFactory parameterResolverFactory,
-                                                         Iterable<HandlerDefinition> handlerDefinitions,
-                                                         Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
-        return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory,
-                                                      handlerDefinitions,
-                                                      handlerEnhancerDefinitions).createModel(aggregateType);
+                                                         HandlerDefinition handlerDefinition) {
+        return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory, handlerDefinition)
+                .createModel(aggregateType);
     }
 
     @Override
     public <T> AnnotatedAggregateModel<T> createModel(Class<? extends T> aggregateType) {
         if (!registry.containsKey(aggregateType)) {
-            AnnotatedHandlerInspector<T> inspector;
-            if (parameterResolverFactory == null) {
-                inspector = AnnotatedHandlerInspector.inspectType(aggregateType);
-            } else if (handlerDefinitions == null) {
-                inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
-                                                                  parameterResolverFactory);
-            } else {
-                inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
-                                                                  parameterResolverFactory,
-                                                                  handlerDefinitions,
-                                                                  handlerEnhancerDefinitions);
-            }
+            AnnotatedHandlerInspector<T> inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
+                                                                                           parameterResolverFactory,
+                                                                                           handlerDefinition);
             AnnotatedAggregateModel<T> model = new AnnotatedAggregateModel<>(aggregateType, inspector);
             // Add the newly created inspector to the registry first to prevent a StackOverflowError:
             // another call to createInspector with the same inspectedType will return this instance of the inspector.

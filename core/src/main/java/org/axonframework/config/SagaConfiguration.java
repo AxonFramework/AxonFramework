@@ -181,12 +181,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                             sagaStore.get(),
                                                                             c.resourceInjector(),
                                                                             c.parameterResolverFactory(),
-                                                                            c.handlerDefinitions(),
-                                                                            c.handlerEnhancerDefinitions()));
+                                                                            c.handlerDefinition()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
                                                                                                  c.parameterResolverFactory(),
-                                                                                                 c.handlerDefinitions(),
-                                                                                                 c.handlerEnhancerDefinitions(),
+                                                                                                 c.handlerDefinition(),
                                                                                                  listenerInvocationErrorHandler
                                                                                                          .get()));
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",

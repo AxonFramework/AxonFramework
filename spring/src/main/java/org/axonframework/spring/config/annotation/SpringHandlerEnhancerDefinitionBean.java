@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,9 @@
 
 package org.axonframework.spring.config.annotation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -32,13 +26,17 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Spring factory bean that creates a HandlerEnhancerDefinition instance that is capable of resolving parameter values
  * as Spring Beans, in addition to the default behavior defined by Axon.
  *
- * @author Allard Buijze
+ * @author Milan Savic
  * @see ClasspathHandlerEnhancerDefinition
- * @since 2.3.1
+ * @since 3.3
  */
 public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerEnhancerDefinition>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
@@ -48,13 +46,18 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
     private ApplicationContext applicationContext;
 
     @Override
-    public HandlerEnhancerDefinition getObject() throws Exception {
+    public void setBeanClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
+    @Override
+    public HandlerEnhancerDefinition getObject() {
         return MultiHandlerEnhancerDefinition.ordered(enhancers);
     }
 
     @Override
     public Class<?> getObjectType() {
-        return ParameterResolverFactory.class;
+        return HandlerEnhancerDefinition.class;
     }
 
     @Override
@@ -63,31 +66,28 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        enhancers.add(new ClasspathHandlerEnhancerDefinition(classLoader));
-        Map<String, HandlerEnhancerDefinition> beansFound = applicationContext.getBeansOfType(HandlerEnhancerDefinition.class);
-        enhancers.add(new MultiHandlerEnhancerDefinition(beansFound.values()));
-    }
-
-    /**
-     * Defines any additional handler enhancers that should be used. By default, the HandlerEnhancerDefinitions are
-     * found on the classpath, as well as a SpringBeanParameterResolverFactory are registered.
-     *
-     * @param additionalFactories The extra enhancers to register
-     * @see SpringBeanParameterResolverFactory
-     * @see ClasspathParameterResolverFactory
-     */
-    public void setAdditionalFactories(List<HandlerEnhancerDefinition> additionalFactories) {
-        this.enhancers.addAll(additionalFactories);
-    }
-
-    @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
-        this.classLoader = classLoader;
+    public void afterPropertiesSet() {
+        enhancers.addAll(new ClasspathHandlerEnhancerDefinition(classLoader).handlerEnhancerDefinitions());
+        Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext.getBeansOfType(
+                HandlerEnhancerDefinition.class);
+        enhancers.addAll(enhancersFound.values());
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    /**
+     * Defines any additional handler enhancer definitions that should be used. By default, the
+     * HandlerEnhancerDefinitions are found on the classpath, as well as a SpringBeanParameterResolverFactory are
+     * registered.
+     *
+     * @param additionalFactories The extra definitions to register
+     * @see SpringBeanParameterResolverFactory
+     * @see ClasspathHandlerEnhancerDefinition
+     */
+    public void setAdditionalHandlers(List<HandlerEnhancerDefinition> additionalFactories) {
+        this.enhancers.addAll(additionalFactories);
     }
 }

@@ -35,11 +35,12 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -57,12 +58,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -112,7 +111,7 @@ public class SpringAxonAutoConfigurerTest {
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
 
     @Test
-    public void contextWiresMainComponents() throws Exception {
+    public void contextWiresMainComponents() {
         assertNotNull(axonConfig);
         assertNotNull(axonConfig.eventBus());
         assertNotNull(eventBus);
@@ -184,21 +183,26 @@ public class SpringAxonAutoConfigurerTest {
     }
 
     @Test
-    public void testHandlerDefinitionBeansRegistered() {
-        assertEquals(AnnotatedMessageHandlingMemberDefinition.class, axonConfig.handlerDefinitions().get(0).getClass());
-        assertEquals(MyHandlerDefinition.class, axonConfig.handlerDefinitions().get(1).getClass());
-        assertEquals(MyHandlerDefinition.class, axonConfig.handlerDefinitions().get(2).getClass());
-    }
+    public void testHandlerDefinitionAndHandlerEnhancerBeansRegistered() {
+        MultiHandlerDefinition handlerDefinition = (MultiHandlerDefinition) axonConfig.handlerDefinition();
+        MultiHandlerEnhancerDefinition handlerEnhancerDefinition = (MultiHandlerEnhancerDefinition) handlerDefinition
+                .getHandlerEnhancerDefinition();
 
-    @Test
-    public void testHandlerEnhancerDefinitionBeanRegistered() {
+        assertEquals(AnnotatedMessageHandlingMemberDefinition.class,
+                     handlerDefinition.getDelegates().get(0).getClass());
+        assertEquals(Context.HandlerDefinitionWithInjectedResource.class,
+                     handlerDefinition.getDelegates().get(1).getClass());
+        assertEquals(MyHandlerDefinition.class, handlerDefinition.getDelegates().get(2).getClass());
+        assertEquals(MyHandlerDefinition.class, handlerDefinition.getDelegates().get(3).getClass());
+
         assertEquals(SagaMethodMessageHandlerDefinition.class,
-                     axonConfig.handlerEnhancerDefinitions().get(0).getClass());
-        assertEquals(MethodCommandHandlerDefinition.class, axonConfig.handlerEnhancerDefinitions().get(1).getClass());
+                     handlerEnhancerDefinition.getDelegates().get(0).getClass());
+        assertEquals(MethodCommandHandlerDefinition.class, handlerEnhancerDefinition.getDelegates().get(1).getClass());
         assertEquals(MethodQueryMessageHandlerDefinition.class,
-                     axonConfig.handlerEnhancerDefinitions().get(2).getClass());
-        assertEquals(ReplayAwareMessageHandlerWrapper.class, axonConfig.handlerEnhancerDefinitions().get(3).getClass());
-        assertEquals(MyHandlerEnhancerDefinition.class, axonConfig.handlerEnhancerDefinitions().get(4).getClass());
+                     handlerEnhancerDefinition.getDelegates().get(2).getClass());
+        assertEquals(ReplayAwareMessageHandlerWrapper.class,
+                     handlerEnhancerDefinition.getDelegates().get(3).getClass());
+        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(4).getClass());
     }
 
     @EnableAxon
@@ -362,6 +366,23 @@ public class SpringAxonAutoConfigurerTest {
         @Bean
         public HandlerEnhancerDefinition myHandlerEnhancerDefinition() {
             return new MyHandlerEnhancerDefinition();
+        }
+
+        @Component
+        public static class HandlerDefinitionWithInjectedResource implements HandlerDefinition {
+
+            private final CommandBus commandBus;
+
+            public HandlerDefinitionWithInjectedResource(CommandBus commandBus) {
+                this.commandBus = commandBus;
+            }
+
+            @Override
+            public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
+                                                                        ParameterResolverFactory parameterResolverFactory) {
+                assertNotNull(commandBus);
+                return Optional.empty();
+            }
         }
     }
 

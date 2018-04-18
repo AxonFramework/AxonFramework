@@ -36,13 +36,12 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.spring.config.annotation.SpringContextHandlerEnhancerDefinitionBuilder;
+import org.axonframework.spring.config.annotation.SpringContextHandlerDefinitionBuilder;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -136,10 +135,10 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         configurer.registerComponent(ParameterResolverFactory.class, c -> beanFactory
                 .getBean(parameterResolver.getBeanName(), ParameterResolverFactory.class));
 
-        RuntimeBeanReference handlerEnhancer =
-                SpringContextHandlerEnhancerDefinitionBuilder.getBeanReference(registry);
-        configurer.registerComponent(HandlerEnhancerDefinition.class, c -> beanFactory
-                .getBean(handlerEnhancer.getBeanName(), HandlerEnhancerDefinition.class));
+        RuntimeBeanReference handlerDefinition =
+                SpringContextHandlerDefinitionBuilder.getBeanReference(registry);
+        configurer.registerComponent(HandlerDefinition.class, c -> beanFactory
+                .getBean(handlerDefinition.getBeanName(), HandlerDefinition.class));
 
         findComponent(CommandBus.class)
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
@@ -182,8 +181,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer);
         registerModules(configurer);
-        registerHandlerDefinitions(configurer);
-        registerHandlerEnhancerDefinitions(configurer);
 
         Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
         String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
@@ -207,16 +204,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                  .map(n -> (CorrelationDataProvider) getBean(n, c))
                                  .collect(Collectors.toList());
                 });
-    }
-
-    private void registerHandlerDefinitions(Configurer configurer) {
-        Arrays.stream(beanFactory.getBeanNamesForType(HandlerDefinition.class))
-              .forEach(name -> configurer.registerHandlerDefinition(c -> getBean(name, c)));
-    }
-
-    private void registerHandlerEnhancerDefinitions(Configurer configurer) {
-        Arrays.stream(beanFactory.getBeanNamesForType(HandlerEnhancerDefinition.class))
-              .forEach(name -> configurer.registerHandlerEnhancerDefinition(c -> getBean(name, c)));
     }
 
     @SuppressWarnings("unchecked")
@@ -334,8 +321,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                         c.eventBus(),
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
                                         c.parameterResolverFactory(),
-                                        c.handlerDefinitions(),
-                                        c.handlerEnhancerDefinitions()));
+                                        c.handlerDefinition()));
                     }
                 }
             } else {

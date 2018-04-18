@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -70,15 +69,21 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                                                                  nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")));
     }
 
+    /**
+     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type.
+     *
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
-                                 Iterable<HandlerDefinition> handlerDefinitions,
-                                 Iterable<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+                                 HandlerDefinition handlerDefinition) {
         this(AnnotatedAggregateMetaModelFactory
                      .inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
                                        nonNull(parameterResolverFactory,
                                                () -> "parameterResolverFactory may not be null"),
-                                       handlerDefinitions,
-                                       handlerEnhancerDefinitions));
+                                       nonNull(handlerDefinition, () -> "handler definition may not be null")));
     }
 
     /**
