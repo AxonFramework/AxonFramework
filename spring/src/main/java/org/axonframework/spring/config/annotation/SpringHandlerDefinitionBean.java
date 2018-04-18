@@ -17,7 +17,6 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.springframework.beans.BeansException;
