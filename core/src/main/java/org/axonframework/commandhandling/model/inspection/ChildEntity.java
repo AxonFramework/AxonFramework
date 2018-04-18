@@ -42,5 +42,4 @@ public interface ChildEntity<T> {
      * @return a map containing with the Command Names as keys and the handlers as values.
      */
     Map<String, MessageHandlingMember<? super T>> commandHandlers();
-
 }

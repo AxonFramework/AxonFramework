@@ -21,6 +21,7 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -73,6 +74,11 @@ public class ModelInspector<T> implements AggregateModel<T> {
     @Override
     public Long getVersion(T target) {
         return model.getVersion(target);
+    }
+
+    @Override
+    public List<MessageHandlingMember<? super T>> commandHandlerInterceptors() {
+        return model.commandHandlerInterceptors();
     }
 
     @Override
