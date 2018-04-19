@@ -56,7 +56,7 @@ public abstract class AbstractEventBus implements EventBus {
     private final String eventsKey = this + "_EVENTS";
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
-    private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
+    private final Set<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
 
     /**
      * Initializes an event bus with a {@link NoOpMessageMonitor}.
@@ -106,7 +106,7 @@ public abstract class AbstractEventBus implements EventBus {
      * @param dispatchInterceptor
      */
     @Override
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
@@ -182,7 +182,7 @@ public abstract class AbstractEventBus implements EventBus {
         }
         List<EventMessage<?>> messages = new ArrayList<>();
         for (UnitOfWork<?> uow = CurrentUnitOfWork.get(); uow != null; uow = uow.parent().orElse(null)) {
-            messages.addAll(uow.getOrDefaultResource(eventsKey, Collections.emptyList()));
+            messages.addAll(0, uow.getOrDefaultResource(eventsKey, Collections.emptyList()));
         }
         return messages;
     }
@@ -195,10 +195,10 @@ public abstract class AbstractEventBus implements EventBus {
      */
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
-        for (MessageDispatchInterceptor<EventMessage<?>> preprocessor : dispatchInterceptors) {
-            BiFunction<Integer, EventMessage<?>, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
+        for (MessageDispatchInterceptor<? super EventMessage<?>> preprocessor : dispatchInterceptors) {
+            BiFunction<Integer, ? super EventMessage<?>, ? super EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
             for (int i = 0; i < preprocessedEvents.size(); i++) {
-                preprocessedEvents.set(i, function.apply(i, preprocessedEvents.get(i)));
+                preprocessedEvents.set(i, (EventMessage<?>) function.apply(i, preprocessedEvents.get(i)));
             }
         }
         return preprocessedEvents;

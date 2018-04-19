@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.*;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -190,8 +190,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(nonAxonInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
 
-        ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(false);
         URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
         when(restTemplate.exchange(
                 eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)

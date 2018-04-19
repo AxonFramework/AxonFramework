@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
@@ -30,6 +29,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class OutboundEventMessageChannelAdapterTest {
 
@@ -72,11 +72,6 @@ public class OutboundEventMessageChannelAdapterTest {
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {
-        return argThat(new ArgumentMatcher<Message<?>>() {
-            @Override
-            public boolean matches(Object argument) {
-                return event.equals(((Message) argument).getPayload());
-            }
-        });
+        return argThat(x -> event.equals(((Message) x).getPayload()));
     }
 }
