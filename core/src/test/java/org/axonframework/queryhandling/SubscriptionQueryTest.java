@@ -69,9 +69,9 @@ public class SubscriptionQueryTest {
         Registration registration2 = queryBus.subscriptionQuery(queryMessage2, updateHandler2);
 
         // then
-        chatQueryHandler.emitter.emit(String.class, m -> m.equals("axonFrameworkCR"), "Update11");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update11");
         registration1.cancel();
-        chatQueryHandler.emitter.emit(String.class, m -> m.equals("axonFrameworkCR"), "Update12");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update12");
         verify(updateHandler1).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
         verify(updateHandler1).onUpdate("Update11");
         verify(updateHandler1, times(0)).onUpdate("Update12");
@@ -97,8 +97,8 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, m -> m.equals("axonFrameworkCR"), "Update1");
-        chatQueryHandler.emitter.complete(String.class, m -> m.equals("axonFrameworkCR"));
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
 
         // then
         verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
@@ -120,8 +120,8 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, m -> m.equals("axonFrameworkCR"), "Update1");
-        chatQueryHandler.emitter.completeExceptionally(String.class, m -> m.equals("axonFrameworkCR"), toBeThrown);
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, toBeThrown);
 
         // then
         verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
@@ -207,7 +207,7 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, s -> s.equals("axonFrameworkCR"), "Update");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update");
 
         // then
         verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
@@ -228,7 +228,7 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, s -> s.equals("axonFrameworkCR"), in -> {
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, in -> {
             throw toBeThrown;
         });
 
@@ -294,9 +294,9 @@ public class SubscriptionQueryTest {
         @QueryHandler(queryName = "emitFirstThenReturnInitial")
         public String emitFirstThenReturnInitial(String criteria) throws InterruptedException {
             Executors.newSingleThreadExecutor().submit(() -> {
-                emitter.emit(String.class, s -> s.equals("axonFrameworkCR"), "Update1");
-                emitter.emit(String.class, s -> s.equals("axonFrameworkCR"), "Update2");
-                emitter.complete(String.class, s -> s.equals("axonFrameworkCR"));
+                emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+                emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+                emitter.complete(String.class, "axonFrameworkCR"::equals);
             });
 
             Thread.sleep(200);

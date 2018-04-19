@@ -309,7 +309,7 @@ public class SpringAxonAutoConfigurerTest {
                 assertNotNull(eventBus);
                 assertNotNull(beanInjectionCheck);
                 received.add(event);
-                queryUpdateEmitter.emit(String.class, chatRoom -> chatRoom.equals("axonCR"), event);
+                queryUpdateEmitter.emit(String.class, "axonCR"::equals, event);
             }
         }
 
