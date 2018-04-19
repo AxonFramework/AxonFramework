@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
+import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
@@ -202,7 +203,9 @@ public class SpringAxonAutoConfigurerTest {
                      handlerEnhancerDefinition.getDelegates().get(2).getClass());
         assertEquals(ReplayAwareMessageHandlerWrapper.class,
                      handlerEnhancerDefinition.getDelegates().get(3).getClass());
-        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(4).getClass());
+        assertEquals(MethodCommandHandlerInterceptorDefinition.class,
+                     handlerEnhancerDefinition.getDelegates().get(4).getClass());
+        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(5).getClass());
     }
 
     @EnableAxon
