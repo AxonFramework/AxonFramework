@@ -98,7 +98,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 new SimpleResourceParameterResolverFactory(resources),
                 ClasspathParameterResolverFactory.forClass(aggregateType));
-        handlerDefinition = new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader());
+        handlerDefinition = ClasspathHandlerDefinition.forClass(aggregateType);
     }
 
     @Override

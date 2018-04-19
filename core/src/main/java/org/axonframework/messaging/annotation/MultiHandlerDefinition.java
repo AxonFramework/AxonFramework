@@ -125,7 +125,8 @@ public class MultiHandlerDefinition implements HandlerDefinition {
      * @param delegates The handlerDefinitions providing the parameter values to use
      */
     public MultiHandlerDefinition(List<HandlerDefinition> delegates) {
-        this(delegates, new ClasspathHandlerEnhancerDefinition(Thread.currentThread().getContextClassLoader()));
+        this(delegates,
+             ClasspathHandlerEnhancerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
     }
 
     /**

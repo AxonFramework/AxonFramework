@@ -67,7 +67,7 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
 
     @Override
     public void afterPropertiesSet() {
-        enhancers.addAll(new ClasspathHandlerEnhancerDefinition(classLoader).handlerEnhancerDefinitions());
+        enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
         Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext.getBeansOfType(
                 HandlerEnhancerDefinition.class);
         enhancers.addAll(enhancersFound.values());

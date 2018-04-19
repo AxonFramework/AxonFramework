@@ -63,7 +63,7 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
 
     @Override
     public void afterPropertiesSet() {
-        definitions.addAll(new ClasspathHandlerDefinition(classLoader).handlerDefinitions());
+        definitions.addAll(ClasspathHandlerDefinition.forClassLoader(classLoader).getDelegates());
         Map<String, HandlerDefinition> definitionsFound = applicationContext.getBeansOfType(HandlerDefinition.class);
         definitions.addAll(definitionsFound.values());
     }

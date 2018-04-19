@@ -18,8 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
@@ -127,47 +125,20 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
      *
      * @param eventListeners                 list of event listeners to register with this invoker
-     * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler methods with
-     * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
-     * @param sequencingPolicy               The policy describing the expectations of sequential processing
-     */
-    public SimpleEventHandlerInvoker(List<?> eventListeners,
-                                     ParameterResolverFactory parameterResolverFactory,
-                                     ListenerInvocationErrorHandler listenerInvocationErrorHandler,
-                                     SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this(eventListeners,
-             parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()),
-             listenerInvocationErrorHandler,
-             sequencingPolicy);
-    }
-
-    /**
-     * Initializes a {@link SimpleEventHandlerInvoker} containing the given list of {@code eventListeners}. If an event
-     * listener is assignable to {@link EventListener} it will registered as is. If not, it will be wrapped by a new
-     * {@link AnnotationEventListenerAdapter}.
-     * <p>
-     * Events handled by the invoker will be passed to all the given {@code eventListeners}. If an exception is
-     * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
-     *
-     * @param eventListeners                 list of event listeners to register with this invoker
      * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler
      *                                       methods with
-     * @param handlerDefinition              The handler definition used to create concrete handlers
      * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
      * @param sequencingPolicy               The policy describing the expectations of sequential processing
      */
     public SimpleEventHandlerInvoker(List<?> eventListeners,
                                      ParameterResolverFactory parameterResolverFactory,
-                                     HandlerDefinition handlerDefinition,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
         this.eventListeners = eventListeners.stream()
                                             .map(listener -> listener instanceof EventListener ?
                                                     (EventListener) listener :
                                                     new AnnotationEventListenerAdapter(listener,
-                                                                                       parameterResolverFactory,
-                                                                                       handlerDefinition))
+                                                                                       parameterResolverFactory))
                                             .collect(toList());
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;

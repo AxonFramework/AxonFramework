@@ -57,7 +57,7 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
                                           ParameterResolverFactory parameterResolverFactory) {
         this(annotatedEventListener,
              parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+             ClasspathHandlerDefinition.forClass(annotatedEventListener.getClass()));
     }
 
     /**

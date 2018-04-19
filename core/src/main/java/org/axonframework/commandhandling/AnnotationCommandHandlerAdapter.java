@@ -64,7 +64,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
                                            ParameterResolverFactory parameterResolverFactory) {
         this(annotatedCommandHandler,
              parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+             ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()));
     }
 
     /**

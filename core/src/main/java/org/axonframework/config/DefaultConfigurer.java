@@ -42,7 +42,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -238,7 +237,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default HandlerDefinition to use
      */
     protected HandlerDefinition defaultHandlerDefinition() {
-        return new MultiHandlerDefinition(new ClasspathHandlerDefinition(getClass().getClassLoader()));
+        return ClasspathHandlerDefinition.forClass(getClass());
     }
 
     /**

@@ -38,17 +38,6 @@ public class AnnotatedHandlerInspector<T> {
     private AnnotatedHandlerInspector(Class<T> inspectedType,
                                       List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
                                       ParameterResolverFactory parameterResolverFactory,
-                                      Map<Class<?>, AnnotatedHandlerInspector> registry) {
-        this(inspectedType,
-             superClassInspectors,
-             parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()),
-             registry);
-    }
-
-    private AnnotatedHandlerInspector(Class<T> inspectedType,
-                                      List<AnnotatedHandlerInspector<? super T>> superClassInspectors,
-                                      ParameterResolverFactory parameterResolverFactory,
                                       HandlerDefinition handlerDefinition,
                                       Map<Class<?>, AnnotatedHandlerInspector> registry) {
         this.inspectedType = inspectedType;
@@ -72,22 +61,6 @@ public class AnnotatedHandlerInspector<T> {
     }
 
     /**
-     * Create an inspector for given {@code handlerType} that uses a {@link ClasspathParameterResolverFactory} to
-     * resolve method parameters and given {@code handlerDefinition} to create handlers.
-     *
-     * @param handlerType       the target handler type
-     * @param handlerDefinition the handler definition used to create concrete handlers
-     * @param <T>               the handler's type
-     * @return a new inspector instance for the inspected class
-     */
-    public static <T> AnnotatedHandlerInspector<T> inspectType(Class<? extends T> handlerType,
-                                                               HandlerDefinition handlerDefinition) {
-        return inspectType(handlerType,
-                           ClasspathParameterResolverFactory.forClass(handlerType),
-                           handlerDefinition);
-    }
-
-    /**
      * Create an inspector for given {@code handlerType} that uses given {@code parameterResolverFactory} to resolve
      * method parameters.
      *
@@ -100,7 +73,7 @@ public class AnnotatedHandlerInspector<T> {
                                                                ParameterResolverFactory parameterResolverFactory) {
         return inspectType(handlerType,
                            parameterResolverFactory,
-                           new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+                           ClasspathHandlerDefinition.forClass(handlerType));
     }
 
     /**

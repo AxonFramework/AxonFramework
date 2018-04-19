@@ -16,15 +16,19 @@
 
 package org.axonframework.messaging.annotation;
 
-import static java.util.ServiceLoader.load;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.WeakHashMap;
 
-import org.slf4j.LoggerFactory;
+import static java.util.ServiceLoader.load;
 
 /**
  * HandlerEnhancerDefinition instance that locates other HandlerEnhancerDefinition instances on the class path. It uses
@@ -39,18 +43,51 @@ import org.slf4j.LoggerFactory;
  * @see ServiceLoader
  * @since 3.3
  */
-public final class ClasspathHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
+public final class ClasspathHandlerEnhancerDefinition {
 
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
-    private MultiHandlerEnhancerDefinition multiHandlerEnhancer;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathHandlerEnhancerDefinition.class);
+    private static final Object MONITOR = new Object();
+    private static final Map<ClassLoader, WeakReference<MultiHandlerEnhancerDefinition>> FACTORIES = new WeakHashMap<>();
+
+    private ClasspathHandlerEnhancerDefinition() {
+        // not meant to be publicly instantiated
+    }
 
     /**
-     * Initializes classpath handler definition with given class loader. Using this class loader, handler definition
-     * enhancers are found on classpath.
+     * Creates an instance for the given {@code clazz}. Effectively, the class loader of the given class is used to
+     * locate implementations.
      *
-     * @param classLoader used to load handler definitions
+     * @param clazz The class for which the handler definition must be returned
+     * @return a MultiHandlerEnhancerDefinition that can create handlers for the given class
      */
-    public ClasspathHandlerEnhancerDefinition(ClassLoader classLoader) {
+    public static MultiHandlerEnhancerDefinition forClass(Class<?> clazz) {
+        return forClassLoader(clazz == null ? null : clazz.getClassLoader());
+    }
+
+    /**
+     * Creates an instance using the given {@code classLoader}. Implementations are located using this class loader.
+     *
+     * @param classLoader The class loader to locate the implementations with
+     * @return a MultiHandlerEnhancerDefinition instance using the given classLoader
+     */
+    public static MultiHandlerEnhancerDefinition forClassLoader(ClassLoader classLoader) {
+        synchronized (MONITOR) {
+            MultiHandlerEnhancerDefinition enhancerDefinition;
+            if (!FACTORIES.containsKey(classLoader)) {
+                enhancerDefinition = MultiHandlerEnhancerDefinition.ordered(findDelegates(classLoader));
+                FACTORIES.put(classLoader, new WeakReference<>(enhancerDefinition));
+                return enhancerDefinition;
+            }
+            enhancerDefinition = FACTORIES.get(classLoader).get();
+            if (enhancerDefinition == null) {
+                enhancerDefinition = MultiHandlerEnhancerDefinition.ordered(findDelegates(classLoader));
+                FACTORIES.put(classLoader, new WeakReference<>(enhancerDefinition));
+            }
+            return enhancerDefinition;
+        }
+    }
+
+    private static MultiHandlerEnhancerDefinition findDelegates(ClassLoader classLoader) {
         Iterator<HandlerEnhancerDefinition> iterator = load(HandlerEnhancerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
@@ -60,28 +97,15 @@ public final class ClasspathHandlerEnhancerDefinition implements HandlerEnhancer
                 HandlerEnhancerDefinition factory = iterator.next();
                 enhancers.add(factory);
             } catch (ServiceConfigurationError e) {
-                logger.info(
+                LOGGER.info(
                         "HandlerEnhancerDefinition instance ignored, as one of the required classes is not available" +
                                 "on the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
-                logger.info("HandlerEnhancerDefinition instance ignored. It relies on a class that cannot be found: {}",
+                LOGGER.info("HandlerEnhancerDefinition instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());
             }
         }
-        multiHandlerEnhancer = new MultiHandlerEnhancerDefinition(enhancers);
+        return new MultiHandlerEnhancerDefinition(enhancers);
     }
 
-    /**
-     * Gets the handler definition enhancers found on classpath.
-     *
-     * @return handler definition enhancers found on classpath
-     */
-    public List<HandlerEnhancerDefinition> handlerEnhancerDefinitions() {
-        return multiHandlerEnhancer.getDelegates();
-    }
-
-    @Override
-    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
-        return multiHandlerEnhancer.wrapHandler(original);
-    }
 }

@@ -63,7 +63,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
     public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory) {
         this(target,
              parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+             ClasspathHandlerDefinition.forClass(target.getClass()));
     }
 
     /**

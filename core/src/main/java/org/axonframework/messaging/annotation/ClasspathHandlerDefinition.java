@@ -16,22 +16,23 @@
 
 package org.axonframework.messaging.annotation;
 
-import static java.util.ServiceLoader.load;
-
-import java.lang.reflect.Executable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.WeakHashMap;
+
+import static java.util.ServiceLoader.load;
+
 /**
- * HandlerDefinition instance that locates other HandlerDefinition instances on the class path. It uses
- * the {@link ServiceLoader} mechanism to locate and initialize them.
+ * HandlerDefinition instance that locates other HandlerDefinition instances on the class path. It uses the {@link
+ * ServiceLoader} mechanism to locate and initialize them.
  * <p/>
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
  * {@code META-INF/services/org.axonframework.messaging.annotation.HandlerDefinition}. For more details, see
@@ -42,18 +43,51 @@ import org.slf4j.LoggerFactory;
  * @see ServiceLoader
  * @since 3.3
  */
-public final class ClasspathHandlerDefinition implements HandlerDefinition {
+public final class ClasspathHandlerDefinition {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClasspathHandlerDefinition.class);
-    private MultiHandlerDefinition multiHandlerDefinition;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathHandlerDefinition.class);
+    private static final Object MONITOR = new Object();
+    private static final Map<ClassLoader, WeakReference<MultiHandlerDefinition>> FACTORIES = new WeakHashMap<>();
+
+    private ClasspathHandlerDefinition() {
+        // not meant to be publicly instantiated
+    }
 
     /**
-     * Initializes classpath handler definition with given class loader. Using this class loader, handler definitions
-     * are found on classpath.
+     * Creates an instance for the given {@code clazz}. Effectively, the class loader of the given class is used to
+     * locate implementations.
      *
-     * @param classLoader used to load handler definitions
+     * @param clazz The class for which the handler definition must be returned
+     * @return a MultiHandlerDefinition that can create handlers for the given class
      */
-    public ClasspathHandlerDefinition(ClassLoader classLoader) {
+    public static MultiHandlerDefinition forClass(Class<?> clazz) {
+        return forClassLoader(clazz == null ? null : clazz.getClassLoader());
+    }
+
+    /**
+     * Creates an instance using the given {@code classLoader}. Implementations are located using this class loader.
+     *
+     * @param classLoader The class loader to locate the implementations with
+     * @return a MultiHandlerDefinition instance using the given classLoader
+     */
+    public static MultiHandlerDefinition forClassLoader(ClassLoader classLoader) {
+        synchronized (MONITOR) {
+            MultiHandlerDefinition handlerDefinition;
+            if (!FACTORIES.containsKey(classLoader)) {
+                handlerDefinition = MultiHandlerDefinition.ordered(findDelegates(classLoader));
+                FACTORIES.put(classLoader, new WeakReference<>(handlerDefinition));
+                return handlerDefinition;
+            }
+            handlerDefinition = FACTORIES.get(classLoader).get();
+            if (handlerDefinition == null) {
+                handlerDefinition = MultiHandlerDefinition.ordered(findDelegates(classLoader));
+                FACTORIES.put(classLoader, new WeakReference<>(handlerDefinition));
+            }
+            return handlerDefinition;
+        }
+    }
+
+    private static MultiHandlerDefinition findDelegates(ClassLoader classLoader) {
         Iterator<HandlerDefinition> iterator = load(HandlerDefinition.class, classLoader == null ?
                 Thread.currentThread().getContextClassLoader() : classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
@@ -63,30 +97,14 @@ public final class ClasspathHandlerDefinition implements HandlerDefinition {
                 HandlerDefinition factory = iterator.next();
                 definitions.add(factory);
             } catch (ServiceConfigurationError e) {
-                logger.info(
+                LOGGER.info(
                         "HandlerDefinition instance ignored, as one of the required classes is not available" +
                                 "on the classpath: {}", e.getMessage());
             } catch (NoClassDefFoundError e) {
-                logger.info("HandlerDefinition instance ignored. It relies on a class that cannot be found: {}",
+                LOGGER.info("HandlerDefinition instance ignored. It relies on a class that cannot be found: {}",
                             e.getMessage());
             }
         }
-        multiHandlerDefinition = new MultiHandlerDefinition(definitions);
-    }
-
-    /**
-     * Gets the handler definitions found on classpath.
-     *
-     * @return handler definitions found on classpath
-     */
-    public List<HandlerDefinition> handlerDefinitions() {
-        return multiHandlerDefinition.getDelegates();
-    }
-
-    @Override
-    public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType,
-                                                                Executable executable,
-                                                                ParameterResolverFactory parameterResolverFactory) {
-        return multiHandlerDefinition.createHandler(declaringType, executable, parameterResolverFactory);
+        return new MultiHandlerDefinition(definitions);
     }
 }

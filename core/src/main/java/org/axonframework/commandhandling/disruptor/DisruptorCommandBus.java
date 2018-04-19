@@ -467,7 +467,7 @@ public class DisruptorCommandBus implements CommandBus {
                                 aggregateFactory,
                                 snapshotTriggerDefinition,
                                 parameterResolverFactory,
-                                new ClasspathHandlerDefinition(getClass().getClassLoader()));
+                                ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()));
     }
 
     /**

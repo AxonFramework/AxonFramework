@@ -198,7 +198,8 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
-     * Registers handler definition within this fixture.
+     * Registers handler definition within this fixture. This {@code handlerDefinition} will replace existing one within
+     * this fixture.
      *
      * @param handlerDefinition used to create concrete handlers
      * @return the current FixtureConfiguration, for fluent interfacing

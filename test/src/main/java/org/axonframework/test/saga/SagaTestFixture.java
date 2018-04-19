@@ -93,7 +93,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
                                                                   sagaType, fieldFilters);
-        handlerDefinition = new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader());
+        handlerDefinition = ClasspathHandlerDefinition.forClass(sagaType);
     }
 
     /**

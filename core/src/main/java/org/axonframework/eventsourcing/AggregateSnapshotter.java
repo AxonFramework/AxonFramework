@@ -92,7 +92,9 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         this(eventStore,
              aggregateFactories,
              parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+             ClasspathHandlerDefinition.forClassLoader(
+                     aggregateFactories.isEmpty() ? Thread.currentThread().getContextClassLoader()
+                             : aggregateFactories.get(0).getClass().getClassLoader()));
     }
 
     /**
@@ -132,7 +134,9 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         this(eventStore,
              aggregateFactories,
              parameterResolverFactory,
-             new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()),
+             ClasspathHandlerDefinition.forClassLoader(
+                     aggregateFactories.isEmpty() ? Thread.currentThread().getContextClassLoader()
+                             : aggregateFactories.get(0).getClass().getClassLoader()),
              executor,
              transactionManager);
     }

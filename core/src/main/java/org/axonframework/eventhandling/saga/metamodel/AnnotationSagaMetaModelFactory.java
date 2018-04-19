@@ -56,7 +56,8 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
      * @param parameterResolverFactory factory for event handler parameter resolvers
      */
     public AnnotationSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
-        this(parameterResolverFactory, new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+        this(parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
     }
 
     /**

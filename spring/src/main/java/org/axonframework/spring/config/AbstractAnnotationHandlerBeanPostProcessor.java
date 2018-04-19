@@ -76,7 +76,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
             parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
         }
         if (handlerDefinition == null) {
-            handlerDefinition = new ClasspathHandlerDefinition(classLoader);
+            handlerDefinition = ClasspathHandlerDefinition.forClassLoader(classLoader);
         }
         if (isPostProcessingCandidate(targetClass)) {
             T adapter = initializeAdapterFor(bean, parameterResolverFactory, handlerDefinition);

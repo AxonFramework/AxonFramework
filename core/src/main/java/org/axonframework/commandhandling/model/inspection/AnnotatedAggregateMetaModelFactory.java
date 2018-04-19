@@ -65,7 +65,8 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
      * @param parameterResolverFactory to resolve parameter values of annotated handlers with
      */
     public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
-        this(parameterResolverFactory, new ClasspathHandlerDefinition(Thread.currentThread().getContextClassLoader()));
+        this(parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
