@@ -69,7 +69,7 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     @Override
-    public BiFunction<Integer, T, T> handle(List<T> messages) {
+    public BiFunction<Integer, T, T> handle(List<? extends T> messages) {
         return (index, message) -> {
             Validator validator = validatorFactory.getValidator();
             Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);

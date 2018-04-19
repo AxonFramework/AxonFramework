@@ -45,7 +45,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
     public <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
                                                                 ParameterResolverFactory parameterResolverFactory) {
         return findAnnotationAttributes(executable, MessageHandler.class)
-                .map(attr -> new AnnotatedMessageHandlingMember<T>(
+                .map(attr -> new AnnotatedMessageHandlingMember<>(
                         executable,
                         (Class<? extends Message>) attr.getOrDefault("messageType", Message.class),
                         (Class<? extends Message>) attr.getOrDefault("payloadType", Object.class),
