@@ -60,6 +60,20 @@ public class KafkaMessageSourceTests {
 
     private static TrackingToken incompatibleTokenType() {
         return new TrackingToken() {
+            @Override
+            public TrackingToken lowerBound(TrackingToken other) {
+                return null;
+            }
+
+            @Override
+            public TrackingToken upperBound(TrackingToken other) {
+                return null;
+            }
+
+            @Override
+            public boolean covers(TrackingToken other) {
+                return false;
+            }
         };
     }
 

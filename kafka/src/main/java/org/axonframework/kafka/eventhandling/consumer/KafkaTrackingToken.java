@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -75,6 +76,39 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
         HashMap<Integer, Long> newPositions = new HashMap<>(partitionPositions);
         newPositions.put(partition, offset);
         return new KafkaTrackingToken(newPositions);
+    }
+
+    @Override
+    public TrackingToken lowerBound(TrackingToken other) {
+        Assert.isTrue(other instanceof KafkaTrackingToken, () -> "Incompatible token type provided.");
+        KafkaTrackingToken otherToken = (KafkaTrackingToken) other;
+
+        Map<Integer, Long> intersection = new HashMap<>(this.partitionPositions);
+        partitionPositions.keySet().forEach(k -> {
+            if (!otherToken.partitionPositions.containsKey(k)) {
+                intersection.remove(k);
+            }
+        });
+        return new KafkaTrackingToken(intersection);
+    }
+
+    @Override
+    public TrackingToken upperBound(TrackingToken other) {
+        Assert.isTrue(other instanceof KafkaTrackingToken, () -> "Incompatible token type provided.");
+        Map<Integer, Long> events = new HashMap<>(partitionPositions);
+        events.putAll(((KafkaTrackingToken) other).partitionPositions);
+        return new KafkaTrackingToken(events);
+    }
+
+    @Override
+    public boolean covers(TrackingToken other) {
+        Assert.isTrue(other instanceof KafkaTrackingToken, () -> "Incompatible token type provided.");
+        KafkaTrackingToken otherToken = (KafkaTrackingToken) other;
+
+        long oldest = this.partitionPositions.values().stream().min(Comparator.naturalOrder()).orElse(0L);
+        return otherToken.partitionPositions.keySet().stream()
+                                            .allMatch(k -> this.partitionPositions.containsKey(k) ||
+                                                    otherToken.partitionPositions.get(k) < oldest);
     }
 
     public static boolean isEmpty(KafkaTrackingToken token) {

@@ -30,9 +30,9 @@ import static java.util.stream.Collectors.toSet;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotSame;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.emptyToken;
 import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.isEmpty;
 import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.isNotEmpty;
-import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.emptyToken;
 
 /**
  * Tests for {@link KafkaTrackingToken}
@@ -129,6 +129,35 @@ public class KafkaTrackingTokenTests {
         Collection<TopicPartition> expected = Lists.newArrayList(new TopicPartition("bar", 0),
                                                                  new TopicPartition("bar", 2));
         assertEquals(expected, KafkaTrackingToken.partitions("bar", existingToken));
+    }
+
+    @Test
+    public void testAdvancingATokenMakesItCoverThePrevious() {
+        KafkaTrackingToken subject = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+        }});
+        KafkaTrackingToken advancedToken = subject.advancedTo(0, 1);
+        assertThat(advancedToken.covers(subject)).isTrue();
+        assertThat(KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(1, 0L);
+        }}).covers(subject)).isFalse();
+    }
+
+    @Test
+    public void testUpperBound() {
+        KafkaTrackingToken first = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+            put(1, 1L);
+            put(2, 2L);
+        }});
+
+        KafkaTrackingToken second = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+            put(1, 1L);
+            put(2, 3L);
+        }});
+
+        assertThat(first.advancedTo(2, 3L)).isEqualTo(first.upperBound(second));
     }
 
     private static KafkaTrackingToken nonEmptyToken() {
