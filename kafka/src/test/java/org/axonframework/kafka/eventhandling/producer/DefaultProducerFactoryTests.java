@@ -215,7 +215,8 @@ public class DefaultProducerFactoryTests {
         ProducerFactory<String, String> pf = producerFactory(kafka);
         Producer<String, String> producer = pf.createProducer();
         producer.send(new ProducerRecord<>("testUsingCallbackWhilePublishingMessages", "callback"), cb).get();
-        verify(cb, only()).onCompletion(any(RecordMetadata.class), any(Exception.class));
+        producer.flush();
+        verify(cb, only()).onCompletion(any(RecordMetadata.class), any());
         cleanup(pf, producer);
     }
 

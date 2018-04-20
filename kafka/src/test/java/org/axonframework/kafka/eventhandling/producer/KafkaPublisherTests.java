@@ -286,7 +286,7 @@ public class KafkaPublisherTests {
         Producer producer = mock(Producer.class);
         when(pf.confirmationMode()).thenReturn(ConfirmationMode.TRANSACTIONAL);
         when(pf.createProducer()).thenReturn(producer);
-        doThrow(Exception.class).when(producer).abortTransaction();
+        doThrow(RuntimeException.class).when(producer).abortTransaction();
         return pf;
     }
 
