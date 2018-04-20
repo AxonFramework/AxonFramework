@@ -55,6 +55,7 @@ message Application {
     string hashed_token = 3;
     repeated ApplicationRole roles = 4;
     Action action = 5;
+    bool fine_grained_access_control = 6;
 }
 
 message User {
