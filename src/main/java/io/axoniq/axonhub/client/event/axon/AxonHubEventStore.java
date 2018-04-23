@@ -67,7 +67,7 @@ public class AxonHubEventStore extends AbstractEventStore {
      * The Event Store will delay creating the connection until the first activity takes place.
      *
      * @param configuration The configuration describing the servers to connect with and how to manage flow control
-     * @param platformConnectionManager
+     * @param platformConnectionManager manager for connections to AxonHub platform
      * @param serializer    The serializer to serialize Event payloads with
      */
     public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
@@ -80,7 +80,7 @@ public class AxonHubEventStore extends AbstractEventStore {
      * The Event Store will delay creating the connection until the first activity takes place.
      *
      * @param configuration The configuration describing the servers to connect with and how to manage flow control
-     * @param platformConnectionManager
+     * @param platformConnectionManager manager for connections to AxonHub platform
      * @param serializer    The serializer to serialize Event payloads with
      * @param upcasterChain The upcaster to modify received Event representations with
      */
@@ -101,7 +101,7 @@ public class AxonHubEventStore extends AbstractEventStore {
 
     private static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
 
-        public static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
+        private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
 
         private final EventUpcaster upcasterChain;
@@ -223,13 +223,12 @@ public class AxonHubEventStore extends AbstractEventStore {
 
                 @Override
                 public void onError(Throwable throwable) {
-                    logger.error("Failed to receive events", throwable);
                     consumer.fail(new EventStoreException("Error while reading events from the server", throwable));
                 }
 
                 @Override
                 public void onCompleted() {
-
+                    consumer.fail(new EventStoreException("Error while reading events from the server", new RuntimeException("Connection closed by server")));
                 }
             });
             FlowControllingStreamObserver<GetEventsRequest> observer = new FlowControllingStreamObserver<>(

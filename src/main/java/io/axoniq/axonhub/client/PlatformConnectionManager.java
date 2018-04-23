@@ -92,7 +92,7 @@ public class PlatformConnectionManager {
                     if(isPrimary(nodeInfo, clusterInfo)) {
                         channel = candidate;
                     } else {
-                        candidate.shutdownNow();
+                        shutdown(candidate);
                         logger.info("Connecting to {} ({}:{})", clusterInfo.getPrimary().getNodeName(), clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
                         channel = createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
                                 ManagedChannelBuilder.forAddress(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort()).usePlaintext(true).build();
@@ -101,6 +101,7 @@ public class PlatformConnectionManager {
                     unavailable = false;
                     break;
                 } catch( StatusRuntimeException sre) {
+                    shutdown(candidate);
                     logger.warn("Connecting to AxonHub node {}:{} failed: {}", nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage());
                     if( sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
                         unavailable = true;
@@ -113,6 +114,14 @@ public class PlatformConnectionManager {
             }
         }
         return channel;
+    }
+
+    private void shutdown(ManagedChannel managedChannel) {
+        try {
+            managedChannel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.debug("Interrupted during shutdown");
+        }
     }
 
     private boolean isPrimary(NodeInfo nodeInfo, PlatformInfo clusterInfo) {
