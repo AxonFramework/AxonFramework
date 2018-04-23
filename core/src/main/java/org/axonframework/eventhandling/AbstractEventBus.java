@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
@@ -113,6 +114,8 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public void publish(List<? extends EventMessage<?>> events) {
+        Stream<MessageMonitor.MonitorCallback> ingested = events.stream().map(messageMonitor::onMessageIngested);
+
         if (CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
@@ -122,12 +125,20 @@ public abstract class AbstractEventBus implements EventBus {
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
                                "committed.");
 
-            eventsQueue(unitOfWork).addAll(events);
+            unitOfWork.afterCommit(u -> ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess));
+            unitOfWork.onRollback(u -> ingested.forEach(m -> m.reportFailure(u.getExecutionResult().getExceptionResult())));
 
+            eventsQueue(unitOfWork).addAll(events);
         } else {
-            prepareCommit(intercept(events));
-            commit(events);
-            afterCommit(events);
+            try {
+                prepareCommit(intercept(events));
+                commit(events);
+                afterCommit(events);
+                ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
+            } catch (Exception e) {
+                ingested.forEach(m -> m.reportFailure(e));
+                throw e;
+            }
         }
     }
 
@@ -217,7 +228,6 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void prepareCommit(List<? extends EventMessage<?>> events) {
-        events.forEach(messageMonitor::onMessageIngested);
         eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events));
     }
 
