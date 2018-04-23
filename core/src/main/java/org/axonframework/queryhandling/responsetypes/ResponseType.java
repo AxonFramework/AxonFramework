@@ -45,5 +45,10 @@ public interface ResponseType<R> extends Serializable {
         return (R) response;
     }
 
+    /**
+     * Returns a {@link java.lang.Class} representing the type of the payload to be contained in the response message.
+     *
+     * @return a {@link java.lang.Class} representing the type of the payload to be contained in the response message
+     */
     Class<R> responseMessagePayloadType();
 }
