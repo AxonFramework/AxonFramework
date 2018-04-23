@@ -66,7 +66,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
         } else if (entry.getPublisherId() == segmentId) {

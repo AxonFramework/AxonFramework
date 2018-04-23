@@ -111,7 +111,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         private final boolean mayBlock;
         private Spliterator<? extends TrackedEventMessage<?>> active;
         private TrackingToken lastToken;
-        private Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
+        private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
 
         public ConcatenatingSpliterator(Spliterator<? extends TrackedEventMessage<?>> historicSpliterator, boolean mayBlock,
                                         Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider) {
@@ -140,7 +140,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         private final DomainEventStream historic;
         private final String aggregateIdentifier;
         private DomainEventStream actual;
-        private BiFunction<String, Long, DomainEventStream> domainEventStream;
+        private final BiFunction<String, Long, DomainEventStream> domainEventStream;
 
         public ConcatenatingDomainEventStream(DomainEventStream historic, String aggregateIdentifier, BiFunction<String, Long, DomainEventStream> domainEventStream) {
             this.historic = historic;

@@ -107,7 +107,7 @@ public class XStreamSerializerTest {
     }
 
     @Test
-    public void testRevisionNumber() throws UnsupportedEncodingException {
+    public void testRevisionNumber() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);
         assertEquals("2", serialized.getType().getRevision());
@@ -115,7 +115,7 @@ public class XStreamSerializerTest {
     }
 
     @Test
-    public void testSerializedTypeUsesClassAlias() throws UnsupportedEncodingException {
+    public void testSerializedTypeUsesClassAlias() {
         testSubject.addAlias("rse", RevisionSpecifiedEvent.class);
         SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);

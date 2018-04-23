@@ -31,17 +31,17 @@ public class SerialVersionUIDRevisionResolverTest {
     private SerialVersionUIDRevisionResolver testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new SerialVersionUIDRevisionResolver();
     }
 
     @Test
-    public void testRevisionOfAnnotatedClass() throws Exception {
+    public void testRevisionOfAnnotatedClass() {
         assertEquals("7038084420164786502", testSubject.revisionOf(IsSerializable.class));
     }
 
     @Test
-    public void testRevisionOfNonAnnotatedClass() throws Exception {
+    public void testRevisionOfNonAnnotatedClass() {
         assertEquals(null, testSubject.revisionOf(NotSerializable.class));
     }
 

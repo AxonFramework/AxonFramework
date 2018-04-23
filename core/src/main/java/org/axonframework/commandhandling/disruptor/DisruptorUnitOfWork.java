@@ -110,7 +110,7 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
      * This feature is not supported by this Unit of Work.
      */
     @Override
-    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) {
         throw new UnsupportedOperationException();
     }
 

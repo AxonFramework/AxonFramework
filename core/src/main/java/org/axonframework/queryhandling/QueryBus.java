@@ -50,9 +50,6 @@ public interface QueryBus {
     /**
      * Subscribe the given {@code handler} to queries with given {@code queryName}, {@code initialResponseType} and
      * {@code updateResponseType}.
-     * <p>
-     * If during emitting of incremental updates there is no {@code updateHandler}, {@link
-     * NoUpdateHandlerForEmitterException} will be thrown.
      *
      * @param queryName           the name of the query request to subscribe
      * @param initialResponseType the type of initial response the subscribed component answers with
@@ -61,6 +58,7 @@ public interface QueryBus {
      * @param <I>                 the type of initial response
      * @param <U>                 the type of incremental responses
      * @return a handle to un-subscribe the query handler
+     * @throws NoHandlerForQueryException when no suitable handler is found for this query
      */
     <I, U> Registration subscribe(String queryName,
                                   Type initialResponseType,

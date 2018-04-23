@@ -38,7 +38,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testSagas() throws Exception {
+    public void testSagas() {
         mongoTemplate.sagaCollection();
 
         verify(mockMongo).getDatabase("axonframework");
@@ -46,7 +46,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testCustomProvidedNames() throws Exception {
+    public void testCustomProvidedNames() {
         mongoTemplate = new DefaultMongoTemplate(mockMongo,
                                                  "customdatabase",
                                                  "customsagas");

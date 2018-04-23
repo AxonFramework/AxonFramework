@@ -68,7 +68,7 @@ public class SerializedMessageTest {
 
     @Test
     public void testWithMetaData() {
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
         SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
@@ -83,7 +83,7 @@ public class SerializedMessageTest {
 
     @Test
     public void testAndMetaData() {
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
         Message<Object> message = new SerializedMessage<>(eventId, serializedPayload,

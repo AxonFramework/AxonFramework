@@ -75,7 +75,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
         private ParameterResolverFactory factory;
 
         @Override
-        public ParameterResolverFactory getObject() throws Exception {
+        public ParameterResolverFactory getObject() {
             return factory;
         }
 
@@ -90,7 +90,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
         }
 
         @Override
-        public void afterPropertiesSet() throws Exception {
+        public void afterPropertiesSet() {
             this.factory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
         }
 

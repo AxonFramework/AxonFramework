@@ -55,7 +55,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
 
     @Override
-    public SimpleEventScheduler getObject() throws Exception {
+    public SimpleEventScheduler getObject() {
         return eventScheduler;
     }
 
@@ -70,7 +70,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (executorService == null) {
             executorService = Executors.newSingleThreadScheduledExecutor();
             executorServiceToShutDown = executorService;
@@ -88,7 +88,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     }
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         if (executorServiceToShutDown != null) {
             executorServiceToShutDown.shutdown();
         }

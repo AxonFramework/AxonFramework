@@ -266,7 +266,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<T>(aggregateType),
+            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
                                                              eventStore, parameterResolverFactory,
                                                              NoSnapshotTriggerDefinition.INSTANCE));
         }

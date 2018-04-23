@@ -11,18 +11,18 @@ public class AnnotationRoutingStrategyTest {
     private AnnotationRoutingStrategy testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AnnotationRoutingStrategy();
     }
 
     @Test
-    public void testGetRoutingKeyFromField() throws Exception {
+    public void testGetRoutingKeyFromField() {
         assertEquals("Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeFieldAnnotatedCommand())));
         assertEquals("Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeOtherFieldAnnotatedCommand())));
     }
 
     @Test
-    public void testGetRoutingKeyFromMethod() throws Exception {
+    public void testGetRoutingKeyFromMethod() {
         assertEquals("Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeMethodAnnotatedCommand())));
         assertEquals("Target", testSubject.getRoutingKey(new GenericCommandMessage<>(new SomeOtherMethodAnnotatedCommand())));
     }

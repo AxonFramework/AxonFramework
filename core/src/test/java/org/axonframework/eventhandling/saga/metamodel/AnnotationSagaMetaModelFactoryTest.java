@@ -33,12 +33,12 @@ public class AnnotationSagaMetaModelFactoryTest {
     private AnnotationSagaMetaModelFactory testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AnnotationSagaMetaModelFactory();
     }
 
     @Test
-    public void testInspectSaga() throws Exception {
+    public void testInspectSaga() {
         SagaModel<MySaga> sagaModel = testSubject.modelOf(MySaga.class);
 
         Optional<AssociationValue> actual = sagaModel.resolveAssociation(asEventMessage(new MySagaStartEvent("value")));

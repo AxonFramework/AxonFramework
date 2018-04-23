@@ -59,7 +59,7 @@ public class DefaultConfigurerTest {
     private EntityManager em;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Map<String, String> properties = new HashMap<>();
         properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
         properties.put("hibernate.hbm2ddl.auto", "create-drop");
@@ -68,7 +68,7 @@ public class DefaultConfigurerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         em.close();
     }
 

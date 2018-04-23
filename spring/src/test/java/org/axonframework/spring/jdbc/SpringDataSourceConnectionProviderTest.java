@@ -59,7 +59,7 @@ public class SpringDataSourceConnectionProviderTest {
     private SpringTransactionManager springTransactionManager;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         springTransactionManager  = new SpringTransactionManager(transactionManager);
     }
 
@@ -108,7 +108,7 @@ public class SpringDataSourceConnectionProviderTest {
     public static class Context {
 
         @Bean
-        public ConnectionProvider connectionProvider(DataSource dataSource) throws SQLException {
+        public ConnectionProvider connectionProvider(DataSource dataSource) {
             return new UnitOfWorkAwareConnectionProviderWrapper(new SpringDataSourceConnectionProvider(dataSource));
         }
     }

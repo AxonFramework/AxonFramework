@@ -127,7 +127,7 @@ public class SimpleCommandBusTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() throws Exception {
+    public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() {
         final AtomicReference<UnitOfWork<?>> unitOfWork = new AtomicReference<>();
         testSubject.subscribe(String.class.getName(), command -> {
             unitOfWork.set(CurrentUnitOfWork.get());
@@ -310,7 +310,7 @@ public class SimpleCommandBusTest {
 
     private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handle(CommandMessage<?> message) {
             return message;
         }
     }

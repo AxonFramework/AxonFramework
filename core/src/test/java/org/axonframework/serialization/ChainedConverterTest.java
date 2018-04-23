@@ -47,7 +47,7 @@ public class ChainedConverterTest {
     private ContentTypeConverter<?, ?> numberToStringConverter;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         candidates = new ArrayList<>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
@@ -120,7 +120,7 @@ public class ChainedConverterTest {
     }
 
     @Test(expected = CannotConvertBetweenTypesException.class)
-    public void testInexistentRoute() throws Exception {
+    public void testInexistentRoute() {
         target = InputStream.class;
         source = new StringReader("hello");
         testSubject = ChainedConverter.calculateChain(Reader.class, target, candidates);
@@ -128,7 +128,7 @@ public class ChainedConverterTest {
 
     // Detects an issue where the ChainedConverter hangs as it evaluates a recursive route
     @Test(expected = CannotConvertBetweenTypesException.class)
-    public void testAnotherInexistentRoute() throws Exception {
+    public void testAnotherInexistentRoute() {
         target = Number.class;
         source = "hello";
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
@@ -136,7 +136,7 @@ public class ChainedConverterTest {
     }
 
     @Test(expected = CannotConvertBetweenTypesException.class)
-    public void testAThirdInexistentRoute() throws Exception {
+    public void testAThirdInexistentRoute() {
         target = Documented.class;
         source = "hello".getBytes();
         testSubject = ChainedConverter.calculateChain(byte[].class, target, candidates);

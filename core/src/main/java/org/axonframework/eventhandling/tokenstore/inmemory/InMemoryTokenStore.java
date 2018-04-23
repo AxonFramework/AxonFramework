@@ -54,9 +54,7 @@ public class InMemoryTokenStore implements TokenStore {
     @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().afterCommit(uow -> {
-                tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
-            });
+            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN)));
         } else {
             tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
         }

@@ -103,7 +103,7 @@ public class TrackingEventProcessorTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
@@ -122,7 +122,7 @@ public class TrackingEventProcessorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
     }
@@ -464,7 +464,7 @@ public class TrackingEventProcessorTest {
         }).when(eventHandlerInvoker).handle(any(), any());
 
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> {assertEquals(4, firstRun.size());});
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, firstRun.size()));
         testSubject.shutDown();
 
         doAnswer(i -> {
@@ -474,7 +474,7 @@ public class TrackingEventProcessorTest {
 
         testSubject.resetTokens();
         testSubject.start();
-        assertWithin(1, TimeUnit.SECONDS, () -> {assertEquals(8, replayRun.size());});
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, replayRun.size()));
 
         assertEquals(GapAwareTrackingToken.newInstance(5, asList(3L, 4L)), firstRun.get(3));
         assertTrue(replayRun.get(0) instanceof ReplayToken);

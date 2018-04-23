@@ -60,7 +60,7 @@ public class AbstractEventMultiUpcasterTest {
     private Upcaster<IntermediateEventRepresentation> upcaster;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         expectedNewString = "newNameValue";
         expectedNewInteger = 42;
         expectedNewBooleans = new ArrayList<>();
@@ -156,7 +156,7 @@ public class AbstractEventMultiUpcasterTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void testUpcastsKnownType() throws IOException {
+    public void testUpcastsKnownType() {
         String expectedRevisionNumber = "1";
         String expectedSecondAndThirdRevisionNumber = null;
 

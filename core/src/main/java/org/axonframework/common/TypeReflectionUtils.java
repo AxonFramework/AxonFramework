@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 /**
  * Utility class for doing reflection on types.
  * </p>
- * This TypeReflectionUtils is a trimmed down copy of the {@link com.googlecode.gentyref.GenericTypeReflector}.
+ * This TypeReflectionUtils is a trimmed down copy of the {@code com.googlecode.gentyref.GenericTypeReflector}.
  * All the unused functions have been removed and only the {@link TypeReflectionUtils#getExactSuperType(Type, Class)}
  * has remained. The private functions used by {@code getExactSuperType(Type, Class)} have also been tailored to our
  * exact needs.
@@ -47,6 +47,10 @@ public abstract class TypeReflectionUtils {
      * <tt>getExactSuperType(StringList.class, Collection.class)</tt>
      * returns a {@link ParameterizedType} representing <tt>Collection&lt;String&gt;</tt>.
      * </p>
+     *
+     * @param type        The type to search
+     * @param searchClass The erased type of the super class to find
+     * @return The supertype of {@code type}, whose erased type is {@code searchClass}
      */
     public static Type getExactSuperType(Type type, Class<?> searchClass) {
         if (type instanceof ParameterizedType || type instanceof Class || type instanceof GenericArrayType) {
@@ -95,7 +99,7 @@ public abstract class TypeReflectionUtils {
      */
     private static Type[] getExactDirectSuperTypes(Type type) {
         if (type instanceof ParameterizedType || type instanceof Class) {
-            return getExactDirectSuperTypesOfParameterizeTypeOrClass(type);
+            return getExactDirectSuperTypesOfParameterizedTypeOrClass(type);
         } else if (type instanceof TypeVariable) {
             return ((TypeVariable<?>) type).getBounds();
         } else if (type instanceof WildcardType) {
@@ -113,7 +117,7 @@ public abstract class TypeReflectionUtils {
         return new Type[]{type};
     }
 
-    private static Type[] getExactDirectSuperTypesOfParameterizeTypeOrClass(Type type) {
+    private static Type[] getExactDirectSuperTypesOfParameterizedTypeOrClass(Type type) {
         Class<?> clazz;
         if (type instanceof ParameterizedType) {
             clazz = (Class<?>) ((ParameterizedType) type).getRawType();
@@ -125,7 +129,7 @@ public abstract class TypeReflectionUtils {
                 Type[] result = new Type[componentSupertypes.length + 3];
                 for (int resultIndex = 0; resultIndex < componentSupertypes.length; resultIndex++) {
                     result[resultIndex] = Array.newInstance((Class<?>) componentSupertypes[resultIndex], 0)
-                                               .getClass();
+                            .getClass();
                 }
                 return result;
             }
@@ -201,6 +205,10 @@ public abstract class TypeReflectionUtils {
             );
             return false;
         }
+    }
+
+    private TypeReflectionUtils() {
+        // Utility class
     }
 
     /**
@@ -285,9 +293,5 @@ public abstract class TypeReflectionUtils {
                 return ownerType;
             }
         }
-    }
-
-    private TypeReflectionUtils() {
-        // Utility class
     }
 }

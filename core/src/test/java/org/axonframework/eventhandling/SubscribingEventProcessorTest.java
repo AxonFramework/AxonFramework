@@ -37,7 +37,7 @@ public class SubscribingEventProcessorTest {
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockListener = mock(EventListener.class);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
@@ -45,7 +45,7 @@ public class SubscribingEventProcessorTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
     }

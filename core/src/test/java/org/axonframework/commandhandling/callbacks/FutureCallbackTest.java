@@ -39,7 +39,7 @@ public class FutureCallbackTest {
     private static final int THREAD_JOIN_TIMEOUT = 1000;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new FutureCallback<>();
     }
 

@@ -37,7 +37,7 @@ import static java.util.Collections.singletonMap;
  */
 public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefinition {
 
-    private static Map<String, Object> DEFAULT_SETTING = singletonMap("allowReplay", Boolean.TRUE);
+    private static final Map<String, Object> DEFAULT_SETTING = singletonMap("allowReplay", Boolean.TRUE);
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {

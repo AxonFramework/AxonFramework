@@ -38,14 +38,14 @@ public class GenericMessageTest {
     private Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         UnitOfWork<?> unitOfWork = mock(UnitOfWork.class);
         when(unitOfWork.getCorrelationData()).thenAnswer(invocation -> correlationData);
         CurrentUnitOfWork.set(unitOfWork);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
         }

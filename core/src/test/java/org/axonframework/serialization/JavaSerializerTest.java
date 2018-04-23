@@ -31,7 +31,7 @@ public class JavaSerializerTest {
     private JavaSerializer testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new JavaSerializer();
     }
 

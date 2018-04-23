@@ -31,7 +31,7 @@ public class PropertyAccessStrategyTest {
     private TestPropertyAccessStrategy testPropertyAccessStrategy = new TestPropertyAccessStrategy();
 
     @After
-    public void setUp() throws Exception {
+    public void setUp() {
         PropertyAccessStrategy.unregister(mock1);
         PropertyAccessStrategy.unregister(mock2);
         PropertyAccessStrategy.unregister(mock3);

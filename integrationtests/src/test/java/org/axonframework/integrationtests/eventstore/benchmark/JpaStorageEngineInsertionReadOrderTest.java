@@ -69,7 +69,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
     private TransactionTemplate txTemplate;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         txTemplate = new TransactionTemplate(tx);
         txTemplate.execute(ts -> {
             entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
