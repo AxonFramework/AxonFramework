@@ -275,6 +275,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                                       U calculatedUpdate = update.apply(query);
                                       updateHandler.onUpdate(calculatedUpdate);
                                   } catch (Exception e) {
+                                      logger.error(format("An error happened while trying to emit an update to a query: %s.", query), e);
                                       updateHandlers.remove(query);
                                       updateHandler.onCompletedExceptionally(e);
                                   }
@@ -287,11 +288,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                 updateHandlers.keySet()
                               .stream()
                               .filter(filter)
-                              .forEach(query -> {
-                                  UpdateHandler<?, ?> updateHandler = updateHandlers.get(query);
-                                  updateHandlers.remove(query);
-                                  updateHandler.onCompleted();
-                              }));
+                              .forEach(query -> updateHandlers.remove(query).onCompleted()));
     }
 
     @Override
@@ -300,11 +297,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                 updateHandlers.keySet()
                               .stream()
                               .filter(filter)
-                              .forEach(query -> {
-                                  UpdateHandler<?, ?> updateHandler = updateHandlers.get(query);
-                                  updateHandlers.remove(query);
-                                  updateHandler.onCompletedExceptionally(cause);
-                              }));
+                              .forEach(query -> updateHandlers.remove(query).onCompletedExceptionally(cause)));
     }
 
     @SuppressWarnings("unchecked")
