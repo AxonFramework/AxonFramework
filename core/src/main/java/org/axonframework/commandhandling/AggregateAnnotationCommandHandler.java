@@ -92,9 +92,9 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
-     * given {@code repository} to add and load aggregate instances, the given {@code parameterResolverFactory} and the
-     * given {@code handlerDefinition}.
+     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the given
+     * {@code repository} to add and load aggregate instances, the given {@code parameterResolverFactory} to resolve
+     * parameters which are required by handlers and the given {@code handlerDefinition} used to create handlers.
      *
      * @param aggregateType            The type of aggregate
      * @param repository               The repository providing access to aggregate instances
@@ -102,7 +102,8 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
      * @param parameterResolverFactory The strategy for resolving parameter values for handler methods
      * @param handlerDefinition        The handler definition used to create concrete handlers
      */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
+    public AggregateAnnotationCommandHandler(Class<T> aggregateType,
+                                             Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver,
                                              ParameterResolverFactory parameterResolverFactory,
                                              HandlerDefinition handlerDefinition) {

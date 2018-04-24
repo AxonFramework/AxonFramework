@@ -99,7 +99,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory}.
+     * Initialize the repository with the given {@code lockFactory}.
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param lockFactory   the lock factory to use
@@ -111,7 +111,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory} and {@code aggregateModel}
+     * Initialize the repository with the given {@code lockFactory} and {@code aggregateModel}
      *
      * @param aggregateModel The model describing the structure of the aggregate
      * @param lockFactory    the lock factory to use
@@ -123,7 +123,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory} and {@code ParameterResolverFactory}.
+     * Initialize the repository with the given {@code lockFactory} and {@code parameterResolverFactory}.
      *
      * @param aggregateType            The type of aggregate stored in this repository
      * @param lockFactory              The lock factory to use
@@ -137,8 +137,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory}, {@code ParameterResolverFactory} and {@code
-     * HandlerDefinition}.
+     * Initialize the repository with the given {@code lockFactory}, {@code parameterResolverFactory} and {@code
+     * handlerDefinition}.
      *
      * @param aggregateType            The type of aggregate stored in this repository
      * @param lockFactory              The lock factory to use

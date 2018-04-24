@@ -324,13 +324,10 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * {@code aggregateFactory}. The given {@code decorator} is used to decorate event streams.
+     * {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
-     * <p>
-     * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
-     * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for creating snapshots
@@ -347,13 +344,10 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Creates a repository instance for an Event Sourced aggregate, source from given {@code eventStore}, that is
-     * created by the given {@code aggregateFactory}. The given {@code decorator} is used to decorate event streams.
+     * created by the given {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
-     * <p>
-     * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
-     * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
@@ -407,7 +401,8 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * {@code aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are
-     * resolved using the given {@code parameterResolverFactory}.
+     * resolved using the given {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create
+     * handler instances.
      *
      * @param eventStore               The Event Store to retrieve and persist events
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
@@ -417,7 +412,8 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore,
+                                              AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory,
                                               HandlerDefinition handlerDefinition) {
         return createRepository(eventStore,
@@ -430,7 +426,7 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
-     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     * {@code parameterResolverFactory}.
      *
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for snapshots
@@ -450,7 +446,7 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate, sourced from given {@code eventStore}, that is
      * created by the given {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
-     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     * {@code parameterResolverFactory}.
      *
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
@@ -473,7 +469,7 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate, sourced from given {@code eventStore}, that is
      * created by the given {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
-     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     * {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create handler instances.
      *
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate

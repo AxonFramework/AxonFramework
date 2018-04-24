@@ -99,8 +99,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                              new SimpleEventHandlerInvoker(
                                                      eh,
                                                      conf.parameterResolverFactory(),
-                                                     getListenerInvocationErrorHandler(conf, name),
-                                                     new SequentialPerAggregatePolicy()),
+                                                     getListenerInvocationErrorHandler(conf, name)),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
                                              getErrorHandler(conf, name),
