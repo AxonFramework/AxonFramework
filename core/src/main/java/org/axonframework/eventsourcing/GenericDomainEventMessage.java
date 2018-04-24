@@ -32,6 +32,7 @@ import java.util.function.Supplier;
  */
 public class GenericDomainEventMessage<T> extends GenericEventMessage<T> implements DomainEventMessage<T> {
 
+    private static final long serialVersionUID = -1222000190977419970L;
     private final String type;
     private final String aggregateIdentifier;
     private final long sequenceNumber;

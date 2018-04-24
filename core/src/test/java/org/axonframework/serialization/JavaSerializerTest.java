@@ -73,6 +73,14 @@ public class JavaSerializerTest {
         }
     }
 
+    @Test
+    public void testDeserializeNullValue() {
+        SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        assertNull(testSubject.deserialize(serializedNull));
+        assertNull(testSubject.deserialize(serializedNullString));
+    }
+
     private static class MySerializableObject implements Serializable {
 
         private static final long serialVersionUID = 2166108932776672373L;

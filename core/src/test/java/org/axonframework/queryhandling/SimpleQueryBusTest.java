@@ -130,6 +130,22 @@ public class SimpleQueryBusTest {
     }
 
     @Test
+    public void testNullResponseProperlyReturned() throws ExecutionException, InterruptedException {
+        testSubject.subscribe(String.class.getName(), String.class, p -> null);
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse)
+                .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
+
+        assertTrue("SimpleQueryBus should resolve CompletableFutures directly", result.isDone());
+        assertNull(result.get().getPayload());
+        assertEquals(String.class, result.get().getPayloadType());
+        assertEquals(
+                MetaData.with(CORRELATION_ID, testQueryMessage.getIdentifier()).and(TRACE_ID, "fakeTraceId"),
+                result.get().getMetaData()
+        );
+    }
+
+    @Test
     public void testQueryWithTransaction() throws Exception {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
