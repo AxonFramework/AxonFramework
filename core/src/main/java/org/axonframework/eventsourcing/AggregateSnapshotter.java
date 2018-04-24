@@ -69,7 +69,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * which represent the snapshots.
      *
      * @param eventStore         The Event Store to store snapshots in
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
      * @see ClasspathParameterResolverFactory
      */
@@ -100,7 +100,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      *
      * @param eventStore         The Event Store to store snapshots in
      * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @see ClasspathParameterResolverFactory
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
@@ -135,7 +135,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
      * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
      *                                 handlers with
-     * @param repositoryProvider       Provides repositories for given aggregate types
+     * @param repositoryProvider       Provides repositories for specific aggregate types
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory,
@@ -173,7 +173,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param executor                 The executor to process the actual snapshot creation with
      * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
      *                                 process with
-     * @param repositoryProvider       Provides repositories for given aggregate types
+     * @param repositoryProvider       Provides repositories for specific aggregate types
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory, Executor executor,

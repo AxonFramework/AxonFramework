@@ -86,7 +86,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateRoot      The aggregate root instance
      * @param model              The model describing the aggregate structure
      * @param eventBus           The Event Bus to publish generated events on
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      */
     protected AnnotatedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
                                  RepositoryProvider repositoryProvider) {
@@ -111,7 +111,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      *
      * @param inspector          The AggregateModel that describes the aggregate
      * @param eventBus           The Event Bus to publish generated events on
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      */
     protected AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus,
                                  RepositoryProvider repositoryProvider) {
@@ -145,7 +145,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateFactory   The factory to create the aggregate root instance with
      * @param aggregateModel     The model describing the aggregate structure
      * @param eventBus           The EventBus to publish events on
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param <T>                The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      *
@@ -182,7 +182,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateFactory   The factory to create the aggregate root instance with
      * @param aggregateModel     The model describing the aggregate structure
      * @param eventBus           The EventBus to publish events on
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param generateSequences  Whether to generate sequence numbers on events published from this aggregate
      * @param <T>                The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
@@ -223,7 +223,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateRoot      The aggregate root instance
      * @param aggregateModel     The model describing the aggregate structure
      * @param eventBus           The EventBus to publish events on
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param <T>                The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      */

@@ -63,7 +63,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param aggregateRoot      The aggregate root instance
      * @param inspector          The inspector describing the aggregate structure
      * @param eventBus           The event bus to send generated events to
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
@@ -105,7 +105,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param aggregateFactory   The aggregate root factory
      * @param inspector          The inspector describing the aggregate structure
      * @param eventBus           The event bus to send generated events to
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
@@ -156,7 +156,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param seqNo              The last event sequence number of the aggregate
      * @param isDeleted          Flag to indicate whether or not the aggregate is deleted
      * @param eventBus           The event bus to send generated events to
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @param <T>                the aggregate root type
      * @return the reconstructed EventSourcedAggregate instance
@@ -200,7 +200,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param aggregateRoot      The aggregate root instance
      * @param model              The model describing the aggregate structure
      * @param eventBus           The event store to store generated events in
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param snapshotTrigger    The trigger to notify of events and initialization
      */
     protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
@@ -231,7 +231,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      *
      * @param model              The model describing the aggregate structure
      * @param eventBus           The event store to store generated events in
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specific aggregate types
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */

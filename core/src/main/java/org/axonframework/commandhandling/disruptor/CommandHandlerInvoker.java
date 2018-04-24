@@ -132,7 +132,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      *
      * @param <T>                       The type of aggregate created by the factory
      * @param eventStore                The events store to load and publish events
-     * @param repositoryProvider        Provides repositories for given aggregate types
+     * @param repositoryProvider        Provides repositories for specified aggregate types
      * @param aggregateFactory          The factory creating aggregate instances
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods

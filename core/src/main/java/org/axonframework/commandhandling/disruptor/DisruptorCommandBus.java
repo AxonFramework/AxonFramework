@@ -331,7 +331,7 @@ public class DisruptorCommandBus implements CommandBus {
      *
      * @param eventStore         The Event Store to retrieve and persist events
      * @param aggregateFactory   The factory creating uninitialized instances of the Aggregate
-     * @param repositoryProvider Provides repositories for given aggregate types
+     * @param repositoryProvider Provides repositories for specified aggregate types
      * @param <T>                The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
@@ -402,7 +402,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for creating snapshots
-     * @param repositoryProvider        Provides repositories for given aggregate types
+     * @param repositoryProvider        Provides repositories for specified aggregate types
      * @param <T>                       The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
@@ -465,7 +465,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
      * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                 with
-     * @param repositoryProvider       Provides repositories for given aggregate types
+     * @param repositoryProvider       Provides specific for given aggregate types
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
@@ -536,7 +536,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                  with
-     * @param repositoryProvider        Provides repositories for given aggregate types
+     * @param repositoryProvider        Provides repositories for specific aggregate types
      * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */

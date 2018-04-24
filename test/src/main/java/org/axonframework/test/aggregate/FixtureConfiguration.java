@@ -102,7 +102,7 @@ public interface FixtureConfiguration<T> {
      * Registers repository provider with the fixture. If an aggregate being testing spawns new aggregates, this
      * provider should be registered. Otherwise, it is not going to be invoked.
      *
-     * @param repositoryProvider provides repositories for give aggregate types
+     * @param repositoryProvider provides repositories for specified aggregate types
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider);

@@ -70,7 +70,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * @param parameterResolverFactory The parameterResolverFactory used to reconstruct aggregates
      * @param executor                 The executor that processes the snapshotting requests
      * @param txManager                The transaction manager to manage the persistence transactions with
-     * @param repositoryProvider       Provides repositories for given aggregate types
+     * @param repositoryProvider       Provides repositories for specific aggregate types
      * @see ClasspathParameterResolverFactory
      */
     public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
