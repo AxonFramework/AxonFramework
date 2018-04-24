@@ -43,7 +43,7 @@ public class AggregateSnapshotterTest {
 
     @Before
     @SuppressWarnings({"unchecked"})
-    public void setUp() throws Exception {
+    public void setUp() {
         EventStore mockStorageEngine = mock(EventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
@@ -126,7 +126,7 @@ public class AggregateSnapshotterTest {
         }
 
         public String getIdentifier() {
-            return identifier.toString();
+            return identifier;
         }
 
         @EventSourcingHandler

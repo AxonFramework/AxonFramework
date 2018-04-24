@@ -19,7 +19,7 @@ public class ConnectionWrapperFactoryTest {
     private Connection connection;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         closeHandler = mock(ConnectionWrapperFactory.ConnectionCloseHandler.class);
         connection = mock(Connection.class);
     }
@@ -45,27 +45,27 @@ public class ConnectionWrapperFactoryTest {
         final Runnable runnable = mock(Runnable.class);
         Connection wrapped = wrap(connection, Runnable.class, runnable, closeHandler);
 
-        assertFalse(wrapped.equals(connection));
-        assertTrue(wrapped.equals(wrapped));
+        assertNotEquals(wrapped, connection);
+        assertEquals(wrapped, wrapped);
     }
 
     @Test
     public void testEquals_WithoutWrapper() {
         Connection wrapped = wrap(connection, closeHandler);
 
-        assertFalse(wrapped.equals(connection));
-        assertTrue(wrapped.equals(wrapped));
+        assertNotEquals(wrapped, connection);
+        assertEquals(wrapped, wrapped);
     }
 
     @Test
-    public void testHashCode_WithWrapper() throws Exception {
+    public void testHashCode_WithWrapper() {
         final Runnable runnable = mock(Runnable.class);
         Connection wrapped = wrap(connection, Runnable.class, runnable, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
     }
 
     @Test
-    public void testHashCode_WithoutWrapper() throws Exception {
+    public void testHashCode_WithoutWrapper() {
         Connection wrapped = wrap(connection, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
     }

@@ -18,7 +18,7 @@ public class Oracle11EventTableFactoryTest {
     private EventSchema eventSchema;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
         try {
@@ -29,7 +29,7 @@ public class Oracle11EventTableFactoryTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         closeQuietly(connection);
     }
 

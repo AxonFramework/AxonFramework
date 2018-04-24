@@ -16,14 +16,14 @@ public class TrackingTokenSerializationTest {
     private Serializer[] serializers;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         serializers = new Serializer[]{new XStreamSerializer(),
                 new JacksonSerializer(),
                 new JavaSerializer()};
     }
 
     @Test
-    public void testSerializeGapAwareTokenWithoutGaps() throws Exception {
+    public void testSerializeGapAwareTokenWithoutGaps() {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
         GapAwareTrackingToken[] results = serializeToken(token);
         for (int i = 0; i < results.length; i++) {
@@ -32,7 +32,7 @@ public class TrackingTokenSerializationTest {
     }
 
     @Test
-    public void testSerializeGapAwareTokenWithGaps() throws Exception {
+    public void testSerializeGapAwareTokenWithGaps() {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
         GapAwareTrackingToken[] results = serializeToken(token);
         for (int i = 0; i < results.length; i++) {

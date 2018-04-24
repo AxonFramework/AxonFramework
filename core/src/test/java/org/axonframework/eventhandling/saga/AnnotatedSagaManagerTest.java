@@ -48,7 +48,7 @@ public class AnnotatedSagaManagerTest {
     private InMemorySagaStore sagaStore;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         sagaStore = new InMemorySagaStore();
         sagaRepository = spy(new AnnotatedSagaRepository<>(MyTestSaga.class, sagaStore));
         manager = new AnnotatedSagaManager<>(MyTestSaga.class, sagaRepository, MyTestSaga::new);
@@ -175,7 +175,7 @@ public class AnnotatedSagaManagerTest {
 
         @StartSaga
         @SagaEventHandler(associationProperty = "myIdentifier")
-        public void handleSomeEvent(StartingEvent event) throws InterruptedException {
+        public void handleSomeEvent(StartingEvent event) {
             capturedEvents.add(event);
         }
 

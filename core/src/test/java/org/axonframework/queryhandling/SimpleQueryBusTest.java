@@ -42,9 +42,6 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 public class SimpleQueryBusTest {
@@ -61,7 +58,7 @@ public class SimpleQueryBusTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         messageMonitor = mock(MessageMonitor.class);
         errorHandler = mock(QueryInvocationErrorHandler.class);
         monitorCallback = mock(MessageMonitor.MonitorCallback.class);
@@ -126,6 +123,22 @@ public class SimpleQueryBusTest {
 
         assertTrue("SimpleQueryBus should resolve CompletableFutures directly", result.isDone());
         assertEquals("hello1234", result.get().getPayload());
+        assertEquals(
+                MetaData.with(CORRELATION_ID, testQueryMessage.getIdentifier()).and(TRACE_ID, "fakeTraceId"),
+                result.get().getMetaData()
+        );
+    }
+
+    @Test
+    public void testNullResponseProperlyReturned() throws ExecutionException, InterruptedException {
+        testSubject.subscribe(String.class.getName(), String.class, p -> null);
+        QueryMessage<String, String> testQueryMessage = new GenericQueryMessage<>("hello", singleStringResponse)
+                .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+        CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQueryMessage);
+
+        assertTrue("SimpleQueryBus should resolve CompletableFutures directly", result.isDone());
+        assertNull(result.get().getPayload());
+        assertEquals(String.class, result.get().getPayloadType());
         assertEquals(
                 MetaData.with(CORRELATION_ID, testQueryMessage.getIdentifier()).and(TRACE_ID, "fakeTraceId"),
                 result.get().getMetaData()

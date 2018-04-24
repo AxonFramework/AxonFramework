@@ -32,7 +32,7 @@ public class LegacyAwareJobDataBinderTest {
     private LegacyAwareJobDataBinder testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new LegacyAwareJobDataBinder();
     }
 

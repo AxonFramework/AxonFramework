@@ -117,7 +117,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command) throws Exception {
+        public Object handle(CommandMessage<?> command) {
             repository.load(aggregateIdentifier.toString()).execute(MyAggregate::doSomething);
             return null;
         }

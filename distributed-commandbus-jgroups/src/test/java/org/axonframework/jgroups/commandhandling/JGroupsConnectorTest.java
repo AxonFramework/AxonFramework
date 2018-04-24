@@ -418,7 +418,7 @@ public class JGroupsConnectorTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handle(CommandMessage<?> message) {
             counter.incrementAndGet();
             return "The Reply!";
         }

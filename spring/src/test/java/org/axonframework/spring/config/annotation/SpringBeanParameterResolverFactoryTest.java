@@ -61,7 +61,7 @@ public class SpringBeanParameterResolverFactoryTest {
     private ParameterResolverFactory parameterResolver;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         counter.set(0);
         assertTrue(applicationContext.getBean("duplicateResourceWithPrimary1", DuplicateResourceWithPrimary.class).isPrimary());
         assertFalse(applicationContext.getBean("duplicateResourceWithPrimary2", DuplicateResourceWithPrimary.class).isPrimary());
@@ -194,22 +194,12 @@ public class SpringBeanParameterResolverFactoryTest {
         @Primary
         @Bean
         public DuplicateResourceWithPrimary duplicateResourceWithPrimary1() {
-            return new DuplicateResourceWithPrimary() {
-                @Override
-                public boolean isPrimary() {
-                    return true;
-                }
-            };
+            return () -> true;
         }
 
         @Bean
         public DuplicateResourceWithPrimary duplicateResourceWithPrimary2() {
-            return new DuplicateResourceWithPrimary() {
-                @Override
-                public boolean isPrimary() {
-                    return false;
-                }
-            };
+            return () -> false;
         }
 
         @Bean

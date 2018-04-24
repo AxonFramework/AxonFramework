@@ -61,7 +61,7 @@ public class AxonAutoConfigurationWithAMQPAndEventSerializer {
     private ApplicationContext applicationContext;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         System.setProperty("axon.amqp.exchange", "test");
     }
 

@@ -39,7 +39,7 @@ public class SpringPrototypeAggregateFactoryTest {
     private SpringPrototypeAggregateFactory<SpringWiredAggregate> testSubject;
 
     @Test
-    public void testContextStarts() throws Exception {
+    public void testContextStarts() {
         assertNotNull(testSubject);
     }
 

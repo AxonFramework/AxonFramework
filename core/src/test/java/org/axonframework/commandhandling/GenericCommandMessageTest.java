@@ -34,7 +34,7 @@ public class GenericCommandMessageTest {
     public void testConstructor() {
         Object payload = new Object();
         CommandMessage<Object> message1 = asCommandMessage(payload);
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message2 = new GenericCommandMessage<>(payload, metaData);
         GenericCommandMessage<Object> message3 = new GenericCommandMessage<>(payload, metaDataMap);
@@ -60,7 +60,7 @@ public class GenericCommandMessageTest {
     @Test
     public void testWithMetaData() {
         Object payload = new Object();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message = new GenericCommandMessage<>(payload, metaData);
         GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
@@ -74,7 +74,7 @@ public class GenericCommandMessageTest {
     @Test
     public void testAndMetaData() {
         Object payload = new Object();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message = new GenericCommandMessage<>(payload, metaData);
         GenericCommandMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());

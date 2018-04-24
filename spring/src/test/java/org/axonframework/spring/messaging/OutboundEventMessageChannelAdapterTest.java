@@ -53,7 +53,7 @@ public class OutboundEventMessageChannelAdapterTest {
     }
 
     @Test
-    public void testEventListenerRegisteredOnInit() throws Exception {
+    public void testEventListenerRegisteredOnInit() {
         verify(mockEventBus, never()).subscribe(any());
         testSubject.afterPropertiesSet();
         verify(mockEventBus).subscribe(any());
@@ -61,7 +61,7 @@ public class OutboundEventMessageChannelAdapterTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testFilterBlocksEvents() throws Exception {
+    public void testFilterBlocksEvents() {
         testSubject = new OutboundEventMessageChannelAdapter(mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class));
         testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));

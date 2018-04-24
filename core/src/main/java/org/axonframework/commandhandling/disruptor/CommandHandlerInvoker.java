@@ -87,7 +87,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     }
 
     @Override
-    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) {
         if (entry.isRecoverEntry()) {
             removeEntry(entry.getAggregateIdentifier());
         } else if (entry.getInvokerId() == segmentId) {
@@ -220,7 +220,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             }
             if (aggregateRoot == null) {
                 Object cachedItem = cache.get(aggregateIdentifier);
-                if (cachedItem != null && AggregateCacheEntry.class.isInstance(cachedItem)) {
+                if (AggregateCacheEntry.class.isInstance(cachedItem)) {
                     EventSourcedAggregate<T> cachedAggregate = ((AggregateCacheEntry<T>) cachedItem).recreateAggregate(
                             model,
                             eventStore,

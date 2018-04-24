@@ -119,7 +119,7 @@ public class SimpleEventBus extends AbstractEventBus {
         }
 
         @Override
-        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) {
             try {
                 return peekEvent != null || (peekEvent = eventQueue.poll(timeout, unit)) != null;
             } catch (InterruptedException e) {
@@ -130,7 +130,7 @@ public class SimpleEventBus extends AbstractEventBus {
         }
 
         @Override
-        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+        public TrackedEventMessage<?> nextAvailable() {
             try {
                 return peekEvent == null ? eventQueue.take() : peekEvent;
             } catch (InterruptedException e) {

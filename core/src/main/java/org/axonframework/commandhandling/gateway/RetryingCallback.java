@@ -99,7 +99,7 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
             rootCause = rootCause.getCause();
             types.add(rootCause.getClass());
         }
-        return types.toArray(new Class[types.size()]);
+        return types.toArray(new Class[0]);
     }
 
     private class RetryDispatch implements Runnable {

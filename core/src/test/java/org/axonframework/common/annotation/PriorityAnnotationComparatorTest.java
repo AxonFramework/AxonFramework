@@ -32,7 +32,7 @@ public class PriorityAnnotationComparatorTest {
     private PriorityAnnotationComparator<Object> testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = PriorityAnnotationComparator.getInstance();
     }
 

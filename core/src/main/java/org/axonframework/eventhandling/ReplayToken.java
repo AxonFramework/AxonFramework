@@ -35,6 +35,9 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     /**
      * Initialize a ReplayToken, using the given {@code tokenAtReset} to represent the position at which a reset was
      * triggered. The current token is reset to the initial position.
+     * <p>
+     * Using the {@link #createReplayToken(TrackingToken)} is preferred, as it covers cases where a replay is started
+     *
      * @param tokenAtReset The token representing the position at which the reset was triggered.
      */
     public ReplayToken(TrackingToken tokenAtReset) {
@@ -45,6 +48,23 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     protected ReplayToken(TrackingToken tokenAtReset, TrackingToken newRedeliveryToken) {
         this.tokenAtReset = tokenAtReset;
         this.currentToken = newRedeliveryToken;
+    }
+
+    /**
+     * Creates a new TrackingToken that reflects the reset state, when appropriate.
+     *
+     * @param tokenAtReset
+     * @return
+     */
+    public static TrackingToken createReplayToken(TrackingToken tokenAtReset) {
+        if (tokenAtReset == null) {
+            // we haven't processed anything, so there is no need for a reset token
+            return null;
+        }
+        if (tokenAtReset instanceof ReplayToken) {
+            return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset);
+        }
+        return new ReplayToken(tokenAtReset);
     }
 
     public static boolean isReplay(Message<?> message) {
@@ -59,7 +79,8 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     }
 
     public TrackingToken advancedTo(TrackingToken newToken) {
-        if (newToken.covers(this.tokenAtReset) && !tokenAtReset.covers(newToken)) {
+        if (this.tokenAtReset == null
+                || (newToken.covers(this.tokenAtReset) && !tokenAtReset.covers(newToken))) {
             // we're done replaying
             return newToken;
         } else if (tokenAtReset.covers(newToken)) {

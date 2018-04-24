@@ -48,7 +48,7 @@ public class EventSourcingRepositoryTest {
     private Repository<StubAggregate> repository;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         eventStore = Mockito.mock(EventStore.class);
         Mockito.when(eventStore.readEvents(Matchers.anyString())).thenAnswer(invocationOnMock -> DomainEventStream
                 .of(new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgument(0), 1,
@@ -62,21 +62,21 @@ public class EventSourcingRepositoryTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
     }
 
     @Test
-    public void testLoadAggregate() throws Exception {
+    public void testLoadAggregate() {
         Aggregate<StubAggregate> actual = repository.load("test");
 
         assertEquals(3L, (long) actual.version());
     }
 
     @Test
-    public void testLoadAggregateAndApplyEvent() throws Exception {
+    public void testLoadAggregateAndApplyEvent() {
         Aggregate<StubAggregate> actual = repository.load("test");
 
         assertEquals(3L, (long) actual.version());

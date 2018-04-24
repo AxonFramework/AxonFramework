@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
+import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
@@ -63,6 +64,13 @@ public interface EntityModel<T> {
      * @return Map of message handler to command name
      */
     Map<String, MessageHandlingMember<? super T>> commandHandlers();
+
+    /**
+     * Gets a list of command handler interceptors for this entity.
+     *
+     * @return list of command handler interceptors
+     */
+    List<MessageHandlingMember<? super T>> commandHandlerInterceptors();
 
     /**
      * Get the {@link MessageHandlingMember} capable of handling commands with given {@code commandName} (see {@link

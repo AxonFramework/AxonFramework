@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class SQLErrorCodesResolverTest {
 
     @Test
-    public void testIsDuplicateKey() throws Exception {
+    public void testIsDuplicateKey() {
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(new ArrayList<>());
 
         boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
@@ -48,7 +48,7 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingSetDuplicateKeyCodes() throws Exception {
+    public void testIsDuplicateKey_isDuplicateKey_usingSetDuplicateKeyCodes() {
         List<Integer> errorCodes = new ArrayList<>();
         errorCodes.add(-104);
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(errorCodes);
@@ -123,7 +123,7 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingProductName() throws Exception {
+    public void testIsDuplicateKey_isDuplicateKey_usingProductName() {
         String databaseProductName = "HSQL Database Engine";
 
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(databaseProductName);
@@ -162,7 +162,7 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingSqlState() throws Exception {
+    public void testIsDuplicateKey_isDuplicateKey_usingSqlState() {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 
@@ -179,7 +179,7 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingNonIntSqlState() throws Exception {
+    public void testIsDuplicateKey_isDuplicateKey_usingNonIntSqlState() {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 
@@ -196,7 +196,7 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test
-    public void testIsDuplicateKey_isDuplicateKey_usingNonNullSqlState() throws Exception {
+    public void testIsDuplicateKey_isDuplicateKey_usingNonNullSqlState() {
         Properties props = new Properties();
         props.setProperty("MyCustom_Database_Engine.duplicateKeyCodes", "-104");
 

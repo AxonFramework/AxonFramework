@@ -109,7 +109,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
             throw new AxonConfigurationException("The current security context does not allow extraction of "
                                                          + "aggregate information from the given command.", e);
         }
-        return aggregateIdentifier != null ? aggregateIdentifier : null;
+        return aggregateIdentifier;
     }
 
     @SuppressWarnings("unchecked")

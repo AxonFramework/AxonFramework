@@ -29,9 +29,6 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.*;
 
 /**
@@ -45,7 +42,7 @@ public class JGroupsConnectorFactoryBeanTest {
     private JGroupsConnector mockConnector;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockApplicationContext = mock(ApplicationContext.class);
         mockChannel = mock(JChannel.class);
         mockConnector = mock(JGroupsConnector.class);
@@ -107,7 +104,7 @@ public class JGroupsConnectorFactoryBeanTest {
     }
 
     @Test
-    public void testCreateWithCustomConfigurationFile() throws Exception {
+    public void testCreateWithCustomConfigurationFile() {
         testSubject.setConfiguration("does-not-exist");
         testSubject.setClusterName("ClusterName");
         XStreamSerializer serializer = new XStreamSerializer();

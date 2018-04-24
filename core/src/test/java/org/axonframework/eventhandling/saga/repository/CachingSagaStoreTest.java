@@ -46,7 +46,7 @@ public class CachingSagaStoreTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         ehCache = new net.sf.ehcache.Cache("test", 100, false, false, 10, 10);
         cacheManager = CacheManager.create();
         cacheManager.addCache(ehCache);
@@ -59,12 +59,12 @@ public class CachingSagaStoreTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         cacheManager.shutdown();
     }
 
     @Test
-    public void testSagaAddedToCacheOnAdd() throws Exception {
+    public void testSagaAddedToCacheOnAdd() {
 
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), null, singleton(new AssociationValue("key", "value")));
 
@@ -73,7 +73,7 @@ public class CachingSagaStoreTest {
     }
 
     @Test
-    public void testAssociationsAddedToCacheOnLoad() throws Exception {
+    public void testAssociationsAddedToCacheOnLoad() {
         testSubject.insertSaga(StubSaga.class, "id", new StubSaga(), null, singleton(new AssociationValue("key", "value")));
 
         verify(associationsCache, never()).put(any(), any());
@@ -91,7 +91,7 @@ public class CachingSagaStoreTest {
     }
 
     @Test
-    public void testSagaAddedToCacheOnLoad() throws Exception {
+    public void testSagaAddedToCacheOnLoad() {
         StubSaga saga = new StubSaga();
         testSubject.insertSaga(StubSaga.class, "id", saga, null, singleton(new AssociationValue("key", "value")));
 
@@ -107,7 +107,7 @@ public class CachingSagaStoreTest {
     }
 
     @Test
-    public void testSagaNotAddedToCacheWhenLoadReturnsNull() throws Exception {
+    public void testSagaNotAddedToCacheWhenLoadReturnsNull() {
 
         ehCache.removeAll();
         reset(sagaCache, associationsCache);
@@ -122,7 +122,7 @@ public class CachingSagaStoreTest {
 
 
     @Test
-    public void testCommitDelegatedAfterAddingToCache() throws Exception {
+    public void testCommitDelegatedAfterAddingToCache() {
         StubSaga saga = new StubSaga();
         AssociationValue associationValue = new AssociationValue("key", "value");
         testSubject.insertSaga(StubSaga.class, "123", saga, null, singleton(associationValue));

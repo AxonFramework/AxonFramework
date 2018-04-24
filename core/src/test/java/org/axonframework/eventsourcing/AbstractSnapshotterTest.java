@@ -74,8 +74,7 @@ public class AbstractSnapshotterTest {
     }
 
     @Test
-    public void testScheduleSnapshot_ConcurrencyExceptionIsSilenced()
-            throws NoSuchFieldException, IllegalAccessException {
+    public void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
