@@ -433,7 +433,7 @@ public class TrackingEventProcessorTest {
         final List<String> handled = new CopyOnWriteArrayList<>();
         final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
         doAnswer(i -> {
-            EventMessage message = i.getArgumentAt(0, EventMessage.class);
+            EventMessage message = i.getArgument(0);
             handled.add(message.getIdentifier());
             if (ReplayToken.isReplay(message)) {
                 handledInRedelivery.add(message.getIdentifier());
