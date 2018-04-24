@@ -114,7 +114,7 @@ public class SpringAxonAutoConfigurerTest {
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
 
     @Test
-    public void contextWiresMainComponents() throws Exception {
+    public void contextWiresMainComponents() {
         assertNotNull(axonConfig);
         assertNotNull(axonConfig.eventBus());
         assertNotNull(eventBus);
@@ -350,7 +350,7 @@ public class SpringAxonAutoConfigurerTest {
             public List<Exception> received = new ArrayList<>();
 
             @Override
-            public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception {
+            public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
                 received.add(exception);
             }
         }

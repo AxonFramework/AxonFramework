@@ -44,7 +44,7 @@ public class BeanValidationInterceptorTest {
 
     @Before
     @SuppressWarnings("unchecked")
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new BeanValidationInterceptor<>();
         mockInterceptorChain = mock(InterceptorChain.class);
         uow = new DefaultUnitOfWork<>(null);

@@ -21,12 +21,12 @@ public class DefaultAMQPMessageConverterTest {
     private DefaultAMQPMessageConverter testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new DefaultAMQPMessageConverter(new XStreamSerializer());
     }
 
     @Test
-    public void testWriteAndReadEventMessage() throws Exception {
+    public void testWriteAndReadEventMessage() {
         EventMessage<?> eventMessage = GenericEventMessage.asEventMessage("SomePayload").withMetaData(MetaData.with("key", "value"));
         AMQPMessage amqpMessage = testSubject.createAMQPMessage(eventMessage);
         EventMessage<?> actualResult = testSubject.readAMQPMessage(amqpMessage.getBody(), amqpMessage.getProperties().getHeaders())
@@ -61,7 +61,7 @@ public class DefaultAMQPMessageConverterTest {
     }
 
     @Test
-    public void testWriteAndReadDomainEventMessage() throws Exception {
+    public void testWriteAndReadDomainEventMessage() {
         DomainEventMessage<?> eventMessage = new GenericDomainEventMessage<>("Stub", "1234", 1L, "Payload", MetaData.with("key", "value"));
         AMQPMessage amqpMessage = testSubject.createAMQPMessage(eventMessage);
         EventMessage<?> actualResult = testSubject.readAMQPMessage(amqpMessage.getBody(), amqpMessage.getProperties().getHeaders())

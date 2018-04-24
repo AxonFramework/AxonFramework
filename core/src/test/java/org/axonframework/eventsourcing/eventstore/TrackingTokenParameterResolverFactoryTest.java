@@ -22,7 +22,7 @@ public class TrackingTokenParameterResolverFactoryTest {
     }
 
     @Test
-    public void createInstance() throws Exception {
+    public void createInstance() {
         assertNull(testSubject.createInstance(method, method.getParameters(), 0));
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
 

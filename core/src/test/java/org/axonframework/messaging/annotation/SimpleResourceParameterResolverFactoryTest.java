@@ -52,7 +52,7 @@ public class SimpleResourceParameterResolverFactoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResolvesToResourceWhenMessageHandlingMethodHasResourceParameter() throws Exception {
+    public void testResolvesToResourceWhenMessageHandlingMethodHasResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResourceParameter, messageHandlingMethodWithResourceParameter.getParameters(), 1);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
@@ -62,7 +62,7 @@ public class SimpleResourceParameterResolverFactoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() throws Exception {
+    public void testResolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithResource2Parameter, messageHandlingMethodWithResource2Parameter.getParameters(), 1);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
@@ -71,14 +71,14 @@ public class SimpleResourceParameterResolverFactoryTest {
     }
 
     @Test
-    public void testIgnoredWhenMessageHandlingMethodHasNoResourceParameter() throws Exception {
+    public void testIgnoredWhenMessageHandlingMethodHasNoResourceParameter() {
         ParameterResolver resolver =
                 testSubject.createInstance(messageHandlingMethodWithoutResourceParameter, messageHandlingMethodWithoutResourceParameter.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    public void testIgnoredWhenMessageHandlingMethodHasResourceParameterOfDifferentType() throws Exception {
+    public void testIgnoredWhenMessageHandlingMethodHasResourceParameterOfDifferentType() {
         ParameterResolver resolver = testSubject.createInstance(messageHandlingMethodWithResourceParameterOfDifferentType, messageHandlingMethodWithResourceParameterOfDifferentType.getParameters(), 1);
         assertNull(resolver);
     }

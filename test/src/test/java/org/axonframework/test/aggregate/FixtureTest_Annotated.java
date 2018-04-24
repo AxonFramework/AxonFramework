@@ -45,7 +45,7 @@ public class FixtureTest_Annotated {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (CurrentUnitOfWork.isStarted()) {
             fail("A unit of work is still running");
         }

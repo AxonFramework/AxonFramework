@@ -51,7 +51,7 @@ public class AbstractEventBusTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -63,7 +63,8 @@ public class AbstractEventBusTest {
         testSubject.publish(event);
         verify(unitOfWork).onPrepareCommit(any());
         verify(unitOfWork).onCommit(any());
-        verify(unitOfWork).afterCommit(any());
+        // the monitor callback is also registered
+        verify(unitOfWork, times(2)).afterCommit(any());
         assertEquals(emptyList(), testSubject.committedEvents);
         unitOfWork.commit();
         assertEquals(Collections.singletonList(event), testSubject.committedEvents);
@@ -73,12 +74,17 @@ public class AbstractEventBusTest {
     public void testNoMoreConsumersRegisteredWithUnitOfWorkWhenSecondEventIsPublished() {
         EventMessage<?> event = newEvent();
         testSubject.publish(event);
+        verify(unitOfWork).onPrepareCommit(any());
+        verify(unitOfWork).onCommit(any());
+        // the monitor callback is also registered
+        verify(unitOfWork, times(2)).afterCommit(any());
         reset(unitOfWork);
 
         testSubject.publish(event);
         verify(unitOfWork, never()).onPrepareCommit(any());
         verify(unitOfWork, never()).onCommit(any());
-        verify(unitOfWork, never()).afterCommit(any());
+        // the monitor callback should still be registered
+        verify(unitOfWork).afterCommit(any());
 
         unitOfWork.commit();
         List<EventMessage<?>> actual = testSubject.committedEvents;

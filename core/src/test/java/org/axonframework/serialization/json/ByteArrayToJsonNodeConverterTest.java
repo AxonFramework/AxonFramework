@@ -33,7 +33,7 @@ public class ByteArrayToJsonNodeConverterTest {
     private ObjectMapper objectMapper;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         objectMapper = new ObjectMapper();
         testSubject = new ByteArrayToJsonNodeConverter(objectMapper);
     }

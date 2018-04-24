@@ -86,6 +86,7 @@
                                 <include>**/BatchingEventStorageEngineTest.*</include>
                                 <include>**/EventStorageEngineTest.*</include>
                                 <include>**/EventStoreTestUtils.*</include>
+                                <include>**/AbstractSerializerTest.*</include>
                             </includes>
                         </configuration>
                     </execution>

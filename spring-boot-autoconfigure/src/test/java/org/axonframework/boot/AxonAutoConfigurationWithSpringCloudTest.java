@@ -83,7 +83,7 @@ public class AxonAutoConfigurationWithSpringCloudTest {
     private CommandBusConnector commandBusConnector;
 
     @Test
-    public void testContextInitialization() throws Exception {
+    public void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(RoutingStrategy.class));

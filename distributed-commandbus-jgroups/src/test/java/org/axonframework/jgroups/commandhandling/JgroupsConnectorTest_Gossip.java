@@ -77,7 +77,7 @@ public class JgroupsConnectorTest_Gossip {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (gossipRouter != null) {
             gossipRouter.stop();
         }
@@ -168,7 +168,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handle(CommandMessage<?> message) {
             counter.incrementAndGet();
             return "The Reply!";
         }

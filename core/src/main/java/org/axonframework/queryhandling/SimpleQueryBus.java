@@ -155,7 +155,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             while (!invocationSuccess && handlerIterator.hasNext()) {
                 try {
                     DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    result = GenericQueryResponseMessage.asResponseMessage(
+                    result = GenericQueryResponseMessage.asNullableResponseMessage(
+                            query.getResponseType().responseMessagePayloadType(),
                             interceptAndInvoke(uow, handlerIterator.next())
                     );
                     invocationSuccess = true;
@@ -323,7 +324,9 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            return GenericQueryResponseMessage.asResponseMessage(responseType.convert(queryResponse));
+            return GenericQueryResponseMessage.asNullableResponseMessage(
+                    responseType.responseMessagePayloadType(),
+                    responseType.convert(queryResponse));
         });
     }
 

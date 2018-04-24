@@ -30,7 +30,7 @@ public class StubAggregateLifecycleRuleTest {
     public StubAggregateLifecycleRule testSubject = new StubAggregateLifecycleRule();
 
     @Test
-    public void testAppliedEventsArePassedToActiveLifecycle() throws Exception {
+    public void testAppliedEventsArePassedToActiveLifecycle() {
         apply("test");
 
         assertEquals(1, testSubject.getAppliedEvents().size());
@@ -39,7 +39,7 @@ public class StubAggregateLifecycleRuleTest {
     }
 
     @Test
-    public void testMarkDeletedIsRegisteredWithActiveLifecycle() throws Exception {
+    public void testMarkDeletedIsRegisteredWithActiveLifecycle() {
         markDeleted();
 
         assertEquals(0, testSubject.getAppliedEvents().size());

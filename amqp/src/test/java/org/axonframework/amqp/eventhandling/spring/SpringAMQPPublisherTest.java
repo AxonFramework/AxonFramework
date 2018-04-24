@@ -54,7 +54,7 @@ public class SpringAMQPPublisherTest {
     private SimpleEventBus eventBus;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         eventBus = new SimpleEventBus();
         testSubject = new SpringAMQPPublisher(eventBus);
         connectionFactory = mock(ConnectionFactory.class);

@@ -34,8 +34,6 @@ import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -47,7 +45,7 @@ public class AnnotationQueryHandlerAdapterTest {
     private QueryBus queryBus;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AnnotationQueryHandlerAdapter<>(new MyQueryHandler());
         when(queryBus.subscribe(anyObject(), anyObject(), anyObject())).thenReturn(() -> true);
     }

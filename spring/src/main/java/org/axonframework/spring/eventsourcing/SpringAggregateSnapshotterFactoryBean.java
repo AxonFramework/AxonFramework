@@ -55,7 +55,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
-    public SpringAggregateSnapshotter getObject() throws Exception {
+    public SpringAggregateSnapshotter getObject() {
         if (transactionManager == null) {
             Map<String, PlatformTransactionManager> candidates =
                     applicationContext.getBeansOfType(PlatformTransactionManager.class);

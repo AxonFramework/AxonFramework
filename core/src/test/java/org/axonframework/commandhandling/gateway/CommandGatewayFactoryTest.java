@@ -168,7 +168,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test
-    public void testGatewayWithReturnValue_RuntimeException() throws InterruptedException {
+    public void testGatewayWithReturnValue_RuntimeException() {
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         RuntimeException runtimeException = new RuntimeException();
@@ -417,7 +417,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testRetrySchedulerInvokedOnExceptionCausedByDeadlock() throws Throwable {
+    public void testRetrySchedulerInvokedOnExceptionCausedByDeadlock() {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
@@ -520,7 +520,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testCreateGateway_CompletableFuture_Failure() throws Throwable {
+    public void testCreateGateway_CompletableFuture_Failure() {
         final RuntimeException exception = new RuntimeException();
         doAnswer(new Failure(exception))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
@@ -557,7 +557,7 @@ public class CommandGatewayFactoryTest {
     }
 
     @Test(timeout = 2000)
-    public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() throws Throwable {
+    public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
@@ -583,9 +583,7 @@ public class CommandGatewayFactoryTest {
         CompleteGateway gateway2 = testSubject.createGateway(CompleteGateway.class);
 
         assertNotSame(gateway, gateway2);
-        assertFalse(gateway.equals(gateway2));
-        assertNotNull(gateway.hashCode());
-        assertNotNull(gateway2.hashCode());
+        assertNotEquals(gateway, gateway2);
     }
 
     private interface CompleteGateway {
@@ -633,7 +631,7 @@ public class CommandGatewayFactoryTest {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
+        public Object answer(InvocationOnMock invocation) {
             cdl.countDown();
             return null;
         }
@@ -650,7 +648,7 @@ public class CommandGatewayFactoryTest {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
+        public Object answer(InvocationOnMock invocation) {
             cdl.countDown();
             ((CommandCallback) invocation.getArguments()[1]).onSuccess((CommandMessage) invocation.getArguments()[0],
                                                                        returnValue);
@@ -684,7 +682,7 @@ public class CommandGatewayFactoryTest {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
+        public Object answer(InvocationOnMock invocation) {
             if (cdl != null) {
                 cdl.countDown();
             }

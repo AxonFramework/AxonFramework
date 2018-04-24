@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
@@ -148,18 +149,17 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation) {
-
         try {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
                 return new SimpleSerializedObject<>((T) getWriter().writeValueAsString(object), expectedRepresentation,
-                                                    typeForClass(object.getClass()));
+                                                    typeForClass(ObjectUtils.nullSafeTypeOf(object)));
             }
 
             byte[] serializedBytes = getWriter().writeValueAsBytes(object);
             T serializedContent = converter.convert(serializedBytes, expectedRepresentation);
             return new SimpleSerializedObject<>(serializedContent, expectedRepresentation,
-                                                typeForClass(object.getClass()));
+                                                typeForClass(ObjectUtils.nullSafeTypeOf(object)));
         } catch (JsonProcessingException e) {
             throw new SerializationException("Unable to serialize object", e);
         }
@@ -217,6 +217,9 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) throws UnknownSerializedTypeException {
+        if (SimpleSerializedType.emptyType().equals(type)) {
+            return Void.class;
+        }
         try {
             return classLoader.loadClass(resolveClassName(type));
         } catch (ClassNotFoundException e) {
@@ -237,6 +240,9 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public SerializedType typeForClass(Class type) {
+        if (type == null || Void.TYPE.equals(type) || Void.class.equals(type)) {
+            return SimpleSerializedType.emptyType();
+        }
         return new SimpleSerializedType(type.getName(), revisionResolver.revisionOf(type));
     }
 

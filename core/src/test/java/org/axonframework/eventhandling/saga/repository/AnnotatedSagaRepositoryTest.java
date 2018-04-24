@@ -46,21 +46,21 @@ public class AnnotatedSagaRepositoryTest {
     private UnitOfWork<?> currentUnitOfWork;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         currentUnitOfWork = startAndGet(null);
         this.store = spy(new InMemorySagaStore());
         this.testSubject = new AnnotatedSagaRepository<>(Object.class, store);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (currentUnitOfWork.isActive()) {
             currentUnitOfWork.commit();
         }
     }
 
     @Test
-    public void testLoadedFromUnitOfWorkAfterCreate() throws Exception {
+    public void testLoadedFromUnitOfWorkAfterCreate() {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
@@ -90,16 +90,14 @@ public class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    public void testLoadedFromNestedUnitOfWorkAfterCreateAndStore() throws Exception {
+    public void testLoadedFromNestedUnitOfWorkAfterCreateAndStore() {
         Saga<Object> saga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
-        currentUnitOfWork.onPrepareCommit(u -> {
-            startAndGet(null).execute(() -> {
-                Saga<Object> saga1 = testSubject.load(saga.getSagaIdentifier());
-                saga1.getAssociationValues().add(new AssociationValue("second", "value"));
-            });
-        });
+        currentUnitOfWork.onPrepareCommit(u -> startAndGet(null).execute(() -> {
+            Saga<Object> saga1 = testSubject.load(saga.getSagaIdentifier());
+            saga1.getAssociationValues().add(new AssociationValue("second", "value"));
+        }));
 
         currentUnitOfWork.commit();
         InOrder inOrder = inOrder(store);
@@ -112,7 +110,7 @@ public class AnnotatedSagaRepositoryTest {
     }
 
     @Test
-    public void testLoadedFromUnitOfWorkAfterPreviousLoad() throws Exception {
+    public void testLoadedFromUnitOfWorkAfterPreviousLoad() {
         Saga<Object> preparedSaga =
                 testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         currentUnitOfWork.commit();

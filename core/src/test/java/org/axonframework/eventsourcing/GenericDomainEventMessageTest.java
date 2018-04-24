@@ -36,7 +36,7 @@ public class GenericDomainEventMessageTest {
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
         GenericDomainEventMessage<Object> message1 = new GenericDomainEventMessage<>("type", id, seqNo, payload);
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message2 = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaData);
         GenericDomainEventMessage<Object> message3 = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaDataMap);
@@ -70,7 +70,7 @@ public class GenericDomainEventMessageTest {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaData);
         GenericDomainEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
@@ -86,7 +86,7 @@ public class GenericDomainEventMessageTest {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
+        Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>("type", id, seqNo, payload, metaData);
         GenericDomainEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());

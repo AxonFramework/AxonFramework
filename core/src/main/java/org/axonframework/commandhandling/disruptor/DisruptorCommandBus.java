@@ -116,7 +116,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
-    private EventStore backUpEventStore;
+    private final EventStore eventStore;
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
 
@@ -168,7 +168,7 @@ public class DisruptorCommandBus implements CommandBus {
     @Deprecated
     @SuppressWarnings({"unchecked", "DeprecatedIsStillUsed"})
     public DisruptorCommandBus(EventStore eventStore, DisruptorConfiguration configuration) {
-        this.backUpEventStore = eventStore;
+        this.eventStore = eventStore;
         Assert.notNull(configuration, () -> "configuration may not be null");
         Executor executor = configuration.getExecutor();
         if (executor == null) {
@@ -419,7 +419,7 @@ public class DisruptorCommandBus implements CommandBus {
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
-        return createRepository(backUpEventStore, aggregateFactory, snapshotTriggerDefinition, parameterResolverFactory);
+        return createRepository(eventStore, aggregateFactory, snapshotTriggerDefinition, parameterResolverFactory);
     }
 
     /**

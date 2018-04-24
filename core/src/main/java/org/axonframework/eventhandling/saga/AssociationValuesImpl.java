@@ -13,6 +13,7 @@
 
 package org.axonframework.eventhandling.saga;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,7 +26,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AssociationValuesImpl implements AssociationValues {
+public class AssociationValuesImpl implements AssociationValues, Serializable {
 
     private static final long serialVersionUID = 8273718165811296962L;
 
@@ -92,7 +93,7 @@ public class AssociationValuesImpl implements AssociationValues {
 
     @Override
     public Set<AssociationValue> removedAssociations() {
-        if (removedValues == null || removedValues.isEmpty()) {
+        if (removedValues.isEmpty()) {
             return Collections.emptySet();
         }
         return removedValues;
@@ -100,7 +101,7 @@ public class AssociationValuesImpl implements AssociationValues {
 
     @Override
     public Set<AssociationValue> addedAssociations() {
-        if (addedValues == null || addedValues.isEmpty()) {
+        if (addedValues.isEmpty()) {
             return Collections.emptySet();
         }
         return addedValues;
@@ -108,11 +109,7 @@ public class AssociationValuesImpl implements AssociationValues {
 
     @Override
     public void commit() {
-        if (addedValues != null) {
-            addedValues.clear();
-        }
-        if (removedValues != null) {
-            removedValues.clear();
-        }
+        addedValues.clear();
+        removedValues.clear();
     }
 }

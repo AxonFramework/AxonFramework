@@ -55,7 +55,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     private Class<T> gatewayInterface;
 
     @Override
-    public T getObject() throws Exception {
+    public T getObject() {
         if (gateway == null) {
             throw new FactoryBeanNotInitializedException();
         }
@@ -74,7 +74,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
 
     @SuppressWarnings("unchecked")
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (commandBus == null) {
             throw new AxonConfigurationException("CommandBus may not be null");
         }

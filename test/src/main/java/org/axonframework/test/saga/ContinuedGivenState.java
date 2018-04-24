@@ -68,5 +68,5 @@ public interface ContinuedGivenState extends WhenState {
      * @return an object that allows chaining of more given state
      * @throws Exception if an exception happens when the event is handled
      */
-    ContinuedGivenState andThenAPublished(Object event) throws Exception;
+    ContinuedGivenState andThenAPublished(Object event);
 }
