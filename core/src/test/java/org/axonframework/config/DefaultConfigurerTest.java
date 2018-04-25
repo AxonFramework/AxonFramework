@@ -290,6 +290,7 @@ public class DefaultConfigurerTest {
                                                        .registerModule(module2)
                                                        .registerModule(module3)
                                                        .start();
+        assertNotNull(configuration);
         configuration.shutdown();
 
         InOrder inOrder = inOrder(module1, module2, module3);

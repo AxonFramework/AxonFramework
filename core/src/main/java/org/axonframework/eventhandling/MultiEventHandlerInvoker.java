@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Invoker with capabilities to invoke several different invokers.
+ * Implementation of {@link EventHandlerInvoker} with capabilities to invoke several different invokers.
  *
  * @author Milan Savic
  * @since 3.3
