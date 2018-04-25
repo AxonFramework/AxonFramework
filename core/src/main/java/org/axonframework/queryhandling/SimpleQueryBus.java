@@ -70,7 +70,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, ReentrantReadWriteLock> subscriptionQueriesRegistering = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, ReentrantReadWriteLock> registeringSubscriptionQueryLocks = new ConcurrentHashMap<>();
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, UpdateHandler<?, ?>> updateHandlers = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
@@ -211,7 +211,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = intercept(query);
         ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
-        subscriptionQueriesRegistering.put(interceptedQuery, rwLock);
+        registeringSubscriptionQueryLocks.put(interceptedQuery, rwLock);
         List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         rwLock.writeLock().lock();
         try {
@@ -253,7 +253,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             rwLock.writeLock().unlock();
         }
 
-        subscriptionQueriesRegistering.remove(interceptedQuery);
+        registeringSubscriptionQueryLocks.remove(interceptedQuery);
 
         return () -> {
             updateHandlers.remove(query);
@@ -301,17 +301,26 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                               .forEach(query -> updateHandlers.remove(query).onCompletedExceptionally(cause)));
     }
 
+    /**
+     * Makes sure that {@code subscriptionQueryUpdate} is executed with the read lock on all subscription queries which
+     * are currently in registration process.
+     *
+     * @param subscriptionQueryFilter used to filter out subscription queries which are currently in registration
+     *                                process
+     * @param subscriptionQueryUpdate operation to be executed in lock safe guard
+     */
     @SuppressWarnings("unchecked")
-    private void registeringSubscriptionQueryReadSafe(Predicate<?> filter, Runnable r) {
-        List<ReentrantReadWriteLock> locks = subscriptionQueriesRegistering.keySet()
-                                                                           .stream()
-                                                                           .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) filter)
-                                                                           .map(subscriptionQueriesRegistering::get)
-                                                                           .collect(Collectors.toList());
+    private void registeringSubscriptionQueryReadSafe(Predicate<?> subscriptionQueryFilter,
+                                                      Runnable subscriptionQueryUpdate) {
+        List<ReentrantReadWriteLock> locks = registeringSubscriptionQueryLocks.keySet()
+                                                                              .stream()
+                                                                              .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) subscriptionQueryFilter)
+                                                                              .map(registeringSubscriptionQueryLocks::get)
+                                                                              .collect(Collectors.toList());
 
         locks.forEach(lock -> lock.readLock().lock());
         try {
-            r.run();
+            subscriptionQueryUpdate.run();
         } finally {
             locks.forEach(lock -> lock.readLock().unlock());
         }
