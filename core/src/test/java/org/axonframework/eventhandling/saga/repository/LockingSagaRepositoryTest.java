@@ -42,7 +42,7 @@ public class LockingSagaRepositoryTest {
     private LockingSagaRepository<Object> subject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         lockFactory = mock(LockFactory.class);
         lock = mock(Lock.class);
         when(lockFactory.obtainLock(anyString())).thenReturn(lock);
@@ -51,12 +51,12 @@ public class LockingSagaRepositoryTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         CurrentUnitOfWork.ifStarted(UnitOfWork::commit);
     }
 
     @Test
-    public void testLockReleasedOnUnitOfWorkCleanUpAfterCreate() throws Exception {
+    public void testLockReleasedOnUnitOfWorkCleanUpAfterCreate() {
         subject.createInstance("id", Object::new);
         verify(lockFactory).obtainLock("id");
         verify(subject).doCreateInstance(eq("id"), any());
@@ -66,7 +66,7 @@ public class LockingSagaRepositoryTest {
     }
 
     @Test
-    public void testLockReleasedOnUnitOfWorkCleanUpAfterLoad() throws Exception {
+    public void testLockReleasedOnUnitOfWorkCleanUpAfterLoad() {
         subject.load("id");
         verify(lockFactory).obtainLock("id");
         verify(subject).doLoad("id");

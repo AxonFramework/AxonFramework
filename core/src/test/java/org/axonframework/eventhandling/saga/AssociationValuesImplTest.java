@@ -29,13 +29,13 @@ public class AssociationValuesImplTest {
     private AssociationValue associationValue;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AssociationValuesImpl();
         associationValue = new AssociationValue("key", "value");
     }
 
     @Test
-    public void testAddAssociationValue() throws Exception {
+    public void testAddAssociationValue() {
         testSubject.add(associationValue);
 
         assertEquals(1, testSubject.addedAssociations().size());
@@ -43,7 +43,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testAddAssociationValue_AddedTwice() throws Exception {
+    public void testAddAssociationValue_AddedTwice() {
         testSubject.add(associationValue);
         testSubject.commit();
         testSubject.add(associationValue);

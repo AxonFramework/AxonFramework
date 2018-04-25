@@ -66,7 +66,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testDetectFactoryMethodHandler() throws Exception {
+    public void testDetectFactoryMethodHandler() {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
         CommandMessage<?> message = asCommandMessage("string");
         final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember = inspector.commandHandler(message.getCommandName());
@@ -79,7 +79,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
 
 
     @Test
-    public void testEventIsPublishedThroughoutRecursiveHierarchy() throws Exception {
+    public void testEventIsPublishedThroughoutRecursiveHierarchy() {
         // Note that if the inspector does not support recursive entities this will throw an StackOverflowError.
         AggregateModel<SomeRecursiveEntity> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeRecursiveEntity.class);
 
@@ -192,7 +192,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testEventIsPublishedThroughoutHierarchy() throws Exception {
+    public void testEventIsPublishedThroughoutHierarchy() {
         AggregateModel<SomeSubclass> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
         AtomicLong payload = new AtomicLong();
@@ -212,7 +212,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testFindIdentifier() throws Exception {
+    public void testFindIdentifier() {
         AggregateModel<SomeAnnotatedHandlers> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
         assertEquals("SomeAnnotatedHandlers", inspector.type());
@@ -221,7 +221,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testFindJavaxPersistenceIdentifier() throws Exception {
+    public void testFindJavaxPersistenceIdentifier() {
         AggregateModel<JavaxPersistenceAnnotatedHandlers> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(JavaxPersistenceAnnotatedHandlers.class);
 
         assertEquals("id", inspector.getIdentifier(new JavaxPersistenceAnnotatedHandlers()));
@@ -229,7 +229,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test
-    public void testFindIdentifierInSuperClass() throws Exception {
+    public void testFindIdentifierInSuperClass() {
         AggregateModel<SomeSubclass> inspector = AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
         assertEquals("SomeOtherName", inspector.type());
@@ -237,7 +237,7 @@ public class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testIllegalFactoryMethodThrowsExceptionClass() throws Exception {
+    public void testIllegalFactoryMethodThrowsExceptionClass() {
         AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class);
     }
 

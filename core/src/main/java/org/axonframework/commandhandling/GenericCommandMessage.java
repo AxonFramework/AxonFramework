@@ -31,6 +31,7 @@ import java.util.Map;
  * @since 2.0
  */
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
+    private static final long serialVersionUID = 3282528436414939876L;
     private final String commandName;
 
     /**

@@ -63,7 +63,7 @@ public class DBObjectXStreamSerializerTest {
 
     // Test for issue AXON-141 - BSONNode - marshalling EnumSet problem
     @Test
-    public void testSerializeEnumSet() throws Exception {
+    public void testSerializeEnumSet() {
         SerializedObject<String> serialized = testSubject.serialize(new TestEventWithEnumSet("testing123"),
                                                                     String.class);
 
@@ -83,7 +83,7 @@ public class DBObjectXStreamSerializerTest {
     }
 
     @Test
-    public void testPackageAlias() throws UnsupportedEncodingException {
+    public void testPackageAlias() {
         testSubject.addPackageAlias("test", "org.axonframework.mongo.serialization");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
@@ -120,7 +120,7 @@ public class DBObjectXStreamSerializerTest {
     }
 
     @Test
-    public void testRevisionNumber_FromAnnotation() throws UnsupportedEncodingException {
+    public void testRevisionNumber_FromAnnotation() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);
         assertEquals("2", serialized.getType().getRevision());
@@ -128,7 +128,7 @@ public class DBObjectXStreamSerializerTest {
     }
 
     @Test
-    public void testSerializedTypeUsesClassAlias() throws UnsupportedEncodingException {
+    public void testSerializedTypeUsesClassAlias() {
         testSubject.addAlias("rse", RevisionSpecifiedEvent.class);
         SerializedObject<byte[]> serialized = testSubject.serialize(new RevisionSpecifiedEvent(), byte[].class);
         assertNotNull(serialized);
@@ -201,7 +201,7 @@ public class DBObjectXStreamSerializerTest {
 
 
         private enum SomeEnum {
-            FIRST, SECOND, THIRD;
+            FIRST, SECOND, THIRD
         }
     }
 }

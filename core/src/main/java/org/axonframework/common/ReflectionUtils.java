@@ -44,10 +44,6 @@ public abstract class ReflectionUtils {
         primitiveWrapperTypeMap.put(short.class, Short.class);
     }
 
-    private ReflectionUtils() {
-        // utility class
-    }
-
     /**
      * Returns the value of the given {@code field} in the given {@code object}. If necessary, the field is
      * made accessible, assuming the security manager allows it.
@@ -55,7 +51,6 @@ public abstract class ReflectionUtils {
      * @param field  The field containing the value
      * @param object The object to retrieve the field's value from
      * @return the value of the {@code field} in the {@code object}
-     *
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
@@ -64,7 +59,7 @@ public abstract class ReflectionUtils {
         ensureAccessible(field);
         try {
             return (R) field.get(object);
-        } catch (IllegalArgumentException | IllegalAccessException ex) {
+        } catch(IllegalArgumentException | IllegalAccessException ex) {
             throw new IllegalStateException("Unable to access field for getting.", ex);
         }
     }
@@ -82,7 +77,7 @@ public abstract class ReflectionUtils {
         ensureAccessible(field);
         try {
             field.set(object, value);
-        } catch (IllegalAccessException ex) {
+        } catch(IllegalAccessException ex) {
             throw new IllegalStateException("Unable to access field for setting.", ex);
         }
     }
@@ -101,7 +96,7 @@ public abstract class ReflectionUtils {
     public static Class<?> declaringClass(Class<?> instanceClass, String methodName, Class<?>... parameterTypes) {
         try {
             return instanceClass.getMethod(methodName, parameterTypes).getDeclaringClass();
-        } catch (NoSuchMethodException e) {
+        } catch(NoSuchMethodException e) {
             return null;
         }
     }
@@ -147,7 +142,6 @@ public abstract class ReflectionUtils {
      * @param member The member (field, method, constructor, etc) to make accessible
      * @param <T>    The type of member to make accessible
      * @return the given {@code member}, for easier method chaining
-     *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
@@ -175,7 +169,6 @@ public abstract class ReflectionUtils {
      *
      * @param member The member to check
      * @return {@code true} if the member is public and non-final, otherwise {@code false}.
-     *
      * @see #isAccessible(java.lang.reflect.AccessibleObject)
      * @see #ensureAccessible(java.lang.reflect.AccessibleObject)
      */
@@ -212,7 +205,6 @@ public abstract class ReflectionUtils {
      *                       {@link java.lang.reflect.Method} being searched for
      * @return a {@link java.lang.reflect.Method} object from the given {@code clazz} matching the specified
      * {@code methodName}
-     *
      * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found matching the {@code methodName}
      *                               in {@code clazz}
      */
@@ -244,7 +236,6 @@ public abstract class ReflectionUtils {
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
      * @return the boxed wrapper type for the given {@code primitiveType}
-     *
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
@@ -283,11 +274,14 @@ public abstract class ReflectionUtils {
      */
     public static Optional<Class<?>> resolveGenericType(Field field, int genericTypeIndex) {
         final Type genericType = field.getGenericType();
-        if (genericType == null
-                || !(genericType instanceof ParameterizedType)
+        if (!(genericType instanceof ParameterizedType)
                 || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
             return Optional.empty();
         }
         return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
+    }
+
+    private ReflectionUtils() {
+        // utility class
     }
 }

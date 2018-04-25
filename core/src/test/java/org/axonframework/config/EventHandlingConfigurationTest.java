@@ -42,7 +42,7 @@ public class EventHandlingConfigurationTest {
     private Configurer configurer;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         configurer = DefaultConfigurer.defaultConfiguration();
     }
 

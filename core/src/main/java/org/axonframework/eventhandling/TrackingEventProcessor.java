@@ -347,7 +347,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             eventHandlerInvoker().performReset();
 
             for (int i = 0; i < tokens.length; i++) {
-                tokenStore.storeToken(new ReplayToken(tokens[i]), getName(), segments[i]);
+                tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i]), getName(), segments[i]);
             }
         });
     }

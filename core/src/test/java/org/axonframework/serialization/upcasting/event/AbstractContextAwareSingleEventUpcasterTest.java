@@ -15,16 +15,12 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import static java.util.stream.Collectors.toList;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
@@ -37,12 +33,14 @@ import org.axonframework.serialization.upcasting.Upcaster;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 
 /*
  This test class should only assert whether the context map is created, filled with data and if that data is used to
@@ -57,7 +55,7 @@ public class AbstractContextAwareSingleEventUpcasterTest {
     private String expectedNewString;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         expectedNewString = "newNameValue";
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -67,7 +65,7 @@ public class AbstractContextAwareSingleEventUpcasterTest {
     }
 
     @Test
-    public void testUpcastsAddsContextValueFromFirstEvent() throws IOException {
+    public void testUpcastsAddsContextValueFromFirstEvent() {
         int expectedNumberOfEvents = 2;
         String expectedContextEventString = "oldName";
         Integer expectedContextEventNumber = 1;

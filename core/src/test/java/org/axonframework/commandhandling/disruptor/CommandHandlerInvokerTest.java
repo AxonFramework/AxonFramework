@@ -60,7 +60,7 @@ public class CommandHandlerInvokerTest {
     private SnapshotTrigger mockTrigger;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockEventStore = mock(EventStore.class);
         mockCache = mock(Cache.class);
         doAnswer(invocation -> {
@@ -86,7 +86,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void usesProvidedParameterResolverFactoryToResolveParameters() throws Exception {
+    public void usesProvidedParameterResolverFactoryToResolveParameters() {
         ParameterResolverFactory parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         testSubject.createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                      snapshotTriggerDefinition, parameterResolverFactory);
@@ -157,7 +157,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testCacheEntryInvalidatedOnRecoveryEntry() throws Exception {
+    public void testCacheEntryInvalidatedOnRecoveryEntry() {
         commandHandlingEntry.resetAsRecoverEntry(aggregateIdentifier);
         testSubject.onEvent(commandHandlingEntry, 0, true);
 

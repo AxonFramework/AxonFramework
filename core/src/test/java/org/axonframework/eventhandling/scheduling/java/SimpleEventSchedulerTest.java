@@ -49,14 +49,14 @@ public class SimpleEventSchedulerTest {
     private ScheduledExecutorService executorService;
 
     @Before
-    public void setUp() throws SchedulerException {
+    public void setUp() {
         eventBus = mock(EventBus.class);
         executorService = Executors.newSingleThreadScheduledExecutor();
         testSubject = new SimpleEventScheduler(executorService, eventBus);
     }
 
     @After
-    public void tearDown() throws SchedulerException {
+    public void tearDown() {
         if (executorService != null) {
             executorService.shutdownNow();
         }
@@ -89,7 +89,7 @@ public class SimpleEventSchedulerTest {
     }
 
     @Test
-    public void testCancelJob() throws SchedulerException, InterruptedException {
+    public void testCancelJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();

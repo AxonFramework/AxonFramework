@@ -33,12 +33,12 @@ public class InputStreamToDom4jConverterTest {
     private InputStreamToDom4jConverter testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new InputStreamToDom4jConverter();
     }
 
     @Test
-    public void testConvert() throws Exception {
+    public void testConvert() {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         Document actual = testSubject.convert(inputStream);

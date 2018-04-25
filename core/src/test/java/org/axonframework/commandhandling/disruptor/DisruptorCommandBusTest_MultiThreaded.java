@@ -64,7 +64,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     private String[] aggregateIdentifier;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         aggregateIdentifier = new String[AGGREGATE_COUNT];
         for (int i = 0; i < AGGREGATE_COUNT; i++) {
             aggregateIdentifier[i] = IdentifierFactory.getInstance().generateIdentifier();

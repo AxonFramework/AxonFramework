@@ -47,7 +47,7 @@ public class AsynchronousEventProcessingStrategyTest {
     private AsynchronousEventProcessingStrategy testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         executor = mock(Executor.class);
         doAnswer(invocation -> {
             // since we need to pretend we run in another thread, we clear the Unit of Work first
@@ -119,9 +119,7 @@ public class AsynchronousEventProcessingStrategyTest {
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 
         UnitOfWork<EventMessage<?>> uow = DefaultUnitOfWork.startAndGet(message1);
-        uow.onPrepareCommit(u -> {
-            verify(executor, never()).execute(isA(Runnable.class));
-        });
+        uow.onPrepareCommit(u -> verify(executor, never()).execute(isA(Runnable.class)));
 
         testSubject.handle(Arrays.asList(message1, message2), mock(Consumer.class));
 

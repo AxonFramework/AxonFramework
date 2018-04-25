@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ConcurrentSaga extends AbstractTestSaga {
 
     private static final long serialVersionUID = 5329800443421589068L;
-    private List<Object> events = new CopyOnWriteArrayList<>();
+    private final List<Object> events = new CopyOnWriteArrayList<>();
 
     @StartSaga
     @SagaEventHandler(associationProperty = "id")

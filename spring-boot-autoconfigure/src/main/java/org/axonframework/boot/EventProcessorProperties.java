@@ -31,7 +31,7 @@ public class EventProcessorProperties {
      * The configuration of each of the processors. The key is the name of the processor, the value represents the
      * settings to use for the processor with that name.
      */
-    private Map<String, ProcessorSettings> processors = new HashMap<>();
+    private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
     /**
      * Returns the settings for each of the configured processors, by name.

@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.CollectionUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
@@ -40,18 +39,36 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
      *
      * @param result The result reported by the Query Handler
      */
+    @SuppressWarnings("unchecked")
     public GenericQueryResponseMessage(R result) {
-        this(result, MetaData.emptyInstance());
+        this((Class<R>) result.getClass(), result, MetaData.emptyInstance());
+    }
+
+    public GenericQueryResponseMessage(Class<R> declaredResultType, R result) {
+        this(declaredResultType, result, MetaData.emptyInstance());
     }
 
     /**
-     * Initialize the response message with given {@code result}.
+     * Initialize the response message with given {@code result} and {@code metaData}.
      *
      * @param result   The result reported by the Query Handler
      * @param metaData The meta data to contain in the message
      */
     public GenericQueryResponseMessage(R result, Map<String, ?> metaData) {
         super(new GenericMessage<>(result, metaData));
+    }
+
+    /**
+     * Initialize the response message with a specific {@code declaredResultType}, the given {@code result} as payload
+     * and {@code metaData}.
+     *
+     * @param declaredResultType A {@link java.lang.Class} denoting the declared result type of this query response
+     *                           message
+     * @param result             The result reported by the Query Handler
+     * @param metaData           The meta data to contain in the message
+     */
+    public GenericQueryResponseMessage(Class<R> declaredResultType, R result, Map<String, ?> metaData) {
+        super(new GenericMessage<>(declaredResultType, result, metaData));
     }
 
     /**
@@ -69,9 +86,7 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
 
     /**
      * Creates a QueryResponseMessage for the given {@code result}. If result already implements QueryResponseMessage,
-     * it is returned directly. Otherwise a new QueryResponseMessage is created with the result as payload. An attempt
-     * is made to detect collection-like structures (see {@link CollectionUtils#asCollection(Object)}) in the given
-     * {@code result}, converting it to a Collection is possible.
+     * it is returned directly. Otherwise a new QueryResponseMessage is created with the result as payload.
      *
      * @param result The result of a Query, to be wrapped in a QueryResponseMessage
      * @param <R>    The type of response expected
@@ -84,6 +99,29 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
             return (QueryResponseMessage<R>) result;
         } else {
             return new GenericQueryResponseMessage(result);
+        }
+    }
+
+    /**
+     * Creates a QueryResponseMessage for the given {@code result} with a {@code declaredType} as the result type.
+     * Providing both the result type and the result allows the creation of a nullable response message, as the
+     * implementation does not have to check the type itself, which could result in a
+     * {@link java.lang.NullPointerException}. If result already implements QueryResponseMessage, it is returned
+     * directly. Otherwise a new QueryResponseMessage is created with the declared type as the result type and the
+     * result as payload.
+     *
+     * @param declaredType The declared type of the Query Response Message to be created.
+     * @param result       The result of a Query, to be wrapped in a QueryResponseMessage
+     * @param <R>          The type of response expected
+     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
+     * QueryResponseMessage.
+     */
+    @SuppressWarnings("unchecked")
+    public static <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
+        if (result instanceof QueryResponseMessage) {
+            return (QueryResponseMessage<R>) result;
+        } else {
+            return new GenericQueryResponseMessage(declaredType, result);
         }
     }
 

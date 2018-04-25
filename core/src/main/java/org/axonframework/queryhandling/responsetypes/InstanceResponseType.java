@@ -37,4 +37,10 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
     public boolean matches(Type responseType) {
         return isGenericAssignableFrom(responseType) || isAssignableFrom(responseType);
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class<R> responseMessagePayloadType() {
+        return (Class<R>) expectedResponseType;
+    }
 }

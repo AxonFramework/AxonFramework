@@ -463,7 +463,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 " WHERE (" + schema.globalIndexColumn() + " > ? AND " + schema.globalIndexColumn() + " <= ?) ";
         List<Long> gaps;
         if (previousToken != null) {
-            gaps = previousToken.getGaps().stream().collect(Collectors.toList());
+            gaps = new ArrayList<>(previousToken.getGaps());
             if (!gaps.isEmpty()) {
                 sql += " OR " + schema.globalIndexColumn() + " IN (" +
                         String.join(",", Collections.nCopies(gaps.size(), "?")) + ") ";

@@ -31,8 +31,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 public class SagaConfigurationTest {
@@ -40,7 +38,7 @@ public class SagaConfigurationTest {
     private Configuration configuration;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         configuration = spy(DefaultConfigurer.defaultConfiguration().start());
     }
 

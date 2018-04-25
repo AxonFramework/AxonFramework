@@ -182,7 +182,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         execute(() -> {
             applying = true;
             while (!delayedTasks.isEmpty()) {
-                delayedTasks.poll().run();
+                delayedTasks.remove().run();
             }
             applying = false;
         });
@@ -311,7 +311,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             try {
                 publish(createMessage(payload, metaData));
                 while (!delayedTasks.isEmpty()) {
-                    delayedTasks.poll().run();
+                    delayedTasks.remove().run();
                 }
             } finally {
                 delayedTasks.clear();

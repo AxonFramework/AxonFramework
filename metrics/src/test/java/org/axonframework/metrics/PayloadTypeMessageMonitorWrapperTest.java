@@ -36,7 +36,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
     private final Logger logger = Logger.getRootLogger();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         logger.addAppender(appender);
 
         expectedMonitorClass = CapacityMonitor.class;
@@ -44,7 +44,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         logger.removeAppender(appender);
     }
 
@@ -98,7 +98,7 @@ public class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Messa
     }
 
     @Test
-    public void testMonitorNameFollowsGivenMonitorNameBuilderSpecifics() throws Exception {
+    public void testMonitorNameFollowsGivenMonitorNameBuilderSpecifics() {
         String testPrefix = "additional-monitor-name.";
         PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject = new PayloadTypeMessageMonitorWrapper<>(
                 CapacityMonitor::new, payloadType -> testPrefix + payloadType.getName());

@@ -38,7 +38,7 @@ public class ConflictResolutionIntegrationTest {
     private CommandGateway commandGateway;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .configureAggregate(StubAggregate.class)
@@ -48,14 +48,14 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    public void testNonConflictingEventsAllowed() throws Exception {
+    public void testNonConflictingEventsAllowed() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update2", 0L));
     }
 
     @Test
-    public void testUnresolvedConflictCausesException() throws Exception {
+    public void testUnresolvedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         try {
@@ -67,7 +67,7 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    public void testExpressedConflictCausesException() throws Exception {
+    public void testExpressedConflictCausesException() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         try {
@@ -79,7 +79,7 @@ public class ConflictResolutionIntegrationTest {
     }
 
     @Test
-    public void testNoExpectedVersionIgnoresConflicts() throws Exception {
+    public void testNoExpectedVersionIgnoresConflicts() {
         commandGateway.sendAndWait(new CreateCommand("1234"));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", 0L));
         commandGateway.sendAndWait(new UpdateCommand("1234", "update1", null));

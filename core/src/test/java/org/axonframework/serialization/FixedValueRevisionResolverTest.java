@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class FixedValueRevisionResolverTest {
 
     @Test
-    public void testRevisionOf() throws Exception {
+    public void testRevisionOf() {
         assertEquals("test", new FixedValueRevisionResolver("test").revisionOf(Object.class));
     }
 }

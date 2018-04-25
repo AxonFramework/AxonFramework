@@ -107,7 +107,7 @@ public class DefaultConfigurer implements Configurer {
     private final List<ConsumerHandler> initHandlers = new ArrayList<>();
     private final List<RunnableHandler> startHandlers = new ArrayList<>();
     private final List<RunnableHandler> shutdownHandlers = new ArrayList<>();
-    private List<ModuleConfiguration> modules = new ArrayList<>();
+    private final List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
 

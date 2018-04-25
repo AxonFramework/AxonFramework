@@ -41,7 +41,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testDomainEvents() throws Exception {
+    public void testDomainEvents() {
         mongoTemplate.eventCollection();
 
         verify(mockMongo).getDatabase("axonframework");
@@ -49,7 +49,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testSnapshotEvents() throws Exception {
+    public void testSnapshotEvents() {
 
         mongoTemplate.snapshotCollection();
 
@@ -58,7 +58,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testCustomProvidedNames() throws Exception {
+    public void testCustomProvidedNames() {
         mongoTemplate = new DefaultMongoTemplate(mockMongo,
                 "customdatabase",
                 "customevents",

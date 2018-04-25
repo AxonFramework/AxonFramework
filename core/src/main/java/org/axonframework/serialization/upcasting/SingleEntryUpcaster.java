@@ -32,7 +32,7 @@ public abstract class SingleEntryUpcaster<T> implements Upcaster<T> {
             if (!canUpcast(entry)) {
                 return entry;
             }
-            return requireNonNull(doUpcast(entry), () -> "Result from #doUpcast() should not be null. To remove an " +
+            return requireNonNull(doUpcast(entry), "Result from #doUpcast() should not be null. To remove an " +
                     "intermediateRepresentation add a filter to the input stream.");
         });
     }

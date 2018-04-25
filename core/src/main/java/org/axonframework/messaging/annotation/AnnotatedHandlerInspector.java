@@ -114,7 +114,7 @@ public class AnnotatedHandlerInspector<T> {
                             .ifPresent(handler -> registerHandler(wrapped(handler, wrapperDefinitions))));
         }
         superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
-        Collections.sort(handlers, HandlerComparator.instance());
+        handlers.sort(HandlerComparator.instance());
     }
 
     private MessageHandlingMember<T> wrapped(MessageHandlingMember<T> handler,

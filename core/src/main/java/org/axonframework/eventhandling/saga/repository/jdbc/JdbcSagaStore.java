@@ -195,7 +195,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
                                                                                  Charset.forName("UTF-8")));
         }
 
-        int updateCount = 0;
+        int updateCount;
         PreparedStatement statement = null;
         Connection conn = null;
         try {
