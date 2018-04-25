@@ -136,8 +136,8 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param eventStore                The event store that holds the event streams for this repository
      * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
      * @param cache                     The cache in which entries will be stored
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
-     *                                  LockingRepository#LockingRepository(Class)
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
@@ -154,9 +154,9 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param eventStore                The event store that holds the event streams for this repository
      * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
      * @param cache                     The cache in which entries will be stored
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
-     *                                  LockingRepository#LockingRepository(Class)
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @param repositoryProvider        Provides repositories for specific aggregate types
+     * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
@@ -179,8 +179,8 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
      * @param cache                     The cache in which entries will be stored
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
-     *                                  LockingRepository#LockingRepository(Class)
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
@@ -205,9 +205,9 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
      * @param cache                     The cache in which entries will be stored
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
-     *                                  LockingRepository#LockingRepository(Class)
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @param repositoryProvider        Provides repositories for specific aggregate types
+     * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
