@@ -60,20 +60,6 @@ public interface EventProcessor {
     Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor);
 
     /**
-     * Sets the event handler invoker to do the actual invocation of handlers.
-     *
-     * @param eventHandlerInvoker the event handler invoker
-     */
-    void setEventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker);
-
-    /**
-     * Gets the event handler invoker within this processor.
-     *
-     * @return the event handler invoker
-     */
-    EventHandlerInvoker eventHandlerInvoker();
-
-    /**
      * Start processing events.
      */
     void start();

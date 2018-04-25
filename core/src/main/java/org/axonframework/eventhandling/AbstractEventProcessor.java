@@ -53,7 +53,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Set<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
     private final String name;
-    private volatile EventHandlerInvoker eventHandlerInvoker;
+    private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
@@ -154,14 +154,14 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
     }
 
-    @Override
-    public EventHandlerInvoker eventHandlerInvoker() {
+    /**
+     * Returns the invoker assigned to this processor. The invoker is responsible for invoking the correct handler
+     * methods for any given message.
+     *
+     * @return the invoker assigned to this processor
+     */
+    protected EventHandlerInvoker eventHandlerInvoker() {
         return eventHandlerInvoker;
-    }
-
-    @Override
-    public void setEventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
-        this.eventHandlerInvoker = eventHandlerInvoker;
     }
 
     /**

@@ -342,16 +342,6 @@ public class EventHandlingConfigurationTest {
         }
 
         @Override
-        public void setEventHandlerInvoker(EventHandlerInvoker eventHandlerInvoker) {
-            // noop
-        }
-
-        @Override
-        public EventHandlerInvoker eventHandlerInvoker() {
-            return null;
-        }
-
-        @Override
         public void start() {
             // noop
         }

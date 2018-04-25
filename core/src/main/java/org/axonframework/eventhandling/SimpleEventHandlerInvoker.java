@@ -22,6 +22,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,6 +37,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
+    private final List<?> eventListenerDelegates;
     private final List<EventListener> eventListeners;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
@@ -89,6 +91,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     public SimpleEventHandlerInvoker(List<?> eventListeners,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        this.eventListenerDelegates = eventListeners;
         this.eventListeners = new ArrayList<>(eventListeners.stream()
                                                             .map(listener -> listener instanceof EventListener ?
                                                                     (EventListener) listener :
@@ -133,6 +136,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                      ParameterResolverFactory parameterResolverFactory,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+        this.eventListenerDelegates = eventListeners;
         this.eventListeners = new ArrayList<>(eventListeners.stream()
                                                             .map(listener -> listener instanceof EventListener ?
                                                                     (EventListener) listener :
@@ -140,6 +144,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                                             .collect(toList()));
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
+    }
+
+    /**
+     * Gets the list of event listener delegates. This delegates are the end point of event handling.
+     *
+     * @return the list ov event listener delegates
+     */
+    public List<?> eventListeners() {
+        return Collections.unmodifiableList(eventListenerDelegates);
     }
 
     /**
