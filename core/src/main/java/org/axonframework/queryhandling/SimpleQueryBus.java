@@ -42,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
@@ -333,6 +334,9 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
+            if (queryResponse instanceof Future) {
+                queryResponse = ((Future) queryResponse).get();
+            }
             return GenericQueryResponseMessage.asNullableResponseMessage(
                     responseType.responseMessagePayloadType(),
                     responseType.convert(queryResponse));
