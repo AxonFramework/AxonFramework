@@ -78,8 +78,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         try {
             optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
         } catch (Exception | LinkageError e) {
-            logger.warn("Error reading snapshot. Reconstructing aggregate from entire event stream. Caused by: {} {}",
-                        e.getClass().getName(), e.getMessage());
+            logger.warn("Error reading snapshot. Reconstructing aggregate from entire event stream.", e);
             optionalSnapshot = Optional.empty();
         }
         DomainEventStream eventStream;
