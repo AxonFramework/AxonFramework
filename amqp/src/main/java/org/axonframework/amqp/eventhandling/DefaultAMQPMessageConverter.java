@@ -24,10 +24,20 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
@@ -77,7 +87,13 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         AMQP.BasicProperties.Builder properties = new AMQP.BasicProperties.Builder();
         Map<String, Object> headers = new HashMap<>();
         eventMessage.getMetaData().forEach((k, v) -> headers.put(Headers.MESSAGE_METADATA + "-" + k, v));
-        Headers.defaultHeaders(eventMessage, serializedObject).forEach(headers::put);
+        Headers.defaultHeaders(eventMessage, serializedObject).forEach((k, v) -> {
+            if (k.equals(MESSAGE_TIMESTAMP)) {
+                headers.put(k, formatInstant(eventMessage.getTimestamp()));
+            } else {
+                headers.put(k, v);
+            }
+        });
         if (eventMessage instanceof DomainEventMessage) {
             Headers.domainHeaders((DomainEventMessage<?>) eventMessage).forEach(headers::put);
         }
