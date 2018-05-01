@@ -28,6 +28,7 @@ import org.junit.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.messaging.Headers.AGGREGATE_ID;
 import static org.axonframework.messaging.Headers.AGGREGATE_SEQ;
@@ -103,7 +104,7 @@ public class HeadersTests {
             put(MESSAGE_ID, message.getIdentifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
-            put(MESSAGE_TIMESTAMP, message.getTimestamp());
+            put(MESSAGE_TIMESTAMP, formatInstant(message.getTimestamp()));
         }};
 
         assertThat(Headers.defaultHeaders(message, serializedObject), is(expected));
