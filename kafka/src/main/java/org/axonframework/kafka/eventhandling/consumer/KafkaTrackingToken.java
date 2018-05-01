@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -73,7 +74,7 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
     public KafkaTrackingToken advancedTo(int partition, long offset) {
         Assert.isTrue(partition >= 0, () -> "Partition may not be negative");
         Assert.isTrue(offset >= 0, () -> "Offset may not be negative");
-        HashMap<Integer, Long> newPositions = new HashMap<>(partitionPositions);
+        Map<Integer, Long> newPositions = new HashMap<>(partitionPositions);
         newPositions.put(partition, offset);
         return new KafkaTrackingToken(newPositions);
     }
@@ -82,22 +83,16 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
     public TrackingToken lowerBound(TrackingToken other) {
         Assert.isTrue(other instanceof KafkaTrackingToken, () -> "Incompatible token type provided.");
         KafkaTrackingToken otherToken = (KafkaTrackingToken) other;
-
-        Map<Integer, Long> intersection = new HashMap<>(this.partitionPositions);
-        partitionPositions.keySet().forEach(k -> {
-            if (!otherToken.partitionPositions.containsKey(k)) {
-                intersection.remove(k);
-            }
-        });
-        return new KafkaTrackingToken(intersection);
+        Map<Integer, Long> partitionsWithLowerBound = bounds(otherToken, Math::min);
+        return new KafkaTrackingToken(partitionsWithLowerBound);
     }
 
     @Override
     public TrackingToken upperBound(TrackingToken other) {
         Assert.isTrue(other instanceof KafkaTrackingToken, () -> "Incompatible token type provided.");
-        Map<Integer, Long> events = new HashMap<>(partitionPositions);
-        events.putAll(((KafkaTrackingToken) other).partitionPositions);
-        return new KafkaTrackingToken(events);
+        KafkaTrackingToken otherToken = (KafkaTrackingToken) other;
+        Map<Integer, Long> partitionsWithUpperBound = bounds(otherToken, Math::max);
+        return new KafkaTrackingToken(partitionsWithUpperBound);
     }
 
     @Override
@@ -141,5 +136,17 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
         return "KafkaTrackingToken{" +
                 "partitionPositions=" + partitionPositions +
                 '}';
+    }
+
+    private Map<Integer, Long> bounds(KafkaTrackingToken otherToken, BiFunction<Long, Long, Long> fxn) {
+        Map<Integer, Long> intersection = new HashMap<>(this.partitionPositions);
+        otherToken.partitionPositions.forEach(intersection::putIfAbsent);
+        intersection.keySet()
+                    .forEach(k -> intersection.put(k, fxn.apply(
+                            partitionPositions.getOrDefault(k, 0L),
+                            otherToken.partitionPositions.getOrDefault(k, 0L))
+
+                    ));
+        return intersection;
     }
 }

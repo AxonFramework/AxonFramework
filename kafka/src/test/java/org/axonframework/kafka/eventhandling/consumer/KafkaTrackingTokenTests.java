@@ -147,17 +147,54 @@ public class KafkaTrackingTokenTests {
     public void testUpperBound() {
         KafkaTrackingToken first = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
             put(0, 0L);
-            put(1, 1L);
+            put(1, 10L);
             put(2, 2L);
+            put(3, 2L);
         }});
 
         KafkaTrackingToken second = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
-            put(0, 0L);
+            put(0, 10L);
             put(1, 1L);
-            put(2, 3L);
+            put(2, 2L);
+            put(4, 3L);
         }});
 
-        assertThat(first.advancedTo(2, 3L)).isEqualTo(first.upperBound(second));
+        KafkaTrackingToken expected = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 10L);
+            put(1, 10L);
+            put(2, 2L);
+            put(3, 2L);
+            put(4, 3L);
+        }});
+
+        assertThat(first.upperBound(second)).isEqualTo(expected);
+    }
+
+    @Test
+    public void testLowerBound() {
+        KafkaTrackingToken first = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+            put(1, 10L);
+            put(2, 2L);
+            put(3, 2L);
+        }});
+
+        KafkaTrackingToken second = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 10L);
+            put(1, 1L);
+            put(2, 2L);
+            put(4, 3L);
+        }});
+
+        KafkaTrackingToken expected = KafkaTrackingToken.newInstance(new HashMap<Integer, Long>() {{
+            put(0, 0L);
+            put(1, 1L);
+            put(2, 2L);
+            put(3, 0L);
+            put(4, 0L);
+        }});
+
+        assertThat(first.lowerBound(second)).isEqualTo(expected);
     }
 
     private static KafkaTrackingToken nonEmptyToken() {
