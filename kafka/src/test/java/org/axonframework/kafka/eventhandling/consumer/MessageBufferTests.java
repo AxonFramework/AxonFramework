@@ -592,7 +592,7 @@ public class MessageBufferTests extends JSR166TestCase {
             }
         }
         //Test should complete in max 1 Minute.
-        assertThat(pool.awaitTermination(0, TimeUnit.NANOSECONDS))
+        assertThat(pool.awaitTermination(1, TimeUnit.MINUTES))
                 .as("Excepted to finish in a minute but took longer")
                 .isTrue();
     }

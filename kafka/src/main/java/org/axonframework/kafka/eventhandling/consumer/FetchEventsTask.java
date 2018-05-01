@@ -23,6 +23,9 @@ import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.BiFunction;
 
 /**
@@ -58,29 +61,46 @@ class FetchEventsTask<K, V> implements Runnable {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Fetched {} records", records.count());
                 }
+                Collection<MessageAndMetadata> messages = new ArrayList<>(records.count());
+                List<CallbackEntry<K, V>> callbacks = new ArrayList<>(records.count());
                 for (ConsumerRecord<K, V> record : records) {
                     converter.readKafkaMessage(record).ifPresent(eventMessage -> {
-                        try {
-                            KafkaTrackingToken nextToken = currentToken.advancedTo(record.partition(), record.offset());
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Updating token from {} -> {}", currentToken, nextToken);
-                            }
-                            currentToken = nextToken;
-                            buffer.put(MessageAndMetadata.from(eventMessage, record, currentToken));
-                            this.callback.apply(record, currentToken);
-                        } catch (InterruptedException e) {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Event producer thread was interrupted. Shutting down.", e);
-                            }
-                            Thread.currentThread().interrupt();
+                        KafkaTrackingToken nextToken = currentToken.advancedTo(record.partition(), record.offset());
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Updating token from {} -> {}", currentToken, nextToken);
                         }
+                        currentToken = nextToken;
+                        messages.add(MessageAndMetadata.from(eventMessage, record, currentToken));
+                        callbacks.add(new CallbackEntry<>(currentToken, record));
                     });
+                }
+                try {
+                    buffer.putAll(messages);
+                    for (CallbackEntry<K, V> c : callbacks) {
+                        this.callback.apply(c.record, c.token);
+                    }
+                } catch (InterruptedException e) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Event producer thread was interrupted. Shutting down.", e);
+                    }
+                    Thread.currentThread().interrupt();
                 }
             }
         } catch (Exception e) {
             logger.error("Cannot proceed with Fetching, encountered {} ", e);
         } finally {
             consumer.close();
+        }
+    }
+
+    private static class CallbackEntry<K, V> {
+
+        private final KafkaTrackingToken token;
+        private final ConsumerRecord<K, V> record;
+
+        public CallbackEntry(KafkaTrackingToken token, ConsumerRecord<K, V> record) {
+            this.token = token;
+            this.record = record;
         }
     }
 

@@ -15,15 +15,22 @@
 
 package org.axonframework.kafka.eventhandling.consumer;
 
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Nakul Mishra
+ * Defines a buffer that wait for the space to become non-empty when retrieving an
+ * element, and wait for space to become available in the buffer when
+ * storing an element.
+ *
  * @param <E>
+ * @author Nakul Mishra
  */
 public interface SortableBuffer<E> {
 
     void put(E e) throws InterruptedException;
+
+    void putAll(Collection<E> c) throws InterruptedException;
 
     E poll(long timeout, TimeUnit unit) throws InterruptedException;
 

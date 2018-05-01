@@ -95,10 +95,8 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
         if (this.producer == null) {
             synchronized (this) {
                 if (this.producer == null) {
-                    this.producer = new CloseLazyProducer<>(createKafkaProducer(configs),
-                                                            cache,
-                                                            closeTimeout,
-                                                            unit);
+                    this.producer = new CloseLazyProducer<>(
+                            createKafkaProducer(configs), cache, closeTimeout, unit);
                 }
             }
         }

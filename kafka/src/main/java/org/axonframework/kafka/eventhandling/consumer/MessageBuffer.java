@@ -19,6 +19,7 @@ import org.axonframework.common.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -94,22 +95,40 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> impleme
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (this.count == this.capacity) {
-                this.notFull.await();
-            }
-            add(e);
-            if (logger.isDebugEnabled()) {
-                logger.debug("buffer state after appending {}", e);
-                for (E message : delegate) {
-                    logger.debug("partition:{}, offset:{}, timestamp:{}, payload:{}",
-                                 message.partition(),
-                                 message.offset(),
-                                 message.timestamp(),
-                                 message.value());
-                }
+            doPut(e);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void putAll(Collection<E> c) throws InterruptedException {
+        Assert.notNull(c, () -> "Element may not be empty");
+        final ReentrantLock lock = this.lock;
+        lock.lockInterruptibly();
+        try {
+            for (E e : c) {
+                doPut(e);
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void doPut(E e) throws InterruptedException {
+        while (this.count == this.capacity) {
+            this.notFull.await();
+        }
+        add(e);
+        if (logger.isDebugEnabled()) {
+            logger.debug("buffer state after appending {}", e);
+            for (E message : delegate) {
+                logger.debug("partition:{}, offset:{}, timestamp:{}, payload:{}",
+                             message.partition(),
+                             message.offset(),
+                             message.timestamp(),
+                             message.value());
+            }
         }
     }
 
