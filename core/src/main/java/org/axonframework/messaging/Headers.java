@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+
 /**
  * Default headers to include when publishing a message on a broker.
  *
@@ -61,7 +63,7 @@ public class Headers {
             put(MESSAGE_ID, message.getIdentifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
             put(MESSAGE_REVISION, serializedObject.getType().getRevision());
-            put(MESSAGE_TIMESTAMP, message.getTimestamp());
+            put(MESSAGE_TIMESTAMP, formatInstant(message.getTimestamp()));
         }});
     }
 
