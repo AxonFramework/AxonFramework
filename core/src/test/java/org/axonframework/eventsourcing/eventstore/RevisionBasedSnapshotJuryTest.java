@@ -13,8 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 public class RevisionBasedSnapshotJuryTest {
 
-
-    public static final String PAYLOAD = "payload", AGGREGATE = "aggregate", TYPE = "type", METADATA = "metadata";
+    private static final String PAYLOAD = "payload", AGGREGATE = "aggregate", TYPE = "type", METADATA = "metadata";
     private RevisionBasedSnapshotJury testSubject;
 
     @Before
@@ -24,30 +23,28 @@ public class RevisionBasedSnapshotJuryTest {
 
     @Test
     public void testSameRevisionForAggregateAndPayload() {
-        assertTrue(testSubject.decide(createEntry(WithAnnotation.class.getName(),
-                "2.3-TEST")));
+        assertTrue(testSubject.decide(createEntry(WithAnnotationAggregate.class.getName(), "2.3-TEST")));
     }
 
     @Test
     public void testDifferentRevisionsForAggregateAndPayload() {
-        assertFalse(testSubject.decide(createEntry(WithAnnotation.class.getName(), "2.3-TEST-DIFFERENT")));
+        assertFalse(testSubject.decide(createEntry(WithAnnotationAggregate.class.getName(), "2.3-TEST-DIFFERENT")));
     }
 
     @Test
     public void testNoRevisionForAggregateAndPayload() {
-        assertTrue(testSubject.decide(createEntry(WithoutAnnotation.class.getName())));
+        assertTrue(testSubject.decide(createEntry(WithoutAnnotationAggregate.class.getName())));
     }
 
     @Test
     public void testNoRevisionForPayload() {
-        assertFalse(testSubject.decide(createEntry(WithAnnotation.class.getName())));
+        assertFalse(testSubject.decide(createEntry(WithAnnotationAggregate.class.getName())));
     }
 
     @Test
     public void testNoRevisionForAggregate() {
-        assertFalse(testSubject.decide(createEntry(WithoutAnnotation.class.getName(), "2.3-TEST")));
+        assertFalse(testSubject.decide(createEntry(WithoutAnnotationAggregate.class.getName(), "2.3-TEST")));
     }
-
 
     private static DomainEventData<?> createEntry(String payloadType) {
         return createEntry(payloadType, null);
@@ -60,11 +57,11 @@ public class RevisionBasedSnapshotJuryTest {
     }
 
     @Revision("2.3-TEST")
-    private class WithAnnotation {
+    private class WithAnnotationAggregate {
 
     }
 
-    private class WithoutAnnotation {
+    private class WithoutAnnotationAggregate {
 
     }
 }
