@@ -164,9 +164,8 @@ public class AxonHubCommandBus implements CommandBus {
         private void commandExecutor() {
             logger.debug("Starting command Executor");
             while(true) {
-                Command command = null;
                 try {
-                    command = commandQueue.poll(10, TimeUnit.SECONDS);
+                    Command command = commandQueue.poll(10, TimeUnit.SECONDS);
                     if( command != null) {
                         logger.debug("Received command: {}", command);
                         processCommand(command);

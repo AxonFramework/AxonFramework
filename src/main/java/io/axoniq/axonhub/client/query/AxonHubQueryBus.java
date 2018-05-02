@@ -213,12 +213,11 @@ public class AxonHubQueryBus implements QueryBus {
         private void queryExecutor() {
             logger.debug("Starting Query Executor");
             while (true) {
-                QueryRequest command = null;
                 try {
-                    command = queryQueue.poll(10, TimeUnit.SECONDS);
-                    if (command != null) {
-                        logger.debug("Received command: {}", command);
-                        processQuery(command);
+                    QueryRequest query = queryQueue.poll(10, TimeUnit.SECONDS);
+                    if (query != null) {
+                        logger.debug("Received query: {}", query);
+                        processQuery(query);
                     }
                 } catch (InterruptedException e) {
                     logger.warn("Interrupted queryExecutor", e);
