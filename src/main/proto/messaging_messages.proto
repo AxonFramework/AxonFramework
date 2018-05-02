@@ -11,6 +11,8 @@ message Command {
     io.axoniq.platform.SerializedObject payload = 4;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
     repeated ProcessingInstruction processing_instructions = 6;
+    string clientId = 7;
+    string componentName = 8;
 }
 
 message CommandResponse {
@@ -33,6 +35,8 @@ message QueryRequest {
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
     io.axoniq.platform.SerializedObject response_type = 6;
     repeated ProcessingInstruction processing_instructions = 7;
+    string clientId = 8;
+    string componentName = 9;
 }
 
 message QueryResponse {
