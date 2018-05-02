@@ -76,7 +76,7 @@ public class AxonHubCommandBus implements CommandBus {
     public AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
                              CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
         this.localSegment = localSegment;
-        this.serializer = new CommandSerializer(serializer);
+        this.serializer = new CommandSerializer(serializer, configuration);
         this.platformConnectionManager = platformConnectionManager;
         this.routingStrategy = routingStrategy;
         this.priorityCalculator = priorityCalculator;
