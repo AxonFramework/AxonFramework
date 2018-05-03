@@ -38,7 +38,13 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
         this.expectedResponseType = expectedResponseType;
     }
 
-    protected Type unwrapFuture(Type type) {
+    /**
+     * Tries to unwrap generic type if provided {@code type} is of type {@link Future}.
+     *
+     * @param type to be unwrapped
+     * @return unwrapped generic, or original if provided {@code type} is not of type {@link Future}
+     */
+    protected Type unwrapIfTypeFuture(Type type) {
         Type futureType = TypeReflectionUtils.getExactSuperType(type, Future.class);
         if (futureType instanceof ParameterizedType) {
             Type[] actualTypeArguments = ((ParameterizedType) futureType).getActualTypeArguments();

@@ -27,12 +27,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for different types of queries hitting query handlers with Future as a response type.
@@ -40,6 +42,8 @@ import static org.mockito.Mockito.verify;
  * @author Milan Savic
  */
 public class FutureAsResponseTypeToQueryHandlersTest {
+
+    private static final int FUTURE_RESOLVING_TIMEOUT = 500;
 
     private final SimpleQueryBus queryBus = new SimpleQueryBus();
     private final MyQueryHandler myQueryHandler = new MyQueryHandler();
@@ -77,7 +81,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
                 "criteria", "myQueryWithMultipleResponses", ResponseTypes.multipleInstancesOf(String.class));
 
         List<String> response = queryBus
-                .scatterGather(queryMessage, 10, TimeUnit.MILLISECONDS)
+                .scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
                 .map(Message::getPayload)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -91,7 +95,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
                 "criteria", "myQueryWithSingleResponse", ResponseTypes.instanceOf(String.class));
 
         String response = queryBus
-                .scatterGather(queryMessage, 10, TimeUnit.MILLISECONDS)
+                .scatterGather(queryMessage, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
                 .map(Message::getPayload)
                 .findFirst()
                 .orElse(null);
@@ -100,7 +104,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testSubscriptionQueryWithMultipleResponses() {
+    public void testSubscriptionQueryWithMultipleResponses() throws InterruptedException {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "criteria",
                 "myQueryWithMultipleResponses",
@@ -111,13 +115,15 @@ public class FutureAsResponseTypeToQueryHandlersTest {
 
         Registration registration = queryBus.subscriptionQuery(queryMessage, updateHandler);
 
+        Thread.sleep(FUTURE_RESOLVING_TIMEOUT + 100); // wait for future to resolve
+
         verify(updateHandler).onInitialResult(Arrays.asList("Response1", "Response2"));
 
         registration.close();
     }
 
     @Test
-    public void testSubscriptionQueryWithSingleResponse() {
+    public void testSubscriptionQueryWithSingleResponse() throws InterruptedException {
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "criteria",
                 "myQueryWithSingleResponse",
@@ -128,6 +134,8 @@ public class FutureAsResponseTypeToQueryHandlersTest {
 
         Registration registration = queryBus.subscriptionQuery(queryMessage, updateHandler);
 
+        Thread.sleep(FUTURE_RESOLVING_TIMEOUT + 100); // wait for future to resolve
+
         verify(updateHandler).onInitialResult("Response");
 
         registration.close();
@@ -136,17 +144,23 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     @SuppressWarnings("unused")
     private static class MyQueryHandler {
 
+        private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
         @QueryHandler(queryName = "myQueryWithMultipleResponses")
         public CompletableFuture<List<String>> queryHandler1(String criteria) {
             CompletableFuture<List<String>> completableFuture = new CompletableFuture<>();
-            completableFuture.complete(Arrays.asList("Response1", "Response2"));
+            executor.schedule(() -> completableFuture.complete(Arrays.asList("Response1", "Response2")),
+                              FUTURE_RESOLVING_TIMEOUT,
+                              TimeUnit.MILLISECONDS);
             return completableFuture;
         }
 
         @QueryHandler(queryName = "myQueryWithSingleResponse")
-        public CompletableFuture<String> queryHandler2(String criteria) {
+        public Future<String> queryHandler2(String criteria) {
             CompletableFuture<String> completableFuture = new CompletableFuture<>();
-            completableFuture.complete("Response");
+            executor.schedule(() -> completableFuture.complete("Response"),
+                              FUTURE_RESOLVING_TIMEOUT,
+                              TimeUnit.MILLISECONDS);
             return completableFuture;
         }
     }

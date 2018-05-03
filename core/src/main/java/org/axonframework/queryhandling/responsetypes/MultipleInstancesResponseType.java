@@ -56,7 +56,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      */
     @Override
     public boolean matches(Type responseType) {
-        Type unwrapped = unwrapFuture(responseType);
+        Type unwrapped = unwrapIfTypeFuture(responseType);
         return isIterableOfExpectedType(unwrapped) ||
                 isStreamOfExpectedType(unwrapped) ||
                 isGenericArrayOfExpectedType(unwrapped) ||

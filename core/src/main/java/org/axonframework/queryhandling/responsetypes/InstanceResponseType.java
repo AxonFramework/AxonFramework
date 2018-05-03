@@ -35,7 +35,7 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      */
     @Override
     public boolean matches(Type responseType) {
-        Type unwrapped = unwrapFuture(responseType);
+        Type unwrapped = unwrapIfTypeFuture(responseType);
         return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
     }
 
