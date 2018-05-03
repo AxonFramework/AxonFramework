@@ -333,7 +333,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @SuppressWarnings("unchecked")
     private <Q, R> CompletableFuture<QueryResponseMessage<R>> interceptAndInvoke(UnitOfWork<QueryMessage<Q, R>> uow,
-                                                              MessageHandler<? super QueryMessage<?, R>> handler)
+                                                                                 MessageHandler<? super QueryMessage<?, R>> handler)
             throws Exception {
         return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
@@ -345,8 +345,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                 return CompletableFuture.supplyAsync(() -> {
                     try {
                         return ((Future) queryResponse).get();
-                    } catch (InterruptedException|ExecutionException e) {
-                        throw new RuntimeException(e);
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new QueryExecutionException("Error happened while trying to execute query handler", e);
                     }
                 });
             }
