@@ -1,17 +1,20 @@
 package io.axoniq.axonhub.client.util;
 
+import io.axoniq.axonhub.ErrorMessage;
+
 /**
  * Author: marc
  */
 public class ExceptionSerializer {
-    public static String serialize(String client, Throwable t) {
-        StringBuilder builder = new StringBuilder(client).append(": ");
-        builder.append(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+    public static ErrorMessage serialize(String client, Throwable t) {
+        ErrorMessage.Builder builder = ErrorMessage.newBuilder().setLocation(client).setMessage(
+                t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+        builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         while(t.getCause() != null) {
             t = t.getCause();
-            builder.append("\n").append(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
+            builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         }
-        return builder.toString();
+        return builder.build();
     }
 
 }

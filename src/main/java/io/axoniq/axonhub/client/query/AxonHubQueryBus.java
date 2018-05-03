@@ -139,7 +139,11 @@ public class AxonHubQueryBus implements QueryBus {
                                    @Override
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
-                                       completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                       if( queryResponse.hasMessage()) {
+                                           completableFuture.completeExceptionally(new RemoteQueryException(queryResponse.getErrorCode(), queryResponse.getMessage()));
+                                       } else {
+                                           completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                       }
                                    }
 
                                    @Override
@@ -171,7 +175,12 @@ public class AxonHubQueryBus implements QueryBus {
                                    @Override
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
-                                       resultSpliterator.put( serializer.deserializeResponse(queryResponse));
+
+                                       if( queryResponse.hasMessage()) {
+                                           logger.warn("Received exception: {}", queryResponse.getMessage());
+                                       } else {
+                                           resultSpliterator.put(serializer.deserializeResponse(queryResponse));
+                                       }
                                    }
 
                                    @Override

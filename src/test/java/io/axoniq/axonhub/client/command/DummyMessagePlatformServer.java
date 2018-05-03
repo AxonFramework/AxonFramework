@@ -17,6 +17,7 @@ package io.axoniq.axonhub.client.command;
 
 import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.CommandResponse;
+import io.axoniq.axonhub.ErrorMessage;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformService;
 import io.axoniq.axonhub.grpc.CommandProviderInbound;
@@ -108,7 +109,7 @@ public class DummyMessagePlatformServer {
                 responseObserver.onNext(CommandResponse.newBuilder()
                         .setErrorCode(ErrorCode.DATAFILE_READ_ERROR.errorCode())
                         .setMessageIdentifier(request.getMessageIdentifier())
-                        .setMessage(data)
+                        .setMessage(ErrorMessage.newBuilder().setMessage(data))
                         .build());
 
             } else {
