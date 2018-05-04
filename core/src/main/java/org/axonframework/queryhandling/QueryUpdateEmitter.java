@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -33,11 +32,10 @@ public interface QueryUpdateEmitter {
      * filter.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
-     * @param update function which returns incremental update
+     * @param update incremental update message
      * @param <U>    the type of the update
      */
-    <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                  Function<SubscriptionQueryMessage<?, ?, U>, U> update);
+    <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, SubscriptionQueryUpdateMessage<U> update);
 
     /**
      * Emits given incremental update to subscription queries matching given filter.
@@ -47,27 +45,23 @@ public interface QueryUpdateEmitter {
      * @param <U>    the type of the update
      */
     default <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, U update) {
-        emit(filter, (Function<SubscriptionQueryMessage<?, ?, U>, U>) q -> update);
+        emit(filter, GenericSubscriptionQueryUpdateMessage.from(update));
     }
 
     /**
-     * Emits incremental update (as return value of provided update function) to subscription queries matching given
-     * query type and filter.
+     * Emits given incremental update to subscription queries matching given query type and filter.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
-     * @param update    function which returns incremental update
+     * @param update    incremental update message
      * @param <Q>       the type of the query
      * @param <U>       the type of the update
      */
     @SuppressWarnings("unchecked")
-    default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, Function<Q, U> update) {
+    default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, SubscriptionQueryUpdateMessage<U> update) {
         Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
                 m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
-
-        Function<SubscriptionQueryMessage<?, ?, U>, U> sqmUpdate = q -> update.apply((Q) q.getPayload());
-
-        emit(sqmFilter, sqmUpdate);
+        emit(sqmFilter, update);
     }
 
     /**
@@ -80,7 +74,7 @@ public interface QueryUpdateEmitter {
      * @param <U>       the type of the update
      */
     default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, U update) {
-        emit(queryType, filter, q -> update);
+        emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.from(update));
     }
 
     /**
