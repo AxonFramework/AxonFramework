@@ -71,12 +71,14 @@ public class SubscriptionQueryTest {
         // then
         chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update11");
         registration1.cancel();
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update12");
+        chatQueryHandler.emitter.emit(String.class,
+                                      "axonFrameworkCR"::equals,
+                                      GenericSubscriptionQueryUpdateMessage.from("Update12"));
         verify(updateHandler1).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
         verify(updateHandler1).onUpdate("Update11");
         verify(updateHandler1, times(0)).onUpdate("Update12");
 
-        chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, 1);
+        chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, GenericSubscriptionQueryUpdateMessage.from(1));
         registration2.cancel();
         chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, 2);
         verify(updateHandler2).onInitialResult(0);
@@ -97,7 +99,9 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.emit(String.class,
+                                      "axonFrameworkCR"::equals,
+                                      GenericSubscriptionQueryUpdateMessage.from("Update1"));
         chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
 
         // then
@@ -207,30 +211,9 @@ public class SubscriptionQueryTest {
 
         // when
         queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update");
-
-        // then
-        verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
-        verify(updateHandler).onCompletedExceptionally(toBeThrown);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testSubscriptionHandlerFailingUpdateFunction() {
-        // given
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "axonFrameworkCR",
-                "chatMessages",
-                ResponseTypes.multipleInstancesOf(String.class),
-                ResponseTypes.instanceOf(String.class));
-        UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
-        RuntimeException toBeThrown = new RuntimeException();
-
-        // when
-        queryBus.subscriptionQuery(queryMessage, updateHandler);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, in -> {
-            throw toBeThrown;
-        });
+        chatQueryHandler.emitter.emit(String.class,
+                                      "axonFrameworkCR"::equals,
+                                      GenericSubscriptionQueryUpdateMessage.from("Update"));
 
         // then
         verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
@@ -294,8 +277,12 @@ public class SubscriptionQueryTest {
         @QueryHandler(queryName = "emitFirstThenReturnInitial")
         public String emitFirstThenReturnInitial(String criteria) throws InterruptedException {
             Executors.newSingleThreadExecutor().submit(() -> {
-                emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
-                emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+                emitter.emit(String.class,
+                             "axonFrameworkCR"::equals,
+                             GenericSubscriptionQueryUpdateMessage.from("Update1"));
+                emitter.emit(String.class,
+                             "axonFrameworkCR"::equals,
+                             GenericSubscriptionQueryUpdateMessage.from("Update2"));
                 emitter.complete(String.class, "axonFrameworkCR"::equals);
             });
 

@@ -73,6 +73,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, ReentrantReadWriteLock> registeringSubscriptionQueryLocks = new ConcurrentHashMap<>();
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, UpdateHandler<?, ?>> updateHandlers = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
+    private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
@@ -106,7 +107,24 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
                           TransactionManager transactionManager,
                           QueryInvocationErrorHandler errorHandler) {
+        this(messageMonitor, NoOpMessageMonitor.INSTANCE, transactionManager, errorHandler);
+    }
+
+    /**
+     * Initialize the query bus with the given {@code messageMonitor} and given {@code errorHandler}.
+     *
+     * @param messageMonitor       The message monitor notified for incoming messages and their result
+     * @param updateMessageMonitor The message monitor notified for incoming update message in regard to subscription
+     *                             queries
+     * @param transactionManager   The transaction manager to manage transactions around query execution with
+     * @param errorHandler         The error handler to invoke when query handler report an error
+     */
+    public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
+                          MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor,
+                          TransactionManager transactionManager,
+                          QueryInvocationErrorHandler errorHandler) {
         this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.instance();
+        this.updateMessageMonitor = updateMessageMonitor != null ? updateMessageMonitor : NoOpMessageMonitor.instance();
         this.errorHandler = getOrDefault(errorHandler, () -> new LoggingQueryInvocationErrorHandler(logger));
         if (transactionManager != null) {
             registerHandlerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
@@ -264,23 +282,34 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         Function<SubscriptionQueryMessage<?, ?, U>, U> update) {
-        registeringSubscriptionQueryReadSafe(filter, () ->
-                updateHandlers.keySet()
-                              .stream()
-                              .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                              .map(m -> (SubscriptionQueryMessage<?, ?, U>) m)
-                              .forEach(query -> {
-                                  UpdateHandler<?, U> updateHandler = (UpdateHandler<?, U>) updateHandlers.get(query);
-                                  try {
-                                      U calculatedUpdate = update.apply(query);
-                                      updateHandler.onUpdate(calculatedUpdate);
-                                  } catch (Exception e) {
-                                      logger.error(format("An error happened while trying to emit an update to a query: %s.", query), e);
-                                      updateHandlers.remove(query);
-                                      updateHandler.onCompletedExceptionally(e);
-                                  }
-                              }));
+                         SubscriptionQueryUpdateMessage<U> update) {
+        registeringSubscriptionQueryReadSafe(filter, () -> {
+            MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
+            List<? extends SubscriptionQueryMessage<?, ?, U>> queries =
+                    updateHandlers.keySet()
+                                  .stream()
+                                  .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                                  .map(m -> (SubscriptionQueryMessage<?, ?, U>) m)
+                                  .collect(Collectors.toList());
+            if (queries.isEmpty()) {
+                monitorCallback.reportIgnored();
+            } else {
+                queries.forEach(query -> {
+                    UpdateHandler<?, U> updateHandler = (UpdateHandler<?, U>) updateHandlers.get(query);
+                    try {
+                        updateHandler.onUpdate(update.getPayload());
+                        monitorCallback.reportSuccess();
+                    } catch (Exception e) {
+                        logger.error(format(
+                                "An error happened while trying to emit an update to a query: %s.",
+                                query), e);
+                        monitorCallback.reportFailure(e);
+                        updateHandlers.remove(query);
+                        updateHandler.onCompletedExceptionally(e);
+                    }
+                });
+            }
+        });
     }
 
     @Override
