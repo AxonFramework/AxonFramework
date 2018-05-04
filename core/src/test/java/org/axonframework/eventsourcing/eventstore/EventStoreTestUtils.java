@@ -28,8 +28,8 @@ import java.util.stream.IntStream;
 
 public abstract class EventStoreTestUtils {
 
-    private static final String PAYLOAD = "payload";
-    private static final String AGGREGATE = "aggregate";
+    public static final String PAYLOAD = "payload";
+    public static final String AGGREGATE = "aggregate";
     private static final String TYPE = "type";
     private static final MetaData METADATA = MetaData.emptyInstance();
 
