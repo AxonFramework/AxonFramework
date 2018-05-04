@@ -35,8 +35,8 @@ import io.grpc.ClientInterceptor;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -135,7 +135,7 @@ public class AxonHubCommandBus implements CommandBus {
 
                                     commandCallback.onSuccess(command, payload);
                                 } else {
-                                    commandCallback.onFailure(command, new RemoteCommandHandlingException(commandResponse.getMessage().getMessage(), new RemoteCommandException(commandResponse.getErrorCode(), commandResponse.getMessage())));
+                                    commandCallback.onFailure(command, new CommandExecutionException(commandResponse.getMessage().getMessage(), new RemoteCommandException(commandResponse.getErrorCode(), commandResponse.getMessage())));
                                 }
                             }
 
