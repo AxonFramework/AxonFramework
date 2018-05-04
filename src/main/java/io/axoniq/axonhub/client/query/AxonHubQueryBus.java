@@ -148,7 +148,7 @@ public class AxonHubQueryBus implements QueryBus {
 
                                    @Override
                                    public void onError(Throwable throwable) {
-                                       logger.warn("Received error while waiting for first response: {}", throwable.getMessage());
+                                       logger.warn("Received error while waiting for first response: {}", throwable.getMessage(), throwable);
                                        completableFuture.completeExceptionally(throwable);
                                    }
 
@@ -186,7 +186,7 @@ public class AxonHubQueryBus implements QueryBus {
                                    @Override
                                    public void onError(Throwable throwable) {
                                        if (!isDeadlineExceeded(throwable)) {
-                                           logger.warn("Received error while waiting for responses: {}", throwable.getMessage());
+                                           logger.warn("Received error while waiting for responses: {}", throwable.getMessage(), throwable);
                                        }
                                        resultSpliterator.cancel(throwable);
                                    }

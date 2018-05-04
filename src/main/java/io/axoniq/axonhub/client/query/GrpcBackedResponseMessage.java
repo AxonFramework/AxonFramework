@@ -42,7 +42,12 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer) {
         this.queryResponse = queryResponse;
         this.messageSerializer = messageSerializer;
-        this.serializedPayload = new LazyDeserializingObject<>(fromGrpcSerializedObject(queryResponse.getPayload()), messageSerializer);
+        if( queryResponse.hasPayload() && !"empty".equalsIgnoreCase(queryResponse.getPayload().getType())) {
+            this.serializedPayload = new LazyDeserializingObject<>(fromGrpcSerializedObject(queryResponse.getPayload()),
+                                                                   messageSerializer);
+        } else {
+            this.serializedPayload = null;
+        }
     }
 
     private GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer messageSerializer, LazyDeserializingObject<R> serializedPayload,
@@ -76,11 +81,13 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     public R getPayload() {
+        if( serializedPayload == null) return null;
         return serializedPayload.getObject();
     }
 
     @Override
     public Class<R> getPayloadType() {
+        if( serializedPayload == null) return null;
         return serializedPayload.getType();
     }
 
