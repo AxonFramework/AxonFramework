@@ -21,14 +21,14 @@ public class EventHandlerRegistrarTest {
     private EventHandlerRegistrar testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         axonConfig = mock(AxonConfiguration.class);
         eventConfig = mock(EventHandlingConfiguration.class);
         testSubject = new EventHandlerRegistrar(axonConfig, eventConfig);
     }
 
     @Test
-    public void testBeansRegisteredInOrder() throws Exception {
+    public void testBeansRegisteredInOrder() {
         testSubject.setEventHandlers(Arrays.asList(new OrderedBean(), new LateOrderedBean(), new UnorderedBean()));
 
         InOrder inOrder = Mockito.inOrder(eventConfig);

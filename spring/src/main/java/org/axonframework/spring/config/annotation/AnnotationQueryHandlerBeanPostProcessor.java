@@ -55,7 +55,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
     protected AnnotationQueryHandlerAdapter initializeAdapterFor(Object o,
                                                                  ParameterResolverFactory parameterResolverFactory,
                                                                  HandlerDefinition handlerDefinition) {
-        return new AnnotationQueryHandlerAdapter(o, parameterResolverFactory, handlerDefinition);
+        return new AnnotationQueryHandlerAdapter<>(o, parameterResolverFactory, handlerDefinition);
     }
 
     private class HasQueryHandlerAnnotationMethodCallback implements ReflectionUtils.MethodCallback {
@@ -66,7 +66,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
         }
 
         @Override
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+        public void doWith(Method method) throws IllegalArgumentException {
             if (method.isAnnotationPresent(QueryHandler.class)) {
                 result.set(true);
             }

@@ -74,7 +74,7 @@ public class AnnotationCommandHandlerBeanPostProcessor
          * {@inheritDoc}
          */
         @Override
-        public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+        public void doWith(Method method) throws IllegalArgumentException {
             if (method.isAnnotationPresent(CommandHandler.class)) {
                 result.set(true);
             }

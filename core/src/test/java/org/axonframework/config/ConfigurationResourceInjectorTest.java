@@ -18,7 +18,7 @@ public class ConfigurationResourceInjectorTest {
     private ConfigurationResourceInjector testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .buildConfiguration();
@@ -26,7 +26,7 @@ public class ConfigurationResourceInjectorTest {
     }
 
     @Test
-    public void testInjectorHasResource() throws Exception {
+    public void testInjectorHasResource() {
         Saga saga = new Saga();
         testSubject.injectResources(saga);
 

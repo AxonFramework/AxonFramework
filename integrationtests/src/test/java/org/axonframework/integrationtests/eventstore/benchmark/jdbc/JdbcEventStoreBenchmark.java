@@ -37,7 +37,7 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
     private final DataSource dataSource;
     private final PlatformTransactionManager transactionManager;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         ApplicationContext context = new ClassPathXmlApplicationContext("META-INF/spring/benchmark-jdbc-context.xml");
         AbstractEventStoreBenchmark benchmark = context.getBean(AbstractEventStoreBenchmark.class);
         benchmark.start();

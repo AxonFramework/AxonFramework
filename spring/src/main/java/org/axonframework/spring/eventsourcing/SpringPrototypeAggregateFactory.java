@@ -82,7 +82,7 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
 
     @SuppressWarnings("unchecked")
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (!applicationContext.isPrototype(prototypeBeanName)) {
             throw new IncompatibleAggregateException(
                     format("Cannot initialize repository '%s'. "

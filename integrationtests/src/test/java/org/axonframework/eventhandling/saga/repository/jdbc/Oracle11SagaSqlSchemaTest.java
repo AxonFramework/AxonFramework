@@ -18,7 +18,7 @@ public class Oracle11SagaSqlSchemaTest {
     private SagaSchema sagaSchema;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         sagaSchema = new SagaSchema();
         testSubject = new Oracle11SagaSqlSchema(sagaSchema);
         try {
@@ -29,7 +29,7 @@ public class Oracle11SagaSqlSchemaTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         closeQuietly(connection);
     }
 

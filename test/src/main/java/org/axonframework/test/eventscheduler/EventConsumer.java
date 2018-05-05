@@ -30,5 +30,5 @@ public interface EventConsumer<T> {
      * @param var the input argument
      * @throws Exception if the operation results in an exception
      */
-    void accept(T var) throws Exception;
+    void accept(T var);
 }

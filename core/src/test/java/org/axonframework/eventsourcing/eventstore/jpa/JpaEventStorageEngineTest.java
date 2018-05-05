@@ -90,7 +90,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         GenericEventMessage.clock = Clock.systemUTC();
     }
 

@@ -63,7 +63,13 @@ public class MessageSerializer implements Serializer {
         if (message instanceof SerializationAware) {
             return ((SerializationAware) message).serializePayload(serializer, expectedRepresentation);
         }
-        return serializer.serialize(message.getPayload(), expectedRepresentation);
+        SerializedObject<T> serializedObject = serializer.serialize(message.getPayload(), expectedRepresentation);
+        if (message.getPayload() == null) {
+            // make sure the payload type is maintained
+            return new SimpleSerializedObject<>(serializedObject.getData(), serializedObject.getContentType(),
+                                                serializer.typeForClass(message.getPayloadType()));
+        }
+        return serializedObject;
     }
 
     /**

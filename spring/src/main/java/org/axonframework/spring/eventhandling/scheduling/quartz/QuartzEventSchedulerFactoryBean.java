@@ -53,7 +53,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
 
 
     @Override
-    public QuartzEventScheduler getObject() throws Exception {
+    public QuartzEventScheduler getObject() {
         return eventScheduler;
     }
 

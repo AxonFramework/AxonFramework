@@ -42,7 +42,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
     MessageHandler<QueryMessage<?, ?>>, SubscriptionQueryMessageHandler<QueryMessage<?, Object>, Object, Object> {
 
     private final T target;
-    private AnnotatedHandlerInspector<T> model;
+    private final AnnotatedHandlerInspector<T> model;
 
     /**
      * Initializes the adapter, forwarding call to the given {@code target}.

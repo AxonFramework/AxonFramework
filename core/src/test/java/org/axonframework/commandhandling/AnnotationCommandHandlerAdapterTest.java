@@ -91,7 +91,7 @@ public class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    public void testHandlerDispatching_ThrowingException() throws Exception {
+    public void testHandlerDispatching_ThrowingException() {
         try {
             testSubject.handle(GenericCommandMessage.asCommandMessage(new HashSet()));
             fail("Expected exception");
@@ -155,7 +155,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
         @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
-        public void exceptionThrowingHandler(ArrayList o) throws Exception {
+        public void exceptionThrowingHandler(ArrayList o) {
             throw new RuntimeException("Some exception");
         }
     }

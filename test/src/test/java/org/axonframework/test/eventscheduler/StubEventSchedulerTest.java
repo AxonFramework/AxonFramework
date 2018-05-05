@@ -49,7 +49,7 @@ public class StubEventSchedulerTest {
     }
 
     @Test
-    public void testInitializeAtDateTimeAfterSchedulingEvent() throws Exception {
+    public void testInitializeAtDateTimeAfterSchedulingEvent() {
         testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
         exception.expect(IllegalStateException.class);
         testSubject.initializeAt(Instant.now().minus(10, ChronoUnit.MINUTES));

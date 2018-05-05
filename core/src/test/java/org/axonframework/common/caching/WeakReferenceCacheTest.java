@@ -34,7 +34,7 @@ public class WeakReferenceCacheTest {
     private Registration registration;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockListener = mock(Cache.EntryListener.class);
         testSubject = new WeakReferenceCache();
         registration = testSubject.registerCacheEntryListener(mockListener);
@@ -79,7 +79,7 @@ public class WeakReferenceCacheTest {
     }
 
     @Test
-    public void testEntryListenerNotifiedOfCreationUpdateAndDeletion() throws Exception {
+    public void testEntryListenerNotifiedOfCreationUpdateAndDeletion() {
 
         Object value = new Object();
         Object value2 = new Object();

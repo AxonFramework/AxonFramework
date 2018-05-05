@@ -24,7 +24,7 @@ import java.sql.SQLException;
 public class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Before
-    public void setUp() throws SQLException {
+    public void setUp() {
         setTestSubject(new InMemoryEventStorageEngine());
     }
 

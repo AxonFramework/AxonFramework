@@ -46,7 +46,7 @@ public class ConflictResolutionTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         CurrentUnitOfWork.ifStarted(UnitOfWork::commit);
     }
 

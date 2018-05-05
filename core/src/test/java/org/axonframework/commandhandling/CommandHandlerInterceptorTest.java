@@ -56,7 +56,7 @@ public class CommandHandlerInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         Repository<MyAggregate> myAggregateRepository = new EventSourcingRepository<>(MyAggregate.class, eventStore);
         CommandBus commandBus = new SimpleCommandBus();

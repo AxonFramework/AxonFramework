@@ -36,7 +36,7 @@ public class AssociationValueMapTest {
     private AssociationValueMap testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AssociationValueMap();
     }
 

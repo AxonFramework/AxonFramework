@@ -29,17 +29,17 @@ public class AnnotationRevisionResolverTest {
     private AnnotationRevisionResolver testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AnnotationRevisionResolver();
     }
 
     @Test
-    public void testRevisionOfAnnotatedClass() throws Exception {
+    public void testRevisionOfAnnotatedClass() {
         assertEquals("2.3-TEST", testSubject.revisionOf(WithAnnotation.class));
     }
 
     @Test
-    public void testRevisionOfNonAnnotatedClass() throws Exception {
+    public void testRevisionOfNonAnnotatedClass() {
         assertEquals(null, testSubject.revisionOf(WithoutAnnotation.class));
     }
 

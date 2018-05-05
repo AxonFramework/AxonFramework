@@ -54,7 +54,7 @@ public class FixtureExecutionResultImplTest {
     private String identifier;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         commandBus = new RecordingCommandBus();
         eventBus = new SimpleEventBus();
         eventScheduler = new StubEventScheduler();

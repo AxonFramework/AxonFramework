@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
@@ -78,7 +77,7 @@ public abstract class AbstractEventStoreBenchmark {
         stopWatch.start("Storing events");
         try {
             executorService.invokeAll(storageJobs);
-        } catch (InterruptedException e) {
+        } catch(InterruptedException e) {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
         stopWatch.stop();
@@ -89,7 +88,7 @@ public abstract class AbstractEventStoreBenchmark {
         stopWatch.start("Waiting for event processor to catch up");
         try {
             remainingEvents.await(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
+        } catch(InterruptedException e) {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
         stopWatch.stop();
@@ -104,7 +103,7 @@ public abstract class AbstractEventStoreBenchmark {
         eventProcessor.start();
         try {
             Thread.sleep(1000);
-        } catch (InterruptedException e) {
+        } catch(InterruptedException e) {
             throw new IllegalStateException("Benchmark was interrupted", e);
         }
     }
@@ -117,8 +116,8 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected List<Callable<Object>> createStorageJobs(int threadCount, int batchSize, int batchCount) {
         return IntStream.range(0, threadCount)
-                .mapToObj(i -> createStorageJobs(String.valueOf(i), batchSize, batchCount)).flatMap(Collection::stream)
-                .collect(Collectors.toList());
+                        .mapToObj(i -> createStorageJobs(String.valueOf(i), batchSize, batchCount)).flatMap(Collection::stream)
+                        .collect(Collectors.toList());
     }
 
     protected List<Callable<Object>> createStorageJobs(String aggregateId, int batchSize, int batchCount) {
@@ -130,15 +129,12 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected EventMessage<?>[] createEvents(String aggregateId, int startSequenceNumber, int count) {
-        Stream<EventMessage<?>> stream = IntStream.range(startSequenceNumber, startSequenceNumber + count)
-                .mapToObj(sequenceNumber -> createEvent(aggregateId, sequenceNumber)).map(event -> {
-                    serializer().ifPresent(serializer -> {
-                        serializePayload(event, serializer, byte[].class);
-                        serializeMetaData(event, serializer, byte[].class);
-                    });
-                    return event;
-                });
-        return stream.toArray(EventMessage[]::new);
+        return IntStream.range(startSequenceNumber, startSequenceNumber + count)
+                        .mapToObj(sequenceNumber -> createEvent(aggregateId, sequenceNumber))
+                        .peek(event -> serializer().ifPresent(serializer -> {
+                            serializePayload(event, serializer, byte[].class);
+                            serializeMetaData(event, serializer, byte[].class);
+                        })).toArray(EventMessage[]::new);
     }
 
     protected void executeStorageJob(EventMessage<?>... events) {

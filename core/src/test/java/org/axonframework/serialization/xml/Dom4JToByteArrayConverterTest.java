@@ -31,7 +31,7 @@ public class Dom4JToByteArrayConverterTest {
     private Dom4JToByteArrayConverter testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new Dom4JToByteArrayConverter();
     }
 
@@ -42,7 +42,7 @@ public class Dom4JToByteArrayConverterTest {
     }
 
     @Test
-    public void testConvert() throws Exception {
+    public void testConvert() {
         DocumentFactory df = DocumentFactory.getInstance();
         Document doc = df.createDocument("UTF-8");
         doc.setRootElement(df.createElement("rootElement"));

@@ -38,7 +38,7 @@ public class ConcatenatingDomainEventStreamTest {
     private DomainEventMessage event5;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 0,
                                                  "Mock contents 1", MetaData.emptyInstance());
         event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), (long) 1,

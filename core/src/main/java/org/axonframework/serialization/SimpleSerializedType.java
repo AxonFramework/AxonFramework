@@ -30,8 +30,18 @@ import static java.lang.String.format;
  */
 public class SimpleSerializedType implements SerializedType {
 
+    private static final SerializedType EMPTY_TYPE = new SimpleSerializedType("empty", null);
     private final String type;
     private final String revisionId;
+
+    /**
+     * Returns the type that represents an empty message, of undefined type. The type of such message is "empty" and
+     * always has a {@code null} revision.
+     * @return the type representing an empty message
+     */
+    public static SerializedType emptyType() {
+        return EMPTY_TYPE;
+    }
 
     /**
      * Initialize with given {@code objectType} and {@code revisionNumber}

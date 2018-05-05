@@ -29,29 +29,29 @@ public class StubAggregateLifecycleTest {
     private StubAggregateLifecycle testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new StubAggregateLifecycle();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSubject.close();
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testLifecycleIsNotRegisteredAutomatically() throws Exception {
+    public void testLifecycleIsNotRegisteredAutomatically() {
         apply("test");
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testApplyingEventsAfterDeactivationFails() throws Exception {
+    public void testApplyingEventsAfterDeactivationFails() {
         testSubject.activate();
         testSubject.close();
         apply("test");
     }
 
     @Test
-    public void testAppliedEventsArePassedToActiveLifecycle() throws Exception {
+    public void testAppliedEventsArePassedToActiveLifecycle() {
         testSubject.activate();
         apply("test");
 
@@ -61,7 +61,7 @@ public class StubAggregateLifecycleTest {
     }
 
     @Test
-    public void testMarkDeletedIsRegisteredWithActiveLifecycle() throws Exception {
+    public void testMarkDeletedIsRegisteredWithActiveLifecycle() {
         testSubject.activate();
         markDeleted();
 

@@ -52,7 +52,7 @@ public class FixtureTest_Generic {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             fail("Test failed to close Unit of Work!!");
             CurrentUnitOfWork.get().rollback();

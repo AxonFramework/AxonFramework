@@ -18,24 +18,24 @@ public class EventValidatorTest {
     }
 
     @Test
-    public void testAssertPublishedEventsWithNoEventsMatcherIfNoEventWasPublished() throws Exception {
+    public void testAssertPublishedEventsWithNoEventsMatcherIfNoEventWasPublished() {
         testSubject.assertPublishedEventsMatching(Matchers.noEvents());
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testAssertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() throws Exception {
+    public void testAssertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
         testSubject.handle(GenericEventMessage.asEventMessage(new MyOtherEvent()));
 
         testSubject.assertPublishedEventsMatching(Matchers.noEvents());
     }
 
     @Test
-    public void testAssertPublishedEventsIfNoEventWasPublished() throws Exception {
+    public void testAssertPublishedEventsIfNoEventWasPublished() {
         testSubject.assertPublishedEvents();
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testAssertPublishedEventsThrowsAssertionErrorIfEventWasPublished() throws Exception {
+    public void testAssertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
         testSubject.handle(GenericEventMessage.asEventMessage(new MyOtherEvent()));
 
         testSubject.assertPublishedEvents();

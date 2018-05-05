@@ -31,7 +31,7 @@ public class MockitoMockFactoryBean<T> implements FactoryBean<T> {
     private T lastMock;
 
     @Override
-    public T getObject() throws Exception {
+    public T getObject() {
         if (singleton && lastMock != null) {
             return lastMock;
         }

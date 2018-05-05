@@ -25,6 +25,7 @@ import java.util.function.Supplier;
  * @param <T> The type of payload contained in this Message
  */
 public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implements TrackedEventMessage<T> {
+    private static final long serialVersionUID = -8955035317050776846L;
     private final TrackingToken trackingToken;
 
     /**

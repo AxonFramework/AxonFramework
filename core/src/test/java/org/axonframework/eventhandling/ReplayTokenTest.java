@@ -31,7 +31,7 @@ public class ReplayTokenTest {
     private TrackingToken innerToken;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         innerToken = GapAwareTrackingToken.newInstance(10, Collections.singleton(9L));
     }
 

@@ -32,7 +32,7 @@ public class InputStreamToByteArrayConverterTest {
     private InputStreamToByteArrayConverter testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new InputStreamToByteArrayConverter();
     }
 

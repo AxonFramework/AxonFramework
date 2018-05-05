@@ -48,7 +48,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private Executor executor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(EventStore.class);
         executor = spy(new MockExecutor());

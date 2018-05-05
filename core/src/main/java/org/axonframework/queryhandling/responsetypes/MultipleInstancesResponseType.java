@@ -89,6 +89,12 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
                                                    + "the expected response type [" + expectedResponseType + "]");
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class responseMessagePayloadType() {
+        return List.class;
+    }
+
     private boolean isIterableOfExpectedType(Object response) {
         Class<?> responseType = response.getClass();
 

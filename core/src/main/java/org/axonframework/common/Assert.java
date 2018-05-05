@@ -84,6 +84,7 @@ public abstract class Assert {
      *
      * @param value           the value not to be {@code null}
      * @param messageSupplier Supplier of the exception message if the assertion fails
+     * @return the provided {@code value}
      */
     public static <T> T nonNull(T value, Supplier<String> messageSupplier) {
         isTrue(value != null, messageSupplier);

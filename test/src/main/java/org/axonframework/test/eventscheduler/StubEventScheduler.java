@@ -132,10 +132,10 @@ public class StubEventScheduler implements EventScheduler {
      * @return the first event scheduled
      */
     public EventMessage advanceToNextTrigger() {
-        if (scheduledEvents.isEmpty()) {
+        StubScheduleToken nextItem = scheduledEvents.pollFirst();
+        if (nextItem == null) {
             throw new NoSuchElementException("There are no scheduled events");
         }
-        StubScheduleToken nextItem = scheduledEvents.pollFirst();
         if (nextItem.getScheduleTime().isAfter(currentDateTime)) {
             currentDateTime = nextItem.getScheduleTime();
         }
@@ -148,9 +148,8 @@ public class StubEventScheduler implements EventScheduler {
      *
      * @param newDateTime   The time to advance the "current time" of the scheduler to
      * @param eventConsumer The function to invoke for each event to trigger
-     * @throws Exception when an exception is thrown by the consumer handling events
      */
-    public void advanceTimeTo(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
+    public void advanceTimeTo(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) {
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             eventConsumer.accept(advanceToNextTrigger());
         }
@@ -165,9 +164,8 @@ public class StubEventScheduler implements EventScheduler {
      *
      * @param duration      The amount of time to advance the "current time" of the scheduler with
      * @param eventConsumer The function to invoke for each event to trigger
-     * @throws Exception when an exception is thrown by the consumer handling events
      */
-    public void advanceTimeBy(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) throws Exception {
+    public void advanceTimeBy(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) {
         advanceTimeTo(currentDateTime.plus(duration), eventConsumer);
     }
 }
