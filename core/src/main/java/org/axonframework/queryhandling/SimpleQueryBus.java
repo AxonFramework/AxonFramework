@@ -53,6 +53,7 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
@@ -207,8 +208,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         return handlers.stream()
                        .map(handler -> {
                            try {
-                               long leftTimeout = deadline - System.currentTimeMillis();
-                               leftTimeout = leftTimeout < 0 ? 0 : leftTimeout;
+                               long leftTimeout = getRemainingOfDeadline(deadline);
                                QueryResponseMessage<R> response =
                                        interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery), handler)
                                                .get(leftTimeout, TimeUnit.MILLISECONDS);
