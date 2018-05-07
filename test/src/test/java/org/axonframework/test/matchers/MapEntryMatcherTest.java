@@ -101,7 +101,7 @@ public class MapEntryMatcherTest {
     }
 
     private Map<String, Object> newHashMap(Object... keysAndValues) {
-        if (!(keysAndValues.length % 2 == 0)) {
+        if (keysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException("Must has even number of items");
         }
         Map<String, Object> map = new HashMap<>();
