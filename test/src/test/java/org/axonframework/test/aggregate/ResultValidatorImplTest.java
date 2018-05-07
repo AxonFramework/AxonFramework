@@ -3,7 +3,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.List;
 
@@ -22,7 +22,8 @@ public class ResultValidatorImplTest {
     }
 
     private List<EventMessage<?>> actualEvents() {
-        return singletonList(asEventMessage(new MyEvent("aggregateId", 123)).andMetaData(singletonMap("key1", "value1")));
+        return singletonList(asEventMessage(new MyEvent("aggregateId", 123))
+                                     .andMetaData(singletonMap("key1", "value1")));
     }
 
     @Test(expected = AxonAssertionError.class)

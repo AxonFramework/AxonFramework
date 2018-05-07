@@ -48,12 +48,10 @@ public class MapEntryMatcherTest {
     public void testIncorrectValue() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "c", new ValueItem("CCCC"))));
 
-//        assertThat(matcher.getMissingEntries(), equalTo(newHashMap("c", new ValueItem("c"))));
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("c", new ValueItem("CCCC"))));
 
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "c", null)));
 
-//        assertThat(matcher.getMissingEntries(), equalTo(newHashMap("c", new ValueItem("c"))));
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("c", null)));
 
     }
@@ -62,12 +60,10 @@ public class MapEntryMatcherTest {
     public void testIncorrectKey() {
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), "CCCC", new ValueItem("c"))));
 
-//        assertThat(matcher.getMissingEntries(), equalTo(newHashMap("c", new ValueItem("c"))));
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap("CCCC", new ValueItem("c"))));
 
         assertFalse(matcher.matches(newHashMap("a", new ValueItem("a"), "b", new ValueItem("b"), null, new ValueItem("c"))));
 
-//        assertThat(matcher.getMissingEntries(), equalTo(newHashMap("c", new ValueItem("c"))));
         assertThat(matcher.getAdditionalEntries(), equalTo(newHashMap(null, new ValueItem("c"))));
 
     }

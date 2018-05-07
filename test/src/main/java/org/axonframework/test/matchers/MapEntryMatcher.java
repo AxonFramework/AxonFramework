@@ -15,6 +15,7 @@ import static org.axonframework.test.matchers.EqualsMatcher.equalTo;
  * keys-values pairs are equal to pairs of the expected instance.
  *
  * @author bliessens
+ * @since 3.3
  */
 public class MapEntryMatcher extends TypeSafeMatcher<Map<String, Object>> {
 
