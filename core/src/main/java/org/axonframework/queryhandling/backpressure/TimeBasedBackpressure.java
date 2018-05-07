@@ -20,6 +20,7 @@ import org.axonframework.queryhandling.UpdateHandler;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.PreDestroy;
 
 /**
  * Base class for all time based backpressure mechanisms.
@@ -66,6 +67,7 @@ public abstract class TimeBasedBackpressure<I, U> implements BackpressuredUpdate
     /**
      * Shuts down the executor service, there will be no more updates scheduled.
      */
+    @PreDestroy
     public void shutdown() {
         try {
             scheduledExecutorService.shutdown();
