@@ -40,8 +40,7 @@ public interface ResultValidator {
      * Expect the given set of events to have been published.
      * <p>
      * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
-     * means that all assigned values on the events' fields should have a proper equals implementation.<br/>
-     * When events implement {@link EventMessage} the metadata will be compared too.
+     * means that all assigned values on the events' fields should have a proper equals implementation.
      * <p>
      * Note that the event identifier is ignored in the comparison.
      *
@@ -49,6 +48,20 @@ public interface ResultValidator {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator expectEvents(Object... expectedEvents);
+
+    /**
+     * Expect the given set of events to have been published.
+     * <p>
+     * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
+     * means that all assigned values on the events' fields should have a proper equals implementation.<br/>
+     * Additionally the metadata will be compared too.
+     * <p>
+     * Note that the event identifier is ignored in the comparison.
+     *
+     * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator expectEvents(EventMessage... expectedEvents);
 
     /**
      * Expect no events to have been published from the command.

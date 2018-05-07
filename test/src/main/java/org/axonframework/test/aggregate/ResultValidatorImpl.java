@@ -68,13 +68,23 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
-            if (EventMessage.class.isInstance(expectedEvent)) {
-                EventMessage<?> expectedEventMessage = (EventMessage<?>) expectedEvent;
-                if (!verifyEventEquality(expectedEventMessage.getPayload(), actualEvent.getPayload())
-                        || !verifyMetaDataEquality(expectedEventMessage.getPayloadType(), expectedEventMessage.getMetaData(), actualEvent.getMetaData())) {
-                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
-                }
-            } else if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
+            if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectEvents(EventMessage... expectedEvents) {
+        this.expectEvents((Object[]) expectedEvents);
+
+        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+        for (EventMessage expectedEvent : expectedEvents) {
+            EventMessage actualEvent = iterator.next();
+            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
+                                        expectedEvent.getMetaData(),
+                                        actualEvent.getMetaData())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -178,12 +188,12 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         return true;
     }
 
-    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData, Map<String, Object> actualMetaData) {
+    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
+                                           Map<String, Object> actualMetaData) {
         MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
         if (!matcher.matches(actualMetaData)) {
             reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
         }
         return true;
     }
-
 }
