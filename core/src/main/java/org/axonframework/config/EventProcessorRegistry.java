@@ -30,6 +30,7 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.monitoring.MessageMonitor;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -84,6 +85,14 @@ public interface EventProcessorRegistry {
      */
     EventProcessorRegistry registerHandlerInterceptor(String processorName,
                                                       Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder);
+
+    /**
+     * Returns a list of interceptors for a processor with given {@code processorName}.
+     *
+     * @param processorName The name of the processor
+     * @return a list of interceptors for a processor with given {@code processorName}
+     */
+    List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName);
 
     /**
      * Allows for more fine-grained definition of the Event Processor to use for each group of Event Listeners. The
@@ -149,7 +158,7 @@ public interface EventProcessorRegistry {
     EventProcessorRegistry configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory);
 
     /**
-     * Register a TrackingProcessor using default configuration for the given {@code name}. Unlike
+     * Register a TrackingEventProcessor using default configuration for the given {@code name}. Unlike
      * {@link #usingTrackingProcessors()}, this method will not default all processors to tracking, but instead only
      * use tracking for event handler that have been assigned to the processor with given {@code name}.
      * <p>
@@ -163,9 +172,9 @@ public interface EventProcessorRegistry {
     }
 
     /**
-     * Registers a TrackingProcessor using the given {@code source} to read messages from.
+     * Registers a TrackingEventProcessor using the given {@code source} to read messages from.
      *
-     * @param name   The name of the TrackingProcessor
+     * @param name   The name of the TrackingEventProcessor
      * @param source The source of messages for this processor
      * @return event processor registry for chaining purposes
      */
@@ -178,8 +187,8 @@ public interface EventProcessorRegistry {
     }
 
     /**
-     * Registers a TrackingProcessor with the given {@code name}, reading from the Event Bus (or Store) from the main
-     * configuration and using the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines
+     * Registers a TrackingEventProcessor with the given {@code name}, reading from the Event Bus (or Store) from the
+     * main configuration and using the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines
      * the policy for events that need to be executed sequentially.
      *
      * @param name                   The name of the Tracking Processor
@@ -192,9 +201,9 @@ public interface EventProcessorRegistry {
     }
 
     /**
-     * Registers a TrackingProcessor with the given {@code name}, reading from the given {@code source} and using the
-     * given {@code processorConfiguration}. The given {@code sequencingPolicy} defines the policy for events that need
-     * to be executed sequentially.
+     * Registers a TrackingEventProcessor with the given {@code name}, reading from the given {@code source} and using
+     * the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines the policy for events that
+     * need to be executed sequentially.
      *
      * @param name                   The name of the Tracking Processor
      * @param source                 The source to read Events from
@@ -206,7 +215,7 @@ public interface EventProcessorRegistry {
                                                           Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration);
 
     /**
-     * Register a subscribing processor with given {@code name} that subscribes to the Event Bus.
+     * Register a subscribing event processor with given {@code name} that subscribes to the Event Bus.
      *
      * @param name The name of the Event Processor
      * @return event processor registry for chaining purposes
@@ -216,8 +225,9 @@ public interface EventProcessorRegistry {
     }
 
     /**
-     * Register a subscribing processor with given {@code name} that subscribes to the given {@code messageSource}.
-     * This allows the use of standard Subscribing Processors that listen to another source than the Event Bus.
+     * Register a subscribing event processor with given {@code name} that subscribes to the given {@code
+     * messageSource}. This allows the use of standard Subscribing Event Processors that listen to another source than
+     * the Event Bus.
      *
      * @param name          The name of the Event Processor
      * @param messageSource The source the processor should read from
@@ -285,7 +295,18 @@ public interface EventProcessorRegistry {
      * @param name The name of the event processor
      * @return optional whether event processor with given name exists
      */
-    Optional<EventProcessor> eventProcessor(String name);
+    @SuppressWarnings("unchecked")
+    default <T extends EventProcessor> Optional<T> eventProcessor(String name) {
+        Map<String, EventProcessor> eventProcessors = eventProcessors();
+        if (eventProcessors.containsKey(name)) {
+            return (Optional<T>) Optional.of(eventProcessors.get(name));
+        }
+        return Optional.empty();
+    }
+
+    default <T extends EventProcessor> Optional<T> eventProcessor(String name, Class<T> expectedType) {
+        return eventProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
+    }
 
     /**
      * Initializes the Event Processor Registry with global configuration. Initializing means that all event processor

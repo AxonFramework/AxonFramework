@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -135,13 +134,14 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
     }
 
     @Override
-    public Optional<EventProcessor> eventProcessor(String name) {
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
         Assert.state(configuration != null, () -> "Configuration is not initialized yet");
-        if (eventProcessors.containsKey(name)) {
-            return Optional.of(eventProcessors.get(name).get());
-        }
-        return Optional.empty();
+        return handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
+                                          .stream()
+                                          .map(hi -> hi.apply(configuration))
+                                          .collect(Collectors.toList());
     }
+
 
     @Override
     public EventProcessorRegistry registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder) {

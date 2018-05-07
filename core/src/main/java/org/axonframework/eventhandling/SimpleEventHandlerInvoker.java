@@ -38,8 +38,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
-    private final List<?> eventListenerDelegates;
-    private final List<EventListener> eventListeners;
+    private final List<?> eventListeners;
+    private final List<EventListener> wrappedEventListeners;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
 
@@ -103,12 +103,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     public SimpleEventHandlerInvoker(List<?> eventListeners,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this.eventListenerDelegates = eventListeners;
-        this.eventListeners = eventListeners.stream()
-                                            .map(listener -> listener instanceof EventListener ?
+        this.eventListeners = eventListeners;
+        this.wrappedEventListeners = eventListeners.stream()
+                                                   .map(listener -> listener instanceof EventListener ?
                                                     (EventListener) listener :
                                                     new AnnotationEventListenerAdapter(listener))
-                                            .collect(Collectors.toCollection(ArrayList::new));
+                                                   .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
@@ -148,12 +148,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                      ParameterResolverFactory parameterResolverFactory,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this.eventListenerDelegates = eventListeners;
-        this.eventListeners = eventListeners.stream()
-                                            .map(listener -> listener instanceof EventListener ?
+        this.eventListeners = eventListeners;
+        this.wrappedEventListeners = eventListeners.stream()
+                                                   .map(listener -> listener instanceof EventListener ?
                                                     (EventListener) listener :
                                                     new AnnotationEventListenerAdapter(listener, parameterResolverFactory))
-                                            .collect(toCollection(ArrayList::new));
+                                                   .collect(toCollection(ArrayList::new));
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
@@ -161,15 +161,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     /**
      * Gets the list of event listener delegates. This delegates are the end point of event handling.
      *
-     * @return the list ov event listener delegates
+     * @return the list of event listener delegates
      */
     public List<?> eventListeners() {
-        return Collections.unmodifiableList(eventListenerDelegates);
+        return Collections.unmodifiableList(eventListeners);
     }
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        for (EventListener listener : eventListeners) {
+        for (EventListener listener : wrappedEventListeners) {
             try {
                 listener.handle(message);
             } catch(Exception e) {
@@ -186,7 +186,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {
-        for (EventListener eventListener : eventListeners) {
+        for (EventListener eventListener : wrappedEventListeners) {
             if (eventListener.canHandle(eventMessage)) {
                 return true;
             }
@@ -196,7 +196,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean supportsReset() {
-        for (EventListener eventListener : eventListeners) {
+        for (EventListener eventListener : wrappedEventListeners) {
             if (!eventListener.supportsReset()) {
                 return false;
             }
@@ -206,7 +206,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void performReset() {
-        for (EventListener eventListener : eventListeners) {
+        for (EventListener eventListener : wrappedEventListeners) {
             eventListener.prepareReset();
         }
     }

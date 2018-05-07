@@ -124,7 +124,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @see EventHandlingConfiguration#registerHandlerInterceptor(BiFunction)
      * @see EventHandlingConfiguration#registerHandlerInterceptor(String, Function)
+     * @deprecated use {@link EventProcessorRegistry#interceptorsFor(String)} instead
      */
+    @Deprecated
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(Configuration configuration,
                                                                                     String processorName) {
         List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
@@ -603,7 +605,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * configuration hasn't been {@link #initialize(Configuration) initialized} yet.
      *
      * @return a read-only list of processors initialized in this configuration.
+     * @deprecated use {@link EventProcessorRegistry#eventProcessors()} instead
      */
+    @Deprecated
     public List<EventProcessor> getProcessors() {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
         return new ArrayList<>(config.eventProcessorRegistry().eventProcessors().values());
@@ -615,7 +619,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the processor to return
      * @return an Optional referencing the processor, if present.
+     * @deprecated use {@link EventProcessorRegistry#eventProcessor(String)} instead
      */
+    @Deprecated
     public <T extends EventProcessor> Optional<T> getProcessor(String name) {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
         //noinspection unchecked
@@ -631,9 +637,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param expectedType The type of processor expected
      * @param <T>          The type of processor expected
      * @return an Optional referencing the processor, if present and of expected type.
+     * @deprecated use {@link EventProcessorRegistry#eventProcessor(String, Class)} instead
      */
+    @Deprecated
     public <T extends EventProcessor> Optional<T> getProcessor(String name, Class<T> expectedType) {
-        return getProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
+        Assert.state(config != null, () -> "Configuration is not initialized yet");
+        return config.eventProcessorRegistry().eventProcessor(name, expectedType);
     }
 
     /**
