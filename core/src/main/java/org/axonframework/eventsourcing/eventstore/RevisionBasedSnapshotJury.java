@@ -3,6 +3,8 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializedType;
 
+import java.util.Optional;
+
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -15,7 +17,6 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class RevisionBasedSnapshotJury implements SnapshotJury {
 
-    private static final String NO_REVISION = "NO_REVISION";
     private final RevisionResolver resolver;
 
     /**
@@ -31,10 +32,10 @@ public class RevisionBasedSnapshotJury implements SnapshotJury {
     @Override
     public boolean decide(DomainEventData<?> snapshot) {
         final SerializedType payloadType = snapshot.getPayload().getType();
-        final String payloadRevision = getOrDefault(payloadType.getRevision(), NO_REVISION);
-        final String aggregateRevision;
+        final Optional<String> payloadRevision = Optional.ofNullable(payloadType.getRevision());
+        final Optional<String> aggregateRevision;
         try {
-            aggregateRevision = getOrDefault(resolver.revisionOf(Class.forName(payloadType.getName())), NO_REVISION);
+            aggregateRevision = Optional.ofNullable(resolver.revisionOf(Class.forName(payloadType.getName())));
         } catch (ClassNotFoundException e) {
             // Payload type is not found, just ignore the snapshot.
             return false;
