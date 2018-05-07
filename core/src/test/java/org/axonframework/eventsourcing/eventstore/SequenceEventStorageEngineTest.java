@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.*;
 
 public class SequenceEventStorageEngineTest {
@@ -28,7 +27,7 @@ public class SequenceEventStorageEngineTest {
     private SequenceEventStorageEngine testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         activeStorage = mock(EventStorageEngine.class);
         historicStorage = mock(EventStorageEngine.class);
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
@@ -39,7 +38,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testPublishEventsSendsToActiveStorageOnly() throws Exception {
+    public void testPublishEventsSendsToActiveStorageOnly() {
         List<EventMessage<Object>> events = singletonList(GenericEventMessage.asEventMessage("test"));
         testSubject.appendEvents(events);
 
@@ -48,7 +47,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testAggregateEventsAreReadFromHistoricThenActive() throws Exception {
+    public void testAggregateEventsAreReadFromHistoricThenActive() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
         when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1));
@@ -75,7 +74,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testAggregateEventsAreReadFromActiveWhenNoHistoricEventsAvailable() throws Exception {
+    public void testAggregateEventsAreReadFromActiveWhenNoHistoricEventsAvailable() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
         when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
@@ -98,7 +97,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testSnapshotsStoredInActiveStorage() throws Exception {
+    public void testSnapshotsStoredInActiveStorage() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
         testSubject.storeSnapshot(event1);
 
@@ -107,7 +106,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testEventStreamedFromHistoricThenActive() throws Exception {
+    public void testEventStreamedFromHistoricThenActive() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
         TrackingToken token1 = new GlobalSequenceTrackingToken(1);
@@ -131,7 +130,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testSnapshotReadFromActiveThenHistoric() throws Exception {
+    public void testSnapshotReadFromActiveThenHistoric() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
 
         when(historicStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event1));
@@ -147,7 +146,7 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
-    public void testSnapshotReadFromActive() throws Exception {
+    public void testSnapshotReadFromActive() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
 

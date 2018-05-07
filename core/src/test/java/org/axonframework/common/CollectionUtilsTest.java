@@ -18,11 +18,11 @@ package org.axonframework.common;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class CollectionUtilsTest {
@@ -32,9 +32,9 @@ public class CollectionUtilsTest {
         Collection<String> collectionFromElement = CollectionUtils.asCollection("item");
         Collection<String> collectionFromNull = CollectionUtils.asCollection(null);
         Collection<String> collectionFromArray = CollectionUtils.asCollection(new String[]{"item1", "item2"});
-        Collection<String> collectionFromCollection = CollectionUtils.asCollection(Arrays.asList("item1", "item2"));
+        Collection<String> collectionFromCollection = CollectionUtils.asCollection(asList("item1", "item2"));
         Collection<String> collectionFromSpliterator = CollectionUtils.asCollection(Spliterators.spliterator(new String[] {"item1", "item2"}, Spliterator.ORDERED));
-        Collection<String> collectionFromIterable = CollectionUtils.asCollection((Iterable) () -> Arrays.asList("item1", "item2").iterator());
+        Collection<String> collectionFromIterable = CollectionUtils.asCollection((Iterable) () -> asList("item1", "item2").iterator());
 
         assertEquals(1, collectionFromElement.size());
         assertEquals(0, collectionFromNull.size());
@@ -42,5 +42,16 @@ public class CollectionUtilsTest {
         assertEquals(2, collectionFromCollection.size());
         assertEquals(2, collectionFromSpliterator.size());
         assertEquals(2, collectionFromIterable.size());
+    }
+
+    @Test
+    public void testIntersect() {
+        TreeSet<Integer> result1 = CollectionUtils.intersect(asList(1, 2, 4, 5), asList(1, 3, 5, 7), TreeSet::new);
+        TreeSet<Integer> result2 = CollectionUtils.intersect(emptyList(), asList(1, 3, 5, 7), TreeSet::new);
+        List<Integer> result3 = CollectionUtils.intersect(singletonList(1), asList(1, 3, 5, 7), ArrayList::new);
+
+        assertEquals(new TreeSet<>(asList(1, 5)), result1);
+        assertEquals(new TreeSet<>(), result2);
+        assertEquals(singletonList(1), result3);
     }
 }

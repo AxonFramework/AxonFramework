@@ -16,11 +16,7 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.MonitorAwareCallback;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
@@ -28,6 +24,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
@@ -83,8 +80,8 @@ public class DistributedCommandBus implements CommandBus {
      * The {@code connector} performs the actual transport of the message to the destination node.
      * The {@code messageMonitor} is used to monitor incoming messages and their execution result.
      *
-     * @param commandRouter the service registry that discovers the network of worker nodes
-     * @param connector     the connector that connects the different command bus segments
+     * @param commandRouter  the service registry that discovers the network of worker nodes
+     * @param connector      the connector that connects the different command bus segments
      * @param messageMonitor the message monitor to notify of incoming messages and their execution result
      */
     public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector, MessageMonitor<? super CommandMessage<?>> messageMonitor) {
@@ -102,12 +99,12 @@ public class DistributedCommandBus implements CommandBus {
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
             Member destination = commandRouter.findDestination(interceptedCommand)
-                                              .orElseThrow(() -> new NoHandlerForCommandException(
-                                                      format("No node known to accept [%s]",
-                                                             interceptedCommand.getCommandName())));
+                    .orElseThrow(() -> new NoHandlerForCommandException(
+                            format("No node known to accept [%s]",
+                                   interceptedCommand.getCommandName())));
             try {
                 connector.send(destination, interceptedCommand);
-            } catch (Exception e) {
+            } catch(Exception e) {
                 destination.suspect();
                 throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
             }
@@ -126,17 +123,17 @@ public class DistributedCommandBus implements CommandBus {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Member destination = commandRouter.findDestination(interceptedCommand)
-                                          .orElseThrow(() -> {
-                                              NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                                                      format("No node known to accept [%s]",
-                                                             interceptedCommand.getCommandName()));
-                                              messageMonitorCallback.reportFailure(exception);
-                                              return exception;
-                                          });
+                .orElseThrow(() -> {
+                    NoHandlerForCommandException exception = new NoHandlerForCommandException(
+                            format("No node known to accept [%s]",
+                                   interceptedCommand.getCommandName()));
+                    messageMonitorCallback.reportFailure(exception);
+                    return exception;
+                });
         try {
             connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
                                                                                        messageMonitorCallback));
-        } catch (Exception e) {
+        } catch(Exception e) {
             messageMonitorCallback.reportFailure(e);
             destination.suspect();
             throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
@@ -204,5 +201,10 @@ public class DistributedCommandBus implements CommandBus {
     public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        return connector.registerHandlerInterceptor(handlerInterceptor);
     }
 }

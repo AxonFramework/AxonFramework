@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.3-SNAPSHOT</version>
     <modules>
         <module>core</module>
         <module>spring</module>
@@ -101,6 +101,8 @@
         <pax.url.version>2.5.2</pax.url.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jgroups.version>4.0.6.Final</jgroups.version>
+        <mockito.version>2.15.0</mockito.version>
+        <powermock.version>1.7.3</powermock.version>
     </properties>
 
     <dependencies>
@@ -253,23 +255,23 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
-                <version>1.10.19</version>
+                <version>${mockito.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>1.10.19</version>
+                <version>${mockito.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
-                <version>1.6.6</version>
+                <artifactId>powermock-api-mockito2</artifactId>
+                <version>${powermock.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4</artifactId>
-                <version>1.6.6</version>
+                <version>${powermock.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

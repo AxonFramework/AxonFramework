@@ -367,7 +367,7 @@ public class CommandGatewayFactory {
                 }
             }
         }
-        return extractors.toArray(new MetaDataExtractor[extractors.size()]);
+        return extractors.toArray(new MetaDataExtractor[0]);
     }
 
     /**

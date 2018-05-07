@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,6 @@ public abstract class ReflectionUtils {
         primitiveWrapperTypeMap.put(short.class, Short.class);
     }
 
-    private ReflectionUtils() {
-        // utility class
-    }
-
     /**
      * Returns the value of the given {@code field} in the given {@code object}. If necessary, the field is
      * made accessible, assuming the security manager allows it.
@@ -63,7 +59,7 @@ public abstract class ReflectionUtils {
         ensureAccessible(field);
         try {
             return (R) field.get(object);
-        } catch (IllegalArgumentException | IllegalAccessException ex) {
+        } catch(IllegalArgumentException | IllegalAccessException ex) {
             throw new IllegalStateException("Unable to access field for getting.", ex);
         }
     }
@@ -72,24 +68,24 @@ public abstract class ReflectionUtils {
      * Set the {@code field} of {@code object} to a certain {@code value}. If necessary, the field is made accessible,
      * assuming the security manager allows it.
      *
-     * @param field The field to set {@code value} on
+     * @param field  The field to set {@code value} on
      * @param object The object to set the {@code value} on {@code field}
-     * @param value The value to set on {@code field}
-     * @param <T> The type of the {@code value}
+     * @param value  The value to set on {@code field}
+     * @param <T>    The type of the {@code value}
      */
     public static <T> void setFieldValue(Field field, Object object, T value) {
         ensureAccessible(field);
         try {
             field.set(object, value);
-        } catch (IllegalAccessException ex) {
+        } catch(IllegalAccessException ex) {
             throw new IllegalStateException("Unable to access field for setting.", ex);
         }
     }
 
     /**
-     * Returns the class on which the method with name "{@code getter}" and parameters of type
+     * Returns the class on which the method with given {@code methodName} and parameters of type
      * {@code parameterTypes} is declared. The given {@code instanceClass} is the instance on which the
-     * method cn be called. If the method is not available on the given {@code instanceClass}, {@code null}
+     * method can be called. If the method is not available on the given {@code instanceClass}, {@code null}
      * is returned.
      *
      * @param instanceClass  The class on which to look for the method
@@ -100,7 +96,7 @@ public abstract class ReflectionUtils {
     public static Class<?> declaringClass(Class<?> instanceClass, String methodName, Class<?>... parameterTypes) {
         try {
             return instanceClass.getMethod(methodName, parameterTypes).getDeclaringClass();
-        } catch (NoSuchMethodException e) {
+        } catch(NoSuchMethodException e) {
             return null;
         }
     }
@@ -200,6 +196,24 @@ public abstract class ReflectionUtils {
     }
 
     /**
+     * Utility function which returns a {@link java.lang.reflect.Method} matching the given {@code methodName} and
+     * {@code parameterTypes} in the {@code clazz}.
+     *
+     * @param clazz          The {@link java.lang.Class} to return a method for
+     * @param methodName     A {@link java.lang.String} for the simple name of the method to return
+     * @param parameterTypes An array of type {@link java.lang.Class} for all the parameters which are part  of the
+     *                       {@link java.lang.reflect.Method} being searched for
+     * @return a {@link java.lang.reflect.Method} object from the given {@code clazz} matching the specified
+     * {@code methodName}
+     * @throws NoSuchMethodException if no {@link java.lang.reflect.Method} can be found matching the {@code methodName}
+     *                               in {@code clazz}
+     */
+    public static Method methodOf(Class<?> clazz, String methodName, Class<?>... parameterTypes)
+            throws NoSuchMethodException {
+        return clazz.getMethod(methodName, parameterTypes);
+    }
+
+    /**
      * Returns an {@link Iterable} of all the methods declared on the given class and its super classes. The iterator
      * will always return methods declared in a subtype before returning methods declared in a super type.
      *
@@ -260,11 +274,14 @@ public abstract class ReflectionUtils {
      */
     public static Optional<Class<?>> resolveGenericType(Field field, int genericTypeIndex) {
         final Type genericType = field.getGenericType();
-        if (genericType == null
-                || !(genericType instanceof ParameterizedType)
+        if (!(genericType instanceof ParameterizedType)
                 || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
             return Optional.empty();
         }
         return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
+    }
+
+    private ReflectionUtils() {
+        // utility class
     }
 }

@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
@@ -60,8 +61,10 @@ public class SpringBeanParameterResolverFactoryTest {
     private ParameterResolverFactory parameterResolver;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         counter.set(0);
+        assertTrue(applicationContext.getBean("duplicateResourceWithPrimary1", DuplicateResourceWithPrimary.class).isPrimary());
+        assertFalse(applicationContext.getBean("duplicateResourceWithPrimary2", DuplicateResourceWithPrimary.class).isPrimary());
     }
 
     @Test
@@ -96,9 +99,39 @@ public class SpringBeanParameterResolverFactoryTest {
 
     @Test
     @DirtiesContext
-    public void testMethodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() {
+    public void testMethodsAreProperlyInjected_DuplicateParameterTypeWithPrimary() throws Exception {
         // this should generate an error
-        assertNotNull(applicationContext.getBean("duplicateResourceHandlerWithPrimary"));
+        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandlerWithPrimary"), parameterResolver).handle(asEventMessage("Hi there"));
+
+        assertEquals(1, counter.get());
+    }
+
+    @Test
+    @DirtiesContext
+    public void testMethodsAreProperlyInjected_DuplicateParameterTypeWithQualifier() throws Exception {
+        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandlerWithQualifier"), parameterResolver).handle(asEventMessage("Hi there"));
+
+        assertEquals(1, counter.get());
+    }
+
+    @Test
+    @DirtiesContext
+    public void testMethodsAreProperlyInjected_QualifierPrecedesPrimary() throws Exception {
+        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandlerWithQualifierAndPrimary"), parameterResolver).handle(asEventMessage("Hi there"));
+
+        assertEquals(1, counter.get());
+    }
+
+    public interface DuplicateResourceWithPrimary {
+        boolean isPrimary();
+    }
+
+    public interface DuplicateResource {
+
+    }
+
+    public interface DuplicateResourceWithQualifier {
+
     }
 
     @AnnotationDriven
@@ -130,6 +163,18 @@ public class SpringBeanParameterResolverFactoryTest {
 
         @Lazy
         @Bean
+        public DuplicateResourceHandlerWithQualifier duplicateResourceHandlerWithQualifier() {
+            return new DuplicateResourceHandlerWithQualifier();
+        }
+
+        @Lazy
+        @Bean
+        public DuplicateResourceHandlerWithQualifierAndPrimary duplicateResourceHandlerWithQualifierAndPrimary() {
+            return new DuplicateResourceHandlerWithQualifierAndPrimary();
+        }
+
+        @Lazy
+        @Bean
         public PrototypeResourceHandler prototypeResourceHandler() {
             return new PrototypeResourceHandler();
         }
@@ -149,13 +194,23 @@ public class SpringBeanParameterResolverFactoryTest {
         @Primary
         @Bean
         public DuplicateResourceWithPrimary duplicateResourceWithPrimary1() {
-            return new DuplicateResourceWithPrimary() {
-            };
+            return () -> true;
         }
 
         @Bean
         public DuplicateResourceWithPrimary duplicateResourceWithPrimary2() {
-            return new DuplicateResourceWithPrimary() {
+            return () -> false;
+        }
+
+        @Bean
+        public DuplicateResourceWithQualifier duplicateResourceWithQualifier1() {
+            return new DuplicateResourceWithQualifier() {
+            };
+        }
+
+        @Bean("qualifiedByName")
+        public DuplicateResourceWithQualifier duplicateResourceWithQualifier2() {
+            return new DuplicateResourceWithQualifier() {
             };
         }
 
@@ -175,14 +230,6 @@ public class SpringBeanParameterResolverFactoryTest {
         public EventBus eventBus() {
             return new SimpleEventBus();
         }
-    }
-
-    public interface DuplicateResource {
-
-    }
-
-    public interface DuplicateResourceWithPrimary {
-
     }
 
     public interface PrototypeResource {
@@ -209,6 +256,23 @@ public class SpringBeanParameterResolverFactoryTest {
 
         @EventHandler
         public void handle(String message, DuplicateResourceWithPrimary dataSource) {
+            counter.incrementAndGet();
+        }
+    }
+
+    public static class DuplicateResourceHandlerWithQualifier {
+
+        @EventHandler
+        public void handle(String message, @Qualifier("qualifiedByName") DuplicateResourceWithQualifier resource) {
+            counter.incrementAndGet();
+        }
+    }
+
+    public static class DuplicateResourceHandlerWithQualifierAndPrimary {
+
+        @EventHandler
+        public void handle(String message, @Qualifier("duplicateResourceWithPrimary2") DuplicateResourceWithPrimary resource) {
+            assertFalse("expect the non-primary bean to be autowired here", resource.isPrimary());
             counter.incrementAndGet();
         }
     }

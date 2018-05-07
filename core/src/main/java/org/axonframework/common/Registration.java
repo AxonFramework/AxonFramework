@@ -31,7 +31,7 @@ public interface Registration extends AutoCloseable {
      * {@inheritDoc}
      */
     @Override
-    default void close() throws Exception {
+    default void close() {
         cancel();
     }
 

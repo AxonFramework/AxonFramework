@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.spring.config.annotation.StubAggregate;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -38,6 +36,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class SpringAggregateSnapshotterFactoryBeanTest {
 
@@ -49,7 +48,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private Executor executor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(EventStore.class);
         executor = spy(new MockExecutor());
@@ -157,19 +156,8 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     private DomainEventMessage eventSequence(final long sequenceNumber) {
-        return argThat(new BaseMatcher<DomainEventMessage>() {
-            @Override
-            public boolean matches(Object o) {
-                return o instanceof DomainEventMessage &&
-                        ((DomainEventMessage) o).getSequenceNumber() == sequenceNumber;
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("expected event with sequence number: ");
-                description.appendValue(sequenceNumber);
-            }
-        });
+        return argThat(o -> o != null &&
+                o.getSequenceNumber() == sequenceNumber);
     }
 
     public static class MockExecutor implements Executor {

@@ -34,7 +34,8 @@ import java.util.stream.Stream;
  * @author Rene de Waele
  */
 public abstract class AbstractEventStore extends AbstractEventBus implements EventStore {
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractEventStore.class);
 
     private final EventStorageEngine storageEngine;
 

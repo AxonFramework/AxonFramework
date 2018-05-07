@@ -32,7 +32,7 @@ public class PackageRoutingKeyResolverTest {
     private PackageRoutingKeyResolver testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new PackageRoutingKeyResolver();
     }
 

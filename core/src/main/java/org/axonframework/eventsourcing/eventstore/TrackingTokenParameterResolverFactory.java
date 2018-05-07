@@ -17,6 +17,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -44,7 +45,14 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
         @Override
         public TrackingToken resolveParameterValue(Message<?> message) {
-            return ((TrackedEventMessage) message).trackingToken();
+            return unwrap(((TrackedEventMessage) message).trackingToken());
+        }
+
+        private TrackingToken unwrap(TrackingToken trackingToken) {
+            if (trackingToken instanceof WrappedToken) {
+                return unwrap(((WrappedToken) trackingToken).unwrap());
+            }
+            return trackingToken;
         }
 
         @Override

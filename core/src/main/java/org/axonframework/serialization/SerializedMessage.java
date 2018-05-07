@@ -34,6 +34,8 @@ import java.util.Map;
  */
 public class SerializedMessage<T> extends AbstractMessage<T> implements SerializationAware {
 
+    private static final long serialVersionUID = 8079093289710229594L;
+
     private final LazyDeserializingObject<MetaData> metaData;
     private final LazyDeserializingObject<T> payload;
 

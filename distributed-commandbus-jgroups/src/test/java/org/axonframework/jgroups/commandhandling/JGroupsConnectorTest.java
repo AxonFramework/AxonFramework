@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import org.jgroups.stack.IpAddress;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +47,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class JGroupsConnectorTest {
 
@@ -101,12 +101,7 @@ public class JGroupsConnectorTest {
         futureCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
         //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
-        verify(mockCommandBus1).dispatch(argThat(new ArgumentMatcher<CommandMessage<Object>>() {
-            @Override
-            public boolean matches(Object argument) {
-                return argument instanceof CommandMessage && ((CommandMessage) argument).getPayload().equals(mockPayload);
-            }
-        }), any(CommandCallback.class));
+        verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)), any(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -228,7 +223,7 @@ public class JGroupsConnectorTest {
 
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()
-                            .map(i -> i.getConnectionEndpoint(Address.class).orElse(null)).anyMatch(a -> a.equals(new IpAddress(12345))));
+                              .map(i -> i.getConnectionEndpoint(Address.class).orElse(null)).anyMatch(a -> a.equals(new IpAddress(12345))));
     }
 
     @SuppressWarnings("unchecked")
@@ -266,7 +261,7 @@ public class JGroupsConnectorTest {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > 300) {
                 assertEquals("Connectors did not synchronize within 15 seconds.", connector1.getConsistentHash(),
-                        connector2.getConsistentHash());
+                             connector2.getConsistentHash());
             }
             Thread.sleep(50);
         }
@@ -423,26 +418,26 @@ public class JGroupsConnectorTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handle(CommandMessage<?> message) {
             counter.incrementAndGet();
             return "The Reply!";
         }
     }
 
-        public static void assertWithin(int time, TimeUnit unit, Runnable assertion) {
-            long now = System.currentTimeMillis();
-            long deadline = now + unit.toMillis(time);
-            do {
-                try {
-                    assertion.run();
-                    break;
-                } catch (AssertionError e) {
-                    if (now >= deadline) {
-                        throw e;
-                    }
+    public static void assertWithin(int time, TimeUnit unit, Runnable assertion) {
+        long now = System.currentTimeMillis();
+        long deadline = now + unit.toMillis(time);
+        do {
+            try {
+                assertion.run();
+                break;
+            } catch (AssertionError e) {
+                if (now >= deadline) {
+                    throw e;
                 }
-                now = System.currentTimeMillis();
-            } while (true);
-        }
-
+            }
+            now = System.currentTimeMillis();
+        } while (true);
     }
+
+}

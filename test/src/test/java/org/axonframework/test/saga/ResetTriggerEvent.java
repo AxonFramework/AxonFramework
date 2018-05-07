@@ -21,7 +21,7 @@ package org.axonframework.test.saga;
  */
 public class ResetTriggerEvent {
 
-    private String identifier;
+    private final String identifier;
 
     public ResetTriggerEvent(String identifier) {
         this.identifier = identifier;

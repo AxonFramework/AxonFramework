@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 public class DateTimeUtilsTest {
 
     @Test
-    public void testFormattedDateAlwaysContainsMillis() throws Exception {
+    public void testFormattedDateAlwaysContainsMillis() {
         Instant now = Instant.now();
         Instant nowAtZeroMillis = now.minusNanos(now.get(ChronoField.NANO_OF_SECOND));
 

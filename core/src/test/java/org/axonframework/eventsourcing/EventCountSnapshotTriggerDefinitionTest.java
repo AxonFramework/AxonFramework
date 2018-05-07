@@ -46,7 +46,7 @@ public class EventCountSnapshotTriggerDefinitionTest {
     private UnitOfWork<?> unitOfWork;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }

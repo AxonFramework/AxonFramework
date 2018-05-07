@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +27,8 @@ import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 
 public class DefaultConflictResolverTest {
@@ -34,7 +37,7 @@ public class DefaultConflictResolverTest {
     private DefaultConflictResolver subject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         eventStore.publish(IntStream.range(0, 10).mapToObj(
                 sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber)).collect(toList()));
@@ -69,5 +72,23 @@ public class DefaultConflictResolverTest {
         subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
         subject.detectConflicts(Conflicts.payloadMatching(Long.class::isInstance));
         subject.ensureConflictsResolved();
+    }
+
+    @Test
+    public void testConflictingEventsAreAvailableInExceptionBuilder() {
+        subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
+        try {
+            subject.detectConflicts(Conflicts.payloadTypeOf(String.class),
+                                    c -> new ConflictingModificationException("" + c.unexpectedEvents().size()));
+            fail("Expected exception");
+        } catch (ConflictingModificationException e) {
+            assertEquals("4", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testConflictResolverProvidingNullExceptionIgnoresConflict() {
+        subject = new DefaultConflictResolver(eventStore, AGGREGATE, 5, 9);
+        subject.detectConflicts(Conflicts.payloadTypeOf(String.class), c -> null);
     }
 }

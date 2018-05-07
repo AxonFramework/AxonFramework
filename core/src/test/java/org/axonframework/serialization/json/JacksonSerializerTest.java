@@ -41,7 +41,7 @@ public class JacksonSerializerTest {
     private Instant time;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new JacksonSerializer();
         time = Instant.now();
     }
@@ -54,7 +54,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_StringFormat() throws Exception {
+    public void testSerializeAndDeserializeObject_StringFormat() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -66,7 +66,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_ByteArrayFormat() throws Exception {
+    public void testSerializeAndDeserializeObject_ByteArrayFormat() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -79,7 +79,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeAndDeserializeObject_JsonNodeFormat() throws Exception {
+    public void testSerializeAndDeserializeObject_JsonNodeFormat() {
         SimpleSerializableType toSerialize = new SimpleSerializableType("first", time,
                                                                         new SimpleSerializableType("nested"));
 
@@ -158,7 +158,7 @@ public class JacksonSerializerTest {
     }
 
     @Test
-    public void testSerializeMetaDataWithComplexObjects() throws Exception {
+    public void testSerializeMetaDataWithComplexObjects() {
         // typing must be enabled for this (which we expect end-users to do
         testSubject.getObjectMapper().enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type");
 
@@ -167,6 +167,14 @@ public class JacksonSerializerTest {
         MetaData actual = testSubject.deserialize(serialized);
 
         assertEquals(metaData, actual);
+    }
+
+    @Test
+    public void testDeserializeNullValue() {
+        SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        assertNull(testSubject.deserialize(serializedNull));
+        assertNull(testSubject.deserialize(serializedNullString));
     }
 
     public static class ComplexObject {

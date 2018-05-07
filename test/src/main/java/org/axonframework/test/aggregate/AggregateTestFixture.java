@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,8 +161,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<CommandMessage<?>> commandHanderInterceptor) {
-        commandHandlerInterceptors.add(commandHanderInterceptor);
+            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor) {
+        commandHandlerInterceptors.add(commandHandlerInterceptor);
         return this;
     }
 
@@ -266,7 +266,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<T>(aggregateType),
+            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
                                                              eventStore, parameterResolverFactory,
                                                              NoSnapshotTriggerDefinition.INSTANCE));
         }
@@ -316,7 +316,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             } catch (Exception e) {
                 throw new FixtureExecutionException("An Exception occurred while reconstructing the Aggregate from " +
                                                             "given and published events. This may be an indication " +
-                                                            "that the aggregate cannot be recreated from it events.",
+                                                            "that the aggregate cannot be recreated from its events.",
                                                     e);
             } finally {
                 // rollback to prevent changes bing pushed to event store
@@ -552,7 +552,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             return () -> true;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
-import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +40,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class AbstractSnapshotterTest {
 
@@ -74,8 +74,7 @@ public class AbstractSnapshotterTest {
     }
 
     @Test
-    public void testScheduleSnapshot_ConcurrencyExceptionIsSilenced()
-            throws NoSuchFieldException, IllegalAccessException {
+    public void testScheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
@@ -124,18 +123,9 @@ public class AbstractSnapshotterTest {
         inOrder.verify(mockTransaction).commit();
     }
 
-    private Matcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
-        return new ArgumentMatcher<DomainEventMessage>() {
-            @Override
-            public boolean matches(Object argument) {
-                if (!(argument instanceof DomainEventMessage)) {
-                    return false;
-                }
-                DomainEventMessage event = (DomainEventMessage) argument;
-                return aggregateIdentifier.equals(event.getAggregateIdentifier())
-                        && event.getSequenceNumber() == i;
-            }
-        };
+    private ArgumentMatcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
+        return x -> aggregateIdentifier.equals(x.getAggregateIdentifier())
+                && x.getSequenceNumber() == i;
     }
 
     private long getLastIdentifierFrom(DomainEventStream eventStream) {

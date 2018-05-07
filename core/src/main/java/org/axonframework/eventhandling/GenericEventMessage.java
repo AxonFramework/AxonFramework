@@ -33,6 +33,7 @@ import java.util.function.Supplier;
  * @param <T> The type of payload contained in this Message
  */
 public class GenericEventMessage<T> extends MessageDecorator<T> implements EventMessage<T> {
+    private static final long serialVersionUID = -8296350547944518544L;
     private final Supplier<Instant> timestampSupplier;
 
     /**
@@ -137,5 +138,17 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
             return this;
         }
         return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestampSupplier);
+    }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", timestamp='")
+                .append(getTimestamp().toString());
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericEventMessage";
     }
 }

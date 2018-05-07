@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
- *
+ * Copyright (c) 2010-2018. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,10 +16,7 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
@@ -46,7 +42,7 @@ public class EventHandlingConfigurationTest {
     private Configurer configurer;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         configurer = DefaultConfigurer.defaultConfiguration();
     }
 
@@ -104,9 +100,11 @@ public class EventHandlingConfigurationTest {
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("java.util.concurrent2").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
+        assertTrue(processors.get("java.util.concurrent2").getInterceptors()
+                             .get(0) instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
-        assertTrue(processors.get("java.util.concurrent").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
+        assertTrue(processors.get("java.util.concurrent").getInterceptors()
+                             .get(0) instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("java.lang").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
         assertEquals(1, config.getModules().size());
@@ -143,10 +141,7 @@ public class EventHandlingConfigurationTest {
     public void testAssignInterceptors() {
         EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .usingTrackingProcessors()
-                .registerEventProcessor("default", (config, name, handlers) -> {
-                    StubEventProcessor processor = new StubEventProcessor(name, handlers);
-                    return processor;
-                });
+                .registerEventProcessor("default", (config, name, handlers) -> new StubEventProcessor(name, handlers));
         module.byDefaultAssignTo("default");
         module.assignHandlersMatching("concurrent", 1, "concurrent"::equals);
         module.registerEventHandler(c -> new Object()); // --> java.lang
@@ -160,7 +155,7 @@ public class EventHandlingConfigurationTest {
         Configuration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
-        assertEquals(3, ((StubEventProcessor)module.getProcessor("default").get()).getInterceptors().size());
+        assertEquals(3, ((StubEventProcessor) module.getProcessor("default").get()).getInterceptors().size());
         assertEquals(1, config.getModules().size());
     }
 
@@ -168,32 +163,17 @@ public class EventHandlingConfigurationTest {
     public void testConfigureMonitor() throws Exception {
         MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
         MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
-
-        // Use InMemoryEventStorageEngine so tracking processors don't miss events
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
         CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-        EventHandlingConfiguration module = new EventHandlingConfiguration()
-                .registerSubscribingEventProcessor("subscribing")
-                .registerTrackingProcessor("tracking")
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
                 .configureMessageMonitor("subscribing", c -> subscribingMonitor)
-                .configureMessageMonitor("tracking", c -> trackingMonitor)
-                .assignHandlersMatching("subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
-                .assignHandlersMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
-                .registerEventHandler(c -> new SubscribingEventHandler())
-                .registerEventHandler(c -> new TrackingEventHandler())
-                .registerTokenStore("tracking", c-> new InMemoryTokenStore() {
-                    @Override
-                    public int[] fetchSegments(String processorName) {
-                        tokenStoreInvocation.countDown();
-                        return super.fetchSegments(processorName);
-                    }
-                });
+                .configureMessageMonitor("tracking", c -> trackingMonitor);
         configurer.registerModule(module);
         Configuration config = configurer.start();
 
         try {
             config.eventBus().publish(new GenericEventMessage<Object>("test"));
-            
+
             assertEquals(1, subscribingMonitor.getMessages().size());
             assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
             assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
@@ -202,6 +182,139 @@ public class EventHandlingConfigurationTest {
         }
     }
 
+    @Test
+    public void testConfigureDefaultListenerInvocationErrorHandler() throws Exception {
+        GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
+
+        int expectedListenerInvocationErrorHandlerCalls = 2;
+
+        StubErrorHandler errorHandler = new StubErrorHandler(2);
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
+                .configureListenerInvocationErrorHandler(config -> errorHandler);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        //noinspection Duplicates
+        try {
+            config.eventBus().publish(errorThrowingEventMessage);
+            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+
+            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
+            assertEquals(expectedListenerInvocationErrorHandlerCalls, errorHandler.getErrorCounter());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    public void testConfigureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
+        GenericEventMessage<Boolean> errorThrowingEventMessage = new GenericEventMessage<>(true);
+
+        int expectedErrorHandlerCalls = 1;
+
+        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
+        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
+                .configureListenerInvocationErrorHandler("subscribing", config -> subscribingErrorHandler)
+                .configureListenerInvocationErrorHandler("tracking", config -> trackingErrorHandler);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        //noinspection Duplicates
+        try {
+            config.eventBus().publish(errorThrowingEventMessage);
+
+            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
+
+            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
+            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    public void testConfigureDefaultErrorHandler() throws Exception {
+        GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
+
+        int expectedErrorHandlerCalls = 2;
+
+        StubErrorHandler errorHandler = new StubErrorHandler(2);
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
+                .configureErrorHandler(config -> errorHandler);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        //noinspection Duplicates
+        try {
+            config.eventBus().publish(failingEventMessage);
+            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+
+            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
+            assertEquals(expectedErrorHandlerCalls, errorHandler.getErrorCounter());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    @Test
+    public void testConfigureErrorHandlerPerEventProcessor() throws Exception {
+        GenericEventMessage<Integer> failingEventMessage = new GenericEventMessage<>(1000);
+
+        int expectedErrorHandlerCalls = 1;
+
+        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
+        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
+        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
+
+        EventHandlingConfiguration module = buildComplexEventHandlingConfiguration(tokenStoreInvocation)
+                .configureErrorHandler("subscribing", config -> subscribingErrorHandler)
+                .configureErrorHandler("tracking", config -> trackingErrorHandler);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        //noinspection Duplicates
+        try {
+            config.eventBus().publish(failingEventMessage);
+
+            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
+
+            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
+            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
+            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
+        } finally {
+            config.shutdown();
+        }
+    }
+
+    private EventHandlingConfiguration buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
+        // Use InMemoryEventStorageEngine so tracking processors don't miss events
+        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
+        return new EventHandlingConfiguration()
+                .registerSubscribingEventProcessor("subscribing")
+                .registerTrackingProcessor("tracking")
+                .assignHandlersMatching("subscribing",
+                                        eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class))
+                .assignHandlersMatching("tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class))
+                .registerEventHandler(c -> new SubscribingEventHandler())
+                .registerEventHandler(c -> new TrackingEventHandler())
+                .registerTokenStore("tracking", c -> new InMemoryTokenStore() {
+                    @Override
+                    public int[] fetchSegments(String processorName) {
+                        tokenStoreInvocation.countDown();
+                        return super.fetchSegments(processorName);
+                    }
+                });
+    }
+
+    @SuppressWarnings("WeakerAccess")
     private static class StubEventProcessor implements EventProcessor {
 
         private final String name;
@@ -243,25 +356,42 @@ public class EventHandlingConfigurationTest {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     @ProcessingGroup("processingGroup")
     public static class AnnotatedBean {
+
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class AnnotatedBeanSubclass extends AnnotatedBean {
 
     }
 
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+
         @Override
-        public Object handle(UnitOfWork<? extends EventMessage<?>> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+        public Object handle(UnitOfWork<? extends EventMessage<?>> unitOfWork, InterceptorChain interceptorChain)
+                throws Exception {
             return interceptorChain.proceed();
         }
     }
 
+    @SuppressWarnings("unused")
     @ProcessingGroup("subscribing")
     private class SubscribingEventHandler {
+
+        @EventHandler
+        public void handle(Integer event, UnitOfWork unitOfWork) {
+            unitOfWork.rollback(new IllegalStateException());
+        }
+
+        @EventHandler
+        public void handle(Boolean event) {
+            throw new IllegalStateException();
+        }
     }
 
+    @SuppressWarnings("unused")
     @ProcessingGroup("tracking")
     private class TrackingEventHandler {
 
@@ -269,6 +399,46 @@ public class EventHandlingConfigurationTest {
         public void handle(String event) {
 
         }
+
+        @EventHandler
+        public void handle(Integer event, UnitOfWork unitOfWork) {
+            unitOfWork.rollback(new IllegalStateException());
+        }
+
+        @EventHandler
+        public void handle(Boolean event) {
+            throw new IllegalStateException();
+        }
     }
 
+    private class StubErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
+
+        private long errorCounter = 0;
+        private final CountDownLatch latch;
+
+        private StubErrorHandler(int count) {
+            this.latch = new CountDownLatch(count);
+        }
+
+        @Override
+        public void handleError(ErrorContext errorContext) {
+            errorCounter++;
+            latch.countDown();
+        }
+
+        @Override
+        public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
+            errorCounter++;
+            latch.countDown();
+        }
+
+        @SuppressWarnings("WeakerAccess")
+        public long getErrorCounter() {
+            return errorCounter;
+        }
+
+        public boolean await(long timeout, TimeUnit timeUnit) throws InterruptedException {
+            return latch.await(timeout, timeUnit);
+        }
+    }
 }

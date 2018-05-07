@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public class LoggingInterceptorTest {
@@ -70,9 +71,9 @@ public class LoggingInterceptorTest {
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubMessage]"),
-                                         any(Throwable.class));
+                                         any());
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubMessage]"),
-                                                                           contains("[null]")), any(Throwable.class));
+                                                                           contains("[null]")), any());
         verifyNoMoreInteractions(mockLogger);
     }
 
@@ -85,9 +86,9 @@ public class LoggingInterceptorTest {
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubMessage]"),
-                                         any(Throwable.class));
+                                         any());
         verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubMessage]"),
-                                                                           contains("[null]")), any(Throwable.class));
+                                                                           contains("[null]")), any());
         verifyNoMoreInteractions(mockLogger);
     }
 
@@ -99,9 +100,9 @@ public class LoggingInterceptorTest {
         testSubject.handle(unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
-        verify(mockLogger).log(any(String.class), eq(Level.INFO),
+        verify(mockLogger).log(anyString(), eq(Level.INFO),
                                and(contains("[StubMessage]"), contains("[StubResponse]")),
-                               any(Throwable.class));
+                               any());
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})

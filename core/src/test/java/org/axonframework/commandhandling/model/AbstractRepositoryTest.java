@@ -33,7 +33,7 @@ public class AbstractRepositoryTest {
     private AbstractRepository testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(JpaAggregate.class) {
 
             @Override
@@ -60,7 +60,7 @@ public class AbstractRepositoryTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }

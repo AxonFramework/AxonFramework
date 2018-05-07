@@ -31,6 +31,7 @@ import java.util.Map;
  * @since 2.0
  */
 public class GenericCommandMessage<T> extends MessageDecorator<T> implements CommandMessage<T> {
+    private static final long serialVersionUID = 3282528436414939876L;
     private final String commandName;
 
     /**
@@ -94,5 +95,18 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
     @Override
     public GenericCommandMessage<T> andMetaData(Map<String, ?> metaData) {
         return new GenericCommandMessage<>(getDelegate().andMetaData(metaData), commandName);
+    }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", commandName='")
+                     .append(getCommandName())
+                     .append('\'');
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericCommandMessage";
     }
 }

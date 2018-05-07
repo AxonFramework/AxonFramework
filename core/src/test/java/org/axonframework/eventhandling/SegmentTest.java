@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,8 +27,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -52,7 +55,7 @@ public class SegmentTest {
 
         // segment 0, mask 0;
         final long count = identifiers.stream().filter(Segment.ROOT_SEGMENT::matches).count();
-        assertThat(count, is((long)identifiers.size()));
+        assertThat(count, is((long) identifiers.size()));
 
         final Segment[] splitSegment = Segment.ROOT_SEGMENT.split();
 
@@ -125,10 +128,28 @@ public class SegmentTest {
 
     @Test
     public void testSegmentSplitNTimes() {
+        {
+            //
+            final List<Segment> segmentMasks = Segment.splitBalanced(Segment.ROOT_SEGMENT, 5);
+            assertThat(segmentMasks.size(), is(6));
+            assertThat(segmentMasks.get(5), equalTo(new Segment(5, 0x7)));
+            assertThat(segmentMasks.get(0), equalTo(new Segment(0, 0x7)));
+            assertThat(segmentMasks.get(1), equalTo(new Segment(1, 0x7)));
+            assertThat(segmentMasks.get(2), equalTo(new Segment(2, 0x3)));
+            assertThat(segmentMasks.get(3), equalTo(new Segment(3, 0x3)));
+            assertThat(segmentMasks.get(4), equalTo(new Segment(4, 0x7)));
+        }
+    }
 
-        final List<Segment> splits = Segment.splitBalanced(Segment.ROOT_SEGMENT, 10);
-
-        assertThat(splits.size(), is(11));
+    @Test
+    public void testSplitFromRootSegmentAlwaysYieldsSequentialSegmentIds() {
+        for (int i = 0; i < 500; i++) {
+            List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, i);
+            assertEquals(i + 1, segments.size());
+            for (int j = 0; j < i; j++) {
+                assertEquals(j, segments.get(j).getSegmentId());
+            }
+        }
     }
 
     @Test
@@ -242,6 +263,19 @@ public class SegmentTest {
             assertThat(segmentMasks[3].getMask(), is(0x7));
             assertThat(segmentMasks[4].getMask(), is(0x7));
         }
+
+        {
+            //
+            final int[] segments = {0, 1, 2, 3, 4, 5};
+            final Segment[] segmentMasks = Segment.computeSegments(segments);
+            assertThat(segmentMasks.length, is(6));
+            assertThat(segmentMasks[0], equalTo(new Segment(0, 0x7)));
+            assertThat(segmentMasks[1], equalTo(new Segment(1, 0x7)));
+            assertThat(segmentMasks[2], equalTo(new Segment(2, 0x3)));
+            assertThat(segmentMasks[3], equalTo(new Segment(3, 0x3)));
+            assertThat(segmentMasks[4], equalTo(new Segment(4, 0x7)));
+            assertThat(segmentMasks[5], equalTo(new Segment(5, 0x7)));
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -262,6 +296,16 @@ public class SegmentTest {
         assertThat(splitSegment[1].getMask(), is(Integer.MAX_VALUE));
     }
 
+    @Test
+    public void testItemsAssignedToOnlyOneSegment() {
+        for (int j = 0; j < 10; j++) {
+            List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, ThreadLocalRandom.current().nextInt(50) + 1);
+            for (int i = 0; i < 100_000; i++) {
+                String value = UUID.randomUUID().toString();
+                assertEquals(1, segments.stream().filter(s -> s.matches(value)).count());
+            }
+        }
+    }
 
     private List<DomainEventMessage> produceEvents() {
         final ArrayList<DomainEventMessage> events = new ArrayList<>();
@@ -276,6 +320,6 @@ public class SegmentTest {
 
     private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
         return new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
-                new Object(), MetaData.emptyInstance());
+                                               new Object(), MetaData.emptyInstance());
     }
 }

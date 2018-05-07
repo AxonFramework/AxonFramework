@@ -32,6 +32,8 @@ import org.axonframework.serialization.Serializer;
  */
 public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
 
+    private static final long serialVersionUID = 3969631713723578521L;
+
     private final Message<T> delegate;
     private transient volatile SerializedObjectHolder serializedObjectHolder;
 
@@ -95,5 +97,48 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
      */
     protected Message<T> getDelegate() {
         return delegate;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder()
+                .append(describeType())
+                .append("{");
+        describeTo(sb);
+        return sb.append("}")
+                 .toString();
+    }
+
+    /**
+     * Describe the message specific properties to the given {@code stringBuilder}. Subclasses should override this
+     * method, calling the super method and appending their own properties to the end (or beginning).
+     * <p>
+     * As convention, String values should be enclosed in single quotes, Objects in curly brackets and numeric values
+     * may be appended without enclosing. All properties should be preceded by a comma when appending, or finish with a
+     * comma when prefixing values.
+     *
+     * @param stringBuilder the builder to append data to
+     */
+    protected void describeTo(StringBuilder stringBuilder) {
+        stringBuilder.append("payload={")
+                     .append(getPayload())
+                     .append('}')
+                     .append(", metadata={")
+                     .append(getMetaData())
+                     .append('}')
+                     .append(", messageIdentifier='")
+                     .append(getIdentifier())
+                     .append('\'');
+    }
+
+    /**
+     * Describe the type of message, used in {@link #toString()}.
+     * <p>
+     * Defaults to the simple class name of the actual instance.
+     *
+     * @return the type of message
+     */
+    protected String describeType() {
+        return getClass().getSimpleName();
     }
 }

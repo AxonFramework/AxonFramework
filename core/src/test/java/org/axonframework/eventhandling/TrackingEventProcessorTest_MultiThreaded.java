@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 
 /**
@@ -61,7 +59,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     private EventListener mockListener;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
@@ -86,17 +84,21 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
     }
 
     @Test
-    public void testProcessorWorkerCount() throws InterruptedException {
+    public void testProcessorWorkerCount() {
         testSubject.start();
         // give it some time to split segments from the store and submit to executor service.
-        Thread.sleep(200);
-        assertThat(testSubject.activeProcessorThreads(), is(2));
+        assertWithin(1, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
+        assertThat(testSubject.processingStatus().size(), is(2));
+        assertTrue(testSubject.processingStatus().containsKey(0));
+        assertTrue(testSubject.processingStatus().containsKey(1));
+        assertWithin(1, SECONDS, () -> assertTrue(testSubject.processingStatus().get(0).isCaughtUp()));
+        assertWithin(1, SECONDS, () -> assertTrue(testSubject.processingStatus().get(1).isCaughtUp()));
     }
 
     @Test
@@ -112,8 +114,21 @@ public class TrackingEventProcessorTest_MultiThreaded {
         assertArrayEquals(new int[]{0, 1, 2, 3}, actual);
     }
 
+    // Reproduce issue #508 (https://github.com/AxonFramework/AxonFramework/issues/508)
     @Test
-    public void testProcessorWorkerCountWithMultipleSegments() throws InterruptedException {
+    public void testProcessorInitializesAndUsesSameTokens() {
+        configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(6)
+                                                              .andInitialSegmentsCount(6));
+        testSubject.start();
+
+        assertWithin(5, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(6)));
+        int[] actual = tokenStore.fetchSegments(testSubject.getName());
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5}, actual);
+    }
+
+    @Test
+    public void testProcessorWorkerCountWithMultipleSegments() {
 
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
@@ -121,6 +136,11 @@ public class TrackingEventProcessorTest_MultiThreaded {
         testSubject.start();
 
         assertWithin(20, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
+        assertThat(testSubject.processingStatus().size(), is(2));
+        assertTrue(testSubject.processingStatus().containsKey(0));
+        assertTrue(testSubject.processingStatus().containsKey(1));
+        assertWithin(10, MILLISECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1L), testSubject.processingStatus().get(0).getTrackingToken()));
+        assertWithin(10, MILLISECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(2L), testSubject.processingStatus().get(1).getTrackingToken()));
     }
 
     /**
@@ -281,7 +301,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         assertWithin(1, SECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1), tokenStore.fetchToken("test", 0)));
         assertWithin(1, SECONDS, () -> assertEquals(new GlobalSequenceTrackingToken(1), tokenStore.fetchToken("test", 1)));
 
-        testSubject.pause();
+        testSubject.shutDown();
         // The thread may block for 1 second waiting for a next event to pop up
         while (testSubject.activeProcessorThreads() > 0) {
             Thread.sleep(1);
@@ -367,7 +387,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         }
 
         void assertEventsAddUpTo(int eventCount) {
-            assertThat(ackedEventsByThreadMap.values().stream().mapToLong(Collection::size).sum(), is(new Integer(eventCount).longValue()));
+            assertThat(ackedEventsByThreadMap.values().stream().mapToLong(Collection::size).sum(), is(Integer.valueOf(eventCount).longValue()));
         }
     }
 

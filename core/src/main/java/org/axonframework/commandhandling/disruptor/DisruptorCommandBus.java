@@ -116,7 +116,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
-    private EventStore backUpEventStore;
+    private final EventStore eventStore;
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
 
@@ -168,7 +168,7 @@ public class DisruptorCommandBus implements CommandBus {
     @Deprecated
     @SuppressWarnings({"unchecked", "DeprecatedIsStillUsed"})
     public DisruptorCommandBus(EventStore eventStore, DisruptorConfiguration configuration) {
-        this.backUpEventStore = eventStore;
+        this.eventStore = eventStore;
         Assert.notNull(configuration, () -> "configuration may not be null");
         Executor executor = configuration.getExecutor();
         if (executor == null) {
@@ -178,9 +178,9 @@ public class DisruptorCommandBus implements CommandBus {
             executorService = null;
         }
         rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
-        invokerInterceptors = new ArrayList<>(configuration.getInvokerInterceptors());
+        invokerInterceptors = new CopyOnWriteArrayList<>(configuration.getInvokerInterceptors());
         publisherInterceptors = new ArrayList<>(configuration.getPublisherInterceptors());
-        dispatchInterceptors = new ArrayList<>(configuration.getDispatchInterceptors());
+        dispatchInterceptors = new CopyOnWriteArrayList<>(configuration.getDispatchInterceptors());
         TransactionManager transactionManager = configuration.getTransactionManager();
         disruptor = new Disruptor<>(CommandHandlingEntry::new, configuration.getBufferSize(), executor,
                                     configuration.getProducerType(), configuration.getWaitStrategy());
@@ -419,7 +419,7 @@ public class DisruptorCommandBus implements CommandBus {
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
-        return createRepository(backUpEventStore, aggregateFactory, snapshotTriggerDefinition, parameterResolverFactory);
+        return createRepository(eventStore, aggregateFactory, snapshotTriggerDefinition, parameterResolverFactory);
     }
 
     /**
@@ -473,6 +473,18 @@ public class DisruptorCommandBus implements CommandBus {
         if (executorService != null) {
             executorService.shutdown();
         }
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        invokerInterceptors.add(handlerInterceptor);
+        return () -> invokerInterceptors.remove(handlerInterceptor);
     }
 
     private static class FailureLoggingCommandCallback implements CommandCallback<Object, Object> {

@@ -34,7 +34,7 @@ public class TransactionManagerFactoryBean implements FactoryBean<TransactionMan
     private TransactionManager transactionManager;
 
     @Override
-    public TransactionManager getObject() throws Exception {
+    public TransactionManager getObject() {
         return transactionManager;
     }
 

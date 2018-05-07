@@ -35,7 +35,7 @@ public class SerializationAwareTest {
     private GenericEventMessage<String> testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new GenericEventMessage<>("payload", Collections.singletonMap("key", "value"));
     }
 

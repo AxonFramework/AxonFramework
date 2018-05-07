@@ -22,18 +22,18 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.runners.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Optional;
 
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -54,7 +54,7 @@ public class DistributedCommandBusTest {
     private Member mockMember;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector, mockMessageMonitor);
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
@@ -170,12 +170,12 @@ public class DistributedCommandBusTest {
 
     private static class StubCommandBusConnector implements CommandBusConnector {
         @Override
-        public <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception {
+        public <C> void send(Member destination, CommandMessage<? extends C> command) {
             //Do nothing
         }
 
         @Override
-        public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception {
+        public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) {
             if ("fail".equals(command.getPayload())) {
                 callback.onFailure(command, new Exception("Failing"));
             } else {
@@ -185,6 +185,11 @@ public class DistributedCommandBusTest {
 
         @Override
         public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+            return null;
+        }
+
+        @Override
+        public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
             return null;
         }
     }

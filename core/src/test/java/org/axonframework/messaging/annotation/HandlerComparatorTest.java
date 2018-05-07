@@ -35,7 +35,7 @@ public class HandlerComparatorTest {
     private Comparator<MessageHandlingMember<?>> testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         stringHandler = new StubMessageHandlingMember(String.class, 0);
         objectHandler = new StubMessageHandlingMember(Object.class, 0);
         longHandler = new StubMessageHandlingMember(Long.class, 0);
@@ -45,7 +45,7 @@ public class HandlerComparatorTest {
     }
 
     @Test
-    public void testSubclassesBeforeSuperclasses() throws Exception {
+    public void testSubclassesBeforeSuperclasses() {
         assertTrue("String should appear before Object", testSubject.compare(stringHandler, objectHandler) < 0);
         assertTrue("String should appear before Object", testSubject.compare(objectHandler, stringHandler) > 0);
 
@@ -60,7 +60,7 @@ public class HandlerComparatorTest {
     }
 
     @Test
-    public void testHandlersIsEqualWithItself() throws Exception {
+    public void testHandlersIsEqualWithItself() {
         assertEquals(0, testSubject.compare(stringHandler, stringHandler));
         assertEquals(0, testSubject.compare(objectHandler, objectHandler));
         assertEquals(0, testSubject.compare(longHandler, longHandler));
@@ -83,7 +83,7 @@ public class HandlerComparatorTest {
     }
 
     @Test
-    public void testNotInSameHierarchyUsesPriorityBasedEvaluation() throws Exception {
+    public void testNotInSameHierarchyUsesPriorityBasedEvaluation() {
         assertTrue("Number should appear before String based on priority", testSubject.compare(numberHandler, stringHandler) < 0);
         assertTrue("Number should appear before String based on priority", testSubject.compare(stringHandler, numberHandler) > 0);
     }
@@ -114,7 +114,7 @@ public class HandlerComparatorTest {
         }
 
         @Override
-        public Object handle(Message<?> message, Object target) throws Exception {
+        public Object handle(Message<?> message, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

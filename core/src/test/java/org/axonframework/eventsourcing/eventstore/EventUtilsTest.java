@@ -37,12 +37,12 @@ public class EventUtilsTest {
     private Serializer serializer;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         serializer = mock(Serializer.class);
     }
 
     @Test
-    public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntry() throws Exception {
+    public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntry() {
         DomainEventStream eventStream = EventUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
                                                   NoOpEventUpcaster.INSTANCE, false);
@@ -52,8 +52,7 @@ public class EventUtilsTest {
     }
 
     @Test
-    public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterIgnoringLastEntry() throws
-            Exception {
+    public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterIgnoringLastEntry() {
         DomainEventStream eventStream = EventUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1), createEntry(2), createEntry(3)), serializer,
                                                   new EventUpcasterChain(e -> e
@@ -66,8 +65,7 @@ public class EventUtilsTest {
     }
 
     @Test
-    public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterUpcastingToEmptyStream() throws
-            Exception {
+    public void testDomainEventStream_lastSequenceNumberEqualToLastProcessedEntryAfterUpcastingToEmptyStream() {
         DomainEventStream eventStream = EventUtils
                 .upcastAndDeserializeDomainEvents(Stream.of(createEntry(1)), serializer,
                                                   new EventUpcasterChain(s -> s.filter(e -> false)), false);

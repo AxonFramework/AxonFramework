@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.function.Consumer;
@@ -83,4 +84,14 @@ public interface Saga<T> extends EventListener {
      * @return the TrackingToken of the last processed EventMessage, if present.
      */
     TrackingToken trackingToken();
+
+    @Override
+    default boolean supportsReset() {
+        return false;
+    }
+
+    @Override
+    default void prepareReset() {
+        throw new ResetNotSupportedException("Sagas do not support reset");
+    }
 }

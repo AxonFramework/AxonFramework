@@ -95,7 +95,7 @@ public class MongoSagaStoreTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         try {
             context.getBean(Mongo.class);
             context.getBean(MongoEventStorageEngine.class);

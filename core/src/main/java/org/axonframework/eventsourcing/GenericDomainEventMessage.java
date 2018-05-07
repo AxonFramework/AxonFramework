@@ -32,6 +32,7 @@ import java.util.function.Supplier;
  */
 public class GenericDomainEventMessage<T> extends GenericEventMessage<T> implements DomainEventMessage<T> {
 
+    private static final long serialVersionUID = -1222000190977419970L;
     private final String type;
     private final String aggregateIdentifier;
     private final long sequenceNumber;
@@ -148,5 +149,21 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
         }
         return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
                                                getDelegate().andMetaData(metaData), getTimestamp());
+    }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append('\'').append(", aggregateType='")
+                     .append(getType()).append('\'')
+                     .append(", aggregateIdentifier='")
+                     .append(getAggregateIdentifier()).append('\'')
+                     .append(", sequenceNumber=")
+                     .append(getSequenceNumber());
+    }
+
+    @Override
+    protected String describeType() {
+        return "GenericDomainEventMessage";
     }
 }

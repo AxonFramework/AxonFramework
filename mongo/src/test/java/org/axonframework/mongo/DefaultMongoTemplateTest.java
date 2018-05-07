@@ -23,7 +23,6 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class DefaultMongoTemplateTest {
@@ -44,7 +43,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testTrackingTokenDefaultValues() throws Exception {
+    public void testTrackingTokenDefaultValues() {
         testSubject = new DefaultMongoTemplate(mockMongo);
 
         verify(mockMongo).getDatabase("axonframework");
@@ -54,7 +53,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testTrackingTokenCustomValues() throws Exception {
+    public void testTrackingTokenCustomValues() {
         testSubject = new DefaultMongoTemplate(mockMongo, "customDatabaseName").withTrackingTokenCollection("customCollectionName");
 
         verify(mockMongo).getDatabase("customDatabaseName");
@@ -63,7 +62,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testSagasDefaultValues() throws Exception {
+    public void testSagasDefaultValues() {
         testSubject = new DefaultMongoTemplate(mockMongo);
 
         testSubject.sagaCollection();
@@ -71,7 +70,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testCustomProvidedNames() throws Exception {
+    public void testCustomProvidedNames() {
         testSubject = new DefaultMongoTemplate(mockMongo).withSagasCollection("customsagas");
 
         testSubject.sagaCollection();
@@ -79,7 +78,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testDomainEvents() throws Exception {
+    public void testDomainEvents() {
         testSubject = new DefaultMongoTemplate(mockMongo);
 
         testSubject.eventCollection();
@@ -87,7 +86,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testSnapshotEvents() throws Exception {
+    public void testSnapshotEvents() {
         testSubject = new DefaultMongoTemplate(mockMongo);
 
         testSubject.snapshotCollection();
@@ -96,7 +95,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testEventsCollectionWithCustomProvidedNames() throws Exception {
+    public void testEventsCollectionWithCustomProvidedNames() {
         testSubject = new DefaultMongoTemplate(mockMongo)
                 .withDomainEventsCollection("customevents")
                 .withSnapshotCollection("customsnapshots");
@@ -106,7 +105,7 @@ public class DefaultMongoTemplateTest {
     }
 
     @Test
-    public void testSnapshotsCollectionWithCustomProvidedNames() throws Exception {
+    public void testSnapshotsCollectionWithCustomProvidedNames() {
         testSubject = new DefaultMongoTemplate(mockMongo)
                 .withDomainEventsCollection("customevents")
                 .withSnapshotCollection("customsnapshots");

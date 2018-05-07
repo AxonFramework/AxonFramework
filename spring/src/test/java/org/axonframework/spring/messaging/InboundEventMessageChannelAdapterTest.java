@@ -51,7 +51,7 @@ public class InboundEventMessageChannelAdapterTest {
 
         testSubject.handleMessage(new GenericMessage<Object>(event));
 
-        verify(mockEventBus).publish(Matchers.<EventMessage<?>>anyList());
+        verify(mockEventBus).publish(Matchers.anyList());
     }
 
 }

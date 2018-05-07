@@ -104,6 +104,6 @@ public class EventValidator implements EventListener {
         for (Object event : expected) {
             matchers.add(equalTo(event, fieldFilter));
         }
-        return matchers.toArray(new Matcher[matchers.size()]);
+        return matchers.toArray(new Matcher[0]);
     }
 }

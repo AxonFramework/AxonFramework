@@ -26,26 +26,36 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * @author Rene de Waele
- */
-public class EventStoreTestUtils {
+public abstract class EventStoreTestUtils {
 
-    public static final String PAYLOAD = "payload", AGGREGATE = "aggregate", TYPE = "type";
-    public static final MetaData METADATA = MetaData.emptyInstance();
+    public static final String PAYLOAD = "payload";
+    public static final String AGGREGATE = "aggregate";
+    private static final String TYPE = "type";
+    private static final MetaData METADATA = MetaData.emptyInstance();
+
+    private EventStoreTestUtils() {
+    }
 
     public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
-        return IntStream.range(0, numberOfEvents).mapToObj(
-                sequenceNumber -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), AGGREGATE,
-                                              sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
-                .collect(Collectors.toList());
+        return IntStream.range(0, numberOfEvents)
+                        .mapToObj(sequenceNumber -> createEvent(TYPE,
+                                                                IdentifierFactory.getInstance().generateIdentifier(),
+                                                                AGGREGATE,
+                                                                sequenceNumber,
+                                                                PAYLOAD + sequenceNumber,
+                                                                METADATA))
+                        .collect(Collectors.toList());
     }
 
     public static List<DomainEventMessage<?>> createUUIDEvents(int numberOfEvents) {
         return IntStream.range(0, numberOfEvents).mapToObj(
-                sequenceNumber -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), UUID.randomUUID().toString(),
-                        sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
-                .collect(Collectors.toList());
+                sequenceNumber -> createEvent(TYPE,
+                                              IdentifierFactory.getInstance().generateIdentifier(),
+                                              UUID.randomUUID().toString(),
+                                              sequenceNumber,
+                                              PAYLOAD + sequenceNumber,
+                                              METADATA))
+                        .collect(Collectors.toList());
     }
 
     public static DomainEventMessage<String> createEvent() {
@@ -61,20 +71,30 @@ public class EventStoreTestUtils {
     }
 
     public static DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber, String payload) {
-        return createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), aggregateId, sequenceNumber,
-                           payload, METADATA);
+        return createEvent(TYPE,
+                           IdentifierFactory.getInstance().generateIdentifier(),
+                           aggregateId,
+                           sequenceNumber,
+                           payload,
+                           METADATA);
     }
 
     public static DomainEventMessage<String> createEvent(String eventId, String aggregateId, long sequenceNumber) {
         return createEvent(TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
     }
 
-    public static DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId,
-                                                         long sequenceNumber, String payload, MetaData metaData) {
-        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber, payload, metaData, eventId, GenericDomainEventMessage.clock.instant());
+    public static DomainEventMessage<String> createEvent(String type,
+                                                         String eventId,
+                                                         String aggregateId,
+                                                         long sequenceNumber,
+                                                         String payload,
+                                                         MetaData metaData) {
+        return new GenericDomainEventMessage<>(type,
+                                               aggregateId,
+                                               sequenceNumber,
+                                               payload,
+                                               metaData,
+                                               eventId,
+                                               GenericDomainEventMessage.clock.instant());
     }
-
-    private EventStoreTestUtils() {
-    }
-
 }

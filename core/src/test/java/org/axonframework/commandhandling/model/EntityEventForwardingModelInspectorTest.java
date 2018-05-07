@@ -36,7 +36,7 @@ public class EntityEventForwardingModelInspectorTest {
     private static final String ENTITY_ID = "entityId";
 
     @Test
-    public void testExpectEventsToBeRoutedToNoEntityForForwardModeSetToNone() throws Exception {
+    public void testExpectEventsToBeRoutedToNoEntityForForwardModeSetToNone() {
         AggregateModel<SomeNoneEventForwardingEntityAggregate> inspector =
                 inspectAggregate(SomeNoneEventForwardingEntityAggregate.class);
 
@@ -53,7 +53,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnly() throws Exception {
+    public void testExpectEventsToBeRoutedToRightEntityOnly() {
         AggregateModel<SomeEventForwardingEntityAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityAggregate.class);
 
@@ -71,7 +71,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKey() throws Exception {
+    public void testExpectEventsToBeRoutedToRightEntityOnlyWithSpecificRoutingKey() {
         AggregateModel<SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey> inspector =
                 inspectAggregate(SomeEventForwardingEntityAggregateWithSpecificEventRoutingKey.class);
 
@@ -90,7 +90,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollection() throws Exception {
+    public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityCollection() {
         AggregateModel<SomeEventForwardingEntityCollectionAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityCollectionAggregate.class);
 
@@ -110,7 +110,7 @@ public class EntityEventForwardingModelInspectorTest {
     }
 
     @Test
-    public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityMap() throws Exception {
+    public void testExpectEventsToBeRoutedToRightEntityOnlyForEntityMap() {
         AggregateModel<SomeEventForwardingEntityMapAggregate> inspector =
                 inspectAggregate(SomeEventForwardingEntityMapAggregate.class);
 

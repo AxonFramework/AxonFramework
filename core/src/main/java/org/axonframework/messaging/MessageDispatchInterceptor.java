@@ -48,6 +48,6 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
      * @param messages  The Messages to pre-process
      * @return a function that processes messages based on their position in the list
      */
-    BiFunction<Integer, T, T> handle(List<T> messages);
+    BiFunction<Integer, T, T> handle(List<? extends T> messages);
 
 }
