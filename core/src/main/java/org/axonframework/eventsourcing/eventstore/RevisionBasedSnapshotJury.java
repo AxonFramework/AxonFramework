@@ -5,8 +5,6 @@ import org.axonframework.serialization.SerializedType;
 
 import java.util.Optional;
 
-import static org.axonframework.common.ObjectUtils.getOrDefault;
-
 /**
  * A simple {@link org.axonframework.serialization.RevisionResolver} based implementation of
  * SnapshotJury. Decides whether to use a snapshot based on the current aggregate revision and the current snapshot
