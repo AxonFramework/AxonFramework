@@ -304,6 +304,16 @@ public interface EventProcessorRegistry {
         return Optional.empty();
     }
 
+    /**
+     * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}. This
+     * method also returns an empty optional if the Processor was configured, but it hasn't been assigned any Event
+     * Handlers.
+     *
+     * @param name         The name of the processor to return
+     * @param expectedType The type of processor expected
+     * @param <T>          The type of processor expected
+     * @return an Optional referencing the processor, if present and of expected type.
+     */
     default <T extends EventProcessor> Optional<T> eventProcessor(String name, Class<T> expectedType) {
         return eventProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
     }
