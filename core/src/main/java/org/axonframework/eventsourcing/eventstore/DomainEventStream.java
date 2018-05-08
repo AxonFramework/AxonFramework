@@ -16,6 +16,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -139,6 +140,22 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
         return new ConcatenatingDomainEventStream(a, b);
     }
 
+    /**
+     * Filters a DomainEventStream. In the resulting stream events from stream
+     * {@code a} will be filtered by {@ filter}.
+     *
+     * @param a
+     *            The stream
+     * @param filter
+     *            The filter to apply to the stream
+     * @return A filtered version of stream a
+     */
+    static DomainEventStream filter(DomainEventStream a, Predicate<DomainEventMessage<?>> filter) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(filter);
+        return new FilteringDomainEventStream(a, filter);
+    }
+    
     /**
      * Returns {@code true} if the stream has more events, meaning that a call to {@code next()} will not
      * result in an exception. If a call to this method returns {@code false}, there is no guarantee about the
