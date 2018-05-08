@@ -204,7 +204,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
-        DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
+        DomainEventStream eventStream = DomainEventStream.filter(eventStore.readEvents(aggregateIdentifier),
+                e -> e.getType().equals(aggregateModel().type()));
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         if (!eventStream.hasNext()) {
             throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found in the event store");
