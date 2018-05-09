@@ -16,9 +16,11 @@
 
 package org.axonframework.eventhandling.saga.metamodel;
 
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +49,14 @@ public interface SagaModel<T> {
      * @return event message handlers for this event
      */
     List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> event);
+
+    /**
+     * Returns a list of deadline handlers that can handle the given {@code deadlineMessage}.
+     *
+     * @param deadlineMessage The deadline message to be handled
+     * @return deadline handlers for this deadline
+     */
+    List<MessageHandlingMember<T>> findDeadlineHandlers(DeadlineMessage<?> deadlineMessage);
 
     /**
      * Indicates whether the Saga described by this model has a handler for the given {@code eventMessage}
