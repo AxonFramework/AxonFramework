@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -493,6 +494,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
+    }
+
+    @Override
+    public void handle(DeadlineMessage<?> deadlineMessage) {
+
     }
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {

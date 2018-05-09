@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.lock.Lock;
+import org.axonframework.deadline.DeadlineMessage;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -100,5 +101,10 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     @Override
     public Class<? extends AR> rootType() {
         return wrappedAggregate.rootType();
+    }
+
+    @Override
+    public void handle(DeadlineMessage<?> deadlineMessage) {
+        wrappedAggregate.handle(deadlineMessage);
     }
 }

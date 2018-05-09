@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.deadline.DeadlineAware;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -34,7 +35,7 @@ import java.util.function.Function;
  *
  * @param <T> The aggregate root type
  */
-public interface Aggregate<T> {
+public interface Aggregate<T> extends DeadlineAware {
 
     /**
      * Get the String representation of the aggregate's type. This defaults to the simple name of the {@link

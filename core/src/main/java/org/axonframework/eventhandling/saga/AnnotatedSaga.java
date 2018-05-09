@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
@@ -169,4 +170,8 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         associationValues.remove(property);
     }
 
+    @Override
+    public void handle(DeadlineMessage<?> deadlineMessage) {
+
+    }
 }
