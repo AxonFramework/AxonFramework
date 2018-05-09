@@ -27,9 +27,13 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DefaultDeadlineTargetLoader;
+import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
+import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -123,6 +127,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
     }
 
     /**
@@ -250,6 +255,17 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ResourceInjector defaultResourceInjector(Configuration config) {
         return new ConfigurationResourceInjector(config);
+    }
+
+    /**
+     * Provides the default {@link DeadlineManager} implementation. Subclasses may override this method to provide their
+     * own default.
+     *
+     * @param config The configuration that supplies registered components.
+     * @return The default DeadlineManager to use
+     */
+    protected DeadlineManager defaultDeadlineManager(Configuration config) {
+        return new SimpleDeadlineManager(new DefaultDeadlineTargetLoader(config::repository, config::sagaRepository));
     }
 
     /**
@@ -447,6 +463,16 @@ public class DefaultConfigurer implements Configurer {
                         "Aggregate " + aggregateType.getSimpleName() + " has not been configured");
             }
             return aggregateConfigurer.repository();
+        }
+
+        @Override
+        public <T> SagaRepository<T> sagaRepository(Class<T> sagaType) {
+            return DefaultConfigurer.this.modules.stream().filter(m -> m instanceof SagaConfiguration)
+                                                 .map(m -> (SagaConfiguration) m)
+                                                 .filter(sc -> sc.getSagaType().equals(sagaType))
+                                                 .map((Function<SagaConfiguration, SagaRepository<T>>) SagaConfiguration::getSagaRepository)
+                                                 .findAny()
+                                                 .orElseThrow(() -> new IllegalArgumentException("Saga " + sagaType.getSimpleName() + " has not been configured"));
         }
 
         @Override

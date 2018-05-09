@@ -16,11 +16,14 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -121,6 +124,43 @@ public abstract class AggregateLifecycle {
     }
 
     /**
+     * Schedules a deadline on this Aggregate. When {@code triggerDateTime} passes and deadline was not cancelled
+     * ({@link #cancelDeadline(ScheduleToken)}), the {@link org.axonframework.deadline.annotation.DeadlineHandler} with
+     * type {@code D} will be invoked on this Aggregate.
+     *
+     * @param triggerDateTime The moment to trigger the deadline
+     * @param deadlineInfo    The details about the deadline
+     * @param <D>             The type of the deadline info
+     * @return token to use when cancelling the schedule
+     */
+    public static <D> ScheduleToken scheduleDeadline(Instant triggerDateTime, D deadlineInfo) {
+        return getInstance().doScheduleDeadline(triggerDateTime, deadlineInfo);
+    }
+
+    /**
+     * Schedules a deadline on this Aggregate. When {@code triggerDuration} elapses and deadline was not cancelled
+     * ({@link #cancelDeadline(ScheduleToken)}, the {@link org.axonframework.deadline.annotation.DeadlineHandler} with
+     * type {@code D} will be invoked on this Aggregate.
+     *
+     * @param triggerDuration The amount of time to wait before the deadline
+     * @param deadlineInfo    The details about the deadline
+     * @param <D>             The type of the deadline info
+     * @return token to use when cancelling the schedule
+     */
+    public static <D> ScheduleToken scheduleDeadline(Duration triggerDuration, D deadlineInfo) {
+        return getInstance().doScheduleDeadline(triggerDuration, deadlineInfo);
+    }
+
+    /**
+     * Cancels already scheduled deadline. If the deadline is already handled, this method does nothing.
+     *
+     * @param scheduleToken The token used to schedule a deadline
+     */
+    public static void cancelDeadline(ScheduleToken scheduleToken) {
+        getInstance().doCancelDeadline(scheduleToken);
+    }
+
+    /**
      * Returns the {@link AggregateLifecycle} for the current aggregate. If none was defined this method will throw
      * an exception.
      *
@@ -187,6 +227,38 @@ public abstract class AggregateLifecycle {
      * @see ApplyMore
      */
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
+
+    /**
+     * {@link AggregateLifecycle} instance method to schedule a deadline. When {@code triggerDateTime} passes and
+     * deadline was not cancelled ({@link #cancelDeadline(ScheduleToken)}), the {@link
+     * org.axonframework.deadline.annotation.DeadlineHandler} with type {@code D} will be invoked on this Aggregate.
+     *
+     * @param triggerDateTime The moment to trigger the deadline
+     * @param deadlineInfo    The details about the deadline
+     * @param <D>             The type of the deadline info
+     * @return token to use when cancelling the schedule
+     */
+    protected abstract <D> ScheduleToken doScheduleDeadline(Instant triggerDateTime, D deadlineInfo);
+
+    /**
+     * {@link AggregateLifecycle} instance method to schedule a deadline. When {@code triggerDuration} elapses and
+     * deadline was not cancelled ({@link #cancelDeadline(ScheduleToken)}, the {@link
+     * org.axonframework.deadline.annotation.DeadlineHandler} with type {@code D} will be invoked on this Aggregate.
+     *
+     * @param triggerDuration The amount of time to wait before the deadline
+     * @param deadlineInfo    The details about the deadline
+     * @param <D>             The type of the deadline info
+     * @return token to use when cancelling the schedule
+     */
+    protected abstract <D> ScheduleToken doScheduleDeadline(Duration triggerDuration, D deadlineInfo);
+
+    /**
+     * {@link AggregateLifecycle} instance method to cancel a deadline. If the deadline is already handled, this method
+     * does nothing.
+     *
+     * @param scheduleToken The token used to schedule a deadline
+     */
+    protected abstract void doCancelDeadline(ScheduleToken scheduleToken);
 
     /**
      * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be

@@ -27,6 +27,7 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -86,7 +87,7 @@ import static java.lang.String.format;
  * <p>
  * This CommandBus implementation has special requirements for the Repositories being used during Command Processing.
  * Therefore, the Repository instance to use in the Command Handler must be created using {@link
- * #createRepository(EventStore, AggregateFactory, RepositoryProvider)}.
+ * #createRepository(EventStore, AggregateFactory, RepositoryProvider, DeadlineManager)}.
  * Using another repository will most likely result in undefined behavior.
  * <p>
  * The DisruptorCommandBus must have access to at least 3 threads, two of which are permanently used while the
@@ -295,11 +296,11 @@ public class DisruptorCommandBus implements CommandBus {
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
      *
-     * @param aggregateFactory   The factory creating uninitialized instances of the Aggregate
-     * @param <T>                The type of aggregate to create the repository for
+     * @param aggregateFactory The factory creating uninitialized instances of the Aggregate
+     * @param <T>              The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      *
-     * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, RepositoryProvider)} instead
+     * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, RepositoryProvider, DeadlineManager)} instead
      */
     @Deprecated
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
@@ -332,12 +333,17 @@ public class DisruptorCommandBus implements CommandBus {
      * @param eventStore         The Event Store to retrieve and persist events
      * @param aggregateFactory   The factory creating uninitialized instances of the Aggregate
      * @param repositoryProvider Provides repositories for specified aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param <T>                The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
-                                              RepositoryProvider repositoryProvider) {
-        return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider);
+                                              RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                NoSnapshotTriggerDefinition.INSTANCE,
+                                repositoryProvider,
+                                deadlineManager);
     }
 
     /**
@@ -356,7 +362,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      *
      * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, SnapshotTriggerDefinition,
-     * RepositoryProvider)} instead.
+     * RepositoryProvider, DeadlineManager)} instead.
      */
     @Deprecated
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
@@ -403,17 +409,19 @@ public class DisruptorCommandBus implements CommandBus {
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for creating snapshots
      * @param repositoryProvider        Provides repositories for specified aggregate types
+     * @param deadlineManager           Manager used for scheduling deadlines on this Aggregate
      * @param <T>                       The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                              RepositoryProvider repositoryProvider) {
+                                              RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
         return createRepository(eventStore,
                                 aggregateFactory,
                                 snapshotTriggerDefinition,
                                 ClasspathParameterResolverFactory.forClass(aggregateFactory.getAggregateType()),
-                                repositoryProvider);
+                                repositoryProvider,
+                                deadlineManager);
     }
 
     /**
@@ -428,7 +436,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      *
      * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, ParameterResolverFactory,
-     * RepositoryProvider)} instead.
+     * RepositoryProvider, DeadlineManager)} instead.
      */
     @Deprecated
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
@@ -466,14 +474,19 @@ public class DisruptorCommandBus implements CommandBus {
      * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                 with
      * @param repositoryProvider       Provides specific for given aggregate types
+     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory,
-                                              RepositoryProvider repositoryProvider) {
-        return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE,
-                                parameterResolverFactory, repositoryProvider);
+                                              RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                NoSnapshotTriggerDefinition.INSTANCE,
+                                parameterResolverFactory,
+                                repositoryProvider,
+                                deadlineManager);
     }
 
     /**
@@ -489,7 +502,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      *
      * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, SnapshotTriggerDefinition,
-     * ParameterResolverFactory, RepositoryProvider)} instead
+     * ParameterResolverFactory, RepositoryProvider, DeadlineManager)} instead
      */
     @Deprecated
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
@@ -533,6 +546,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                  with
+     * @param deadlineManager           Manager used for scheduling deadlines on this Aggregate
      * @param repositoryProvider        Provides repositories for specific aggregate types
      * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
@@ -540,10 +554,11 @@ public class DisruptorCommandBus implements CommandBus {
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
-                                              RepositoryProvider repositoryProvider) {
+                                              RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
             invoker.createRepository(eventStore,
                                      repositoryProvider,
+                                     deadlineManager,
                                      aggregateFactory,
                                      snapshotTriggerDefinition,
                                      parameterResolverFactory);

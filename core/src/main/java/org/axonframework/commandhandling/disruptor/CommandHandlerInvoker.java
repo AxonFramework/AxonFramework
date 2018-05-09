@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.caching.Cache;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -121,6 +122,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                               ParameterResolverFactory parameterResolverFactory) {
         return createRepository(eventStore,
                                 null,
+                                null,
                                 aggregateFactory,
                                 snapshotTriggerDefinition,
                                 parameterResolverFactory);
@@ -133,6 +135,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * @param <T>                       The type of aggregate created by the factory
      * @param eventStore                The events store to load and publish events
      * @param repositoryProvider        Provides repositories for specified aggregate types
+     * @param deadlineManager           Manager used for scheduling deadlines on this Aggregate
      * @param aggregateFactory          The factory creating aggregate instances
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
@@ -141,6 +144,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     @SuppressWarnings("unchecked")
     public <T> Repository<T> createRepository(EventStore eventStore,
                                               RepositoryProvider repositoryProvider,
+                                              DeadlineManager deadlineManager,
                                               AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
@@ -148,7 +152,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                             k -> new DisruptorRepository<>(aggregateFactory, cache, eventStore,
                                                                            parameterResolverFactory,
                                                                            snapshotTriggerDefinition,
-                                                                           repositoryProvider));
+                                                                           repositoryProvider,
+                                                                           deadlineManager));
     }
 
     private void removeEntry(String aggregateIdentifier) {
@@ -177,6 +182,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
         private final EventStore eventStore;
         private final RepositoryProvider repositoryProvider;
+        private final DeadlineManager deadlineManager;
         private final SnapshotTriggerDefinition snapshotTriggerDefinition;
         private final AggregateFactory<T> aggregateFactory;
         private final Map<EventSourcedAggregate<T>, Object> firstLevelCache = new WeakHashMap<>();
@@ -186,7 +192,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
                                     ParameterResolverFactory parameterResolverFactory,
                                     SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                    RepositoryProvider repositoryProvider) {
+                                    RepositoryProvider repositoryProvider,
+                                    DeadlineManager deadlineManager) {
             this.aggregateFactory = aggregateFactory;
             this.cache = cache;
             this.eventStore = eventStore;
@@ -194,6 +201,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
                                                                              parameterResolverFactory);
             this.repositoryProvider = repositoryProvider;
+            this.deadlineManager = deadlineManager;
         }
 
         @Override
@@ -225,6 +233,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                             model,
                             eventStore,
                             repositoryProvider,
+                            deadlineManager,
                             snapshotTriggerDefinition);
                     aggregateRoot = cachedAggregate.invoke(r -> {
                         if (aggregateFactory.getAggregateType().isInstance(r)) {
@@ -244,9 +253,9 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                     throw new AggregateNotFoundException(aggregateIdentifier,
                                                          "The aggregate was not found in the event store");
                 }
-                aggregateRoot = EventSourcedAggregate
-                        .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier, eventStream.peek()),
-                                    model, eventStore, repositoryProvider, trigger);
+                aggregateRoot = EventSourcedAggregate.initialize(aggregateFactory.createAggregateRoot(
+                        aggregateIdentifier,
+                        eventStream.peek()), model, eventStore, repositoryProvider, deadlineManager, trigger);
                 aggregateRoot.initializeState(eventStream);
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
                 cache.put(aggregateIdentifier, new AggregateCacheEntry<>(aggregateRoot));
@@ -257,8 +266,12 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
-            EventSourcedAggregate<T> aggregate =
-                    EventSourcedAggregate.initialize(factoryMethod, model, eventStore, repositoryProvider, trigger);
+            EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod,
+                                                                                  model,
+                                                                                  eventStore,
+                                                                                  repositoryProvider,
+                                                                                  deadlineManager,
+                                                                                  trigger);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
             return aggregate;

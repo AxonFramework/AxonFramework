@@ -25,6 +25,7 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
+import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
@@ -122,6 +123,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public <T> Repository<T> repository(Class<T> aggregateType) {
         return config.repository(aggregateType);
+    }
+
+    @Override
+    public <T> SagaRepository<T> sagaRepository(Class<T> sagaType) {
+        return config.sagaRepository(sagaType);
     }
 
     @Override

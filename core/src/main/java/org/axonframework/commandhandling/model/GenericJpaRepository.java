@@ -22,6 +22,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -54,6 +55,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     private final EntityManagerProvider entityManagerProvider;
     private final EventBus eventBus;
     private final RepositoryProvider repositoryProvider;
+    private final DeadlineManager deadlineManager;
     private final Function<String, ?> identifierConverter;
     private boolean forceFlushOnSave = true;
 
@@ -78,10 +80,16 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                EventBus eventBus, RepositoryProvider repositoryProvider) {
-        this(entityManagerProvider, aggregateType, eventBus, repositoryProvider, NullLockFactory.INSTANCE);
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
+        this(entityManagerProvider,
+             aggregateType,
+             eventBus,
+             repositoryProvider,
+             deadlineManager,
+             NullLockFactory.INSTANCE);
     }
 
     /**
@@ -105,11 +113,17 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateModel        the model describing the structure of the aggregate
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider,
-                                AggregateModel<T> aggregateModel, EventBus eventBus,
-                                RepositoryProvider repositoryProvider) {
-        this(entityManagerProvider, aggregateModel, eventBus, repositoryProvider, NullLockFactory.INSTANCE);
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
+                                EventBus eventBus, RepositoryProvider repositoryProvider,
+                                DeadlineManager deadlineManager) {
+        this(entityManagerProvider,
+             aggregateModel,
+             eventBus,
+             repositoryProvider,
+             deadlineManager,
+             NullLockFactory.INSTANCE);
     }
 
     /**
@@ -141,16 +155,18 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      * @param identifierConverter   the function that converts the String based identifier to the Identifier object
      *                              used in the Entity
      */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                EventBus eventBus, RepositoryProvider repositoryProvider,
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
                                 Function<String, ?> identifierConverter) {
         this(entityManagerProvider,
              aggregateType,
              eventBus,
              repositoryProvider,
+             deadlineManager,
              NullLockFactory.INSTANCE,
              identifierConverter);
     }
@@ -183,15 +199,17 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType            the aggregate type this repository manages
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
+     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                EventBus eventBus, RepositoryProvider repositoryProvider,
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
                                 ParameterResolverFactory parameterResolverFactory) {
         this(entityManagerProvider,
              aggregateType,
              eventBus,
              repositoryProvider,
+             deadlineManager,
              NullLockFactory.INSTANCE,
              parameterResolverFactory);
     }
@@ -218,11 +236,19 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      * @param lockFactory           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                RepositoryProvider repositoryProvider, LockFactory lockFactory) {
-        this(entityManagerProvider, aggregateType, eventBus, repositoryProvider, lockFactory, Function.identity());
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
+                                LockFactory lockFactory) {
+        this(entityManagerProvider,
+             aggregateType,
+             eventBus,
+             repositoryProvider,
+             deadlineManager,
+             lockFactory,
+             Function.identity());
     }
 
     /**
@@ -247,11 +273,19 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateModel        the model describing the structure of the aggregate
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      * @param lockFactory           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
-                                EventBus eventBus, RepositoryProvider repositoryProvider, LockFactory lockFactory) {
-        this(entityManagerProvider, aggregateModel, eventBus, repositoryProvider, lockFactory, Function.identity());
+                                EventBus eventBus, RepositoryProvider repositoryProvider,
+                                DeadlineManager deadlineManager, LockFactory lockFactory) {
+        this(entityManagerProvider,
+             aggregateModel,
+             eventBus,
+             repositoryProvider,
+             deadlineManager,
+             lockFactory,
+             Function.identity());
     }
 
     /**
@@ -268,7 +302,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
                                 LockFactory lockFactory, Function<String, ?> identifierConverter) {
-        this(entityManagerProvider, aggregateType, eventBus, null, lockFactory, identifierConverter);
+        this(entityManagerProvider, aggregateType, eventBus, null, null, lockFactory, identifierConverter);
     }
 
     /**
@@ -280,19 +314,21 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      * @param lockFactory           the additional locking strategy for this repository
      * @param identifierConverter   the function that converts the String based identifier to the Identifier object
      *                              used in the Entity
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                RepositoryProvider repositoryProvider, LockFactory lockFactory,
-                                Function<String, ?> identifierConverter) {
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
+                                LockFactory lockFactory, Function<String, ?> identifierConverter) {
         super(aggregateType, lockFactory);
         Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
         this.eventBus = eventBus;
         this.identifierConverter = identifierConverter;
         this.repositoryProvider = repositoryProvider;
+        this.deadlineManager = deadlineManager;
     }
 
     /**
@@ -308,8 +344,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      *                              used in the Entity
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
-                                EventBus eventBus,LockFactory lockFactory, Function<String, ?> identifierConverter) {
-        this(entityManagerProvider, aggregateModel, eventBus, null, lockFactory, identifierConverter);
+                                EventBus eventBus, LockFactory lockFactory, Function<String, ?> identifierConverter) {
+        this(entityManagerProvider, aggregateModel, eventBus, null, null, lockFactory, identifierConverter);
     }
 
     /**
@@ -321,12 +357,14 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateModel        the model describing the structure of the aggregate
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
+     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
      * @param lockFactory           the additional locking strategy for this repository
      * @param identifierConverter   the function that converts the String based identifier to the Identifier object
      *                              used in the Entity
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
-                                EventBus eventBus, RepositoryProvider repositoryProvider, LockFactory lockFactory,
+                                EventBus eventBus, RepositoryProvider repositoryProvider,
+                                DeadlineManager deadlineManager, LockFactory lockFactory,
                                 Function<String, ?> identifierConverter) {
         super(aggregateModel, lockFactory);
         Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
@@ -334,6 +372,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         this.eventBus = eventBus;
         this.identifierConverter = identifierConverter;
         this.repositoryProvider = repositoryProvider;
+        this.deadlineManager = deadlineManager;
     }
 
     /**
@@ -366,16 +405,18 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType            the aggregate type this repository manages
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
+     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      * @param lockFactory              the additional locking strategy for this repository
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                RepositoryProvider repositoryProvider, LockFactory lockFactory,
-                                ParameterResolverFactory parameterResolverFactory) {
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
+                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory) {
         this(entityManagerProvider,
              aggregateType,
              eventBus,
              repositoryProvider,
+             deadlineManager,
              lockFactory,
              parameterResolverFactory,
              Function.identity());
@@ -402,6 +443,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
              aggregateType,
              eventBus,
              null,
+             null,
              lockFactory,
              parameterResolverFactory,
              identifierConverter);
@@ -417,14 +459,15 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType            the aggregate type this repository manages
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
+     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      * @param lockFactory              the additional locking strategy for this repository
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      * @param identifierConverter      the function that converts the String based identifier to the Identifier object
      *                                 used in the Entity
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                RepositoryProvider repositoryProvider, LockFactory lockFactory,
-                                ParameterResolverFactory parameterResolverFactory,
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
+                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory,
                                 Function<String, ?> identifierConverter) {
         super(aggregateType, lockFactory, parameterResolverFactory);
         Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
@@ -432,6 +475,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         this.eventBus = eventBus;
         this.identifierConverter = identifierConverter;
         this.repositoryProvider = repositoryProvider;
+        this.deadlineManager = deadlineManager;
     }
 
     @Override
@@ -447,7 +491,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         AnnotatedAggregate<T> aggregate = AnnotatedAggregate.initialize(aggregateRoot,
                                                                         aggregateModel(),
                                                                         eventBus,
-                                                                        repositoryProvider);
+                                                                        repositoryProvider,
+                                                                        deadlineManager);
         if (eventBus instanceof EventStore) {
             Optional<Long> sequenceNumber = ((EventStore) eventBus).lastSequenceNumberFor(aggregateIdentifier);
             sequenceNumber.ifPresent(aggregate::initSequence);
@@ -462,6 +507,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                              aggregateModel(),
                                              eventBus,
                                              repositoryProvider,
+                                             deadlineManager,
                                              eventBus instanceof EventStore);
     }
 

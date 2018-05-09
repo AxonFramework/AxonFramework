@@ -25,8 +25,13 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineContext;
+import org.axonframework.deadline.DefaultDeadlineTargetLoader;
+import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.*;
@@ -46,6 +51,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -73,6 +80,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
     private RepositoryProvider repositoryProvider;
+    private DeadlineManager deadlineManager;
     private Repository<T> repository;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage<?>> givenEvents;
@@ -114,13 +122,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public FixtureConfiguration<T> registerDeadlineManager(DeadlineManager deadlineManager) {
+        this.deadlineManager = deadlineManager;
+        return this;
+    }
+
+    @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
         return registerRepository(new EventSourcingRepository<>(
                 aggregateFactory, eventStore,
                 MultiParameterResolverFactory.ordered(
                         new SimpleResourceParameterResolverFactory(resources),
                         ClasspathParameterResolverFactory.forClass(aggregateType)),
-                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()));
+                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider(), deadlineManager));
     }
 
     @Override
@@ -280,7 +294,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                              eventStore,
                                                              parameterResolverFactory,
                                                              NoSnapshotTriggerDefinition.INSTANCE,
-                                                             getRepositoryProvider()));
+                                                             getRepositoryProvider(),
+                                                             deadlineManager));
         }
     }
 
@@ -649,7 +664,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         @Override
         public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
-            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
+            return EventSourcedAggregate.initialize(factoryMethod,
+                                                    aggregateModel,
+                                                    eventStore,
+                                                    repositoryProvider,
+                                                    deadlineManager);
         }
     }
 }

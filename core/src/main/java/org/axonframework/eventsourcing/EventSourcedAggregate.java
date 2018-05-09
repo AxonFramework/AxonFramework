@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -53,7 +54,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      */
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
                                                           EventBus eventBus, SnapshotTrigger snapshotTrigger) {
-        return initialize(aggregateRoot, inspector, eventBus, null, snapshotTrigger);
+        return initialize(aggregateRoot, inspector, eventBus, null, null, snapshotTrigger);
     }
 
     /**
@@ -64,15 +65,21 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param inspector          The inspector describing the aggregate structure
      * @param eventBus           The event bus to send generated events to
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
      */
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
                                                           EventBus eventBus, RepositoryProvider repositoryProvider,
+                                                          DeadlineManager deadlineManager,
                                                           SnapshotTrigger snapshotTrigger) {
-        EventSourcedAggregate<T> aggregate =
-                new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, repositoryProvider, snapshotTrigger);
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(aggregateRoot,
+                                                                         inspector,
+                                                                         eventBus,
+                                                                         repositoryProvider,
+                                                                         deadlineManager,
+                                                                         snapshotTrigger);
         aggregate.registerWithUnitOfWork();
         return aggregate;
     }
@@ -94,7 +101,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
                                                           EventBus eventBus, SnapshotTrigger snapshotTrigger)
             throws Exception {
-        return initialize(aggregateFactory, inspector, eventBus, null, snapshotTrigger);
+        return initialize(aggregateFactory, inspector, eventBus, null, null, snapshotTrigger);
     }
 
     /**
@@ -106,6 +113,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param inspector          The inspector describing the aggregate structure
      * @param eventBus           The event bus to send generated events to
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
@@ -114,10 +122,12 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      */
     public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
                                                           EventBus eventBus, RepositoryProvider repositoryProvider,
+                                                          DeadlineManager deadlineManager,
                                                           SnapshotTrigger snapshotTrigger) throws Exception {
         EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector,
                                                                          eventBus,
                                                                          repositoryProvider,
+                                                                         deadlineManager,
                                                                          snapshotTrigger);
         aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);
@@ -142,7 +152,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
                                                            boolean isDeleted, EventBus eventBus,
                                                            SnapshotTrigger snapshotTrigger) {
-        return reconstruct(aggregateRoot, model, seqNo, isDeleted, eventBus, null, snapshotTrigger);
+        return reconstruct(aggregateRoot, model, seqNo, isDeleted, eventBus, null, null, snapshotTrigger);
     }
 
     /**
@@ -157,6 +167,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param isDeleted          Flag to indicate whether or not the aggregate is deleted
      * @param eventBus           The event bus to send generated events to
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @param <T>                the aggregate root type
      * @return the reconstructed EventSourcedAggregate instance
@@ -164,11 +175,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
                                                            boolean isDeleted, EventBus eventBus,
                                                            RepositoryProvider repositoryProvider,
+                                                           DeadlineManager deadlineManager,
                                                            SnapshotTrigger snapshotTrigger) {
         EventSourcedAggregate<T> aggregate = initialize(aggregateRoot,
                                                         model,
                                                         eventBus,
                                                         repositoryProvider,
+                                                        deadlineManager,
                                                         snapshotTrigger);
         aggregate.initSequence(seqNo);
         if (isDeleted) {
@@ -201,11 +214,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param model              The model describing the aggregate structure
      * @param eventBus           The event store to store generated events in
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param snapshotTrigger    The trigger to notify of events and initialization
      */
     protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
-                                    RepositoryProvider repositoryProvider, SnapshotTrigger snapshotTrigger) {
-        super(aggregateRoot, model, eventBus, repositoryProvider);
+                                    RepositoryProvider repositoryProvider, DeadlineManager deadlineManager,
+                                    SnapshotTrigger snapshotTrigger) {
+        super(aggregateRoot, model, eventBus, repositoryProvider, deadlineManager);
         this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }
@@ -232,12 +247,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param model              The model describing the aggregate structure
      * @param eventBus           The event store to store generated events in
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
     protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, RepositoryProvider repositoryProvider,
-                                    SnapshotTrigger snapshotTrigger) {
-        super(model, eventBus, repositoryProvider);
+                                    DeadlineManager deadlineManager, SnapshotTrigger snapshotTrigger) {
+        super(model, eventBus, repositoryProvider, deadlineManager);
         this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
     }

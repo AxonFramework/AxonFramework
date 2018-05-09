@@ -17,6 +17,7 @@
 package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -46,6 +47,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private String aggregateIdentifier;
     private EventStore mockEventStore;
     private RepositoryProvider mockRepositoryProvider;
+    private DeadlineManager mockDeadlineManager;
     private ApplicationContext mockApplicationContext;
     private Executor executor;
 
@@ -54,6 +56,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(EventStore.class);
         mockRepositoryProvider = mock(RepositoryProvider.class);
+        mockDeadlineManager = mock(DeadlineManager.class);
         executor = spy(new MockExecutor());
 
         testSubject = new SpringAggregateSnapshotterFactoryBean();
@@ -70,6 +73,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
                                          }));
         testSubject.setEventStore(mockEventStore);
         testSubject.setRepositoryProvider(mockRepositoryProvider);
+        testSubject.setDeadlineManager(mockDeadlineManager);
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
@@ -97,7 +101,10 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         when(mockApplicationContext.getBean(EventStore.class)).thenReturn(mockEventStore);
         when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class)).thenReturn(
                 Collections.singletonMap("myRepository",
-                                         new EventSourcingRepository<>(StubAggregate.class, mockEventStore, mockRepositoryProvider))
+                                         new EventSourcingRepository<>(StubAggregate.class,
+                                                                       mockEventStore,
+                                                                       mockRepositoryProvider,
+                                                                       mockDeadlineManager))
         );
         testSnapshotCreated_NoTransaction();
     }

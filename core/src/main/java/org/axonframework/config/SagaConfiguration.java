@@ -44,6 +44,7 @@ import java.util.function.Function;
  */
 public class SagaConfiguration<S> implements ModuleConfiguration {
 
+    private final Class<S> sagaType;
     private final Component<EventProcessor> processor;
     private final Component<TrackingEventProcessorConfiguration> trackingEventProcessorConfiguration;
     private final Component<AnnotatedSagaManager<S>> sagaManager;
@@ -157,6 +158,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private SagaConfiguration(Class<S> sagaType, Class<? extends EventProcessor> eventProcessorType,
                               Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
                               Function<Configuration, EventProcessingStrategy> processingStrategy) {
+        this.sagaType = sagaType;
         String managerName = sagaType.getSimpleName() + "Manager";
         String processorName = sagaType.getSimpleName() + "Processor";
         String repositoryName = sagaType.getSimpleName() + "Repository";
@@ -175,9 +177,13 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                 c -> c.getComponent(RollbackConfiguration.class,
                                                                     () -> RollbackConfigurationType.ANY_THROWABLE));
         sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
-        sagaRepository = new Component<>(() -> config, repositoryName,
-                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector(),
-                                                                            c.parameterResolverFactory()));
+        sagaRepository = new Component<>(() -> config,
+                                         repositoryName,
+                                         c -> new AnnotatedSagaRepository<>(sagaType,
+                                                                            sagaStore.get(),
+                                                                            c.resourceInjector(),
+                                                                            c.parameterResolverFactory(),
+                                                                            c.deadlineManager()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
                                                                                                  c.parameterResolverFactory(),
                                                                                                  listenerInvocationErrorHandler
@@ -196,6 +202,15 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                         processor.registerInterceptor(new CorrelationDataInterceptor<>(c.correlationDataProviders()));
                                         return processor;
                                     });
+    }
+
+    /**
+     * Gets the saga type.
+     *
+     * @return the saga type
+     */
+    public Class<S> getSagaType() {
+        return sagaType;
     }
 
     /**

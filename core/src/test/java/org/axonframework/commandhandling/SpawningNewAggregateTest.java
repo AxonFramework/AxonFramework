@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -59,6 +60,8 @@ public class SpawningNewAggregateTest {
     @Mock
     private RepositoryProvider repositoryProvider;
     @Mock
+    private DeadlineManager deadlineManager;
+    @Mock
     private EventStore eventStore;
     private AggregateModel<Aggregate1> aggregate1Model;
 
@@ -77,7 +80,8 @@ public class SpawningNewAggregateTest {
                                                                                                      .getArguments()[0],
                                                                                              aggregate2Model,
                                                                                              eventStore,
-                                                                                             repositoryProvider));
+                                                                                             repositoryProvider,
+                                                                                             deadlineManager));
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
 
@@ -157,7 +161,8 @@ public class SpawningNewAggregateTest {
                                                                                                      .getArguments()[0],
                                                                                              aggregate1Model,
                                                                                              eventStore,
-                                                                                             repositoryProvider));
+                                                                                             repositoryProvider,
+                                                                                             deadlineManager));
     }
 
     private static class CreateAggregate1Command {

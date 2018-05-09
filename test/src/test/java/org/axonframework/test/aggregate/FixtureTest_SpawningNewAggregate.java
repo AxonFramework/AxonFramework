@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.junit.*;
@@ -63,6 +64,7 @@ public class FixtureTest_SpawningNewAggregate {
     @Test
     public void testFixtureWithRepositoryProviderInjected() throws Exception {
         RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
+        DeadlineManager deadlineManager = mock(DeadlineManager.class);
         Repository<Aggregate2> aggregate2Repository = mock(Repository.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
@@ -73,7 +75,8 @@ public class FixtureTest_SpawningNewAggregate {
                                                                                                      .getArguments()[0],
                                                                                              aggregate2Model,
                                                                                              fixture.getEventStore(),
-                                                                                             repositoryProvider));
+                                                                                             repositoryProvider,
+                                                                                             deadlineManager));
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
 

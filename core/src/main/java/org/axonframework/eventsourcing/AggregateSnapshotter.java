@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
@@ -48,6 +49,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
     private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
     private final RepositoryProvider repositoryProvider;
+    private final DeadlineManager deadlineManager;
     private final ParameterResolverFactory parameterResolverFactory;
 
     /**
@@ -70,12 +72,13 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      *
      * @param eventStore         The Event Store to store snapshots in
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
      * @see ClasspathParameterResolverFactory
      */
     public AggregateSnapshotter(EventStore eventStore, RepositoryProvider repositoryProvider,
-                                AggregateFactory<?>... aggregateFactories) {
-        this(eventStore, Arrays.asList(aggregateFactories), repositoryProvider);
+                                DeadlineManager deadlineManager, AggregateFactory<?>... aggregateFactories) {
+        this(eventStore, Arrays.asList(aggregateFactories), repositoryProvider, deadlineManager);
     }
 
     /**
@@ -101,14 +104,16 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param eventStore         The Event Store to store snapshots in
      * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
      * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @see ClasspathParameterResolverFactory
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                RepositoryProvider repositoryProvider) {
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
         this(eventStore,
              aggregateFactories,
              ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class),
-             repositoryProvider);
+             repositoryProvider,
+             deadlineManager);
     }
 
     /**
@@ -123,7 +128,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory) {
-        this(eventStore, aggregateFactories, parameterResolverFactory, null);
+        this(eventStore, aggregateFactories, parameterResolverFactory, (RepositoryProvider) null, null);
     }
 
     /**
@@ -136,14 +141,16 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
      *                                 handlers with
      * @param repositoryProvider       Provides repositories for specific aggregate types
+     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory,
-                                RepositoryProvider repositoryProvider) {
+                                RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
         super(eventStore);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
         this.repositoryProvider = repositoryProvider;
+        this.deadlineManager = deadlineManager;
     }
 
     /**
@@ -160,7 +167,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory, Executor executor,
                                 TransactionManager transactionManager) {
-        this(eventStore, aggregateFactories, parameterResolverFactory, executor, transactionManager, null);
+        this(eventStore, aggregateFactories, parameterResolverFactory, executor, transactionManager, null, null);
     }
 
     /**
@@ -174,14 +181,17 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
      *                                 process with
      * @param repositoryProvider       Provides repositories for specific aggregate types
+     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory, Executor executor,
-                                TransactionManager transactionManager, RepositoryProvider repositoryProvider) {
+                                TransactionManager transactionManager, RepositoryProvider repositoryProvider,
+                                DeadlineManager deadlineManager) {
         super(eventStore, executor, transactionManager);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
         this.repositoryProvider = repositoryProvider;
+        this.deadlineManager = deadlineManager;
     }
 
     @SuppressWarnings("unchecked")
@@ -198,7 +208,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot,
                                                                     aggregateModels.get(aggregateType),
-                                                                    repositoryProvider);
+                                                                    repositoryProvider,
+                                                                    deadlineManager);
         aggregate.initializeState(eventStream);
         if (aggregate.isDeleted()) {
             return null;
@@ -234,8 +245,14 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
 
         private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel,
-                                  RepositoryProvider repositoryProvider) {
-            super(aggregateRoot, aggregateModel, null, repositoryProvider, NoSnapshotTriggerDefinition.TRIGGER);
+                                  RepositoryProvider repositoryProvider,
+                                  DeadlineManager deadlineManager) {
+            super(aggregateRoot,
+                  aggregateModel,
+                  null,
+                  repositoryProvider,
+                  deadlineManager,
+                  NoSnapshotTriggerDefinition.TRIGGER);
         }
 
         @Override

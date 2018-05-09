@@ -21,6 +21,10 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineTargetLoader;
+import org.axonframework.deadline.DefaultDeadlineTargetLoader;
+import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -55,6 +59,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     private EventStore eventStore;
     private RepositoryProvider repositoryProvider;
+    private DeadlineManager deadlineManager;
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
@@ -71,8 +76,9 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
             eventStore = applicationContext.getBean(EventStore.class);
         }
 
+        Configuration configuration = applicationContext.getBean(Configuration.class);
         if (repositoryProvider == null) {
-            repositoryProvider = applicationContext.getBean(Configuration.class)::repository;
+            repositoryProvider = configuration::repository;
         }
 
         if (parameterResolverFactory == null) {
@@ -84,8 +90,18 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore, parameterResolverFactory,
-                                                                                executor, txManager, repositoryProvider);
+        if (deadlineManager == null) {
+            DeadlineTargetLoader deadlineTargetLoader = new DefaultDeadlineTargetLoader(configuration::repository,
+                                                                                        configuration::sagaRepository);
+            deadlineManager = new SimpleDeadlineManager(txManager, deadlineTargetLoader);
+        }
+
+        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore,
+                                                                                parameterResolverFactory,
+                                                                                executor,
+                                                                                txManager,
+                                                                                repositoryProvider,
+                                                                                deadlineManager);
         snapshotter.setApplicationContext(applicationContext);
         return snapshotter;
     }
@@ -137,6 +153,15 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
      */
     public void setRepositoryProvider(RepositoryProvider repositoryProvider) {
         this.repositoryProvider = repositoryProvider;
+    }
+
+    /**
+     * Sets deadline manager in order to have possibility to schedule deadlines on Aggregate.
+     *
+     * @param deadlineManager Manager used for scheduling deadlines on Aggregate
+     */
+    public void setDeadlineManager(DeadlineManager deadlineManager) {
+        this.deadlineManager = deadlineManager;
     }
 
     @Override

@@ -20,8 +20,10 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
+import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
@@ -120,6 +122,15 @@ public interface Configuration {
     <T> Repository<T> repository(Class<T> aggregateType);
 
     /**
+     * Returns the Saga Repository configured for the given {@code sagaType}.
+     *
+     * @param sagaType The saga type to find the repository for
+     * @param <T>      The saga type
+     * @return the saga repository from which sagas of the given type can be loaded
+     */
+    <T> SagaRepository<T> sagaRepository(Class<T> sagaType);
+
+    /**
      * Returns the Component declared under the given {@code componentType}, typically the interface the component
      * implements.
      *
@@ -204,6 +215,15 @@ public interface Configuration {
      */
     default ParameterResolverFactory parameterResolverFactory() {
         return getComponent(ParameterResolverFactory.class);
+    }
+
+    /**
+     * Returns the Deadline Manager defined in this Configuration.
+     *
+     * @return the Deadline Manager defined in this Configuration
+     */
+    default DeadlineManager deadlineManager() {
+        return getComponent(DeadlineManager.class);
     }
 
     /**
