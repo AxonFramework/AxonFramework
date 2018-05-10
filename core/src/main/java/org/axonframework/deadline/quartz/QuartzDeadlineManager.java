@@ -16,16 +16,14 @@
 
 package org.axonframework.deadline.quartz;
 
-import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineContext;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.DeadlineContext;
 import org.axonframework.deadline.DeadlineTargetLoader;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.quartz.JobBuilder;
@@ -42,9 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
-import javax.annotation.PostConstruct;
 
-import static org.axonframework.common.Assert.notNull;
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -58,18 +55,49 @@ public class QuartzDeadlineManager implements DeadlineManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(QuartzDeadlineManager.class);
     private static final String JOB_NAME_PREFIX = "deadline-";
     private static final String DEFAULT_GROUP_NAME = "AxonFramework-Deadlines";
-    private String groupIdentifier = DEFAULT_GROUP_NAME;
-    private Scheduler scheduler;
-    private volatile boolean initialized;
-    private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-    private DeadlineTargetLoader deadlineTargetLoader;
+    private final String groupIdentifier;
+    private final Scheduler scheduler;
+    private final TransactionManager transactionManager;
+    private final DeadlineTargetLoader deadlineTargetLoader;
+
+    /**
+     * Initializes Quartz Deadline Manager with {@code scheduler} and {@code deadlineTargetLoader}. As group identifier
+     * {@link #DEFAULT_GROUP_NAME} is used, and {@link NoTransactionManager} as transaction manager.
+     *
+     * @param scheduler            Used for scheduling and triggering purposes
+     * @param deadlineTargetLoader Used for loading of target entities in order to handle deadlines
+     */
+    public QuartzDeadlineManager(Scheduler scheduler, DeadlineTargetLoader deadlineTargetLoader) {
+        this(DEFAULT_GROUP_NAME, scheduler, NoTransactionManager.INSTANCE, deadlineTargetLoader);
+    }
+
+    /**
+     * Initializes Quartz Deadline Manager.
+     *
+     * @param groupIdentifier      Identifier for quartz job (used in combination with deadline message id)
+     * @param scheduler            Used for scheduling and triggering purposes
+     * @param transactionManager   Builds transactions and ties them to deadline execution
+     * @param deadlineTargetLoader Used for loading of target entities in order to handle deadlines
+     */
+    public QuartzDeadlineManager(String groupIdentifier, Scheduler scheduler,
+                                 TransactionManager transactionManager,
+                                 DeadlineTargetLoader deadlineTargetLoader) {
+        this.groupIdentifier = groupIdentifier;
+        this.scheduler = scheduler;
+        this.transactionManager = transactionManager;
+        this.deadlineTargetLoader = deadlineTargetLoader;
+        try {
+            initialize();
+        } catch (SchedulerException e) {
+            throw new DeadlineException("Unable to initialize quartz scheduler", e);
+        }
+    }
 
     @Override
     public void schedule(Instant triggerDateTime, DeadlineContext deadlineContext,
                          Object deadlineInfo, ScheduleToken scheduleToken) {
-        Assert.state(initialized, () -> "Scheduler is not yet initialized");
         QuartzScheduleToken token = convert(scheduleToken);
-        DeadlineMessage deadlineMessage = GenericDeadlineMessage.asDeadlineMessage(deadlineInfo);
+        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineInfo);
         try {
             JobDetail jobDetail = buildJobDetail(deadlineMessage,
                                                  deadlineContext,
@@ -94,8 +122,6 @@ public class QuartzDeadlineManager implements DeadlineManager {
 
     @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
-        Assert.state(initialized, () -> "Scheduler is not yet initialized");
-
         QuartzScheduleToken reference = convert(scheduleToken);
         try {
             if (!scheduler.deleteJob(jobKey(reference.getJobIdentifier(), reference.getGroupIdentifier()))) {
@@ -106,29 +132,9 @@ public class QuartzDeadlineManager implements DeadlineManager {
         }
     }
 
-    @PostConstruct
-    public void initialize() throws SchedulerException {
-        notNull(scheduler, () -> "A Scheduler must be provided.");
-        notNull(deadlineTargetLoader, () -> "A DeadlineTargetLoader must be provided.");
+    private void initialize() throws SchedulerException {
         scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(DeadlineJob.DEADLINE_TARGET_LOADER_KEY, deadlineTargetLoader);
-        initialized = true;
-    }
-
-    public void setScheduler(Scheduler scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    public void setTransactionManager(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
-    public void setGroupIdentifier(String groupIdentifier) {
-        this.groupIdentifier = groupIdentifier;
-    }
-
-    public void setDeadlineTargetLoader(DeadlineTargetLoader deadlineTargetLoader) {
-        this.deadlineTargetLoader = deadlineTargetLoader;
     }
 
     private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, DeadlineContext deadlineContext, JobKey jobKey) {

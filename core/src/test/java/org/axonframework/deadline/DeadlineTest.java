@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.SagaConfiguration;
@@ -65,7 +66,6 @@ import static org.mockito.Mockito.*;
 @RunWith(Parameterized.class)
 public class DeadlineTest {
 
-    private static final String GROUP_ID = "TestGroup";
     private static final int DEADLINE_TIMEOUT = 1000;
     private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 500;
 
@@ -89,20 +89,16 @@ public class DeadlineTest {
     }
 
     private static DeadlineManager quartzDeadlineManager(Configuration c) {
-        QuartzDeadlineManager quartzDeadlineManager = new QuartzDeadlineManager();
-        quartzDeadlineManager.setGroupIdentifier(GROUP_ID);
-        quartzDeadlineManager.setDeadlineTargetLoader(new DefaultDeadlineTargetLoader(c::repository,
-                                                                                      c::sagaRepository));
         try {
             Scheduler scheduler = new StdSchedulerFactory().getScheduler();
-            quartzDeadlineManager.setScheduler(scheduler);
-            quartzDeadlineManager.initialize();
+            DefaultDeadlineTargetLoader deadlineTargetLoader = new DefaultDeadlineTargetLoader(c::repository,
+                                                                                               c::sagaRepository);
+            QuartzDeadlineManager quartzDeadlineManager = new QuartzDeadlineManager(scheduler, deadlineTargetLoader);
             scheduler.start();
+            return quartzDeadlineManager;
         } catch (SchedulerException e) {
             throw new AxonConfigurationException("Unable to configure quartz scheduler", e);
         }
-
-        return quartzDeadlineManager;
     }
 
     @Before

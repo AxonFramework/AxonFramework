@@ -25,6 +25,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.*;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -169,6 +170,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)
                                                         .getBeanDefinition());
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
+
+        findComponent(DeadlineManager.class).ifPresent(deadlineManager -> configurer
+                .registerComponent(DeadlineManager.class, c -> getBean(deadlineManager, c)));
 
         registerCorrelationDataProviders(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
