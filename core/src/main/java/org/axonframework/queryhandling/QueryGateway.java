@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.Registration;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
  * @author Marc Gathier
  * @author Allard Buijze
  * @author Steven van Beelen
+ * @author Milan Savic
  * @since 3.1
  */
 public interface QueryGateway {
@@ -131,6 +133,95 @@ public interface QueryGateway {
      */
     <R, Q> Stream<R> scatterGather(String queryName, Q query, ResponseType<R> responseType, long timeout,
                                    TimeUnit timeUnit);
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and uses {@code updateHandler} to inform caller about initial
+     * response and incremental updates. Returned registration can be used to cancel receiving updates.
+     *
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param updateHandler       The handler to be invoked when there is an initial response to be sent and when there
+     *                            are incremental updates
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     */
+    default <Q, I, U> Registration subscriptionQuery(Q query, Class<I> initialResponseType,
+                                                     Class<U> updateResponseType, UpdateHandler<I, U> updateHandler) {
+        return subscriptionQuery(query.getClass().getName(),
+                                 query,
+                                 initialResponseType,
+                                 updateResponseType,
+                                 updateHandler);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and uses {@code updateHandler} to inform caller about initial
+     * response and incremental updates. Returned registration can be used to cancel receiving updates.
+     *
+     * @param queryName           A {@link String} describing query to be executed
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param updateHandler       The handler to be invoked when there is an initial response to be sent and when there
+     *                            are incremental updates
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     */
+    default <Q, I, U> Registration subscriptionQuery(String queryName, Q query, Class<I> initialResponseType,
+                                                     Class<U> updateResponseType, UpdateHandler<I, U> updateHandler) {
+        return subscriptionQuery(queryName,
+                                 query,
+                                 ResponseTypes.instanceOf(initialResponseType),
+                                 ResponseTypes.instanceOf(updateResponseType),
+                                 updateHandler);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and uses {@code updateHandler} to inform caller about initial
+     * response and incremental updates. Returned registration can be used to cancel receiving updates.
+     *
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param updateHandler       The handler to be invoked when there is an initial response to be sent and when there
+     *                            are incremental updates
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     */
+    default <Q, I, U> Registration subscriptionQuery(Q query, ResponseType<I> initialResponseType,
+                                                     ResponseType<U> updateResponseType,
+                                                     UpdateHandler<I, U> updateHandler) {
+        return subscriptionQuery(query.getClass().getName(),
+                                 query,
+                                 initialResponseType,
+                                 updateResponseType,
+                                 updateHandler);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and uses {@code updateHandler} to inform caller about initial
+     * response and incremental updates. Returned registration can be used to cancel receiving updates.
+     *
+     * @param queryName           A {@link String} describing query to be executed
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param updateHandler       The handler to be invoked when there is an initial response to be sent and when there
+     *                            are incremental updates
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     */
+    <Q, I, U> Registration subscriptionQuery(String queryName, Q query, ResponseType<I> initialResponseType,
+                                             ResponseType<U> updateResponseType, UpdateHandler<I, U> updateHandler);
 
     /**
      * Sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.
