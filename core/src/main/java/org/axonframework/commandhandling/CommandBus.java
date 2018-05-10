@@ -18,7 +18,9 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
@@ -28,7 +30,8 @@ import org.axonframework.messaging.MessageHandler;
  * @author Allard Buijze
  * @since 0.5
  */
-public interface CommandBus {
+public interface CommandBus extends MessageHandlerInterceptorSupport<CommandMessage<?>>,
+                                    MessageDispatchInterceptorSupport<CommandMessage<?>> {
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.

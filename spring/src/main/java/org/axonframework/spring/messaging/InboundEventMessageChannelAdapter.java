@@ -16,18 +16,19 @@
 
 package org.axonframework.spring.messaging;
 
-import static java.util.Collections.*;
-
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
-
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Adapter class that publishes Events from a Spring Messaging Message Channel on the Event Bus. All events are
@@ -70,7 +71,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      */
     public InboundEventMessageChannelAdapter(List<Consumer<List<? extends EventMessage<?>>>> processors,
                                              EventMessageConverter eventMessageConverter){
-        processors.forEach(messageProcessors::add);
+        messageProcessors.addAll(processors);
         this.eventMessageConverter = eventMessageConverter;
     }
 

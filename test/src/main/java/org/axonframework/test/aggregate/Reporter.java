@@ -17,7 +17,6 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
@@ -45,21 +44,6 @@ public class Reporter {
     private static final String NEWLINE = System.getProperty("line.separator");
 
     /**
-     * Report a failed assertion due to a difference in the stored versus the published events.
-     *  @param storedEvents    The events that were stored
-     * @param publishedEvents The events that were published
-     * @param probableCause   An exception that might be the cause of the failure
-     */
-    public void reportDifferenceInStoredVsPublished(Collection<DomainEventMessage<?>> storedEvents,
-                                                    Collection<EventMessage<?>> publishedEvents, Throwable probableCause) {
-        StringBuilder sb = new StringBuilder(
-                "The stored events do not match the published events.");
-        appendEventOverview(sb, storedEvents, publishedEvents, "Stored events", "Published events");
-        appendProbableCause(probableCause, sb);
-        throw new AxonAssertionError(sb.toString());
-    }
-
-    /**
      * Report an error in the ordering or count of events. This is typically a difference that can be shown to the user
      * by enumerating the expected and actual events
      *
@@ -71,7 +55,7 @@ public class Reporter {
                                  Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events");
-        appendEventOverview(sb, expectedEvents, actualEvents, "Expected", "Actual");
+        appendEventOverview(sb, expectedEvents, actualEvents);
         appendProbableCause(probableCause, sb);
 
         throw new AxonAssertionError(sb.toString());
@@ -120,12 +104,12 @@ public class Reporter {
         StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
         sb.append(NEWLINE)
           .append(NEWLINE)
-                .append("Expected <") //NOSONAR
-                .append(expectation.toString())
-                .append("> but got <exception of type [")
-                .append(actualException.getClass().getSimpleName())
-                .append("]>. Stack trace follows:")
-                .append(NEWLINE);
+          .append("Expected <") //NOSONAR
+          .append(expectation.toString())
+          .append("> but got <exception of type [")
+          .append(actualException.getClass().getSimpleName())
+          .append("]>. Stack trace follows:")
+          .append(NEWLINE);
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
@@ -176,9 +160,9 @@ public class Reporter {
      * @param description     A description describing the expected value
      */
     public void reportWrongException(Throwable actualException, Description description) {
-        StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type");
-        sb.append(NEWLINE)
-          .append(NEWLINE)
+        StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type")
+                .append(NEWLINE)
+                .append(NEWLINE)
                 .append("Expected <") //NOSONAR
                 .append(description.toString())
                 .append("> but got <exception of type [")
@@ -188,6 +172,25 @@ public class Reporter {
         writeStackTrace(actualException, sb);
         sb.append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
+    }
+
+    /**
+     * Report an error due to a difference in exception message.
+     *
+     * @param actualException The actual exception
+     * @param description     A description describing the expected value
+     */
+    public void reportWrongExceptionMessage(Throwable actualException, Description description) {
+        throw new AxonAssertionError("The command handler threw an exception, but not with expected message"
+                                             + NEWLINE +
+                                             NEWLINE +
+                                             "Expected <" + //NOSONAR
+                                             description.toString() +
+                                             "> but got <message [" +
+                                             actualException.getMessage() +
+                                             "]>." +
+                                             NEWLINE +
+                                             NEWLINE);
     }
 
     /**
@@ -216,12 +219,12 @@ public class Reporter {
 
         sb.append("was not as expected.")
           .append(NEWLINE)
-                .append("Expected <") //NOSONAR
-                .append(nullSafeToString(expected))
-                .append("> but got <")
-                .append(nullSafeToString(actual))
-                .append(">")
-                .append(NEWLINE);
+          .append("Expected <") //NOSONAR
+          .append(nullSafeToString(expected))
+          .append("> but got <")
+          .append(nullSafeToString(actual))
+          .append(">")
+          .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -261,14 +264,12 @@ public class Reporter {
     }
 
     private void appendEventOverview(StringBuilder sb, Collection<?> leftColumnEvents,
-                                     Collection<?> rightColumnEvents,
-                                     String leftColumnName,
-                                     String rightColumnName) {
+                                     Collection<?> rightColumnEvents) {
         List<String> actualTypes = new ArrayList<>(rightColumnEvents.size());
         List<String> expectedTypes = new ArrayList<>(leftColumnEvents.size());
-        int largestExpectedSize = leftColumnName.length();
+        int largestExpectedSize = 8;
         actualTypes.addAll(rightColumnEvents.stream().map((Function<Object, String>) this::payloadContentType)
-                                   .collect(Collectors.toList()));
+                                            .collect(Collectors.toList()));
         for (Object event : leftColumnEvents) {
             String simpleName = payloadContentType(event);
             if (simpleName.length() > largestExpectedSize) {
@@ -278,10 +279,10 @@ public class Reporter {
         }
         sb.append(NEWLINE);
         sb.append(NEWLINE);
-        sb.append(leftColumnName);
-        pad(sb, leftColumnName.length(), largestExpectedSize, " ");
+        sb.append("Expected");
+        pad(sb, "Expected".length(), largestExpectedSize, " ");
         sb.append("  |  ")
-          .append(rightColumnName)
+          .append("Actual")
           .append(NEWLINE);
         pad(sb, 0, largestExpectedSize, "-");
         sb.append("--|--");

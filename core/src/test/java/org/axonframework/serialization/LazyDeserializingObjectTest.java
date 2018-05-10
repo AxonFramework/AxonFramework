@@ -36,7 +36,7 @@ public class LazyDeserializingObjectTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockSerializer = mock(Serializer.class);
         mockType = mock(SerializedType.class);
         mockObject = new SimpleSerializedObject(mockDeserializedObject, String.class, mockType);

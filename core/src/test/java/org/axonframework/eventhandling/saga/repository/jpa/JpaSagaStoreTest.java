@@ -28,7 +28,6 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,8 +45,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.*;
 
 /**
@@ -95,7 +92,7 @@ public class JpaSagaStoreTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -158,9 +155,7 @@ public class JpaSagaStoreTest {
 
 
     public void testLoadSaga_NotFound() {
-        unitOfWork.execute(() -> {
-            assertNull(repository.load("123456"));
-        });
+        unitOfWork.execute(() -> assertNull(repository.load("123456")));
     }
 
     @DirtiesContext

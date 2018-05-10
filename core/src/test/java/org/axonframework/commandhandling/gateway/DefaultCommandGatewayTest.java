@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +44,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class DefaultCommandGatewayTest {
 
@@ -54,7 +54,7 @@ public class DefaultCommandGatewayTest {
     private MessageDispatchInterceptor mockCommandMessageTransformer;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         mockCommandMessageTransformer = mock(MessageDispatchInterceptor.class);
@@ -237,24 +237,19 @@ public class DefaultCommandGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testCorrelationDataIsAttachedToCommandAsObject() throws Exception {
+    public void testCorrelationDataIsAttachedToCommandAsObject() {
         UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>("header correlationId") {
-            @Override
-            protected boolean matchesSafely(CommandMessage<Object> item) {
-                return "test".equals(item.getMetaData().get("correlationId"));
-            }
-        }), isA(CommandCallback.class));
+        verify(mockCommandBus).dispatch(argThat(x -> "test".equals(x.getMetaData().get("correlationId"))), isA(CommandCallback.class));
 
         CurrentUnitOfWork.clear(unitOfWork);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testCorrelationDataIsAttachedToCommandAsMessage() throws Exception {
+    public void testCorrelationDataIsAttachedToCommandAsMessage() {
         final Map<String, String> data = new HashMap<>();
         data.put("correlationId", "test");
         data.put("header", "someValue");
@@ -262,14 +257,8 @@ public class DefaultCommandGatewayTest {
         unitOfWork.registerCorrelationDataProvider(message -> data);
         testSubject.send(new GenericCommandMessage<>("Hello", Collections.singletonMap("header", "value")));
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>(
-                "header 'correlationId' and 'header'") {
-            @Override
-            protected boolean matchesSafely(CommandMessage<Object> item) {
-                return "test".equals(item.getMetaData().get("correlationId"))
-                        && "value".equals(item.getMetaData().get("header"));
-            }
-        }), isA(CommandCallback.class));
+        verify(mockCommandBus).dispatch(argThat(x -> "test".equals(x.getMetaData().get("correlationId"))
+                && "value".equals(x.getMetaData().get("header"))), isA(CommandCallback.class));
 
         CurrentUnitOfWork.clear(unitOfWork);
     }
@@ -277,7 +266,7 @@ public class DefaultCommandGatewayTest {
     private static class RescheduleCommand implements Answer<Boolean> {
 
         @Override
-        public Boolean answer(InvocationOnMock invocation) throws Exception {
+        public Boolean answer(InvocationOnMock invocation) {
             ((Runnable) invocation.getArguments()[3]).run();
             return true;
         }

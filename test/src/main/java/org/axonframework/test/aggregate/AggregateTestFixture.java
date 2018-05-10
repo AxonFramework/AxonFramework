@@ -161,8 +161,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<CommandMessage<?>> commandHanderInterceptor) {
-        commandHandlerInterceptors.add(commandHanderInterceptor);
+            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor) {
+        commandHandlerInterceptors.add(commandHandlerInterceptor);
         return this;
     }
 
@@ -266,7 +266,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<T>(aggregateType),
+            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
                                                              eventStore, parameterResolverFactory,
                                                              NoSnapshotTriggerDefinition.INSTANCE));
         }
@@ -552,7 +552,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             return () -> true;
         }
     }

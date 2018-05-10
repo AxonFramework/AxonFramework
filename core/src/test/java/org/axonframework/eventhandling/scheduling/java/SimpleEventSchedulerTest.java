@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.quartz.SchedulerException;
 
 import java.io.*;
@@ -41,6 +40,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class SimpleEventSchedulerTest {
 
@@ -49,14 +49,14 @@ public class SimpleEventSchedulerTest {
     private ScheduledExecutorService executorService;
 
     @Before
-    public void setUp() throws SchedulerException {
+    public void setUp() {
         eventBus = mock(EventBus.class);
         executorService = Executors.newSingleThreadScheduledExecutor();
         testSubject = new SimpleEventScheduler(executorService, eventBus);
     }
 
     @After
-    public void tearDown() throws SchedulerException {
+    public void tearDown() {
         if (executorService != null) {
             executorService.shutdownNow();
         }
@@ -89,7 +89,7 @@ public class SimpleEventSchedulerTest {
     }
 
     @Test
-    public void testCancelJob() throws SchedulerException, InterruptedException {
+    public void testCancelJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -104,7 +104,9 @@ public class SimpleEventSchedulerTest {
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
-        verify(eventBus).publish(argThat(new EqualPayloadMatcher(event2)));
+        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
+                && event2.getPayload().equals(item.getPayload())
+                && event2.getMetaData().equals(item.getMetaData())));
         executorService.shutdown();
         assertTrue("Executor refused to shutdown within a second",
                    executorService.awaitTermination(1, TimeUnit.SECONDS));
@@ -112,29 +114,5 @@ public class SimpleEventSchedulerTest {
 
     private EventMessage<Object> createEvent() {
         return new GenericEventMessage<>(new Object());
-    }
-
-    private static class EqualPayloadMatcher extends BaseMatcher<EventMessage> {
-
-        private final EventMessage<Object> event2;
-
-        public EqualPayloadMatcher(EventMessage<Object> event2) {
-            this.event2 = event2;
-        }
-
-        @Override
-        public boolean matches(Object o) {
-            return (o instanceof EventMessage)
-                    && event2.getPayload().equals(((EventMessage) o).getPayload())
-                    && event2.getMetaData().equals(((EventMessage) o).getMetaData());
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("an EventMessage with payload equal to ")
-                       .appendValue(event2.getPayload())
-                       .appendText(" and MetaData equal to")
-                       .appendValue(event2.getMetaData());
-        }
     }
 }

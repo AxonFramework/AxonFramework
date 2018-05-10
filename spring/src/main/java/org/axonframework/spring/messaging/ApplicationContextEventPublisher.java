@@ -64,7 +64,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         messageSource.subscribe(msgs -> msgs.forEach(msg -> {
             ApplicationEvent converted = convert(msg);
             if (converted != null) {

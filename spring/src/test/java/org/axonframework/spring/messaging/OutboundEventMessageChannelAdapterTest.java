@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
@@ -30,6 +29,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class OutboundEventMessageChannelAdapterTest {
 
@@ -53,7 +53,7 @@ public class OutboundEventMessageChannelAdapterTest {
     }
 
     @Test
-    public void testEventListenerRegisteredOnInit() throws Exception {
+    public void testEventListenerRegisteredOnInit() {
         verify(mockEventBus, never()).subscribe(any());
         testSubject.afterPropertiesSet();
         verify(mockEventBus).subscribe(any());
@@ -61,7 +61,7 @@ public class OutboundEventMessageChannelAdapterTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testFilterBlocksEvents() throws Exception {
+    public void testFilterBlocksEvents() {
         testSubject = new OutboundEventMessageChannelAdapter(mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class));
         testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));
@@ -72,11 +72,6 @@ public class OutboundEventMessageChannelAdapterTest {
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {
-        return argThat(new ArgumentMatcher<Message<?>>() {
-            @Override
-            public boolean matches(Object argument) {
-                return event.equals(((Message) argument).getPayload());
-            }
-        });
+        return argThat(x -> event.equals(((Message) x).getPayload()));
     }
 }

@@ -120,7 +120,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         public Registration registerDispatchInterceptor(
-                MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+                MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }
@@ -166,7 +166,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handle(CommandMessage<?> message) {
             StubCommand payload = (StubCommand) message.getPayload();
             repository.load(payload.getAggregateIdentifier()).execute(StubAggregate::doSomething);
             return null;

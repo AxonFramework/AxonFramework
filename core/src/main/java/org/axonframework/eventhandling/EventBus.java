@@ -20,6 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 
@@ -37,7 +38,8 @@ import java.util.List;
  * @see SimpleEventBus
  * @since 0.1
  */
-public interface EventBus extends SubscribableMessageSource<EventMessage<?>>, StreamableMessageSource<TrackedEventMessage<?>> {
+public interface EventBus extends SubscribableMessageSource<EventMessage<?>>, StreamableMessageSource<TrackedEventMessage<?>>,
+                                  MessageDispatchInterceptorSupport<EventMessage<?>> {
 
     /**
      * Open an event stream containing all events since given tracking token. The returned stream is comprised of events
@@ -89,6 +91,6 @@ public interface EventBus extends SubscribableMessageSource<EventMessage<?>>, St
      * @return a handle to unregister the {@code dispatchInterceptor}. When unregistered it will no longer be given
      * event messages published on this bus.
      */
-    Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor);
+    Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor);
 
 }

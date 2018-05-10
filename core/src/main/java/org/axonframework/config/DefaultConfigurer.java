@@ -105,7 +105,7 @@ public class DefaultConfigurer implements Configurer {
     private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private final List<Runnable> startHandlers = new ArrayList<>();
     private final List<Runnable> shutdownHandlers = new ArrayList<>();
-    private List<ModuleConfiguration> modules = new ArrayList<>();
+    private final List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
 
@@ -214,6 +214,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected QueryBus defaultQueryBus(Configuration config) {
         return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
+                                  config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"),
                                   config.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                   config.getComponent(QueryInvocationErrorHandler.class));
     }

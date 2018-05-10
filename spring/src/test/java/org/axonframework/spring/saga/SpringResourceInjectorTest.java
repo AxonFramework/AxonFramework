@@ -40,7 +40,7 @@ public class SpringResourceInjectorTest {
     private static ResourceInjector testSubject;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         ApplicationContext appCtx = new AnnotationConfigApplicationContext(Context.class);
         testSubject = appCtx.getBean(ResourceInjector.class);
     }

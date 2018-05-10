@@ -52,7 +52,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
     }
 
     @Override
-    public ParameterResolverFactory getObject() throws Exception {
+    public ParameterResolverFactory getObject() {
         return parameterResolverFactory;
     }
 
@@ -72,7 +72,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         factories.addAll(applicationContext.getBeansOfType(ParameterResolverFactory.class).values());
         parameterResolverFactory = MultiParameterResolverFactory.ordered(factories);
     }

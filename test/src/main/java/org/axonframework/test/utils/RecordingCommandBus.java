@@ -20,7 +20,9 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -127,5 +129,15 @@ public class RecordingCommandBus implements CommandBus {
      */
     public void setCallbackBehavior(CallbackBehavior callbackBehavior) {
         this.callbackBehavior = callbackBehavior;
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+        return null;
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        return () -> true;
     }
 }

@@ -86,6 +86,24 @@ public interface ResultValidator {
     ResultValidator expectReturnValueMatching(Matcher<?> matcher);
 
     /**
+     * Expect an exception message to occur during command handler execution that matches with the given {@code
+     * matcher}.
+     *
+     * @param matcher The matcher to validate the actual exception message
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator expectExceptionMessage(Matcher<?> matcher);
+
+    /**
+     * Expect the given {@code exceptionMessage} to occur during command handler execution. The actual exception
+     * message should be exactly the same as {@code exceptionMessage}.
+     *
+     * @param exceptionMessage The exception message expected from the command handler execution
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator expectExceptionMessage(String exceptionMessage);
+
+    /**
      * Expect the given {@code expectedException} to occur during command handler execution. The actual exception
      * should be exactly of that type, subclasses are not accepted.
      *

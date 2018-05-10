@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,12 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.*;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -48,6 +47,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class JgroupsConnectorTest_Gossip {
 
@@ -77,7 +77,7 @@ public class JgroupsConnectorTest_Gossip {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (gossipRouter != null) {
             gossipRouter.stop();
         }
@@ -132,16 +132,7 @@ public class JgroupsConnectorTest_Gossip {
 
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
-        doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat(new TypeSafeMatcher<SerializedObject<byte[]>>() {
-            @Override
-            protected boolean matchesSafely(SerializedObject<byte[]> item) {
-                return Arrays.equals("<string>Try this!</string>".getBytes(Charset.forName("UTF-8")), item.getData());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-            }
-        }));
+        doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat((ArgumentMatcher<SerializedObject<byte[]>>) x -> Arrays.equals("<string>Try this!</string>".getBytes(Charset.forName("UTF-8")), x.getData())));
 
         try {
             gateway1.sendAndWait("Try this!");
@@ -177,7 +168,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message) throws Exception {
+        public Object handle(CommandMessage<?> message) {
             counter.incrementAndGet();
             return "The Reply!";
         }

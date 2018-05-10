@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Class used by {@link DefaultConfigurer} to maintain the configuration for Message Monitors and create the function
@@ -35,12 +36,12 @@ class MessageMonitorFactoryBuilder {
 
     // Comparator to ensure the keys are processed in a reasonably stable order in #getFactoryForType
     // Added comparing on the class' classloader as a class can be loaded multiple times by different classloaders
-    private Comparator<Class<?>> classComparator =
-            Comparator.comparing((Class<?> c) -> c.getName())
+    private final Comparator<Class<?>> classComparator =
+            Comparator.comparing((Function<Class<?>, String>) Class::getName)
                       .thenComparingInt((Class<?> c) -> c.getClassLoader().hashCode());
 
-    private Map<String, SortedMap<Class<?>, MessageMonitorFactory>> forNameFactories = new HashMap<>();
-    private SortedMap<Class<?>, MessageMonitorFactory> forTypeFactories = new TreeMap<>(classComparator);
+    private final Map<String, SortedMap<Class<?>, MessageMonitorFactory>> forNameFactories = new HashMap<>();
+    private final SortedMap<Class<?>, MessageMonitorFactory> forTypeFactories = new TreeMap<>(classComparator);
     private MessageMonitorFactory defaultFactory = (configuration, type, name) -> NoOpMessageMonitor.instance();
     private boolean built = false;
 

@@ -347,7 +347,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             eventHandlerInvoker().performReset();
 
             for (int i = 0; i < tokens.length; i++) {
-                tokenStore.storeToken(new ReplayToken(tokens[i]), getName(), segments[i]);
+                tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i]), getName(), segments[i]);
             }
         });
     }
@@ -639,8 +639,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public void run() {
             int waitTime = 1;
+            String processorName = TrackingEventProcessor.this.getName();
             while (getState().isRunning()) {
-                String processorName = TrackingEventProcessor.this.getName();
                 int[] tokenStoreCurrentSegments;
 
                 try {
@@ -670,7 +670,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                boolean attemptImmediateRetry = false;
                 for (int i = 0; i < segments.length
                         && activeSegments.size() < maxThreadCount; i++) {
                     Segment segment = segments[i];
@@ -685,7 +684,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
-                            attemptImmediateRetry = true;
                             continue;
                         } catch (Exception e) {
                             activeSegments.remove(segment.getSegmentId());
@@ -715,10 +713,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     workingInCurrentThread.run();
                     break;
                 }
-
-                if (!attemptImmediateRetry) {
-                    doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
-                }
+                doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
             }
         }
     }

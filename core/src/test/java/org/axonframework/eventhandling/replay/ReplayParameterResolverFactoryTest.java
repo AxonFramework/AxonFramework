@@ -38,7 +38,7 @@ public class ReplayParameterResolverFactoryTest {
     private GlobalSequenceTrackingToken regularToken;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         handler = new SomeHandler();
         testSubject = new AnnotationEventListenerAdapter(handler);
         regularToken = new GlobalSequenceTrackingToken(1L);

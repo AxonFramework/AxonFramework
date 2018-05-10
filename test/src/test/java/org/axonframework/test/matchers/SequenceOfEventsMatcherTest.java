@@ -189,7 +189,7 @@ public class SequenceOfEventsMatcherTest {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Exception {
+        public Object answer(InvocationOnMock invocation) {
             Description descriptionParameter = (Description) invocation.getArguments()[0];
             descriptionParameter.appendText(this.description);
             return Void.class;

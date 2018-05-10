@@ -38,7 +38,7 @@ public class AxonAutoConfigurationWithHibernateTest {
     private EntityManager entityManager;
 
     @Test
-    public void testContextInitialization() throws Exception {
+    public void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));

@@ -104,6 +104,6 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
     }
 }

@@ -71,6 +71,6 @@ public class GenericMessage<T> implements Serializable {
     }
 
     private Object readResolve() {
-        return new org.axonframework.messaging.GenericMessage<T>(identifier, payload, metaData.getValues());
+        return new org.axonframework.messaging.GenericMessage<>(identifier, payload, metaData.getValues());
     }
 }

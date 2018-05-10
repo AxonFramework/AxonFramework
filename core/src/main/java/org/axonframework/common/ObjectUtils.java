@@ -71,4 +71,11 @@ public abstract class ObjectUtils {
         return instance;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> nullSafeTypeOf(T instance) {
+        if (instance == null) {
+            return (Class<T>) Void.class;
+        }
+        return (Class<T>) instance.getClass();
+    }
 }

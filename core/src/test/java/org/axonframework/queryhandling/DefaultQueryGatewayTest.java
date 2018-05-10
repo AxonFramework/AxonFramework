@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,15 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
@@ -42,7 +37,7 @@ public class DefaultQueryGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         answer = new GenericQueryResponseMessage<>("answer");
         MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
@@ -58,17 +53,7 @@ public class DefaultQueryGatewayTest {
         CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertEquals("answer", actual.get());
 
-        verify(mockBus).query(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
-            @Override
-            protected boolean matchesSafely(QueryMessage<String, String> item) {
-                return "query".equals(item.getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a QueryMessage containing the 'query' payload");
-            }
-        }));
+        verify(mockBus).query(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())));
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -81,18 +66,8 @@ public class DefaultQueryGatewayTest {
                 "query", ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS
         );
         assertEquals("answer", actual.findFirst().get());
-
-        verify(mockBus).scatterGather(argThat(new TypeSafeMatcher<QueryMessage<String, String>>() {
-            @Override
-            protected boolean matchesSafely(QueryMessage<String, String> item) {
-                return "query".equals(item.getPayload());
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("a QueryMessage containing the 'query' payload");
-            }
-        }), eq(1L), eq(TimeUnit.SECONDS));
+        verify(mockBus).scatterGather(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
+                                      eq(1L), eq(TimeUnit.SECONDS));
     }
 
     @SuppressWarnings("unused")

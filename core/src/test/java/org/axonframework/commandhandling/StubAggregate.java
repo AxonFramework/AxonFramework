@@ -21,9 +21,7 @@ import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.StubDomainEvent;
-import org.axonframework.messaging.MetaData;
 
 import java.util.UUID;
 
@@ -34,8 +32,6 @@ public class StubAggregate {
 
     @AggregateIdentifier
     private String identifier;
-
-    private int invocationCount;
 
     public StubAggregate() {
         identifier = UUID.randomUUID().toString();
@@ -50,22 +46,12 @@ public class StubAggregate {
     }
 
     public String getIdentifier() {
-        return identifier.toString();
+        return identifier;
     }
 
     @EventSourcingHandler
     protected void handle(EventMessage event) {
         identifier = ((DomainEventMessage) event).getAggregateIdentifier();
-        invocationCount++;
-    }
-
-    public int getInvocationCount() {
-        return invocationCount;
-    }
-
-    public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>("type", identifier.toString(), (long) 5,
-                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 
     public void delete() {

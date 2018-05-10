@@ -27,17 +27,22 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the {@link Aggregate} interface that allows for an aggregate root to be a POJO with annotations on
@@ -177,7 +182,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         execute(() -> {
             applying = true;
             while (!delayedTasks.isEmpty()) {
-                delayedTasks.poll().run();
+                delayedTasks.remove().run();
             }
             applying = false;
         });
@@ -274,8 +279,23 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public Object handle(CommandMessage<?> msg) throws Exception {
         return executeWithResult(() -> {
+            List<AnnotatedCommandHandlerInterceptor<? super T>> interceptors =
+                    inspector.commandHandlerInterceptors()
+                             .stream()
+                             .filter(chi -> chi.canHandle(msg))
+                             .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
+                             .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
+                             .collect(Collectors.toList());
             MessageHandlingMember<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
-            Object result = handler.handle(msg, aggregateRoot);
+            Object result;
+            if (interceptors.isEmpty()) {
+                result = handler.handle(msg, aggregateRoot);
+            } else {
+                result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                                                       interceptors,
+                                                       m -> handler.handle(msg, aggregateRoot)).proceed();
+            }
+
             if (aggregateRoot == null) {
                 aggregateRoot = (T) result;
                 return identifierAsString();
@@ -291,7 +311,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             try {
                 publish(createMessage(payload, metaData));
                 while (!delayedTasks.isEmpty()) {
-                    delayedTasks.poll().run();
+                    delayedTasks.remove().run();
                 }
             } finally {
                 delayedTasks.clear();

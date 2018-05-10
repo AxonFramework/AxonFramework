@@ -31,7 +31,7 @@ public class JavaSerializerTest {
     private JavaSerializer testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new JavaSerializer();
     }
 
@@ -71,6 +71,14 @@ public class JavaSerializerTest {
             assertTrue("Wrong message in exception", e.getMessage().contains("unknown"));
             assertTrue("Wrong message in exception", e.getMessage().contains("0"));
         }
+    }
+
+    @Test
+    public void testDeserializeNullValue() {
+        SerializedObject<byte[]> serializedNull = testSubject.serialize(null, byte[].class);
+        SimpleSerializedObject<byte[]> serializedNullString = new SimpleSerializedObject<>(serializedNull.getData(), byte[].class, testSubject.typeForClass(String.class));
+        assertNull(testSubject.deserialize(serializedNull));
+        assertNull(testSubject.deserialize(serializedNullString));
     }
 
     private static class MySerializableObject implements Serializable {

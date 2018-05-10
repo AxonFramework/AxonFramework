@@ -42,7 +42,7 @@ public class AsynchronousEventProcessorConcurrencyTest {
     private AsynchronousEventProcessingStrategy testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         executor = Executors.newCachedThreadPool();
         testSubject = new AsynchronousEventProcessingStrategy(executor, Message::getPayload);
     }

@@ -64,12 +64,12 @@ public class FixtureTest_CommandInterceptors {
     private MessageHandlerInterceptor<CommandMessage<?>> mockCommandHandlerInterceptor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         fixture = new AggregateTestFixture<>(InterceptorAggregate.class);
     }
 
     @Test
-    public void testRegisteredCommandDispatchInterceptorsAreInvoked() throws Exception {
+    public void testRegisteredCommandDispatchInterceptorsAreInvoked() {
         when(firstMockCommandDispatchInterceptor.handle(any(CommandMessage.class)))
                 .thenAnswer(it -> it.getArguments()[0]);
         fixture.registerCommandDispatchInterceptor(firstMockCommandDispatchInterceptor);
@@ -95,7 +95,7 @@ public class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    public void testRegisteredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() throws Exception {
+    public void testRegisteredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                 .when(new TestCommand(AGGREGATE_IDENTIFIER))
                 .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -111,8 +111,7 @@ public class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    public void testRegisteredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands()
-            throws Exception {
+    public void testRegisteredCommandDispatchInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
 
         MetaData expectedValues =
@@ -148,7 +147,7 @@ public class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    public void testRegisteredCommandHandlerInterceptorIsInvokedAndAltersEvent() throws Exception {
+    public void testRegisteredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                 .when(new TestCommand(AGGREGATE_IDENTIFIER))
                 .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -164,7 +163,7 @@ public class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    public void testRegisteredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() throws Exception {
+    public void testRegisteredCommandHandlerInterceptorIsInvokedForFixtureMethodsGivenCommands() {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
         Map<String, Object> expectedMetaDataMap = new HashMap<>();
@@ -176,7 +175,7 @@ public class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    public void testRegisteredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() throws Exception {
+    public void testRegisteredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                 .when(new TestCommand(AGGREGATE_IDENTIFIER))
                 .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
@@ -262,7 +261,7 @@ public class FixtureTest_CommandInterceptors {
     class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
         @Override
-        public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+        public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<? extends CommandMessage<?>> messages) {
             return (index, message) -> {
                 Map<String, Object> testMetaDataMap = new HashMap<>();
                 testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);

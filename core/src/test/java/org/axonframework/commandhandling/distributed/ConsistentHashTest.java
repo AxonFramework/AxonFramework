@@ -37,7 +37,7 @@ public class ConsistentHashTest {
     private Member member2;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         // md5(routingkey) -> de596bb1f674a2c001d807ce1024ae7f
         // md5(someOtherKey) -> 70ce6e22841006dd1122a89311f7e9fe
         // 276db5f995e944c0721c3daefb90f2f6 --> member3

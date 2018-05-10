@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
+ * @author Nakul Mishra
  */
 public class MultiParameterResolverFactoryTest {
 
@@ -47,7 +48,7 @@ public class MultiParameterResolverFactoryTest {
     private MultiParameterResolverFactory testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockFactory1 = mock(ParameterResolverFactory.class);
         mockFactory2 = mock(ParameterResolverFactory.class);
 
@@ -55,10 +56,10 @@ public class MultiParameterResolverFactoryTest {
         mockResolver2 = mock(ParameterResolver.class);
 
         when(mockFactory1.createInstance(Matchers.any(Executable.class),
-                                         Matchers.<Parameter[]>any(),
+                                         Matchers.any(),
                                          Matchers.anyInt())).thenReturn(mockResolver1);
         when(mockFactory2.createInstance(Matchers.any(Executable.class),
-                                         Matchers.<Parameter[]>any(),
+                                         Matchers.any(),
                                          Matchers.anyInt())).thenReturn(mockResolver2);
 
         testSubject = new MultiParameterResolverFactory(mockFactory1, mockFactory2);
@@ -72,12 +73,12 @@ public class MultiParameterResolverFactoryTest {
 
         InOrder inOrder = inOrder(mockFactory1, mockFactory2, mockResolver1, mockResolver2);
         inOrder.verify(mockFactory1).createInstance(Matchers.any(Executable.class),
-                                                    Matchers.<Parameter[]>any(),
+                                                    Matchers.any(),
                                                     Matchers.anyInt());
-        inOrder.verify(mockResolver1).matches(any(Message.class));
+        inOrder.verify(mockResolver1).matches(any());
 
         verify(mockFactory2, never()).createInstance(Matchers.any(Executable.class),
-                                                     Matchers.<Parameter[]>any(),
+                                                     Matchers.any(),
                                                      Matchers.anyInt());
 
         verify(mockResolver2, never()).matches(any(Message.class));
@@ -88,7 +89,7 @@ public class MultiParameterResolverFactoryTest {
         Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         when(mockFactory1.createInstance(Matchers.any(Executable.class),
-                                         Matchers.<Parameter[]>any(),
+                                         Matchers.any(),
                                          Matchers.anyInt()))
                 .thenReturn(null);
         when(mockResolver2.matches(message)).thenReturn(true);

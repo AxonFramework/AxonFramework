@@ -155,8 +155,7 @@ public class CachingEventSourcingRepositoryTest {
     }
 
     private UnitOfWork<?> startAndGetUnitOfWork() {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
-        return uow;
+        return DefaultUnitOfWork.startAndGet(null);
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {

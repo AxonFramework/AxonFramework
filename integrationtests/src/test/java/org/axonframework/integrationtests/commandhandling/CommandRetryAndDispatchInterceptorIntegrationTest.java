@@ -55,7 +55,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         scheduledThreadPool.shutdownNow();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -90,7 +90,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         final Thread testThread = Thread.currentThread();
         commandBus.registerDispatchInterceptor(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
-            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<? extends CommandMessage<?>> messages) {
                 return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
                         return message; // ok
@@ -121,19 +121,14 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     @Test(timeout = 10000)
     public void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
-        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, new MessageDispatchInterceptor<CommandMessage<?>>() {
-
-            @Override
-            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
-                return (index, message) -> {
-                    if (Thread.currentThread() == testThread) {
-                        return message.andMetaData(
-                                Collections.singletonMap("gatewayMetaData", "myUserSession"));
-                    } else {
-                        // gateway interceptor should only be called from the caller's thread
-                        throw new SecurityException("test dispatch interceptor exception");
-                    }
-                };
+        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler,
+                                                   (MessageDispatchInterceptor<CommandMessage<?>>) messages -> (index, message) -> {
+            if (Thread.currentThread() == testThread) {
+                return message.andMetaData(
+                        Collections.singletonMap("gatewayMetaData", "myUserSession"));
+            } else {
+                // gateway interceptor should only be called from the caller's thread
+                throw new SecurityException("test dispatch interceptor exception");
             }
         });
 

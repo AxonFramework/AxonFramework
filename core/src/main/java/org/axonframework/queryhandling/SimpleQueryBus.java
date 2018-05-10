@@ -70,9 +70,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, ReentrantReadWriteLock> subscriptionQueriesRegistering = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, ReentrantReadWriteLock> registeringSubscriptionQueryLocks = new ConcurrentHashMap<>();
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, UpdateHandler<?, ?>> updateHandlers = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
+    private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
@@ -106,7 +107,24 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
                           TransactionManager transactionManager,
                           QueryInvocationErrorHandler errorHandler) {
+        this(messageMonitor, NoOpMessageMonitor.INSTANCE, transactionManager, errorHandler);
+    }
+
+    /**
+     * Initialize the query bus with the given {@code messageMonitor} and given {@code errorHandler}.
+     *
+     * @param messageMonitor       The message monitor notified for incoming messages and their result
+     * @param updateMessageMonitor The message monitor notified for incoming update message in regard to subscription
+     *                             queries
+     * @param transactionManager   The transaction manager to manage transactions around query execution with
+     * @param errorHandler         The error handler to invoke when query handler report an error
+     */
+    public SimpleQueryBus(MessageMonitor<? super QueryMessage<?, ?>> messageMonitor,
+                          MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor,
+                          TransactionManager transactionManager,
+                          QueryInvocationErrorHandler errorHandler) {
         this.messageMonitor = messageMonitor != null ? messageMonitor : NoOpMessageMonitor.instance();
+        this.updateMessageMonitor = updateMessageMonitor != null ? updateMessageMonitor : NoOpMessageMonitor.instance();
         this.errorHandler = getOrDefault(errorHandler, () -> new LoggingQueryInvocationErrorHandler(logger));
         if (transactionManager != null) {
             registerHandlerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
@@ -155,7 +173,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             while (!invocationSuccess && handlerIterator.hasNext()) {
                 try {
                     DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    result = GenericQueryResponseMessage.asResponseMessage(
+                    result = GenericQueryResponseMessage.asNullableResponseMessage(
+                            query.getResponseType().responseMessagePayloadType(),
                             interceptAndInvoke(uow, handlerIterator.next())
                     );
                     invocationSuccess = true;
@@ -210,28 +229,23 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = intercept(query);
         ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
-        subscriptionQueriesRegistering.put(interceptedQuery, rwLock);
-        List<QuerySubscription> subs = subscriptions
-                .computeIfAbsent(interceptedQuery.getQueryName(), k -> new CopyOnWriteArrayList<>())
-                .stream()
-                .filter(subscription -> interceptedQuery.getResponseType().matches(subscription.getResponseType()))
-                .collect(Collectors.toList());
+        registeringSubscriptionQueryLocks.put(interceptedQuery, rwLock);
+        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
         rwLock.writeLock().lock();
         try {
-            if (subs.isEmpty()) {
+            if (handlers.isEmpty()) {
                 throw new NoHandlerForQueryException(
                         format("No handler found for %s with response type %s and update type %s",
                                interceptedQuery.getQueryName(),
                                interceptedQuery.getResponseType(),
                                interceptedQuery.getUpdateResponseType()));
             }
-            Iterator<QuerySubscription> subsIterator = subs.iterator();
+            Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
-            while (!invocationSuccess && subsIterator.hasNext()) {
+            while (!invocationSuccess && handlerIterator.hasNext()) {
                 try {
-                    QuerySubscription subscription = subsIterator.next();
                     DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    I initialResponse = (I) interceptAndInvoke(uow, subscription.getQueryHandler()).getPayload();
+                    I initialResponse = interceptAndInvoke(uow, handlerIterator.next()).getPayload();
 
                     updateHandler.onInitialResult(initialResponse);
 
@@ -257,7 +271,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             rwLock.writeLock().unlock();
         }
 
-        subscriptionQueriesRegistering.remove(interceptedQuery);
+        registeringSubscriptionQueryLocks.remove(interceptedQuery);
 
         return () -> {
             updateHandlers.remove(query);
@@ -268,22 +282,34 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         Function<SubscriptionQueryMessage<?, ?, U>, U> update) {
-        registeringSubscriptionQueryReadSafe(filter, () ->
-                updateHandlers.keySet()
-                              .stream()
-                              .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                              .map(m -> (SubscriptionQueryMessage<?, ?, U>) m)
-                              .forEach(query -> {
-                                  UpdateHandler<?, U> updateHandler = (UpdateHandler<?, U>) updateHandlers.get(query);
-                                  try {
-                                      U calculatedUpdate = update.apply(query);
-                                      updateHandler.onUpdate(calculatedUpdate);
-                                  } catch (Exception e) {
-                                      updateHandlers.remove(query);
-                                      updateHandler.onCompletedExceptionally(e);
-                                  }
-                              }));
+                         SubscriptionQueryUpdateMessage<U> update) {
+        registeringSubscriptionQueryReadSafe(filter, () -> {
+            MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
+            List<? extends SubscriptionQueryMessage<?, ?, U>> queries =
+                    updateHandlers.keySet()
+                                  .stream()
+                                  .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                                  .map(m -> (SubscriptionQueryMessage<?, ?, U>) m)
+                                  .collect(Collectors.toList());
+            if (queries.isEmpty()) {
+                monitorCallback.reportIgnored();
+            } else {
+                queries.forEach(query -> {
+                    UpdateHandler<?, U> updateHandler = (UpdateHandler<?, U>) updateHandlers.get(query);
+                    try {
+                        updateHandler.onUpdate(update.getPayload());
+                        monitorCallback.reportSuccess();
+                    } catch (Exception e) {
+                        logger.error(format(
+                                "An error happened while trying to emit an update to a query: %s.",
+                                query), e);
+                        monitorCallback.reportFailure(e);
+                        updateHandlers.remove(query);
+                        updateHandler.onCompletedExceptionally(e);
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -292,11 +318,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                 updateHandlers.keySet()
                               .stream()
                               .filter(filter)
-                              .forEach(query -> {
-                                  UpdateHandler<?, ?> updateHandler = updateHandlers.get(query);
-                                  updateHandlers.remove(query);
-                                  updateHandler.onCompleted();
-                              }));
+                              .forEach(query -> updateHandlers.remove(query).onCompleted()));
     }
 
     @Override
@@ -305,24 +327,29 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                 updateHandlers.keySet()
                               .stream()
                               .filter(filter)
-                              .forEach(query -> {
-                                  UpdateHandler<?, ?> updateHandler = updateHandlers.get(query);
-                                  updateHandlers.remove(query);
-                                  updateHandler.onCompletedExceptionally(cause);
-                              }));
+                              .forEach(query -> updateHandlers.remove(query).onCompletedExceptionally(cause)));
     }
 
+    /**
+     * Makes sure that {@code subscriptionQueryUpdate} is executed with the read lock on all subscription queries which
+     * are currently in registration process.
+     *
+     * @param subscriptionQueryFilter used to filter out subscription queries which are currently in registration
+     *                                process
+     * @param subscriptionQueryUpdate operation to be executed in lock safe guard
+     */
     @SuppressWarnings("unchecked")
-    private void registeringSubscriptionQueryReadSafe(Predicate<?> filter, Runnable r) {
-        List<ReentrantReadWriteLock> locks = subscriptionQueriesRegistering.keySet()
-                                                                           .stream()
-                                                                           .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) filter)
-                                                                           .map(subscriptionQueriesRegistering::get)
-                                                                           .collect(Collectors.toList());
+    private void registeringSubscriptionQueryReadSafe(Predicate<?> subscriptionQueryFilter,
+                                                      Runnable subscriptionQueryUpdate) {
+        List<ReentrantReadWriteLock> locks = registeringSubscriptionQueryLocks.keySet()
+                                                                              .stream()
+                                                                              .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) subscriptionQueryFilter)
+                                                                              .map(registeringSubscriptionQueryLocks::get)
+                                                                              .collect(Collectors.toList());
 
         locks.forEach(lock -> lock.readLock().lock());
         try {
-            r.run();
+            subscriptionQueryUpdate.run();
         } finally {
             locks.forEach(lock -> lock.readLock().unlock());
         }
@@ -335,7 +362,9 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         return uow.executeWithResult(() -> {
             ResponseType<R> responseType = uow.getMessage().getResponseType();
             Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceed();
-            return GenericQueryResponseMessage.asResponseMessage(responseType.convert(queryResponse));
+            return GenericQueryResponseMessage.asNullableResponseMessage(
+                    responseType.responseMessagePayloadType(),
+                    responseType.convert(queryResponse));
         });
     }
 
