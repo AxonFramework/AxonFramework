@@ -171,8 +171,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<CommandMessage<?>> commandHanderInterceptor) {
-        commandHandlerInterceptors.add(commandHanderInterceptor);
+            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor) {
+        commandHandlerInterceptors.add(commandHandlerInterceptor);
         return this;
     }
 
