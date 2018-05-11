@@ -32,6 +32,8 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.Test;
@@ -52,11 +54,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -96,6 +101,9 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
+
+    @Autowired
+    private EventUpcaster eventUpcaster;
 
     @Test
     public void contextWiresMainComponents() {
@@ -169,6 +177,14 @@ public class SpringAxonAutoConfigurerTest {
         assertEquals("Ooops! I failed.", myListenerInvocationErrorHandler.received.get(0).getMessage());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testEventUpcasterBeanPickedUp() {
+        Stream<IntermediateEventRepresentation> representationStream = mock(Stream.class);
+        axonConfig.upcasterChain().upcast(representationStream);
+        verify(eventUpcaster).upcast(representationStream);
+    }
+
     @EnableAxon
     @Scope
     @Configuration
@@ -198,6 +214,11 @@ public class SpringAxonAutoConfigurerTest {
         @Bean
         public SagaStore customSagaStore() {
             return new InMemorySagaStore();
+        }
+
+        @Bean
+        public EventUpcaster eventUpcaster() {
+            return mock(EventUpcaster.class);
         }
 
         @Aggregate
