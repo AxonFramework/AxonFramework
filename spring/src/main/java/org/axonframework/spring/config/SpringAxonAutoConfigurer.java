@@ -40,6 +40,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -171,6 +172,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
         registerCorrelationDataProviders(configurer);
+        registerEventUpcasters(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer);
         registerModules(configurer);
@@ -197,6 +199,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                  .map(n -> (CorrelationDataProvider) getBean(n, c))
                                  .collect(Collectors.toList());
                 });
+    }
+
+    private void registerEventUpcasters(Configurer configurer) {
+        Arrays.stream(beanFactory.getBeanNamesForType(EventUpcaster.class))
+              .forEach(name -> configurer.registerEventUpcaster(c -> getBean(name, c)));
     }
 
     @SuppressWarnings("unchecked")
