@@ -16,12 +16,17 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /**
  * Tag interface identifying a token that is used to identify the position of an event in an event stream. Event
  * processors use this token to keep track of the events they have processed and still need to process.
  *
  * @author Rene de Waele
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "@class")
 public interface TrackingToken {
 
     /**
