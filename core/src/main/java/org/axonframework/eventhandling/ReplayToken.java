@@ -17,6 +17,7 @@ package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
@@ -33,7 +34,9 @@ import java.util.Objects;
 public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     private static final long serialVersionUID = -4102464856247630944L;
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     private final TrackingToken tokenAtReset;
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     private final TrackingToken currentToken;
 
     /**
