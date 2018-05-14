@@ -142,12 +142,10 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
 
     /**
      * Filters a DomainEventStream. In the resulting stream events from stream
-     * {@code a} will be filtered by {@ filter}.
+     * {@code a} will be filtered by {@code filter}.
      *
-     * @param a
-     *            The stream
-     * @param filter
-     *            The filter to apply to the stream
+     * @param a      The stream
+     * @param filter The filter to apply to the stream
      * @return A filtered version of stream a
      */
     static DomainEventStream filter(DomainEventStream a, Predicate<DomainEventMessage<?>> filter) {
