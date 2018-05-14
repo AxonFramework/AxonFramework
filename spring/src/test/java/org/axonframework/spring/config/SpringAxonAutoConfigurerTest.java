@@ -43,6 +43,8 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
@@ -63,6 +65,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -112,6 +115,9 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
+
+    @Autowired
+    private EventUpcaster eventUpcaster;
 
     @Test
     public void contextWiresMainComponents() {
@@ -201,6 +207,14 @@ public class SpringAxonAutoConfigurerTest {
         verify(updateHandler).onUpdate("New chat message");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testEventUpcasterBeanPickedUp() {
+        Stream<IntermediateEventRepresentation> representationStream = mock(Stream.class);
+        axonConfig.upcasterChain().upcast(representationStream);
+        verify(eventUpcaster).upcast(representationStream);
+    }
+
     @EnableAxon
     @Scope
     @Configuration
@@ -230,6 +244,11 @@ public class SpringAxonAutoConfigurerTest {
         @Bean
         public SagaStore customSagaStore() {
             return new InMemorySagaStore();
+        }
+
+        @Bean
+        public EventUpcaster eventUpcaster() {
+            return mock(EventUpcaster.class);
         }
 
         @Aggregate
