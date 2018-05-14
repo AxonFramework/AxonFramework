@@ -33,6 +33,7 @@ import java.util.UUID;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.AggregateRoot;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
 import org.axonframework.eventhandling.EventMessage;
@@ -184,6 +185,37 @@ public class EventSourcingRepositoryTest {
         inOrder.verify(snapshotTrigger, times(2)).eventHandled(any());
     }
 
+    @Test(expected = AggregateNotFoundException.class)
+    public void testLoadFilteredByTypeNoEventsLeft() {
+        String identifier = UUID.randomUUID().toString();
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
+                new GenericDomainEventMessage<>("anotherType", identifier, (long) 1, "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>("anotherType", identifier, (long) 2, "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>("anotherType", identifier, (long) 3, "Mock contents", MetaData.emptyInstance())));
+        testSubject.load(identifier);
+    }
+
+    @Test
+    public void testLoadFilteredByType() {
+        String identifier = UUID.randomUUID().toString();
+        DomainEventMessage<? extends String> event1 = new GenericDomainEventMessage<>("anotherType", identifier, (long) 1,
+                                                                                      "Mock contents",
+                                                                                      MetaData.emptyInstance());
+        DomainEventMessage<? extends String> event2 = new GenericDomainEventMessage<>("type", identifier, (long) 1,
+                                                                                      "Mock contents",
+                                                                                      MetaData.emptyInstance());
+        DomainEventMessage<? extends String> event3 = new GenericDomainEventMessage<>("type", identifier, (long) 2,
+                                                                                      "Mock contents",
+                                                                                      MetaData.emptyInstance());
+
+        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2, event3));
+        Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
+
+        assertEquals(2, aggregate.invoke(TestAggregate::getHandledEvents).size());
+        assertSame(event2, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
+        assertSame(event3, aggregate.invoke(TestAggregate::getHandledEvents).get(1));
+    }
+    
     private static class StubAggregateFactory extends AbstractAggregateFactory<TestAggregate> {
 
         public StubAggregateFactory() {
