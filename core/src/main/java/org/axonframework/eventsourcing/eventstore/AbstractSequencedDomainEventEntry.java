@@ -13,6 +13,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
 
@@ -31,8 +32,7 @@ public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomai
 
     @Id
     @GeneratedValue
-    @SuppressWarnings("unused")
-    private long globalIndex;
+    private Long globalIndex;
 
     /**
      * Construct a new default domain event entry from a published domain event message to enable storing the event or
@@ -54,5 +54,12 @@ public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomai
      * Default constructor required by JPA
      */
     protected AbstractSequencedDomainEventEntry() {
+    }
+
+
+    @JsonIgnore
+    @SuppressWarnings("unused")
+    public Long getGlobalIndex() {
+        return globalIndex;
     }
 }
