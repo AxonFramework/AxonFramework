@@ -18,6 +18,7 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
@@ -60,6 +61,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -104,6 +106,9 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private EventUpcaster eventUpcaster;
+
+    @Autowired
+    private CommandTargetResolver myCommandTargetResolver;
 
     @Test
     public void contextWiresMainComponents() {
@@ -157,6 +162,7 @@ public class SpringAxonAutoConfigurerTest {
 
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
+        verify(myCommandTargetResolver).resolveTarget(any());
     }
 
     @Test
@@ -221,7 +227,12 @@ public class SpringAxonAutoConfigurerTest {
             return mock(EventUpcaster.class);
         }
 
-        @Aggregate
+        @Bean
+        public CommandTargetResolver myCommandTargetResolver() {
+            return mock(CommandTargetResolver.class);
+        }
+
+        @Aggregate(commandTargetResolver = "myCommandTargetResolver")
         public static class MyAggregate {
 
             @AggregateIdentifier
