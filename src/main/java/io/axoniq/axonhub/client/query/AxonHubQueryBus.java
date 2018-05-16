@@ -25,6 +25,8 @@ import io.axoniq.axonhub.client.DispatchInterceptors;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
+import io.axoniq.axonhub.client.query.subscription.AxonHubUpdateDispatcher;
+import io.axoniq.axonhub.client.query.subscription.SubscriptionQuerySerializer;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
@@ -43,6 +45,8 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +84,8 @@ public class AxonHubQueryBus implements QueryBus {
     private final PlatformConnectionManager platformConnectionManager;
     private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new DispatchInterceptors<>();
+    private final SubscriptionQuerySerializer subscriptionQuerySerializer;
+    private final AxonHubUpdateDispatcher updateDispatcher;
 
 
     /**
@@ -105,6 +111,9 @@ public class AxonHubQueryBus implements QueryBus {
         this.platformConnectionManager.addDisconnectListener(queryProvider::unsubscribeAll);
         interceptors = new ClientInterceptor[]{new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
+        this.subscriptionQuerySerializer = new SubscriptionQuerySerializer(configuration, messageSerializer, genericSerializer);
+        this.updateDispatcher = new AxonHubUpdateDispatcher(this::publish, messageSerializer, genericSerializer,configuration);
+        this.platformConnectionManager.addDisconnectListener(updateDispatcher::onDisconnect);
 
     }
 
@@ -156,6 +165,31 @@ public class AxonHubQueryBus implements QueryBus {
                                });
 
         return completableFuture;
+    }
+
+    @Override
+    public <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query, UpdateHandler<I, U> updateHandler) {
+        String subscriptionId = query.getIdentifier();
+        logger.debug("subscriptionQuery request with subscriptionId " + subscriptionId);
+        this.query(query).thenAccept( response -> {
+            this.queryProvider.getSubscriberObserver().onNext(subscriptionQuerySerializer.subscriptionRequest(query));
+            updateHandler.onInitialResult(response.getPayload());
+            this.updateDispatcher.register(subscriptionId, updateHandler);
+        }).exceptionally(throwable -> {
+            updateHandler.onCompletedExceptionally(throwable);
+            return null;
+        });
+
+        return () -> {
+            logger.debug("Unsubscribe request for subscriptionId " + subscriptionId);
+            this.queryProvider.getSubscriberObserver().onNext(subscriptionQuerySerializer.subscriptionCancel(subscriptionId));
+            this.updateDispatcher.unregister(subscriptionId);
+            return true;
+        };
+    }
+
+    private void publish(QueryProviderOutbound providerOutbound){
+        this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
     }
 
     @Override
@@ -285,6 +319,15 @@ public class AxonHubQueryBus implements QueryBus {
                                 break;
                             case QUERY:
                                 queryQueue.add(inboundRequest.getQuery());
+                                break;
+                            case QUERY_UPDATE:
+                                updateDispatcher.onUpdate(inboundRequest);
+                                break;
+                            case QUERY_UPDATE_COMPLETE:
+                                updateDispatcher.onUpdateComplete(inboundRequest);
+                                break;
+                            case QUERY_UPDATE_COMPLETE_EXCEPTIONALLY:
+                                updateDispatcher.onUpdateCompleteExceptionally(inboundRequest);
                                 break;
                         }
                     }

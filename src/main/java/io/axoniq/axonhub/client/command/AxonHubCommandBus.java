@@ -15,8 +15,15 @@
 
 package io.axoniq.axonhub.client.command;
 
-import io.axoniq.axonhub.*;
-import io.axoniq.axonhub.client.*;
+import io.axoniq.axonhub.Command;
+import io.axoniq.axonhub.CommandResponse;
+import io.axoniq.axonhub.CommandSubscription;
+import io.axoniq.axonhub.ProcessingInstruction;
+import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.DispatchInterceptors;
+import io.axoniq.axonhub.client.ErrorCode;
+import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
@@ -34,6 +41,7 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +49,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 
@@ -144,6 +156,12 @@ public class AxonHubCommandBus implements CommandBus {
         logger.debug("Subscribe: {}", s);
         commandRouterSubscriber.subscribe(s);
         return new AxonHubRegistration(localSegment.subscribe(s, messageHandler), () -> commandRouterSubscriber.unsubscribe(s));
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        return null;
     }
 
     protected class CommandRouterSubscriber {
