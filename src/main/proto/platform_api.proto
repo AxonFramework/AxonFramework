@@ -18,6 +18,8 @@ message PlatformInboundInstruction {
         Application application = 10;
         User user = 11;
         ContextUpdate context = 12;
+        HeartbeatResponse heartbeat = 99;
+        UnknownRequest unknown_request = 100;
     }
 }
 
@@ -27,10 +29,25 @@ message PlatformOutboundInstruction {
         RequestReconnect request_reconnect = 3;
         PauseEventProcessor pause_event_processor = 4;
         StartEventProcessor start_event_processor = 5;
+        HeartbeatRequest heartbeat = 99;
+        UnknownRequest unknown_request = 100;
     }
 }
 
 message RequestReconnect {
+}
+
+message HeartbeatRequest {
+    string message_id = 1;
+}
+
+message UnknownRequest {
+    int32 number = 1;
+}
+
+message HeartbeatResponse {
+    string message_id = 1;
+    string correlates_to = 2;
 }
 
 message PlatformInfo {
@@ -49,6 +66,7 @@ message ClientIdentification {
     string client_name = 1;
     string component_name = 2;
 }
+
 
 message Application {
     string name = 1;
