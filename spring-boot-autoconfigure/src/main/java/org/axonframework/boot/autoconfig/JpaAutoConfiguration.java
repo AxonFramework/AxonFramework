@@ -31,7 +31,6 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -44,7 +43,6 @@ import javax.persistence.EntityManagerFactory;
         "org.axonframework.eventhandling.tokenstore",
         "org.axonframework.eventhandling.saga.repository.jpa"})
 @Configuration
-@AutoConfigureAfter(JdbcAutoConfiguration.class)
 public class JpaAutoConfiguration {
 
     @ConditionalOnMissingBean
