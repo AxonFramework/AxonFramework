@@ -52,6 +52,7 @@ public class AxonHubConfiguration {
     private int processorsNotificationInitialDelay = 5000;
 
     private EventCipher eventCipher = new EventCipher();
+    private long heartbeatTimeout = 5000;
 
 
     public AxonHubConfiguration() {
@@ -194,6 +195,14 @@ public class AxonHubConfiguration {
 
     public void setProcessorsNotificationInitialDelay(int processorsNotificationInitialDelay) {
         this.processorsNotificationInitialDelay = processorsNotificationInitialDelay;
+    }
+
+    public long getHeartbeatTimeout() {
+        return this.heartbeatTimeout;
+    }
+
+    public void setHeartbeatTimeout(long heartbeatTimeout) {
+        this.heartbeatTimeout = heartbeatTimeout;
     }
 
     @SuppressWarnings("unused")

@@ -24,11 +24,14 @@ import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import io.axoniq.platform.grpc.ClientIdentification;
+import io.axoniq.platform.grpc.HeartbeatRequest;
+import io.axoniq.platform.grpc.HeartbeatResponse;
 import io.axoniq.platform.grpc.NodeInfo;
 import io.axoniq.platform.grpc.PlatformInboundInstruction;
 import io.axoniq.platform.grpc.PlatformInfo;
 import io.axoniq.platform.grpc.PlatformOutboundInstruction;
 import io.axoniq.platform.grpc.PlatformServiceGrpc;
+import io.axoniq.platform.grpc.UnknownRequest;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannel;
@@ -49,6 +52,7 @@ import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -71,9 +75,21 @@ public class PlatformConnectionManager {
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonHubConfiguration connectInformation;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
+    private volatile long lastHeartbeat = 0;
+    private volatile boolean supportsHeartbeat = false;
 
     public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
         this.connectInformation = connectInformation;
+        scheduler.schedule(this::verifyConnection, 1, TimeUnit.SECONDS);
+    }
+
+    private void verifyConnection() {
+        if(channel != null && supportsHeartbeat ) {
+            logger.warn("Connection to AxonHub is lost, trying to reconnect");
+            if( lastHeartbeat < System.currentTimeMillis() - connectInformation.getHeartbeatTimeout()) {
+                scheduleReconnect();
+            }
+        }
     }
 
     public synchronized Channel getChannel() {
@@ -152,11 +168,17 @@ public class PlatformConnectionManager {
 
     private synchronized void startInstructionStream() {
         logger.debug("Start instruction stream");
+        supportsHeartbeat = false;
         inputStream = PlatformServiceGrpc.newStub(channel)
                 .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
                 .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
+                        if( messagePlatformOutboundInstruction.getRequestCase() == null) {
+                            inputStream.onNext(PlatformInboundInstruction.newBuilder().setUnknownRequest(
+                                    UnknownRequest.newBuilder().build()
+                            ).build());
+                        }
                         handlers.getOrDefault(messagePlatformOutboundInstruction.getRequestCase(), new ArrayDeque<>())
                                 .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
 
@@ -169,7 +191,20 @@ public class PlatformConnectionManager {
                                 inputStream.onCompleted();
                                 scheduleReconnect();
                                 break;
+                            case HEARTBEAT:
+                                HeartbeatRequest request = messagePlatformOutboundInstruction.getHeartbeat();
+                                supportsHeartbeat = true;
+                                lastHeartbeat = System.currentTimeMillis();
+                                inputStream.onNext(
+                                        PlatformInboundInstruction.newBuilder()
+                                                                  .setHeartbeat(HeartbeatResponse.newBuilder()
+                                                                                                 .setMessageId(UUID.randomUUID().toString())
+                                                                                                 .setCorrelatesTo(request.getMessageId())
+                                                                                                 .build())
+                                                                  .build()
+                                );
                             case REQUEST_NOT_SET:
+
                                 break;
                         }
                     }
