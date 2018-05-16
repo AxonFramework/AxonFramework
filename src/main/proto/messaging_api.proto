@@ -30,6 +30,8 @@ message QueryProviderOutbound {
         FlowControl flowControl = 3;
         QueryResponse queryResponse = 4;
         QueryComplete queryComplete = 5;
+        SubscriptionQueryRequest subscription_query_request = 6;
+        UnsubscriptionQueryRequest unsubscription_query_request = 7;
     }
 }
 
@@ -44,6 +46,9 @@ message QueryProviderInbound {
     oneof request {
         Confirmation confirmation = 1;
         QueryRequest query = 2;
+        QueryUpdate query_update = 6;
+        QueryUpdateComplete query_update_complete = 7;
+        QueryUpdateCompleteExceptionally query_update_complete_exceptionally = 8;
     }
 }
 
