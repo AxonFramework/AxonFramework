@@ -31,6 +31,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.spring.stereotype.Aggregate;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -219,6 +220,7 @@ public class SynchronousLoopbackTest {
         }
     }
 
+    @Aggregate (type = "test")
     private static class CountingAggregate {
 
         private static final long serialVersionUID = -2927751585905120260L;

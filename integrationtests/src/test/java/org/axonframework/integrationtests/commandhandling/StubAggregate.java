@@ -18,12 +18,14 @@ package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.spring.stereotype.Aggregate;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Allard Buijze
  */
+@Aggregate (type = "test")
 public class StubAggregate {
 
     private int changeCounter;
