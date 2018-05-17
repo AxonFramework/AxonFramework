@@ -25,14 +25,13 @@ import io.axoniq.axonhub.client.DispatchInterceptors;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubRegistration;
-import io.axoniq.axonhub.client.query.subscription.AxonHubUpdateDispatcher;
-import io.axoniq.axonhub.client.query.subscription.SubscriptionQuerySerializer;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
 import io.axoniq.axonhub.grpc.QueryComplete;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
+import io.axoniq.axonhub.grpc.QueryProviderInbound.RequestCase;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import io.grpc.ClientInterceptor;
@@ -45,15 +44,17 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -65,6 +66,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -84,8 +86,7 @@ public class AxonHubQueryBus implements QueryBus {
     private final PlatformConnectionManager platformConnectionManager;
     private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new DispatchInterceptors<>();
-    private final SubscriptionQuerySerializer subscriptionQuerySerializer;
-    private final AxonHubUpdateDispatcher updateDispatcher;
+    private final Map<RequestCase, Collection<Consumer<QueryProviderInbound>>> queryHandlers = new EnumMap<>(RequestCase.class);
 
 
     /**
@@ -111,9 +112,7 @@ public class AxonHubQueryBus implements QueryBus {
         this.platformConnectionManager.addDisconnectListener(queryProvider::unsubscribeAll);
         interceptors = new ClientInterceptor[]{new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
-        this.subscriptionQuerySerializer = new SubscriptionQuerySerializer(configuration, messageSerializer, genericSerializer);
-        this.updateDispatcher = new AxonHubUpdateDispatcher(this::publish, messageSerializer, genericSerializer,configuration);
-        this.platformConnectionManager.addDisconnectListener(updateDispatcher::onDisconnect);
+
 
     }
 
@@ -165,31 +164,6 @@ public class AxonHubQueryBus implements QueryBus {
                                });
 
         return completableFuture;
-    }
-
-    @Override
-    public <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query, UpdateHandler<I, U> updateHandler) {
-        String subscriptionId = query.getIdentifier();
-        logger.debug("subscriptionQuery request with subscriptionId " + subscriptionId);
-        this.query(query).thenAccept( response -> {
-            this.queryProvider.getSubscriberObserver().onNext(subscriptionQuerySerializer.subscriptionRequest(query));
-            updateHandler.onInitialResult(response.getPayload());
-            this.updateDispatcher.register(subscriptionId, updateHandler);
-        }).exceptionally(throwable -> {
-            updateHandler.onCompletedExceptionally(throwable);
-            return null;
-        });
-
-        return () -> {
-            logger.debug("Unsubscribe request for subscriptionId " + subscriptionId);
-            this.queryProvider.getSubscriberObserver().onNext(subscriptionQuerySerializer.subscriptionCancel(subscriptionId));
-            this.updateDispatcher.unregister(subscriptionId);
-            return true;
-        };
-    }
-
-    private void publish(QueryProviderOutbound providerOutbound){
-        this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
     }
 
     @Override
@@ -314,20 +288,14 @@ public class AxonHubQueryBus implements QueryBus {
                 StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
                     @Override
                     public void onNext(QueryProviderInbound inboundRequest) {
-                        switch (inboundRequest.getRequestCase()) {
+                        RequestCase requestCase = inboundRequest.getRequestCase();
+                        queryHandlers.getOrDefault(requestCase, Collections.emptySet())
+                                     .forEach(consumer -> consumer.accept(inboundRequest));
+                        switch (requestCase) {
                             case CONFIRMATION:
                                 break;
                             case QUERY:
                                 queryQueue.add(inboundRequest.getQuery());
-                                break;
-                            case QUERY_UPDATE:
-                                updateDispatcher.onUpdate(inboundRequest);
-                                break;
-                            case QUERY_UPDATE_COMPLETE:
-                                updateDispatcher.onUpdateComplete(inboundRequest);
-                                break;
-                            case QUERY_UPDATE_COMPLETE_EXCEPTIONALLY:
-                                updateDispatcher.onUpdateCompleteExceptionally(inboundRequest);
                                 break;
                         }
                     }
@@ -430,6 +398,16 @@ public class AxonHubQueryBus implements QueryBus {
                 return Objects.hash(queryName, responseName, componentName);
             }
         }
+    }
+
+    void publish(QueryProviderOutbound providerOutbound){
+        this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
+    }
+
+    public void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
+        Collection<Consumer<QueryProviderInbound>> consumers =
+                queryHandlers.computeIfAbsent(requestCase,rc -> new CopyOnWriteArraySet<>());
+        consumers.add(consumer);
     }
 
 }
