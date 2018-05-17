@@ -3,11 +3,14 @@ package org.axonframework.queryhandling.responsetypes;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.ReflectionUtils.methodOf;
@@ -224,6 +227,16 @@ public abstract class AbstractResponseTypeTest<R> {
     @SuppressWarnings("unused")
     public Map<QueryResponse, QueryResponse> someMapQuery() {
         return new HashMap<>();
+    }
+
+    @SuppressWarnings("unused")
+    public Future<QueryResponse> someFutureQuery() {
+        return CompletableFuture.completedFuture(new QueryResponse());
+    }
+
+    @SuppressWarnings("unused")
+    public Future<List<QueryResponse>> someFutureListQuery() {
+        return CompletableFuture.completedFuture(Collections.singletonList(new QueryResponse()));
     }
 
     static class QueryResponse {
