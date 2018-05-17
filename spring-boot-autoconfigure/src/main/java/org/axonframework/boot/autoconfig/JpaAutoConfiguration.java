@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -45,7 +46,7 @@ import javax.persistence.EntityManagerFactory;
 @Configuration
 public class JpaAutoConfiguration {
 
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventStore.class})
     @Bean
     public EventStorageEngine eventStorageEngine(Serializer serializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,

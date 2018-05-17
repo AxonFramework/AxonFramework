@@ -4,11 +4,13 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jdbc.GenericSagaSqlSchema;
 import org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
@@ -30,7 +32,7 @@ import java.sql.SQLException;
 @AutoConfigureAfter(JpaAutoConfiguration.class)
 public class JdbcAutoConfiguration {
 
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventStore.class})
     @Bean
     public EventStorageEngine eventStorageEngine(Serializer serializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
@@ -54,7 +56,7 @@ public class JdbcAutoConfiguration {
         return new SQLErrorCodesResolver(dataSource);
     }
 
-    @ConditionalOnMissingBean({DataSource.class, PersistenceExceptionResolver.class})
+    @ConditionalOnMissingBean({DataSource.class, PersistenceExceptionResolver.class, EventStore.class})
     @Bean
     public PersistenceExceptionResolver jdbcSQLErrorCodesResolver() {
         return new JdbcSQLErrorCodesResolver();
@@ -72,7 +74,7 @@ public class JdbcAutoConfiguration {
         return new JdbcTokenStore(connectionProvider, serializer);
     }
 
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(SagaStore.class)
     @Bean
     public JdbcSagaStore sagaStore(ConnectionProvider connectionProvider, Serializer serializer) {
         return new JdbcSagaStore(connectionProvider, new GenericSagaSqlSchema(), serializer);
