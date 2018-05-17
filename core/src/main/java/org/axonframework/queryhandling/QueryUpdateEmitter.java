@@ -16,40 +16,108 @@
 
 package org.axonframework.queryhandling;
 
+import java.util.function.Predicate;
+
 /**
- * Emitter used on query handling side in order to emit incremental updates on query side.
+ * Component which informs subscription queries about updates, errors and when there are no more updates.
  *
- * @param <U> the type of incremental updates
  * @author Milan Savic
  * @see UpdateHandler
  * @since 3.3
  */
-public interface QueryUpdateEmitter<U> {
+public interface QueryUpdateEmitter {
 
     /**
-     * Emits a single update.
+     * Emits incremental update (as return value of provided update function) to subscription queries matching given
+     * filter.
      *
-     * @param update the update
-     * @return {@code true} if emit was successful
+     * @param filter predicate on subscription query message used to filter subscription queries
+     * @param update incremental update message
+     * @param <U>    the type of the update
      */
-    boolean emit(U update);
+    <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, SubscriptionQueryUpdateMessage<U> update);
 
     /**
-     * Informs query side that there are no more updates.
-     */
-    void complete();
-
-    /**
-     * Informs query side that error occurred.
+     * Emits given incremental update to subscription queries matching given filter.
      *
-     * @param error the error
+     * @param filter predicate on subscription query message used to filter subscription queries
+     * @param update incremental update
+     * @param <U>    the type of the update
      */
-    void error(Throwable error);
+    default <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, U update) {
+        emit(filter, GenericSubscriptionQueryUpdateMessage.from(update));
+    }
 
     /**
-     * Registers a handler to be invoked when query cancels the registration.
+     * Emits given incremental update to subscription queries matching given query type and filter.
      *
-     * @param r the handler to be invoked
+     * @param queryType the type of the query
+     * @param filter    predicate on query payload used to filter subscription queries
+     * @param update    incremental update message
+     * @param <Q>       the type of the query
+     * @param <U>       the type of the update
      */
-    void onRegistrationCanceled(Runnable r);
+    @SuppressWarnings("unchecked")
+    default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, SubscriptionQueryUpdateMessage<U> update) {
+        Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
+                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        emit(sqmFilter, update);
+    }
+
+    /**
+     * Emits given incremental update to subscription queries matching given query type and filter.
+     *
+     * @param queryType the type of the query
+     * @param filter    predicate on query payload used to filter subscription queries
+     * @param update    incremental update
+     * @param <Q>       the type of the query
+     * @param <U>       the type of the update
+     */
+    default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, U update) {
+        emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.from(update));
+    }
+
+    /**
+     * Completes subscription queries matching given filter.
+     *
+     * @param filter predicate on subscription query message used to filter subscription queries
+     */
+    void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter);
+
+    /**
+     * Completes subscription queries matching given query type and filter.
+     *
+     * @param queryType the type of the query
+     * @param filter    predicate on query payload used to filter subscription queries
+     * @param <Q>       the type of the query
+     */
+    @SuppressWarnings("unchecked")
+    default <Q> void complete(Class<Q> queryType, Predicate<Q> filter) {
+        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
+                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        complete(sqmFilter);
+    }
+
+    /**
+     * Completes with an error subscription queries matching given filter.
+     *
+     * @param filter predicate on subscription query message used to filter subscription queries
+     * @param cause  the cause of an error
+     */
+    void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause);
+
+    /**
+     * Completes with an error subscription queries matching given query type and filter
+     *
+     * @param queryType the type of the query
+     * @param filter    predicate on query payload used to filter subscription queries
+     * @param cause     the cause of an error
+     * @param <Q>       the type of the query
+     */
+    @SuppressWarnings("unchecked")
+    default <Q> void completeExceptionally(Class<Q> queryType, Predicate<Q> filter, Throwable cause) {
+        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
+                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        completeExceptionally(sqmFilter, cause);
+    }
 }

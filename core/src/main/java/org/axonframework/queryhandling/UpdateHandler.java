@@ -52,5 +52,5 @@ public interface UpdateHandler<I, U> {
      *
      * @param error the error which occurred
      */
-    void onError(Throwable error);
+    void onCompletedExceptionally(Throwable error);
 }

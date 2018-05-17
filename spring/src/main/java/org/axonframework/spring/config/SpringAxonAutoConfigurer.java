@@ -40,6 +40,7 @@ import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
@@ -139,6 +140,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
         findComponent(QueryBus.class)
                 .ifPresent(queryBus -> configurer.configureQueryBus(c -> getBean(queryBus, c)));
+        findComponent(QueryUpdateEmitter.class)
+                .ifPresent(queryUpdateEmitter -> configurer.configureQueryUpdateEmitter(c -> getBean(queryUpdateEmitter, c)));
         findComponent(EventStorageEngine.class)
                 .ifPresent(ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
         findComponent(EventBus.class).ifPresent(eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
