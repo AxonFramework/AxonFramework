@@ -21,7 +21,11 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.NoHandlerForQueryException;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerAdapter;
+import org.axonframework.queryhandling.QueryMessage;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -37,7 +41,7 @@ import java.util.stream.Collectors;
  * @since 3.1
  */
 public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
-    MessageHandler<QueryMessage<?, ?>>, SubscriptionQueryMessageHandler<QueryMessage<?, Object>, Object, Object> {
+        MessageHandler<QueryMessage<?, ?>> {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
@@ -66,12 +70,12 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
 
     public Registration subscribe(QueryBus queryBus) {
         Collection<Registration> registrationList = model.getHandlers().stream()
-                .map(m -> subscribe(queryBus, m))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                                                         .map(m -> subscribe(queryBus, m))
+                                                         .filter(Objects::nonNull)
+                                                         .collect(Collectors.toList());
         return () -> registrationList.stream().map(Registration::cancel)
-                .reduce(Boolean::logicalOr)
-                .orElse(false);
+                                     .reduce(Boolean::logicalOr)
+                                     .orElse(false);
     }
 
     @Override
@@ -85,21 +89,8 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
                                                      + message.getPayloadType().getName());
     }
 
-    @Override
-    public Object handle(QueryMessage<?, Object> message, QueryUpdateEmitter<Object> emitter) throws Exception {
-        QueryUpdateEmitterParameterResolverFactory.initialize(emitter);
-        return handle(message);
-    }
-
     @SuppressWarnings("unchecked")
     private Registration subscribe(QueryBus queryBus, MessageHandlingMember<? super T> m) {
-        Optional<SubscriptionQueryHandlingMember> unwrappedSubscriptionQueryMember = m.unwrap(
-                SubscriptionQueryHandlingMember.class);
-        if (unwrappedSubscriptionQueryMember.isPresent()) {
-            SubscriptionQueryHandlingMember sqhm = unwrappedSubscriptionQueryMember.get();
-            return queryBus.subscribe(sqhm.getQueryName(), sqhm.getResultType(), sqhm.getUpdateType(), this);
-        }
-
         Optional<QueryHandlingMember> unwrappedQueryMember = m.unwrap(QueryHandlingMember.class);
         if (unwrappedQueryMember.isPresent()) {
             QueryHandlingMember qhm = unwrappedQueryMember.get();
