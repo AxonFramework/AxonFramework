@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent;
 import org.springframework.cloud.client.serviceregistry.Registration;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
 import java.net.URI;
@@ -191,18 +191,18 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * Update the local member and all the other remote members known by the
      * {@link org.springframework.cloud.client.discovery.DiscoveryClient} to be able to have an as up-to-date awareness
      * of which actions which members can handle. This function is automatically triggered by an (unused)
-     * {@link org.springframework.context.event.ContextRefreshedEvent}. Upon this event we may assume that the
-     * application has fully start up. Because of this we can update the local member with the correct name and
+     * {@link org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent}. Upon this event we may assume
+     * that the application has fully start up. Because of this we can update the local member with the correct name and
      * {@link java.net.URI}, as initially these were not provided by the
      * {@link org.springframework.cloud.client.serviceregistry.Registration} yet.
      *
-     * @param event an unused {@link org.springframework.context.event.ContextRefreshedEvent}, serves as a trigger for
-     *              this function
+     * @param event an unused {@link org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent}, serves
+     *              as a trigger for this function
      * @see SpringCloudCommandRouter#buildMember(ServiceInstance)
      */
     @EventListener
     @SuppressWarnings("UnusedParameters")
-    public void resetLocalMembership(ContextRefreshedEvent event) {
+    public void resetLocalMembership(InstanceRegisteredEvent event) {
         afterStartUp = true;
         Member startUpPhaseLocalMember =
                 atomicConsistentHash.get().getMembers().stream()

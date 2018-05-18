@@ -31,8 +31,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent;
 import org.springframework.cloud.client.serviceregistry.Registration;
-import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -198,7 +198,7 @@ public class SpringCloudCommandRouterTest {
                      resultMemberSet.iterator().next(),
                      DURING_START_UP);
 
-        testSubject.resetLocalMembership(mock(ContextRefreshedEvent.class));
+        testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
 
         resultAtomicConsistentHash = getFieldValue(atomicConsistentHashField, testSubject);
         resultMemberSet = resultAtomicConsistentHash.get().getMembers();
@@ -214,13 +214,12 @@ public class SpringCloudCommandRouterTest {
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
     }
 
-
     @Test
     public void testUpdateMembershipsOnHeartbeatEventUpdatesConsistentHash() {
         // Start up command router
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
         // Set command router has passed the start up phase
-        testSubject.resetLocalMembership(mock(ContextRefreshedEvent.class));
+        testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
@@ -278,7 +277,7 @@ public class SpringCloudCommandRouterTest {
         // Start up command router
         testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
         // Set router has passed the start up phase
-        testSubject.resetLocalMembership(mock(ContextRefreshedEvent.class));
+        testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
         // Update router memberships with local and remote service instance
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
