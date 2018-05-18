@@ -227,6 +227,11 @@ public class MultipleInstancesResponseTypeTest
         testMatches("someMapQuery", DOES_NOT_MATCHES);
     }
 
+    @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsFutureOfProvidedType() throws NoSuchMethodException {
+        testMatches("someFutureListQuery", MATCHES);
+    }
+
     @SuppressWarnings("unused")
     @Test(expected = Exception.class)
     public void testConvertThrowsExceptionForSingleInstanceResponse() {
