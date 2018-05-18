@@ -15,6 +15,7 @@
 
 package io.axoniq.axonhub.client.query;
 
+import io.axoniq.axonhub.ErrorMessage;
 import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
@@ -154,8 +155,10 @@ public class AxonHubQueryBus implements QueryBus {
 
                                    @Override
                                    public void onCompleted() {
-                                       if (!completableFuture.isDone())
-                                           completableFuture.complete(null);
+                                       if (!completableFuture.isDone()) {
+                                           completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.OTHER.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
+//                                           completableFuture.complete(null);
+                                       }
                                    }
                                });
 
