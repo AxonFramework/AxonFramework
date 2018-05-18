@@ -54,6 +54,11 @@ public class AxonHubConfiguration {
     private EventCipher eventCipher = new EventCipher();
     private long heartbeatTimeout = 5000;
 
+    private long checkAliveDelay = 1000;
+    private long checkAliveInterval = 1000;
+
+
+
 
     public AxonHubConfiguration() {
     }
@@ -203,6 +208,26 @@ public class AxonHubConfiguration {
 
     public void setHeartbeatTimeout(long heartbeatTimeout) {
         this.heartbeatTimeout = heartbeatTimeout;
+    }
+
+    public void setCommandThreads(int commandThreads) {
+        this.commandThreads = commandThreads;
+    }
+
+    public long getCheckAliveDelay() {
+        return checkAliveDelay;
+    }
+
+    public void setCheckAliveDelay(long checkAliveDelay) {
+        this.checkAliveDelay = checkAliveDelay;
+    }
+
+    public long getCheckAliveInterval() {
+        return checkAliveInterval;
+    }
+
+    public void setCheckAliveInterval(long checkAliveInterval) {
+        this.checkAliveInterval = checkAliveInterval;
     }
 
     @SuppressWarnings("unused")

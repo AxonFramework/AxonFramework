@@ -80,13 +80,13 @@ public class PlatformConnectionManager {
 
     public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
         this.connectInformation = connectInformation;
-        scheduler.schedule(this::verifyConnection, 1, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::verifyConnection, connectInformation.getCheckAliveDelay(), connectInformation.getCheckAliveInterval(), TimeUnit.MILLISECONDS);
     }
 
     private void verifyConnection() {
         if(channel != null && supportsHeartbeat ) {
-            logger.warn("Connection to AxonHub is lost, trying to reconnect");
             if( lastHeartbeat < System.currentTimeMillis() - connectInformation.getHeartbeatTimeout()) {
+                logger.warn("Connection to AxonHub is lost, trying to reconnect");
                 scheduleReconnect();
             }
         }
