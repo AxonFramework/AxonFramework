@@ -304,13 +304,13 @@ public class AxonHubQueryBus implements QueryBus {
                     @Override
                     public void onError(Throwable throwable) {
                         outboundStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
+//                        platformConnectionManager.scheduleReconnect();
                     }
 
                     @Override
                     public void onCompleted() {
                         outboundStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
+//                        platformConnectionManager.scheduleReconnect();
                     }
                 };
 

@@ -31,7 +31,6 @@ import io.axoniq.platform.grpc.PlatformInboundInstruction;
 import io.axoniq.platform.grpc.PlatformInfo;
 import io.axoniq.platform.grpc.PlatformOutboundInstruction;
 import io.axoniq.platform.grpc.PlatformServiceGrpc;
-import io.axoniq.platform.grpc.UnknownRequest;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannel;
@@ -113,7 +112,7 @@ public class PlatformConnectionManager {
                         channel = createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
                                 ManagedChannelBuilder.forAddress(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort()).usePlaintext(true).build();
                     }
-                    startInstructionStream();
+                    startInstructionStream(clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
                     break;
                 } catch( StatusRuntimeException sre) {
@@ -166,19 +165,14 @@ public class PlatformConnectionManager {
         return builder.build();
     }
 
-    private synchronized void startInstructionStream() {
-        logger.debug("Start instruction stream");
+    private synchronized void startInstructionStream(String name) {
+        logger.debug("Start instruction stream to {}", name);
         supportsHeartbeat = false;
-        inputStream = PlatformServiceGrpc.newStub(channel)
-                .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
-                .openStream(new StreamObserver<PlatformOutboundInstruction>() {
+        inputStream = new SynchronizedStreamObserver(PlatformServiceGrpc.newStub(channel)
+                                                                        .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
+                                                                        .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
-                        if( messagePlatformOutboundInstruction.getRequestCase() == null) {
-                            inputStream.onNext(PlatformInboundInstruction.newBuilder().setUnknownRequest(
-                                    UnknownRequest.newBuilder().build()
-                            ).build());
-                        }
                         handlers.getOrDefault(messagePlatformOutboundInstruction.getRequestCase(), new ArrayDeque<>())
                                 .forEach(consumer -> consumer.accept(messagePlatformOutboundInstruction));
 
@@ -192,17 +186,24 @@ public class PlatformConnectionManager {
                                 scheduleReconnect();
                                 break;
                             case HEARTBEAT:
-                                HeartbeatRequest request = messagePlatformOutboundInstruction.getHeartbeat();
-                                supportsHeartbeat = true;
-                                lastHeartbeat = System.currentTimeMillis();
-                                inputStream.onNext(
-                                        PlatformInboundInstruction.newBuilder()
-                                                                  .setHeartbeat(HeartbeatResponse.newBuilder()
-                                                                                                 .setMessageId(UUID.randomUUID().toString())
-                                                                                                 .setCorrelatesTo(request.getMessageId())
-                                                                                                 .build())
-                                                                  .build()
-                                );
+                                try {
+                                    HeartbeatRequest request = messagePlatformOutboundInstruction.getHeartbeat();
+                                    supportsHeartbeat = true;
+                                    lastHeartbeat = System.currentTimeMillis();
+                                    inputStream.onNext(
+                                            PlatformInboundInstruction.newBuilder()
+                                                                      .setHeartbeat(HeartbeatResponse.newBuilder()
+                                                                                                     .setMessageId(UUID.randomUUID()
+                                                                                                                       .toString())
+                                                                                                     .setCorrelatesTo(
+                                                                                                             request.getMessageId())
+                                                                                                     .build())
+                                                                      .build()
+                                    );
+                                } catch( Throwable ex) {
+                                    logger.warn("Failed to reply to heartbeat", ex);
+                                }
+                                break;
                             case REQUEST_NOT_SET:
 
                                 break;
@@ -211,7 +212,7 @@ public class PlatformConnectionManager {
 
                     @Override
                     public void onError(Throwable throwable) {
-                        logger.debug("Lost instruction stream - {}", throwable.getMessage());
+                        logger.debug("Lost instruction stream from {} - {}", name, throwable.getMessage());
                         disconnectListeners.forEach(Runnable::run);
                         if( throwable instanceof StatusRuntimeException) {
                             StatusRuntimeException sre = (StatusRuntimeException)throwable;
@@ -222,18 +223,19 @@ public class PlatformConnectionManager {
 
                     @Override
                     public void onCompleted() {
-                        logger.debug("Closed instruction stream");
+                        logger.warn("Closed instruction stream to {}", name);
                         disconnectListeners.forEach(Runnable::run);
                         scheduleReconnect();
                     }
-                });
+                }));
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
                 .setClientName(connectInformation.getClientName())
                 .setComponentName(connectInformation.getComponentName())
         ).build());
     }
 
-    private void tryReconnect() {
+    private synchronized void tryReconnect() {
+        if( channel != null ) return;
         try {
             reconnectTask = null;
             getChannel();
@@ -252,8 +254,15 @@ public class PlatformConnectionManager {
     }
 
     public synchronized void scheduleReconnect() {
-        channel = null;
         if( reconnectTask == null || reconnectTask.isDone()) {
+            if( channel != null) {
+                try {
+                    channel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
+                } catch(Exception ignored) {
+
+                }
+            }
+            channel = null;
             reconnectTask = scheduler.schedule(this::tryReconnect, 1, TimeUnit.SECONDS);
         }
     }

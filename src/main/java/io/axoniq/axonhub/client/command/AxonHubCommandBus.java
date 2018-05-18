@@ -258,14 +258,12 @@ public class AxonHubCommandBus implements CommandBus {
                     public void onError(Throwable throwable) {
                         logger.warn("Received error from server: {}", throwable.getMessage());
                         subscriberStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
                     }
 
                     @Override
                     public void onCompleted() {
                         logger.debug("Received completed from server");
                         subscriberStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
                     }
                 };
 
