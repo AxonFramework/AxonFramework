@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>3.3-SNAPSHOT</version>
+    <version>5.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
         <module>spring</module>
@@ -103,6 +103,7 @@
         <jgroups.version>4.0.6.Final</jgroups.version>
         <mockito.version>2.15.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
+        <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
     </properties>
 
     <dependencies>
@@ -273,6 +274,11 @@
                 <artifactId>powermock-module-junit4</artifactId>
                 <version>${powermock.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>${projectreactor.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
