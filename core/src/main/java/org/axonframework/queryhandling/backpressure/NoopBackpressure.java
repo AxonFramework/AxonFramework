@@ -30,6 +30,11 @@ public class NoopBackpressure<I, U> implements BackpressuredUpdateHandler<I, U> 
 
     private final UpdateHandler<I, U> delegate;
 
+    /**
+     * Initializes Noop backpressure with delegate update handler.
+     *
+     * @param delegate delegate update handler
+     */
     public NoopBackpressure(UpdateHandler<I, U> delegate) {
         this.delegate = delegate;
     }
