@@ -94,7 +94,7 @@
         <log4j.version>1.2.17</log4j.version>
         <spring.version>5.0.3.RELEASE</spring.version>
         <spring.boot.version>2.0.0.RELEASE</spring.boot.version>
-        <spring-cloud.version>2.0.0.M8</spring-cloud.version>
+        <spring-cloud.version>2.0.0.RC1</spring-cloud.version>
         <rabbitmq.version>4.1.0</rabbitmq.version>
         <felix.bundle.plugin.version>3.3.0</felix.bundle.plugin.version>
         <felix.version>5.6.2</felix.version>
@@ -231,7 +231,7 @@
         <repository>
             <id>repository.spring.milestone</id>
             <name>Spring Milestone Repository</name>
-            <url>http://repo.spring.io/milestone</url>
+            <url>https://repo.spring.io/libs-milestone</url>
         </repository>
     </repositories>
     <dependencyManagement>
