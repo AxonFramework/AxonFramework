@@ -39,8 +39,10 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.queryhandling.DefaultReactiveQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.ReactiveQueryGateway;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.*;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -51,6 +53,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -235,6 +238,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
                                   transactionManager,
                                   eh);
+    }
+
+    @ConditionalOnClass(name = "reactor.core.publisher.Mono")
+    @ConditionalOnMissingBean
+    @Bean
+    public ReactiveQueryGateway reactiveQueryGateway(QueryBus queryBus) {
+        return new DefaultReactiveQueryGateway(queryBus);
     }
 
     @Override
