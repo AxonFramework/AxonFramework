@@ -130,7 +130,7 @@ public class SpringCloudCommandRouterTest {
         assertTrue(resultOptional.isPresent());
         Member resultMember = resultOptional.orElseThrow(IllegalStateException::new);
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, REMOTE_MEMBER, resultMember, DURING_START_UP);
+        assertMember(REMOTE_MEMBER, resultMember, DURING_START_UP);
 
         verify(routingStrategy).getRoutingKey(TEST_COMMAND);
     }
@@ -172,11 +172,10 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID,
-                     SERVICE_INSTANCE_URI,
-                     LOCAL_MEMBER,
-                     resultMemberSet.iterator().next(),
-                     DURING_START_UP);
+        assertMember(
+                LOCAL_MEMBER,
+                resultMemberSet.iterator().next(),
+                DURING_START_UP);
     }
 
     @Test
@@ -192,11 +191,10 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
 
         assertFalse(resultMemberSet.isEmpty());
-        assertMember(SERVICE_INSTANCE_ID,
-                     SERVICE_INSTANCE_URI,
-                     LOCAL_MEMBER,
-                     resultMemberSet.iterator().next(),
-                     DURING_START_UP);
+        assertMember(
+                LOCAL_MEMBER,
+                resultMemberSet.iterator().next(),
+                DURING_START_UP);
 
         testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
 
@@ -204,11 +202,10 @@ public class SpringCloudCommandRouterTest {
         resultMemberSet = resultAtomicConsistentHash.get().getMembers();
 
         assertFalse(resultMemberSet.isEmpty());
-        assertMember(SERVICE_INSTANCE_ID,
-                     SERVICE_INSTANCE_URI,
-                     LOCAL_MEMBER,
-                     resultMemberSet.iterator().next(),
-                     AFTER_START_UP);
+        assertMember(
+                LOCAL_MEMBER,
+                resultMemberSet.iterator().next(),
+                AFTER_START_UP);
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
@@ -232,11 +229,10 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID,
-                     SERVICE_INSTANCE_URI,
-                     LOCAL_MEMBER,
-                     resultMemberSet.iterator().next(),
-                     AFTER_START_UP);
+        assertMember(
+                LOCAL_MEMBER,
+                resultMemberSet.iterator().next(),
+                AFTER_START_UP);
 
         verify(discoveryClient, times(2)).getServices();
         verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
@@ -309,11 +305,10 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
         assertEquals(1, resultMemberSetAfterVanish.size());
-        assertMember(SERVICE_INSTANCE_ID,
-                     SERVICE_INSTANCE_URI,
-                     LOCAL_MEMBER,
-                     resultMemberSetAfterVanish.iterator().next(),
-                     AFTER_START_UP);
+        assertMember(
+                LOCAL_MEMBER,
+                resultMemberSetAfterVanish.iterator().next(),
+                AFTER_START_UP);
     }
 
     @Test
@@ -440,8 +435,10 @@ public class SpringCloudCommandRouterTest {
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
     }
 
-    private void assertMember(String expectedMemberName, URI expectedEndpoint, boolean localMember,
-                              Member resultMember, Boolean afterStartUp) {
+    private void assertMember(boolean localMember, Member resultMember, Boolean afterStartUp) {
+        String expectedMemberName = SpringCloudCommandRouterTest.SERVICE_INSTANCE_ID;
+        URI expectedEndpoint = SpringCloudCommandRouterTest.SERVICE_INSTANCE_URI;
+
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
         if (!afterStartUp && localMember) {

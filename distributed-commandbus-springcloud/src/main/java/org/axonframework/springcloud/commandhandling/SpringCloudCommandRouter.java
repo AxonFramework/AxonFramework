@@ -61,7 +61,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private final ConsistentHashChangeListener consistentHashChangeListener;
     private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
     private final Set<ServiceInstance> blackListedServiceInstances = new HashSet<>();
-    private boolean afterStartUp = false;
+    private volatile boolean afterStartUp = false;
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
@@ -209,7 +209,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
                                     .filter(Member::local)
                                     .findFirst()
                                     .orElseThrow(() -> new IllegalStateException(
-                                            "There should be no scenario were the local member does not exist."
+                                            "There should be no scenario where the local member does not exist."
                                     ));
         updateMemberships();
         atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(startUpPhaseLocalMember));
