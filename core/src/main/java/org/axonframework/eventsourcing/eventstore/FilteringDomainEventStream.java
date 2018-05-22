@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
  * DomainEventStream implementation that filters a stream.
  * 
  * @author André Bierwolf
- * @since 3.2.2
+ * @since 3.3
  */
 public class FilteringDomainEventStream implements DomainEventStream {
     private final DomainEventStream delegate;
