@@ -98,6 +98,15 @@ public interface QueryBus {
      * @param <U>           the incremental response types of the query
      * @return a handle to un-subscribe {@code updateHandler}
      */
-    <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query,
-                                             UpdateHandler<I, U> updateHandler);
+    default <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query,
+                                                     UpdateHandler<I, U> updateHandler) {
+        this.query(query).thenAccept(response -> {
+            updateHandler.onInitialResult(response.getPayload());
+            updateHandler.onCompleted();
+        }).exceptionally(error -> {
+            updateHandler.onCompletedExceptionally(error);
+            return null;
+        });
+        return () -> true;
+    }
 }
