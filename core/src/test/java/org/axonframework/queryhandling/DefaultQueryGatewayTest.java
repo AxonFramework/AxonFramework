@@ -70,6 +70,21 @@ public class DefaultQueryGatewayTest {
                                       eq(1L), eq(TimeUnit.SECONDS));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testDispatchSubscriptionQuery() {
+        when(mockBus.subscriptionQuery(any(), any())).thenReturn(() -> true);
+        UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
+
+        testSubject.subscriptionQuery("query",
+                                      ResponseTypes.instanceOf(String.class),
+                                      ResponseTypes.instanceOf(String.class),
+                                      updateHandler);
+        verify(mockBus)
+                .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>) x -> "query"
+                        .equals(x.getPayload())), eq(updateHandler));
+    }
+
     @SuppressWarnings("unused")
     private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
