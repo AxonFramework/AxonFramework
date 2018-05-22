@@ -63,8 +63,8 @@ public class SpringCloudCommandRouterTest {
     private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
     private static final boolean LOCAL_MEMBER = true;
     private static final boolean REMOTE_MEMBER = false;
-    private static final boolean AFTER_START_UP = true;
-    private static final boolean DURING_START_UP = false;
+    private static final boolean REGISTERED = true;
+    private static final boolean NOT_REGISTERED = false;
 
     private SpringCloudCommandRouter testSubject;
 
@@ -130,7 +130,7 @@ public class SpringCloudCommandRouterTest {
         assertTrue(resultOptional.isPresent());
         Member resultMember = resultOptional.orElseThrow(IllegalStateException::new);
 
-        assertMember(REMOTE_MEMBER, resultMember, DURING_START_UP);
+        assertMember(REMOTE_MEMBER, resultMember, NOT_REGISTERED);
 
         verify(routingStrategy).getRoutingKey(TEST_COMMAND);
     }
@@ -172,7 +172,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), DURING_START_UP);
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), NOT_REGISTERED);
     }
 
     @Test
@@ -188,7 +188,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
 
         assertFalse(resultMemberSet.isEmpty());
-        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), DURING_START_UP);
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), NOT_REGISTERED);
 
         testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
 
@@ -196,7 +196,7 @@ public class SpringCloudCommandRouterTest {
         resultMemberSet = resultAtomicConsistentHash.get().getMembers();
 
         assertFalse(resultMemberSet.isEmpty());
-        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), AFTER_START_UP);
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), REGISTERED);
 
         verify(discoveryClient).getServices();
         verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
@@ -220,7 +220,7 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), AFTER_START_UP);
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), REGISTERED);
 
         verify(discoveryClient, times(2)).getServices();
         verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
@@ -293,7 +293,7 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
         assertEquals(1, resultMemberSetAfterVanish.size());
-        assertMember(LOCAL_MEMBER, resultMemberSetAfterVanish.iterator().next(), AFTER_START_UP);
+        assertMember(LOCAL_MEMBER, resultMemberSetAfterVanish.iterator().next(), REGISTERED);
     }
 
     @Test
@@ -420,13 +420,13 @@ public class SpringCloudCommandRouterTest {
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
     }
 
-    private void assertMember(boolean localMember, Member resultMember, Boolean afterStartUp) {
+    private void assertMember(boolean localMember, Member resultMember, Boolean registered) {
         String expectedMemberName = SpringCloudCommandRouterTest.SERVICE_INSTANCE_ID;
         URI expectedEndpoint = SpringCloudCommandRouterTest.SERVICE_INSTANCE_URI;
 
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        if (!afterStartUp && localMember) {
+        if (localMember && !registered) {
             assertTrue(result.name().contains(expectedMemberName));
         } else {
             assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
@@ -434,7 +434,7 @@ public class SpringCloudCommandRouterTest {
         assertEquals(LOAD_FACTOR, result.segmentCount());
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
-        if (!afterStartUp && localMember) {
+        if (localMember && !registered) {
             assertFalse(connectionEndpointOptional.isPresent());
         } else {
             assertTrue(connectionEndpointOptional.isPresent());

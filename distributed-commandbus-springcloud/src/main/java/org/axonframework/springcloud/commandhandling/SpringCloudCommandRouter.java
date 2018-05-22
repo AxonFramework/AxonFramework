@@ -61,7 +61,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private final ConsistentHashChangeListener consistentHashChangeListener;
     private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
     private final Set<ServiceInstance> blackListedServiceInstances = new HashSet<>();
-    private volatile boolean afterStartUp = false;
+    private volatile boolean registered = false;
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
@@ -203,7 +203,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     @EventListener
     @SuppressWarnings("UnusedParameters")
     public void resetLocalMembership(InstanceRegisteredEvent event) {
-        afterStartUp = true;
+        registered = true;
         Member startUpPhaseLocalMember =
                 atomicConsistentHash.get().getMembers().stream()
                                     .filter(Member::local)
@@ -332,7 +332,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
         String localServiceId = localServiceInstance.getServiceId();
         URI emptyEndpoint = null;
         //noinspection ConstantConditions | added null variable for clarity
-        return afterStartUp
+        return registered
                 ? new SimpleMember<>(buildSimpleMemberName(localServiceId, localServiceInstance.getUri()),
                                      localServiceInstance.getUri(),
                                      SimpleMember.LOCAL_MEMBER,
