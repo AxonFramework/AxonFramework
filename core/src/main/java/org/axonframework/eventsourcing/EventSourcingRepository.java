@@ -204,8 +204,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
-        DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier).filter(
-                e -> e.getType().equals(aggregateModel().type()));
+        DomainEventStream eventStream = readEvents(aggregateIdentifier);
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         if (!eventStream.hasNext()) {
             throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found in the event store");
@@ -220,6 +219,17 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         return aggregate;
     }
 
+    /**
+     * Reads the events for the given aggregateIdentifier from the eventStore. This method can be overridden
+     * to perform filtering on for example aggregate type.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to load
+     * @return the domain event stream for the given aggregateIdentifier
+     */
+    protected DomainEventStream readEvents(String aggregateIdentifier) {
+    	return eventStore.readEvents(aggregateIdentifier);
+    }
+    
     @Override
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && expectedVersion < aggregate.version()) {
