@@ -107,7 +107,7 @@ public class EventSourcingRepositoryTest {
         verify(eventStore).publish(messages.get(1));
     }
 
-    @AggregateRoot (type = "type")
+    @AggregateRoot
     public static class StubAggregate {
 
         private final List<DomainEventMessage<String>> messages = new ArrayList<>();
