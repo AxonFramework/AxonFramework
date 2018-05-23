@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonTransientException;
+import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -78,9 +80,9 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         try {
             optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
         } catch (Exception | LinkageError e) {
-            logger.warn("Error reading snapshot. Reconstructing aggregate from entire event stream. Caused by: {} {}",
-                        e.getClass().getName(), e.getMessage());
-            optionalSnapshot = Optional.empty();
+            String message = String.format("Error reading snapshot. I stop to read the events for aggregateIdentifier %s. Caused by: %s %s",
+                    aggregateIdentifier, e.getClass().getName(), e.getMessage());
+            throw new JdbcException(message, e);
         }
         DomainEventStream eventStream;
         if (optionalSnapshot.isPresent()) {
