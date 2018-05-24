@@ -23,8 +23,8 @@ import java.time.Instant;
 
 /**
  * Contract for deadline managers. There are two groups of methods for scheduling - ones which accept external {@link
- * ScheduleToken} and ones generate the token themselves and return it to the caller. For callers that use external
- * {@link ScheduleToken}, it is recommended to use {@link #generateToken()} method in order to generate one.
+ * ScheduleToken} and ones which generate the token themselves and return it to the caller. For callers that use
+ * external {@link ScheduleToken}, it is recommended to use {@link #generateToken()} method in order to generate one.
  *
  * @author Milan Savic
  * @since 3.3
@@ -95,7 +95,7 @@ public interface DeadlineManager {
      * @throws IllegalArgumentException if ScheduleToken is not compatible with this DeadlineManager
      */
     <T> void schedule(Instant triggerDateTime, DeadlineContext deadlineContext, T deadlineInfo,
-                      ScheduleToken scheduleToken);
+                      ScheduleToken scheduleToken) throws IllegalArgumentException;
 
     /**
      * Schedules a deadline after the given {@code triggerDuration} with provided context. The provided ScheduleToken
@@ -115,7 +115,7 @@ public interface DeadlineManager {
      * @throws IllegalArgumentException if ScheduleToken is not compatible with this DeadlineManager
      */
     <T> void schedule(Duration triggerDuration, DeadlineContext deadlineContext, T deadlineInfo,
-                      ScheduleToken scheduleToken);
+                      ScheduleToken scheduleToken) throws IllegalArgumentException;
 
     /**
      * Generates a schedule token. It is recommended to generate a token with this method when methods with external
@@ -131,5 +131,5 @@ public interface DeadlineManager {
      * @param scheduleToken The token used to schedule a deadline
      * @throws IllegalArgumentException if the token belongs to another scheduler
      */
-    void cancelSchedule(ScheduleToken scheduleToken);
+    void cancelSchedule(ScheduleToken scheduleToken) throws IllegalArgumentException;
 }

@@ -57,7 +57,7 @@ public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements
     }
 
     /**
-     * Crates a GenericDeadlineMessage with given {@code payload}, and an empty MetaData.
+     * Creates a GenericDeadlineMessage with given {@code payload}, and an empty MetaData.
      *
      * @param payload The payload of the Message
      */

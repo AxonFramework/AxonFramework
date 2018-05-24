@@ -43,7 +43,7 @@ import static org.axonframework.common.Assert.notNull;
  * Implementation of {@link DeadlineManager} which uses Java's {@link ScheduledExecutorService} as scheduling and
  * triggering mechanism.
  * <p>
- * Note that this mechanism is non-persistent. Scheduled tasks will be los then the JVM is shut down, unless special
+ * Note that this mechanism is non-persistent. Scheduled tasks will be lost then the JVM is shut down, unless special
  * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
  * org.axonframework.deadline.quartz.QuartzDeadlineManager}.
  * </p>

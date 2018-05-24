@@ -91,7 +91,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
         if (deadlineManager == null) {
-            DeadlineTargetLoader deadlineTargetLoader = new DefaultDeadlineTargetLoader(configuration::repository,
+            DeadlineTargetLoader deadlineTargetLoader = new DefaultDeadlineTargetLoader(repositoryProvider,
                                                                                         configuration::sagaRepository);
             deadlineManager = new SimpleDeadlineManager(txManager, deadlineTargetLoader);
         }

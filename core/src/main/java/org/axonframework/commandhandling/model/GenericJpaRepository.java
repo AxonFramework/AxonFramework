@@ -80,7 +80,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
                                 RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
@@ -113,7 +113,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateModel        the model describing the structure of the aggregate
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
                                 EventBus eventBus, RepositoryProvider repositoryProvider,
@@ -155,7 +155,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param identifierConverter   the function that converts the String based identifier to the Identifier object
      *                              used in the Entity
      */
@@ -199,7 +199,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType            the aggregate type this repository manages
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
-     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager          Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
@@ -236,7 +236,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param lockFactory           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
@@ -273,7 +273,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateModel        the model describing the structure of the aggregate
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param lockFactory           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
@@ -314,7 +314,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType         the aggregate type this repository manages
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param lockFactory           the additional locking strategy for this repository
      * @param identifierConverter   the function that converts the String based identifier to the Identifier object
      *                              used in the Entity
@@ -357,7 +357,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateModel        the model describing the structure of the aggregate
      * @param eventBus              the event bus to which new events are published
      * @param repositoryProvider    Provides repositories for specific aggregate types
-     * @param deadlineManager       Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager       Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param lockFactory           the additional locking strategy for this repository
      * @param identifierConverter   the function that converts the String based identifier to the Identifier object
      *                              used in the Entity
@@ -405,7 +405,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType            the aggregate type this repository manages
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
-     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager          Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param lockFactory              the additional locking strategy for this repository
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      */
@@ -459,7 +459,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param aggregateType            the aggregate type this repository manages
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
-     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
+     * @param deadlineManager          Manager used for scheduling deadlines for the Aggregate of type {@code T}
      * @param lockFactory              the additional locking strategy for this repository
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      * @param identifierConverter      the function that converts the String based identifier to the Identifier object

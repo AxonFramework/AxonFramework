@@ -68,8 +68,8 @@ public class DeadlineJob implements Job {
             DeadlineContext deadlineContext = DeadlineJobDataBinder.deadlineContext(jobData);
 
             TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
-            DeadlineTargetLoader deadlineTargetLoader = (DeadlineTargetLoader) schedulerContext.get(
-                    DEADLINE_TARGET_LOADER_KEY);
+            DeadlineTargetLoader deadlineTargetLoader =
+                    (DeadlineTargetLoader) schedulerContext.get(DEADLINE_TARGET_LOADER_KEY);
 
 
             DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);

@@ -55,7 +55,8 @@ public class DefaultDeadlineTargetLoader implements DeadlineTargetLoader {
                         .repositoryFor(deadlineContext.getTargetType())
                         .load(deadlineContext.getId());
             default:
-                throw new IllegalStateException("Unsupported deadline context");
+                throw new IllegalStateException(
+                        "Unsupported deadline context type: '" + deadlineContext.getType() + "'");
         }
     }
 }
