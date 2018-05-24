@@ -43,11 +43,11 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -72,7 +72,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     private final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
     private final DeadlineManager deadlineManager;
-    private final Queue<Runnable> delayedTasks = new LinkedList<>();
+    private final PriorityQueue<DelayedTask> delayedTasks = new PriorityQueue<>();
     private final EventBus eventBus;
     private T aggregateRoot;
     private boolean applying = false;
@@ -446,7 +446,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 applying = false;
             }
         } else {
-            delayedTasks.add(() -> publish(createMessage(payload, metaData)));
+            delayedTasks.add(DelayedTask.highPriorityTask(() -> publish(createMessage(payload, metaData))));
         }
         return this;
     }
@@ -458,8 +458,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (aggregateRoot != null) {
             deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken);
         } else {
-            delayedTasks.add(() -> deadlineManager
-                    .schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken));
+            delayedTasks.add(DelayedTask.lowPriorityTask(() -> deadlineManager
+                    .schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken)));
         }
         return scheduleToken;
     }
@@ -471,8 +471,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (aggregateRoot != null) {
             deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken);
         } else {
-            delayedTasks.add(() -> deadlineManager
-                    .schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken));
+            delayedTasks.add(DelayedTask.lowPriorityTask(() -> deadlineManager
+                    .schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken)));
         }
         return scheduleToken;
     }
@@ -483,7 +483,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (aggregateRoot != null) {
             deadlineManager.cancelSchedule(scheduleToken);
         } else {
-            delayedTasks.add(() -> deadlineManager.cancelSchedule(scheduleToken));
+            delayedTasks.add(DelayedTask.lowPriorityTask(() -> deadlineManager.cancelSchedule(scheduleToken)));
         }
     }
 
@@ -527,7 +527,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public ApplyMore andThen(Runnable runnable) {
         if (applying || aggregateRoot == null) {
-            delayedTasks.add(runnable);
+            delayedTasks.add(DelayedTask.highPriorityTask(runnable));
         } else {
             runnable.run();
         }
@@ -604,6 +604,45 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
                                                               getMetaData().mergedWith(additionalMetaData));
             }
+        }
+    }
+
+    private static class DelayedTask implements Runnable, Comparable<DelayedTask> {
+
+        private static final int HIGH_PRIORITY = 1;
+        private static final int LOW_PRIORITY = 10;
+
+        private static final AtomicInteger sequence = new AtomicInteger(0);
+
+        private final int priority;
+        private final int order;
+        private final Runnable delegate;
+
+        private DelayedTask(int priority, int order, Runnable delegate) {
+            this.priority = priority;
+            this.order = order;
+            this.delegate = delegate;
+        }
+
+        private static DelayedTask highPriorityTask(Runnable delegate) {
+            return new DelayedTask(HIGH_PRIORITY, sequence.getAndIncrement(), delegate);
+        }
+
+        private static DelayedTask lowPriorityTask(Runnable delegate) {
+            return new DelayedTask(LOW_PRIORITY, sequence.getAndIncrement(), delegate);
+        }
+
+        @Override
+        public void run() {
+            delegate.run();
+        }
+
+        @Override
+        public int compareTo(DelayedTask o) {
+            if (priority == o.priority) {
+                return Integer.compare(order, o.order);
+            }
+            return Integer.compare(priority, o.priority);
         }
     }
 }

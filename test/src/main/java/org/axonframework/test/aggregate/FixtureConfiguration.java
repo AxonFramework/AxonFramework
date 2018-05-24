@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -107,15 +106,6 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider);
-
-    /**
-     * Registers deadline manager with the fixture. If an aggregate being tested schedules a deadline, this manager
-     * should be registered.
-     *
-     * @param deadlineManager manager used for scheduling deadlines on this Aggregate
-     * @return the current FixtureConfiguration, fro fluent interfacing
-     */
-    FixtureConfiguration<T> registerDeadlineManager(DeadlineManager deadlineManager);
 
     /**
      * Registers the given {@code aggregateFactory} with the fixture. The repository used by the fixture will use

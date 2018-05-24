@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.SagaConfiguration;

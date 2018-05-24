@@ -97,8 +97,7 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEvent(Duration duration, Object event);
 
     /**
-     * Asserts that a deadline equal to the given {@code deadline} has been scheduled for publication after the given
-     * {@code duration}.
+     * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
      * <p/>
      * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
      * an "equals" check on all fields in the deadlines.

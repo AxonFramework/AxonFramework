@@ -157,9 +157,9 @@ public class StubDeadlineManager implements DeadlineManager {
     public void advanceTimeTo(Instant newDateTime, DeadlineConsumer deadlineConsumer) {
         while (!schedules.isEmpty() && !schedules.first().getScheduleTime().isAfter(newDateTime)) {
             ScheduleDeadlineInfo scheduleDeadlineInfo = advanceToNextTrigger();
-            String sagaId = scheduleDeadlineInfo.getDeadlineContext().getId();
+            String targetId = scheduleDeadlineInfo.getDeadlineContext().getId();
             DeadlineMessage deadlineMessage = scheduleDeadlineInfo.deadlineMessage();
-            deadlineConsumer.consume(sagaId, deadlineMessage);
+            deadlineConsumer.consume(targetId, deadlineMessage);
         }
         if (newDateTime.isAfter(currentDateTime)) {
             currentDateTime = newDateTime;

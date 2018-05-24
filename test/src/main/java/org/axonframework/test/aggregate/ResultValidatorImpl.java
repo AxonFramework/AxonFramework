@@ -18,17 +18,25 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.FixtureExecutionException;
+import org.axonframework.test.deadline.DeadlineManagerValidator;
+import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.Matchers;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.axonframework.test.matchers.Matchers.messageWithPayload;
 import static org.hamcrest.CoreMatchers.*;
 
 /**
@@ -42,6 +50,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     private final List<EventMessage<?>> publishedEvents;
     private final Reporter reporter = new Reporter();
     private final FieldFilter fieldFilter;
+    private final DeadlineManagerValidator deadlineManagerValidator;
     private Object actualReturnValue;
     private Throwable actualException;
 
@@ -51,10 +60,11 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
      * @param publishedEvents The events that were published during command execution
      * @param fieldFilter     The filter describing which fields to include in the comparison
      */
-    public ResultValidatorImpl(List<EventMessage<?>> publishedEvents,
-                               FieldFilter fieldFilter) {
+    public ResultValidatorImpl(List<EventMessage<?>> publishedEvents, FieldFilter fieldFilter,
+                               StubDeadlineManager stubDeadlineManager) {
         this.publishedEvents = publishedEvents;
         this.fieldFilter = fieldFilter;
+        this.deadlineManagerValidator = new DeadlineManagerValidator(stubDeadlineManager, fieldFilter);
     }
 
     @Override
@@ -93,11 +103,64 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
+    public ResultValidator expectScheduledDeadlineMatching(Duration duration,
+                                                           Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertScheduledDeadlineMatching(duration, matcher);
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectScheduledDeadline(Duration duration, Object deadline) {
+        return expectScheduledDeadlineMatching(duration, messageWithPayload(Matchers.equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public ResultValidator expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
+        return expectScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator expectScheduledDeadlineMatching(Instant scheduledTime,
+                                                           Matcher<? super DeadlineMessage<?>> matcher) {
+        deadlineManagerValidator.assertScheduledDeadlineMatching(scheduledTime, matcher);
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectScheduledDeadline(Instant scheduledTime, Object deadline) {
+        return expectScheduledDeadlineMatching(scheduledTime,
+                                               messageWithPayload(Matchers.equalTo(deadline, fieldFilter)));
+    }
+
+    @Override
+    public ResultValidator expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+        return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+    }
+
+    @Override
+    public ResultValidator expectNoScheduledDeadlines() {
+        deadlineManagerValidator.assertNoScheduledDeadlines();
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher) {
+        deadlineManagerValidator.assertDeadlinesMetMatching(matcher);
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectDeadlinesMet(Object... expected) {
+        deadlineManagerValidator.assertDeadlinesMet(expected);
+        return this;
+    }
+
+    @Override
     public ResultValidator expectReturnValue(Object expectedReturnValue) {
         if (expectedReturnValue == null) {
             return expectReturnValueMatching(nullValue());
         }
-        return expectReturnValueMatching(equalTo(expectedReturnValue));
+        return expectReturnValueMatching(CoreMatchers.equalTo(expectedReturnValue));
     }
 
     @Override
@@ -133,7 +196,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
 
     @Override
     public ResultValidator expectExceptionMessage(String exceptionMessage) {
-        return expectExceptionMessage(equalTo(exceptionMessage));
+        return expectExceptionMessage(CoreMatchers.equalTo(exceptionMessage));
     }
 
     @SuppressWarnings({"unchecked"})
