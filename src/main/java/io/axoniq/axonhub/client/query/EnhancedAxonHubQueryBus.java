@@ -58,8 +58,8 @@ public class EnhancedAxonHubQueryBus implements QueryBus {
         subscriptionQuerySerializer = new SubscriptionQuerySerializer(configuration, messageSerializer, genericSerializer);
         updateDispatcher = new AxonHubUpdateDispatcher(axonHubQueryBus::publish, messageSerializer, genericSerializer,configuration);
         axonHubQueryBus.on(QUERY_UPDATE, updateDispatcher::onUpdate);
-        axonHubQueryBus.on(QUERY_UPDATE_COMPLETE, updateDispatcher::onUpdate);
-        axonHubQueryBus.on(QUERY_UPDATE_COMPLETE_EXCEPTIONALLY, updateDispatcher::onUpdate);
+        axonHubQueryBus.on(QUERY_UPDATE_COMPLETE, updateDispatcher::onUpdateComplete);
+        axonHubQueryBus.on(QUERY_UPDATE_COMPLETE_EXCEPTIONALLY, updateDispatcher::onUpdateCompleteExceptionally);
         platformConnectionManager.addDisconnectListener(updateDispatcher::onDisconnect);
     }
 
