@@ -73,6 +73,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     private final RepositoryProvider repositoryProvider;
     private final DeadlineManager deadlineManager;
     private final PriorityQueue<DelayedTask> delayedTasks = new PriorityQueue<>();
+    private final AtomicInteger delayedTasksSequence = new AtomicInteger(0);
     private final EventBus eventBus;
     private T aggregateRoot;
     private boolean applying = false;
@@ -446,7 +447,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 applying = false;
             }
         } else {
-            delayedTasks.add(DelayedTask.highPriorityTask(() -> publish(createMessage(payload, metaData))));
+            delayedTasks.add(DelayedTask.highPriorityTask(() -> publish(createMessage(payload, metaData)),
+                                                          delayedTasksSequence.getAndIncrement()));
         }
         return this;
     }
@@ -458,8 +460,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (aggregateRoot != null) {
             deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken);
         } else {
-            delayedTasks.add(DelayedTask.lowPriorityTask(() -> deadlineManager
-                    .schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken)));
+            delayedTasks.add(DelayedTask.lowPriorityTask(
+                    () -> deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken),
+                    delayedTasksSequence.getAndIncrement()));
         }
         return scheduleToken;
     }
@@ -471,8 +474,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (aggregateRoot != null) {
             deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken);
         } else {
-            delayedTasks.add(DelayedTask.lowPriorityTask(() -> deadlineManager
-                    .schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken)));
+            delayedTasks.add(DelayedTask.lowPriorityTask(
+                    () -> deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken),
+                    delayedTasksSequence.getAndIncrement()));
         }
         return scheduleToken;
     }
@@ -483,7 +487,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (aggregateRoot != null) {
             deadlineManager.cancelSchedule(scheduleToken);
         } else {
-            delayedTasks.add(DelayedTask.lowPriorityTask(() -> deadlineManager.cancelSchedule(scheduleToken)));
+            delayedTasks.add(DelayedTask.lowPriorityTask(
+                    () -> deadlineManager.cancelSchedule(scheduleToken),
+                    delayedTasksSequence.getAndIncrement()));
         }
     }
 
@@ -527,7 +533,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public ApplyMore andThen(Runnable runnable) {
         if (applying || aggregateRoot == null) {
-            delayedTasks.add(DelayedTask.highPriorityTask(runnable));
+            delayedTasks.add(DelayedTask.highPriorityTask(runnable, delayedTasksSequence.getAndIncrement()));
         } else {
             runnable.run();
         }
@@ -612,8 +618,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         private static final int HIGH_PRIORITY = 1;
         private static final int LOW_PRIORITY = 10;
 
-        private static final AtomicInteger sequence = new AtomicInteger(0);
-
         private final int priority;
         private final int order;
         private final Runnable delegate;
@@ -624,12 +628,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             this.delegate = delegate;
         }
 
-        private static DelayedTask highPriorityTask(Runnable delegate) {
-            return new DelayedTask(HIGH_PRIORITY, sequence.getAndIncrement(), delegate);
+        private static DelayedTask highPriorityTask(Runnable delegate, int order) {
+            return new DelayedTask(HIGH_PRIORITY, order, delegate);
         }
 
-        private static DelayedTask lowPriorityTask(Runnable delegate) {
-            return new DelayedTask(LOW_PRIORITY, sequence.getAndIncrement(), delegate);
+        private static DelayedTask lowPriorityTask(Runnable delegate, int order) {
+            return new DelayedTask(LOW_PRIORITY, order, delegate);
         }
 
         @Override
