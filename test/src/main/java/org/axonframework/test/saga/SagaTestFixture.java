@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
+import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -62,6 +64,7 @@ import static org.axonframework.messaging.annotation.MultiParameterResolverFacto
 public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
     private final StubEventScheduler eventScheduler;
+    private final StubDeadlineManager deadlineManager;
     private final LinkedList<Object> registeredResources = new LinkedList<>();
     private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
@@ -70,7 +73,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
+    private SagaRepository<T> sagaRepository;
     private boolean transienceCheckEnabled = true;
+    private boolean resourcesInitialized = false;
 
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given {@code sagaType}.
@@ -81,15 +86,22 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     public SagaTestFixture(Class<T> sagaType) {
         this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
+        deadlineManager = new StubDeadlineManager();
         EventBus eventBus = new SimpleEventBus();
         sagaStore = new InMemorySagaStore();
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
+        registeredResources.add(deadlineManager);
         registeredResources.add(new DefaultCommandGateway(commandBus));
-        fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
-                                                                  sagaType, fieldFilters);
+        fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore,
+                                                                  eventScheduler,
+                                                                  deadlineManager,
+                                                                  eventBus,
+                                                                  commandBus,
+                                                                  sagaType,
+                                                                  fieldFilters);
     }
 
     /**
@@ -99,7 +111,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      * @param event The event message to handle
      */
     protected void handleInSaga(EventMessage<?> event) {
-        ensureSagaManagerInitialized();
+        ensureSagaResourcesInitialized();
         try {
             DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
                 sagaManager.handle(event, Segment.ROOT_SEGMENT);
@@ -111,20 +123,38 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     /**
-     * Initializes the SagaManager if it hasn't already done so. If once the SagaManager is initialized, this method
-     * does nothing.
+     * Handles the given {@code deadlineMessage} in the saga with given {@code sagaId}. Deadline message is handled in
+     * the scope of a {@link org.axonframework.messaging.unitofwork.UnitOfWork}. If handling the deadline results in an
+     * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
+     *
+     * @param sagaId          The saga identifier, should match id of saga being tested
+     * @param deadlineMessage The deadline message to be handled
      */
-    protected void ensureSagaManagerInitialized() {
-        if (sagaManager == null) {
+    protected void handleDeadline(String sagaId, DeadlineMessage<?> deadlineMessage) {
+        ensureSagaResourcesInitialized();
+        try {
+            DefaultUnitOfWork.startAndGet(deadlineMessage)
+                             .execute(() -> sagaRepository.load(sagaId).handle(deadlineMessage));
+        } catch (Exception e) {
+            throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+        }
+    }
+
+    /**
+     * Initializes the saga resources if it hasn't already done so. If once initialized, this method does nothing.
+     */
+    protected void ensureSagaResourcesInitialized() {
+        if (!resourcesInitialized) {
             ParameterResolverFactory parameterResolverFactory = ordered(new SimpleResourceParameterResolverFactory(
                                                                                 registeredResources),
                                                                         ClasspathParameterResolverFactory
                                                                                 .forClass(sagaType));
-            SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
-                                                                             new TransienceValidatingResourceInjector(),
-                                                                             parameterResolverFactory);
+            sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
+                                                           new TransienceValidatingResourceInjector(),
+                                                           parameterResolverFactory, deadlineManager);
             sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory,
                                                      new LoggingErrorHandler());
+            resourcesInitialized = true;
         }
     }
 
@@ -139,6 +169,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         try {
             fixtureExecutionResult.startRecording();
             eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
+            deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while trying to advance time " +
                                                         "and handle scheduled events", e);
@@ -151,6 +182,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         try {
             fixtureExecutionResult.startRecording();
             eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
+            deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while trying to advance time " +
                                                         "and handle scheduled events", e);
@@ -183,6 +215,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public ContinuedGivenState givenCurrentTime(Instant currentTime) {
         eventScheduler.initializeAt(currentTime);
+        deadlineManager.initializeAt(currentTime);
         return this;
     }
 
@@ -199,12 +232,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
         eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
+        deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) throws Exception {
         eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
+        deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
         return this;
     }
 
