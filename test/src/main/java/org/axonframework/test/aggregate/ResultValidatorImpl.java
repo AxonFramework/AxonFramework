@@ -160,7 +160,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         if (expectedReturnValue == null) {
             return expectReturnValueMatching(nullValue());
         }
-        return expectReturnValueMatching(CoreMatchers.equalTo(expectedReturnValue));
+        return expectReturnValueMatching(equalTo(expectedReturnValue));
     }
 
     @Override
@@ -196,7 +196,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
 
     @Override
     public ResultValidator expectExceptionMessage(String exceptionMessage) {
-        return expectExceptionMessage(CoreMatchers.equalTo(exceptionMessage));
+        return expectExceptionMessage(equalTo(exceptionMessage));
     }
 
     @SuppressWarnings({"unchecked"})

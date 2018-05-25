@@ -101,7 +101,7 @@ public class SagaDeadlineSchedulingTest {
 
         @DeadlineHandler
         public void handleDeadline(String deadlineInfo) {
-
+            // nothing to be done for test purposes, having this deadline handler invoked is sufficient
         }
     }
 }

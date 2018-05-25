@@ -17,7 +17,6 @@
 package org.axonframework.deadline;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 
 import java.util.Map;
 
