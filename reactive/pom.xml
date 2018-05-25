@@ -34,6 +34,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>axon-core</artifactId>
+            <version>${project.version}</version>
             <optional>true</optional>
             <scope>compile</scope>
         </dependency>
@@ -44,5 +45,18 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
-
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Automatic-Module-Name>org.axonframework.reactive</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
