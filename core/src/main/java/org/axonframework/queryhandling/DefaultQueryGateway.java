@@ -38,7 +38,7 @@ public class DefaultQueryGateway implements QueryGateway {
 
     /**
      * Initializes the gateway to send queries to the given {@code queryBus} and invoking given
-     * {@code dispatchInterceptors} prior to publication ont he query bus.
+     * {@code dispatchInterceptors} prior to publication on the query bus.
      *
      * @param queryBus             The bus to deliver messages on
      * @param dispatchInterceptors The interceptors to invoke prior to publication on the bus
