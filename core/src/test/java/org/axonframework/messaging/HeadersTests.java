@@ -118,20 +118,20 @@ public class HeadersTests {
     @Test
     public void testGeneratingDomainMessagingHeaders() {
         DomainEventMessage<String> message = domainMessage();
+        SerializedObject<byte[]> serializedObject = serializePayload(message, serializer, byte[].class);
+
         Map<String, Object> expected = new HashMap<String, Object>() {{
+            put(MESSAGE_ID, message.getIdentifier());
+            put(MESSAGE_TYPE, serializedObject.getType().getName());
+            put(MESSAGE_REVISION, serializedObject.getType().getRevision());
+            put(MESSAGE_TIMESTAMP, message.getTimestamp());
             put(AGGREGATE_ID, message.getAggregateIdentifier());
             put(AGGREGATE_SEQ, message.getSequenceNumber());
             put(AGGREGATE_TYPE, message.getType());
         }};
 
-        assertThat(Headers.domainHeaders(message), is(expected));
+        assertThat(Headers.defaultHeaders(message, serializedObject), is(expected));
     }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGeneratingDomainMessagingHeaders_InvalidDomainEvent() {
-        Headers.domainHeaders(null);
-    }
-
 
     private GenericDomainEventMessage<String> domainMessage() {
         return new GenericDomainEventMessage<>("Stub", "893612", 1L, "Payload");

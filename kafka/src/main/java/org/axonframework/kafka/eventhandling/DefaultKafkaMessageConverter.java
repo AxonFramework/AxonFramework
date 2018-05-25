@@ -128,16 +128,20 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
             if (isAxonMessage(headers)) {
                 byte[] messageBody = consumerRecord.value();
                 SerializedMessage<?> message = extractSerializedMessage(headers, messageBody);
-                long timestamp = valueAsLong(headers, MESSAGE_TIMESTAMP);
-                return headers.lastHeader(AGGREGATE_ID) != null ?
-                        domainEvent(headers, message, timestamp) :
-                        event(message, timestamp);
+                return buildMessage(headers, message);
             }
         } catch (Exception e) {
-            logger.trace("Error converting {} to axon, {}", consumerRecord, e);
+            logger.trace("Error converting {} to axon", consumerRecord, e);
         }
 
         return Optional.empty();
+    }
+
+    private Optional<EventMessage<?>> buildMessage(Headers headers, SerializedMessage<?> message) {
+        long timestamp = valueAsLong(headers, MESSAGE_TIMESTAMP);
+        return headers.lastHeader(AGGREGATE_ID) != null ?
+                domainEvent(headers, message, timestamp) :
+                event(message, timestamp);
     }
 
     private SerializedMessage<?> extractSerializedMessage(Headers headers, byte[] messageBody) {

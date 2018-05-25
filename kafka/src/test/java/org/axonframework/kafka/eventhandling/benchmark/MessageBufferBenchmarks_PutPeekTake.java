@@ -15,8 +15,8 @@
 
 package org.axonframework.kafka.eventhandling.benchmark;
 
-import org.axonframework.kafka.eventhandling.consumer.MessageAndMetadata;
-import org.axonframework.kafka.eventhandling.consumer.MessageBuffer;
+import org.axonframework.kafka.eventhandling.consumer.KafkaEventMessage;
+import org.axonframework.kafka.eventhandling.consumer.SortedKafkaMessageBuffer;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -41,9 +41,9 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
- * This compares the speed of operations that can be performed on the bundled {@link MessageBuffer}. Re-run this
- * benchmark when changing internals of {@link MessageBuffer}.
- * <p>The {@link MessageBuffer bundled buffer} aims to be efficient in terms of operations performed on the buffer. It
+ * This compares the speed of operations that can be performed on the bundled {@link SortedKafkaMessageBuffer}. Re-run this
+ * benchmark when changing internals of {@link SortedKafkaMessageBuffer}.
+ * <p>The {@link SortedKafkaMessageBuffer bundled buffer} aims to be efficient in terms of operations performed on the buffer. It
  * may not always be fastest, but we should try to keep it competitive.
  *
  * @author Nakul Mishra
@@ -55,23 +55,23 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEve
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-public class MessageBufferBenchmarks_PutPeekPoll {
+public class MessageBufferBenchmarks_PutPeekTake {
 
     @Param(value = "1000000")
     private static int bufferSize;
 
-    private static MessageAndMetadata[] testData;
+    private static KafkaEventMessage[] testData;
 
-    private MessageBuffer<MessageAndMetadata> buffer;
+    private SortedKafkaMessageBuffer<KafkaEventMessage> buffer;
 
     @Setup(Level.Trial)
     public void createBuffer() {
-        buffer = new MessageBuffer<>(bufferSize);
+        buffer = new SortedKafkaMessageBuffer<>(bufferSize);
     }
 
     @Setup(Level.Trial)
     public void prepareTestData() {
-        testData = new MessageAndMetadata[bufferSize];
+        testData = new KafkaEventMessage[bufferSize];
         int i = 0;
         while (i < bufferSize) {
             testData[i++] = message(0, i, i + 1);
@@ -81,8 +81,8 @@ public class MessageBufferBenchmarks_PutPeekPoll {
         }
     }
 
-    private static MessageAndMetadata message(int partition, int offset, int timestamp) {
-        return new MessageAndMetadata(
+    private static KafkaEventMessage message(int partition, int offset, int timestamp) {
+        return new KafkaEventMessage(
                 asTrackedEventMessage(asEventMessage(
                         String.valueOf(offset) + "abc" + String.valueOf(offset * 17 + 123)), null),
                 partition,
@@ -94,20 +94,20 @@ public class MessageBufferBenchmarks_PutPeekPoll {
     @Benchmark
     @Group("rw")
     public void put(ThreadState state) throws InterruptedException {
-        MessageAndMetadata message = testData[state.next() & (testData.length - 1)];
+        KafkaEventMessage message = testData[state.next() & (testData.length - 1)];
         buffer.put(message);
     }
 
     @Benchmark
     @Group("rw")
-    public MessageAndMetadata peek() {
+    public KafkaEventMessage peek() {
         return buffer.peek();
     }
 
     @Benchmark
     @Group("rw")
-    public MessageAndMetadata poll() throws InterruptedException {
-        return buffer.poll(10, TimeUnit.MILLISECONDS);
+    public KafkaEventMessage take() throws InterruptedException {
+        return buffer.take();
     }
 
     @State(Scope.Thread)
@@ -123,7 +123,7 @@ public class MessageBufferBenchmarks_PutPeekPoll {
     // Convenience main entry-point
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                .include(".*" + MessageBufferBenchmarks_PutPeekPoll.class.getSimpleName() + ".*")
+                .include(".*" + MessageBufferBenchmarks_PutPeekTake.class.getSimpleName() + ".*")
                 .threads(40)
                 .build();
 

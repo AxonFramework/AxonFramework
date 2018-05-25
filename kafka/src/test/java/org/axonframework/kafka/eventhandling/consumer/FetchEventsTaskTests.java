@@ -34,7 +34,6 @@ import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
 import static org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST;
 import static org.apache.kafka.common.record.TimestampType.NO_TIMESTAMP_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.kafka.eventhandling.consumer.DefaultFetcher.Builder.emptyCallback;
 import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.emptyToken;
 import static org.mockito.Mockito.*;
 
@@ -54,7 +53,7 @@ public class FetchEventsTaskTests {
     public void testTaskConstruction_WithInvalidConsumer_ShouldThrowException() {
         FetchEventsTask.builder(null,
                                 mock(KafkaTrackingToken.class),
-                                mock(SortableBuffer.class),
+                                mock(Buffer.class),
                                 mock(KafkaMessageConverter.class),
                                 mock(BiFunction.class), 0).build();
     }
@@ -74,7 +73,7 @@ public class FetchEventsTaskTests {
     public void testTaskConstruction_WithInvalidConverter_ShouldThrowException() {
         FetchEventsTask.builder(mock(KafkaConsumer.class),
                                 mock(KafkaTrackingToken.class),
-                                mock(SortableBuffer.class),
+                                mock(Buffer.class),
                                 null,
                                 mock(BiFunction.class), 0);
     }
@@ -84,7 +83,7 @@ public class FetchEventsTaskTests {
     public void testTaskConstruction_WithInvalidCallback_ShouldThrowException() {
         FetchEventsTask.builder(mock(KafkaConsumer.class),
                                 mock(KafkaTrackingToken.class),
-                                mock(SortableBuffer.class),
+                                mock(Buffer.class),
                                 mock(KafkaMessageConverter.class),
                                 null,
                                 0);
@@ -95,7 +94,7 @@ public class FetchEventsTaskTests {
     public void testTaskConstruction_WithNegativeTimeout_ShouldThrowException() {
         FetchEventsTask.builder(mock(KafkaConsumer.class),
                                 mock(KafkaTrackingToken.class),
-                                mock(SortableBuffer.class),
+                                mock(Buffer.class),
                                 mock(KafkaMessageConverter.class),
                                 mock(BiFunction.class),
                                 -1);
@@ -104,13 +103,13 @@ public class FetchEventsTaskTests {
     @SuppressWarnings("unchecked")
     @Test
     public void testTaskExecution_StartingThreadAndInterrupt_ShouldNotCauseAnyException() {
-        MessageBuffer<MessageAndMetadata> buffer = new MessageBuffer<>(TOTAL_MESSAGES);
-        KafkaMessageConverter<String, String> converter = new DefaultFetcherTests.ValueConverter();
+        SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(TOTAL_MESSAGES);
+        KafkaMessageConverter<String, String> converter = new AsyncFetcherTests.ValueConverter();
         FetchEventsTask testSubject = FetchEventsTask.builder(consumer(),
                                                               emptyToken(),
                                                               buffer,
                                                               converter,
-                                                              emptyCallback(), 10000).build();
+                                                              (r, t) -> null, 10000).build();
         Thread thread = new Thread(testSubject);
         thread.start();
         thread.interrupt();

@@ -57,27 +57,19 @@ public class Headers {
         Assert.notNull(message, () -> "Event message cannot be null");
         Assert.notNull(serializedObject, () -> "Serialized Object cannot be null");
         Assert.notNull(serializedObject.getType(), () -> "SerializedObject Type cannot be null");
-        return Collections.unmodifiableMap(new HashMap<String, Object>() {{
-            put(MESSAGE_ID, message.getIdentifier());
-            put(MESSAGE_TYPE, serializedObject.getType().getName());
-            put(MESSAGE_REVISION, serializedObject.getType().getRevision());
-            put(MESSAGE_TIMESTAMP, message.getTimestamp());
-        }});
-    }
+        HashMap<String, Object> headers = new HashMap<>();
+        headers.put(MESSAGE_ID, message.getIdentifier());
+        headers.put(MESSAGE_TYPE, serializedObject.getType().getName());
+        headers.put(MESSAGE_REVISION, serializedObject.getType().getRevision());
+        headers.put(MESSAGE_TIMESTAMP, message.getTimestamp());
 
-    /**
-     * Generate defaults headers to recognise a domain message.
-     *
-     * @param message domain message.
-     * @return headers.
-     */
-    public static Map<String, Object> domainHeaders(DomainEventMessage<?> message) {
-        Assert.notNull(message, () -> "Domain message cannot be null");
-        return Collections.unmodifiableMap(new HashMap<String, Object>() {{
-            put(AGGREGATE_ID, message.getAggregateIdentifier());
-            put(AGGREGATE_SEQ, message.getSequenceNumber());
-            put(AGGREGATE_TYPE, message.getType());
-        }});
+        if (message instanceof DomainEventMessage) {
+            headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) message).getAggregateIdentifier());
+            headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) message).getSequenceNumber());
+            headers.put(AGGREGATE_TYPE, ((DomainEventMessage<?>) message).getType());
+        }
+
+        return Collections.unmodifiableMap(headers);
     }
 
     @Override

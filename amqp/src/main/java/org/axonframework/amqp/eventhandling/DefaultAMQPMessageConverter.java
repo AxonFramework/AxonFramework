@@ -94,9 +94,6 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
                 headers.put(k, v);
             }
         });
-        if (eventMessage instanceof DomainEventMessage) {
-            Headers.domainHeaders((DomainEventMessage<?>) eventMessage).forEach(headers::put);
-        }
         properties.headers(headers);
         if (durable) {
             properties.deliveryMode(2);
@@ -121,7 +118,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         SerializedMessage<?> message = new SerializedMessage<>(Objects.toString(headers.get(Headers.MESSAGE_ID)),
                                                                new LazyDeserializingObject<>(serializedMessage, serializer),
                                                                new LazyDeserializingObject<>(MetaData.from(metaData)));
-        String timestamp = Objects.toString(headers.get(Headers.MESSAGE_TIMESTAMP));
+        String timestamp = Objects.toString(headers.get(MESSAGE_TIMESTAMP));
         if (headers.containsKey(Headers.AGGREGATE_ID)) {
             return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get(Headers.AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(Headers.AGGREGATE_ID)),

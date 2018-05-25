@@ -27,15 +27,18 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEve
 /**
  * @author Nakul Mishra.
  */
-public class MessageAndMetadata
-        implements KafkaMetadataProvider<TrackedEventMessage<?>>, Comparable<MessageAndMetadata> {
+public class KafkaEventMessage
+        implements KafkaMetadataProvider<TrackedEventMessage<?>>, Comparable<KafkaEventMessage> {
 
+    private static final Comparator<KafkaEventMessage> COMPARATOR = Comparator.comparing(KafkaEventMessage::timestamp)
+                                                                              .thenComparing(KafkaEventMessage::partition)
+                                                                              .thenComparing(KafkaEventMessage::offset);
     private final TrackedEventMessage<?> eventMessage;
     private final int partition;
     private final long offset;
     private final long timestamp;
 
-    public MessageAndMetadata(TrackedEventMessage<?> eventMessage, int partition, long offset, long timestamp) {
+    public KafkaEventMessage(TrackedEventMessage<?> eventMessage, int partition, long offset, long timestamp) {
         Assert.notNull(eventMessage, () -> "Event may not be null");
         this.partition = partition;
         this.offset = offset;
@@ -43,9 +46,9 @@ public class MessageAndMetadata
         this.eventMessage = eventMessage;
     }
 
-    public static MessageAndMetadata from(EventMessage<?> eventMessage, ConsumerRecord<?, ?> record,
-                                          KafkaTrackingToken token) {
-        return new MessageAndMetadata(
+    public static KafkaEventMessage from(EventMessage<?> eventMessage, ConsumerRecord<?, ?> record,
+                                         KafkaTrackingToken token) {
+        return new KafkaEventMessage(
                 asTrackedEventMessage(eventMessage, token), record.partition(), record.offset(), record.timestamp()
         );
     }
@@ -79,22 +82,12 @@ public class MessageAndMetadata
      * </ul>
      */
     @Override
-    public int compareTo(MessageAndMetadata other) {
-        // @formatter:off
-        //TODO : Improve readability Compartor.compareLong
-        if (Long.compare(this.timestamp(), other.timestamp()) == 0) { // records on different partitions were published at the same time.
-            if (Integer.compare(this.partition(), other.partition()) == 0) { // belong to same partition.
-                return Long.compare(this.offset(), other.offset());// return the one with smaller offset.
-            }
-            return Long.compare(this.partition(), other.partition()); // we don't know which one was published first; best effort not loose the event.
+    public int compareTo(KafkaEventMessage other) {
+        return COMPARATOR.compare(this, other);
         }
-        return Long.compare(this.timestamp(), other.timestamp()); // published on different partitions, return the one with smaller timestamp.
-        // @formatter:on
-    }
-
     @Override
     public String toString() {
-        return "MessageAndMetadata{" +
+        return "KafkaEventMessage{" +
                 "eventMessage=" + eventMessage +
                 ", partition=" + partition +
                 ", offset=" + offset +

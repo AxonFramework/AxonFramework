@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @param <E>
  * @author Nakul Mishra
  */
-public interface SortableBuffer<E> {
+public interface Buffer<E> {
 
     void put(E e) throws InterruptedException;
 

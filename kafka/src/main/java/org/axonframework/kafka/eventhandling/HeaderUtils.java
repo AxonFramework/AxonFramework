@@ -36,7 +36,6 @@ import java.util.function.BiFunction;
 
 import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
 import static org.axonframework.messaging.Headers.defaultHeaders;
-import static org.axonframework.messaging.Headers.domainHeaders;
 
 /**
  * Utility for dealing with {@link Headers}. Mostly for internal use.
@@ -165,11 +164,11 @@ public class HeaderUtils {
         } else if (value instanceof Number) {
             target.add(key, toBytes((Number) value));
         } else if (value instanceof String) {
-            target.add(key, ((String) value).getBytes());
+            target.add(key, ((String) value).getBytes(UTF_8));
         } else if (value == null) {
             target.add(key, null);
         } else {
-            target.add(key, value.toString().getBytes());
+            target.add(key, value.toString().getBytes(UTF_8));
         }
     }
 
@@ -256,7 +255,7 @@ public class HeaderUtils {
     public static BiFunction<String, Object, RecordHeader> byteMapper() {
         return (key, value) -> value instanceof byte[] ?
                 new RecordHeader(key, (byte[]) value) :
-                new RecordHeader(key, value == null ? null : value.toString().getBytes());
+                new RecordHeader(key, value == null ? null : value.toString().getBytes(UTF_8));
     }
 
     private static boolean isValidMetadataKey(String key) {
@@ -269,9 +268,6 @@ public class HeaderUtils {
         eventMessage.getMetaData()
                     .forEach((k, v) -> target.add(headerValueMapper.apply(generateMetadataKey(k), v)));
         defaultHeaders(eventMessage, serializedObject).forEach((k, v) -> addHeader(target, k, v));
-        if (eventMessage instanceof DomainEventMessage) {
-            domainHeaders((DomainEventMessage) eventMessage).forEach((k, v) -> addHeader(target, k, v));
-        }
     }
 
     private static byte[] toBytes(Short value) {

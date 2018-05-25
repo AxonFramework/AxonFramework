@@ -31,9 +31,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <E> element type.
  * @author Nakul Mishra.
  */
-public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> implements SortableBuffer<E> {
+public class SortedKafkaMessageBuffer<E extends Comparable & KafkaMetadataProvider> implements Buffer<E> {
 
-    private static final Logger logger = LoggerFactory.getLogger(MessageBuffer.class);
+    private static final Logger logger = LoggerFactory.getLogger(SortedKafkaMessageBuffer.class);
 
     /**
      * Data structure
@@ -66,14 +66,14 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> impleme
     private int count;
 
 
-    public MessageBuffer() {
+    public SortedKafkaMessageBuffer() {
         this(1_000);
     }
 
     /**
      * @param capacity the capacity of this buffer.
      */
-    public MessageBuffer(int capacity) {
+    public SortedKafkaMessageBuffer(int capacity) {
         Assert.isTrue(capacity > 0, () -> "Capacity may not be <= 0");
         this.delegate = new ConcurrentSkipListSet<>();
         this.lock = new ReentrantLock();
@@ -301,6 +301,6 @@ public class MessageBuffer<E extends Comparable & KafkaMetadataProvider> impleme
 
     @Override
     public String toString() {
-        return "MessageBuffer:" + this.delegate;
+        return "SortedKafkaMessageBuffer:" + this.delegate;
     }
 }

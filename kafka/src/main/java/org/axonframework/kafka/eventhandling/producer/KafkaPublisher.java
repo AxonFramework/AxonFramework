@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * EventBusTerminal implementation that uses Kafka Message Broker to dispatch event messages. All
+ * Publisher implementation that uses Kafka Message Broker to dispatch event messages. All
  * outgoing messages are sent to a configured topics.
  * <p>
  * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own Kafka
@@ -215,6 +215,7 @@ public class KafkaPublisher<K, V> {
             monitorCallbacks.forEach((k, v) -> v.reportSuccess());
         } catch (ProducerFencedException e) {
             logger.warn("Unable to commit transaction", e);
+            monitorCallbacks.forEach((k, v) -> v.reportFailure(e));
             throw new EventPublicationFailedException(
                     "Event publication failed: Exception occurred while committing kafka transaction",
                     e);

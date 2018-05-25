@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
- * Use to track messages consumed & committed from Kafka to Axon.
+ * Use to track messages consumed &amp committed from Kafka to Axon.
  *
  * @author Nakul Mishra
  * @since 3.0
@@ -60,11 +60,11 @@ public class KafkaTrackingToken implements TrackingToken, Serializable {
         return partitionPositions;
     }
 
-    public static Collection<TopicPartition> partitions(String topic, KafkaTrackingToken token) {
-        return token.partitionPositions.keySet()
-                                       .stream()
-                                       .map(i -> new org.apache.kafka.common.TopicPartition(topic, i))
-                                       .collect(Collectors.toList());
+    public Collection<TopicPartition> partitions(String topic) {
+        return partitionPositions.keySet()
+                                 .stream()
+                                 .map(i -> new TopicPartition(topic, i))
+                                 .collect(Collectors.toList());
     }
 
     public static TopicPartition partition(String topic, int partitionNumber) {

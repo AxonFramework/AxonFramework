@@ -18,7 +18,7 @@ package org.axonframework.monitoring;
 
 import org.axonframework.messaging.Message;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -45,11 +45,11 @@ public interface MessageMonitor<T extends Message<?>> {
     MonitorCallback onMessageIngested(T message);
 
     /**
-     * Takes a list of messages and returns a map containing events along with their callbacks
+     * Takes a collection of messages and returns a map containing events along with their callbacks
      * @param messages to monitor
      * @return map where key = event and value = the callback
      */
-    default Map<? super T, MonitorCallback> onMessagesIngested(List<? extends T> messages) {
+    default Map<? super T, MonitorCallback> onMessagesIngested(Collection<? extends T> messages) {
         return messages.stream().collect(Collectors.toMap(msg -> msg, this::onMessageIngested));
     }
 

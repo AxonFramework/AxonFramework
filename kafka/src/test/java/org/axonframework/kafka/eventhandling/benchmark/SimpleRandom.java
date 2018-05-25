@@ -12,7 +12,7 @@ final class SimpleRandom {
     private final static long multiplier = 0x5DEECE66DL;
     private final static long addend = 0xBL;
     private final static long mask = (1L << 48) - 1;
-    static final AtomicLong seq = new AtomicLong(-715159705);
+    private static final AtomicLong seq = new AtomicLong(-715159705);
     private long seed;
 
     SimpleRandom() {

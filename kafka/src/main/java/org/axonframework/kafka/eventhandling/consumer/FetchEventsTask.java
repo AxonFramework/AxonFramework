@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
- * Polls {@link Consumer} and inserts records on {@link SortableBuffer}.
+ * Polls {@link Consumer} and inserts records on {@link Buffer}.
  *
  * @author Nakul Mishra
  */
@@ -37,7 +37,7 @@ class FetchEventsTask<K, V> implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(FetchEventsTask.class);
     private final Consumer<K, V> consumer;
-    private final SortableBuffer<MessageAndMetadata> buffer;
+    private final Buffer<KafkaEventMessage> buffer;
     private final KafkaMessageConverter<K, V> converter;
     private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
     private final long timeout;
@@ -61,7 +61,7 @@ class FetchEventsTask<K, V> implements Runnable {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Fetched {} records", records.count());
                 }
-                Collection<MessageAndMetadata> messages = new ArrayList<>(records.count());
+                Collection<KafkaEventMessage> messages = new ArrayList<>(records.count());
                 List<CallbackEntry<K, V>> callbacks = new ArrayList<>(records.count());
                 for (ConsumerRecord<K, V> record : records) {
                     converter.readKafkaMessage(record).ifPresent(eventMessage -> {
@@ -70,7 +70,7 @@ class FetchEventsTask<K, V> implements Runnable {
                             logger.debug("Updating token from {} -> {}", currentToken, nextToken);
                         }
                         currentToken = nextToken;
-                        messages.add(MessageAndMetadata.from(eventMessage, record, currentToken));
+                        messages.add(KafkaEventMessage.from(eventMessage, record, currentToken));
                         callbacks.add(new CallbackEntry<>(currentToken, record));
                     });
                 }
@@ -105,7 +105,7 @@ class FetchEventsTask<K, V> implements Runnable {
     }
 
     public static <K, V> Builder<K, V> builder(Consumer<K, V> consumer, KafkaTrackingToken token,
-                                               SortableBuffer<MessageAndMetadata> buffer,
+                                               Buffer<KafkaEventMessage> buffer,
                                                KafkaMessageConverter<K, V> converter,
                                                BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback,
                                                long timeout) {
@@ -116,13 +116,13 @@ class FetchEventsTask<K, V> implements Runnable {
 
         private final long timeout;
         private final Consumer<K, V> consumer;
-        private final SortableBuffer<MessageAndMetadata> buffer;
+        private final Buffer<KafkaEventMessage> buffer;
         private final KafkaMessageConverter<K, V> converter;
         private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
         private final KafkaTrackingToken currentToken;
 
         public Builder(Consumer<K, V> consumer, KafkaTrackingToken token,
-                       SortableBuffer<MessageAndMetadata> buffer,
+                       Buffer<KafkaEventMessage> buffer,
                        KafkaMessageConverter<K, V> converter,
                        BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback, long timeout) {
             Assert.notNull(consumer, () -> "Consumer may not be null");

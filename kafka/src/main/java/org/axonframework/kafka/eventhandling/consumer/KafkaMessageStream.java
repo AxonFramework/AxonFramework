@@ -43,17 +43,16 @@ public class KafkaMessageStream implements TrackingEventStream {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaMessageStream.class);
 
-    private final SortableBuffer<MessageAndMetadata> buffer;
-    private final Fetcher fetcher;
-    private MessageAndMetadata peekEvent;
+    private final Buffer<KafkaEventMessage> buffer;
+    private final Runnable closeHandler;
+    private KafkaEventMessage peekEvent;
 
-    public KafkaMessageStream(SortableBuffer<MessageAndMetadata> buffer,
-                              Fetcher fetcher) {
+    public KafkaMessageStream(Buffer<KafkaEventMessage> buffer, Runnable closeHandler) {
         Assert.notNull(buffer, () -> "Buffer may not be null");
-        Assert.notNull(fetcher, () -> "Fetcher may not be null");
+        this.closeHandler = closeHandler;
         this.buffer = buffer;
-        this.fetcher = fetcher;
     }
+
 
     @Override
     public Optional<TrackedEventMessage<?>> peek() {
@@ -87,6 +86,6 @@ public class KafkaMessageStream implements TrackingEventStream {
 
     @Override
     public void close() {
-        fetcher.shutdown();
+        closeHandler.run();
     }
 }

@@ -132,15 +132,17 @@ public class KafkaMessageStreamTests {
     }
 
     @Test
-    public void testClosing_MessageStream_ShouldShutdownTheFetcher() {
-        Fetcher<String, byte[]> fetcher = fetcher();
-        KafkaMessageStream mock = new KafkaMessageStream(new MessageBuffer<>(), fetcher);
+    public void testClosing_MessageStream_ShouldInvokeTheCloseHandler() {
+        Runnable closeHandler = mock(Runnable.class);
+        KafkaMessageStream mock = new KafkaMessageStream(new SortedKafkaMessageBuffer<>(), closeHandler);
+        verify(closeHandler, never()).run();
         mock.close();
-        verify(fetcher, times(1)).shutdown();
+        verify(closeHandler).run();
     }
 
     private static KafkaMessageStream emptyStream() {
-        return new KafkaMessageStream(new MessageBuffer<>(), fetcher());
+        Runnable closeHandler = mock(Runnable.class);
+        return new KafkaMessageStream(new SortedKafkaMessageBuffer<>(), closeHandler);
     }
 
     private static GenericTrackedDomainEventMessage<String> trackedDomainEvent(String aggregateId) {
@@ -154,17 +156,13 @@ public class KafkaMessageStreamTests {
 
     private static KafkaMessageStream stream(List<GenericTrackedDomainEventMessage<String>> messages)
             throws InterruptedException {
-        MessageBuffer<MessageAndMetadata> buffer = new MessageBuffer<>(messages.size());
+        SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(messages.size());
 
         for (int i = 0; i < messages.size(); i++) {
-            buffer.put(new MessageAndMetadata(messages.get(i), 0, i, 1));
+            buffer.put(new KafkaEventMessage(messages.get(i), 0, i, 1));
         }
 
-        return new KafkaMessageStream(buffer, fetcher());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Fetcher<String, byte[]> fetcher() {
-        return mock(Fetcher.class);
+        Runnable closeHandler = mock(Runnable.class);
+        return new KafkaMessageStream(buffer, closeHandler);
     }
 }

@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -45,19 +46,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.consumerFactory;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.producerFactory;
-import static org.axonframework.kafka.eventhandling.consumer.DefaultFetcher.Builder.emptyCallback;
-import static org.axonframework.kafka.eventhandling.consumer.DefaultFetcher.builder;
+import static org.axonframework.kafka.eventhandling.consumer.AsyncFetcher.builder;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link DefaultFetcher}
+ * Tests for {@link AsyncFetcher}
  *
  * @author Nakul Mishra
  */
 @RunWith(SpringRunner.class)
 @DirtiesContext
 @EmbeddedKafka(topics = {"testStartFetcherWith_ExistingToken_ShouldStartAtSpecificPositions"}, partitions = 5)
-public class DefaultFetcherTests {
+public class AsyncFetcherTests {
 
     @SuppressWarnings("SpringJavaAutowiredMembersInspection")
     @Autowired
@@ -68,31 +68,32 @@ public class DefaultFetcherTests {
     @SuppressWarnings("unchecked")
     @Test(expected = IllegalArgumentException.class)
     public void testBuilderCreation_InvalidTopic() {
-        builder(null, mock(ConsumerFactory.class), mock(KafkaMessageConverter.class), mock(SortableBuffer.class), 1);
+        builder(new HashMap<>()).withTopic(null).build();
     }
 
     @SuppressWarnings("unchecked")
     @Test(expected = IllegalArgumentException.class)
-    public void testBuilderCreation_InvalidMessageFactory() {
-        builder("foo", null, mock(KafkaMessageConverter.class), mock(SortableBuffer.class), 1);
+    public void testBuilderCreation_InvalidConsumerFactory() {
+        builder((ConsumerFactory<?, ?>) null);
     }
 
     @SuppressWarnings("unchecked")
     @Test(expected = IllegalArgumentException.class)
     public void testBuilderCreation_InvalidConverter() {
-        builder("foo", mock(ConsumerFactory.class), null, mock(SortableBuffer.class), 1);
+        builder(new HashMap<>()).withMessageConverter(null);
     }
 
     @SuppressWarnings("unchecked")
     @Test(expected = IllegalArgumentException.class)
     public void testBuilderCreation_InvalidBuffer() {
-        builder("foo", mock(ConsumerFactory.class), mock(KafkaMessageConverter.class), null, 1);
+        builder(new HashMap<>()).withBufferFactory(null);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testEmptyCallback_ShouldDoNothing() {
-        assertThat(emptyCallback().apply(mock(ConsumerRecord.class), mock(KafkaTrackingToken.class))).isNull();
+        assertThat(((BiFunction<ConsumerRecord<Object, Object>, KafkaTrackingToken, Void>) (r, t) -> null)
+                           .apply(mock(ConsumerRecord.class), mock(KafkaTrackingToken.class))).isNull();
     }
 
     @Test
@@ -103,12 +104,15 @@ public class DefaultFetcherTests {
         }});
         String topic = "foo";
         ConsumerFactory<String, String> cf = mockConsumerFactory(topic);
-        MessageBuffer<MessageAndMetadata> buffer = new MessageBuffer<>(1);
-        Fetcher<String, String> testSubject = DefaultFetcher.builder(topic, cf, new ValueConverter(), buffer, 3000)
-                                                            .withPool(newSingleThreadExecutor())
-                                                            .onRecordPublished(countMessage(messageCounter))
-                                                            .build();
-
+        SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(1);
+        Fetcher<String, String> testSubject = AsyncFetcher.builder(cf)
+                                                          .withTopic(topic)
+                                                          .withMessageConverter(new ValueConverter())
+                                                          .withBufferFactory(() -> buffer)
+                                                          .withPollTimeout(3000, TimeUnit.MILLISECONDS)
+                                                          .withPool(newSingleThreadExecutor())
+                                                          .onRecordPublished(countMessage(messageCounter))
+                                                          .build();
         testSubject.start(null);
         messageCounter.await();
 
@@ -131,7 +135,7 @@ public class DefaultFetcherTests {
         String topic = "testStartFetcherWith_ExistingToken_ShouldStartAtSpecificPositions";
         int p0 = 0, p1 = 1, p2 = 2, p3 = 3, p4 = 4;
         ProducerFactory<String, String> pf = publishRecords(topic, p0, p1, p2, p3, p4);
-        MessageBuffer<MessageAndMetadata> buffer = new MessageBuffer<>(expectedMessages);
+        SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(expectedMessages);
         ConsumerFactory<String, String> cf = consumerFactory(kafka, topic);
         Map<Integer, Long> positions = new HashMap<Integer, Long>() {{
             put(0, 5L);
@@ -140,9 +144,13 @@ public class DefaultFetcherTests {
             put(3, 4L);
             put(4, 0L);
         }};
-        Fetcher<String, String> testSubject = DefaultFetcher.builder(topic, cf, new ValueConverter(), buffer, 3000)
-                                                            .onRecordPublished(countMessage(messageCounter))
-                                                            .build();
+        Fetcher<String, String> testSubject = AsyncFetcher.builder(cf)
+                                                          .withTopic(topic)
+                                                          .withMessageConverter(new ValueConverter())
+                                                          .withBufferFactory(() -> buffer)
+                                                          .withPollTimeout(3000, TimeUnit.MILLISECONDS)
+                                                          .onRecordPublished(countMessage(messageCounter))
+                                                          .build();
         KafkaTrackingToken startingToken = KafkaTrackingToken.newInstance(positions);
 
         testSubject.start(startingToken);
@@ -182,11 +190,11 @@ public class DefaultFetcherTests {
     }
 
     private static void assertMessagesCountPerPartition(int expectedMessages, int p0, int p1, int p2, int p3, int p4,
-                                                        MessageBuffer<MessageAndMetadata> buffer)
+                                                        SortedKafkaMessageBuffer<KafkaEventMessage> buffer)
             throws InterruptedException {
         Map<Integer, Integer> received = new HashMap<>();
         for (int i = 0; i < expectedMessages; i++) {
-            MessageAndMetadata m = buffer.take();
+            KafkaEventMessage m = buffer.take();
             received.putIfAbsent(m.partition(), 0);
             received.put(m.partition(), received.get(m.partition()) + 1);
         }

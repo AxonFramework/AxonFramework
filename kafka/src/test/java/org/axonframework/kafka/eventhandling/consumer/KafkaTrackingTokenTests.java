@@ -128,7 +128,7 @@ public class KafkaTrackingTokenTests {
         }});
         Collection<TopicPartition> expected = Lists.newArrayList(new TopicPartition("bar", 0),
                                                                  new TopicPartition("bar", 2));
-        assertEquals(expected, KafkaTrackingToken.partitions("bar", existingToken));
+        assertEquals(expected, existingToken.partitions("bar"));
     }
 
     @Test

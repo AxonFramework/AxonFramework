@@ -16,6 +16,7 @@
 package org.axonframework.kafka.eventhandling.consumer;
 
 /**
+ * An interface for messages originating from Kafka capable of providing information about their source.
  * @param <V>.
  * @author Nakul Mishra.
  */
