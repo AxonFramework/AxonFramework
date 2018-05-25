@@ -35,6 +35,12 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-kafka</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -101,6 +107,18 @@
             <artifactId>spring-cloud-commons</artifactId>
             <version>1.3.2.RELEASE</version>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.12</artifactId>
+            <version>${kafka.version}</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.amqp.eventhandling;
+package org.axonframework.messaging;
 
 import org.axonframework.common.AxonException;
 
 /**
  * Exception indication that an error occurred while publishing an event to an AMQP Broker
  *
- * Deprecated in favor of {@link org.axonframework.messaging.EventPublicationFailedException}
  * @author Allard Buijze
- * @since 2.0
+ * @author Nakul Mishra
+ * @since 3.0
  */
-@Deprecated
-public class EventPublicationFailedException extends org.axonframework.messaging.EventPublicationFailedException {
 
-    private static final long serialVersionUID = 3663633361627495227L;
+public class EventPublicationFailedException extends AxonException {
 
     /**
      * Initialize the exception using given descriptive {@code message} and {@code cause}
