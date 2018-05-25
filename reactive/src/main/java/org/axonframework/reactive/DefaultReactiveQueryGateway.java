@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.reactive;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.backpressure.BackpressuredUpdateHandler;
 import org.axonframework.queryhandling.backpressure.TimeBasedBackpressure;
 import org.axonframework.queryhandling.responsetypes.ResponseType;

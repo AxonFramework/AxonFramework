@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.reactive;
 
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.backpressure.BackpressuredUpdateHandler;
 import org.axonframework.queryhandling.backpressure.NoopBackpressure;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
