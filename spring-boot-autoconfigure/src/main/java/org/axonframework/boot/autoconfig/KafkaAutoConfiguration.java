@@ -17,20 +17,10 @@
 package org.axonframework.boot.autoconfig;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
-import org.axonframework.kafka.eventhandling.consumer.AsyncFetcher;
-import org.axonframework.kafka.eventhandling.consumer.ConsumerFactory;
-import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
-import org.axonframework.kafka.eventhandling.consumer.Fetcher;
-import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
-import org.axonframework.kafka.eventhandling.consumer.SortedKafkaMessageBuffer;
-import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
-import org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory;
-import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
-import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration;
-import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
+import org.axonframework.kafka.eventhandling.consumer.*;
+import org.axonframework.kafka.eventhandling.producer.*;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -85,32 +75,32 @@ public class KafkaAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     @ConditionalOnProperty("axon.kafka.consumer.group-id")
-    public ConsumerFactory<String, byte[]> consumerFactory() {
+    public ConsumerFactory<String, byte[]> kafkaConsumerFactory() {
         return new DefaultConsumerFactory<>(properties.buildConsumerProperties());
     }
 
     @ConditionalOnMissingBean
     @Bean(initMethod = "start", destroyMethod = "shutDown")
     @ConditionalOnBean(ProducerFactory.class)
-    public KafkaPublisher<String, byte[]> publisher(ProducerFactory<String, byte[]> producerFactory,
-                                                    EventBus eventBus,
-                                                    KafkaMessageConverter<String, byte[]> messageConverter,
-                                                    AxonConfiguration configuration) {
+    public KafkaPublisher<String, byte[]> kafkaPublisher(ProducerFactory<String, byte[]> producerFactory,
+                                                         EventBus eventBus,
+                                                         KafkaMessageConverter<String, byte[]> messageConverter,
+                                                         AxonConfiguration configuration) {
         return new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
                                             .withTopic(properties.getDefaultTopic())
                                             .withMessageConverter(messageConverter)
                                             .withProducerFactory(producerFactory)
                                             .withMessageSource(eventBus)
                                             .withMessageMonitor(configuration
-                                                                        .messageMonitor(EventStore.class, "eventStore"))
+                                                                        .messageMonitor(KafkaPublisher.class, "kafkaPublisher"))
                                             .build());
     }
 
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnBean({ConsumerFactory.class, KafkaMessageConverter.class})
-    public Fetcher<String, byte[]> fetcher(ConsumerFactory<String, byte[]> consumerFactory,
-                                           KafkaMessageConverter<String, byte[]> messageConverter) {
+    public Fetcher<String, byte[]> kafkaFetcher(ConsumerFactory<String, byte[]> consumerFactory,
+                                                KafkaMessageConverter<String, byte[]> messageConverter) {
         return AsyncFetcher.builder(consumerFactory)
                            .withTopic(properties.getDefaultTopic())
                            .withPollTimeout(properties.getFetcher().getPollTimeout(), MILLISECONDS)
@@ -129,7 +119,7 @@ public class KafkaAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    public KafkaMessageConverter<String, byte[]> messageConverter(
+    public KafkaMessageConverter<String, byte[]> kafkaMessageConverter(
             @Qualifier("eventSerializer") Serializer eventSerializer) {
         return new DefaultKafkaMessageConverter(eventSerializer);
     }
