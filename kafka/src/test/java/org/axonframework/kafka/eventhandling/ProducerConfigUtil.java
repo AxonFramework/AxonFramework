@@ -154,7 +154,7 @@ public class ProducerConfigUtil {
         return DefaultProducerFactory
                 .<String, V>builder(minimal(kafka, valueSerializer))
                 .withConfirmationMode(WAIT_FOR_ACK)
-                .withCloseTimeout(100, MILLISECONDS)
+                .withCloseTimeout(1000, MILLISECONDS)
                 .build();
     }
 

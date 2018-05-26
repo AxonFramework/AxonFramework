@@ -33,8 +33,11 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
@@ -42,9 +45,9 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -57,7 +60,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.transactionalConsumerFactory;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.ackProducerFactory;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.txnProducerFactory;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -99,11 +103,11 @@ public class KafkaPublisherTests {
 
         eventBus.publish(messages);
 
+        assertThat(KafkaTestUtils.getRecords(consumer).count()).isEqualTo(messages.size());
         assertThat(messages).isEqualTo(monitor.received);
-        assertThat(monitor.successCount()).isEqualTo(messages.size());
         assertThat(monitor.failureCounter.get()).isZero();
         assertThat(monitor.ignoreCount()).isZero();
-        assertThat(KafkaTestUtils.getRecords(consumer).count()).isEqualTo(monitor.successCount());
+        assertThat(monitor.successCount()).isEqualTo(messages.size());
 
         cleanup(pf, testSubject, consumer);
     }
@@ -318,7 +322,7 @@ public class KafkaPublisherTests {
         KafkaPublisher<?, ?> testSubject = new KafkaPublisher<>(
                 KafkaPublisherConfiguration.<String, byte[]>builder()
                         .withProducerFactory(pf)
-                        .withPublisherAckTimeout(100)
+                        .withPublisherAckTimeout(1000)
                         .withMessageMonitor(monitor)
                         .withMessageSource(eventBus)
                         .withMessageConverter(new DefaultKafkaMessageConverter(new XStreamSerializer()))
@@ -374,7 +378,7 @@ public class KafkaPublisherTests {
         private final AtomicInteger failureCounter = new AtomicInteger(0);
         private final AtomicInteger ignoreCounter = new AtomicInteger(0);
 
-        private List<Message<?>> received = new ArrayList<>();
+        private List<Message<?>> received = new CopyOnWriteArrayList<>();
 
         @Override
         public MonitorCallback onMessageIngested(Message<?> message) {
