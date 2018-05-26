@@ -148,6 +148,9 @@ public class KafkaPublisherTests {
 
     @Test
     public void testPublishMessagesWithTransactionalMode_NoUnitOfWork_ShouldBePublishedAndReadSuccessfully() {
+        Assume.assumeFalse("Transactional producers not supported on Windows",
+                           System.getProperty("os.name").contains("Windows"));
+
         String topic = "testPublishMessagesWithTransactionalMode_NoUnitOfWork_ShouldBePublishedAndReadSuccessfully";
         ProducerFactory<String, byte[]> pf = txnProducerFactory(kafka, "foo", ByteArraySerializer.class);
         Consumer<?, ?> consumer = consumer(topic);
@@ -187,6 +190,9 @@ public class KafkaPublisherTests {
 
     @Test
     public void testPublishMessagesWithTransactionalMode_UnitOfWork_ShouldBePublishedAndReadSuccessfully() {
+        Assume.assumeFalse("Transactional producers not supported on Windows",
+                           System.getProperty("os.name").contains("Windows"));
+
         String topic = "testPublishMessagesWithTransactionalMode_UnitOfWork_ShouldBePublishedAndReadSuccessfully";
         ProducerFactory<String, byte[]> pf = txnProducerFactory(kafka, "foo", ByteArraySerializer.class);
         Consumer<?, ?> consumer = consumer(topic);

@@ -131,6 +131,9 @@ public class DefaultProducerFactoryTests {
 
     @Test
     public void testTransactionalProducerCreation() {
+        Assume.assumeFalse("Transactional producers not supported on Windows",
+                           System.getProperty("os.name").contains("Windows"));
+
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "xyz");
         Producer<String, String> producer = pf.createProducer();
         producer.beginTransaction();
@@ -172,6 +175,9 @@ public class DefaultProducerFactoryTests {
 
     @Test(expected = KafkaException.class)
     public void testTransactionalProducerBehavior_OnCommittingAnAbortedTransaction() {
+        Assume.assumeFalse("Transactional producers not supported on Windows",
+                           System.getProperty("os.name").contains("Windows"));
+
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "xyz");
         Producer<String, String> producer = pf.createProducer();
         try {
@@ -186,6 +192,8 @@ public class DefaultProducerFactoryTests {
 
     @Test(expected = KafkaException.class)
     public void testTransactionalProducerBehavior_OnSendingOffsetsWhenTransactionIsClosed() {
+        Assume.assumeFalse("Transactional producers not supported on Windows",
+                           System.getProperty("os.name").contains("Windows"));
         ProducerFactory<String, String> pf = txnProducerFactory(kafka, "xyz");
         Producer<String, String> producer = pf.createProducer();
         producer.beginTransaction();
