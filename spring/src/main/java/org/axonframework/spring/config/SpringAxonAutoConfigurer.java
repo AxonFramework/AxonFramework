@@ -330,8 +330,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             }
 
             if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
-                aggregateConf.configureCommandTargetResolver(c -> beanFactory
-                        .getBean(aggregateAnnotation.commandTargetResolver(), CommandTargetResolver.class));
+                aggregateConf.configureCommandTargetResolver(c -> getBean(aggregateAnnotation.commandTargetResolver(),
+                                                                          c));
+            } else {
+                findComponent(CommandTargetResolver.class).ifPresent(commandTargetResolver -> aggregateConf
+                        .configureCommandTargetResolver(c -> getBean(commandTargetResolver, c)));
             }
 
             configurer.configureAggregate(aggregateConf);
