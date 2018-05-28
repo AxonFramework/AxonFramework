@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.MockException;
+import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -231,15 +232,12 @@ public class EmbeddedEventStoreTest {
         assertFalse(stream.hasNextAvailable());
     }
 
-    @Test
+    @Test(expected = JdbcException.class)
     public void testLoadWithFailingSnapshot() {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
         when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
         List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
-        assertEquals(110, eventMessages.size());
-        assertEquals(0, eventMessages.get(0).getSequenceNumber());
-        assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
     }
 
     @Test
