@@ -183,8 +183,8 @@ public class AsyncFetcherTests {
     private BiFunction<ConsumerRecord<String, String>, KafkaTrackingToken, Void> countMessage(
             CountDownLatch counter) {
         return (r, t) -> {
-            counter.countDown();
             currentToken = t;
+            counter.countDown();
             return null;
         };
     }
