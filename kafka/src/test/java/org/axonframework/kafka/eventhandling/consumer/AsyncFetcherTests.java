@@ -63,7 +63,7 @@ public class AsyncFetcherTests {
     @Autowired
     private KafkaEmbedded kafka;
 
-    private KafkaTrackingToken currentToken;
+    private volatile KafkaTrackingToken currentToken;
 
     @SuppressWarnings("unchecked")
     @Test(expected = IllegalArgumentException.class)
