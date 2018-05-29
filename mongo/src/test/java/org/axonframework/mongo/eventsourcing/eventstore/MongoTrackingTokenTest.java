@@ -16,8 +16,11 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
@@ -112,6 +115,16 @@ public class MongoTrackingTokenTest {
 
         assertEquals(first.advanceTo(time(1003), "3", Duration.ofHours(1)),
                      first.upperBound(second));
+    }
+
+    @Test
+    public void testSerializationDeserialization() throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        MongoTrackingToken mongoTrackingToken = MongoTrackingToken.of(time(1000), "0");
+        String serialized = objectMapper.writeValueAsString(mongoTrackingToken);
+        MongoTrackingToken deserialized = objectMapper.readValue(serialized, MongoTrackingToken.class);
+        assertEquals(mongoTrackingToken, deserialized);
     }
 
     private static void assertKnownEventIds(MongoTrackingToken token, String... expectedKnownIds) {
