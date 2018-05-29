@@ -15,6 +15,9 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
@@ -23,14 +26,17 @@ import java.util.Objects;
 
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
- * messages that are redelivered ass part of a replay.
+ * messages that are redelivered as part of a replay.
  *
  * @author Allard Buijze
  * @since 3.2
  */
 public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
+    private static final long serialVersionUID = -4102464856247630944L;
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     private final TrackingToken tokenAtReset;
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     private final TrackingToken currentToken;
 
     /**
@@ -42,13 +48,39 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      * @param tokenAtReset The token representing the position at which the reset was triggered.
      */
     public ReplayToken(TrackingToken tokenAtReset) {
-        this.tokenAtReset = tokenAtReset;
-        this.currentToken = null;
+        this(tokenAtReset, null);
     }
 
-    protected ReplayToken(TrackingToken tokenAtReset, TrackingToken newRedeliveryToken) {
+    /**
+     * Initializes a ReplayToken with {@code tokenAtReset} which represents the position at which a reset was triggered
+     * and the {@code newRedeliveryToken} which represents current token.
+     *
+     * @param tokenAtReset       The token representing the position at which the reset was triggered
+     * @param newRedeliveryToken The current token
+     */
+    @JsonCreator
+    public ReplayToken(@JsonProperty("tokenAtReset") TrackingToken tokenAtReset,
+                       @JsonProperty("currentToken") TrackingToken newRedeliveryToken) {
         this.tokenAtReset = tokenAtReset;
         this.currentToken = newRedeliveryToken;
+    }
+
+    /**
+     * Gets the token representing the position at which the reset was triggered.
+     *
+     * @return the token representing the position at which the reset was triggered
+     */
+    public TrackingToken getTokenAtReset() {
+        return tokenAtReset;
+    }
+
+    /**
+     * Gets the current token.
+     *
+     * @return the current token
+     */
+    public TrackingToken getCurrentToken() {
+        return currentToken;
     }
 
     /**

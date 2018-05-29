@@ -16,7 +16,11 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+
+import java.util.Objects;
 
 /**
  * ScheduleToken for tasks event scheduled using the SimpleEventScheduler.
@@ -34,7 +38,8 @@ public class SimpleScheduleToken implements ScheduleToken {
      *
      * @param tokenId The identifier referencing the scheduled task.
      */
-    public SimpleScheduleToken(String tokenId) {
+    @JsonCreator
+    public SimpleScheduleToken(@JsonProperty("tokenId") String tokenId) {
         this.tokenId = tokenId;
     }
 
@@ -45,5 +50,29 @@ public class SimpleScheduleToken implements ScheduleToken {
      */
     public String getTokenId() {
         return tokenId;
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleScheduleToken{" +
+                "tokenId='" + tokenId + '\'' +
+                '}';
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tokenId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final SimpleScheduleToken other = (SimpleScheduleToken) obj;
+        return Objects.equals(this.tokenId, other.tokenId);
     }
 }

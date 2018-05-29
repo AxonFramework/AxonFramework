@@ -16,7 +16,11 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+
+import java.util.Objects;
 
 import static java.lang.String.format;
 
@@ -39,7 +43,9 @@ public class QuartzScheduleToken implements ScheduleToken {
      * @param jobIdentifier   The identifier used when registering the job with quartz.
      * @param groupIdentifier The identifier of the group the job is part of.
      */
-    public QuartzScheduleToken(String jobIdentifier, String groupIdentifier) {
+    @JsonCreator
+    public QuartzScheduleToken(@JsonProperty("jobIdentifier") String jobIdentifier,
+                               @JsonProperty("groupIdentifier") String groupIdentifier) {
         this.jobIdentifier = jobIdentifier;
         this.groupIdentifier = groupIdentifier;
     }
@@ -65,5 +71,23 @@ public class QuartzScheduleToken implements ScheduleToken {
     @Override
     public String toString() {
         return format("Quartz Schedule token for job [%s] in group [%s]", jobIdentifier, groupIdentifier);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobIdentifier, groupIdentifier);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final QuartzScheduleToken other = (QuartzScheduleToken) obj;
+        return Objects.equals(this.jobIdentifier, other.jobIdentifier)
+                && Objects.equals(this.groupIdentifier, other.groupIdentifier);
     }
 }
