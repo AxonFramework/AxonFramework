@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -27,7 +28,7 @@ import java.util.Objects;
  * @author Allard Buijze
  * @since 3.2
  */
-public class ReplayToken implements TrackingToken, WrappedToken {
+public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
 
     private final TrackingToken tokenAtReset;
     private final TrackingToken currentToken;

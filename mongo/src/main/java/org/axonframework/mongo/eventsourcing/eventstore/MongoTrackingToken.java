@@ -19,6 +19,7 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -37,7 +38,7 @@ import static java.util.Collections.unmodifiableSet;
  *
  * @author Rene de Waele
  */
-public class MongoTrackingToken implements TrackingToken {
+public class MongoTrackingToken implements TrackingToken, Serializable {
 
     private final long timestamp;
     private final Map<String, Long> trackedEvents;
