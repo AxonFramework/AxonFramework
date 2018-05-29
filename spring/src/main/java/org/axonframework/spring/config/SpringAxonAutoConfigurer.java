@@ -36,6 +36,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStreamLoadingStrategyFactory;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -332,6 +333,10 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
                 aggregateConf.configureCommandTargetResolver(c -> beanFactory
                         .getBean(aggregateAnnotation.commandTargetResolver(), CommandTargetResolver.class));
+            }
+
+            if (beanFactory.containsBean("eventStreamLoadingStrategyFactory")) {
+                aggregateConf.configureEventStreamLoadingStrategyFactory(c -> beanFactory.getBean("eventStreamLoadingStrategyFactory",EventStreamLoadingStrategyFactory.class));
             }
 
             configurer.configureAggregate(aggregateConf);
