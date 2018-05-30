@@ -16,9 +16,13 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -37,7 +41,7 @@ import static java.util.Collections.unmodifiableSet;
  *
  * @author Rene de Waele
  */
-public class MongoTrackingToken implements TrackingToken {
+public class MongoTrackingToken implements TrackingToken, Serializable {
 
     private final long timestamp;
     private final Map<String, Long> trackedEvents;
@@ -58,6 +62,21 @@ public class MongoTrackingToken implements TrackingToken {
     public static MongoTrackingToken of(Instant timestamp, String eventIdentifier) {
         return new MongoTrackingToken(timestamp.toEpochMilli(),
                                       Collections.singletonMap(eventIdentifier, timestamp.toEpochMilli()));
+    }
+
+    /**
+     * Returns a new instance of {@link MongoTrackingToken} with given {@code timestamp} and given {@code
+     * trackedEvents}.
+     *
+     * @param timestamp     the event's timestamp
+     * @param trackedEvents the map of tracked events where the key is the event identifier and the value is the
+     *                      timestamp
+     * @return Mongo tracking token instance
+     */
+    @JsonCreator
+    public static MongoTrackingToken of(@JsonProperty("timestamp") Instant timestamp,
+                                        @JsonProperty("trackedEvents") Map<String, Long> trackedEvents) {
+        return new MongoTrackingToken(timestamp.toEpochMilli(), trackedEvents);
     }
 
     /**
@@ -107,12 +126,22 @@ public class MongoTrackingToken implements TrackingToken {
     }
 
     /**
+     * Gets tracked events. The key is the event identifier, and the value is the timestamp.
+     *
+     * @return tracked events
+     */
+    public Map<String, Long> getTrackedEvents() {
+        return Collections.unmodifiableMap(trackedEvents);
+    }
+
+    /**
      * Returns an {@link Iterable} with all known identifiers of events tracked before and including this token. Note,
      * the token only stores ids of prior events if they are not too old, see
      * {@link #advanceTo(Instant, String, Duration)}.
      *
      * @return all known event identifiers
      */
+    @JsonIgnore
     public Set<String> getKnownEventIds() {
         return unmodifiableSet(trackedEvents.keySet());
     }

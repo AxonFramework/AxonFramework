@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.scheduling;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.io.Serializable;
 
 /**
@@ -25,6 +27,7 @@ import java.io.Serializable;
  * @author Allard Buijze
  * @since 0.7
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public interface ScheduleToken extends Serializable {
 
 }

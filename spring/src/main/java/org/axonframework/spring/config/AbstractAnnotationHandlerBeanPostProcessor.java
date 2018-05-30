@@ -63,7 +63,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        if (beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
+        if (beanName != null && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
             return bean;
         }
 

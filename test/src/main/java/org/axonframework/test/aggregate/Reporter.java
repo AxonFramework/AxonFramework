@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -194,7 +195,7 @@ public class Reporter {
     }
 
     /**
-     * Report an error due to a difference in on of the fields of an event.
+     * Report an error due to a difference in one of the fields of an event.
      *
      * @param eventType The (runtime) type of event the difference was found in
      * @param field     The field that contains the difference
@@ -225,6 +226,42 @@ public class Reporter {
           .append(nullSafeToString(actual))
           .append(">")
           .append(NEWLINE);
+        throw new AxonAssertionError(sb.toString());
+    }
+
+    /**
+     * Report an error due to a difference in the metadata of an event
+     *
+     * @param eventType         The (runtime) type of event the difference was found in
+     * @param missingEntries    The expected key-value pairs that where not present in the metadata
+     * @param additionalEntries Key-value pairs that where present in the metadata but not expected
+     */
+    public void reportDifferentMetaData(Class<?> eventType, Map<String, Object> missingEntries,
+                                        Map<String, Object> additionalEntries) {
+        StringBuilder sb = new StringBuilder("One of the events contained different metadata than expected");
+        sb.append(NEWLINE)
+          .append(NEWLINE)
+          .append("In an event of type [")
+          .append(eventType.getSimpleName())
+          .append("], ");
+        if (!additionalEntries.isEmpty()) {
+            sb.append("metadata entries" + NEWLINE).append("[");
+            for (Map.Entry<String, Object> entry : additionalEntries.entrySet()) {
+                sb.append(entryAsString(entry) + ", ");
+            }
+            sb.delete(sb.lastIndexOf(", "), sb.lastIndexOf(",") + 2);
+            sb.append("] " + NEWLINE);
+            sb.append("were not expected. ");
+        }
+        if (!missingEntries.isEmpty()) {
+            sb.append("metadata entries " + NEWLINE).append("[");
+            for (Map.Entry<String, Object> entry : missingEntries.entrySet()) {
+                sb.append(entryAsString(entry) + ", ");
+            }
+            sb.delete(sb.lastIndexOf(","), sb.lastIndexOf(",") + 2);
+            sb.append("] " + NEWLINE);
+            sb.append("were expected but not seen.");
+        }
         throw new AxonAssertionError(sb.toString());
     }
 
@@ -260,6 +297,14 @@ public class Reporter {
             sb.append("null");
         } else {
             sb.append(value.toString());
+        }
+    }
+
+    private String entryAsString(Map.Entry<?, ?> entry) {
+        if (entry == null) {
+            return "<null>=<null>";
+        } else {
+            return nullSafeToString(entry.getKey()) + "=" + nullSafeToString(entry.getValue());
         }
     }
 
