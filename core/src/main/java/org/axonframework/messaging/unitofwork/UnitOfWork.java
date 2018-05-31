@@ -386,7 +386,7 @@ public interface UnitOfWork<T extends Message<?>> {
         /**
          * Indicates that the Unit of Work has been committed and is passed the {@link #PREPARE_COMMIT} phase.
          */
-        COMMIT(true, false),
+        COMMIT(true, true),
 
         /**
          * Indicates that the Unit of Work is being rolled back. Generally this is because an exception was raised while
