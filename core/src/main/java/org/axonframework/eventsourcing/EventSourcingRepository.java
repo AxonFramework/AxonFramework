@@ -27,7 +27,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventStreamLoadingStrategy;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -45,12 +44,9 @@ import java.util.concurrent.Callable;
  */
 public class EventSourcingRepository<T> extends LockingRepository<T, EventSourcedAggregate<T>> {
 
-    public static final EventStreamLoadingStrategy DEFAULT_EVENT_STREAM_LOADING_STRATEGY = (i,e) -> e.readEvents(i);
-
     private final EventStore eventStore;
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
     private final AggregateFactory<T> aggregateFactory;
-    private final EventStreamLoadingStrategy eventStreamLoadingStrategy;
 
     /**
      * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
@@ -92,22 +88,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
 
     /**
      * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances and {@code eventStreamLoadingStrategy} to load the events from 
-     * {@code eventStore}.
-     *
-     * @param aggregateModel   The meta model describing the aggregate's structure
-     * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore       The event store that holds the event streams for this repository
-     * @param eventStreamLoadingStrategy The strategy for reading events from EventStore
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   EventStreamLoadingStrategy eventStreamLoadingStrategy) {
-        this(aggregateModel, aggregateFactory, eventStore, NoSnapshotTriggerDefinition.INSTANCE, eventStreamLoadingStrategy);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
      * create new aggregate instances.
      *
      * @param aggregateModel   The meta model describing the aggregate's structure
@@ -120,9 +100,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     /**
-     * Initializes a repository with the default locking and event stream loading strategy, using the given
-     * {@code aggregateFactory} to create new aggregate instances and triggering snapshots using the given
-     * {@code snapshotTriggerDefinition}
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
+     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
      *
      * @param aggregateFactory          The factory for new aggregate instances
      * @param eventStore                The event store that holds the event streams for this repository
@@ -136,13 +115,11 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.aggregateFactory = aggregateFactory;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.eventStreamLoadingStrategy = DEFAULT_EVENT_STREAM_LOADING_STRATEGY;
     }
 
     /**
-     * Initializes a repository with the default locking and event stream loading strategy, using the given
-     * {@code aggregateFactory} to create new aggregate instances and triggering snapshots using the given
-     * {@code snapshotTriggerDefinition}
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
+     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
      *
      * @param aggregateModel            The meta model describing the aggregate's structure
      * @param aggregateFactory          The factory for new aggregate instances
@@ -157,35 +134,12 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.aggregateFactory = aggregateFactory;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.eventStreamLoadingStrategy = DEFAULT_EVENT_STREAM_LOADING_STRATEGY;
     }
+
 
     /**
      * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances, triggering snapshots using the given {@code snapshotTriggerDefinition}
-     * and {@code eventStreamLoadingStrategy} to load the events from {@code eventStore}.
-     *
-     * @param aggregateModel             The meta model describing the aggregate's structure
-     * @param aggregateFactory           The factory for new aggregate instances
-     * @param eventStore                 The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition  The definition describing when to trigger a snapshot
-     * @param eventStreamLoadingStrategy The strategy for reading events from EventStore
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
-                                   EventStore eventStore, SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   EventStreamLoadingStrategy eventStreamLoadingStrategy) {
-        super(aggregateModel);
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.aggregateFactory = aggregateFactory;
-        this.eventStore = eventStore;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.eventStreamLoadingStrategy = eventStreamLoadingStrategy;
-    }
-
-    /**
-     * Initializes a repository with the default locking and event stream loading strategy, using the given
-     * {@code aggregateFactory} to create new aggregate instances.
+     * create new aggregate instances.
      *
      * @param aggregateFactory          The factory for new aggregate instances
      * @param eventStore                The event store that holds the event streams for this repository
@@ -201,7 +155,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
-        this.eventStreamLoadingStrategy = DEFAULT_EVENT_STREAM_LOADING_STRATEGY;
     }
 
     /**
@@ -219,7 +172,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.eventStreamLoadingStrategy = DEFAULT_EVENT_STREAM_LOADING_STRATEGY;
     }
 
     /**
@@ -239,7 +191,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.eventStreamLoadingStrategy = DEFAULT_EVENT_STREAM_LOADING_STRATEGY;
     }
 
     /**
@@ -253,7 +204,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
-        DomainEventStream eventStream = eventStreamLoadingStrategy.readEvents(aggregateIdentifier, eventStore);
+        DomainEventStream eventStream = readEvents(aggregateIdentifier);
         SnapshotTrigger trigger = snapshotTriggerDefinition.prepareTrigger(aggregateFactory.getAggregateType());
         if (!eventStream.hasNext()) {
             throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found in the event store");
@@ -268,6 +219,17 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         return aggregate;
     }
 
+    /**
+     * Reads the events for the given aggregateIdentifier from the eventStore. this method may be overridden to
+     * add pre or postprocessing to the loading of an event stream
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to load
+     * @return the domain event stream for the given aggregateIdentifier
+     */
+    protected DomainEventStream readEvents(String aggregateIdentifier) {
+    	return eventStore.readEvents(aggregateIdentifier);
+    }
+    
     @Override
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && expectedVersion < aggregate.version()) {

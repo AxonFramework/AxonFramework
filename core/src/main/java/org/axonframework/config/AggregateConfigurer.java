@@ -31,7 +31,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventStreamLoadingStrategyFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +54,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<CommandTargetResolver> commandTargetResolver;
     private final Component<AggregateModel<A>> metaModel;
     private final List<Registration> registrations = new ArrayList<>();
-    private final Component<EventStreamLoadingStrategyFactory> eventStreamLoadingStrategyFactory;
     private Configuration parent;
 
     /**
@@ -78,8 +76,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         aggregateFactory =
                 new Component<>(() -> parent, name("aggregateFactory"), c -> new GenericAggregateFactory<>(aggregate));
-        eventStreamLoadingStrategyFactory = new Component<>(() -> parent, name("eventStreamLoadingStrategyFactory"), c -> c
-                .getComponent(EventStreamLoadingStrategyFactory.class, () -> m -> EventSourcingRepository.DEFAULT_EVENT_STREAM_LOADING_STRATEGY));
         repository = new Component<>(() -> parent, "Repository<" + aggregate.getSimpleName() + ">", c -> {
             Assert.state(c.eventBus() instanceof EventStore,
                          () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
@@ -92,7 +88,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                           c.parameterResolverFactory());
             }
             return new EventSourcingRepository<>(metaModel.get(), aggregateFactory.get(), c.eventStore(),
-                                                 snapshotTriggerDefinition.get(),eventStreamLoadingStrategyFactory.get().create(metaModel.get()));
+                                                 snapshotTriggerDefinition.get());
         });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
                                          c -> new AggregateAnnotationCommandHandler<>(repository.get(),
@@ -218,20 +214,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      */
     public AggregateConfigurer<A> configureSnapshotTrigger(Function<Configuration, SnapshotTriggerDefinition> snapshotTriggerDefinition) {
         this.snapshotTriggerDefinition.update(snapshotTriggerDefinition);
-        return this;
-    }
-
-    /**
-     * Configures the factory for returning EventStreamLoadingStrategy.
-     * <p>
-     * Note that this configuration is ignored if a custom repository instance is configured.
-     *
-     * @param eventStreamLoadingStrategyFactory The factory for returning EventStreamLoadingStrategy instances
-     * @return this configurer instance for chaining
-     */
-    public AggregateConfigurer<A> configureEventStreamLoadingStrategyFactory(Function<Configuration,
-                                                                             EventStreamLoadingStrategyFactory> eventStreamLoadingStrategyFactory) {
-        this.eventStreamLoadingStrategyFactory.update(eventStreamLoadingStrategyFactory);
         return this;
     }
 
