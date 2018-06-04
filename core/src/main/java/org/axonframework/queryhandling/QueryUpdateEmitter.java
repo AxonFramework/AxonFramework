@@ -16,13 +16,13 @@
 
 package org.axonframework.queryhandling;
 
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
  * Component which informs subscription queries about updates, errors and when there are no more updates.
  *
  * @author Milan Savic
- * @see UpdateHandler
  * @since 3.3
  */
 public interface QueryUpdateEmitter {
@@ -119,5 +119,30 @@ public interface QueryUpdateEmitter {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
                 m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
         completeExceptionally(sqmFilter, cause);
+    }
+
+    /**
+     * Gets the current outstanding request amount per message.
+     *
+     * @param filter predicate on subscription query message used to filter subscription queries
+     * @return map where the key key is subscription message and the value is current outstanding amount for that message
+     */
+    Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(
+            Predicate<SubscriptionQueryMessage<?, ?, ?>> filter);
+
+    /**
+     * Gets the current outstanding request amount per message.
+     *
+     * @param queryType the type of the query
+     * @param filter    predicate on query payload used to filter subscription queries
+     * @param <Q>       the type of the query
+     * @return map where the key key is subscription message and the value is current outstanding amount for that message
+     */
+    @SuppressWarnings("unchecked")
+    default <Q> Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(Class<Q> queryType,
+                                                                                     Predicate<Q> filter) {
+        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
+                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+        return requestedFromDownstream(sqmFilter);
     }
 }

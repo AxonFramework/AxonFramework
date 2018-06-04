@@ -39,12 +39,15 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.UpdateHandler;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -62,6 +65,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -227,13 +231,17 @@ public class SpringAxonAutoConfigurerTest {
                 "axonCR",
                 ResponseTypes.multipleInstancesOf(String.class),
                 ResponseTypes.instanceOf(String.class));
-        UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
 
-        queryBus.subscriptionQuery(queryMessage, updateHandler);
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>>result = queryBus
+                .subscriptionQuery(queryMessage);
         eventBus.publish(asEventMessage("New chat message"));
 
-        verify(updateHandler).onInitialResult(Arrays.asList("Message1", "Message2", "Message3"));
-        verify(updateHandler).onUpdate("New chat message");
+        StepVerifier.create(result.initialResult().map(Message::getPayload))
+                    .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
+                    .verifyComplete();
+        StepVerifier.create(result.updates().map(Message::getPayload))
+                    .expectNext("New chat message")
+                    .verifyComplete();
     }
 
     @SuppressWarnings("unchecked")
@@ -423,6 +431,7 @@ public class SpringAxonAutoConfigurerTest {
                 assertNotNull(beanInjectionCheck);
                 received.add(event);
                 queryUpdateEmitter.emit(String.class, "axonCR"::equals, event);
+                queryUpdateEmitter.complete(String.class, "axonCR"::equals);
             }
         }
 

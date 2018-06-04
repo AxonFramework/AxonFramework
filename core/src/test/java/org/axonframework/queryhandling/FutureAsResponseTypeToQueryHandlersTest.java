@@ -16,11 +16,11 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
+import reactor.test.StepVerifier;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Tests for different types of queries hitting query handlers with Future as a response type.
@@ -104,41 +103,29 @@ public class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    public void testSubscriptionQueryWithMultipleResponses() throws InterruptedException {
+    public void testSubscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "criteria",
                 "myQueryWithMultipleResponses",
                 ResponseTypes.multipleInstancesOf(String.class),
                 ResponseTypes.instanceOf(String.class));
-        @SuppressWarnings("unchecked")
-        UpdateHandler<List<String>, String> updateHandler = mock(UpdateHandler.class);
 
-        Registration registration = queryBus.subscriptionQuery(queryMessage, updateHandler);
-
-        Thread.sleep(FUTURE_RESOLVING_TIMEOUT + 100); // wait for future to resolve
-
-        verify(updateHandler).onInitialResult(Arrays.asList("Response1", "Response2"));
-
-        registration.close();
+        StepVerifier.create(queryBus.subscriptionQuery(queryMessage).initialResult().map(Message::getPayload))
+                    .expectNext(Arrays.asList("Response1", "Response2"))
+                    .verifyComplete();
     }
 
     @Test
-    public void testSubscriptionQueryWithSingleResponse() throws InterruptedException {
+    public void testSubscriptionQueryWithSingleResponse() {
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 "criteria",
                 "myQueryWithSingleResponse",
                 ResponseTypes.instanceOf(String.class),
                 ResponseTypes.instanceOf(String.class));
-        @SuppressWarnings("unchecked")
-        UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
 
-        Registration registration = queryBus.subscriptionQuery(queryMessage, updateHandler);
-
-        Thread.sleep(FUTURE_RESOLVING_TIMEOUT + 100); // wait for future to resolve
-
-        verify(updateHandler).onInitialResult("Response");
-
-        registration.close();
+        StepVerifier.create(queryBus.subscriptionQuery(queryMessage).initialResult().map(Message::getPayload))
+                    .expectNext("Response")
+                    .verifyComplete();
     }
 
     @SuppressWarnings("unused")

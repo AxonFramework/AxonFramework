@@ -21,6 +21,8 @@ import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -70,19 +72,17 @@ public class DefaultQueryGatewayTest {
                                       eq(1L), eq(TimeUnit.SECONDS));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testDispatchSubscriptionQuery() {
-        when(mockBus.subscriptionQuery(any(), any())).thenReturn(() -> true);
-        UpdateHandler<String, String> updateHandler = mock(UpdateHandler.class);
+        when(mockBus.subscriptionQuery(any(), any()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty()));
 
         testSubject.subscriptionQuery("query",
                                       ResponseTypes.instanceOf(String.class),
-                                      ResponseTypes.instanceOf(String.class),
-                                      updateHandler);
+                                      ResponseTypes.instanceOf(String.class));
         verify(mockBus)
-                .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>) x -> "query"
-                        .equals(x.getPayload())), eq(updateHandler));
+                .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>)
+                                                   x -> "query".equals(x.getPayload())), any());
     }
 
     @SuppressWarnings("unused")

@@ -17,6 +17,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
@@ -86,27 +88,54 @@ public interface QueryBus {
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
-     * queryName/initialResponseType/updateResponseType.
+     * queryName/initialResponseType/updateResponseType. The result is lazily created and until there is a subscription
+     * to initial result there will be no execution of query handler. In order not to miss updates, query bus will
+     * queue all updates which happen after subscription query is done and once the subscription to the flux is made,
+     * these updates will be emitted.
      * <p>
-     * If no handler is found for the query, {@link NoHandlerForQueryException} will be thrown.
+     * Backpressure mechanism to be used is {@link SubscriptionQueryBackpressure#defaultBackpressure()}.
+     * </p>
      *
-     * @param query         the query
-     * @param updateHandler the handler to be invoked when query handler initially respond and whenever a query handling
-     *                      side emits a message
-     * @param <Q>           the payload type of the query
-     * @param <I>           the response type of the query
-     * @param <U>           the incremental response types of the query
-     * @return a handle to un-subscribe {@code updateHandler}
+     * @param query the query
+     * @param <Q>   the payload type of the query
+     * @param <I>   the response type of the query
+     * @param <U>   the incremental response types of the query
+     * @return query result containing initial result and incremental updates
      */
-    default <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query,
-                                                     UpdateHandler<I, U> updateHandler) {
-        this.query(query).thenAccept(response -> {
-            updateHandler.onInitialResult(response.getPayload());
-            updateHandler.onCompleted();
-        }).exceptionally(error -> {
-            updateHandler.onCompletedExceptionally(error);
-            return null;
-        });
-        return () -> true;
+    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query) {
+        return subscriptionQuery(query, SubscriptionQueryBackpressure.defaultBackpressure());
+    }
+
+    /**
+     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
+     * queryName/initialResponseType/updateResponseType. The result is lazily created and until there is a subscription
+     * to initial result there will be no execution of query handler. In order not to miss updates, query bus will
+     * queue all updates which happen after subscription query is done and once the subscription to the flux is made,
+     * these updates will be emitted.
+     * <p>
+     * Provided backpressure mechanism will be used to deal with fast emitters.
+     * </p>
+     *
+     * @param query        the query
+     * @param backpressure the backpressure mechanism to be used for emitting updates
+     * @param <Q>          the payload type of the query
+     * @param <I>          the response type of the query
+     * @param <U>          the incremental response types of the query
+     * @return query result containing initial result and incremental updates
+     */
+    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure) {
+        return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
+            @Override
+            public Mono<QueryResponseMessage<I>> initialResult() {
+                return Mono.fromFuture(query(query));
+            }
+
+            @Override
+            public Flux<SubscriptionQueryUpdateMessage<U>> updates() {
+                throw new UnsupportedOperationException("The default implementation does not support updates.");
+            }
+        };
     }
 }

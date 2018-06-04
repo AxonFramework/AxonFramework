@@ -15,7 +15,6 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 
@@ -65,12 +64,16 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <Q, I, U> Registration subscriptionQuery(String queryName, Q query, ResponseType<I> initialResponseType,
-                                                    ResponseType<U> updateResponseType,
-                                                    UpdateHandler<I, U> updateHandler) {
+    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+                                                                     ResponseType<I> initialResponseType,
+                                                                     ResponseType<U> updateResponseType,
+                                                                     SubscriptionQueryBackpressure backpressure) {
         SubscriptionQueryMessage<Q, I, U> subscriptionQueryMessage =
                 new GenericSubscriptionQueryMessage<>(query, queryName, initialResponseType, updateResponseType);
-        return queryBus.subscriptionQuery(processInterceptors(subscriptionQueryMessage), updateHandler);
+        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
+                .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure);
+        return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
+                                                    result.updates().map(SubscriptionQueryUpdateMessage::getPayload));
     }
 
     @SuppressWarnings("unchecked")

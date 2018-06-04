@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,7 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -73,8 +74,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, ReentrantReadWriteLock> registeringSubscriptionQueryLocks = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, UpdateHandler<?, ?>> updateHandlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, CopyOnWriteArrayList<BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>>>> delayedUpdates = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
@@ -224,140 +225,132 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query,
-                                                    UpdateHandler<I, U> updateHandler) {
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query,
+            SubscriptionQueryBackpressure backpressure) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = intercept(query);
-        ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
-        registeringSubscriptionQueryLocks.put(interceptedQuery, rwLock);
-        List<MessageHandler<? super QueryMessage<?, ?>>> handlers = getHandlersForMessage(interceptedQuery);
-        rwLock.writeLock().lock();
-        try {
-            if (handlers.isEmpty()) {
-                throw new NoHandlerForQueryException(
-                        format("No handler found for %s with response type %s and update type %s",
-                               interceptedQuery.getQueryName(),
-                               interceptedQuery.getResponseType(),
-                               interceptedQuery.getUpdateResponseType()));
-            }
-            Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = handlers.iterator();
-            boolean invocationSuccess = false;
-            while (!invocationSuccess && handlerIterator.hasNext()) {
-                try {
-                    DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
-                    interceptAndInvoke(uow, handlerIterator.next())
-                            .thenAccept(responseMessage -> {
-                                try {
-                                    I initialResponse = responseMessage.getPayload();
-                                    updateHandler.onInitialResult(initialResponse);
-                                    updateHandlers.put(query, updateHandler);
-                                    registeringSubscriptionQueryLocks.remove(interceptedQuery);
-                                    monitorCallback.reportSuccess();
-                                } catch (Exception e) {
-                                    monitorCallback.reportFailure(e);
-                                    updateHandler.onCompletedExceptionally(e);
-                                }
-                            });
+        delayedUpdates.putIfAbsent(interceptedQuery, new CopyOnWriteArrayList<>());
+        MonoWrapper<QueryResponseMessage<I>> initialResult =
+                MonoWrapper.create(monoSink -> initialResult(interceptedQuery, monitorCallback, monoSink));
+        FluxWrapper<SubscriptionQueryUpdateMessage<U>> updates =
+                FluxWrapper.create(fluxSink -> updates(interceptedQuery, fluxSink), backpressure);
 
-                    invocationSuccess = true;
-                } catch (NoHandlerForQueryException e) {
-                    // Ignore this Query Handler, as we may have another one which is suitable
-                }
-            }
-            if (!invocationSuccess) {
-                throw new NoHandlerForQueryException(
-                        format("No suitable handler was found for %s with response type %s and update type %s",
-                               interceptedQuery.getQueryName(),
-                               interceptedQuery.getResponseType(),
-                               interceptedQuery.getUpdateResponseType()));
-            }
-        } catch (Exception e) {
-            monitorCallback.reportFailure(e);
-            updateHandler.onCompletedExceptionally(e);
-        } finally {
-            rwLock.writeLock().unlock();
-        }
-
-        return () -> {
-            updateHandlers.remove(query);
-            return true;
-        };
+        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(), updates.getFlux());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
-        registeringSubscriptionQueryReadSafe(filter, () -> {
-            MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
-            List<? extends SubscriptionQueryMessage<?, ?, U>> queries =
-                    updateHandlers.keySet()
-                                  .stream()
-                                  .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                                  .map(m -> (SubscriptionQueryMessage<?, ?, U>) m)
-                                  .collect(Collectors.toList());
-            if (queries.isEmpty()) {
-                monitorCallback.reportIgnored();
-            } else {
-                queries.forEach(query -> {
-                    UpdateHandler<?, U> updateHandler = (UpdateHandler<?, U>) updateHandlers.get(query);
-                    try {
-                        updateHandler.onUpdate(update.getPayload());
-                        monitorCallback.reportSuccess();
-                    } catch (Exception e) {
-                        logger.error(format(
-                                "An error happened while trying to emit an update to a query: %s.",
-                                query), e);
-                        monitorCallback.reportFailure(e);
-                        updateHandlers.remove(query);
-                        updateHandler.onCompletedExceptionally(e);
-                    }
-                });
-            }
-        });
+        scheduleAfterInitial(filter, (query, fluxSink) -> doEmit(query, fluxSink, update));
+        updateHandlers.keySet()
+                      .stream()
+                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                      .forEach(query -> {
+                          FluxSinkWrapper<?> updateHandler = updateHandlers.get(query);
+                          doEmit(query, updateHandler, update);
+                      });
     }
 
     @Override
     public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        registeringSubscriptionQueryReadSafe(filter, () ->
-                updateHandlers.keySet()
-                              .stream()
-                              .filter(filter)
-                              .forEach(query -> updateHandlers.remove(query).onCompleted()));
+        scheduleAfterInitial(filter, (query, fluxSink) -> fluxSink.complete());
+        updateHandlers.keySet()
+                      .stream()
+                      .filter(filter)
+                      .forEach(query -> updateHandlers.remove(query).complete());
     }
 
     @Override
     public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        registeringSubscriptionQueryReadSafe(filter, () ->
-                updateHandlers.keySet()
-                              .stream()
-                              .filter(filter)
-                              .forEach(query -> updateHandlers.remove(query).onCompletedExceptionally(cause)));
+        scheduleAfterInitial(filter, (query, fluxSink) -> fluxSink.error(cause));
+        updateHandlers.keySet()
+                      .stream()
+                      .filter(filter)
+                      .forEach(query -> updateHandlers.remove(query).error(cause));
     }
 
-    /**
-     * Makes sure that {@code subscriptionQueryUpdate} is executed with the read lock on all subscription queries which
-     * are currently in registration process.
-     *
-     * @param subscriptionQueryFilter used to filter out subscription queries which are currently in registration
-     *                                process
-     * @param subscriptionQueryUpdate operation to be executed in lock safe guard
-     */
-    @SuppressWarnings("unchecked")
-    private void registeringSubscriptionQueryReadSafe(Predicate<?> subscriptionQueryFilter,
-                                                      Runnable subscriptionQueryUpdate) {
-        List<ReentrantReadWriteLock> locks = registeringSubscriptionQueryLocks.keySet()
-                                                                              .stream()
-                                                                              .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) subscriptionQueryFilter)
-                                                                              .map(registeringSubscriptionQueryLocks::get)
-                                                                              .collect(Collectors.toList());
+    @Override
+    public Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(
+            Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
+        return updateHandlers.keySet()
+                             .stream()
+                             .filter(filter)
+                             .collect(Collectors.toMap(Function.identity(),
+                                                       m -> updateHandlers.get(m).requestedFromDownstream()));
+    }
 
-        locks.forEach(lock -> lock.readLock().lock());
-        try {
-            subscriptionQueryUpdate.run();
-        } finally {
-            locks.forEach(lock -> lock.readLock().unlock());
+    private <Q, I, U> void initialResult(SubscriptionQueryMessage<Q, I, U> query,
+                                         MessageMonitor.MonitorCallback monitorCallback, MonoSinkWrapper<QueryResponseMessage<I>> monoSink) {
+        Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = getHandlersForMessage(query).iterator();
+        boolean foundHandler = false;
+        while (!foundHandler && handlerIterator.hasNext()) {
+            DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(query);
+            try {
+                interceptAndInvoke(uow, handlerIterator.next())
+                        .thenAccept(initialResponse -> {
+                            monoSink.success(initialResponse);
+                            monitorCallback.reportSuccess();
+                        })
+                        .exceptionally(error -> {
+                            monoSink.error(error);
+                            monitorCallback.reportFailure(error);
+                            return null;
+                        });
+                foundHandler = true;
+            } catch (NoHandlerForQueryException e) {
+                // Ignore this Query Handler, as we may have another one which is suitable
+            } catch (Exception e) {
+                foundHandler = true;
+                monitorCallback.reportFailure(e);
+                monoSink.error(e);
+                break;
+            }
         }
+        if (!foundHandler) {
+            NoHandlerForQueryException error = new NoHandlerForQueryException(
+                    format("No suitable handler was found for %s with response type %s and update type %s",
+                           query.getQueryName(),
+                           query.getResponseType(),
+                           query.getUpdateResponseType()));
+            monitorCallback.reportFailure(error);
+            monoSink.error(error);
+        }
+    }
+
+    private <U> void updates(SubscriptionQueryMessage<?, ?, U> query,
+                             FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSink) {
+        updateHandlers.put(query, fluxSink);
+        fluxSink.onDispose(() -> updateHandlers.remove(query));
+        Optional.ofNullable(delayedUpdates.remove(query))
+                .ifPresent(delays -> delays.forEach(c -> c.accept(query, fluxSink)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, FluxSinkWrapper<?> updateHandler,
+                            SubscriptionQueryUpdateMessage<U> update) {
+        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
+        try {
+            ((FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
+            monitorCallback.reportSuccess();
+        } catch (Exception e) {
+            logger.error(format(
+                    "An error happened while trying to emit an update to a query: %s.",
+                    query), e);
+            monitorCallback.reportFailure(e);
+            updateHandlers.remove(query);
+            updateHandler.error(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void scheduleAfterInitial(Predicate<?> subscriptionQueryFilter,
+                                      BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> subscriptionQueryUpdate) {
+        delayedUpdates.keySet()
+                      .stream()
+                      .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) subscriptionQueryFilter)
+                      .forEach(key -> delayedUpdates.get(key).add(subscriptionQueryUpdate));
     }
 
     @SuppressWarnings("unchecked")
