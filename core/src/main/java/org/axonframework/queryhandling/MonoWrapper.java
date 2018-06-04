@@ -46,7 +46,7 @@ class MonoWrapper<T> {
      *
      * @return mono delegate
      */
-    Mono<T> getMono() {
+    public Mono<T> getMono() {
         return mono;
     }
 
@@ -58,7 +58,7 @@ class MonoWrapper<T> {
      * @param <T>      The type of data sent via this mono
      * @return instance of created wrapper
      */
-    static <T> MonoWrapper<T> create(Consumer<MonoSinkWrapper<T>> callback) {
+    public static <T> MonoWrapper<T> create(Consumer<MonoSinkWrapper<T>> callback) {
         return new MonoWrapper<>(Mono.create(monoSink -> callback.accept(new MonoSinkWrapper<>(monoSink))));
     }
 }

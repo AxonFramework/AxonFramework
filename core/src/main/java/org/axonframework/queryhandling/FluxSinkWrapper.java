@@ -43,7 +43,7 @@ class FluxSinkWrapper<T> {
     /**
      * Wrapper around {@link FluxSink#complete()}.
      */
-    void complete() {
+    public void complete() {
         fluxSink.complete();
     }
 
@@ -52,7 +52,7 @@ class FluxSinkWrapper<T> {
      *
      * @param value to be passed to the delegate sink
      */
-    void next(T value) {
+    public void next(T value) {
         fluxSink.next(value);
     }
 
@@ -61,7 +61,7 @@ class FluxSinkWrapper<T> {
      *
      * @param t to be passed to the delegate sink
      */
-    void error(Throwable t) {
+    public void error(Throwable t) {
         fluxSink.error(t);
     }
 
@@ -70,7 +70,7 @@ class FluxSinkWrapper<T> {
      *
      * @param disposable to be passed to the delegate sink
      */
-    void onDispose(Disposable disposable) {
+    public void onDispose(Disposable disposable) {
         fluxSink.onDispose(disposable);
     }
 
@@ -79,7 +79,7 @@ class FluxSinkWrapper<T> {
      *
      * @return the current outstanding request amount
      */
-    long requestedFromDownstream() {
+    public long requestedFromDownstream() {
         return fluxSink.requestedFromDownstream();
     }
 }

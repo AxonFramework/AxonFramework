@@ -44,7 +44,7 @@ class MonoSinkWrapper<T> {
      *
      * @param value to be passed to the delegate sink
      */
-    void success(T value) {
+    public void success(T value) {
         monoSink.success(value);
     }
 
@@ -53,7 +53,7 @@ class MonoSinkWrapper<T> {
      *
      * @param t to be passed to the delegate sink
      */
-    void error(Throwable t) {
+    public void error(Throwable t) {
         monoSink.error(t);
     }
 }

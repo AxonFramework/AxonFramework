@@ -46,7 +46,7 @@ class FluxWrapper<T> {
      *
      * @return delegate flux
      */
-    Flux<T> getFlux() {
+    public Flux<T> getFlux() {
         return flux;
     }
 
@@ -59,7 +59,7 @@ class FluxWrapper<T> {
      * @param <T>          The type of the data sent via this flux
      * @return instance of created wrapper
      */
-    static <T> FluxWrapper<T> create(Consumer<? super FluxSinkWrapper<T>> callback,
+    public static <T> FluxWrapper<T> create(Consumer<? super FluxSinkWrapper<T>> callback,
                                      SubscriptionQueryBackpressure backpressure) {
         return new FluxWrapper<>(Flux.create(emitter -> callback.accept(new FluxSinkWrapper<>(emitter)),
                                              backpressure.getOverflowStrategy()));
