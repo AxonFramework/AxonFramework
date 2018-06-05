@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.eventsourcing;
 
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -44,6 +45,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private PlatformTransactionManager mockTransactionManager;
     private String aggregateIdentifier;
     private EventStore mockEventStore;
+    private RepositoryProvider mockRepositoryProvider;
     private ApplicationContext mockApplicationContext;
     private Executor executor;
 
@@ -51,6 +53,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     public void setUp() {
         mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(EventStore.class);
+        mockRepositoryProvider = mock(RepositoryProvider.class);
         executor = spy(new MockExecutor());
 
         testSubject = new SpringAggregateSnapshotterFactoryBean();
@@ -66,6 +69,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
                                              }
                                          }));
         testSubject.setEventStore(mockEventStore);
+        testSubject.setRepositoryProvider(mockRepositoryProvider);
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
@@ -93,7 +97,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         when(mockApplicationContext.getBean(EventStore.class)).thenReturn(mockEventStore);
         when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class)).thenReturn(
                 Collections.singletonMap("myRepository",
-                                         new EventSourcingRepository<>(StubAggregate.class, mockEventStore))
+                                         new EventSourcingRepository<>(StubAggregate.class, mockEventStore, mockRepositoryProvider))
         );
         testSnapshotCreated_NoTransaction();
     }

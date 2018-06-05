@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -326,6 +327,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                        () -> beanFactory.getBean(EntityManagerProvider.class)),
                                         aggregateType,
                                         c.eventBus(),
+                                        c::repository,
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
                                         c.parameterResolverFactory(),
                                         c.handlerDefinition()));
@@ -334,6 +336,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             } else {
                 aggregateConf.configureRepository(
                         c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
+            }
+
+            if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
+                aggregateConf.configureCommandTargetResolver(c -> getBean(aggregateAnnotation.commandTargetResolver(),
+                                                                          c));
+            } else {
+                findComponent(CommandTargetResolver.class).ifPresent(commandTargetResolver -> aggregateConf
+                        .configureCommandTargetResolver(c -> getBean(commandTargetResolver, c)));
             }
 
             configurer.configureAggregate(aggregateConf);

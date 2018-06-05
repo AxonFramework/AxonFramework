@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -97,6 +98,15 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
+
+    /**
+     * Registers repository provider with the fixture. If an aggregate being testing spawns new aggregates, this
+     * provider should be registered. Otherwise, it is not going to be invoked.
+     *
+     * @param repositoryProvider provides repositories for specified aggregate types
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider);
 
     /**
      * Registers the given {@code aggregateFactory} with the fixture. The repository used by the fixture will use

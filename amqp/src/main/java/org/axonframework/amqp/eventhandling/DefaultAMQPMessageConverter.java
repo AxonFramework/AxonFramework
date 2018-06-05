@@ -22,12 +22,22 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
@@ -76,16 +86,14 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         String routingKey = routingKeyResolver.resolveRoutingKey(eventMessage);
         AMQP.BasicProperties.Builder properties = new AMQP.BasicProperties.Builder();
         Map<String, Object> headers = new HashMap<>();
-        eventMessage.getMetaData().forEach((k, v) -> headers.put("axon-metadata-" + k, v));
-        headers.put("axon-message-id", eventMessage.getIdentifier());
-        headers.put("axon-message-type", serializedObject.getType().getName());
-        headers.put("axon-message-revision", serializedObject.getType().getRevision());
-        headers.put("axon-message-timestamp", formatInstant(eventMessage.getTimestamp()));
-        if (eventMessage instanceof DomainEventMessage) {
-            headers.put("axon-message-aggregate-id", ((DomainEventMessage) eventMessage).getAggregateIdentifier());
-            headers.put("axon-message-aggregate-seq", ((DomainEventMessage) eventMessage).getSequenceNumber());
-            headers.put("axon-message-aggregate-type", ((DomainEventMessage) eventMessage).getType());
-        }
+        eventMessage.getMetaData().forEach((k, v) -> headers.put(Headers.MESSAGE_METADATA + "-" + k, v));
+        Headers.defaultHeaders(eventMessage, serializedObject).forEach((k, v) -> {
+            if (k.equals(MESSAGE_TIMESTAMP)) {
+                headers.put(k, formatInstant(eventMessage.getTimestamp()));
+            } else {
+                headers.put(k, v);
+            }
+        });
         properties.headers(headers);
         if (durable) {
             properties.deliveryMode(2);
@@ -95,26 +103,26 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
 
     @Override
     public Optional<EventMessage<?>> readAMQPMessage(byte[] messageBody, Map<String, Object> headers) {
-        if (!headers.keySet().containsAll(Arrays.asList("axon-message-id", "axon-message-type"))) {
+        if (!headers.keySet().containsAll(Arrays.asList(Headers.MESSAGE_ID, Headers.MESSAGE_TYPE))) {
             return Optional.empty();
         }
         Map<String, Object> metaData = new HashMap<>();
         headers.forEach((k, v) -> {
-            if (k.startsWith("axon-metadata-")) {
-                metaData.put(k.substring("axon-metadata-".length()), v);
+            if (k.startsWith(Headers.MESSAGE_METADATA + "-")) {
+                metaData.put(k.substring((Headers.MESSAGE_METADATA + "-").length()), v);
             }
         });
         SimpleSerializedObject<byte[]> serializedMessage = new SimpleSerializedObject<>(messageBody, byte[].class,
-                                                                                        Objects.toString(headers.get("axon-message-type")),
-                                                                                        Objects.toString(headers.get("axon-message-revision"), null));
-        SerializedMessage<?> message = new SerializedMessage<>(Objects.toString(headers.get("axon-message-id")),
+                                                                                        Objects.toString(headers.get(Headers.MESSAGE_TYPE)),
+                                                                                        Objects.toString(headers.get(Headers.MESSAGE_REVISION), null));
+        SerializedMessage<?> message = new SerializedMessage<>(Objects.toString(headers.get(Headers.MESSAGE_ID)),
                                                                new LazyDeserializingObject<>(serializedMessage, serializer),
                                                                new LazyDeserializingObject<>(MetaData.from(metaData)));
-        String timestamp = Objects.toString(headers.get("axon-message-timestamp"));
-        if (headers.containsKey("axon-message-aggregate-id")) {
-            return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get("axon-message-aggregate-type")),
-                                                   Objects.toString(headers.get("axon-message-aggregate-id")),
-                                                   (Long) headers.get("axon-message-aggregate-seq"),
+        String timestamp = Objects.toString(headers.get(MESSAGE_TIMESTAMP));
+        if (headers.containsKey(Headers.AGGREGATE_ID)) {
+            return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get(Headers.AGGREGATE_TYPE)),
+                                                   Objects.toString(headers.get(Headers.AGGREGATE_ID)),
+                                                   (Long) headers.get(Headers.AGGREGATE_SEQ),
                                                    message, () -> DateTimeUtils.parseInstant(timestamp)));
         } else {
             return Optional.of(new GenericEventMessage<>(message, () -> DateTimeUtils.parseInstant(timestamp)));
