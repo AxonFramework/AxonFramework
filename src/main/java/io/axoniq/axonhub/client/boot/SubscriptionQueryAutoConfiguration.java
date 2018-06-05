@@ -17,9 +17,8 @@ package io.axoniq.axonhub.client.boot;
 
 import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.query.EnhancedAxonHubQueryBus;
+import io.axoniq.axonhub.client.query.subscription.EnhancedAxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
-import io.axoniq.axonhub.client.query.subscription.AxonHubUpdateEmitter;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
@@ -43,25 +42,18 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureBefore(MessagingAutoConfiguration.class)
 public class SubscriptionQueryAutoConfiguration {
 
-    @Bean("queryUpdateEmitter")
-    public QueryUpdateEmitter defaultQueryUpdateEmitter(
-            PlatformConnectionManager platformConnectionManager,
-            @Qualifier("messageSerializer") Serializer messageSerializer,
-            Serializer genericSerializer,
-            AxonHubConfiguration configuration) {
-        return new AxonHubUpdateEmitter(platformConnectionManager, messageSerializer, genericSerializer, configuration);
-    }
 
     @Bean
     @ConditionalOnMissingBean(QueryBus.class)
-    public QueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration axonHubConfiguration,
+    public EnhancedAxonHubQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration axonHubConfiguration,
                                     AxonConfiguration axonConfiguration, TransactionManager txManager,
                                     @Qualifier("messageSerializer") Serializer messageSerializer,
                                     Serializer genericSerializer,
                                     QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
+        SimpleQueryBus simpleQueryBus = new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
+                                                     txManager, queryInvocationErrorHandler);
         return new EnhancedAxonHubQueryBus(platformConnectionManager, axonHubConfiguration,
-                                           new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                                      txManager, queryInvocationErrorHandler),
+                                           simpleQueryBus, simpleQueryBus,
                                            messageSerializer, genericSerializer, priorityCalculator);
     }
 
