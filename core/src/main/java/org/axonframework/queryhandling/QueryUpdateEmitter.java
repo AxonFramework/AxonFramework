@@ -58,9 +58,9 @@ public interface QueryUpdateEmitter {
      * @param <U>       the type of the update
      */
     @SuppressWarnings("unchecked")
-    default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, SubscriptionQueryUpdateMessage<U> update) {
+    default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter, SubscriptionQueryUpdateMessage<U> update) {
         Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         emit(sqmFilter, update);
     }
 
@@ -73,7 +73,7 @@ public interface QueryUpdateEmitter {
      * @param <Q>       the type of the query
      * @param <U>       the type of the update
      */
-    default <Q, U> void emit(Class<Q> queryType, Predicate<Q> filter, U update) {
+    default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter, U update) {
         emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.from(update));
     }
 
@@ -92,9 +92,9 @@ public interface QueryUpdateEmitter {
      * @param <Q>       the type of the query
      */
     @SuppressWarnings("unchecked")
-    default <Q> void complete(Class<Q> queryType, Predicate<Q> filter) {
+    default <Q> void complete(Class<Q> queryType, Predicate<? super Q> filter) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         complete(sqmFilter);
     }
 
@@ -115,9 +115,9 @@ public interface QueryUpdateEmitter {
      * @param <Q>       the type of the query
      */
     @SuppressWarnings("unchecked")
-    default <Q> void completeExceptionally(Class<Q> queryType, Predicate<Q> filter, Throwable cause) {
+    default <Q> void completeExceptionally(Class<Q> queryType, Predicate<? super Q> filter, Throwable cause) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         completeExceptionally(sqmFilter, cause);
     }
 
@@ -140,9 +140,9 @@ public interface QueryUpdateEmitter {
      */
     @SuppressWarnings("unchecked")
     default <Q> Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(Class<Q> queryType,
-                                                                                     Predicate<Q> filter) {
+                                                                                     Predicate<? super Q> filter) {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> m.getPayloadType().equals(queryType) && filter.test((Q) m.getPayload());
+                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         return requestedFromDownstream(sqmFilter);
     }
 }

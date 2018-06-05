@@ -43,7 +43,13 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
      * @return created message
      */
     @SuppressWarnings("unchecked")
-    public static <T> GenericSubscriptionQueryUpdateMessage<T> from(Object o) {
+    public static <T> SubscriptionQueryUpdateMessage<T> from(Object o) {
+        if (SubscriptionQueryUpdateMessage.class.isInstance(o)) {
+            return (SubscriptionQueryUpdateMessage<T>) o;
+        } else if (o instanceof Message) {
+            Message message = (Message) o;
+            return new GenericSubscriptionQueryUpdateMessage<>(message);
+        }
         return new GenericSubscriptionQueryUpdateMessage<>((T) o);
     }
 
