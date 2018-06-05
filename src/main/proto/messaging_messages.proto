@@ -49,51 +49,48 @@ message QueryResponse {
     repeated ProcessingInstruction processing_instructions = 6;
     string request_identifier = 7;
 }
-message SubscriptionQueryRequest {
-    string message_identifier = 1;
-    string query = 2;
-    int64 timestamp = 3;
-    io.axoniq.platform.SerializedObject payload = 4;
-    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
-    io.axoniq.platform.SerializedObject response_type = 6;
-    io.axoniq.platform.SerializedObject update_response_type = 7;
-    string clientId = 9;
-    string componentName = 10;
-    string context = 11;
+message SubscriptionQuery {
+    QueryRequest query_request = 2;
+    io.axoniq.platform.SerializedObject update_response_type = 3;
 }
 
-message UnsubscriptionQueryRequest {
-    string subscription_identifier = 1;
-    string message_identifier = 2;
-    string clientId = 3;
-    string componentName = 4;
-    string context = 5;
-}
 
 message QueryUpdate {
-    string subscription_identifier = 1;
     string message_identifier = 2;
     io.axoniq.platform.SerializedObject payload = 3;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 4;
     string client_name = 5;
     string component_name = 6;
-    string context = 7;
 }
 
 message QueryUpdateComplete {
-    string subscription_identifier = 1;
     string client_name = 2;
     string component_name = 3;
-    string context = 4;
 }
 
 message QueryUpdateCompleteExceptionally {
-    string subscription_identifier = 1;
     string client_name = 2;
     string component_name = 3;
-    string context = 4;
     string error_code = 5;
     string message = 6;
+}
+
+message SubscriptionQueryRequest {
+    oneof response {
+        SubscriptionQuery subscribe = 1;
+        SubscriptionQuery unsubscribe = 2;
+    }
+    string context = 4;
+}
+
+message SubscriptionQueryResponse {
+    string subscription_identifier = 1;
+    oneof response {
+        QueryResponse initial_response = 2;
+        QueryUpdate update = 3;
+        QueryUpdateComplete complete = 4;
+        QueryUpdateCompleteExceptionally complete_exceptionally = 5;
+    }
 }
 
 message CommandSubscription {

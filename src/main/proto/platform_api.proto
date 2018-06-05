@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "messaging_messages.proto";
 package io.axoniq.platform.grpc;
 
 option java_multiple_files = true;
@@ -19,9 +18,6 @@ message PlatformInboundInstruction {
         Application application = 10;
         User user = 11;
         ContextUpdate context = 12;
-        io.axoniq.axonhub.QueryUpdate query_update = 13;
-        io.axoniq.axonhub.QueryUpdateComplete query_update_complete = 14;
-        io.axoniq.axonhub.QueryUpdateCompleteExceptionally query_update_complete_exceptionally = 15;
     }
 }
 
@@ -31,8 +27,6 @@ message PlatformOutboundInstruction {
         RequestReconnect request_reconnect = 3;
         PauseEventProcessor pause_event_processor = 4;
         StartEventProcessor start_event_processor = 5;
-        io.axoniq.axonhub.SubscriptionQueryRequest subscribe_query = 6;
-        io.axoniq.axonhub.UnsubscriptionQueryRequest unsubscribe_query = 7;
     }
 }
 
