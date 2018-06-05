@@ -15,10 +15,10 @@
 
 package io.axoniq.axonhub.client.query.subscription;
 
-import io.axoniq.axonhub.SubscriptionQueryRequest;
-import io.axoniq.axonhub.client.util.GrpcMetadata;
+import io.axoniq.axonhub.QueryRequest;
+import io.axoniq.axonhub.SubscriptionQuery;
+import io.axoniq.axonhub.client.query.GrpcBackedQueryMessage;
 import io.axoniq.axonhub.client.util.GrpcSerializedObject;
-import io.axoniq.platform.grpc.PlatformOutboundInstruction;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
@@ -33,22 +33,14 @@ import java.util.Map;
  */
 public class GrpcBackedSubscriptionQueryMessage<Q,I,U> implements SubscriptionQueryMessage<Q,I,U> {
 
-    private final SubscriptionQueryRequest subscriptionQuery;
-    private final LazyDeserializingObject<Q> payload;
-    private final LazyDeserializingObject<ResponseType<I>> responseType;
+    private final GrpcBackedQueryMessage<Q, I> grpcBackedQueryMessage;
     private final LazyDeserializingObject<ResponseType<U>> updateType;
-    private final GrpcMetadata metadata;
 
-    public GrpcBackedSubscriptionQueryMessage(PlatformOutboundInstruction instruction, Serializer serializer){
-        this(instruction.getSubscribeQuery(), serializer);
-    }
 
-    public GrpcBackedSubscriptionQueryMessage(SubscriptionQueryRequest query, Serializer serializer) {
-        this.subscriptionQuery = query;
-        this.payload = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getPayload()), serializer);
-        this.responseType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), serializer);
-        this.updateType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), serializer);
-        this.metadata = new GrpcMetadata(query.getMetaDataMap(), serializer);
+    public GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery, Serializer messageSerializer, Serializer genericSerializer) {
+        QueryRequest query = subscriptionQuery.getQueryRequest();
+        this.updateType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), messageSerializer);
+        grpcBackedQueryMessage = new GrpcBackedQueryMessage<>(query, messageSerializer, genericSerializer);
     }
 
     @Override
@@ -58,32 +50,32 @@ public class GrpcBackedSubscriptionQueryMessage<Q,I,U> implements SubscriptionQu
 
     @Override
     public String getQueryName() {
-        return subscriptionQuery.getQuery();
+        return grpcBackedQueryMessage.getQueryName();
     }
 
     @Override
     public ResponseType<I> getResponseType() {
-        return responseType.getObject();
+        return grpcBackedQueryMessage.getResponseType();
     }
 
     @Override
     public String getIdentifier() {
-        return subscriptionQuery.getMessageIdentifier();
+        return grpcBackedQueryMessage.getIdentifier();
     }
 
     @Override
     public MetaData getMetaData() {
-        return metadata.get();
+        return grpcBackedQueryMessage.getMetaData();
     }
 
     @Override
     public Q getPayload() {
-        return payload.getObject();
+        return grpcBackedQueryMessage.getPayload();
     }
 
     @Override
     public Class<Q> getPayloadType() {
-        return payload.getType();
+        return grpcBackedQueryMessage.getPayloadType();
     }
 
     @Override

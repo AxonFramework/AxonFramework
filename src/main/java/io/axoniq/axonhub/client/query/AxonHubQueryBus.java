@@ -139,8 +139,7 @@ public class AxonHubQueryBus implements QueryBus {
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
-        QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
-                        .withInterceptors(interceptors)
+        queryServiceStub()
                         .query(serializer.serializeRequest(interceptedQuery, 1,
                                                            TimeUnit.HOURS.toMillis(1), priorityCalculator.determinePriority(interceptedQuery)),
                                new StreamObserver<QueryResponse>() {
@@ -166,12 +165,15 @@ public class AxonHubQueryBus implements QueryBus {
         return completableFuture;
     }
 
+    public QueryServiceGrpc.QueryServiceStub queryServiceStub() {
+        return QueryServiceGrpc.newStub(platformConnectionManager.getChannel()).withInterceptors(interceptors);
+    }
+
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage, long timeout, TimeUnit timeUnit) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
-        QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
-                        .withInterceptors(interceptors)
+        queryServiceStub()
                         .withDeadlineAfter(timeout, timeUnit)
                         .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
                                                            priorityCalculator.determinePriority(interceptedQuery)),
@@ -400,7 +402,7 @@ public class AxonHubQueryBus implements QueryBus {
         }
     }
 
-    void publish(QueryProviderOutbound providerOutbound){
+    public void publish(QueryProviderOutbound providerOutbound){
         this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
     }
 
