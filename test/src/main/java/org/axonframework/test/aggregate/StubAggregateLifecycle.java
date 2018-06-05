@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.eventhandling.EventMessage;
@@ -23,6 +24,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -64,6 +66,11 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     @Override
     protected boolean getIsLive() {
         return true;
+    }
+
+    @Override
+    protected <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception {
+        return null;
     }
 
     @Override
