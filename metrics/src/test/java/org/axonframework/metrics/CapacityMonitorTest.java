@@ -18,13 +18,17 @@ package org.axonframework.metrics;
 
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.*;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.junit.Assert.*;
 
 @SuppressWarnings("unchecked")
 public class CapacityMonitorTest {
@@ -43,14 +47,16 @@ public class CapacityMonitorTest {
     }
 
     @Test
-    public void testMultithreadedCapacity(){
+    public void testMultithreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
-        MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        MessageMonitor.MonitorCallback monitorCallback2 = testSubject.onMessageIngested(null);
+        EventMessage<Object> foo = asEventMessage("foo");
+        EventMessage<Object> bar = asEventMessage("bar");
+        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+                .onMessagesIngested(Arrays.asList(foo, bar));
         testClock.increase(1000);
-        monitorCallback.reportSuccess();
-        monitorCallback2.reportFailure(null);
+        callbacks.get(foo).reportSuccess();
+        callbacks.get(bar).reportFailure(null);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
         Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
@@ -58,12 +64,11 @@ public class CapacityMonitorTest {
     }
 
     @Test
-    public void testEmptyCapacity(){
+    public void testEmptyCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         Map<String, Metric> metricSet = testSubject.getMetrics();
         Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
         assertEquals(0, capacityGauge.getValue(), 0);
     }
-
 }

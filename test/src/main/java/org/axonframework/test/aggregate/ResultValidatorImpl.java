@@ -22,12 +22,14 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.MapEntryMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.*;
 
@@ -67,6 +69,22 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         for (Object expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
             if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator expectEvents(EventMessage... expectedEvents) {
+        this.expectEvents((Object[]) expectedEvents);
+
+        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+        for (EventMessage expectedEvent : expectedEvents) {
+            EventMessage actualEvent = iterator.next();
+            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
+                                        expectedEvent.getMetaData(),
+                                        actualEvent.getMetaData())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -187,6 +205,15 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
                                                   matcher.getFailedField(),
                                                   matcher.getFailedFieldActualValue(),
                                                   matcher.getFailedFieldExpectedValue());
+        }
+        return true;
+    }
+
+    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
+                                           Map<String, Object> actualMetaData) {
+        MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
+        if (!matcher.matches(actualMetaData)) {
+            reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
         }
         return true;
     }

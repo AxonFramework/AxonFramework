@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -40,6 +41,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -174,6 +176,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         registerModules(configurer);
         registerCorrelationDataProviders(configurer);
+        registerEventUpcasters(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer);
 
@@ -199,6 +202,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                  .map(n -> (CorrelationDataProvider) getBean(n, c))
                                  .collect(Collectors.toList());
                 });
+    }
+
+    private void registerEventUpcasters(Configurer configurer) {
+        Arrays.stream(beanFactory.getBeanNamesForType(EventUpcaster.class))
+              .forEach(name -> configurer.registerEventUpcaster(c -> getBean(name, c)));
     }
 
     @SuppressWarnings("unchecked")
@@ -310,6 +318,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                        () -> beanFactory.getBean(EntityManagerProvider.class)),
                                         aggregateType,
                                         c.eventBus(),
+                                        c::repository,
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
                                         c.parameterResolverFactory()));
                     }
@@ -317,6 +326,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             } else {
                 aggregateConf.configureRepository(
                         c -> beanFactory.getBean(aggregateAnnotation.repository(), Repository.class));
+            }
+
+            if (!"".equals(aggregateAnnotation.commandTargetResolver())) {
+                aggregateConf.configureCommandTargetResolver(c -> getBean(aggregateAnnotation.commandTargetResolver(),
+                                                                          c));
+            } else {
+                findComponent(CommandTargetResolver.class).ifPresent(commandTargetResolver -> aggregateConf
+                        .configureCommandTargetResolver(c -> getBean(commandTargetResolver, c)));
             }
 
             configurer.configureAggregate(aggregateConf);

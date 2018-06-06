@@ -20,14 +20,14 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
 public class EventProcessorLatencyMonitorTest {
@@ -41,8 +41,8 @@ public class EventProcessorLatencyMonitorTest {
         EventMessage<?> secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
 
-        testSubject.onMessageIngested(firstEventMessage).reportSuccess();
-        testSubject.onMessageIngested(secondEventMessage);
+        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
+        callbacks.get(firstEventMessage).reportSuccess();
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 
@@ -60,8 +60,8 @@ public class EventProcessorLatencyMonitorTest {
         EventMessage<?> secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
 
-        testSubject.onMessageIngested(firstEventMessage).reportFailure(null);
-        testSubject.onMessageIngested(secondEventMessage);
+        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
+        callbacks.get(firstEventMessage).reportFailure(null);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 

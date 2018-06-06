@@ -29,6 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent;
 import org.springframework.cloud.client.serviceregistry.Registration;
 
 import java.lang.reflect.Field;
@@ -60,6 +61,8 @@ public class SpringCloudCommandRouterTest {
     private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
     private static final boolean LOCAL_MEMBER = true;
     private static final boolean REMOTE_MEMBER = false;
+    private static final boolean REGISTERED = true;
+    private static final boolean NOT_REGISTERED = false;
 
     private SpringCloudCommandRouter testSubject;
 
@@ -125,7 +128,7 @@ public class SpringCloudCommandRouterTest {
         assertTrue(resultOptional.isPresent());
         Member resultMember = resultOptional.orElseThrow(IllegalStateException::new);
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, REMOTE_MEMBER, resultMember);
+        assertMember(REMOTE_MEMBER, resultMember, NOT_REGISTERED);
 
         verify(routingStrategy).getRoutingKey(TEST_COMMAND);
     }
@@ -157,11 +160,42 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, LOCAL_MEMBER, resultMemberSet.iterator().next());
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), NOT_REGISTERED);
+    }
+
+    @Test
+    public void testResetLocalMemberUpdatesConsistentHashByReplacingLocalMember() {
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+
+        AtomicReference<ConsistentHash> resultAtomicConsistentHash =
+                getFieldValue(atomicConsistentHashField, testSubject);
+        Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+
+        assertFalse(resultMemberSet.isEmpty());
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), NOT_REGISTERED);
+
+        testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
+
+        resultAtomicConsistentHash = getFieldValue(atomicConsistentHashField, testSubject);
+        resultMemberSet = resultAtomicConsistentHash.get().getMembers();
+
+        assertFalse(resultMemberSet.isEmpty());
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), REGISTERED);
+
+        verify(discoveryClient).getServices();
+        verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
     }
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventUpdatesConsistentHash() {
+        // Start up command router
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+        // Set command router has passed the start up phase
+        testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
@@ -174,14 +208,14 @@ public class SpringCloudCommandRouterTest {
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertFalse(resultMemberSet.isEmpty());
 
-        assertMember(SERVICE_INSTANCE_ID, SERVICE_INSTANCE_URI, LOCAL_MEMBER, resultMemberSet.iterator().next());
+        assertMember(LOCAL_MEMBER, resultMemberSet.iterator().next(), REGISTERED);
 
-        verify(discoveryClient).getServices();
-        verify(discoveryClient).getInstances(SERVICE_INSTANCE_ID);
+        verify(discoveryClient, times(2)).getServices();
+        verify(discoveryClient, times(2)).getInstances(SERVICE_INSTANCE_ID);
     }
 
     @Test
-    public void testUpdateMembershipAfterHeartbeatEventKeepDoNotOverwriteMembers() {
+    public void testUpdateMembershipsAfterHeartbeatEventDoesNotOverwriteMembers() {
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
@@ -211,12 +245,15 @@ public class SpringCloudCommandRouterTest {
     }
 
     @Test
-    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemoveMember() {
+    public void testUpdateMembershipsWithVanishedMemberOnHeartbeatEventRemovesMember() {
+        // Start up command router
+        testSubject.updateMembership(LOAD_FACTOR, COMMAND_NAME_FILTER);
+        // Set router has passed the start up phase
+        testSubject.resetLocalMembership(mock(InstanceRegisteredEvent.class));
         // Update router memberships with local and remote service instance
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
-
 
         String remoteServiceId = SERVICE_INSTANCE_ID + "-1";
         ServiceInstance remoteServiceInstance = mock(ServiceInstance.class);
@@ -243,10 +280,7 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSetAfterVanish = resultAtomicConsistentHashAfterVanish.get().getMembers();
         assertEquals(1, resultMemberSetAfterVanish.size());
-        assertMember(SERVICE_INSTANCE_ID,
-                     SERVICE_INSTANCE_URI,
-                     LOCAL_MEMBER,
-                     resultMemberSetAfterVanish.iterator().next());
+        assertMember(LOCAL_MEMBER, resultMemberSetAfterVanish.iterator().next(), REGISTERED);
     }
 
     @Test
@@ -373,11 +407,13 @@ public class SpringCloudCommandRouterTest {
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
     }
 
-    private void assertMember(String expectedMemberName, URI expectedEndpoint, boolean localMember,
-                              Member resultMember) {
+    private void assertMember(boolean localMember, Member resultMember, Boolean registered) {
+        String expectedMemberName = SpringCloudCommandRouterTest.SERVICE_INSTANCE_ID;
+        URI expectedEndpoint = SpringCloudCommandRouterTest.SERVICE_INSTANCE_URI;
+
         assertEquals(resultMember.getClass(), ConsistentHash.ConsistentHashMember.class);
         ConsistentHash.ConsistentHashMember result = (ConsistentHash.ConsistentHashMember) resultMember;
-        if (localMember) {
+        if (localMember && !registered) {
             assertTrue(result.name().contains(expectedMemberName));
         } else {
             assertEquals(expectedMemberName + "[" + expectedEndpoint + "]", result.name());
@@ -385,7 +421,7 @@ public class SpringCloudCommandRouterTest {
         assertEquals(LOAD_FACTOR, result.segmentCount());
 
         Optional<URI> connectionEndpointOptional = result.getConnectionEndpoint(URI.class);
-        if (localMember) {
+        if (localMember && !registered) {
             assertFalse(connectionEndpointOptional.isPresent());
         } else {
             assertTrue(connectionEndpointOptional.isPresent());

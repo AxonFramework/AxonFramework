@@ -18,7 +18,10 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.config.SagaConfiguration;
@@ -32,9 +35,11 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -52,11 +57,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -96,6 +106,17 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired
     private SagaConfiguration<Context.MySaga> mySagaConfiguration;
+
+    @Autowired
+    private EventUpcaster eventUpcaster;
+
+    @Autowired
+    @Qualifier("myCommandTargetResolver")
+    private CommandTargetResolver myCommandTargetResolver;
+
+    @Autowired
+    @Qualifier("primaryCommandTargetResolver")
+    private CommandTargetResolver primaryCommandTargetResolver;
 
     @Test
     public void contextWiresMainComponents() {
@@ -149,6 +170,22 @@ public class SpringAxonAutoConfigurerTest {
 
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
+        verify(primaryCommandTargetResolver).resolveTarget(any());
+    }
+
+    @Test
+    public void testCustomCommandTargetResolverWiring() {
+        FutureCallback<Object, Object> callback1 = new FutureCallback<>();
+        commandBus.dispatch(asCommandMessage(new Context.CreateMyOtherAggregateCommand("id")), callback1);
+        callback1.getResult();
+
+        when(myCommandTargetResolver.resolveTarget(any())).thenReturn(new VersionedAggregateIdentifier("id", null));
+
+        FutureCallback<Object, Object> callback2 = new FutureCallback<>();
+        commandBus.dispatch(asCommandMessage(new Context.UpdateMyOtherAggregateCommand("id")), callback2);
+        callback2.getResult();
+
+        verify(myCommandTargetResolver).resolveTarget(any());
     }
 
     @Test
@@ -167,6 +204,14 @@ public class SpringAxonAutoConfigurerTest {
         assertTrue(Context.MySaga.events.containsAll(Arrays.asList("id", "id")));
         assertEquals(1, myListenerInvocationErrorHandler.received.size());
         assertEquals("Ooops! I failed.", myListenerInvocationErrorHandler.received.get(0).getMessage());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testEventUpcasterBeanPickedUp() {
+        Stream<IntermediateEventRepresentation> representationStream = mock(Stream.class);
+        axonConfig.upcasterChain().upcast(representationStream);
+        verify(eventUpcaster).upcast(representationStream);
     }
 
     @EnableAxon
@@ -200,6 +245,24 @@ public class SpringAxonAutoConfigurerTest {
             return new InMemorySagaStore();
         }
 
+        @Bean
+        public EventUpcaster eventUpcaster() {
+            return mock(EventUpcaster.class);
+        }
+
+        @Bean
+        @Primary
+        @Qualifier("primaryCommandTargetResolver")
+        public CommandTargetResolver primaryCommandTargetResolver() {
+            return mock(CommandTargetResolver.class);
+        }
+
+        @Bean
+        @Qualifier("myCommandTargetResolver")
+        public CommandTargetResolver myCommandTargetResolver() {
+            return mock(CommandTargetResolver.class);
+        }
+
         @Aggregate
         public static class MyAggregate {
 
@@ -223,6 +286,58 @@ public class SpringAxonAutoConfigurerTest {
                 fail("Event Handler on aggregate shouldn't be invoked");
             }
 
+        }
+
+        public static class CreateMyOtherAggregateCommand {
+            @TargetAggregateIdentifier
+            private final String id;
+
+            public CreateMyOtherAggregateCommand(String id) {
+                this.id = id;
+            }
+        }
+
+        public static class UpdateMyOtherAggregateCommand {
+            @TargetAggregateIdentifier
+            private final String id;
+
+            public UpdateMyOtherAggregateCommand(String id) {
+                this.id = id;
+            }
+        }
+
+        public static class MyOtherAggregateCreatedEvent {
+            private final String id;
+
+            public MyOtherAggregateCreatedEvent(String id) {
+                this.id = id;
+            }
+        }
+
+        @Aggregate(commandTargetResolver = "myCommandTargetResolver")
+        public static class MyOtherAggregate {
+
+            @AggregateIdentifier
+            private String id;
+
+            public MyOtherAggregate(){
+                // default constructor
+            }
+
+            @CommandHandler
+            public MyOtherAggregate(CreateMyOtherAggregateCommand command) {
+                apply(new MyOtherAggregateCreatedEvent(command.id));
+            }
+
+            @EventSourcingHandler
+            public void on(MyOtherAggregateCreatedEvent event) {
+                this.id = event.id;
+            }
+
+            @CommandHandler
+            public void handle(UpdateMyOtherAggregateCommand command) {
+                // nothing to do here
+            }
         }
 
         @Component

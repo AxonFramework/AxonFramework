@@ -16,15 +16,16 @@
 
 package org.axonframework.eventhandling;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
+import java.io.IOException;
 import java.util.Collections;
 
 import static java.util.Collections.emptySet;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ReplayTokenTest {
 
@@ -41,5 +42,15 @@ public class ReplayTokenTest {
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
         assertTrue(actual instanceof ReplayToken);
         assertTrue(ReplayToken.isReplay(actual));
+    }
+
+    @Test
+    public void testSerializationDeserialization() throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ReplayToken replayToken = new ReplayToken(innerToken);
+        String serializedReplayToken = objectMapper.writer().writeValueAsString(replayToken);
+        ReplayToken deserializedReplayToken = objectMapper.readerFor(ReplayToken.class)
+                                                          .readValue(serializedReplayToken);
+        assertEquals(replayToken, deserializedReplayToken);
     }
 }

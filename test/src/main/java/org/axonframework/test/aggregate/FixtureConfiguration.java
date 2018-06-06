@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -38,7 +39,7 @@ import java.util.List;
  * <p/>
  * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you
  * have implemented your own command handler (either using annotations, or by implementing the {@link MessageHandler}
- * interace), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
+ * interface), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
  * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
  * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
@@ -96,6 +97,15 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
+
+    /**
+     * Registers repository provider with the fixture. If an aggregate being testing spawns new aggregates, this
+     * provider should be registered. Otherwise, it is not going to be invoked.
+     *
+     * @param repositoryProvider provides repositories for specified aggregate types
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider);
 
     /**
      * Registers the given {@code aggregateFactory} with the fixture. The repository used by the fixture will use
@@ -165,10 +175,10 @@ public interface FixtureConfiguration<T> {
      * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
      * the command bus to perform a task specified in the interceptor. It could for example block the command for
      * security reasons or add auditing to the command bus
-     * @param commandHanderInterceptor the command handler interceptor to be added to the commandbus
+     * @param commandHandlerInterceptor the command handler interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>>  commandHanderInterceptor);
+    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>>  commandHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing

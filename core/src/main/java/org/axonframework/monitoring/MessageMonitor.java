@@ -18,6 +18,10 @@ package org.axonframework.monitoring;
 
 import org.axonframework.messaging.Message;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * Specifies a mechanism to monitor message processing. When a message is supplied to
  * a message monitor it returns a callback which should be used to notify the message monitor
@@ -27,6 +31,7 @@ import org.axonframework.messaging.Message;
  * occurred exceptions. It also can gather information contained in messages headers like timestamps and tracers
  *
  * @author Marijn van Zelst
+ * @author Nakul Mishra
  * @since 3.0
  */
 public interface MessageMonitor<T extends Message<?>> {
@@ -38,6 +43,15 @@ public interface MessageMonitor<T extends Message<?>> {
      * @return the callback
      */
     MonitorCallback onMessageIngested(T message);
+
+    /**
+     * Takes a collection of messages and returns a map containing events along with their callbacks
+     * @param messages to monitor
+     * @return map where key = event and value = the callback
+     */
+    default Map<? super T, MonitorCallback> onMessagesIngested(Collection<? extends T> messages) {
+        return messages.stream().collect(Collectors.toMap(msg -> msg, this::onMessageIngested));
+    }
 
     /**
      * An interface to let the message processor inform the message monitor of the result
