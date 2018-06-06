@@ -49,7 +49,8 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 
 /**
- * Implementation of {@link EventProcessorRegistry}.
+ * Non-thread safe implementation of {@link EventProcessorRegistry}. After calling {@link #initialize(Configuration)},
+ * all registrations (except for {@link MessageHandlerInterceptor}s) are ignored.
  *
  * @author Milan Savic
  * @since 3.3

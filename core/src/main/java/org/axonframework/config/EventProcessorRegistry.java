@@ -36,7 +36,9 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Holds a registry of all event processors created during configuration of sagas and event handlers.
+ * Holds a registry of all event processors created during configuration of sagas and event handlers. It is responsible
+ * for registering {@link EventProcessor}s, {@link EventHandlerInvoker}s, {@link MessageHandlerInterceptor}s, {@link
+ * ErrorHandler}s and {@link MessageMonitor}s.
  *
  * @author Milan Savic
  * @since 3.3
