@@ -21,11 +21,8 @@ import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.MetaData;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -103,21 +100,6 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
                 return this;
             }
         };
-    }
-
-    @Override
-    protected <D> ScheduleToken doScheduleDeadline(Instant triggerDateTime, D deadlineInfo) {
-        return null;
-    }
-
-    @Override
-    protected <D> ScheduleToken doScheduleDeadline(Duration triggerDuration, D deadlineInfo) {
-        return null;
-    }
-
-    @Override
-    protected void doCancelDeadline(ScheduleToken scheduleToken) {
-        // to nothing, this is stub
     }
 
     /**

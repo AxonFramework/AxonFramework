@@ -20,12 +20,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.deadline.DeadlineContext;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
@@ -35,8 +33,6 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -444,49 +440,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return this;
     }
 
-    // TODO Remove
-    @Override
-    protected <D> ScheduleToken doScheduleDeadline(Instant triggerDateTime, D deadlineInfo) {
-//        DeadlineManager deadlineManager = deadlineManager();
-//        ScheduleToken scheduleToken = deadlineManager.generateToken();
-//        if (aggregateRoot != null) {
-//            deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken);
-//        } else {
-//            delayedTasks.add(DelayedTask.lowPriorityTask(
-//                    () -> deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken),
-//                    delayedTasksSequence.getAndIncrement()));
-//        }
-//        return scheduleToken;
-        return null;
-    }
-
-    @Override
-    protected <D> ScheduleToken doScheduleDeadline(Duration triggerDuration, D deadlineInfo) {
-//        DeadlineManager deadlineManager = deadlineManager();
-//        ScheduleToken scheduleToken = deadlineManager.generateToken();
-//        if (aggregateRoot != null) {
-//            deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken);
-//        } else {
-//            delayedTasks.add(DelayedTask.lowPriorityTask(
-//                    () -> deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken),
-//                    delayedTasksSequence.getAndIncrement()));
-//        }
-//        return scheduleToken;
-        return null;
-    }
-
-    @Override
-    protected void doCancelDeadline(ScheduleToken scheduleToken) {
-//        DeadlineManager deadlineManager = deadlineManager();
-//        if (aggregateRoot != null) {
-//            deadlineManager.cancelSchedule(scheduleToken);
-//        } else {
-//            delayedTasks.add(DelayedTask.lowPriorityTask(
-//                    () -> deadlineManager.cancelSchedule(scheduleToken),
-//                    delayedTasksSequence.getAndIncrement()));
-//        }
-    }
-
     /**
      * Creates an {@link EventMessage} with given {@code payload} and {@code metaData}.
      *
@@ -550,16 +503,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
     }
 
-    // TODO Remove
     @Override
     public void handle(DeadlineMessage<?> deadlineMessage) {
         execute(() -> inspector.publish(deadlineMessage, aggregateRoot));
-    }
-
-    // TODO Remove
-    private DeadlineContext deadlineContext() {
-//        return new DeadlineContext(identifierAsString(), DeadlineContext.Type.AGGREGATE, aggregateRoot.getClass());
-        return null;
     }
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {
