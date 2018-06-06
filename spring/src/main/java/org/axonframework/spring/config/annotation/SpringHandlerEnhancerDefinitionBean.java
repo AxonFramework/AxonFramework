@@ -45,6 +45,23 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 
+    /**
+     * Initializes definition bean with assumption that application context will be injected.
+     */
+    public SpringHandlerEnhancerDefinitionBean() {
+        // nothing to do, application context will be injected by spring
+    }
+
+    /**
+     * Initializes definition bean with given application context.
+     *
+     * @param applicationContext application context
+     */
+    public SpringHandlerEnhancerDefinitionBean(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        initialize();
+    }
+
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -67,10 +84,7 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
 
     @Override
     public void afterPropertiesSet() {
-        enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
-        Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext.getBeansOfType(
-                HandlerEnhancerDefinition.class);
-        enhancers.addAll(enhancersFound.values());
+        initialize();
     }
 
     @Override
@@ -89,5 +103,12 @@ public class SpringHandlerEnhancerDefinitionBean implements FactoryBean<HandlerE
      */
     public void setAdditionalHandlers(List<HandlerEnhancerDefinition> additionalFactories) {
         this.enhancers.addAll(additionalFactories);
+    }
+
+    private void initialize() {
+        enhancers.addAll(ClasspathHandlerEnhancerDefinition.forClassLoader(classLoader).getDelegates());
+        Map<String, HandlerEnhancerDefinition> enhancersFound = applicationContext.getBeansOfType(
+                HandlerEnhancerDefinition.class);
+        enhancers.addAll(enhancersFound.values());
     }
 }

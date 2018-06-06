@@ -111,6 +111,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         this(eventStore,
              aggregateFactories,
              ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class),
+             ClasspathHandlerDefinition.forClass(AggregateSnapshotter.class),
              repositoryProvider);
     }
 

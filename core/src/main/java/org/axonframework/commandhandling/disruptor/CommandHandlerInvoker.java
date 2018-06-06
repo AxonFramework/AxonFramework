@@ -30,6 +30,7 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -124,7 +125,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                 null,
                                 aggregateFactory,
                                 snapshotTriggerDefinition,
-                                parameterResolverFactory);
+                                parameterResolverFactory,
+                                ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()));
     }
 
     /**
@@ -137,35 +139,12 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * @param aggregateFactory          The factory creating aggregate instances
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
-     * @return A Repository instance for the given aggregate
-     */
-    @SuppressWarnings("unchecked")
-    public <T> Repository<T> createRepository(EventStore eventStore,
-                                              RepositoryProvider repositoryProvider,
-                                              AggregateFactory<T> aggregateFactory,
-                                              SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                              ParameterResolverFactory parameterResolverFactory) {
-        return repositories.computeIfAbsent(aggregateFactory.getAggregateType(),
-                                            k -> new DisruptorRepository<>(aggregateFactory, cache, eventStore,
-                                                                           parameterResolverFactory,
-                                                                           snapshotTriggerDefinition,
-                                                                           repositoryProvider));
-    }
-
-    /**
-     * Create a repository instance for an aggregate created by the given {@code aggregateFactory}. The returning
-     * repository must be safe to use by this invoker instance.
-     *
-     * @param <T>                       The type of aggregate created by the factory
-     * @param eventStore                The events store to load and publish events
-     * @param aggregateFactory          The factory creating aggregate instances
-     * @param snapshotTriggerDefinition The trigger definition for snapshots
-     * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
      * @param handlerDefinition         The handler definition used to create concrete handlers
      * @return A Repository instance for the given aggregate
      */
     @SuppressWarnings("unchecked")
     public <T> Repository<T> createRepository(EventStore eventStore,
+                                              RepositoryProvider repositoryProvider,
                                               AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
@@ -174,7 +153,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                             k -> new DisruptorRepository<>(aggregateFactory, cache, eventStore,
                                                                            parameterResolverFactory,
                                                                            handlerDefinition,
-                                                                           snapshotTriggerDefinition));
+                                                                           snapshotTriggerDefinition,
+                                                                           repositoryProvider));
     }
 
     private void removeEntry(String aggregateIdentifier) {

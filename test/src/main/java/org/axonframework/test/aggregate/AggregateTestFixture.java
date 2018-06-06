@@ -124,6 +124,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 MultiParameterResolverFactory.ordered(
                         new SimpleResourceParameterResolverFactory(resources),
                         ClasspathParameterResolverFactory.forClass(aggregateType)),
+                handlerDefinition,
                 NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()));
     }
 
@@ -289,6 +290,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
                                                              eventStore,
                                                              parameterResolverFactory,
+                                                             handlerDefinition,
                                                              NoSnapshotTriggerDefinition.INSTANCE,
                                                              getRepositoryProvider()));
         }

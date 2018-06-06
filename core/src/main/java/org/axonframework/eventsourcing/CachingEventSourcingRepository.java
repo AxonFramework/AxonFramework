@@ -23,6 +23,7 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -192,6 +193,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
              lockFactory,
              cache,
              parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
              snapshotTriggerDefinition,
              null);
     }
@@ -206,6 +208,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
      * @param cache                     The cache in which entries will be stored
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition         The handler definition used to create concrete handlers
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @param repositoryProvider        Provides repositories for specific aggregate types
      * @see LockingRepository#LockingRepository(Class)
@@ -213,48 +216,20 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockFactory lockFactory, Cache cache,
                                           ParameterResolverFactory parameterResolverFactory,
+                                          HandlerDefinition handlerDefinition,
                                           SnapshotTriggerDefinition snapshotTriggerDefinition,
                                           RepositoryProvider repositoryProvider) {
         super(aggregateFactory,
               eventStore,
               lockFactory,
               parameterResolverFactory,
+              handlerDefinition,
               snapshotTriggerDefinition,
               repositoryProvider);
         this.cache = cache;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
         this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initializes a repository with a the given {@code aggregateFactory} and a pessimistic locking strategy.
-     * <p>
-     * Note that an optimistic locking strategy is not compatible with caching.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
-     * @param cache                     The cache in which entries will be stored
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param handlerDefinition         The handler definition used to create concrete handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot  @see
-     *                                  LockingRepository#LockingRepository(Class)
-     */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          LockFactory lockFactory, Cache cache,
-                                          ParameterResolverFactory parameterResolverFactory,
-                                          HandlerDefinition handlerDefinition,
-                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        super(aggregateFactory,
-              eventStore,
-              lockFactory,
-              parameterResolverFactory,
-              handlerDefinition,
-              snapshotTriggerDefinition);
-        this.cache = cache;
-        this.eventStore = eventStore;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
     }
 
     @Override

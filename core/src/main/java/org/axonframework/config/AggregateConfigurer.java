@@ -88,6 +88,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                aggregateFactory.get(),
                                                                                snapshotTriggerDefinition.get(),
                                                                                c.parameterResolverFactory(),
+                                                                               c.handlerDefinition(),
                                                                                c::repository);
             }
             return new EventSourcingRepository<>(metaModel.get(),

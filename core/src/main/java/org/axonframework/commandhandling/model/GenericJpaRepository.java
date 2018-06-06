@@ -24,6 +24,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -185,35 +186,16 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param eventBus                 the event bus to which new events are published
      * @param repositoryProvider       Provides repositories for specific aggregate types
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
-     */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                EventBus eventBus, RepositoryProvider repositoryProvider,
-                                ParameterResolverFactory parameterResolverFactory) {
-        this(entityManagerProvider,
-             aggregateType,
-             eventBus,
-             repositoryProvider,
-             NullLockFactory.INSTANCE,
-             parameterResolverFactory);
-    }
-
-    /**
-     * Initialize a repository for storing aggregates of the given {@code aggregateType}. No additional locking
-     * will be used.
-     *
-     * @param entityManagerProvider    The EntityManagerProvider providing the EntityManager instance for this
-     *                                 EventStore
-     * @param aggregateType            the aggregate type this repository manages
-     * @param eventBus                 the event bus to which new events are published
-     * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      * @param handlerDefinition        The handler definition used to create concrete handlers
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                EventBus eventBus, ParameterResolverFactory parameterResolverFactory,
+                                EventBus eventBus, RepositoryProvider repositoryProvider,
+                                ParameterResolverFactory parameterResolverFactory,
                                 HandlerDefinition handlerDefinition) {
         this(entityManagerProvider,
              aggregateType,
              eventBus,
+             repositoryProvider,
              NullLockFactory.INSTANCE,
              parameterResolverFactory,
              handlerDefinition);
@@ -391,37 +373,16 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param repositoryProvider       Provides repositories for specific aggregate types
      * @param lockFactory              the additional locking strategy for this repository
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
-     */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                RepositoryProvider repositoryProvider, LockFactory lockFactory,
-                                ParameterResolverFactory parameterResolverFactory) {
-        this(entityManagerProvider,
-             aggregateType,
-             eventBus,
-             repositoryProvider,
-             lockFactory,
-             parameterResolverFactory,
-             Function.identity());
-    }
-
-    /**
-     * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
-     * LockFactory}.
-     *
-     * @param entityManagerProvider    The EntityManagerProvider providing the EntityManager instance for this
-     *                                 repository
-     * @param aggregateType            the aggregate type this repository manages
-     * @param eventBus                 the event bus to which new events are published
-     * @param lockFactory              the additional locking strategy for this repository
-     * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
      * @param handlerDefinition        The handler definition used to create concrete handlers
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory,
+                                RepositoryProvider repositoryProvider, LockFactory lockFactory,
+                                ParameterResolverFactory parameterResolverFactory,
                                 HandlerDefinition handlerDefinition) {
         this(entityManagerProvider,
              aggregateType,
              eventBus,
+             repositoryProvider,
              lockFactory,
              parameterResolverFactory,
              handlerDefinition,
@@ -451,6 +412,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
              null,
              lockFactory,
              parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(aggregateType),
              identifierConverter);
     }
 
@@ -466,44 +428,20 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * @param repositoryProvider       Provides repositories for specific aggregate types
      * @param lockFactory              the additional locking strategy for this repository
      * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
      * @param identifierConverter      the function that converts the String based identifier to the Identifier object
      *                                 used in the Entity
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
                                 RepositoryProvider repositoryProvider, LockFactory lockFactory,
                                 ParameterResolverFactory parameterResolverFactory,
-                                Function<String, ?> identifierConverter) {
-        super(aggregateType, lockFactory, parameterResolverFactory);
-        Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
-        this.entityManagerProvider = entityManagerProvider;
-        this.eventBus = eventBus;
-        this.identifierConverter = identifierConverter;
-        this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
-     * LockFactory} and allowing for a custom {@code identifierConverter} to convert a String based identifier to an
-     * Identifier Object.
-     *
-     * @param entityManagerProvider    The EntityManagerProvider providing the EntityManager instance for this
-     *                                 repository
-     * @param aggregateType            the aggregate type this repository manages
-     * @param eventBus                 the event bus to which new events are published
-     * @param lockFactory              the additional locking strategy for this repository
-     * @param parameterResolverFactory the component to resolve parameter values of annotated message handlers with
-     * @param identifierConverter      the function that converts the String based identifier to the Identifier object
-     *                                 used in the Entity
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
-                                LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory,
                                 HandlerDefinition handlerDefinition, Function<String, ?> identifierConverter) {
         super(aggregateType, lockFactory, parameterResolverFactory, handlerDefinition);
         Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
         this.eventBus = eventBus;
         this.identifierConverter = identifierConverter;
+        this.repositoryProvider = repositoryProvider;
     }
 
     @Override

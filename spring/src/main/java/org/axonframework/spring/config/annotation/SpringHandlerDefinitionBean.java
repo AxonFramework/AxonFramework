@@ -46,6 +46,23 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 
+    /**
+     * Initializes definition bean with assumption that application context will be injected.
+     */
+    public SpringHandlerDefinitionBean() {
+        // nothing to do, application context will be injected by spring
+    }
+
+    /**
+     * Initializes definition bean with given application context.
+     *
+     * @param applicationContext application context
+     */
+    public SpringHandlerDefinitionBean(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        initialize();
+    }
+
     @Override
     public HandlerDefinition getObject() {
         return MultiHandlerDefinition.ordered(definitions);
@@ -63,9 +80,7 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
 
     @Override
     public void afterPropertiesSet() {
-        definitions.addAll(ClasspathHandlerDefinition.forClassLoader(classLoader).getDelegates());
-        Map<String, HandlerDefinition> definitionsFound = applicationContext.getBeansOfType(HandlerDefinition.class);
-        definitions.addAll(definitionsFound.values());
+        initialize();
     }
 
     /**
@@ -88,5 +103,11 @@ public class SpringHandlerDefinitionBean implements FactoryBean<HandlerDefinitio
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    private void initialize() {
+        definitions.addAll(ClasspathHandlerDefinition.forClassLoader(classLoader).getDelegates());
+        Map<String, HandlerDefinition> definitionsFound = applicationContext.getBeansOfType(HandlerDefinition.class);
+        definitions.addAll(definitionsFound.values());
     }
 }
