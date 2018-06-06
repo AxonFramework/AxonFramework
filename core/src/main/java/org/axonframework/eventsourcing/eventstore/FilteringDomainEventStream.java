@@ -28,7 +28,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
  */
 public class FilteringDomainEventStream implements DomainEventStream {
     private final DomainEventStream delegate;
-    private final Predicate<DomainEventMessage<?>> filter;
+    private final Predicate<? super DomainEventMessage<?>> filter;
     private Long lastSequenceNumber;
 
     /**
@@ -38,7 +38,7 @@ public class FilteringDomainEventStream implements DomainEventStream {
      * @param delegate The stream providing the elements
      * @param filter   The filter to apply to the delegate stream
      */
-    public FilteringDomainEventStream(DomainEventStream delegate, Predicate<DomainEventMessage<?>> filter) {
+    public FilteringDomainEventStream(DomainEventStream delegate, Predicate<? super DomainEventMessage<?>> filter) {
         this.delegate = delegate;
         this.filter = filter;
     }

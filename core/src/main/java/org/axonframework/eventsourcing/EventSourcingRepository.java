@@ -375,8 +375,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     /**
-     * Reads the events for the given aggregateIdentifier from the eventStore. This method can be overridden
-     * to perform filtering on for example aggregate type.
+     * Reads the events for the given aggregateIdentifier from the eventStore. this method may be overridden to
+     * add pre or postprocessing to the loading of an event stream
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @return the domain event stream for the given aggregateIdentifier

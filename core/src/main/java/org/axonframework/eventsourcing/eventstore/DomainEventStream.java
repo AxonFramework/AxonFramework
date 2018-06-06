@@ -141,27 +141,12 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
     }
 
     /**
-     * Filters a DomainEventStream. In the resulting stream events from stream
-     * {@code a} will be filtered by {@code filter}.
-     *
-     * @param a      The stream
-     * @param filter The filter to apply to the stream
-     * @return A filtered version of stream a
-     */
-    static DomainEventStream filter(DomainEventStream a, Predicate<DomainEventMessage<?>> filter) {
-        Objects.requireNonNull(a);
-        Objects.requireNonNull(filter);
-        return new FilteringDomainEventStream(a, filter);
-    }
-    
-    /**
-     * Apply a filter the current DomainEventStream. In the resulting stream events 
-     * will be filtered by {@code filter}.
+     * Returns a stream that provides the items of this stream that match the given {@code filter}.
      *
      * @param filter The filter to apply to the stream
      * @return A filtered version of this stream 
      */
-    default DomainEventStream filter(Predicate<DomainEventMessage<?>> filter) {
+    default DomainEventStream filter(Predicate<? super DomainEventMessage<?>> filter) {
         Objects.requireNonNull(filter);
         return new FilteringDomainEventStream(this, filter);
     }
