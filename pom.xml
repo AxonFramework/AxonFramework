@@ -105,7 +105,7 @@
         <mockito.version>2.15.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
         <kafka.version>1.0.0</kafka.version>
-        <projectreactor.version>3.0.7.RELEASE</projectreactor.version>
+        <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
     </properties>
 
     <dependencies>
@@ -283,7 +283,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.projectreactor.addons</groupId>
+                <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-test</artifactId>
                 <version>${projectreactor.version}</version>
                 <scope>test</scope>
