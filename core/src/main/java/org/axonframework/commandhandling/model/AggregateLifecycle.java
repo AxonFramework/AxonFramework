@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.common.Scope;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
@@ -31,9 +32,7 @@ import java.util.concurrent.Callable;
 /**
  * Abstract base class of a component that models an aggregate's life cycle.
  */
-public abstract class AggregateLifecycle {
-
-    private static final ThreadLocal<AggregateLifecycle> CURRENT = new ThreadLocal<>();
+public abstract class AggregateLifecycle extends Scope {
 
     /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
@@ -167,7 +166,7 @@ public abstract class AggregateLifecycle {
      * @return the {@link AggregateLifecycle} for the current aggregate
      */
     protected static AggregateLifecycle getInstance() {
-        AggregateLifecycle instance = CURRENT.get();
+        AggregateLifecycle instance = Scope.getCurrentScope();
         if (instance == null && CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Set<AggregateLifecycle> managedAggregates = unitOfWork.getResource("ManagedAggregates");
@@ -299,15 +298,8 @@ public abstract class AggregateLifecycle {
      * @return a runnable that must be executed to return the lifecycle to the original state
      */
     protected Runnable registerAsCurrent() {
-        AggregateLifecycle existing = CURRENT.get();
-        CURRENT.set(this);
-        return () -> {
-            if (existing == null) {
-                CURRENT.remove();
-            } else {
-                CURRENT.set(existing);
-            }
-        };
+        super.startScope();
+        return super::endScope;
     }
 
     /**
