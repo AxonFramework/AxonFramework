@@ -17,7 +17,6 @@
 package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.commandhandling.model.RepositoryProvider;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -47,7 +46,6 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private String aggregateIdentifier;
     private EventStore mockEventStore;
     private RepositoryProvider mockRepositoryProvider;
-    private DeadlineManager mockDeadlineManager;
     private ApplicationContext mockApplicationContext;
     private Executor executor;
 
@@ -56,7 +54,6 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(EventStore.class);
         mockRepositoryProvider = mock(RepositoryProvider.class);
-        mockDeadlineManager = mock(DeadlineManager.class);
         executor = spy(new MockExecutor());
 
         testSubject = new SpringAggregateSnapshotterFactoryBean();
@@ -73,7 +70,6 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
                                          }));
         testSubject.setEventStore(mockEventStore);
         testSubject.setRepositoryProvider(mockRepositoryProvider);
-        testSubject.setDeadlineManager(mockDeadlineManager);
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
@@ -86,7 +82,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    public void testSnapshotCreated_NoTransaction() throws Exception {
+    public void testSnapshotCreated_NoTransaction() {
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
@@ -95,22 +91,21 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    public void testRetrieveAggregateFactoryFromRepositoryIfNotExplicitlyAvailable() throws Exception {
+    public void testRetrieveAggregateFactoryFromRepositoryIfNotExplicitlyAvailable() {
         testSubject.setEventStore(null);
         reset(mockApplicationContext);
         when(mockApplicationContext.getBean(EventStore.class)).thenReturn(mockEventStore);
-        when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class)).thenReturn(
-                Collections.singletonMap("myRepository",
-                                         new EventSourcingRepository<>(StubAggregate.class,
-                                                                       mockEventStore,
-                                                                       mockRepositoryProvider,
-                                                                       mockDeadlineManager))
-        );
+        when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class))
+                .thenReturn(Collections.singletonMap(
+                        "myRepository",
+                        new EventSourcingRepository<>(StubAggregate.class, mockEventStore, mockRepositoryProvider)
+                ));
+
         testSnapshotCreated_NoTransaction();
     }
 
     @Test
-    public void testSnapshotCreated_NewlyCreatedTransactionCommitted() throws Exception {
+    public void testSnapshotCreated_NewlyCreatedTransactionCommitted() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus newlyCreatedTransaction = new SimpleTransactionStatus(true);
@@ -124,7 +119,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    public void testSnapshotCreated_ExistingTransactionNotCommitted() throws Exception {
+    public void testSnapshotCreated_ExistingTransactionNotCommitted() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
@@ -137,7 +132,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    public void testSnapshotCreated_ExistingTransactionNotRolledBack() throws Exception {
+    public void testSnapshotCreated_ExistingTransactionNotRolledBack() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
@@ -152,7 +147,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
-    public void testSnapshotCreated_NewTransactionRolledBack() throws Exception {
+    public void testSnapshotCreated_NewTransactionRolledBack() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(true);
@@ -172,6 +167,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     public static class MockExecutor implements Executor {
+
         @Override
         public void execute(Runnable command) {
             command.run();

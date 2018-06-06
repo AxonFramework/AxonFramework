@@ -17,7 +17,6 @@ package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -58,8 +57,10 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * @param txManager                The transaction manager to manage the persistence transactions with
      * @see ClasspathParameterResolverFactory
      */
-    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
-                                      Executor executor, TransactionManager txManager) {
+    public SpringAggregateSnapshotter(EventStore eventStore,
+                                      ParameterResolverFactory parameterResolverFactory,
+                                      Executor executor,
+                                      TransactionManager txManager) {
         super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager);
     }
 
@@ -72,29 +73,25 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * @param executor                 The executor that processes the snapshotting requests
      * @param txManager                The transaction manager to manage the persistence transactions with
      * @param repositoryProvider       Provides repositories for specific aggregate types
-     * @param deadlineManager          Manager used for scheduling deadlines on this Aggregate
      * @see ClasspathParameterResolverFactory
      */
-    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
-                                      Executor executor, TransactionManager txManager,
-                                      RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
-        super(eventStore,
-              Collections.emptyList(),
-              parameterResolverFactory,
-              executor,
-              txManager,
-              repositoryProvider,
-              deadlineManager);
+    public SpringAggregateSnapshotter(EventStore eventStore,
+                                      ParameterResolverFactory parameterResolverFactory,
+                                      Executor executor,
+                                      TransactionManager txManager,
+                                      RepositoryProvider repositoryProvider) {
+        super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager, repositoryProvider);
     }
 
     @Override
     protected AggregateFactory<?> getAggregateFactory(Class<?> aggregateType) {
         AggregateFactory<?> aggregateFactory = super.getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
-            Optional<AggregateFactory> factory = applicationContext.getBeansOfType(AggregateFactory.class)
-                    .values().stream()
-                    .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
-                    .findFirst();
+            Optional<AggregateFactory> factory =
+                    applicationContext.getBeansOfType(AggregateFactory.class)
+                                      .values().stream()
+                                      .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
+                                      .findFirst();
             if (!factory.isPresent()) {
                 factory = applicationContext.getBeansOfType(EventSourcingRepository.class)
                                             .values().stream()

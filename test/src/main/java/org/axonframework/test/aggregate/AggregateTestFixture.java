@@ -122,12 +122,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
+        MultiParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
+                new SimpleResourceParameterResolverFactory(resources),
+                ClasspathParameterResolverFactory.forClass(aggregateType)
+        );
+
         return registerRepository(new EventSourcingRepository<>(
-                aggregateFactory, eventStore,
-                MultiParameterResolverFactory.ordered(
-                        new SimpleResourceParameterResolverFactory(resources),
-                        ClasspathParameterResolverFactory.forClass(aggregateType)),
-                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider(), deadlineManager));
+                aggregateFactory,
+                eventStore,
+                parameterResolverFactory,
+                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()
+        ));
     }
 
     @Override
@@ -226,7 +231,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 metaData = ((Message) event).getMetaData();
             }
             this.givenEvents.add(new GenericDomainEventMessage<>(aggregateType.getSimpleName(), aggregateIdentifier,
-                    sequenceNumber++, payload, metaData));
+                                                                 sequenceNumber++, payload, metaData));
         }
         return this;
     }
@@ -312,6 +317,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateId     The aggregate identifier, should match the id of aggregate being tested
      * @param deadlineMessage The deadline message to be handled
      */
+    // TODO very likely this should be removed
     protected void handleDeadline(String aggregateId, DeadlineMessage<?> deadlineMessage) {
         ensureRepositoryConfiguration();
         try {
@@ -331,12 +337,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
-                                                             eventStore,
-                                                             parameterResolverFactory,
-                                                             NoSnapshotTriggerDefinition.INSTANCE,
-                                                             getRepositoryProvider(),
-                                                             deadlineManager));
+            registerRepository(new EventSourcingRepository<>(
+                    new GenericAggregateFactory<>(aggregateType),
+                    eventStore,
+                    parameterResolverFactory,
+                    NoSnapshotTriggerDefinition.INSTANCE,
+                    getRepositoryProvider()
+            ));
         }
     }
 
@@ -572,28 +579,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         protected void doAppendEvents(List<? extends EventMessage<?>> events) {
             publishedEvents.addAll(events);
             events.stream().filter(DomainEventMessage.class::isInstance).map(e -> (DomainEventMessage<?>) e)
-                    .forEach(event -> {
-                        if (aggregateIdentifier == null) {
-                            aggregateIdentifier = event.getAggregateIdentifier();
-                            injectAggregateIdentifier();
-                        }
+                  .forEach(event -> {
+                      if (aggregateIdentifier == null) {
+                          aggregateIdentifier = event.getAggregateIdentifier();
+                          injectAggregateIdentifier();
+                      }
 
-                        DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+                      DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
 
-                        if (lastEvent != null) {
-                            if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
-                                throw new EventStoreException(
-                                        "Writing events for an unexpected aggregate. This could " +
-                                                "indicate that a wrong aggregate is being triggered.");
-                            } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
-                                throw new EventStoreException(format("Unexpected sequence number on stored event. " +
-                                                                             "Expected %s, but got %s.",
-                                                                     lastEvent.getSequenceNumber() + 1,
-                                                                     event.getSequenceNumber()));
-                            }
-                        }
-                        storedEvents.add(event);
-                    });
+                      if (lastEvent != null) {
+                          if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
+                              throw new EventStoreException(
+                                      "Writing events for an unexpected aggregate. This could " +
+                                              "indicate that a wrong aggregate is being triggered.");
+                          } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
+                              throw new EventStoreException(format("Unexpected sequence number on stored event. " +
+                                                                           "Expected %s, but got %s.",
+                                                                   lastEvent.getSequenceNumber() + 1,
+                                                                   event.getSequenceNumber()));
+                          }
+                      }
+                      storedEvents.add(event);
+                  });
         }
 
         private void injectAggregateIdentifier() {
@@ -705,11 +712,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         @Override
         public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
-            return EventSourcedAggregate.initialize(factoryMethod,
-                                                    aggregateModel,
-                                                    eventStore,
-                                                    repositoryProvider,
-                                                    deadlineManager);
+            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }
     }
 }

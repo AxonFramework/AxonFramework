@@ -25,9 +25,10 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMeta
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -64,19 +65,17 @@ public class FixtureTest_SpawningNewAggregate {
     @Test
     public void testFixtureWithRepositoryProviderInjected() throws Exception {
         RepositoryProvider repositoryProvider = mock(RepositoryProvider.class);
-        DeadlineManager deadlineManager = mock(DeadlineManager.class);
         Repository<Aggregate2> aggregate2Repository = mock(Repository.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
 
-        when(aggregate2Repository.newInstance(any())).thenAnswer(invocation ->
-                                                                         EventSourcedAggregate
-                                                                                 .initialize((Callable<Aggregate2>) invocation
-                                                                                                     .getArguments()[0],
-                                                                                             aggregate2Model,
-                                                                                             fixture.getEventStore(),
-                                                                                             repositoryProvider,
-                                                                                             deadlineManager));
+        when(aggregate2Repository.newInstance(any()))
+                .thenAnswer(invocation -> EventSourcedAggregate.initialize(
+                        (Callable<Aggregate2>) invocation.getArguments()[0],
+                        aggregate2Model,
+                        fixture.getEventStore(),
+                        repositoryProvider
+                ));
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
 

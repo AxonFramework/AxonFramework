@@ -17,17 +17,11 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateInvocationException;
-import org.axonframework.commandhandling.model.AggregateLifecycle;
-import org.axonframework.commandhandling.model.ApplyMore;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.DeadlineContext;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -71,7 +65,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     private final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
-    private final DeadlineManager deadlineManager;
     private final PriorityQueue<DelayedTask> delayedTasks = new PriorityQueue<>();
     private final AtomicInteger delayedTasksSequence = new AtomicInteger(0);
     private final EventBus eventBus;
@@ -84,12 +77,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
      * {@code aggregateModel} that will publish events to the given {@code eventBus}.
      *
-     * @param aggregateRoot      The aggregate root instance
-     * @param model              The model describing the aggregate structure
-     * @param eventBus           The Event Bus to publish generated events on
+     * @param aggregateRoot The aggregate root instance
+     * @param model         The model describing the aggregate structure
+     * @param eventBus      The Event Bus to publish generated events on
      */
     protected AnnotatedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus) {
-        this(aggregateRoot, model, eventBus, null, null);
+        this(aggregateRoot, model, eventBus, null);
     }
 
     /**
@@ -100,11 +93,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param model              The model describing the aggregate structure
      * @param eventBus           The Event Bus to publish generated events on
      * @param repositoryProvider Provides repositories for specific aggregate types
-     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      */
-    protected AnnotatedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
-                                 RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
-        this(model, eventBus, repositoryProvider, deadlineManager);
+    protected AnnotatedAggregate(T aggregateRoot,
+                                 AggregateModel<T> model,
+                                 EventBus eventBus,
+                                 RepositoryProvider repositoryProvider) {
+        this(model, eventBus, repositoryProvider);
         this.aggregateRoot = aggregateRoot;
     }
 
@@ -112,11 +106,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
      * {@code aggregateModel} that will publish events to the given {@code eventBus}.
      *
-     * @param inspector          The AggregateModel that describes the aggregate
-     * @param eventBus           The Event Bus to publish generated events on
+     * @param inspector The AggregateModel that describes the aggregate
+     * @param eventBus  The Event Bus to publish generated events on
      */
     protected AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus) {
-        this(inspector, eventBus, null, null);
+        this(inspector, eventBus, null);
     }
 
     /**
@@ -126,24 +120,23 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param inspector          The AggregateModel that describes the aggregate
      * @param eventBus           The Event Bus to publish generated events on
      * @param repositoryProvider Provides repositories for specific aggregate types
-     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      */
-    protected AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus,
-                                 RepositoryProvider repositoryProvider, DeadlineManager deadlineManager) {
+    protected AnnotatedAggregate(AggregateModel<T> inspector,
+                                 EventBus eventBus,
+                                 RepositoryProvider repositoryProvider) {
         this.inspector = inspector;
         this.eventBus = eventBus;
         this.repositoryProvider = repositoryProvider;
-        this.deadlineManager = deadlineManager;
     }
 
     /**
      * Initialize an aggregate created by the given {@code aggregateFactory} which is described in the given
      * {@code aggregateModel}. The given {@code eventBus} is used to publish events generated by the aggregate.
      *
-     * @param aggregateFactory   The factory to create the aggregate root instance with
-     * @param aggregateModel     The model describing the aggregate structure
-     * @param eventBus           The EventBus to publish events on
-     * @param <T>                The type of the Aggregate root
+     * @param aggregateFactory The factory to create the aggregate root instance with
+     * @param aggregateModel   The model describing the aggregate structure
+     * @param eventBus         The EventBus to publish events on
+     * @param <T>              The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      *
      * @throws Exception when an error occurs creating the aggregate root instance
@@ -162,34 +155,36 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateModel     The model describing the aggregate structure
      * @param eventBus           The EventBus to publish events on
      * @param repositoryProvider Provides repositories for specific aggregate types
-     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param <T>                The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      *
      * @throws Exception when an error occurs creating the aggregate root instance
      */
-    public static <T> AnnotatedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> aggregateModel,
-                                                       EventBus eventBus, RepositoryProvider repositoryProvider,
-                                                       DeadlineManager deadlineManager) throws Exception {
-        return initialize(aggregateFactory, aggregateModel, eventBus, repositoryProvider, deadlineManager, false);
+    public static <T> AnnotatedAggregate<T> initialize(Callable<T> aggregateFactory,
+                                                       AggregateModel<T> aggregateModel,
+                                                       EventBus eventBus,
+                                                       RepositoryProvider repositoryProvider) throws Exception {
+        return initialize(aggregateFactory, aggregateModel, eventBus, repositoryProvider, false);
     }
 
     /**
      * Initialize an aggregate created by the given {@code aggregateFactory} which is described in the given
      * {@code aggregateModel}. The given {@code eventBus} is used to publish events generated by the aggregate.
      *
-     * @param aggregateFactory   The factory to create the aggregate root instance with
-     * @param aggregateModel     The model describing the aggregate structure
-     * @param eventBus           The EventBus to publish events on
-     * @param generateSequences  Whether to generate sequence numbers on events published from this aggregate
-     * @param <T>                The type of the Aggregate root
+     * @param aggregateFactory  The factory to create the aggregate root instance with
+     * @param aggregateModel    The model describing the aggregate structure
+     * @param eventBus          The EventBus to publish events on
+     * @param generateSequences Whether to generate sequence numbers on events published from this aggregate
+     * @param <T>               The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      *
      * @throws Exception when an error occurs creating the aggregate root instance
      */
-    public static <T> AnnotatedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> aggregateModel,
-                                                       EventBus eventBus, boolean generateSequences) throws Exception {
-        return initialize(aggregateFactory, aggregateModel, eventBus, null, null, generateSequences);
+    public static <T> AnnotatedAggregate<T> initialize(Callable<T> aggregateFactory,
+                                                       AggregateModel<T> aggregateModel,
+                                                       EventBus eventBus,
+                                                       boolean generateSequences) throws Exception {
+        return initialize(aggregateFactory, aggregateModel, eventBus, null, generateSequences);
     }
 
     /**
@@ -200,21 +195,19 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateModel     The model describing the aggregate structure
      * @param eventBus           The EventBus to publish events on
      * @param repositoryProvider Provides repositories for specific aggregate types
-     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param generateSequences  Whether to generate sequence numbers on events published from this aggregate
      * @param <T>                The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      *
      * @throws Exception when an error occurs creating the aggregate root instance
      */
-    public static <T> AnnotatedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> aggregateModel,
-                                                       EventBus eventBus, RepositoryProvider repositoryProvider,
-                                                       DeadlineManager deadlineManager, boolean generateSequences)
-            throws Exception {
-        AnnotatedAggregate<T> aggregate = new AnnotatedAggregate<>(aggregateModel,
-                                                                   eventBus,
-                                                                   repositoryProvider,
-                                                                   deadlineManager);
+    public static <T> AnnotatedAggregate<T> initialize(Callable<T> aggregateFactory,
+                                                       AggregateModel<T> aggregateModel,
+                                                       EventBus eventBus,
+                                                       RepositoryProvider repositoryProvider,
+                                                       boolean generateSequences) throws Exception {
+        AnnotatedAggregate<T> aggregate =
+                new AnnotatedAggregate<>(aggregateModel, eventBus, repositoryProvider);
         aggregate.registerWithUnitOfWork();
         if (generateSequences) {
             aggregate.initSequence();
@@ -227,15 +220,16 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * Initialize an aggregate with the given {@code aggregateRoot} which is described in the given
      * {@code aggregateModel}. The given {@code eventBus} is used to publish events generated by the aggregate.
      *
-     * @param aggregateRoot      The aggregate root instance
-     * @param aggregateModel     The model describing the aggregate structure
-     * @param eventBus           The EventBus to publish events on
-     * @param <T>                The type of the Aggregate root
+     * @param aggregateRoot  The aggregate root instance
+     * @param aggregateModel The model describing the aggregate structure
+     * @param eventBus       The EventBus to publish events on
+     * @param <T>            The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      */
-    public static <T> AnnotatedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> aggregateModel,
+    public static <T> AnnotatedAggregate<T> initialize(T aggregateRoot,
+                                                       AggregateModel<T> aggregateModel,
                                                        EventBus eventBus) {
-        return initialize(aggregateRoot, aggregateModel, eventBus, null, null);
+        return initialize(aggregateRoot, aggregateModel, eventBus, null);
     }
 
     /**
@@ -246,18 +240,15 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param aggregateModel     The model describing the aggregate structure
      * @param eventBus           The EventBus to publish events on
      * @param repositoryProvider Provides repositories for specific aggregate types
-     * @param deadlineManager    Manager used for scheduling deadlines on this Aggregate
      * @param <T>                The type of the Aggregate root
      * @return An Aggregate instance, fully initialized
      */
-    public static <T> AnnotatedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> aggregateModel,
-                                                       EventBus eventBus, RepositoryProvider repositoryProvider,
-                                                       DeadlineManager deadlineManager) {
-        AnnotatedAggregate<T> aggregate = new AnnotatedAggregate<>(aggregateRoot,
-                                                                   aggregateModel,
-                                                                   eventBus,
-                                                                   repositoryProvider,
-                                                                   deadlineManager);
+    public static <T> AnnotatedAggregate<T> initialize(T aggregateRoot,
+                                                       AggregateModel<T> aggregateModel,
+                                                       EventBus eventBus,
+                                                       RepositoryProvider repositoryProvider) {
+        AnnotatedAggregate<T> aggregate =
+                new AnnotatedAggregate<>(aggregateRoot, aggregateModel, eventBus, repositoryProvider);
         aggregate.registerWithUnitOfWork();
         return aggregate;
     }
@@ -453,44 +444,47 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return this;
     }
 
+    // TODO Remove
     @Override
     protected <D> ScheduleToken doScheduleDeadline(Instant triggerDateTime, D deadlineInfo) {
-        DeadlineManager deadlineManager = deadlineManager();
-        ScheduleToken scheduleToken = deadlineManager.generateToken();
-        if (aggregateRoot != null) {
-            deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken);
-        } else {
-            delayedTasks.add(DelayedTask.lowPriorityTask(
-                    () -> deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken),
-                    delayedTasksSequence.getAndIncrement()));
-        }
-        return scheduleToken;
+//        DeadlineManager deadlineManager = deadlineManager();
+//        ScheduleToken scheduleToken = deadlineManager.generateToken();
+//        if (aggregateRoot != null) {
+//            deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken);
+//        } else {
+//            delayedTasks.add(DelayedTask.lowPriorityTask(
+//                    () -> deadlineManager.schedule(triggerDateTime, deadlineContext(), deadlineInfo, scheduleToken),
+//                    delayedTasksSequence.getAndIncrement()));
+//        }
+//        return scheduleToken;
+        return null;
     }
 
     @Override
     protected <D> ScheduleToken doScheduleDeadline(Duration triggerDuration, D deadlineInfo) {
-        DeadlineManager deadlineManager = deadlineManager();
-        ScheduleToken scheduleToken = deadlineManager.generateToken();
-        if (aggregateRoot != null) {
-            deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken);
-        } else {
-            delayedTasks.add(DelayedTask.lowPriorityTask(
-                    () -> deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken),
-                    delayedTasksSequence.getAndIncrement()));
-        }
-        return scheduleToken;
+//        DeadlineManager deadlineManager = deadlineManager();
+//        ScheduleToken scheduleToken = deadlineManager.generateToken();
+//        if (aggregateRoot != null) {
+//            deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken);
+//        } else {
+//            delayedTasks.add(DelayedTask.lowPriorityTask(
+//                    () -> deadlineManager.schedule(triggerDuration, deadlineContext(), deadlineInfo, scheduleToken),
+//                    delayedTasksSequence.getAndIncrement()));
+//        }
+//        return scheduleToken;
+        return null;
     }
 
     @Override
     protected void doCancelDeadline(ScheduleToken scheduleToken) {
-        DeadlineManager deadlineManager = deadlineManager();
-        if (aggregateRoot != null) {
-            deadlineManager.cancelSchedule(scheduleToken);
-        } else {
-            delayedTasks.add(DelayedTask.lowPriorityTask(
-                    () -> deadlineManager.cancelSchedule(scheduleToken),
-                    delayedTasksSequence.getAndIncrement()));
-        }
+//        DeadlineManager deadlineManager = deadlineManager();
+//        if (aggregateRoot != null) {
+//            deadlineManager.cancelSchedule(scheduleToken);
+//        } else {
+//            delayedTasks.add(DelayedTask.lowPriorityTask(
+//                    () -> deadlineManager.cancelSchedule(scheduleToken),
+//                    delayedTasksSequence.getAndIncrement()));
+//        }
     }
 
     /**
@@ -556,22 +550,16 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
     }
 
+    // TODO Remove
     @Override
     public void handle(DeadlineMessage<?> deadlineMessage) {
         execute(() -> inspector.publish(deadlineMessage, aggregateRoot));
     }
 
+    // TODO Remove
     private DeadlineContext deadlineContext() {
-        return new DeadlineContext(identifierAsString(),
-                                   DeadlineContext.Type.AGGREGATE,
-                                   aggregateRoot.getClass());
-    }
-
-    private DeadlineManager deadlineManager() {
-        if (deadlineManager == null) {
-            throw new AxonConfigurationException("Deadline manager is not configured for " + aggregateRoot.getClass());
-        }
-        return deadlineManager;
+//        return new DeadlineContext(identifierAsString(), DeadlineContext.Type.AGGREGATE, aggregateRoot.getClass());
+        return null;
     }
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {

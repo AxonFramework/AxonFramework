@@ -74,14 +74,13 @@ public class SpawningNewAggregateTest {
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
 
-        when(aggregate2Repository.newInstance(any())).thenAnswer(invocation ->
-                                                                         EventSourcedAggregate
-                                                                                 .initialize((Callable<Aggregate2>) invocation
-                                                                                                     .getArguments()[0],
-                                                                                             aggregate2Model,
-                                                                                             eventStore,
-                                                                                             repositoryProvider,
-                                                                                             deadlineManager));
+        when(aggregate2Repository.newInstance(any()))
+                .thenAnswer(invocation -> EventSourcedAggregate.initialize(
+                        (Callable<Aggregate2>) invocation.getArguments()[0],
+                        aggregate2Model,
+                        eventStore,
+                        repositoryProvider
+                ));
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
 
@@ -155,14 +154,13 @@ public class SpawningNewAggregateTest {
 
     @SuppressWarnings("unchecked")
     private void initializeAggregate1Repository(RepositoryProvider repositoryProvider) throws Exception {
-        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
-                                                                         EventSourcedAggregate
-                                                                                 .initialize((Callable<Aggregate1>) invocation
-                                                                                                     .getArguments()[0],
-                                                                                             aggregate1Model,
-                                                                                             eventStore,
-                                                                                             repositoryProvider,
-                                                                                             deadlineManager));
+        when(aggregate1Repository.newInstance(any()))
+                .thenAnswer(invocation -> EventSourcedAggregate.initialize(
+                        (Callable<Aggregate1>) invocation.getArguments()[0],
+                        aggregate1Model,
+                        eventStore,
+                        repositoryProvider
+                ));
     }
 
     private static class CreateAggregate1Command {
