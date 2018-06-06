@@ -13,6 +13,7 @@
 
 package org.axonframework.eventhandling.saga;
 
+import org.axonframework.common.Scope;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
 import java.time.Duration;
@@ -22,9 +23,7 @@ import java.util.concurrent.Callable;
 /**
  * Abstract base class of a component that models a saga's life cycle.
  */
-public abstract class SagaLifecycle {
-
-    private static final ThreadLocal<SagaLifecycle> CURRENT_SAGA_LIFECYCLE = new ThreadLocal<>();
+public abstract class SagaLifecycle extends Scope {
 
     /**
      * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
@@ -186,7 +185,7 @@ public abstract class SagaLifecycle {
      * @return the thread's current {@link SagaLifecycle}
      */
     protected static SagaLifecycle getInstance() {
-        SagaLifecycle instance = CURRENT_SAGA_LIFECYCLE.get();
+        SagaLifecycle instance = Scope.getCurrentScope();
         if (instance == null) {
             throw new IllegalStateException("Cannot retrieve current SagaLifecycle; none is yet defined");
         }
@@ -200,21 +199,17 @@ public abstract class SagaLifecycle {
      * method returns the execution result of the task.
      *
      * @param task the task to execute
-     * @param <V> the type of execution result of the task
+     * @param <V>  the type of execution result of the task
      * @return the execution result
+     *
      * @throws Exception if executing the task results in an exception
      */
     protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        SagaLifecycle existing = CURRENT_SAGA_LIFECYCLE.get();
-        CURRENT_SAGA_LIFECYCLE.set(this);
+        super.startScope();
         try {
             return task.call();
         } finally {
-            if (existing == null) {
-                CURRENT_SAGA_LIFECYCLE.remove();
-            } else {
-                CURRENT_SAGA_LIFECYCLE.set(existing);
-            }
+            super.endScope();
         }
     }
 
