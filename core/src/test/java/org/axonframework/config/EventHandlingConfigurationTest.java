@@ -343,12 +343,12 @@ public class EventHandlingConfigurationTest {
 
         @Override
         public void start() {
-
+            // noop
         }
 
         @Override
         public void shutDown() {
-
+            // noop
         }
 
         public List<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {

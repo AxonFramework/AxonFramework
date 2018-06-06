@@ -63,6 +63,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -84,6 +85,8 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
+    private final Component<EventProcessorRegistry> eventProcessorRegistry;
+
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
             new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
@@ -103,9 +106,9 @@ public class DefaultConfigurer implements Configurer {
 
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
-    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
-    private final List<Runnable> startHandlers = new ArrayList<>();
-    private final List<Runnable> shutdownHandlers = new ArrayList<>();
+    private final List<ConsumerHandler> initHandlers = new ArrayList<>();
+    private final List<RunnableHandler> startHandlers = new ArrayList<>();
+    private final List<RunnableHandler> shutdownHandlers = new ArrayList<>();
     private final List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
@@ -127,6 +130,11 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+
+        eventProcessorRegistry = new Component<>(config,
+                                                 "eventProcessorRegistry",
+                                                 c -> defaultEventProcessorRegistry());
+        components.put(EventProcessorRegistry.class, eventProcessorRegistry);
     }
 
     /**
@@ -266,6 +274,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Provides the default implementation of {@link EventProcessorRegistry}.
+     *
+     * @return the default implementation of {@link EventProcessorRegistry}
+     */
+    protected EventProcessorRegistry defaultEventProcessorRegistry() {
+        return new DefaultEventProcessorRegistry();
+    }
+
+    /**
      * Provides the default EventBus implementation. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
@@ -320,41 +337,48 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerModule(ModuleConfiguration module) {
-        if (initialized) {
-            module.initialize(config);
-        } else {
-            initHandlers.add(module::initialize);
-        }
-        this.modules.add(module);
-        startHandlers.add(module::start);
-        shutdownHandlers.add(module::shutdown);
+    public Configurer configureEventProcessorRegistry(
+            Function<Configuration, EventProcessorRegistry> eventProcessorRegistryBuilder) {
+        eventProcessorRegistry.update(eventProcessorRegistryBuilder);
         return this;
     }
 
     @Override
-    public Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder) {
-        startHandlers.add(() -> {
+    public Configurer registerModule(ModuleConfiguration module) {
+        if (initialized) {
+            module.initialize(config);
+        } else {
+            initHandlers.add(new ConsumerHandler(module.phase(), module::initialize));
+        }
+        this.modules.add(module);
+        startHandlers.add(new RunnableHandler(module.phase(), module::start));
+        shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
+        return this;
+    }
+
+    @Override
+    public Configurer registerCommandHandler(int phase, Function<Configuration, Object> annotatedCommandHandlerBuilder) {
+        startHandlers.add(new RunnableHandler(phase, () -> {
             Registration registration =
                     new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config),
                                                         config.parameterResolverFactory(),
                                                         config.handlerDefinition())
                             .subscribe(config.commandBus());
-            shutdownHandlers.add(registration::cancel);
-        });
+            shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
+        }));
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
-        startHandlers.add(() -> {
+    @SuppressWarnings("unchecked")
+    public Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder) {
+        startHandlers.add(new RunnableHandler(phase, () -> {
             Registration registration = new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
                                                                           config.parameterResolverFactory(),
                                                                           config.handlerDefinition())
                     .subscribe(config.queryBus());
-            shutdownHandlers.add(registration::cancel);
-        });
+            shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
+        }));
         return this;
     }
 
@@ -392,9 +416,9 @@ public class DefaultConfigurer implements Configurer {
     public <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration) {
         this.modules.add(aggregateConfiguration);
         this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
-        this.initHandlers.add(aggregateConfiguration::initialize);
-        this.startHandlers.add(aggregateConfiguration::start);
-        this.shutdownHandlers.add(aggregateConfiguration::shutdown);
+        this.initHandlers.add(new ConsumerHandler(aggregateConfiguration.phase(), aggregateConfiguration::initialize));
+        this.startHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::start));
+        this.shutdownHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown));
         return this;
     }
 
@@ -412,21 +436,24 @@ public class DefaultConfigurer implements Configurer {
      */
     protected void invokeInitHandlers() {
         initialized = true;
-        initHandlers.forEach(h -> h.accept(config));
+        initHandlers.stream().sorted(comparingInt(ConsumerHandler::phase)).forEach(h -> h.accept(config));
+        eventProcessorRegistry.get().initialize(config);
     }
 
     /**
      * Invokes all registered start handlers.
      */
     protected void invokeStartHandlers() {
-        startHandlers.forEach(Runnable::run);
+        startHandlers.stream().sorted(comparingInt(RunnableHandler::phase)).forEach(RunnableHandler::run);
+        eventProcessorRegistry.get().start();
     }
 
     /**
      * Invokes all registered shutdown handlers.
      */
     protected void invokeShutdownHandlers() {
-        shutdownHandlers.forEach(Runnable::run);
+        shutdownHandlers.stream().sorted(comparingInt(RunnableHandler::phase).reversed()).forEach(RunnableHandler::run);
+        eventProcessorRegistry.get().shutdown();
     }
 
     /**
@@ -508,8 +535,8 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public void onShutdown(Runnable shutdownHandler) {
-            shutdownHandlers.add(shutdownHandler);
+        public void onShutdown(int phase, Runnable shutdownHandler) {
+            shutdownHandlers.add(new RunnableHandler(phase, shutdownHandler));
         }
 
         @Override
@@ -518,8 +545,44 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public void onStart(Runnable startHandler) {
-            startHandlers.add(startHandler);
+        public void onStart(int phase, Runnable startHandler) {
+            startHandlers.add(new RunnableHandler(phase, startHandler));
+        }
+    }
+
+    private static class ConsumerHandler {
+        private final int phase;
+        private final Consumer<Configuration> handler;
+
+        private ConsumerHandler(int phase, Consumer<Configuration> handler) {
+            this.phase = phase;
+            this.handler = handler;
+        }
+
+        public int phase() {
+            return phase;
+        }
+
+        public void accept(Configuration configuration) {
+            handler.accept(configuration);
+        }
+    }
+
+    private static class RunnableHandler {
+        private final int phase;
+        private final Runnable handler;
+
+        private RunnableHandler(int phase, Runnable handler) {
+            this.phase = phase;
+            this.handler = handler;
+        }
+
+        public int phase() {
+            return phase;
+        }
+
+        public void run() {
+            handler.run();
         }
     }
 }
