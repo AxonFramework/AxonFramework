@@ -14,10 +14,7 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Scope;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.Callable;
 
 /**
@@ -81,42 +78,6 @@ public abstract class SagaLifecycle extends Scope {
         removeAssociationWith(associationKey, associationValue.toString());
     }
 
-    /**
-     * Schedules a deadline on this Saga. When {@code triggerDateTime} passes and deadline was not cancelled ({@link
-     * #cancelDeadline(ScheduleToken)}), the {@link org.axonframework.deadline.annotation.DeadlineHandler} with type
-     * {@code D} will be invoked on this Saga.
-     *
-     * @param triggerDateTime The moment to trigger the deadline
-     * @param deadlineInfo    The details about the deadline
-     * @param <D>             The type of the deadline info
-     * @return token to use when cancelling the schedule
-     */
-    public static <D> ScheduleToken scheduleDeadline(Instant triggerDateTime, D deadlineInfo) {
-        return getInstance().doScheduleDeadline(triggerDateTime, deadlineInfo);
-    }
-
-    /**
-     * Schedules a deadline on this Saga. When {@code triggerDuration} elapses and deadline was not cancelled ({@link
-     * #cancelDeadline(ScheduleToken)}, the {@link org.axonframework.deadline.annotation.DeadlineHandler} with type
-     * {@code D} will be invoked on this Saga.
-     *
-     * @param triggerDuration The amount of time to wait before the deadline
-     * @param deadlineInfo    The details about the deadline
-     * @param <D>             The type of the deadline info
-     * @return token to use when cancelling the schedule
-     */
-    public static <D> ScheduleToken scheduleDeadline(Duration triggerDuration, D deadlineInfo) {
-        return getInstance().doScheduleDeadline(triggerDuration, deadlineInfo);
-    }
-
-    /**
-     * Cancels already scheduled deadline. If the deadline is already handled, this method does nothing.
-     *
-     * @param scheduleToken The token used to schedule a deadline
-     */
-    public static void cancelDeadline(ScheduleToken scheduleToken) {
-        getInstance().doCancelDeadline(scheduleToken);
-    }
 
     /**
      * Marks the saga as ended. Ended saga's may be cleaned up by the repository when they are committed.
@@ -137,38 +98,6 @@ public abstract class SagaLifecycle extends Scope {
      * @param associationValue the association value to remove
      */
     protected abstract void doRemoveAssociation(AssociationValue associationValue);
-
-    /**
-     * {@link SagaLifecycle} instance method to schedule a deadline. When {@code triggerDateTime} passes and deadline
-     * was not cancelled ({@link #cancelDeadline(ScheduleToken)}), the {@link org.axonframework.deadline.annotation.DeadlineHandler}
-     * with type {@code D} will be invoked on this Saga.
-     *
-     * @param triggerDateTime The moment to trigger the deadline
-     * @param deadlineInfo    The details about the deadline
-     * @param <D>             The type of the deadline info
-     * @return token to use when cancelling the schedule
-     */
-    protected abstract <D> ScheduleToken doScheduleDeadline(Instant triggerDateTime, D deadlineInfo);
-
-    /**
-     * {@link SagaLifecycle} instance method to schedule a deadline. When {@code triggerDuration} elapses and deadline
-     * was not cancelled ({@link #cancelDeadline(ScheduleToken)}, the {@link org.axonframework.deadline.annotation.DeadlineHandler}
-     * with type {@code D} will be invoked on this Saga.
-     *
-     * @param triggerDuration The amount of time to wait before the deadline
-     * @param deadlineInfo    The details about the deadline
-     * @param <D>             The type of the deadline info
-     * @return token to use when cancelling the schedule
-     */
-    protected abstract <D> ScheduleToken doScheduleDeadline(Duration triggerDuration, D deadlineInfo);
-
-    /**
-     * {@link SagaLifecycle} instance method to cancel a deadline. If the deadline is already handled, this method does
-     * nothing.
-     *
-     * @param scheduleToken The token used to schedule a deadline
-     */
-    protected abstract void doCancelDeadline(ScheduleToken scheduleToken);
 
     /**
      * {@link SagaLifecycle} instance method to register the given {@code associationValue}. If the current saga is

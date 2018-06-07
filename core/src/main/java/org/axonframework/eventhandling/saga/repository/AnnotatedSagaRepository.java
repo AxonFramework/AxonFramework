@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.saga.repository;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.saga.AnnotatedSaga;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -51,7 +50,6 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     private final Class<T> sagaType;
     private final SagaStore<? super T> sagaStore;
     private final SagaModel<T> sagaModel;
-    private final DeadlineManager deadlineManager;
     private final ResourceInjector injector;
 
     /**
@@ -77,9 +75,13 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param sagaStore        the saga store for saving and loading of sagas
      * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
      */
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
+    public AnnotatedSagaRepository(Class<T> sagaType,
+                                   SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector) {
-        this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory().modelOf(sagaType), resourceInjector,
+        this(sagaType,
+             sagaStore,
+             new AnnotationSagaMetaModelFactory().modelOf(sagaType),
+             resourceInjector,
              new PessimisticLockFactory());
     }
 
@@ -95,7 +97,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
      *                                 handlers with
      */
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
+    public AnnotatedSagaRepository(Class<T> sagaType,
+                                   SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector,
                                    ParameterResolverFactory parameterResolverFactory) {
         this(sagaType,
@@ -107,30 +110,6 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
     /**
      * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
-     * sagaStore}. The repository will use given {@code resourceInjector} and {@link AnnotationSagaMetaModelFactory} to
-     * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
-     * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
-     *
-     * @param sagaType                 the saga target type
-     * @param sagaStore                the saga store for saving and loading of sagas
-     * @param resourceInjector         the resource injector used to initialize {@link Saga Sagas} that delegate to the
-     *                                 target
-     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
-     *                                 handlers with
-     * @param deadlineManager          Responsible for scheduling deadlines on Saga
-     */
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, ResourceInjector resourceInjector,
-                                   ParameterResolverFactory parameterResolverFactory, DeadlineManager deadlineManager) {
-        this(sagaType,
-             sagaStore,
-             new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
-             resourceInjector,
-             new PessimisticLockFactory(),
-             deadlineManager);
-    }
-
-    /**
-     * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
      * sagaStore}. The repository will use the given {@code sagaModel} and {@code resourceInjector} to initialize
      * {@link Saga} instances after a target instance is created or loaded from the store.
      *
@@ -140,26 +119,11 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
      * @param lockFactory      lock factory used when a saga is loaded
      */
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, SagaModel<T> sagaModel,
-                                   ResourceInjector resourceInjector, LockFactory lockFactory) {
-        this(sagaType, sagaStore, sagaModel, resourceInjector, lockFactory, null);
-    }
-
-    /**
-     * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
-     * sagaStore}. The repository will use the given {@code sagaModel} and {@code resourceInjector} to initialize
-     * {@link Saga} instances after a target instance is created or loaded from the store.
-     *
-     * @param sagaType         the saga target type
-     * @param sagaStore        the saga store for saving and loading of sagas
-     * @param sagaModel        the saga model used to initialize {@link Saga Sagas} that delegate to the target
-     * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
-     * @param lockFactory      lock factory used when a saga is loaded
-     * @param deadlineManager  responsible for scheduling deadlines on Saga
-     */
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, SagaModel<T> sagaModel,
-                                   ResourceInjector resourceInjector, LockFactory lockFactory,
-                                   DeadlineManager deadlineManager) {
+    public AnnotatedSagaRepository(Class<T> sagaType,
+                                   SagaStore<? super T> sagaStore,
+                                   SagaModel<T> sagaModel,
+                                   ResourceInjector resourceInjector,
+                                   LockFactory lockFactory) {
         super(lockFactory);
         this.injector = resourceInjector;
         this.sagaType = sagaType;
@@ -167,7 +131,6 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         this.sagaModel = sagaModel;
         this.managedSagas = new ConcurrentHashMap<>();
         this.unsavedSagasResourceKey = "Repository[" + sagaType.getSimpleName() + "]/UnsavedSagas";
-        this.deadlineManager = deadlineManager;
     }
 
     @Override
@@ -195,15 +158,12 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     @Override
     public AnnotatedSaga<T> doCreateInstance(String sagaIdentifier, Supplier<T> sagaFactory) {
         try {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+            UnitOfWork<?> processRoot = unitOfWork.root();
             T sagaRoot = sagaFactory.get();
             injector.injectResources(sagaRoot);
-            AnnotatedSaga<T> saga = new AnnotatedSaga<>(sagaIdentifier,
-                                                        Collections.emptySet(),
-                                                        sagaRoot,
-                                                        null,
-                                                        sagaModel,
-                                                        deadlineManager);
+            AnnotatedSaga<T> saga =
+                    new AnnotatedSaga<>(sagaIdentifier, Collections.emptySet(), sagaRoot, null, sagaModel);
 
             unsavedSagaResource(processRoot).add(sagaIdentifier);
             unitOfWork.onPrepareCommit(u -> {
@@ -252,8 +212,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     public Set<String> find(AssociationValue associationValue) {
         Set<String> sagasFound = new TreeSet<>();
         sagasFound.addAll(managedSagas.values().stream()
-                                  .filter(saga -> saga.getAssociationValues().contains(associationValue))
-                                  .map(Saga::getSagaIdentifier).collect(Collectors.toList()));
+                                      .filter(saga -> saga.getAssociationValues().contains(associationValue))
+                                      .map(Saga::getSagaIdentifier).collect(Collectors.toList()));
         sagasFound.addAll(sagaStore.findSagas(sagaType, associationValue));
         return sagasFound;
     }
@@ -304,12 +264,9 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         if (entry != null) {
             T saga = entry.saga();
             injector.injectResources(saga);
-            return new AnnotatedSaga<>(sagaIdentifier,
-                                       entry.associationValues(),
-                                       saga,
-                                       entry.trackingToken(),
-                                       sagaModel,
-                                       deadlineManager);
+            return new AnnotatedSaga<>(
+                    sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(), sagaModel
+            );
         }
         return null;
     }

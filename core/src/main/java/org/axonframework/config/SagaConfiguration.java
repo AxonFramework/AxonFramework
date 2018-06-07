@@ -182,8 +182,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                          c -> new AnnotatedSagaRepository<>(sagaType,
                                                                             sagaStore.get(),
                                                                             c.resourceInjector(),
-                                                                            c.parameterResolverFactory(),
-                                                                            c.deadlineManager()));
+                                                                            c.parameterResolverFactory()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
                                                                                                  c.parameterResolverFactory(),
                                                                                                  listenerInvocationErrorHandler

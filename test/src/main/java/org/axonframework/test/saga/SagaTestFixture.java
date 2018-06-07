@@ -149,9 +149,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                                                                                 registeredResources),
                                                                         ClasspathParameterResolverFactory
                                                                                 .forClass(sagaType));
-            sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
+            sagaRepository = new AnnotatedSagaRepository<>(sagaType,
+                                                           sagaStore,
                                                            new TransienceValidatingResourceInjector(),
-                                                           parameterResolverFactory, deadlineManager);
+                                                           parameterResolverFactory);
             sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory,
                                                      new LoggingErrorHandler());
             resourcesInitialized = true;

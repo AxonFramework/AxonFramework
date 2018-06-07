@@ -17,18 +17,12 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.DeadlineContext;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -51,7 +45,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private final String sagaId;
     private final T sagaInstance;
     private final AtomicReference<TrackingToken> trackingToken;
-    private final DeadlineManager deadlineManager;
 
     /**
      * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
@@ -64,33 +57,17 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
      * @param trackingToken     The token identifying the position in a stream the saga has last processed
      * @param metaModel         The model describing Saga structure
      */
-    public AnnotatedSaga(String sagaId, Set<AssociationValue> associationValues,
-                         T annotatedSaga, TrackingToken trackingToken, SagaModel<T> metaModel) {
-        this(sagaId, associationValues, annotatedSaga, trackingToken, metaModel, null);
-    }
-
-    /**
-     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
-     * {@code sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the
-     * description of the structure of the Saga. The {@code deadlineManager} is responsible for scheduling deadlines on
-     * this Saga.
-     *
-     * @param sagaId            The identifier of this Saga instance
-     * @param associationValues The current associations of this Saga
-     * @param annotatedSaga     The object instance representing the Saga
-     * @param trackingToken     The token identifying the position in a stream the saga has last processed
-     * @param metaModel         The model describing Saga structure
-     * @param deadlineManager   Manager responsible for scheduling deadlines on this Saga
-     */
-    public AnnotatedSaga(String sagaId, Set<AssociationValue> associationValues, T annotatedSaga,
-                         TrackingToken trackingToken, SagaModel<T> metaModel, DeadlineManager deadlineManager) {
+    public AnnotatedSaga(String sagaId,
+                         Set<AssociationValue> associationValues,
+                         T annotatedSaga,
+                         TrackingToken trackingToken,
+                         SagaModel<T> metaModel) {
         Assert.notNull(annotatedSaga, () -> "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
         this.sagaInstance = annotatedSaga;
         this.metaModel = metaModel;
         this.trackingToken = new AtomicReference<>(trackingToken);
-        this.deadlineManager = deadlineManager;
     }
 
     @Override
@@ -131,20 +108,20 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
             metaModel.findHandlerMethods(event).stream()
                      .filter(h -> getAssociationValues().contains(h.getAssociationValue(event)))
                      .findFirst().ifPresent(h -> {
-                        try {
-                            executeWithResult(() -> h.handle(event, sagaInstance));
-                            if (event instanceof TrackedEventMessage) {
-                                this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
-                            }
-                        } catch (RuntimeException | Error e) {
-                            throw e;
-                        } catch (Exception e) {
-                            throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
-                        } finally {
-                            if (h.isEndingHandler()) {
-                                doEnd();
-                            }
-                        }
+                try {
+                    executeWithResult(() -> h.handle(event, sagaInstance));
+                    if (event instanceof TrackedEventMessage) {
+                        this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
+                    }
+                } catch (RuntimeException | Error e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
+                } finally {
+                    if (h.isEndingHandler()) {
+                        doEnd();
+                    }
+                }
             });
         }
     }
@@ -197,21 +174,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     }
 
     @Override
-    protected <D> ScheduleToken doScheduleDeadline(Instant triggerDateTime, D deadlineInfo) {
-        return deadlineManager().schedule(triggerDateTime, deadlineContext(), deadlineInfo);
-    }
-
-    @Override
-    protected <D> ScheduleToken doScheduleDeadline(Duration triggerDuration, D deadlineInfo) {
-        return deadlineManager().schedule(triggerDuration, deadlineContext(), deadlineInfo);
-    }
-
-    @Override
-    protected void doCancelDeadline(ScheduleToken scheduleToken) {
-        deadlineManager().cancelSchedule(scheduleToken);
-    }
-
-    @Override
     public void handle(DeadlineMessage<?> deadlineMessage) {
         if (isActive) {
             metaModel.findDeadlineHandlers(deadlineMessage).forEach(h -> {
@@ -222,16 +184,5 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
                 }
             });
         }
-    }
-
-    private DeadlineManager deadlineManager() {
-        if (deadlineManager == null) {
-            throw new AxonConfigurationException("Deadline manager is not configured for " + sagaInstance.getClass());
-        }
-        return deadlineManager;
-    }
-
-    private DeadlineContext deadlineContext() {
-        return new DeadlineContext(sagaId, DeadlineContext.Type.SAGA, sagaInstance.getClass());
     }
 }
