@@ -243,7 +243,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
-        scheduleAfterInitial(filter, (query, fluxSink) -> doEmit(query, fluxSink, update));
+        scheduleAfterUpdateSubscribed(filter, (query, fluxSink) -> doEmit(query, fluxSink, update));
         updateHandlers.keySet()
                       .stream()
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
@@ -255,7 +255,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @Override
     public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        scheduleAfterInitial(filter, (query, fluxSink) -> fluxSink.complete());
+        scheduleAfterUpdateSubscribed(filter, (query, fluxSink) -> fluxSink.complete());
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
@@ -264,21 +264,11 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @Override
     public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        scheduleAfterInitial(filter, (query, fluxSink) -> fluxSink.error(cause));
+        scheduleAfterUpdateSubscribed(filter, (query, fluxSink) -> fluxSink.error(cause));
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
                       .forEach(query -> updateHandlers.remove(query).error(cause));
-    }
-
-    @Override
-    public Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(
-            Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        return updateHandlers.keySet()
-                             .stream()
-                             .filter(filter)
-                             .collect(Collectors.toMap(Function.identity(),
-                                                       m -> updateHandlers.get(m).requestedFromDownstream()));
     }
 
     private <Q, I, U> void initialResult(SubscriptionQueryMessage<Q, I, U> query,
@@ -345,8 +335,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     @SuppressWarnings("unchecked")
-    private void scheduleAfterInitial(Predicate<?> subscriptionQueryFilter,
-                                      BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> subscriptionQueryUpdate) {
+    private void scheduleAfterUpdateSubscribed(Predicate<?> subscriptionQueryFilter,
+                                               BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> subscriptionQueryUpdate) {
         delayedUpdates.keySet()
                       .stream()
                       .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) subscriptionQueryFilter)

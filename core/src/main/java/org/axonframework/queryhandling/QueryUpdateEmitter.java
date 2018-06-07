@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -58,7 +57,8 @@ public interface QueryUpdateEmitter {
      * @param <U>       the type of the update
      */
     @SuppressWarnings("unchecked")
-    default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter, SubscriptionQueryUpdateMessage<U> update) {
+    default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter,
+                             SubscriptionQueryUpdateMessage<U> update) {
         Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
                 m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         emit(sqmFilter, update);
@@ -119,30 +119,5 @@ public interface QueryUpdateEmitter {
         Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
                 m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         completeExceptionally(sqmFilter, cause);
-    }
-
-    /**
-     * Gets the current outstanding request amount per message.
-     *
-     * @param filter predicate on subscription query message used to filter subscription queries
-     * @return map where the key key is subscription message and the value is current outstanding amount for that message
-     */
-    Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(
-            Predicate<SubscriptionQueryMessage<?, ?, ?>> filter);
-
-    /**
-     * Gets the current outstanding request amount per message.
-     *
-     * @param queryType the type of the query
-     * @param filter    predicate on query payload used to filter subscription queries
-     * @param <Q>       the type of the query
-     * @return map where the key key is subscription message and the value is current outstanding amount for that message
-     */
-    @SuppressWarnings("unchecked")
-    default <Q> Map<SubscriptionQueryMessage<?, ?, ?>, Long> requestedFromDownstream(Class<Q> queryType,
-                                                                                     Predicate<? super Q> filter) {
-        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
-                m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
-        return requestedFromDownstream(sqmFilter);
     }
 }

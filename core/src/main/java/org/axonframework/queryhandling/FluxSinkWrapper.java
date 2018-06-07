@@ -73,13 +73,4 @@ class FluxSinkWrapper<T> {
     public void onDispose(Disposable disposable) {
         fluxSink.onDispose(disposable);
     }
-
-    /**
-     * Wrapper around {@link FluxSink#requestedFromDownstream()}.
-     *
-     * @return the current outstanding request amount
-     */
-    public long requestedFromDownstream() {
-        return fluxSink.requestedFromDownstream();
-    }
 }

@@ -192,31 +192,6 @@ public class SubscriptionQueryTest {
                     .verifyComplete();
     }
 
-    @Test
-    public void testRequestedFromDownstream() {
-        // given
-        SubscriptionQueryMessage<String, Long, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                "axon",
-                "requestedFromDownstream",
-                ResponseTypes.instanceOf(Long.class),
-                ResponseTypes.instanceOf(String.class));
-
-        // when
-        SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<String>> result = queryBus
-                .subscriptionQuery(queryMessage);
-
-        // then
-        result.updates().map(Message::getPayload).subscribe(new BaseSubscriber<String>() {
-            @Override
-            protected void hookOnSubscribe(Subscription subscription) {
-                request(5);
-            }
-        });
-        StepVerifier.create(result.initialResult().map(Message::getPayload))
-                    .expectNext(5L)
-                    .verifyComplete();
-    }
-
     @SuppressWarnings("unused")
     private class ChatQueryHandler {
 
@@ -235,15 +210,6 @@ public class SubscriptionQueryTest {
         @QueryHandler(queryName = "numberOfMessages")
         public Integer numberOfMessages(Integer i) {
             return 0;
-        }
-
-        @QueryHandler(queryName = "requestedFromDownstream")
-        public Long requestedFromDownstream(String s) {
-            return emitter.requestedFromDownstream(String.class, "axon"::equals)
-                          .values()
-                          .stream()
-                          .findFirst()
-                          .get();
         }
 
         @QueryHandler(queryName = "failingQuery")
