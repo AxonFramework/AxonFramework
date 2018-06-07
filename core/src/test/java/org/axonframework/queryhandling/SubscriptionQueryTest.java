@@ -20,8 +20,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
-import org.reactivestreams.Subscription;
-import reactor.core.publisher.BaseSubscriber;
 import reactor.test.StepVerifier;
 
 import java.util.Arrays;
