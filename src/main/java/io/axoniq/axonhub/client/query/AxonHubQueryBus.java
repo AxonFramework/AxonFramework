@@ -121,6 +121,10 @@ public class AxonHubQueryBus implements QueryBus {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
     }
 
+    private static long numberOfResults(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.NR_OF_RESULTS);
+    }
+
     @Override
     public <R> Registration subscribe(String queryName, Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
@@ -157,7 +161,6 @@ public class AxonHubQueryBus implements QueryBus {
                                    public void onCompleted() {
                                        if (!completableFuture.isDone()) {
                                            completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.OTHER.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
-//                                           completableFuture.complete(null);
                                        }
                                    }
                                });
@@ -243,12 +246,22 @@ public class AxonHubQueryBus implements QueryBus {
             String requestId = query.getMessageIdentifier();
             try {
                 //noinspection unchecked
-                localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
-                            .forEach(response -> outboundStreamObserver.onNext(
-                                    QueryProviderOutbound.newBuilder()
-                                                         .setQueryResponse(serializer.serializeResponse(response, requestId))
-                                                         .build()));
-
+                if( numberOfResults(query.getProcessingInstructionsList()) == 1) {
+                    QueryResponseMessage<Object> response = localSegment.query(serializer.deserializeRequest(query))
+                                                                        .get();
+                    outboundStreamObserver.onNext(
+                            QueryProviderOutbound.newBuilder()
+                                                 .setQueryResponse(serializer.serializeResponse(response,
+                                                                                                requestId))
+                                                 .build());
+                } else {
+                    localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
+                                .forEach(response -> outboundStreamObserver.onNext(
+                                        QueryProviderOutbound.newBuilder()
+                                                             .setQueryResponse(serializer.serializeResponse(response,
+                                                                                                            requestId))
+                                                             .build()));
+                }
                 outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
                         QueryComplete.newBuilder().setMessageId(UUID.randomUUID().toString()).setRequestId(requestId)).build());
             } catch (Exception ex) {

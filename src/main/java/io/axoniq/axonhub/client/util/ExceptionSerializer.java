@@ -7,6 +7,8 @@ import io.axoniq.axonhub.ErrorMessage;
  */
 public class ExceptionSerializer {
     public static ErrorMessage serialize(String client, Throwable t) {
+        if( t.getCause() != null)
+            t = t.getCause();
         ErrorMessage.Builder builder = ErrorMessage.newBuilder().setLocation(client).setMessage(
                 t.getMessage() == null ? t.getClass().getName() : t.getMessage());
         builder.addDetails(t.getMessage() == null ? t.getClass().getName() : t.getMessage());

@@ -31,33 +31,84 @@ import java.util.stream.Collectors;
 @ConfigurationProperties(prefix = "axoniq.axonhub")
 public class AxonHubConfiguration {
     private static final int DEFAULT_GRPC_PORT = 8124;
+
+    /**
+     * Comma seperated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is specified, default port 8123 is used.
+     */
     private String servers;
+
+    /**
+     * clientId as it registers itself to AxonHub, must be unique
+     */
     private String clientName = ManagementFactory.getRuntimeMXBean().getName();
+    /**
+     * application name, defaults to spring.application.name
+     * multiple instances of the same application share the same application name, but each must have
+     * a different clientName
+     */
     private String componentName;
 
+    /**
+     * Token for access control
+     */
     private String token;
+
+    /**
+     * Bounded context that this application operates in
+     */
     private String context;
+    /**
+     * Certificate file for SSL
+     */
     private String certFile;
+    /**
+     * Use TLS for connection to AxonHub
+     */
     private boolean sslEnabled;
 
-    private Integer initialNrOfPermits = 1000000;
-    private Integer nrOfNewPermits = 90000;
-    private Integer newPermitsThreshold = 100000;
+    /**
+     * Initial number of permits send for message streams (events, commands, queries)
+     */
+    private Integer initialNrOfPermits = 100000;
+    /**
+     * Additional number of permits send for message streams (events, commands, queries) when application
+     * is ready for more messages
+     */
+    private Integer nrOfNewPermits = 100000;
+    /**
+     * Threshold at which application sends new permits to server
+     */
+    private Integer newPermitsThreshold = 10000;
 
+    /**
+     * Number of threads executing commands
+     */
     private int commandThreads = 10;
+    /**
+     * Number of threads executing queries
+     */
     private int queryThreads = 10;
 
+    /**
+     * Interval (in ms.) application sends status updates on event processors to AxonHub
+     */
     private int processorsNotificationRate = 5000;
 
+    /**
+     * Initial delay (in ms.) before application sends first status update on event processors to AxonHub
+     */
     private int processorsNotificationInitialDelay = 5000;
 
     private EventCipher eventCipher = new EventCipher();
-    private long heartbeatTimeout = 5000;
+    /**
+     * Timeout (in ms) for keep alive requests
+     */
+    private long keepAliveTimeout = 5000;
 
-    private long checkAliveDelay = 1000;
-    private long checkAliveInterval = 1000;
-
-
+    /**
+     * Interval (in ms) for keep alive requests, 0 is keep-alive disabled
+     */
+    private long keepAliveTime = 0;
 
 
     public AxonHubConfiguration() {
@@ -202,32 +253,24 @@ public class AxonHubConfiguration {
         this.processorsNotificationInitialDelay = processorsNotificationInitialDelay;
     }
 
-    public long getHeartbeatTimeout() {
-        return this.heartbeatTimeout;
+    public long getKeepAliveTimeout() {
+        return this.keepAliveTimeout;
     }
 
-    public void setHeartbeatTimeout(long heartbeatTimeout) {
-        this.heartbeatTimeout = heartbeatTimeout;
+    public void setKeepAliveTimeout(long keepAliveTimeout) {
+        this.keepAliveTimeout = keepAliveTimeout;
     }
 
     public void setCommandThreads(int commandThreads) {
         this.commandThreads = commandThreads;
     }
 
-    public long getCheckAliveDelay() {
-        return checkAliveDelay;
+    public long getKeepAliveTime() {
+        return keepAliveTime;
     }
 
-    public void setCheckAliveDelay(long checkAliveDelay) {
-        this.checkAliveDelay = checkAliveDelay;
-    }
-
-    public long getCheckAliveInterval() {
-        return checkAliveInterval;
-    }
-
-    public void setCheckAliveInterval(long checkAliveInterval) {
-        this.checkAliveInterval = checkAliveInterval;
+    public void setKeepAliveTime(long keepAliveTime) {
+        this.keepAliveTime = keepAliveTime;
     }
 
     @SuppressWarnings("unused")

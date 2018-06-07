@@ -24,8 +24,6 @@ import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import io.axoniq.platform.grpc.ClientIdentification;
-import io.axoniq.platform.grpc.HeartbeatRequest;
-import io.axoniq.platform.grpc.HeartbeatResponse;
 import io.axoniq.platform.grpc.NodeInfo;
 import io.axoniq.platform.grpc.PlatformInboundInstruction;
 import io.axoniq.platform.grpc.PlatformInfo;
@@ -51,7 +49,6 @@ import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -74,21 +71,9 @@ public class PlatformConnectionManager {
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonHubConfiguration connectInformation;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
-    private volatile long lastHeartbeat = 0;
-    private volatile boolean supportsHeartbeat = false;
 
     public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
         this.connectInformation = connectInformation;
-        scheduler.scheduleAtFixedRate(this::verifyConnection, connectInformation.getCheckAliveDelay(), connectInformation.getCheckAliveInterval(), TimeUnit.MILLISECONDS);
-    }
-
-    private void verifyConnection() {
-        if(channel != null && supportsHeartbeat ) {
-            if( lastHeartbeat < System.currentTimeMillis() - connectInformation.getHeartbeatTimeout()) {
-                logger.warn("Connection to AxonHub is lost, trying to reconnect");
-                scheduleReconnect();
-            }
-        }
     }
 
     public synchronized Channel getChannel() {
@@ -145,6 +130,12 @@ public class PlatformConnectionManager {
 
     private ManagedChannel createChannel(String hostName, int port) {
         NettyChannelBuilder builder = NettyChannelBuilder.forAddress(hostName, port);
+
+        if( connectInformation.getKeepAliveTime() > 0) {
+            builder.keepAliveTime(connectInformation.getKeepAliveTime(), TimeUnit.MILLISECONDS)
+                   .keepAliveTimeout(connectInformation.getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
+                   .keepAliveWithoutCalls(true);
+        }
         if (connectInformation.isSslEnabled()) {
             try {
                 if( connectInformation.getCertFile() == null) throw new RuntimeException("SSL enabled but no certificate file specified");
@@ -167,8 +158,7 @@ public class PlatformConnectionManager {
 
     private synchronized void startInstructionStream(String name) {
         logger.debug("Start instruction stream to {}", name);
-        supportsHeartbeat = false;
-        inputStream = new SynchronizedStreamObserver(PlatformServiceGrpc.newStub(channel)
+        inputStream = new SynchronizedStreamObserver<>(PlatformServiceGrpc.newStub(channel)
                                                                         .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
                                                                         .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
@@ -184,25 +174,6 @@ public class PlatformConnectionManager {
                                 disconnectListeners.forEach(Runnable::run);
                                 inputStream.onCompleted();
                                 scheduleReconnect();
-                                break;
-                            case HEARTBEAT:
-                                try {
-                                    HeartbeatRequest request = messagePlatformOutboundInstruction.getHeartbeat();
-                                    supportsHeartbeat = true;
-                                    lastHeartbeat = System.currentTimeMillis();
-                                    inputStream.onNext(
-                                            PlatformInboundInstruction.newBuilder()
-                                                                      .setHeartbeat(HeartbeatResponse.newBuilder()
-                                                                                                     .setMessageId(UUID.randomUUID()
-                                                                                                                       .toString())
-                                                                                                     .setCorrelatesTo(
-                                                                                                             request.getMessageId())
-                                                                                                     .build())
-                                                                      .build()
-                                    );
-                                } catch( Throwable ex) {
-                                    logger.warn("Failed to reply to heartbeat", ex);
-                                }
                                 break;
                             case REQUEST_NOT_SET:
 
