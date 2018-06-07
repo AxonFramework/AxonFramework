@@ -23,15 +23,17 @@ import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -59,8 +61,6 @@ public class SpawningNewAggregateTest {
     private Repository<Aggregate2> aggregate2Repository;
     @Mock
     private RepositoryProvider repositoryProvider;
-    @Mock
-    private DeadlineManager deadlineManager;
     @Mock
     private EventStore eventStore;
     private AggregateModel<Aggregate1> aggregate1Model;

@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.junit.Before;
