@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline;
+package org.axonframework.messaging;
+
+import java.io.Serializable;
 
 /**
- * Interface indicating that component is able to handle deadline messages.
+ * Denotes the description of a {@link Scope}. This can be used to figure out in what scope a given message should be
+ * handled.
  *
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
-public interface DeadlineAware {
+public interface ScopeDescriptor extends Serializable {
 
-    /**
-     * Handles provided deadline message.
-     *
-     * @param deadlineMessage message to be handled
-     */
-    void handle(DeadlineMessage<?> deadlineMessage);
 }
