@@ -17,7 +17,7 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.deadline.DeadlineContext;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
@@ -42,7 +42,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Milan Savic
  * @since 3.3
  */
-public class StubDeadlineManager implements DeadlineManager {
+// TODO fix this
+public class StubDeadlineManager /*implements DeadlineManager */{
 
     private final NavigableSet<ScheduleDeadlineInfo> schedules = new TreeSet<>();
     private final List<ScheduleDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
@@ -79,30 +80,30 @@ public class StubDeadlineManager implements DeadlineManager {
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
-    @Override
-    public <T> void schedule(Instant triggerDateTime, DeadlineContext deadlineContext, T deadlineInfo,
+//    @Override
+    public <T> void schedule(Instant triggerDateTime, ScopeDescriptor deadlineScope, T deadlineInfo,
                              ScheduleToken scheduleToken) {
         SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
         ScheduleDeadlineInfo scheduleInfo = new ScheduleDeadlineInfo(triggerDateTime,
                                                                      simpleScheduleToken,
                                                                      counter.getAndIncrement(),
                                                                      deadlineInfo,
-                                                                     deadlineContext);
+                                                                     deadlineScope);
         schedules.add(scheduleInfo);
     }
 
-    @Override
-    public <T> void schedule(Duration triggerDuration, DeadlineContext deadlineContext, T deadlineInfo,
+//    @Override
+    public <T> void schedule(Duration triggerDuration, ScopeDescriptor deadlineScope, T deadlineInfo,
                              ScheduleToken scheduleToken) {
-        schedule(currentDateTime.plus(triggerDuration), deadlineContext, deadlineInfo, scheduleToken);
+        schedule(currentDateTime.plus(triggerDuration), deadlineScope, deadlineInfo, scheduleToken);
     }
 
-    @Override
-    public ScheduleToken generateToken() {
+//    @Override
+    public ScheduleToken generateScheduleId() {
         return new SimpleScheduleToken(IdentifierFactory.getInstance().generateIdentifier());
     }
 
-    @Override
+//    @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
         SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
         schedules.removeIf(s -> s.getScheduleToken().getTokenId().equals(simpleScheduleToken.getTokenId()));
@@ -157,9 +158,9 @@ public class StubDeadlineManager implements DeadlineManager {
     public void advanceTimeTo(Instant newDateTime, DeadlineConsumer deadlineConsumer) {
         while (!schedules.isEmpty() && !schedules.first().getScheduleTime().isAfter(newDateTime)) {
             ScheduleDeadlineInfo scheduleDeadlineInfo = advanceToNextTrigger();
-            String targetId = scheduleDeadlineInfo.getDeadlineContext().getId();
+//            String targetId = scheduleDeadlineInfo.getDeadlineScope().getId();
             DeadlineMessage deadlineMessage = scheduleDeadlineInfo.deadlineMessage();
-            deadlineConsumer.consume(targetId, deadlineMessage);
+//            deadlineConsumer.consume(targetId, deadlineMessage);
         }
         if (newDateTime.isAfter(currentDateTime)) {
             currentDateTime = newDateTime;

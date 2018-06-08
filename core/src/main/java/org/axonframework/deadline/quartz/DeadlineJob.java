@@ -19,7 +19,7 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.DeadlineContext;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.deadline.DeadlineTargetLoader;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.quartz.Job;
@@ -33,12 +33,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and {@link
- * DeadlineContext} are retrieved from the {@link JobExecutionContext}. Transaction manager and deadline target
+ * ScopeDescriptor} are retrieved from the {@link JobExecutionContext}. Transaction manager and deadline target
  * loader are fetched from {@link SchedulerContext}.
  *
  * @author Milan Savic
  * @since 3.3
  */
+// TODO fix this
 public class DeadlineJob implements Job {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeadlineJob.class);
@@ -65,7 +66,7 @@ public class DeadlineJob implements Job {
         try {
             SchedulerContext schedulerContext = context.getScheduler().getContext();
             DeadlineMessage deadlineMessage = DeadlineJobDataBinder.deadlineMessage(jobData);
-            DeadlineContext deadlineContext = DeadlineJobDataBinder.deadlineContext(jobData);
+            ScopeDescriptor deadlineScope = DeadlineJobDataBinder.deadlineContext(jobData);
 
             TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
             DeadlineTargetLoader deadlineTargetLoader =
@@ -76,7 +77,7 @@ public class DeadlineJob implements Job {
             Transaction transaction = transactionManager.startTransaction();
             unitOfWork.onCommit(u -> transaction.commit());
             unitOfWork.onRollback(u -> transaction.rollback());
-            unitOfWork.execute(() -> deadlineTargetLoader.load(deadlineContext).handle(deadlineMessage));
+//            unitOfWork.execute(() -> deadlineTargetLoader.load(deadlineScope).handle(deadlineMessage));
 
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("Job successfully executed. Deadline message [{}] processed.",
@@ -94,19 +95,19 @@ public class DeadlineJob implements Job {
     public static class DeadlineJobDataBinder {
 
         private static final String DEADLINE_MESSAGE_KEY = DeadlineMessage.class.getName();
-        private static final String DEADLINE_CONTEXT_KEY = DeadlineContext.class.getName();
+        private static final String DEADLINE_CONTEXT_KEY = ScopeDescriptor.class.getName();
 
         /**
          * Converts provided {@code deadlineMessage} and {@code deadlineContext} to job data.
          *
          * @param deadlineMessage the message to be handled
-         * @param deadlineContext the scope of the message
+         * @param deadlineScope the scope of the message
          * @return the job data
          */
-        public static JobDataMap toJobData(DeadlineMessage deadlineMessage, DeadlineContext deadlineContext) {
+        public static JobDataMap toJobData(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
             JobDataMap jobData = new JobDataMap();
             jobData.put(DEADLINE_MESSAGE_KEY, deadlineMessage);
-            jobData.put(DEADLINE_CONTEXT_KEY, deadlineContext);
+            jobData.put(DEADLINE_CONTEXT_KEY, deadlineScope);
             return jobData;
         }
 
@@ -126,8 +127,8 @@ public class DeadlineJob implements Job {
          * @param jobDataMap the job data
          * @return the deadline message
          */
-        public static DeadlineContext deadlineContext(JobDataMap jobDataMap) {
-            return (DeadlineContext) jobDataMap.get(DEADLINE_CONTEXT_KEY);
+        public static ScopeDescriptor deadlineContext(JobDataMap jobDataMap) {
+            return (ScopeDescriptor) jobDataMap.get(DEADLINE_CONTEXT_KEY);
         }
     }
 }

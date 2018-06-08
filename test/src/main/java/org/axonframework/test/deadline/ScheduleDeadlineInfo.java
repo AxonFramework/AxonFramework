@@ -16,7 +16,7 @@
 
 package org.axonframework.test.deadline;
 
-import org.axonframework.deadline.DeadlineContext;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
@@ -36,7 +36,7 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
     private final SimpleScheduleToken scheduleToken;
     private final int counter;
     private final Object deadlineInfo;
-    private final DeadlineContext deadlineContext;
+    private final ScopeDescriptor deadlineScope;
 
     /**
      * Initializes the ScheduleDeadlineInfo.
@@ -45,15 +45,15 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
      * @param scheduleToken   The token representing deadline schedule, it can be used to cancel the deadline
      * @param counter         Used to differentiate two deadlines scheduled at the same time
      * @param deadlineInfo    Details about the deadline
-     * @param deadlineContext Context in which the deadline is scheduled
+     * @param deadlineScope Context in which the deadline is scheduled
      */
     public ScheduleDeadlineInfo(Instant scheduleTime, SimpleScheduleToken scheduleToken, int counter,
-                                Object deadlineInfo, DeadlineContext deadlineContext) {
+                                Object deadlineInfo, ScopeDescriptor deadlineScope) {
         this.scheduleTime = scheduleTime;
         this.scheduleToken = scheduleToken;
         this.counter = counter;
         this.deadlineInfo = deadlineInfo;
-        this.deadlineContext = deadlineContext;
+        this.deadlineScope = deadlineScope;
     }
 
     /**
@@ -80,8 +80,8 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
     /**
      * @return the context in which the deadline is scheduled
      */
-    public DeadlineContext getDeadlineContext() {
-        return deadlineContext;
+    public ScopeDescriptor getDeadlineScope() {
+        return deadlineScope;
     }
 
     /**

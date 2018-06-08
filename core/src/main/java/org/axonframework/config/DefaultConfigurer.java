@@ -265,7 +265,8 @@ public class DefaultConfigurer implements Configurer {
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
-        return new SimpleDeadlineManager(new DefaultDeadlineTargetLoader(config::repository, config::sagaRepository));
+//        return new SimpleDeadlineManager(new DefaultDeadlineTargetLoader(config::repository, config::sagaRepository));
+        return null;
     }
 
     /**

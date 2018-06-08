@@ -18,6 +18,8 @@ package org.axonframework.deadline;
 
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.saga.SagaRepositoryProvider;
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
 
 /**
  * Default implementation of {@link DeadlineTargetLoader}. It uses {@link RepositoryProvider} and {@link
@@ -44,19 +46,20 @@ public class DefaultDeadlineTargetLoader implements DeadlineTargetLoader {
     }
 
     @Override
-    public DeadlineAware load(DeadlineContext deadlineContext) {
-        switch (deadlineContext.getType()) {
-            case SAGA:
-                return sagaRepositoryProvider
-                        .repositoryFor(deadlineContext.getTargetType())
-                        .load(deadlineContext.getId());
-            case AGGREGATE:
-                return repositoryProvider
-                        .repositoryFor(deadlineContext.getTargetType())
-                        .load(deadlineContext.getId());
-            default:
-                throw new IllegalStateException(
-                        "Unsupported deadline context type: '" + deadlineContext.getType() + "'");
-        }
+    public ScopeAware load(ScopeDescriptor deadlineScope) {
+//        switch (deadlineScope.getType()) {
+//            case SAGA:
+//                return sagaRepositoryProvider
+//                        .repositoryFor(deadlineScope.getTargetType())
+//                        .load(deadlineScope.getId());
+//            case AGGREGATE:
+//                return repositoryProvider
+//                        .repositoryFor(deadlineScope.getTargetType())
+//                        .load(deadlineScope.getId());
+//            default:
+//                throw new IllegalStateException(
+//                        "Unsupported deadline context type: '" + deadlineScope.getType() + "'");
+//        }
+        throw new UnsupportedOperationException();
     }
 }

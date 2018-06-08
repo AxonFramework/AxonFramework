@@ -16,9 +16,12 @@
 
 package org.axonframework.deadline;
 
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
+
 /**
  * Functional interface responsible for loading the final target which should handle the {@link DeadlineMessage} (if
- * deadline was not met). It uses {@link DeadlineContext} in order to locate the target.
+ * deadline was not met). It uses {@link ScopeDescriptor} in order to locate the target.
  *
  * @author Milan Savic
  * @since 3.3
@@ -29,8 +32,8 @@ public interface DeadlineTargetLoader {
     /**
      * Loads the target which is responsible (and capable) of handling the deadline if it was not met.
      *
-     * @param deadlineContext The context in which deadline was scheduled
+     * @param deadlineScope The context in which deadline was scheduled
      * @return the target component to handle the {@link DeadlineMessage}
      */
-    DeadlineAware load(DeadlineContext deadlineContext);
+    ScopeAware load(ScopeDescriptor deadlineScope);
 }

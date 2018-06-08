@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
@@ -30,12 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.axonframework.common.Assert.notNull;
 
@@ -51,7 +47,8 @@ import static org.axonframework.common.Assert.notNull;
  * @author Milan Savic
  * @since 3.3
  */
-public class SimpleDeadlineManager implements DeadlineManager {
+// TODO fix this
+public class SimpleDeadlineManager /*implements DeadlineManager */{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleDeadlineManager.class);
 
@@ -106,30 +103,32 @@ public class SimpleDeadlineManager implements DeadlineManager {
         this.deadlineTargetLoader = deadlineTargetLoader;
     }
 
-    @Override
-    public void schedule(Instant triggerDateTime, DeadlineContext deadlineContext,
+//    @Override
+    public void schedule(Instant triggerDateTime, ScopeDescriptor deadlineScope,
                          Object deadlineInfo, ScheduleToken scheduleToken) {
-        schedule(Duration.between(Instant.now(), triggerDateTime), deadlineContext, deadlineInfo, scheduleToken);
+        schedule(Duration.between(Instant.now(), triggerDateTime), deadlineScope, deadlineInfo, scheduleToken);
     }
 
-    @Override
-    public void schedule(Duration triggerDuration, DeadlineContext deadlineContext,
+//    @Override
+    public void schedule(Duration triggerDuration, ScopeDescriptor deadlineScope,
                          Object deadlineInfo, ScheduleToken scheduleToken) {
         SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
         ScheduledFuture<?> future = scheduledExecutorService.schedule(new DeadlineTask(simpleScheduleToken.getTokenId(),
                                                                                        deadlineInfo,
-                                                                                       deadlineContext),
+                                                                                       deadlineScope),
                                                                       triggerDuration.toMillis(),
                                                                       TimeUnit.MILLISECONDS);
         tokens.put(simpleScheduleToken.getTokenId(), future);
     }
 
-    @Override
-    public ScheduleToken generateToken() {
+
+
+//    @Override
+    public ScheduleToken generateScheduleId() {
         return new SimpleScheduleToken(IdentifierFactory.getInstance().generateIdentifier());
     }
 
-    @Override
+//    @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
         Future<?> future = tokens.remove(convert(scheduleToken).getTokenId());
         if (future != null) {
@@ -148,12 +147,12 @@ public class SimpleDeadlineManager implements DeadlineManager {
 
         private final String tokenId;
         private final Object deadlineInfo;
-        private final DeadlineContext deadlineContext;
+        private final ScopeDescriptor deadlineScope;
 
-        private DeadlineTask(String tokenId, Object deadlineInfo, DeadlineContext deadlineContext) {
+        private DeadlineTask(String tokenId, Object deadlineInfo, ScopeDescriptor deadlineScope) {
             this.tokenId = tokenId;
             this.deadlineInfo = deadlineInfo;
-            this.deadlineContext = deadlineContext;
+            this.deadlineScope = deadlineScope;
         }
 
         @Override
@@ -167,7 +166,7 @@ public class SimpleDeadlineManager implements DeadlineManager {
                 Transaction transaction = transactionManager.startTransaction();
                 unitOfWork.onCommit(u -> transaction.commit());
                 unitOfWork.onRollback(u -> transaction.rollback());
-                unitOfWork.execute(() -> deadlineTargetLoader.load(deadlineContext).handle(deadlineMessage));
+//                unitOfWork.execute(() -> deadlineTargetLoader.load(deadlineScope).handle(deadlineMessage));
             } finally {
                 tokens.remove(tokenId);
             }

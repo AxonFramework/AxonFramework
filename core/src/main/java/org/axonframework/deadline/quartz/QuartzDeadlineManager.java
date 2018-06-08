@@ -19,7 +19,7 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.deadline.DeadlineContext;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
@@ -50,7 +50,8 @@ import static org.quartz.JobKey.jobKey;
  * @author Milan Savic
  * @since 3.3
  */
-public class QuartzDeadlineManager implements DeadlineManager {
+// TODO fix this
+public class QuartzDeadlineManager /*implements DeadlineManager */{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuartzDeadlineManager.class);
     private static final String JOB_NAME_PREFIX = "deadline-";
@@ -93,14 +94,14 @@ public class QuartzDeadlineManager implements DeadlineManager {
         }
     }
 
-    @Override
-    public void schedule(Instant triggerDateTime, DeadlineContext deadlineContext,
+//    @Override
+    public void schedule(Instant triggerDateTime, ScopeDescriptor deadlineScope,
                          Object deadlineInfo, ScheduleToken scheduleToken) {
         QuartzScheduleToken token = convert(scheduleToken);
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineInfo);
         try {
             JobDetail jobDetail = buildJobDetail(deadlineMessage,
-                                                 deadlineContext,
+                                                 deadlineScope,
                                                  new JobKey(token.getJobIdentifier(), token.getGroupIdentifier()));
             scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
         } catch (SchedulerException e) {
@@ -108,19 +109,19 @@ public class QuartzDeadlineManager implements DeadlineManager {
         }
     }
 
-    @Override
-    public void schedule(Duration triggerDuration, DeadlineContext deadlineContext,
+//    @Override
+    public void schedule(Duration triggerDuration, ScopeDescriptor deadlineScope,
                          Object deadlineInfo, ScheduleToken scheduleToken) {
-        schedule(Instant.now().plus(triggerDuration), deadlineContext, deadlineInfo, scheduleToken);
+        schedule(Instant.now().plus(triggerDuration), deadlineScope, deadlineInfo, scheduleToken);
     }
 
-    @Override
-    public ScheduleToken generateToken() {
+//    @Override
+    public ScheduleToken generateScheduleId() {
         String jobIdentifier = JOB_NAME_PREFIX + IdentifierFactory.getInstance().generateIdentifier();
         return new QuartzScheduleToken(jobIdentifier, groupIdentifier);
     }
 
-    @Override
+//    @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
         QuartzScheduleToken reference = convert(scheduleToken);
         try {
@@ -137,8 +138,8 @@ public class QuartzDeadlineManager implements DeadlineManager {
         scheduler.getContext().put(DeadlineJob.DEADLINE_TARGET_LOADER_KEY, deadlineTargetLoader);
     }
 
-    private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, DeadlineContext deadlineContext, JobKey jobKey) {
-        JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(deadlineMessage, deadlineContext);
+    private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
+        JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
                          .withDescription(deadlineMessage.getPayloadType().getName())
                          .withIdentity(jobKey)

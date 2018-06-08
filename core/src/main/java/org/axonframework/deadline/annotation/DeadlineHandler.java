@@ -16,7 +16,9 @@
 
 package org.axonframework.deadline.annotation;
 
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.messaging.annotation.MessageHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,12 +31,14 @@ import java.lang.annotation.Target;
  * handlers too.
  *
  * @author Milan Savic
- * @see EventHandler
+ * @see MessageHandler
  * @since 3.3
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-@EventHandler
+@MessageHandler(messageType = DeadlineMessage.class)
 public @interface DeadlineHandler {
+
+    Class<?> payloadType() default Object.class;
 
 }
