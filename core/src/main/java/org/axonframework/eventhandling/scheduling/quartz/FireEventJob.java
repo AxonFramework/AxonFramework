@@ -16,13 +16,13 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.quartz.*;
 import org.slf4j.Logger;
@@ -72,11 +72,11 @@ public class FireEventJob implements Job {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
             TransactionManager txManager = (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
 
-            UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+            UnitOfWork<EventMessage<?>> unitOfWork;
             if (txManager != null) {
-                Transaction transaction = txManager.startTransaction();
-                unitOfWork.onCommit(u -> transaction.commit());
-                unitOfWork.onRollback(u -> transaction.rollback());
+                unitOfWork = TransactionalUnitOfWork.startAndGet(null, txManager);
+            } else {
+                unitOfWork = DefaultUnitOfWork.startAndGet(null);
             }
             unitOfWork.execute(() -> eventBus.publish(eventMessage));
 
