@@ -134,10 +134,12 @@ public interface DeadlineManager {
      * @param scheduleId       A {@link String} schedule id to use when cancelling the schedule
      * @throws IllegalArgumentException if the {@code scheduleId}is not compatible with this DeadlineManager
      */
-    void schedule(Instant triggerDateTime,
-                  ScopeDescriptor deadlineScope,
-                  Object messageOrPayload,
-                  String scheduleId) throws IllegalArgumentException;
+    default void schedule(Instant triggerDateTime,
+                          ScopeDescriptor deadlineScope,
+                          Object messageOrPayload,
+                          String scheduleId) throws IllegalArgumentException {
+        schedule(Duration.between(Instant.now(), triggerDateTime), deadlineScope, messageOrPayload, scheduleId);
+    }
 
     /**
      * Schedules a deadline after the given {@code triggerDuration} with provided context. The provided
