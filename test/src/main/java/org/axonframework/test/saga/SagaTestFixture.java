@@ -133,8 +133,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     protected void handleDeadline(String sagaId, DeadlineMessage<?> deadlineMessage) {
         ensureSagaResourcesInitialized();
         try {
-            DefaultUnitOfWork.startAndGet(deadlineMessage)
-                             .execute(() -> sagaRepository.load(sagaId).handle(deadlineMessage));
+            // TODO fix
+//            DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> sagaRepository.load(sagaId).handle(deadlineMessage));
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
         }

@@ -17,21 +17,17 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.MockException;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.junit.Test;
 
-import javax.inject.Inject;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.inject.Inject;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
-/**
- * @author Allard Buijze
- */
 public class SimpleResourceInjectorTest {
 
     private SimpleResourceInjector testSubject;
@@ -149,20 +145,17 @@ public class SimpleResourceInjectorTest {
         public void setSomeWeirdResource(SomeWeirdResource someWeirdResource) {
             throw new MockException();
         }
-
-        @Override
-        public void handle(DeadlineMessage<?> deadlineMessage) {
-            // this is just a stub
-        }
     }
 
     private static class SomeFieldResource {
+
     }
 
     private static class SomeMethodResource {
+
     }
 
     private static class SomeWeirdResource {
-    }
 
+    }
 }

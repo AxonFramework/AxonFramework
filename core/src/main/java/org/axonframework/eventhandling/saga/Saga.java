@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.deadline.DeadlineAware;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
@@ -36,7 +35,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga<T> extends EventListener, DeadlineAware {
+public interface Saga<T> extends EventListener {
 
     /**
      * Returns the unique identifier of this saga.

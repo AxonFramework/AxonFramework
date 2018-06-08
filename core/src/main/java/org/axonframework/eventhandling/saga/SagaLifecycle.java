@@ -13,7 +13,8 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.common.Scope;
+import org.axonframework.messaging.Scope;
+import org.axonframework.messaging.ScopeDescriptor;
 
 import java.util.concurrent.Callable;
 
@@ -160,5 +161,25 @@ public abstract class SagaLifecycle extends Scope {
         } catch (Exception e) {
             throw new SagaExecutionException("Exception while executing a task for a saga", e);
         }
+    }
+
+
+    /**
+     * Retrieve a {@link String} denoting the type of this Aggregate.
+     *
+     * @return a {@link String} denoting the type of this Aggregate
+     */
+    protected abstract String type();
+
+    /**
+     * Retrieve a {@link Object} denoting the identifier of this Aggregate.
+     *
+     * @return a {@link Object} denoting the identifier of this Aggregate
+     */
+    protected abstract Object identifier();
+
+    @Override
+    public ScopeDescriptor describeScope() {
+        return new SagaDescriptor(type(), identifier());
     }
 }

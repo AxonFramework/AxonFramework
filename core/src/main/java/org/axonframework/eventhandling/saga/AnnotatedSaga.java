@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
@@ -163,6 +162,16 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         associationValues.add(property);
     }
 
+    @Override
+    protected String type() {
+        return sagaInstance.getClass().getSimpleName();
+    }
+
+    @Override
+    protected Object identifier() {
+        return getSagaIdentifier();
+    }
+
     /**
      * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
      * given association. If the given property wasn't registered with the saga, nothing happens.
@@ -171,18 +180,5 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
      */
     protected void doRemoveAssociation(AssociationValue property) {
         associationValues.remove(property);
-    }
-
-    @Override
-    public void handle(DeadlineMessage<?> deadlineMessage) {
-        if (isActive) {
-            metaModel.findDeadlineHandlers(deadlineMessage).forEach(h -> {
-                try {
-                    executeWithResult(() -> h.handle(deadlineMessage, sagaInstance));
-                } catch (Exception e) {
-                    throw new SagaExecutionException("Exception while handling deadline message in Saga", e);
-                }
-            });
-        }
     }
 }
