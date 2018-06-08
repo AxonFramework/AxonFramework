@@ -19,6 +19,9 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -41,7 +44,8 @@ import static org.axonframework.common.Assert.nonNull;
  * @see LockingRepository
  * @since 0.1
  */
-public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
+public abstract class AbstractRepository<T, A extends Aggregate<T>>
+        implements Repository<T>, ScopeAware<AggregateDescriptor> {
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
@@ -53,7 +57,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected AbstractRepository(Class<T> aggregateType) {
-        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null")));
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                nonNull(aggregateType, () -> "aggregateType may not be null")
+        ));
     }
 
     /**
@@ -64,8 +70,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
      */
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
-                                                                 nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")));
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                nonNull(aggregateType, () -> "aggregateType may not be null"),
+                nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")
+        ));
     }
 
     /**
@@ -100,6 +108,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
+     *
      * @throws Exception when the factoryMethod throws an exception
      */
     protected abstract A doCreateNew(Callable<T> factoryMethod) throws Exception;
@@ -239,6 +248,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
+     *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
     protected abstract A doLoad(String aggregateIdentifier, Long expectedVersion);
@@ -272,5 +282,16 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @SuppressWarnings("UnusedParameters")
     protected void postDelete(A aggregate) {
         //no op by default
+    }
+
+    @Override
+    public void send(Message<?> message, AggregateDescriptor aggregateDescription) throws Exception {
+        load(aggregateDescription.getIdentifier().toString()).handle(message);
+    }
+
+    @Override
+    public boolean canResolve(ScopeDescriptor scopeDescription) {
+        return scopeDescription instanceof AggregateDescriptor
+                && ((AggregateDescriptor) scopeDescription).getType().equals(aggregateModel.type());
     }
 }

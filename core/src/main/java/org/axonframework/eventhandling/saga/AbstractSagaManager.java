@@ -19,6 +19,9 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.*;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -33,7 +36,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
+public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, ScopeAware<SagaDescriptor> {
 
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
@@ -80,10 +83,11 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
         }
     }
 
-    private boolean shouldCreateSaga(Segment segment, boolean sagaInvoked, SagaInitializationPolicy initializationPolicy) {
+    private boolean shouldCreateSaga(Segment segment, boolean sagaInvoked,
+                                     SagaInitializationPolicy initializationPolicy) {
         return ((initializationPolicy.getCreationPolicy() == SagaCreationPolicy.ALWAYS
-                 || (!sagaInvoked && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)))
-               && segment.matches(initializationPolicy.getInitialAssociationValue());
+                || (!sagaInvoked && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)))
+                && segment.matches(initializationPolicy.getInitialAssociationValue());
     }
 
     private void startNewSaga(EventMessage event, AssociationValue associationValue, Segment segment) throws Exception {
@@ -97,6 +101,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      *
      * @param segment The segment the identifier must match with
      * @return an identifier for a newly created Saga
+     *
      * @implSpec This implementation will repeatedly generate identifier using the {@link IdentifierFactory}, until
      * one is returned that matches the given segment. See {@link #matchesSegment(Segment, String)}.
      */
@@ -118,6 +123,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      * @param segment The segment to validate the identifier for
      * @param sagaId  The identifier to test
      * @return {@code true} if the identifier matches the segment, otherwise {@code false}
+     *
      * @implSpec This implementation uses the {@link Segment#matches(Object)} to match against the Saga identifier
      */
     protected boolean matchesSegment(Segment segment, String sagaId) {
@@ -158,9 +164,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
      * logged. Defaults to {@code true}.
      *
-     * @deprecated Instead of using this method, provide an implementation of {@link LoggingErrorHandler}.
-     *
      * @param suppressExceptions whether or not to suppress exceptions from Sagas.
+     * @deprecated Instead of using this method, provide an implementation of {@link LoggingErrorHandler}.
      */
     @Deprecated
     public void setSuppressExceptions(boolean suppressExceptions) {
@@ -185,5 +190,25 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     @Override
     public void performReset() {
         throw new ResetNotSupportedException("Sagas do no support resetting tokens");
+    }
+
+    @Override
+    public void send(Message<?> message, SagaDescriptor sagaDescription) throws Exception {
+        if (!(message instanceof EventMessage)) {
+            String exceptionMessage = String.format(
+                    "Something else than an EventMessage was scheduled for Saga of type [%s] and id [%s], whilst Sagas can only handle EventMessages.",
+                    sagaDescription.getType(),
+                    sagaDescription.getIdentifier()
+            );
+            throw new IllegalArgumentException(exceptionMessage);
+        }
+        sagaRepository.load(sagaDescription.getIdentifier().toString())
+                      .handle((EventMessage) message);
+    }
+
+    @Override
+    public boolean canResolve(ScopeDescriptor scopeDescription) {
+        return scopeDescription instanceof SagaDescriptor
+                && ((SagaDescriptor) scopeDescription).getType().equals(sagaType.getSimpleName());
     }
 }

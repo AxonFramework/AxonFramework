@@ -16,25 +16,29 @@
 
 package org.axonframework.messaging;
 
+
 /**
  * Interface describing components which are {@link Scope} aware. Provides functionality to check if a given component
  * can resolve a scope through a given {@link ScopeDescriptor}. If this holds, that component should be able to send a
  * {@link Message} to that Scope.
  *
+ * @param <D> a generic extending {@link ScopeDescriptor}
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface ScopeAware {
+public interface ScopeAware<D extends ScopeDescriptor> {
 
     /**
      * Send a {@link Message} to a {@link Scope} which is described by the given {@code scopeDescription}.
      *
      * @param message          a {@link Message} to be send to a {@link Scope}
-     * @param scopeDescription a {@link ScopeDescriptor} describing the {@link Scope} to send the given {@code message}
-     *                         to
+     * @param scopeDescription a {@code D} extending {@link ScopeDescriptor}, describing the {@link Scope} to send the
+     *                         given {@code message} to
+     * @throws Exception if sending the {@code message} failed. Might occur if the message handling process throws an
+     *                   exception
      */
-    void send(Message<?> message, ScopeDescriptor scopeDescription);
+    void send(Message<?> message, D scopeDescription) throws Exception;
 
     /**
      * Check whether this implementation can resolve a {@link Scope} object based on the provided {@code scopeDescription}.
