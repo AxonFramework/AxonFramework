@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -393,31 +392,51 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(CommandMessage<?> msg) throws Exception {
-        return executeWithResult(() -> {
-            List<AnnotatedCommandHandlerInterceptor<? super T>> interceptors =
-                    inspector.commandHandlerInterceptors()
-                             .stream()
-                             .filter(chi -> chi.canHandle(msg))
-                             .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
-                             .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
-                             .collect(Collectors.toList());
-            MessageHandlingMember<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
-            Object result;
-            if (interceptors.isEmpty()) {
-                result = handler.handle(msg, aggregateRoot);
-            } else {
-                result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
-                                                       interceptors,
-                                                       m -> handler.handle(msg, aggregateRoot)).proceed();
-            }
+    public Object handle(Message<?> message) throws Exception {
+        Callable<Object> messageHandling;
 
-            if (aggregateRoot == null) {
-                aggregateRoot = (T) result;
-                return identifierAsString();
-            }
-            return result;
-        });
+        if (message instanceof CommandMessage) {
+            messageHandling = () -> handle((CommandMessage) message);
+        } else {
+            messageHandling = () -> handle((EventMessage) message);
+        }
+
+        return executeWithResult(messageHandling);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object handle(CommandMessage<?> commandMessage) throws Exception {
+        List<AnnotatedCommandHandlerInterceptor<? super T>> interceptors =
+                inspector.commandHandlerInterceptors()
+                         .stream()
+                         .filter(chi -> chi.canHandle(commandMessage))
+                         .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
+                         .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, aggregateRoot))
+                         .collect(Collectors.toList());
+        MessageHandlingMember<? super T> handler = inspector.commandHandlers()
+                                                            .get(commandMessage.getCommandName());
+
+        Object result;
+        if (interceptors.isEmpty()) {
+            result = handler.handle(commandMessage, aggregateRoot);
+        } else {
+            result = new DefaultInterceptorChain<>(
+                    (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                    interceptors,
+                    m -> handler.handle(commandMessage, aggregateRoot)
+            ).proceed();
+        }
+
+        if (aggregateRoot == null) {
+            aggregateRoot = (T) result;
+            return identifierAsString();
+        }
+        return result;
+    }
+
+    private Object handle(EventMessage<?> eventMessage) {
+        inspector.publish(eventMessage, aggregateRoot);
+        return null;
     }
 
     @Override
@@ -501,11 +520,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
-    }
-
-    @Override
-    public void handle(DeadlineMessage<?> deadlineMessage) {
-        execute(() -> inspector.publish(deadlineMessage, aggregateRoot));
     }
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {

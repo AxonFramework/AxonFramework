@@ -317,12 +317,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateId     The aggregate identifier, should match the id of aggregate being tested
      * @param deadlineMessage The deadline message to be handled
      */
-    // TODO very likely this should be removed
     protected void handleDeadline(String aggregateId, DeadlineMessage<?> deadlineMessage) {
         ensureRepositoryConfiguration();
         try {
-            DefaultUnitOfWork.startAndGet(deadlineMessage).execute(
-                    () -> repository.load(aggregateId).handle(deadlineMessage));
+            // TODO fix
+//            DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> repository.load(aggregateId).handle(deadlineMessage));
         } catch (Exception e) {
             throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
         }

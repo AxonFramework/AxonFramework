@@ -16,9 +16,10 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.common.Scope;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Scope;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -231,7 +232,7 @@ public abstract class AggregateLifecycle extends Scope {
      */
     protected Runnable registerAsCurrent() {
         super.startScope();
-        return super::endScope;
+        return () -> super.endScope();
     }
 
     /**
@@ -252,4 +253,23 @@ public abstract class AggregateLifecycle extends Scope {
             throw new AggregateInvocationException("Exception while invoking a task for an aggregate", e);
         }
     }
+
+    @Override
+    public ScopeDescriptor describeScope() {
+        return new AggregateDescriptor(type(), identifier());
+    }
+
+    /**
+     * Retrieve a {@link String} denoting the type of this Aggregate.
+     *
+     * @return a {@link String} denoting the type of this Aggregate
+     */
+    protected abstract String type();
+
+    /**
+     * Retrieve a {@link Object} denoting the identifier of this Aggregate.
+     *
+     * @return a {@link Object} denoting the identifier of this Aggregate
+     */
+    protected abstract Object identifier();
 }
