@@ -147,8 +147,11 @@ public class SimpleCommandBus implements CommandBus {
 
         try {
             UnitOfWork<CommandMessage<?>> unitOfWork = TransactionalUnitOfWork.startAndGet(command, transactionManager);
-        InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
-        R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);callback.onSuccess(command, result);
+            InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
+
+            R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
+
+            callback.onSuccess(command, result);
         } catch (Exception e) {
             callback.onFailure(command, e);
         }
