@@ -19,13 +19,11 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.DeadlineTargetLoader;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
+import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -34,59 +32,80 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import org.quartz.impl.matchers.GroupMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
 
 /**
- * Implementation of {@link DeadlineManager} that delegates scheduling and triggering to a Quartz Scheduler.
+ * Implementation of {@link DeadlineManager} that delegates scheduling and triggering to a Quartz {@link Scheduler}.
  *
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
-// TODO fix this
-public class QuartzDeadlineManager /*implements DeadlineManager */{
+public class QuartzDeadlineManager implements DeadlineManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QuartzDeadlineManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuartzDeadlineManager.class);
+
     private static final String JOB_NAME_PREFIX = "deadline-";
-    private static final String DEFAULT_GROUP_NAME = "AxonFramework-Deadlines";
-    private final String groupIdentifier;
+
     private final Scheduler scheduler;
+    private final List<ScopeAware> scopeAwareComponents;
     private final TransactionManager transactionManager;
-    private final DeadlineTargetLoader deadlineTargetLoader;
 
     /**
-     * Initializes Quartz Deadline Manager with {@code scheduler} and {@code deadlineTargetLoader}. As group identifier
-     * {@link #DEFAULT_GROUP_NAME} is used, and {@link NoTransactionManager} as transaction manager.
+     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareComponents} which will load
+     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. A
+     * {@link NoTransactionManager} will be used as the transaction manager.
      *
-     * @param scheduler            Used for scheduling and triggering purposes
-     * @param deadlineTargetLoader Used for loading of target entities in order to handle deadlines
+     * @param scheduler            A {@link Scheduler} used for scheduling and triggering purposes
+     * @param scopeAwareComponents an array of {@link ScopeAware} components which are able to load and send
+     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
      */
-    public QuartzDeadlineManager(Scheduler scheduler, DeadlineTargetLoader deadlineTargetLoader) {
-        this(DEFAULT_GROUP_NAME, scheduler, NoTransactionManager.INSTANCE, deadlineTargetLoader);
+    public QuartzDeadlineManager(Scheduler scheduler, ScopeAware... scopeAwareComponents) {
+        this(scheduler, Arrays.asList(scopeAwareComponents));
     }
 
     /**
-     * Initializes Quartz Deadline Manager.
+     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareComponents} which will load
+     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. A
+     * {@link NoTransactionManager} will be used as the transaction manager.
      *
-     * @param groupIdentifier      Identifier for quartz job (used in combination with deadline message id)
-     * @param scheduler            Used for scheduling and triggering purposes
-     * @param transactionManager   Builds transactions and ties them to deadline execution
-     * @param deadlineTargetLoader Used for loading of target entities in order to handle deadlines
+     * @param scheduler            A {@link Scheduler} used for scheduling and triggering purposes
+     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
      */
-    public QuartzDeadlineManager(String groupIdentifier, Scheduler scheduler,
-                                 TransactionManager transactionManager,
-                                 DeadlineTargetLoader deadlineTargetLoader) {
-        this.groupIdentifier = groupIdentifier;
+    public QuartzDeadlineManager(Scheduler scheduler, List<ScopeAware> scopeAwareComponents) {
+        this(scheduler, scopeAwareComponents, NoTransactionManager.INSTANCE);
+    }
+
+    /**
+     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareComponents} which will load
+     * and send messages to {@link org.axonframework.messaging.Scope} implementing components.
+     *
+     * @param scheduler            A {@link Scheduler} used for scheduling and triggering purposes
+     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param transactionManager   A {@link TransactionManager} which builds transactions and ties them to deadline
+     *                             execution
+     */
+    public QuartzDeadlineManager(Scheduler scheduler,
+                                 List<ScopeAware> scopeAwareComponents,
+                                 TransactionManager transactionManager) {
         this.scheduler = scheduler;
+        this.scopeAwareComponents = new ArrayList<>(scopeAwareComponents);
         this.transactionManager = transactionManager;
-        this.deadlineTargetLoader = deadlineTargetLoader;
+
         try {
             initialize();
         } catch (SchedulerException e) {
@@ -94,51 +113,70 @@ public class QuartzDeadlineManager /*implements DeadlineManager */{
         }
     }
 
-//    @Override
-    public void schedule(Instant triggerDateTime, ScopeDescriptor deadlineScope,
-                         Object deadlineInfo, ScheduleToken scheduleToken) {
-        QuartzScheduleToken token = convert(scheduleToken);
-        DeadlineMessage deadlineMessage = asDeadlineMessage("", deadlineInfo);
+    private void initialize() throws SchedulerException {
+        scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
+        scheduler.getContext().put(
+                DeadlineJob.SCOPE_AWARE_COMPONENTS, new DeadlineJob.ScopeAwareComponents(scopeAwareComponents)
+        );
+    }
+
+    @Override
+    public void schedule(Instant triggerDateTime,
+                         String deadlineName,
+                         Object messageOrPayload,
+                         ScopeDescriptor deadlineScope,
+                         String scheduleId) {
+        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
         try {
-            JobDetail jobDetail = buildJobDetail(deadlineMessage,
-                                                 deadlineScope,
-                                                 new JobKey(token.getJobIdentifier(), token.getGroupIdentifier()));
+            JobDetail jobDetail = buildJobDetail(deadlineMessage, deadlineScope, new JobKey(scheduleId, deadlineName));
             scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
         } catch (SchedulerException e) {
             throw new DeadlineException("An error occurred while setting a timer for a deadline", e);
         }
     }
 
-//    @Override
-    public void schedule(Duration triggerDuration, ScopeDescriptor deadlineScope,
-                         Object deadlineInfo, ScheduleToken scheduleToken) {
-        schedule(Instant.now().plus(triggerDuration), deadlineScope, deadlineInfo, scheduleToken);
+    @Override
+    public void schedule(Duration triggerDuration,
+                         String deadlineName,
+                         Object messageOrPayload,
+                         ScopeDescriptor deadlineScope,
+                         String scheduleId) {
+        schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope, scheduleId);
     }
 
-//    @Override
-    public ScheduleToken generateScheduleId() {
-        String jobIdentifier = JOB_NAME_PREFIX + IdentifierFactory.getInstance().generateIdentifier();
-        return new QuartzScheduleToken(jobIdentifier, groupIdentifier);
+    @Override
+    public String generateScheduleId() {
+        return JOB_NAME_PREFIX + IdentifierFactory.getInstance().generateIdentifier();
     }
 
-//    @Override
-    public void cancelSchedule(ScheduleToken scheduleToken) {
-        QuartzScheduleToken reference = convert(scheduleToken);
+    @Override
+    public void cancelSchedule(String deadlineName, String scheduleId) {
+        cancelSchedule(jobKey(scheduleId, deadlineName));
+    }
+
+    @Override
+    public void cancelAll(String deadlineName) {
         try {
-            if (!scheduler.deleteJob(jobKey(reference.getJobIdentifier(), reference.getGroupIdentifier()))) {
-                LOGGER.warn("The job belonging to this token could not be deleted.");
+            scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
+                     .forEach(this::cancelSchedule);
+        } catch (SchedulerException e) {
+            throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
+        }
+    }
+
+    private void cancelSchedule(JobKey jobKey) {
+        try {
+            if (!scheduler.deleteJob(jobKey)) {
+                logger.warn("The job belonging to this token could not be deleted.");
             }
         } catch (SchedulerException e) {
             throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
         }
     }
 
-    private void initialize() throws SchedulerException {
-        scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
-        scheduler.getContext().put(DeadlineJob.DEADLINE_TARGET_LOADER_KEY, deadlineTargetLoader);
-    }
-
-    private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
+    private static JobDetail buildJobDetail(DeadlineMessage deadlineMessage,
+                                            ScopeDescriptor deadlineScope,
+                                            JobKey jobKey) {
         JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
                          .withDescription(deadlineMessage.getPayloadType().getName())
@@ -147,17 +185,10 @@ public class QuartzDeadlineManager /*implements DeadlineManager */{
                          .build();
     }
 
-    private Trigger buildTrigger(Instant triggerDateTime, JobKey key) {
+    private static Trigger buildTrigger(Instant triggerDateTime, JobKey key) {
         return TriggerBuilder.newTrigger()
                              .forJob(key)
                              .startAt(Date.from(triggerDateTime))
                              .build();
-    }
-
-    private QuartzScheduleToken convert(ScheduleToken scheduleToken) {
-        if (!QuartzScheduleToken.class.isInstance(scheduleToken)) {
-            throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler");
-        }
-        return (QuartzScheduleToken) scheduleToken;
     }
 }
