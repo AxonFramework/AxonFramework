@@ -96,7 +96,7 @@ public interface FixtureConfiguration<T> {
      * @param repository The repository to use in the test case
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
+    FixtureConfiguration<T> registerRepository(Repository<T> repository);
 
     /**
      * Registers repository provider with the fixture. If an aggregate being testing spawns new aggregates, this
