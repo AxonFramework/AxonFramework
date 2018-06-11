@@ -50,6 +50,7 @@ message QueryResponse {
     string request_identifier = 7;
 }
 message SubscriptionQuery {
+    int64 number_of_permits = 1;
     QueryRequest query_request = 2;
     io.axoniq.platform.SerializedObject update_response_type = 3;
 }
