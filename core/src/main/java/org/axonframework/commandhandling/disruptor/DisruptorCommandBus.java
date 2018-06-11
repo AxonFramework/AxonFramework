@@ -20,6 +20,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateDescriptor;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Assert;
@@ -31,9 +32,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.monitoring.MessageMonitor;
@@ -646,6 +645,19 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (scopeDescription instanceof AggregateDescriptor) {
+                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return scopeDescription instanceof AggregateDescriptor
+                    && ((AggregateDescriptor) scopeDescription).getType().equals(type.getSimpleName());
         }
     }
 

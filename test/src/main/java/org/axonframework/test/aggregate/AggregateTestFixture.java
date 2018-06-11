@@ -17,10 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.ReflectionUtils;
@@ -319,12 +316,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      */
     protected void handleDeadline(String aggregateId, DeadlineMessage<?> deadlineMessage) {
         ensureRepositoryConfiguration();
-        try {
-            // TODO fix
-//            DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> repository.load(aggregateId).handle(deadlineMessage));
-        } catch (Exception e) {
-            throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
-        }
+        DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
+            try {
+                repository.send(deadlineMessage, new AggregateDescriptor(aggregateType.getSimpleName(), aggregateId));
+            } catch (Exception e) {
+                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+            }
+        });
     }
 
     private ResultValidator buildResultValidator() {
@@ -543,6 +541,18 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                         aggregateIdentifier, aggregate.identifierAsString()));
             }
         }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (scopeDescription instanceof AggregateDescriptor) {
+                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return true;
+        }
     }
 
     private class RecordingEventStore implements EventStore {
@@ -712,6 +722,18 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (scopeDescription instanceof AggregateDescriptor) {
+                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return false;
         }
     }
 }

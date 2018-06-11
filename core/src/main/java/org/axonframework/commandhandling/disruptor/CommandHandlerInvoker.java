@@ -26,6 +26,8 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -278,6 +280,19 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                     return;
                 }
             }
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (scopeDescription instanceof AggregateDescriptor) {
+                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return scopeDescription instanceof AggregateDescriptor
+                    && ((AggregateDescriptor) scopeDescription).getType().equals(model.type());
         }
     }
 }

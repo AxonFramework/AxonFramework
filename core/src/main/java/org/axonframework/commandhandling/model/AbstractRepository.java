@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -44,8 +43,7 @@ import static org.axonframework.common.Assert.nonNull;
  * @see LockingRepository
  * @since 0.1
  */
-public abstract class AbstractRepository<T, A extends Aggregate<T>>
-        implements Repository<T>, ScopeAware<AggregateDescriptor> {
+public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
@@ -285,8 +283,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>>
     }
 
     @Override
-    public void send(Message<?> message, AggregateDescriptor aggregateDescription) throws Exception {
-        load(aggregateDescription.getIdentifier().toString()).handle(message);
+    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        if (scopeDescription instanceof AggregateDescriptor) {
+            load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+        }
     }
 
     @Override
