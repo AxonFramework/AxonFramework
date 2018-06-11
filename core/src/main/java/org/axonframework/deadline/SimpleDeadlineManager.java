@@ -154,16 +154,16 @@ public class SimpleDeadlineManager implements DeadlineManager {
 
     private class DeadlineTask implements Runnable {
 
-        private final String tokenId;
+        private final String scheduleId;
         private final String deadlineName;
         private final Object messageOrPayload;
         private final ScopeDescriptor deadlineScope;
 
-        private DeadlineTask(String tokenId,
+        private DeadlineTask(String scheduleId,
                              String deadlineName,
                              Object messageOrPayload,
                              ScopeDescriptor deadlineScope) {
-            this.tokenId = tokenId;
+            this.scheduleId = scheduleId;
             this.deadlineName = deadlineName;
             this.messageOrPayload = messageOrPayload;
             this.deadlineScope = deadlineScope;
@@ -182,23 +182,27 @@ public class SimpleDeadlineManager implements DeadlineManager {
                 Transaction transaction = transactionManager.startTransaction();
                 unitOfWork.onCommit(u -> transaction.commit());
                 unitOfWork.onRollback(u -> transaction.rollback());
-                //Make this call somewhat cleaner, as this's ugly
-                unitOfWork.execute(() -> scopeAwareComponents.stream()
-                                                             .filter(scopeAwareComponent -> scopeAwareComponent
-                                                                     .canResolve(
-                                                                             deadlineScope))
-                                                             .forEach(scopeAwareComponent -> {
-                                                                 try {
-                                                                     scopeAwareComponent.send(deadlineMessage,
-                                                                                              deadlineScope);
-                                                                 } catch (Exception e) {
-                                                                     throw new ExecutionException("", e);
-                                                                 }
-                                                             }));
+                unitOfWork.execute(() -> executeScheduledDeadline(deadlineMessage, deadlineScope));
             } finally {
                 //TODO Adjust remove call to take deadlineName into account
-                tokens.remove(tokenId);
+                tokens.remove(scheduleId);
             }
+        }
+
+        private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
+            scopeAwareComponents.stream()
+                    .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
+                    .forEach(scopeAwareComponent -> {
+                        try {
+                            scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                        } catch (Exception e) {
+                            String exceptionMessage = String.format(
+                                    "Failed to send a DeadlineMessage for scope [%s]",
+                                    deadlineScope.scopeDescription()
+                            );
+                            throw new ExecutionException(exceptionMessage, e);
+                        }
+                    });
         }
     }
 }
