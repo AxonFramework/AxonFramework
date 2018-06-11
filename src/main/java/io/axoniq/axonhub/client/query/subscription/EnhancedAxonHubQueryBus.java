@@ -90,6 +90,7 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
                                                        genericSerializer);
         axonHubQueryBus.on(SUBSCRIPTION_QUERY, this::onSubscriptionQueryRequest);
         platformConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
+        platformConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
         this.publisher = axonHubQueryBus::publish;
         this.localSegment = localSegment;
         this.updateEmitter = updateEmitter;
@@ -186,4 +187,10 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     private void onApplicationDisconnected() {
         subscriptions.clear();
     }
+
+    private Runnable interceptReconnectRequest(Runnable reconnect){
+        if (subscriptions.isEmpty()) return reconnect;
+        return () -> logger.info("Reconnect refused because there are active subscription queries.");
+    }
+
 }

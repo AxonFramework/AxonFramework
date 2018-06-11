@@ -55,6 +55,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.net.ssl.SSLException;
 
 /**
@@ -68,6 +69,7 @@ public class PlatformConnectionManager {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private volatile ScheduledFuture<?> reconnectTask;
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
+    private final List<Function<Runnable, Runnable>> reconnectInterceptors = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonHubConfiguration connectInformation;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
@@ -165,9 +167,15 @@ public class PlatformConnectionManager {
                                 logger.debug("Received: {}", messagePlatformOutboundInstruction.getNodeNotification());
                                 break;
                             case REQUEST_RECONNECT:
-                                disconnectListeners.forEach(Runnable::run);
-                                inputStream.onCompleted();
-                                scheduleReconnect();
+                                Runnable reconnect = () -> {
+                                    disconnectListeners.forEach(Runnable::run);
+                                    inputStream.onCompleted();
+                                    scheduleReconnect();
+                                };
+                                for (Function<Runnable,Runnable> interceptor : reconnectInterceptors) {
+                                    reconnect = interceptor.apply(reconnect);
+                                }
+                                reconnect.run();
                                 break;
                             case REQUEST_NOT_SET:
                                 break;
@@ -214,6 +222,10 @@ public class PlatformConnectionManager {
 
     public void addDisconnectListener(Runnable action) {
         disconnectListeners.add(action);
+    }
+
+    public void addReconnectInterceptor(Function<Runnable, Runnable> interceptor){
+        reconnectInterceptors.add(interceptor);
     }
 
     public synchronized void scheduleReconnect() {
