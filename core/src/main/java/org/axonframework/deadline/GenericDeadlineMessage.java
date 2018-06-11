@@ -19,94 +19,127 @@ package org.axonframework.deadline;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Generic implementation of {@link DeadlineMessage}.
+ * Generic implementation of the {@link DeadlineMessage}.
  *
  * @param <T> The type of payload contained in this Message
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
 public class GenericDeadlineMessage<T> extends GenericEventMessage<T> implements DeadlineMessage<T> {
 
     private static final long serialVersionUID = 2615162095663478618L;
 
+    private final String deadlineName;
+
     /**
-     * Returns the given deadline as DeadlineMessage. If {@code deadline} already implements DeadlineMessage, it is
-     * returned as is. If it is a Message, a new DeadlineMessage will be created using the payload and meta data of the
-     * given deadline. Otherwise, the given {@code deadline} is wrapped into a GenericDeadlineMessage as its payload.
+     * Instantiate a GenericDeadlineMessage with the given {@code deadlineName}, a {@code null} payload and en empty
+     * {@link MetaData}.
      *
-     * @param deadline The deadline to wrap as DeadlineMessage
-     * @param <T>      The generic type of the expected payload of the resulting object
-     * @return a DeadlineMessage containing given {@code deadline} as payload, or {@code deadline} if it already
-     * implements DeadlineMessage
+     * @param deadlineName A {@link String} denoting the deadline's name
      */
-    @SuppressWarnings("unchecked")
-    public static <T> DeadlineMessage<T> asDeadlineMessage(Object deadline) {
-        if (DeadlineMessage.class.isInstance(deadline)) {
-            return (DeadlineMessage<T>) deadline;
-        } else if (deadline instanceof Message) {
-            Message message = (Message) deadline;
-            return new GenericDeadlineMessage<>(message, () -> clock.instant());
-        }
-        return new GenericDeadlineMessage<>(new GenericMessage<>((T) deadline), () -> clock.instant());
+    public GenericDeadlineMessage(String deadlineName) {
+        this(deadlineName, null);
     }
 
     /**
-     * Creates a GenericDeadlineMessage with given {@code payload}, and an empty MetaData.
+     * Instantiate a GenericDeadlineMessage with the given {@code deadlineName}, a {@code payload} of type {@code T}
+     * and en empty {@link MetaData}.
      *
-     * @param payload The payload of the Message
+     * @param deadlineName A {@link String} denoting the deadline's name
+     * @param payload      The payload of type {@code T} for the DeadlineMessage
      */
-    public GenericDeadlineMessage(T payload) {
-        super(payload);
+    public GenericDeadlineMessage(String deadlineName, T payload) {
+        this(deadlineName, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Creates a GenericDeadlineMessage with given {@code payload} and given {@code metaData}.
+     * Instantiate a GenericDeadlineMessage with the given {@code deadlineName}, a {@code payload} of type {@code T}
+     * and the given {@code metaData}.
      *
-     * @param payload  The payload of the Message
-     * @param metaData The MetaData of the Message
+     * @param deadlineName A {@link String} denoting the deadline's name
+     * @param payload      The payload of the Message
+     * @param metaData     The MetaData of the Message
      */
-    public GenericDeadlineMessage(T payload, Map<String, ?> metaData) {
+    public GenericDeadlineMessage(String deadlineName, T payload, Map<String, ?> metaData) {
         super(payload, metaData);
+        this.deadlineName = deadlineName;
     }
 
     /**
      * Constructor to reconstructs a DeadlineMessage using existing data.
      *
-     * @param identifier The identifier of the Message
-     * @param payload    The payload of the Message
-     * @param metaData   The MetaData of the Message
-     * @param timestamp  The timestamp of the Message creation
+     * @param deadlineName A {@link String} denoting the deadline's name
+     * @param identifier   The identifier of type {@link String} for the Message
+     * @param payload      The payload of type {@code T} for the Message
+     * @param metaData     The {@link MetaData} of the Message
+     * @param timestamp    An {@link Instant} timestamp of the Message creation
      */
-    public GenericDeadlineMessage(String identifier, T payload, Map<String, ?> metaData, Instant timestamp) {
+    public GenericDeadlineMessage(String deadlineName,
+                                  String identifier,
+                                  T payload,
+                                  Map<String, ?> metaData,
+                                  Instant timestamp) {
         super(identifier, payload, metaData, timestamp);
+        this.deadlineName = deadlineName;
     }
 
     /**
      * Constructor to reconstruct a DeadlineMessage using existing data. The timestamp of the event is supplied lazily
      * to prevent unnecessary deserialization of the timestamp.
      *
-     * @param delegate          The message containing payload, identifier and MetaData
-     * @param timestampSupplier Supplier for the timestamp of the Message creation
+     * @param deadlineName      A {@link String} denoting the deadline's name
+     * @param delegate          The {@link Message} containing the payload, identifier and {@link MetaData}
+     * @param timestampSupplier {@link Supplier} for the timestamp of the Message creation
      */
-    public GenericDeadlineMessage(Message<T> delegate,
-                                  Supplier<Instant> timestampSupplier) {
+    public GenericDeadlineMessage(String deadlineName, Message<T> delegate, Supplier<Instant> timestampSupplier) {
         super(delegate, timestampSupplier);
+        this.deadlineName = deadlineName;
+    }
+
+    /**
+     * Returns the given {@code deadlineName} and {@code messageOrPayload} as a DeadlineMessage. If the
+     * {@code messageOrPayload} parameter is of type {@link Message}, a new DeadlineMessage will be created using the
+     * payload and meta data of the given deadline.
+     * Otherwise, the given {@code messageOrPayload} is wrapped into a GenericDeadlineMessage as its payload.
+     *
+     * @param deadlineName     A {@link String} denoting the deadline's name
+     * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
+     * @param <T>              The generic type of the expected payload of the resulting object
+     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
+     * {@code messageOrPayload} as the payload
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> DeadlineMessage<T> asDeadlineMessage(String deadlineName, Object messageOrPayload) {
+        return messageOrPayload instanceof Message
+                ? new GenericDeadlineMessage<>(deadlineName, (Message) messageOrPayload, () -> clock.instant())
+                : new GenericDeadlineMessage<>(deadlineName,
+                                               new GenericMessage<>((T) messageOrPayload),
+                                               () -> clock.instant());
+    }
+
+    @Override
+    public String getDeadlineName() {
+        return deadlineName;
     }
 
     @Override
     public GenericDeadlineMessage<T> withMetaData(Map<String, ?> metaData) {
-        return null;
+        return new GenericDeadlineMessage<>(deadlineName, getDelegate().withMetaData(metaData), this::getTimestamp);
     }
 
     @Override
     public GenericDeadlineMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
-        return null;
+        return new GenericDeadlineMessage<>(
+                deadlineName, getDelegate().andMetaData(additionalMetaData), this::getTimestamp
+        );
     }
 
     @Override

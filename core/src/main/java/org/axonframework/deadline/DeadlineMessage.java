@@ -21,15 +21,23 @@ import org.axonframework.eventhandling.EventMessage;
 import java.util.Map;
 
 /**
- * Represents a Message wrapping a Deadline, which details are represented by its payload. DeadlineMessage represents a
- * fact (it's a specialization of EventMessage) that some deadline was not met. Payload contains data relevant to the
- * fact that deadline was not met.
+ * Represents a Message for a Deadline, specified by its deadline name and optionally containing a deadline payload.
+ * Implementations of DeadlineMessage represent a fact (it's a specialization of EventMessage) that some deadline was
+ * reached. The optional payload contains relevant data of the scheduled deadline.
  *
- * @param <T> The type of payload contained in this Message
+ * @param <T> The type of payload contained in this Message; may be {@link Void} if no payload was provided
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
 public interface DeadlineMessage<T> extends EventMessage<T> {
+
+    /**
+     * Retrieve a {@link String} representing the name of this DeadlineMessage.
+     *
+     * @return a {@link String} representing the name of this DeadlineMessage
+     */
+    String getDeadlineName();
 
     /**
      * Returns a copy of this DeadlineMessage with the given {@code metaData}. The payload remains unchanged.
