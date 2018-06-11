@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class SimpleDeadlineManager implements DeadlineManager {
      * transaction manager and {@link Executors#newSingleThreadScheduledExecutor()} is used as scheduled executor
      * service.
      *
-     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
+     * @param scopeAwareComponents an array of {@link ScopeAware} components which are able to load and send
      *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
      */
     public SimpleDeadlineManager(ScopeAware... scopeAwareComponents) {
@@ -127,7 +128,7 @@ public class SimpleDeadlineManager implements DeadlineManager {
 
         this.scheduledExecutorService = scheduledExecutorService;
         this.transactionManager = transactionManager;
-        this.scopeAwareComponents = scopeAwareComponents;
+        this.scopeAwareComponents = new ArrayList<>(scopeAwareComponents);
     }
 
     @Override
