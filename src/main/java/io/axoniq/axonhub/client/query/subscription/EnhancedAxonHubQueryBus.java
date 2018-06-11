@@ -22,21 +22,23 @@ import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.Publisher;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
+import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
-import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -55,13 +57,15 @@ import static io.axoniq.axonhub.grpc.QueryProviderInbound.RequestCase.SUBSCRIPTI
  */
 public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
 
-    private final Logger logger = LoggerFactory.getLogger(AxonHubQueryBus.class);
+    private final Logger logger = LoggerFactory.getLogger(EnhancedAxonHubQueryBus.class);
+
+    private final AxonHubConfiguration configuration;
 
     private final AxonHubQueryBus axonHubQueryBus;
 
     private final SubscriptionMessageSerializer serializer;
 
-    private final Map<String, Registration> registrationMap = new ConcurrentHashMap<>();
+    private final Map<String, Disposable> subscriptions = new ConcurrentHashMap<>();
 
     private final Publisher<QueryProviderOutbound> publisher;
 
@@ -80,6 +84,7 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
                                               messageSerializer,
                                               genericSerializer,
                                               priorityCalculator);
+        this.configuration = configuration;
         serializer = new SubscriptionMessageSerializer(configuration,
                                                        messageSerializer,
                                                        genericSerializer);
@@ -107,6 +112,27 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     @Override
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure) {
+        logger.debug("Subscription Query requested with subscriptionId " + query.getIdentifier());
+        AxonHubSubscriptionQueryResult<I,U> responseObserver = new AxonHubSubscriptionQueryResult<>(serializer, backpressure);
+        SubscriptionQuery subscriptionQuery = this.serializer.serialize(query);
+
+        FlowControllingStreamObserver<SubscriptionQuery> requestObserver = new FlowControllingStreamObserver<>(
+                this.axonHubQueryBus.queryServiceStub().subscription(responseObserver),
+                configuration, flowControl -> SubscriptionQuery.newBuilder(subscriptionQuery)
+                                                               .setNumberOfPermits(flowControl.getPermits())
+                                                               .build(),t-> false);
+        responseObserver.onDispose(() -> {
+            logger.debug("Subscription Query with subscriptionId " + query.getIdentifier()+ " disposed");
+            requestObserver.onCompleted();
+        });
+
+        responseObserver.onResponse(requestObserver::markConsumed);
+        requestObserver.onNext(subscriptionQuery);
+        return responseObserver;
+    }
+    @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
         this.updateEmitter.emit(filter, update);
@@ -120,24 +146,6 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     @Override
     public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
         this.updateEmitter.completeExceptionally(filter, cause);
-    }
-
-    @Override
-    public <Q, I, U> Registration subscriptionQuery(SubscriptionQueryMessage<Q, I, U> query,
-                                                    UpdateHandler<I, U> updateHandler) {
-        String subscriptionId = query.getIdentifier();
-        logger.debug("subscriptionQuery request with subscriptionId " + subscriptionId);
-
-        StreamObserver<SubscriptionQuery> requestObserver = this.axonHubQueryBus
-                .queryServiceStub()
-                .subscription(new SubscriptionResponseHandler<>(updateHandler, serializer));
-        requestObserver.onNext(this.serializer.serialize(query));
-
-        return () -> {
-            logger.debug("Unsubscribe request for subscriptionId " + subscriptionId);
-            requestObserver.onCompleted();
-            return true;
-        };
     }
 
     private void onSubscriptionQueryRequest(QueryProviderInbound inbound) {
@@ -154,17 +162,28 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private void subscribeLocally(SubscriptionQuery subscribe) {
         String subscriptionId = subscribe.getQueryRequest().getMessageIdentifier();
-        UpdateHandler updateHandler = new AxonHubUpdateHandler(subscriptionId, publisher, serializer);
-        SubscriptionQueryMessage subscriptionQueryMessage = serializer.deserialize(subscribe);
-        Registration registration = this.localSegment.subscriptionQuery(subscriptionQueryMessage, updateHandler);
-        registrationMap.put(subscriptionId, registration);
+        logger.debug("subscribe locally subscriptionId " + subscriptionId);
+        SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>> result =
+                this.localSegment.subscriptionQuery(serializer.deserialize(subscribe));
+
+       result.initialResult().subscribe(
+                i -> publisher.publish(serializer.serialize(i, subscriptionId)),
+                e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId));
+        Disposable disposable = result.updates().subscribe(
+                u -> publisher.publish(serializer.serialize(u, subscriptionId)),
+                e -> publisher.publish(serializer.serializeCompleteExceptionally(subscriptionId, e)),
+                () -> publisher.publish(serializer.serializeComplete(subscriptionId)));
+
+        subscriptions.put(subscriptionId, disposable);
     }
 
     private void unsubscribeLocally(SubscriptionQuery unsubscribe) {
-        registrationMap.remove(unsubscribe.getQueryRequest().getMessageIdentifier()).cancel();
+        String subscriptionId = unsubscribe.getQueryRequest().getMessageIdentifier();
+        logger.debug("unsubscribe locally subscriptionId " + subscriptionId);
+        subscriptions.remove(subscriptionId).dispose();
     }
 
     private void onApplicationDisconnected() {
-        registrationMap.clear();
+        subscriptions.clear();
     }
 }

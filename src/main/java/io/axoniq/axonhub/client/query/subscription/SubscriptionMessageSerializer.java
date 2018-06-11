@@ -133,13 +133,14 @@ public class SubscriptionMessageSerializer {
                                                 .putAllMetaData(metadataSerializer.apply(message.getMetaData())).build();
 
         SubscriptionQuery.Builder builder = SubscriptionQuery.newBuilder()
+                                                             .setNumberOfPermits(conf.getInitialNrOfPermits())
                                                              .setUpdateResponseType(responseTypeSerializer.apply(message.getUpdateResponseType()))
                                                              .setQueryRequest(queryRequest);
         return builder.build();
     }
 
-    SubscriptionQueryMessage deserialize(SubscriptionQuery query) {
-        return new GrpcBackedSubscriptionQueryMessage(query, messageSerializer, genericSerializer);
+    <Q, I, U> SubscriptionQueryMessage<Q, I, U> deserialize(SubscriptionQuery query) {
+        return new GrpcBackedSubscriptionQueryMessage<>(query, messageSerializer, genericSerializer);
     }
 
 

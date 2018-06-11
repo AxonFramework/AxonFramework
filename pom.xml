@@ -32,6 +32,13 @@
             <version>${project.parent.version}</version>
         </dependency>
 
+        <!-- OPTIONAL dependency on reactor -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- OPTIONAL dependency on Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
