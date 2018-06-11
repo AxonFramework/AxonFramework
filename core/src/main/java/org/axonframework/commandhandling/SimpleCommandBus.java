@@ -19,16 +19,15 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -147,10 +146,7 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         try {
-            UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-            Transaction transaction = transactionManager.startTransaction();
-            unitOfWork.onCommit(u -> transaction.commit());
-            unitOfWork.onRollback(u -> transaction.rollback());
+            UnitOfWork<CommandMessage<?>> unitOfWork = TransactionalUnitOfWork.startAndGet(command, transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
             R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
