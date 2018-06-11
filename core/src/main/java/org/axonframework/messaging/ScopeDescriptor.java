@@ -28,4 +28,11 @@ import java.io.Serializable;
  */
 public interface ScopeDescriptor extends Serializable {
 
+    /**
+     * Retrieve a {@link String} description of a {@link Scope} object.
+     *
+     * @return a {@link String} description of a {@link Scope} object
+     */
+    String scopeDescription();
+
 }

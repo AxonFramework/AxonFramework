@@ -6,6 +6,9 @@ import java.util.Objects;
 
 /**
  * Describes the scope of a Saga by means of its type and identifier.
+ *
+ * @author Steven van Beelen
+ * @since 3.3
  */
 public class SagaDescriptor implements ScopeDescriptor {
 
@@ -25,6 +28,11 @@ public class SagaDescriptor implements ScopeDescriptor {
 
     public Object getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    public String scopeDescription() {
+        return String.format("AggregateDescriptor for type [%s] and identifier [%s]", type, identifier);
     }
 
     @Override
