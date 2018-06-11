@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, ScopeAware<SagaDescriptor> {
+public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, ScopeAware {
 
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
@@ -193,17 +193,19 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void send(Message<?> message, SagaDescriptor sagaDescription) throws Exception {
+    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
         if (!(message instanceof EventMessage)) {
             String exceptionMessage = String.format(
-                    "Something else than an EventMessage was scheduled for Saga of type [%s] and id [%s], whilst Sagas can only handle EventMessages.",
-                    sagaDescription.getType(),
-                    sagaDescription.getIdentifier()
+                    "Something else than an EventMessage was scheduled for Saga of type [%s], whilst Sagas can only handle EventMessages.",
+                    getSagaType()
             );
             throw new IllegalArgumentException(exceptionMessage);
         }
-        sagaRepository.load(sagaDescription.getIdentifier().toString())
-                      .handle((EventMessage) message);
+
+        if (scopeDescription instanceof SagaDescriptor) {
+            sagaRepository.load(((SagaDescriptor) scopeDescription).getIdentifier().toString())
+                          .handle((EventMessage) message);
+        }
     }
 
     @Override
