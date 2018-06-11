@@ -31,7 +31,13 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.common.Assert.isFalse;
 import static org.axonframework.common.Assert.notNull;
@@ -57,7 +63,7 @@ public class SimpleDeadlineManager implements DeadlineManager {
     private final ScheduledExecutorService scheduledExecutorService;
     private final TransactionManager transactionManager;
 
-    private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
+    private final Map<DeadlineId, Future<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     /**
      * Initializes SimpleDeadlineManager with {@code scopeAwareComponents} which will load and send messages to
@@ -131,42 +137,48 @@ public class SimpleDeadlineManager implements DeadlineManager {
                          ScopeDescriptor deadlineScope,
                          String scheduleId) {
         ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
-                new DeadlineTask(scheduleId, deadlineName, messageOrPayload, deadlineScope),
+                new DeadlineTask(deadlineName, deadlineScope, messageOrPayload, scheduleId),
                 triggerDuration.toMillis(),
                 TimeUnit.MILLISECONDS
         );
-        // TODO store deadlineName for cancelAll() and cancelSchedule()
-        tokens.put(scheduleId, scheduledFuture);
+        scheduledTasks.put(new DeadlineId(deadlineName, scheduleId), scheduledFuture);
     }
 
     @Override
     public void cancelSchedule(String deadlineName, String scheduleId) {
-        Future<?> future = tokens.remove(scheduleId);
+        cancelSchedule(new DeadlineId(deadlineName, scheduleId));
+    }
+
+    @Override
+    public void cancelAll(String deadlineName) {
+        scheduledTasks.entrySet().stream()
+                      .map(Map.Entry::getKey)
+                      .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
+                      .forEach(this::cancelSchedule);
+    }
+
+    private void cancelSchedule(DeadlineId deadlineId) {
+        Future<?> future = scheduledTasks.remove(deadlineId);
         if (future != null) {
             future.cancel(false);
         }
     }
 
-    @Override
-    public void cancelAll(String deadlineName) {
-        // TODO implement
-    }
-
     private class DeadlineTask implements Runnable {
 
-        private final String scheduleId;
         private final String deadlineName;
-        private final Object messageOrPayload;
         private final ScopeDescriptor deadlineScope;
+        private final Object messageOrPayload;
+        private final String deadlineId;
 
-        private DeadlineTask(String scheduleId,
-                             String deadlineName,
+        private DeadlineTask(String deadlineName,
+                             ScopeDescriptor deadlineScope,
                              Object messageOrPayload,
-                             ScopeDescriptor deadlineScope) {
-            this.scheduleId = scheduleId;
+                             String deadlineId) {
             this.deadlineName = deadlineName;
-            this.messageOrPayload = messageOrPayload;
             this.deadlineScope = deadlineScope;
+            this.messageOrPayload = messageOrPayload;
+            this.deadlineId = deadlineId;
         }
 
         @Override
@@ -184,25 +196,70 @@ public class SimpleDeadlineManager implements DeadlineManager {
                 unitOfWork.onRollback(u -> transaction.rollback());
                 unitOfWork.execute(() -> executeScheduledDeadline(deadlineMessage, deadlineScope));
             } finally {
-                //TODO Adjust remove call to take deadlineName into account
-                tokens.remove(scheduleId);
+                scheduledTasks.remove(new DeadlineId(deadlineName, deadlineId));
             }
         }
 
         private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
             scopeAwareComponents.stream()
-                    .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
-                    .forEach(scopeAwareComponent -> {
-                        try {
-                            scopeAwareComponent.send(deadlineMessage, deadlineScope);
-                        } catch (Exception e) {
-                            String exceptionMessage = String.format(
-                                    "Failed to send a DeadlineMessage for scope [%s]",
-                                    deadlineScope.scopeDescription()
-                            );
-                            throw new ExecutionException(exceptionMessage, e);
-                        }
-                    });
+                                .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
+                                .forEach(scopeAwareComponent -> {
+                                    try {
+                                        scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                                    } catch (Exception e) {
+                                        String exceptionMessage = String.format(
+                                                "Failed to send a DeadlineMessage for scope [%s]",
+                                                deadlineScope.scopeDescription()
+                                        );
+                                        throw new ExecutionException(exceptionMessage, e);
+                                    }
+                                });
+        }
+    }
+
+    private static class DeadlineId {
+
+        private final String deadlineName;
+        private final String deadlineId;
+
+
+        private DeadlineId(String deadlineName, String deadlineId) {
+            this.deadlineId = deadlineId;
+            this.deadlineName = deadlineName;
+        }
+
+        public String getDeadlineName() {
+            return deadlineName;
+        }
+
+        public String getDeadlineId() {
+            return deadlineId;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(deadlineName, deadlineId);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            final DeadlineId other = (DeadlineId) obj;
+            return Objects.equals(this.deadlineName, other.deadlineName)
+                    && Objects.equals(this.deadlineId, other.deadlineId);
+        }
+
+        @Override
+        public String toString() {
+            return "DeadlineId{" +
+                    "deadlineName='" + deadlineName + '\'' +
+                    ", deadlineId='" + deadlineId + '\'' +
+                    '}';
         }
     }
 }
