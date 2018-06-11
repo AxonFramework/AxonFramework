@@ -28,10 +28,11 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DefaultDeadlineTargetLoader;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.saga.AbstractSagaManager;
+import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -43,6 +44,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -50,7 +52,11 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -59,11 +65,16 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -95,8 +106,10 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
-    private final Component<Serializer> eventSerializer = new Component<>(config, "eventSerializer", Configuration::messageSerializer);
-    private final Component<Serializer> messageSerializer = new Component<>(config, "messageSerializer", Configuration::serializer);
+    private final Component<Serializer> eventSerializer =
+            new Component<>(config, "eventSerializer", Configuration::messageSerializer);
+    private final Component<Serializer> messageSerializer =
+            new Component<>(config, "messageSerializer", Configuration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain",
@@ -265,8 +278,21 @@ public class DefaultConfigurer implements Configurer {
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
-//        return new SimpleDeadlineManager(new DefaultDeadlineTargetLoader(config::repository, config::sagaRepository));
-        return null;
+        List<Repository> aggregateRepositories =
+                aggregateConfigurations.entrySet().stream()
+                                       .map(Map.Entry::getValue)
+                                       .map((Function<AggregateConfiguration, Repository>) AggregateConfiguration::repository)
+                                       .collect(Collectors.toList());
+        List<AbstractSagaManager> sagaManagers =
+                config.getModules().stream().filter(m -> m instanceof SagaConfiguration)
+                      .map(m -> (SagaConfiguration) m)
+                      .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
+                      .collect(Collectors.toList());
+
+        List<ScopeAware> scopeAwareComponents = new ArrayList<>(aggregateRepositories);
+        scopeAwareComponents.addAll(sagaManagers);
+
+        return new SimpleDeadlineManager(scopeAwareComponents);
     }
 
     /**
@@ -473,7 +499,9 @@ public class DefaultConfigurer implements Configurer {
                                                  .filter(sc -> sc.getSagaType().equals(sagaType))
                                                  .map((Function<SagaConfiguration, SagaRepository<T>>) SagaConfiguration::getSagaRepository)
                                                  .findAny()
-                                                 .orElseThrow(() -> new IllegalArgumentException("Saga " + sagaType.getSimpleName() + " has not been configured"));
+                                                 .orElseThrow(() -> new IllegalArgumentException(
+                                                         "Saga " + sagaType.getSimpleName()
+                                                                 + " has not been configured"));
         }
 
         @Override
