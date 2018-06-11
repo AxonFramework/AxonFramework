@@ -27,7 +27,7 @@ package org.axonframework.messaging;
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface ScopeAware<D extends ScopeDescriptor> {
+public interface ScopeAware {
 
     /**
      * Send a {@link Message} to a {@link Scope} which is described by the given {@code scopeDescription}.
@@ -38,7 +38,7 @@ public interface ScopeAware<D extends ScopeDescriptor> {
      * @throws Exception if sending the {@code message} failed. Might occur if the message handling process throws an
      *                   exception
      */
-    void send(Message<?> message, D scopeDescription) throws Exception;
+    void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception;
 
     /**
      * Check whether this implementation can resolve a {@link Scope} object based on the provided {@code scopeDescription}.
