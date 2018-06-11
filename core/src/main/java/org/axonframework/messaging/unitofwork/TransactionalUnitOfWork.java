@@ -19,11 +19,29 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
 
+/**
+ * This class represents a factory for creating transactional UnitOfWork instances or converting existing UnitOfWork
+ * instances to transaction-aware instances.
+ *
+ * Transaction awareness in this case indicates that a unit of work will be cleaned up properly when its accompanying
+ * transaction results in an error (e.g. starting the transaction fails).
+ */
 public class TransactionalUnitOfWork {
 
     private TransactionalUnitOfWork() {
     }
 
+    /**
+     * Starts a new transaction-aware DefaultUnitOfWork instance (see {@link DefaultUnitOfWork#startAndGet(Message)}).
+     * <p>
+     * The UnitOfWork will be created transaction-aware. This means that if anything goes wrong while setting up the transaction
+     * the UnitOfWork will be rolled back and the error will be thrown up the chain.
+     * </p>
+     *
+     * @param message the message that will be processed in the context of the unit of work
+     * @param transactionManager the TransactionManager instance that will be used to start a transaction for the created UnitOfWork
+     * @return the started transaction-aware UnitOfWork instance
+     */
     public static <T extends Message<?>> UnitOfWork<T> startAndGet(T message, TransactionManager transactionManager) {
         UnitOfWork<T> unitOfWork = DefaultUnitOfWork.startAndGet(message);
         makeTransactional(unitOfWork, transactionManager);
@@ -31,6 +49,12 @@ public class TransactionalUnitOfWork {
         return unitOfWork;
     }
 
+    /**
+     * Transforms the incoming UnitOfWork to a transaction-aware UnitOfWork.
+     *
+     * @param unitOfWork the UnitOfWork instance that should be made transaction-aware
+     * @param transactionManager the TransactionManager instance that will be used to make the incoming UnitOfWork transaction-aware
+     */
     public static <T extends Message<?>> void makeTransactional(UnitOfWork<T> unitOfWork, TransactionManager transactionManager) {
         try {
             Transaction transaction = transactionManager.startTransaction();
