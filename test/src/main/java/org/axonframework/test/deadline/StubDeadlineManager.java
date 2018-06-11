@@ -17,22 +17,17 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
+import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.NavigableSet;
-import java.util.NoSuchElementException;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 3.3
  */
 // TODO fix this
-public class StubDeadlineManager /*implements DeadlineManager */{
+public class StubDeadlineManager /*implements DeadlineManager */ {
 
     private final NavigableSet<ScheduleDeadlineInfo> schedules = new TreeSet<>();
     private final List<ScheduleDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
@@ -80,33 +75,36 @@ public class StubDeadlineManager /*implements DeadlineManager */{
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
-//    @Override
-    public <T> void schedule(Instant triggerDateTime, ScopeDescriptor deadlineScope, T deadlineInfo,
+    //    @Override
+    public <T> void schedule(Instant triggerDateTime,
+                             ScopeDescriptor deadlineScope,
+                             T deadlineInfo,
                              ScheduleToken scheduleToken) {
         SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
         ScheduleDeadlineInfo scheduleInfo = new ScheduleDeadlineInfo(triggerDateTime,
-                                                                     simpleScheduleToken,
+                                                                     "deadlineName",
+                                                                     simpleScheduleToken.getTokenId(),
                                                                      counter.getAndIncrement(),
                                                                      deadlineInfo,
                                                                      deadlineScope);
         schedules.add(scheduleInfo);
     }
 
-//    @Override
+    //    @Override
     public <T> void schedule(Duration triggerDuration, ScopeDescriptor deadlineScope, T deadlineInfo,
                              ScheduleToken scheduleToken) {
         schedule(currentDateTime.plus(triggerDuration), deadlineScope, deadlineInfo, scheduleToken);
     }
 
-//    @Override
+    //    @Override
     public ScheduleToken generateScheduleId() {
         return new SimpleScheduleToken(IdentifierFactory.getInstance().generateIdentifier());
     }
 
-//    @Override
+    //    @Override
     public void cancelSchedule(ScheduleToken scheduleToken) {
         SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
-        schedules.removeIf(s -> s.getScheduleToken().getTokenId().equals(simpleScheduleToken.getTokenId()));
+        schedules.removeIf(s -> s.getScheduleId().equals(simpleScheduleToken.getTokenId()));
     }
 
     /**
