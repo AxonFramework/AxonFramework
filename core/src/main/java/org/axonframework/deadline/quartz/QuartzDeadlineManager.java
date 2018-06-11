@@ -98,7 +98,7 @@ public class QuartzDeadlineManager /*implements DeadlineManager */{
     public void schedule(Instant triggerDateTime, ScopeDescriptor deadlineScope,
                          Object deadlineInfo, ScheduleToken scheduleToken) {
         QuartzScheduleToken token = convert(scheduleToken);
-        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineInfo);
+        DeadlineMessage deadlineMessage = asDeadlineMessage("", deadlineInfo);
         try {
             JobDetail jobDetail = buildJobDetail(deadlineMessage,
                                                  deadlineScope,
