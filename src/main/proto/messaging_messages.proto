@@ -78,8 +78,9 @@ message QueryUpdateCompleteExceptionally {
 
 message SubscriptionQueryRequest {
     oneof response {
-        SubscriptionQuery subscribe = 1;
-        SubscriptionQuery unsubscribe = 2;
+        SubscriptionQuery subscribe_initial = 1;
+        SubscriptionQuery subscribe_update = 2;
+        SubscriptionQuery unsubscribe = 3;
     }
     string context = 4;
 }
