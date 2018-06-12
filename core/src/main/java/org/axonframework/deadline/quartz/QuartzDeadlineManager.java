@@ -26,6 +26,8 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -62,11 +64,13 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private final Scheduler scheduler;
     private final ScopeAwareProvider scopeAwareProvider;
     private final TransactionManager transactionManager;
+    private final Serializer serializer;
 
     /**
      * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
      * and send messages to {@link org.axonframework.messaging.Scope} implementing components. A
-     * {@link NoTransactionManager} will be used as the transaction manager.
+     * {@link NoTransactionManager} will be used as the transaction manager and the {@link XStreamSerializer} for
+     * serializing the {@link JobDataMap} contents.
      *
      * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
      * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
@@ -78,20 +82,40 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
 
     /**
      * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
-     * and send messages to {@link org.axonframework.messaging.Scope} implementing components.
+     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. Uses the {@link
+     * XStreamSerializer} for serializing the deadline message and scope in to the {@link JobDataMap}.
      *
      * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
      * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
      *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
      * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
-     *                           execution
      */
     public QuartzDeadlineManager(Scheduler scheduler,
                                  ScopeAwareProvider scopeAwareProvider,
                                  TransactionManager transactionManager) {
+        this(scheduler, scopeAwareProvider, NoTransactionManager.INSTANCE, new XStreamSerializer());
+    }
+
+    /**
+     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
+     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. Uses the given {@code
+     * serializer} for serializing the deadline message and scope in to the {@link JobDataMap}.
+     *
+     * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
+     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
+     * @param serializer         The {@link Serializer} which will be used to de-/serialize the {@link DeadlineMessage}
+     *                           and the {@link ScopeDescriptor} into the {@link JobDataMap}
+     */
+    public QuartzDeadlineManager(Scheduler scheduler,
+                                 ScopeAwareProvider scopeAwareProvider,
+                                 TransactionManager transactionManager,
+                                 Serializer serializer) {
         this.scheduler = scheduler;
         this.scopeAwareProvider = scopeAwareProvider;
         this.transactionManager = transactionManager;
+        this.serializer = serializer;
 
         try {
             initialize();
@@ -103,6 +127,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private void initialize() throws SchedulerException {
         scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(DeadlineJob.SCOPE_AWARE_RESOLVER, scopeAwareProvider);
+        scheduler.getContext().put(DeadlineJob.JOB_DATA_SERIALIZER, serializer);
     }
 
     @Override
@@ -165,10 +190,8 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         }
     }
 
-    private static JobDetail buildJobDetail(DeadlineMessage deadlineMessage,
-                                            ScopeDescriptor deadlineScope,
-                                            JobKey jobKey) {
-        JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(deadlineMessage, deadlineScope);
+    private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
+        JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
                          .withDescription(deadlineMessage.getPayloadType().getName())
                          .withIdentity(jobKey)
