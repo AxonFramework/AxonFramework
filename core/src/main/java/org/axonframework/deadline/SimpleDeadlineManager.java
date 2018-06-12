@@ -21,6 +21,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -28,8 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,7 +39,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.common.Assert.isFalse;
 import static org.axonframework.common.Assert.notNull;
 
 /**
@@ -60,67 +58,54 @@ public class SimpleDeadlineManager implements DeadlineManager {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleDeadlineManager.class);
 
-    private final List<ScopeAware> scopeAwareComponents;
+    private final ScopeAwareProvider scopeAwareProvider;
     private final ScheduledExecutorService scheduledExecutorService;
     private final TransactionManager transactionManager;
 
     private final Map<DeadlineId, Future<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     /**
-     * Initializes SimpleDeadlineManager with {@code scopeAwareComponents} which will load and send messages to
+     * Initializes SimpleDeadlineManager with {@code scopeAwareProvider} which will load and send messages to
      * {@link org.axonframework.messaging.Scope} implementing components. {@link NoTransactionManager} is used as
      * transaction manager and {@link Executors#newSingleThreadScheduledExecutor()} is used as scheduled executor
      * service.
      *
-     * @param scopeAwareComponents an array of {@link ScopeAware} components which are able to load and send
-     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
      */
-    public SimpleDeadlineManager(ScopeAware... scopeAwareComponents) {
-        this(Arrays.asList(scopeAwareComponents));
+    public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider) {
+        this(scopeAwareProvider, Executors.newSingleThreadScheduledExecutor(), NoTransactionManager.INSTANCE);
     }
 
     /**
-     * Initializes SimpleDeadlineManager with {@code scopeAwareComponents} which will load and send messages to
-     * {@link org.axonframework.messaging.Scope} implementing components. {@link NoTransactionManager} is used as
-     * transaction manager and {@link Executors#newSingleThreadScheduledExecutor()} is used as scheduled executor
-     * service.
-     *
-     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
-     */
-    public SimpleDeadlineManager(List<ScopeAware> scopeAwareComponents) {
-        this(scopeAwareComponents, Executors.newSingleThreadScheduledExecutor(), NoTransactionManager.INSTANCE);
-    }
-
-    /**
-     * Initializes SimpleDeadlineManager with {@code transactionManager} and {@code scopeAwareComponents} which will
+     * Initializes SimpleDeadlineManager with {@code transactionManager} and {@code scopeAwareProvider} which will
      * load and send messages to {@link org.axonframework.messaging.Scope} implementing components.
      * {@link Executors#newSingleThreadScheduledExecutor()} is used as scheduled executor service.
      *
-     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
-     * @param transactionManager   The transaction manager used to manage transaction during processing of {@link
-     *                             DeadlineMessage} when deadline is not met
+     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param transactionManager The transaction manager used to manage transaction during processing of {@link
+     *                           DeadlineMessage} when deadline is not met
      */
-    public SimpleDeadlineManager(List<ScopeAware> scopeAwareComponents, TransactionManager transactionManager) {
-        this(scopeAwareComponents, Executors.newSingleThreadScheduledExecutor(), transactionManager);
+    public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider, TransactionManager transactionManager) {
+        this(scopeAwareProvider, Executors.newSingleThreadScheduledExecutor(), transactionManager);
     }
 
     /**
      * Initializes a SimpleDeadlineManager to handle the process around scheduling and triggering a
      * {@link DeadlineMessage}
      *
-     * @param scopeAwareComponents     a {@link List} of {@link ScopeAware} components which are able to load and send
+     * @param scopeAwareProvider       a {@link List} of {@link ScopeAware} components which are able to load and send
      *                                 Messages to components which implement {@link org.axonframework.messaging.Scope}
      * @param scheduledExecutorService Java's service used for scheduling and triggering deadlines
      * @param transactionManager       The transaction manager used to manage transaction during processing of {@link
      *                                 DeadlineMessage} when deadline is not met
      */
-    public SimpleDeadlineManager(List<ScopeAware> scopeAwareComponents,
+    public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider,
                                  ScheduledExecutorService scheduledExecutorService,
                                  TransactionManager transactionManager) {
-        isFalse(
-                scopeAwareComponents.isEmpty(),
+        notNull(
+                scopeAwareProvider,
                 () -> "cannot process deadline messages without scope aware components to send them too"
         );
         notNull(scheduledExecutorService, () -> "scheduledExecutorService may not be null");
@@ -128,7 +113,7 @@ public class SimpleDeadlineManager implements DeadlineManager {
 
         this.scheduledExecutorService = scheduledExecutorService;
         this.transactionManager = transactionManager;
-        this.scopeAwareComponents = new ArrayList<>(scopeAwareComponents);
+        this.scopeAwareProvider = scopeAwareProvider;
     }
 
     @Override
@@ -202,19 +187,18 @@ public class SimpleDeadlineManager implements DeadlineManager {
         }
 
         private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
-            scopeAwareComponents.stream()
-                                .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
-                                .forEach(scopeAwareComponent -> {
-                                    try {
-                                        scopeAwareComponent.send(deadlineMessage, deadlineScope);
-                                    } catch (Exception e) {
-                                        String exceptionMessage = String.format(
-                                                "Failed to send a DeadlineMessage for scope [%s]",
-                                                deadlineScope.scopeDescription()
-                                        );
-                                        throw new ExecutionException(exceptionMessage, e);
-                                    }
-                                });
+            scopeAwareProvider.provideScopeAwareStream(deadlineScope)
+                              .forEach(scopeAwareComponent -> {
+                                  try {
+                                      scopeAwareComponent.send(deadlineMessage, deadlineScope);
+                                  } catch (Exception e) {
+                                      String exceptionMessage = String.format(
+                                              "Failed to send a DeadlineMessage for scope [%s]",
+                                              deadlineScope.scopeDescription()
+                                      );
+                                      throw new ExecutionException(exceptionMessage, e);
+                                  }
+                              });
         }
     }
 

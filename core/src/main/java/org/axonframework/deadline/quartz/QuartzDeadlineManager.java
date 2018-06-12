@@ -23,6 +23,7 @@ import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -39,8 +40,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
@@ -60,50 +59,37 @@ public class QuartzDeadlineManager implements DeadlineManager {
     private static final String JOB_NAME_PREFIX = "deadline-";
 
     private final Scheduler scheduler;
-    private final List<ScopeAware> scopeAwareComponents;
+    private final ScopeAwareProvider scopeAwareProvider;
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareComponents} which will load
+     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
      * and send messages to {@link org.axonframework.messaging.Scope} implementing components. A
      * {@link NoTransactionManager} will be used as the transaction manager.
      *
-     * @param scheduler            A {@link Scheduler} used for scheduling and triggering purposes
-     * @param scopeAwareComponents an array of {@link ScopeAware} components which are able to load and send
-     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
+     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
      */
-    public QuartzDeadlineManager(Scheduler scheduler, ScopeAware... scopeAwareComponents) {
-        this(scheduler, Arrays.asList(scopeAwareComponents));
+    public QuartzDeadlineManager(Scheduler scheduler, ScopeAwareProvider scopeAwareProvider) {
+        this(scheduler, scopeAwareProvider, NoTransactionManager.INSTANCE);
     }
 
     /**
-     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareComponents} which will load
-     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. A
-     * {@link NoTransactionManager} will be used as the transaction manager.
-     *
-     * @param scheduler            A {@link Scheduler} used for scheduling and triggering purposes
-     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
-     */
-    public QuartzDeadlineManager(Scheduler scheduler, List<ScopeAware> scopeAwareComponents) {
-        this(scheduler, scopeAwareComponents, NoTransactionManager.INSTANCE);
-    }
-
-    /**
-     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareComponents} which will load
+     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
      * and send messages to {@link org.axonframework.messaging.Scope} implementing components.
      *
-     * @param scheduler            A {@link Scheduler} used for scheduling and triggering purposes
-     * @param scopeAwareComponents a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                             Messages to components which implement {@link org.axonframework.messaging.Scope}
-     * @param transactionManager   A {@link TransactionManager} which builds transactions and ties them to deadline
-     *                             execution
+     * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
+     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
+     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
+     *                           execution
      */
     public QuartzDeadlineManager(Scheduler scheduler,
-                                 List<ScopeAware> scopeAwareComponents,
+                                 ScopeAwareProvider scopeAwareProvider,
                                  TransactionManager transactionManager) {
         this.scheduler = scheduler;
-        this.scopeAwareComponents = new ArrayList<>(scopeAwareComponents);
+        this.scopeAwareProvider = scopeAwareProvider;
         this.transactionManager = transactionManager;
 
         try {
@@ -115,9 +101,7 @@ public class QuartzDeadlineManager implements DeadlineManager {
 
     private void initialize() throws SchedulerException {
         scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
-        scheduler.getContext().put(
-                DeadlineJob.SCOPE_AWARE_COMPONENTS, new DeadlineJob.ScopeAwareComponents(scopeAwareComponents)
-        );
+        scheduler.getContext().put(DeadlineJob.SCOPE_AWARE_RESOLVER, scopeAwareProvider);
     }
 
     @Override

@@ -45,6 +45,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -75,6 +77,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -278,21 +281,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
-        List<Repository> aggregateRepositories =
-                aggregateConfigurations.entrySet().stream()
-                                       .map(Map.Entry::getValue)
-                                       .map((Function<AggregateConfiguration, Repository>) AggregateConfiguration::repository)
-                                       .collect(Collectors.toList());
-        List<AbstractSagaManager> sagaManagers =
-                config.getModules().stream().filter(m -> m instanceof SagaConfiguration)
-                      .map(m -> (SagaConfiguration) m)
-                      .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
-                      .collect(Collectors.toList());
-
-        List<ScopeAware> scopeAwareComponents = new ArrayList<>(aggregateRepositories);
-        scopeAwareComponents.addAll(sagaManagers);
-
-        return new SimpleDeadlineManager(scopeAwareComponents);
+        return new SimpleDeadlineManager(new LazyScopeAwareProvider(config));
     }
 
     /**
@@ -560,6 +549,48 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public void onStart(Runnable startHandler) {
             startHandlers.add(startHandler);
+        }
+    }
+
+    private class LazyScopeAwareProvider implements ScopeAwareProvider {
+
+        private List<ScopeAware> scopeAwareComponents;
+        private Configuration configuration;
+
+        private LazyScopeAwareProvider(Configuration configuration) {
+            scopeAwareComponents = new ArrayList<>();
+            this.configuration = configuration;
+        }
+
+
+        @Override
+        public Stream<ScopeAware> provideScopeAwareStream(ScopeDescriptor scopeDescriptor) {
+            if (scopeAwareComponents.isEmpty()) {
+                setScopeAwareComponents();
+            }
+
+            return scopeAwareComponents.stream();
+        }
+
+        private void setScopeAwareComponents() {
+            scopeAwareComponents.addAll(retrieveAggregateRepositories());
+            scopeAwareComponents.addAll(retrieveSagaManagers());
+        }
+
+        private List<Repository> retrieveAggregateRepositories() {
+            return configuration.getModules().stream()
+                                .filter(module -> module instanceof AggregateConfiguration)
+                                .map(module -> (AggregateConfiguration) module)
+                                .map((Function<AggregateConfiguration, Repository>) AggregateConfiguration::repository)
+                                .collect(Collectors.toList());
+        }
+
+        private List<AbstractSagaManager> retrieveSagaManagers() {
+            return configuration.getModules().stream()
+                                .filter(module -> module instanceof SagaConfiguration)
+                                .map(module -> (SagaConfiguration) module)
+                                .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
+                                .collect(Collectors.toList());
         }
     }
 }

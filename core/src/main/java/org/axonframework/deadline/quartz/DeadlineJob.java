@@ -21,6 +21,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.quartz.Job;
@@ -31,8 +32,6 @@ import org.quartz.JobExecutionException;
 import org.quartz.SchedulerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
  * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and {@link
@@ -53,9 +52,9 @@ public class DeadlineJob implements Job {
     public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
 
     /**
-     * The key under which the {@link ScopeAwareComponents} are stored within {@link SchedulerContext}.
+     * The key under which the {@link ScopeAwareProvider} is stored within {@link SchedulerContext}.
      */
-    public static final String SCOPE_AWARE_COMPONENTS = ScopeAwareComponents.class.getName();
+    public static final String SCOPE_AWARE_RESOLVER = ScopeAwareProvider.class.getName();
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -72,8 +71,8 @@ public class DeadlineJob implements Job {
             ScopeDescriptor deadlineScope = DeadlineJobDataBinder.deadlineScope(jobData);
 
             TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
-            ScopeAwareComponents scopeAwareComponents =
-                    (ScopeAwareComponents) schedulerContext.get(SCOPE_AWARE_COMPONENTS);
+            ScopeAwareProvider scopeAwareComponents =
+                    (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
 
 
             DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
@@ -92,11 +91,10 @@ public class DeadlineJob implements Job {
         }
     }
 
-    private void executeScheduledDeadline(ScopeAwareComponents scopeAwareComponents,
+    private void executeScheduledDeadline(ScopeAwareProvider scopeAwareComponents,
                                           DeadlineMessage deadlineMessage,
                                           ScopeDescriptor deadlineScope) {
-        scopeAwareComponents.getScopeAwareComponents().stream()
-                            .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
+        scopeAwareComponents.provideScopeAwareStream(deadlineScope)
                             .forEach(scopeAwareComponent -> {
                                 try {
                                     scopeAwareComponent.send(deadlineMessage, deadlineScope);
@@ -153,20 +151,6 @@ public class DeadlineJob implements Job {
          */
         public static ScopeDescriptor deadlineScope(JobDataMap jobDataMap) {
             return (ScopeDescriptor) jobDataMap.get(DEADLINE_SCOPE_KEY);
-        }
-    }
-
-    public static class ScopeAwareComponents {
-
-        private final List<ScopeAware> scopeAwareComponents;
-
-
-        ScopeAwareComponents(List<ScopeAware> scopeAwareComponents) {
-            this.scopeAwareComponents = scopeAwareComponents;
-        }
-
-        public List<ScopeAware> getScopeAwareComponents() {
-            return scopeAwareComponents;
         }
     }
 }
