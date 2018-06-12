@@ -22,9 +22,9 @@ import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.Publisher;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
-import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
+import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -38,7 +38,6 @@ import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.Disposable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -65,7 +64,7 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private final SubscriptionMessageSerializer serializer;
 
-    private final Map<String, Disposable> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>>> subscriptions = new ConcurrentHashMap<>();
 
     private final Publisher<QueryProviderOutbound> publisher;
 
@@ -116,23 +115,10 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure) {
         logger.debug("Subscription Query requested with subscriptionId " + query.getIdentifier());
-        AxonHubSubscriptionQueryResult<I,U> responseObserver = new AxonHubSubscriptionQueryResult<>(serializer, backpressure);
-        SubscriptionQuery subscriptionQuery = this.serializer.serialize(query);
-
-        FlowControllingStreamObserver<SubscriptionQuery> requestObserver = new FlowControllingStreamObserver<>(
-                this.axonHubQueryBus.queryServiceStub().subscription(responseObserver),
-                configuration, flowControl -> SubscriptionQuery.newBuilder(subscriptionQuery)
-                                                               .setNumberOfPermits(flowControl.getPermits())
-                                                               .build(),t-> false);
-        responseObserver.onDispose(() -> {
-            logger.debug("Subscription Query with subscriptionId " + query.getIdentifier()+ " disposed");
-            requestObserver.onCompleted();
-        });
-
-        responseObserver.onResponse(requestObserver::markConsumed);
-        requestObserver.onNext(subscriptionQuery);
-        return responseObserver;
+        QueryServiceGrpc.QueryServiceStub queryService = this.axonHubQueryBus.queryServiceStub();
+        return new AxonHubSubscriptionQueryResult<>(query, queryService, configuration, serializer, backpressure).get();
     }
+
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
@@ -152,8 +138,11 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     private void onSubscriptionQueryRequest(QueryProviderInbound inbound) {
         SubscriptionQueryRequest subscriptionQuery = inbound.getSubscriptionQuery();
         switch (subscriptionQuery.getResponseCase()) {
-            case SUBSCRIBE:
-                subscribeLocally(subscriptionQuery.getSubscribe());
+            case SUBSCRIBE_INITIAL:
+                subscribeInitialResult(subscriptionQuery.getSubscribeInitial());
+                break;
+            case SUBSCRIBE_UPDATE:
+                subscribeUpdates(subscriptionQuery.getSubscribeUpdate());
                 break;
             case UNSUBSCRIBE:
                 unsubscribeLocally(subscriptionQuery.getUnsubscribe());
@@ -161,36 +150,43 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
         }
     }
 
-    private void subscribeLocally(SubscriptionQuery subscribe) {
-        String subscriptionId = subscribe.getQueryRequest().getMessageIdentifier();
-        logger.debug("subscribe locally subscriptionId " + subscriptionId);
-        SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>> result =
-                this.localSegment.subscriptionQuery(serializer.deserialize(subscribe));
-
-       result.initialResult().subscribe(
+    private void subscribeInitialResult(SubscriptionQuery query){
+        String subscriptionId = query.getQueryRequest().getMessageIdentifier();
+        subscribeLocally(query).initialResult().subscribe(
                 i -> publisher.publish(serializer.serialize(i, subscriptionId)),
-                e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId));
-        Disposable disposable = result.updates().subscribe(
+                e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId)
+        );
+    }
+
+    private void subscribeUpdates(SubscriptionQuery query){
+        String subscriptionId = query.getQueryRequest().getMessageIdentifier();
+        subscribeLocally(query).updates().subscribe(
                 u -> publisher.publish(serializer.serialize(u, subscriptionId)),
                 e -> publisher.publish(serializer.serializeCompleteExceptionally(subscriptionId, e)),
                 () -> publisher.publish(serializer.serializeComplete(subscriptionId)));
+    }
 
-        subscriptions.put(subscriptionId, disposable);
+    private SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>>
+    subscribeLocally(SubscriptionQuery subscribe) {
+        String subscriptionId = subscribe.getQueryRequest().getMessageIdentifier();
+        return subscriptions.computeIfAbsent(subscriptionId,
+                                             id ->  localSegment.subscriptionQuery(serializer.deserialize(subscribe)));
     }
 
     private void unsubscribeLocally(SubscriptionQuery unsubscribe) {
         String subscriptionId = unsubscribe.getQueryRequest().getMessageIdentifier();
         logger.debug("unsubscribe locally subscriptionId " + subscriptionId);
-        subscriptions.remove(subscriptionId).dispose();
+        subscriptions.remove(subscriptionId).updates().subscribe().dispose();
     }
 
     private void onApplicationDisconnected() {
         subscriptions.clear();
     }
 
-    private Runnable interceptReconnectRequest(Runnable reconnect){
-        if (subscriptions.isEmpty()) return reconnect;
+    private Runnable interceptReconnectRequest(Runnable reconnect) {
+        if (subscriptions.isEmpty()) {
+            return reconnect;
+        }
         return () -> logger.info("Reconnect refused because there are active subscription queries.");
     }
-
 }

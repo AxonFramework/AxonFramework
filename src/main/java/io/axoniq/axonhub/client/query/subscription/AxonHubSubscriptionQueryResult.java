@@ -15,15 +15,22 @@
 
 package io.axoniq.axonhub.client.query.subscription;
 
+import io.axoniq.axonhub.SubscriptionQuery;
 import io.axoniq.axonhub.SubscriptionQueryResponse;
+import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
+import io.axoniq.axonhub.grpc.FlowControl;
+import io.axoniq.axonhub.grpc.QueryServiceGrpc;
+import io.axoniq.axonhub.grpc.SubscriptionQueryOutbound;
 import io.grpc.stub.StreamObserver;
+import org.axonframework.queryhandling.DefaultSubscriptionQueryResult;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
@@ -31,6 +38,10 @@ import reactor.core.publisher.MonoSink;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static io.axoniq.axonhub.grpc.SubscriptionQueryOutbound.newBuilder;
 
 /**
  *
@@ -38,11 +49,13 @@ import java.util.function.Consumer;
  *
  * @author Sara Pellegrini
  */
-class AxonHubSubscriptionQueryResult<I, U> implements
-        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>,
+class AxonHubSubscriptionQueryResult<Q, I, U> implements
+        Supplier<SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>>,
         StreamObserver<SubscriptionQueryResponse> {
 
     private final Logger logger = LoggerFactory.getLogger(AxonHubSubscriptionQueryResult.class);
+
+    private final FlowControllingStreamObserver<SubscriptionQueryOutbound> requestObserver;
 
     private final SubscriptionMessageSerializer serializer;
 
@@ -50,34 +63,40 @@ class AxonHubSubscriptionQueryResult<I, U> implements
 
     private final Flux<SubscriptionQueryUpdateMessage<U>> updates;
 
+    private final SubscriptionQuery subscriptionQuery;
+
+    private final Consumer<Integer> responseCounterConsumer;
+
     private MonoSink<QueryResponseMessage<I>> initialResultSink;
 
     private FluxSink<SubscriptionQueryUpdateMessage<U>> updateMessageFluxSink;
 
-    private Disposable disposable;
-
-    private Consumer<Integer> responseCounterConsumer = i -> {};
-
     AxonHubSubscriptionQueryResult(
+            SubscriptionQueryMessage<Q, I, U> query,
+            QueryServiceGrpc.QueryServiceStub queryService,
+            AxonHubConfiguration configuration,
             SubscriptionMessageSerializer serializer,
             SubscriptionQueryBackpressure backpressure) {
+        this.subscriptionQuery = serializer.serialize(query);
         this.serializer = serializer;
-        this.initialResult = Mono.create(sink -> initialResultSink = sink);
-        this.updates = Flux.create(sink -> {
-            updateMessageFluxSink = sink;
-            sink.onDispose(() -> Optional.ofNullable(disposable).ifPresent(Disposable::dispose));
-        }, backpressure.getOverflowStrategy());
+        this.initialResult = Mono.create(this::initialResult);
+        this.updates = Flux.create(this::updates, backpressure.getOverflowStrategy());
+        StreamObserver<SubscriptionQueryOutbound> subscription = queryService.subscription(this);
+        Function<FlowControl, SubscriptionQueryOutbound> requestMapping = flowControl ->
+                newBuilder().setFlowControl(SubscriptionQuery.newBuilder(subscriptionQuery).setNumberOfPermits(flowControl.getPermits())).build();
+        requestObserver = new FlowControllingStreamObserver<>(subscription, configuration, requestMapping, t -> false);
+        responseCounterConsumer = requestObserver::markConsumed;
     }
 
-
-    @Override
-    public Mono<QueryResponseMessage<I>> initialResult() {
-        return initialResult;
+    private void initialResult(MonoSink<QueryResponseMessage<I>> monoSink){
+        initialResultSink = monoSink;
+        requestObserver.onNext(newBuilder().setSubscribeInitial(subscriptionQuery).build());
     }
 
-    @Override
-    public Flux<SubscriptionQueryUpdateMessage<U>> updates() {
-        return updates;
+    private void updates(FluxSink<SubscriptionQueryUpdateMessage<U>> fluxSink){
+        updateMessageFluxSink = fluxSink;
+        fluxSink.onDispose(() -> Optional.ofNullable(requestObserver).ifPresent(StreamObserver::onCompleted));
+        requestObserver.onNext(newBuilder().setSubscribeInitial(subscriptionQuery).build());
     }
 
     @Override
@@ -114,11 +133,8 @@ class AxonHubSubscriptionQueryResult<I, U> implements
         updateMessageFluxSink.complete();
     }
 
-    void onDispose(Disposable disposable) {
-        this.disposable = disposable;
-    }
-
-    void onResponse(Consumer<Integer> responseCounterConsumer){
-        this.responseCounterConsumer = responseCounterConsumer;
+    @Override
+    public SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> get() {
+        return new DefaultSubscriptionQueryResult<>(initialResult, updates);
     }
 }
