@@ -1,5 +1,7 @@
 package org.axonframework.eventhandling.saga;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.util.Objects;
@@ -17,7 +19,8 @@ public class SagaDescriptor implements ScopeDescriptor {
     private final String type;
     private final Object identifier;
 
-    public SagaDescriptor(String type, Object identifier) {
+    @JsonCreator
+    public SagaDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         this.type = type;
         this.identifier = identifier;
     }
