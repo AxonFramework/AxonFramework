@@ -32,9 +32,11 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -60,8 +62,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     private final AggregateModel<T> inspector;
     private final RepositoryProvider repositoryProvider;
-    private final PriorityQueue<DelayedTask> delayedTasks = new PriorityQueue<>();
-    private final AtomicInteger delayedTasksSequence = new AtomicInteger(0);
+    private final Queue<Runnable> delayedTasks = new LinkedList<>();
     private final EventBus eventBus;
     private T aggregateRoot;
     private boolean applying = false;
@@ -453,8 +454,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 applying = false;
             }
         } else {
-            delayedTasks.add(DelayedTask.highPriorityTask(() -> publish(createMessage(payload, metaData)),
-                                                          delayedTasksSequence.getAndIncrement()));
+            delayedTasks.add(() -> publish(createMessage(payload, metaData)));
         }
         return this;
     }
@@ -499,7 +499,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public ApplyMore andThen(Runnable runnable) {
         if (applying || aggregateRoot == null) {
-            delayedTasks.add(DelayedTask.highPriorityTask(runnable, delayedTasksSequence.getAndIncrement()));
+            delayedTasks.add(runnable);
         } else {
             runnable.run();
         }
@@ -558,43 +558,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
                                                               getMetaData().mergedWith(additionalMetaData));
             }
-        }
-    }
-
-    private static class DelayedTask implements Runnable, Comparable<DelayedTask> {
-
-        private static final int HIGH_PRIORITY = 1;
-        private static final int LOW_PRIORITY = 10;
-
-        private final int priority;
-        private final int order;
-        private final Runnable delegate;
-
-        private DelayedTask(int priority, int order, Runnable delegate) {
-            this.priority = priority;
-            this.order = order;
-            this.delegate = delegate;
-        }
-
-        private static DelayedTask highPriorityTask(Runnable delegate, int order) {
-            return new DelayedTask(HIGH_PRIORITY, order, delegate);
-        }
-
-        private static DelayedTask lowPriorityTask(Runnable delegate, int order) {
-            return new DelayedTask(LOW_PRIORITY, order, delegate);
-        }
-
-        @Override
-        public void run() {
-            delegate.run();
-        }
-
-        @Override
-        public int compareTo(DelayedTask o) {
-            if (priority == o.priority) {
-                return Integer.compare(order, o.order);
-            }
-            return Integer.compare(priority, o.priority);
         }
     }
 }
