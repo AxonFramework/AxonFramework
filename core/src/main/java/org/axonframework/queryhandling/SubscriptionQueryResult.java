@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.Registration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +28,7 @@ import reactor.core.publisher.Mono;
  * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure)
  * @since 3.3
  */
-public interface SubscriptionQueryResult<I, U> {
+public interface SubscriptionQueryResult<I, U> extends Registration {
 
     /**
      * Subscribing to this mono will trigger invocation of query handler. The return value of that query handler will be
@@ -43,4 +44,10 @@ public interface SubscriptionQueryResult<I, U> {
      * @return the flux representing the incremental updates
      */
     Flux<U> updates();
+
+    @Override
+    default boolean cancel() {
+        updates().subscribe().dispose();
+        return true;
+    }
 }
