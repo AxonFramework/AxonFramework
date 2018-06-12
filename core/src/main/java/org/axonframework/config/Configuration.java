@@ -70,6 +70,16 @@ public interface Configuration {
     }
 
     /**
+     * Returns the Event Processor Registry in this Configuration. If not set otherwise, the default one is {@link
+     * DefaultEventProcessorRegistry}.
+     *
+     * @return the Event Processor Registry defined in this Configuration
+     */
+    default EventProcessorRegistry eventProcessorRegistry() {
+        return getComponent(EventProcessorRegistry.class);
+    }
+
+    /**
      * Returns the Command Bus defined in this Configuration. Note that this Configuration should be started (see
      * {@link #start()}) before sending Commands over the Command Bus.
      *
@@ -233,7 +243,24 @@ public interface Configuration {
      * @see #start()
      * @see #onShutdown(Runnable)
      */
-    void onStart(Runnable startHandler);
+    default void onStart(Runnable startHandler) {
+        onStart(0, startHandler);
+    }
+
+    /**
+     * Registers a handler to be executed when this Configuration is started.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already started is undefined.
+     *
+     * @param startHandler The handler to execute when the configuration is started
+     * @param phase        defines a phase in which the start handler will be invoked during {@link
+     *                     Configuration#start()} and {@link Configuration#shutdown()}. When starting the configuration
+     *                     handlers are ordered in ascending, when shutting down the configuration, descending order is
+     *                     used.
+     * @see #start()
+     * @see #onShutdown(Runnable)
+     */
+    void onStart(int phase, Runnable startHandler);
 
     /**
      * Registers a handler to be executed when the Configuration is shut down.
@@ -244,7 +271,24 @@ public interface Configuration {
      * @see #shutdown()
      * @see #onStart(Runnable)
      */
-    void onShutdown(Runnable shutdownHandler);
+    default void onShutdown(Runnable shutdownHandler) {
+        onShutdown(0, shutdownHandler);
+    }
+
+    /**
+     * Registers a handler to be executed when the Configuration is shut down.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
+     *
+     * @param shutdownHandler The handler to execute when the Configuration is shut down
+     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
+     *                        Configuration#start()} and {@link Configuration#shutdown()}. When starting the
+     *                        configuration handlers are ordered in ascending, when shutting down the configuration,
+     *                        descending order is used.
+     * @see #shutdown()
+     * @see #onStart(Runnable)
+     */
+    void onShutdown(int phase, Runnable shutdownHandler);
 
     /**
      * Returns the EventUpcasterChain with all registered upcasters.

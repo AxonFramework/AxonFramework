@@ -32,6 +32,16 @@ public interface ModuleConfiguration {
     void initialize(Configuration config);
 
     /**
+     * Defines a phase in which this module's {@link #initialize(Configuration)}, {@link #start()}, {@link #shutdown()}
+     * will be invoked.
+     *
+     * @return this module's phase
+     */
+    default int phase() {
+        return 0;
+    }
+
+    /**
      * Invoked when the Configuration is started.
      *
      * @see Configuration#start()

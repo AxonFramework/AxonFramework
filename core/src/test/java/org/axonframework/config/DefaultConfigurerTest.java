@@ -39,6 +39,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.*;
 
 import javax.persistence.*;
 import java.util.HashMap;
@@ -51,8 +52,7 @@ import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class DefaultConfigurerTest {
 
@@ -274,6 +274,35 @@ public class DefaultConfigurerTest {
                                                 .start();
 
         assertThat(config.getModules().size(), CoreMatchers.is(3));
+    }
+
+    @Test
+    public void testModuleHandlersOrdering() {
+        ModuleConfiguration module1 = mock(ModuleConfiguration.class);
+        ModuleConfiguration module2 = mock(ModuleConfiguration.class);
+        ModuleConfiguration module3 = mock(ModuleConfiguration.class);
+        when(module1.phase()).thenReturn(2);
+        when(module2.phase()).thenReturn(3);
+        when(module3.phase()).thenReturn(1);
+
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .registerModule(module1)
+                                                       .registerModule(module2)
+                                                       .registerModule(module3)
+                                                       .start();
+        assertNotNull(configuration);
+        configuration.shutdown();
+
+        InOrder inOrder = inOrder(module1, module2, module3);
+        inOrder.verify(module3).initialize(configuration);
+        inOrder.verify(module1).initialize(configuration);
+        inOrder.verify(module2).initialize(configuration);
+        inOrder.verify(module3).start();
+        inOrder.verify(module1).start();
+        inOrder.verify(module2).start();
+        inOrder.verify(module2).shutdown();
+        inOrder.verify(module1).shutdown();
+        inOrder.verify(module3).shutdown();
     }
 
     @Entity(name = "StubAggregate")

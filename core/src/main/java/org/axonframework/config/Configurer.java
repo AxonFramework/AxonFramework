@@ -174,6 +174,16 @@ public interface Configurer {
     Configurer configureCorrelationDataProviders(Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder);
 
     /**
+     * Configures the EventProcessorRegistry that is used for registering event processors and (re)using them within
+     * event handling components such as Sagas and Event Handlers.
+     *
+     * @param eventProcessorRegistryBuilder the builder function returning the EventProcessorRegistry
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer configureEventProcessorRegistry(
+            Function<Configuration, EventProcessorRegistry> eventProcessorRegistryBuilder);
+
+    /**
      * Registers an Axon module with this configuration. The module is initialized when the configuration is created and
      * has access to the global configuration when initialized.
      * <p>
@@ -210,7 +220,25 @@ public interface Configurer {
      * @param annotatedCommandHandlerBuilder The builder function of the Command Handler bean
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder);
+    default Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder) {
+        return registerCommandHandler(0, annotatedCommandHandlerBuilder);
+    }
+
+    /**
+     * Registers a command handler bean with this configuration. The bean may be of any type. The actual command handler
+     * methods will be detected based on the annotations present on the bean's methods.
+     * <p>
+     * The builder function receives the Configuration as input, and is expected to return a fully initialized instance
+     * of the command handler bean.
+     *
+     * @param annotatedCommandHandlerBuilder The builder function of the Command Handler bean
+     * @param phase                          defines a phase in which the command handler builder will be invoked during
+     *                                       {@link Configuration#start()} and {@link Configuration#shutdown()}. When
+     *                                       starting the configuration handlers are ordered in ascending, when shutting
+     *                                       down the configuration, descending order is used.
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerCommandHandler(int phase, Function<Configuration, Object> annotatedCommandHandlerBuilder);
 
     /**
      * Registers a query handler bean with this configuration. The bean may be of any type. The actual query handler
@@ -222,7 +250,25 @@ public interface Configurer {
      * @param annotatedQueryHandlerBuilder The builder function of the Query Handler bean
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder);
+    default Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
+        return registerQueryHandler(0, annotatedQueryHandlerBuilder);
+    }
+
+    /**
+     * Registers a query handler bean with this configuration. The bean may be of any type. The actual query handler
+     * methods will be detected based on the annotations present on the bean's methods.
+     * <p>
+     * The builder function receives the Configuration as input, and is expected to return a fully initialized instance
+     * of the query handler bean.
+     *
+     * @param annotatedQueryHandlerBuilder The builder function of the Query Handler bean
+     * @param phase                        defines a phase in which the query handler builder will be invoked during
+     *                                     {@link Configuration#start()} and {@link Configuration#shutdown()}. When
+     *                                     starting the configuration handlers are ordered in ascending, when shutting
+     *                                     down the configuration, descending order is used.
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder);
 
     /**
      * Configures an Embedded Event Store which uses the given Event Storage Engine to store its events. The builder

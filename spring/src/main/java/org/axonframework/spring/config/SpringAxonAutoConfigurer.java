@@ -169,17 +169,19 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(ErrorHandler.class).ifPresent(
                 handler -> configurer.registerComponent(ErrorHandler.class, c -> getBean(handler, c))
         );
+        findComponent(EventProcessorRegistry.class).ifPresent(eventProcessorRegistry -> configurer
+                .configureEventProcessorRegistry(c -> getBean(eventProcessorRegistry, c)));
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)
                                                         .getBeanDefinition());
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
+        registerModules(configurer);
         registerCorrelationDataProviders(configurer);
         registerEventUpcasters(configurer);
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer);
-        registerModules(configurer);
 
         Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
         String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
@@ -270,11 +272,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             String configName = explicitSagaConfig
                     ? sagaAnnotation.configurationBean()
                     : lcFirst(sagaType.getSimpleName()) + "Configuration";
-            if (explicitSagaConfig || beanFactory.containsBean(configName)) {
-                configurer.registerModule(new LazyRetrievedModuleConfiguration(
-                        () -> beanFactory.getBean(configName, ModuleConfiguration.class))
-                );
-            } else {
+            if (!explicitSagaConfig && !beanFactory.containsBean(configName)) {
                 SagaConfiguration<?> sagaConfiguration =
                         SagaConfiguration.subscribingSagaManager(sagaType);
                 beanFactory.registerSingleton(configName, sagaConfiguration);
@@ -323,6 +321,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                        () -> beanFactory.getBean(EntityManagerProvider.class)),
                                         aggregateType,
                                         c.eventBus(),
+                                        c::repository,
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
                                         c.parameterResolverFactory()));
                     }
