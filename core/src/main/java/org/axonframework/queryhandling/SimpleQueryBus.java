@@ -74,7 +74,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, CopyOnWriteArrayList<FluxSinkWrapper<?>>> updateHandlers = new ConcurrentHashMap<>();
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, CopyOnWriteArrayList<BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>>>> delayedUpdates = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
@@ -247,10 +247,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                      .forEach(query -> {
-                          FluxSinkWrapper<?> updateHandler = updateHandlers.get(query);
-                          doEmit(query, updateHandler, update);
-                      });
+                      .forEach(query -> updateHandlers.get(query)
+                                                      .forEach(uh -> doEmit(query, uh, update)));
     }
 
     @Override
@@ -259,7 +257,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .forEach(query -> updateHandlers.remove(query).complete());
+                      .forEach(query -> updateHandlers.remove(query).forEach(FluxSinkWrapper::complete));
     }
 
     @Override
@@ -268,7 +266,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .forEach(query -> updateHandlers.remove(query).error(cause));
+                      .forEach(query -> updateHandlers.remove(query).forEach(uh -> uh.error(cause)));
     }
 
     private <Q, I, U> void initialResult(SubscriptionQueryMessage<Q, I, U> query,
@@ -311,7 +309,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private <U> void updates(SubscriptionQueryMessage<?, ?, U> query,
                              FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSink) {
-        updateHandlers.put(query, fluxSink);
+        updateHandlers.computeIfAbsent(query, k -> new CopyOnWriteArrayList<>()).add(fluxSink);
         fluxSink.onDispose(() -> updateHandlers.remove(query));
         Optional.ofNullable(delayedUpdates.remove(query))
                 .ifPresent(delays -> delays.forEach(c -> c.accept(query, fluxSink)));

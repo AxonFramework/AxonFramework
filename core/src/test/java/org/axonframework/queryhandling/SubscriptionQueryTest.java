@@ -22,10 +22,13 @@ import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
 import reactor.test.StepVerifier;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for subscription query functionality.
@@ -159,6 +162,69 @@ public class SubscriptionQueryTest {
         StepVerifier.create(result.initialResult())
                     .expectErrorMatches(chatQueryHandler.toBeThrown::equals)
                     .verify();
+    }
+
+    @Test
+    public void testSeveralSubscriptions() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
+                .subscriptionQuery(queryMessage);
+        List<String> initial1 = new ArrayList<>();
+        List<String> initial2 = new ArrayList<>();
+        List<String> update1 = new ArrayList<>();
+        List<String> update2 = new ArrayList<>();
+        List<String> update3 = new ArrayList<>();
+        result.initialResult().map(Message::getPayload).subscribe(initial1::addAll);
+        result.initialResult().map(Message::getPayload).subscribe(initial2::addAll);
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        result.updates().map(Message::getPayload).subscribe(update1::add);
+        result.updates().map(Message::getPayload).subscribe(update2::add);
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+        result.updates().map(Message::getPayload).subscribe(update3::add);
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update3");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update4");
+        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
+
+        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
+        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial2);
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update1);
+        assertEquals(Arrays.asList("Update2", "Update3", "Update4"), update2);
+        assertEquals(Arrays.asList("Update3", "Update4"), update3);
+    }
+
+    @Test
+    public void testDoubleSubscriptionMessage() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result1 = queryBus
+                .subscriptionQuery(queryMessage);
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result2 = queryBus
+                .subscriptionQuery(queryMessage);
+        List<String> update1 = new ArrayList<>();
+        List<String> update2 = new ArrayList<>();
+        result1.updates().map(Message::getPayload).subscribe(update1::add);
+        result2.updates().map(Message::getPayload).subscribe(update2::add);
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update3");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update4");
+        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
+
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update1);
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update2);
     }
 
     @Test
