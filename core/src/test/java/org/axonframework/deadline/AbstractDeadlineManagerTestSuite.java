@@ -21,15 +21,12 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
-import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.Timestamp;
-import org.axonframework.eventhandling.saga.AbstractSagaManager;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -37,16 +34,11 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
-import org.junit.runner.*;
-import org.junit.runners.*;
 import org.mockito.*;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Objects;
-import java.util.function.Function;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -54,62 +46,19 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests whether the {@link DeadlineManager} implementations functions as expected.
- * This ia a parameterized test, which currently functions as an integration test suite for the
- * {@link SimpleDeadlineManager} and the {@link org.axonframework.deadline.quartz.QuartzDeadlineManager}.
+ * Tests whether a {@link DeadlineManager} implementations functions as expected.
+ * This is an abstract (integration) test class, whose tests cases should work for any DeadlineManager implementation.
  *
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3
  */
-@RunWith(Parameterized.class)
-public class DeadlineManagerTest {
+public abstract class AbstractDeadlineManagerTestSuite {
 
     private static final int DEADLINE_TIMEOUT = 1000;
     private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 500;
 
-    private final Function<Configuration, DeadlineManager> deadlineManagerBuilder;
-    private Configuration configuration;
-
-    public DeadlineManagerTest(Function<Configuration, DeadlineManager> deadlineManagerBuilder) {
-        this.deadlineManagerBuilder = deadlineManagerBuilder;
-    }
-
-    @Parameterized.Parameters
-    public static Collection deadlineManagers() {
-        ArrayList<Function<Configuration, DeadlineManager>> deadlineManagers = new ArrayList<>();
-        deadlineManagers.add(DeadlineManagerTest::simpleDeadlineManager);
-        // TODO fix as soon as QuartzDeadlineManager is up to date
-//        deadlineManagers.add(DeadlineManagerTest::quartzDeadlineManager);
-        return deadlineManagers;
-    }
-
-    private static DeadlineManager simpleDeadlineManager(Configuration c) {
-        Repository aggregateRepository = c.repository(MyAggregate.class);
-        AbstractSagaManager sagaManager =
-                c.getModules().stream().filter(m -> m instanceof SagaConfiguration)
-                 .map(m -> (SagaConfiguration) m)
-                 .filter(sc -> sc.getSagaType().equals(MySaga.class))
-                 .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
-                 .findAny()
-                 .orElseThrow(() -> new IllegalStateException(""));
-
-        return new SimpleDeadlineManager(aggregateRepository, sagaManager);
-    }
-
-    // TODO fix as soon as QuartzDeadlineManager is up to date
-//    private static DeadlineManager quartzDeadlineManager(Configuration c) {
-//        try {
-//            Scheduler scheduler = new StdSchedulerFactory().getScheduler();
-//            DefaultDeadlineTargetLoader deadlineTargetLoader = new DefaultDeadlineTargetLoader(c::repository,
-//                                                                                               c::sagaRepository);
-//            QuartzDeadlineManager quartzDeadlineManager = new QuartzDeadlineManager(scheduler, deadlineTargetLoader);
-//            scheduler.start();
-//            return quartzDeadlineManager;
-//        } catch (SchedulerException e) {
-//            throw new AxonConfigurationException("Unable to configure quartz scheduler", e);
-//        }
-//    }
+    protected Configuration configuration;
 
     @Before
     public void setUp() {
@@ -118,7 +67,7 @@ public class DeadlineManagerTest {
                                          .configureEventStore(c -> eventStore)
                                          .configureAggregate(MyAggregate.class)
                                          .registerModule(SagaConfiguration.subscribingSagaManager(MySaga.class))
-                                         .registerComponent(DeadlineManager.class, deadlineManagerBuilder)
+                                         .registerComponent(DeadlineManager.class, this::buildDeadlineManager)
                                          .start();
     }
 
@@ -126,6 +75,14 @@ public class DeadlineManagerTest {
     public void tearDown() {
         configuration.shutdown();
     }
+
+    /**
+     * Build the {@link DeadlineManager} to be tested.
+     *
+     * @param configuration the {@link Configuration} used to set up this test class
+     * @return a {@link DeadlineManager} to be tested
+     */
+    public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
     @Test
     public void testDeadlineOnAggregate() throws InterruptedException {
@@ -400,7 +357,7 @@ public class DeadlineManagerTest {
     }
 
     @SuppressWarnings("unused")
-    public static class MySaga {
+    protected static class MySaga {
 
         @StartSaga
         @SagaEventHandler(associationProperty = "id")
@@ -423,7 +380,7 @@ public class DeadlineManagerTest {
     }
 
     @SuppressWarnings("unused")
-    private static class MyAggregate {
+    protected static class MyAggregate {
 
         @AggregateIdentifier
         private String id;
@@ -470,7 +427,7 @@ public class DeadlineManagerTest {
         }
     }
 
-    private static class MyEntity {
+    protected static class MyEntity {
 
         @EntityId
         private final String id;
