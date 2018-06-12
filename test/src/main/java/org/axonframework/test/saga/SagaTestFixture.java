@@ -20,12 +20,18 @@ import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
@@ -44,7 +50,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -123,21 +133,23 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     /**
-     * Handles the given {@code deadlineMessage} in the saga with given {@code sagaId}. Deadline message is handled in
-     * the scope of a {@link org.axonframework.messaging.unitofwork.UnitOfWork}. If handling the deadline results in an
-     * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
+     * Handles the given {@code deadlineMessage} in the saga described by the given {@code sagaDescriptor}.
+     * Deadline message is handled in the scope of a {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
+     * If handling the deadline results in an exception, the exception will be wrapped in a {@link
+     * FixtureExecutionException}.
      *
-     * @param sagaId          The saga identifier, should match id of saga being tested
-     * @param deadlineMessage The deadline message to be handled
+     * @param sagaDescriptor  A {@link ScopeDescriptor} describing the saga under test
+     * @param deadlineMessage The {@link DeadlineMessage} to be handled
      */
-    protected void handleDeadline(String sagaId, DeadlineMessage<?> deadlineMessage) {
+    protected void handleDeadline(ScopeDescriptor sagaDescriptor, DeadlineMessage<?> deadlineMessage) {
         ensureSagaResourcesInitialized();
-        try {
-            // TODO fix
-//            DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> sagaRepository.load(sagaId).handle(deadlineMessage));
-        } catch (Exception e) {
-            throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
-        }
+        DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
+            try {
+                sagaManager.send(deadlineMessage, sagaDescriptor);
+            } catch (Exception e) {
+                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+            }
+        });
     }
 
     /**

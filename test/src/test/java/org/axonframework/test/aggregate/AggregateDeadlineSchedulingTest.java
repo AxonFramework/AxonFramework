@@ -19,124 +19,149 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.annotation.DeadlineHandler;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.junit.*;
 
 import java.time.Duration;
 
-import static org.axonframework.commandhandling.model.AggregateLifecycle.*;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
-/**
- * Tests for scheduling deadlines on {@link AggregateTestFixture}.
- *
- * @author Milan Savic
- */
 public class AggregateDeadlineSchedulingTest {
-// TODO reuse these tests latter on
-//    private static final int TRIGGER_DURATION_MINUTES = 10;
-//
-//    private AggregateTestFixture<MyAggregate> fixture;
-//
-//    @Before
-//    public void setUp() {
-//        fixture = new AggregateTestFixture<>(MyAggregate.class);
-//    }
-//
-//    @Test
-//    public void testDeadlineScheduling() {
-//        fixture.givenNoPriorActivity()
-//               .when(new CreateMyAggregateCommand("id"))
-//               .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
-//    }
-//
-//    @Test
-//    public void testDeadlineSchedulingTypeMatching() {
-//        fixture.givenNoPriorActivity()
-//               .when(new CreateMyAggregateCommand("id"))
-//               .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
-//    }
-//
-//    @Test
-//    public void testDeadlineMet() {
-//        fixture.givenNoPriorActivity()
-//               .andGivenCommands(new CreateMyAggregateCommand("id"))
-//               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-//               .expectDeadlinesMet("deadlineDetails");
-//    }
-//
-//    @Test
-//    public void testDeadlineCancelled() {
-//        fixture.givenNoPriorActivity()
-//               .andGivenCommands(new CreateMyAggregateCommand("id"))
-//               .when(new ResetTriggerCommand("id"))
-//               .expectNoScheduledDeadlines();
-//    }
-//
-//    private static class CreateMyAggregateCommand {
-//
-//        @TargetAggregateIdentifier
-//        private final String aggregateId;
-//
-//        private CreateMyAggregateCommand(String aggregateId) {
-//            this.aggregateId = aggregateId;
-//        }
-//    }
-//
-//    private static class MyAggregateCreatedEvent {
-//
-//        private final String aggregateId;
-//        private final ScheduleToken scheduleToken;
-//
-//        private MyAggregateCreatedEvent(String aggregateId,
-//                                        ScheduleToken scheduleToken) {
-//            this.aggregateId = aggregateId;
-//            this.scheduleToken = scheduleToken;
-//        }
-//    }
-//
-//    private static class ResetTriggerCommand {
-//
-//        @TargetAggregateIdentifier
-//        private final String aggregateId;
-//
-//        private ResetTriggerCommand(String aggregateId) {
-//            this.aggregateId = aggregateId;
-//        }
-//    }
-//
-//    @SuppressWarnings("unused")
-//    private static class MyAggregate {
-//
-//        @AggregateIdentifier
-//        private String id;
-//        private ScheduleToken scheduleToken;
-//
-//        public MyAggregate() {
-//        }
-//
-//        @CommandHandler
-//        public MyAggregate(CreateMyAggregateCommand command) {
-//            ScheduleToken scheduleToken = scheduleDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
-//                                                           "deadlineDetails");
-//            apply(new MyAggregateCreatedEvent(command.aggregateId, scheduleToken));
-//        }
-//
-//        @EventSourcingHandler
-//        public void on(MyAggregateCreatedEvent event) {
-//            this.id = event.aggregateId;
-//            this.scheduleToken = event.scheduleToken;
-//        }
-//
-//        @CommandHandler
-//        public void handle(ResetTriggerCommand command) {
-//            cancelDeadline(scheduleToken);
-//        }
-//
-//        @DeadlineHandler
-//        public void handleDeadline(String deadlineInfo) {
-//            // nothing to be done for test purposes, having this deadline handler invoked is sufficient
-//        }
-//    }
+
+    private static final int TRIGGER_DURATION_MINUTES = 10;
+
+    private AggregateTestFixture<MyAggregate> fixture;
+
+    @Before
+    public void setUp() {
+        fixture = new AggregateTestFixture<>(MyAggregate.class);
+    }
+
+    @Test
+    public void testDeadlineScheduling() {
+        fixture.givenNoPriorActivity()
+               .when(new CreateMyAggregateCommand("id"))
+               .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "deadlineDetails");
+    }
+
+    @Test
+    public void testDeadlineSchedulingTypeMatching() {
+        fixture.givenNoPriorActivity()
+               .when(new CreateMyAggregateCommand("id"))
+               .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
+    }
+
+    @Test
+    public void testDeadlineMet() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .andThenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+               .expectDeadlinesMet("deadlineDetails");
+    }
+
+    @Test
+    public void testDeadlineWhichCancelsSchedule() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .when(new ResetTriggerCommand("id"))
+               .expectNoScheduledDeadlines();
+    }
+
+    @Test
+    public void testDeadlineWhichCancelsAll() {
+        fixture.givenNoPriorActivity()
+               .andGivenCommands(new CreateMyAggregateCommand("id"))
+               .when(new ResetAllTriggerCommand("id"))
+               .expectNoScheduledDeadlines();
+    }
+
+    private static class CreateMyAggregateCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private CreateMyAggregateCommand(String aggregateId) {
+            this.aggregateId = aggregateId;
+        }
+    }
+
+    private static class MyAggregateCreatedEvent {
+
+        private final String aggregateId;
+        private final String deadlineName;
+        private final String deadlineId;
+
+        private MyAggregateCreatedEvent(String aggregateId, String deadlineName, String deadlineId) {
+            this.aggregateId = aggregateId;
+            this.deadlineName = deadlineName;
+            this.deadlineId = deadlineId;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class ResetTriggerCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private ResetTriggerCommand(String aggregateId) {
+            this.aggregateId = aggregateId;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class ResetAllTriggerCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private ResetAllTriggerCommand(String aggregateId) {
+            this.aggregateId = aggregateId;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class MyAggregate {
+
+        @AggregateIdentifier
+        private String id;
+        private String deadlineName;
+        private String deadlineId;
+
+        public MyAggregate() {
+        }
+
+        @CommandHandler
+        public MyAggregate(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
+            String deadlineName = "deadlineName";
+            String deadlineId = deadlineManager.schedule(
+                    Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, "deadlineDetails"
+            );
+            apply(new MyAggregateCreatedEvent(command.aggregateId, deadlineName, deadlineId));
+        }
+
+        @EventSourcingHandler
+        public void on(MyAggregateCreatedEvent event) {
+            this.id = event.aggregateId;
+            this.deadlineName = event.deadlineName;
+            this.deadlineId = event.deadlineId;
+        }
+
+        @CommandHandler
+        public void handle(ResetTriggerCommand command, DeadlineManager deadlineManager) {
+            deadlineManager.cancelSchedule(deadlineName, deadlineId);
+        }
+
+        @CommandHandler
+        public void handle(ResetAllTriggerCommand command, DeadlineManager deadlineManager) {
+            deadlineManager.cancelAll(deadlineName);
+        }
+
+        @DeadlineHandler
+        public void handleDeadline(String deadlineInfo) {
+            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+        }
+    }
 }

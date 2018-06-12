@@ -16,8 +16,19 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.model.*;
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateDescriptor;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.ReflectionUtils;
@@ -25,9 +36,25 @@ import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.*;
-import org.axonframework.eventsourcing.eventstore.*;
-import org.axonframework.messaging.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcedAggregate;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
@@ -47,7 +74,16 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -307,18 +343,18 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     /**
-     * Handles the given {@code deadlineMessage} in the aggregate with given {@code aggregateId}. Deadline message is
-     * handled in the scope of a {@link UnitOfWork}. If handling the deadline results in an exception, the exception
-     * will be wrapped in a {@link FixtureExecutionException}.
+     * Handles the given {@code deadlineMessage} in the aggregate described by the given {@code aggregateDescriptor}.
+     * Deadline message is handled in the scope of a {@link UnitOfWork}. If handling the deadline results in an
+     * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
      *
-     * @param aggregateId     The aggregate identifier, should match the id of aggregate being tested
-     * @param deadlineMessage The deadline message to be handled
+     * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
+     * @param deadlineMessage     The {@link DeadlineMessage} to be handled
      */
-    protected void handleDeadline(String aggregateId, DeadlineMessage<?> deadlineMessage) {
+    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage<?> deadlineMessage) {
         ensureRepositoryConfiguration();
         DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
             try {
-                repository.send(deadlineMessage, new AggregateDescriptor(aggregateType.getSimpleName(), aggregateId));
+                repository.send(deadlineMessage, aggregateDescriptor);
             } catch (Exception e) {
                 throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
             }

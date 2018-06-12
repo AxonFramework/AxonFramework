@@ -16,18 +16,19 @@
 
 package org.axonframework.test.deadline;
 
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.NoSuchElementException;
+import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,13 +36,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Stub implementation of {@link DeadlineManager}. Records all scheduled and met deadlines.
  *
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
-// TODO fix this
-public class StubDeadlineManager /*implements DeadlineManager */ {
+public class StubDeadlineManager implements DeadlineManager {
 
-    private final NavigableSet<ScheduleDeadlineInfo> schedules = new TreeSet<>();
-    private final List<ScheduleDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
+    private final NavigableSet<ScheduledDeadlineInfo> schedules = new TreeSet<>();
+    private final List<ScheduledDeadlineInfo> deadlinesMet = new CopyOnWriteArrayList<>();
     private final AtomicInteger counter = new AtomicInteger(0);
     private Instant currentDateTime;
 
@@ -75,49 +76,51 @@ public class StubDeadlineManager /*implements DeadlineManager */ {
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
-    //    @Override
-    public <T> void schedule(Instant triggerDateTime,
-                             ScopeDescriptor deadlineScope,
-                             T deadlineInfo,
-                             ScheduleToken scheduleToken) {
-        SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
-        ScheduleDeadlineInfo scheduleInfo = new ScheduleDeadlineInfo(triggerDateTime,
-                                                                     "deadlineName",
-                                                                     simpleScheduleToken.getTokenId(),
-                                                                     counter.getAndIncrement(),
-                                                                     deadlineInfo,
-                                                                     deadlineScope);
-        schedules.add(scheduleInfo);
+    @Override
+    public void schedule(Instant triggerDateTime,
+                         String deadlineName,
+                         Object payloadOrMessage,
+                         ScopeDescriptor deadlineScope,
+                         String scheduleId) {
+        schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
+                                                deadlineName,
+                                                scheduleId,
+                                                counter.getAndIncrement(),
+                                                payloadOrMessage,
+                                                deadlineScope));
     }
 
-    //    @Override
-    public <T> void schedule(Duration triggerDuration, ScopeDescriptor deadlineScope, T deadlineInfo,
-                             ScheduleToken scheduleToken) {
-        schedule(currentDateTime.plus(triggerDuration), deadlineScope, deadlineInfo, scheduleToken);
+    @Override
+    public void schedule(Duration triggerDuration,
+                         String deadlineName,
+                         Object payloadOrMessage,
+                         ScopeDescriptor deadlineScope,
+                         String scheduleId) {
+        schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope, scheduleId);
     }
 
-    //    @Override
-    public ScheduleToken generateScheduleId() {
-        return new SimpleScheduleToken(IdentifierFactory.getInstance().generateIdentifier());
+    @Override
+    public void cancelSchedule(String deadlineName, String scheduleId) {
+        schedules.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
+                && scheduledDeadline.getScheduleId().equals(scheduleId));
     }
 
-    //    @Override
-    public void cancelSchedule(ScheduleToken scheduleToken) {
-        SimpleScheduleToken simpleScheduleToken = convert(scheduleToken);
-        schedules.removeIf(s -> s.getScheduleId().equals(simpleScheduleToken.getTokenId()));
+    @Override
+    public void cancelAll(String deadlineName) {
+        schedules.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName));
     }
 
     /**
      * @return scheduled deadlines (which have not been met)
      */
-    public List<ScheduleDeadlineInfo> getScheduledDeadlines() {
+    public List<ScheduledDeadlineInfo> getScheduledDeadlines() {
         return new ArrayList<>(schedules);
     }
 
     /**
      * @return deadlines which have been met
      */
-    public List<ScheduleDeadlineInfo> getDeadlinesMet() {
+    public List<ScheduledDeadlineInfo> getDeadlinesMet() {
         return Collections.unmodifiableList(deadlinesMet);
     }
 
@@ -132,10 +135,10 @@ public class StubDeadlineManager /*implements DeadlineManager */ {
      * Advances the "current time" of the manager to the next scheduled deadline, and returns that deadline. In theory,
      * this may cause "current time" to move backwards.
      *
-     * @return {@link ScheduleDeadlineInfo} of the first scheduled deadline
+     * @return {@link ScheduledDeadlineInfo} of the first scheduled deadline
      */
-    public ScheduleDeadlineInfo advanceToNextTrigger() {
-        ScheduleDeadlineInfo nextItem = schedules.pollFirst();
+    public ScheduledDeadlineInfo advanceToNextTrigger() {
+        ScheduledDeadlineInfo nextItem = schedules.pollFirst();
         if (nextItem == null) {
             throw new NoSuchElementException("There are no scheduled deadlines");
         }
@@ -155,10 +158,8 @@ public class StubDeadlineManager /*implements DeadlineManager */ {
      */
     public void advanceTimeTo(Instant newDateTime, DeadlineConsumer deadlineConsumer) {
         while (!schedules.isEmpty() && !schedules.first().getScheduleTime().isAfter(newDateTime)) {
-            ScheduleDeadlineInfo scheduleDeadlineInfo = advanceToNextTrigger();
-//            String targetId = scheduleDeadlineInfo.getDeadlineScope().getId();
-            DeadlineMessage deadlineMessage = scheduleDeadlineInfo.deadlineMessage();
-//            deadlineConsumer.consume(targetId, deadlineMessage);
+            ScheduledDeadlineInfo scheduledDeadlineInfo = advanceToNextTrigger();
+            deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), scheduledDeadlineInfo.deadlineMessage());
         }
         if (newDateTime.isAfter(currentDateTime)) {
             currentDateTime = newDateTime;
@@ -174,12 +175,5 @@ public class StubDeadlineManager /*implements DeadlineManager */ {
      */
     public void advanceTimeBy(Duration duration, DeadlineConsumer deadlineConsumer) {
         advanceTimeTo(currentDateTime.plus(duration), deadlineConsumer);
-    }
-
-    private SimpleScheduleToken convert(ScheduleToken scheduleToken) {
-        if (!(scheduleToken instanceof SimpleScheduleToken)) {
-            throw new IllegalStateException("Wrong token type. This token was not provided by this scheduler");
-        }
-        return (SimpleScheduleToken) scheduleToken;
     }
 }

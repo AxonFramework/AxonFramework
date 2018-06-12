@@ -17,21 +17,25 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.messaging.ScopeDescriptor;
 
 /**
- * Functional interface describing consumer of deadline message.
+ * Functional interface describing a {@link java.util.function.Consumer} of a {@link DeadlineMessage}.
  *
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
 @FunctionalInterface
 public interface DeadlineConsumer {
 
     /**
-     * Consumes given {@code deadlineMessage}. {@code targetId} is used to identify the handler of the message.
+     * Consumes given {@code deadlineMessage}. The {@code deadlineScope} is used to identify the exact handler of the
+     * message.
      *
-     * @param targetId        Used to identify the handler of the deadline
-     * @param deadlineMessage Message to be handled
+     * @param deadlineScope   A description of the {@link org.axonframework.messaging.Scope} in which a deadline was
+     *                        scheduled
+     * @param deadlineMessage the {@link DeadlineMessage} to be handled
      */
-    void consume(String targetId, DeadlineMessage<?> deadlineMessage);
+    void consume(ScopeDescriptor deadlineScope, DeadlineMessage<?> deadlineMessage);
 }

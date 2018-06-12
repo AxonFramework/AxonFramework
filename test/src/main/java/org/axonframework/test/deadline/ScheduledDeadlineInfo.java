@@ -30,7 +30,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
+public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> {
 
     private final Instant scheduleTime;
     private final String deadlineName;
@@ -40,7 +40,7 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
     private final ScopeDescriptor deadlineScope;
 
     /**
-     * Instantiates a ScheduleDeadlineInfo.
+     * Instantiates a ScheduledDeadlineInfo.
      *
      * @param scheduleTime     The time as an {@link Instant} at which the deadline is scheduled
      * @param deadlineName     A {@link String} denoting the name of the deadline; can be used together with the
@@ -52,12 +52,12 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
      * @param deadlineScope    A description of the {@link org.axonframework.messaging.Scope} in which the deadline is
      *                         scheduled
      */
-    public ScheduleDeadlineInfo(Instant scheduleTime,
-                                String deadlineName,
-                                String scheduleId,
-                                int counter,
-                                Object messageOrPayload,
-                                ScopeDescriptor deadlineScope) {
+    public ScheduledDeadlineInfo(Instant scheduleTime,
+                                 String deadlineName,
+                                 String scheduleId,
+                                 int counter,
+                                 Object messageOrPayload,
+                                 ScopeDescriptor deadlineScope) {
         this.scheduleTime = scheduleTime;
         this.deadlineName = deadlineName;
         this.scheduleId = scheduleId;
@@ -134,7 +134,7 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
     }
 
     @Override
-    public int compareTo(ScheduleDeadlineInfo other) {
+    public int compareTo(ScheduledDeadlineInfo other) {
         if (scheduleTime.equals(other.scheduleTime)) {
             return Integer.compare(counter, other.counter);
         }
@@ -149,7 +149,7 @@ public class ScheduleDeadlineInfo implements Comparable<ScheduleDeadlineInfo> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ScheduleDeadlineInfo that = (ScheduleDeadlineInfo) o;
+        ScheduledDeadlineInfo that = (ScheduledDeadlineInfo) o;
         return counter == that.counter &&
                 Objects.equals(scheduleTime, that.scheduleTime);
     }

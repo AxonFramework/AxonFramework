@@ -49,7 +49,6 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     private final List<EventMessage<?>> publishedEvents;
     private final Reporter reporter = new Reporter();
     private final FieldFilter fieldFilter;
-    // TODO very likely, this should be removed
     private final DeadlineManagerValidator deadlineManagerValidator;
     private Object actualReturnValue;
     private Throwable actualException;

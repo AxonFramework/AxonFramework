@@ -75,8 +75,8 @@ public class DeadlineManagerValidator {
      * @param matcher       The matcher that must match with the deadline scheduled at the given time
      */
     public void assertScheduledDeadlineMatching(Instant scheduledTime, Matcher<?> matcher) {
-        List<ScheduleDeadlineInfo> scheduledDeadlines = deadlineManager.getScheduledDeadlines();
-        for (ScheduleDeadlineInfo scheduledDeadline : scheduledDeadlines) {
+        List<ScheduledDeadlineInfo> scheduledDeadlines = deadlineManager.getScheduledDeadlines();
+        for (ScheduledDeadlineInfo scheduledDeadline : scheduledDeadlines) {
             if (scheduledDeadline.getScheduleTime().equals(scheduledTime) &&
                     matcher.matches(scheduledDeadline.deadlineMessage())) {
                 return;
@@ -97,9 +97,9 @@ public class DeadlineManagerValidator {
      * @param matcher The matcher that will validate the actual deadlines
      */
     public void assertDeadlinesMetMatching(Matcher<? extends Iterable<?>> matcher) {
-        List<ScheduleDeadlineInfo> deadlinesMet = deadlineManager.getDeadlinesMet();
+        List<ScheduledDeadlineInfo> deadlinesMet = deadlineManager.getDeadlinesMet();
         List<DeadlineMessage> deadlineMessages = deadlinesMet.stream()
-                                                             .map(ScheduleDeadlineInfo::deadlineMessage)
+                                                             .map(ScheduledDeadlineInfo::deadlineMessage)
                                                              .collect(Collectors.toList());
         if (!matcher.matches(deadlineMessages)) {
             Description expected = new StringDescription();
@@ -118,7 +118,7 @@ public class DeadlineManagerValidator {
      * @param expected The deadlines that must have been met
      */
     public void assertDeadlinesMet(Object... expected) {
-        List<ScheduleDeadlineInfo> deadlinesMet = deadlineManager.getDeadlinesMet();
+        List<ScheduledDeadlineInfo> deadlinesMet = deadlineManager.getDeadlinesMet();
         if (deadlinesMet.size() != expected.length) {
             throw new AxonAssertionError(format("Got wrong number of deadlines met. Expected <%s>, got <%s>",
                                                 expected.length,
@@ -131,17 +131,17 @@ public class DeadlineManagerValidator {
      * Asserts that no deadlines are scheduled.
      */
     public void assertNoScheduledDeadlines() {
-        List<ScheduleDeadlineInfo> scheduledDeadlines = deadlineManager.getScheduledDeadlines();
+        List<ScheduledDeadlineInfo> scheduledDeadlines = deadlineManager.getScheduledDeadlines();
         if (scheduledDeadlines != null && !scheduledDeadlines.isEmpty()) {
             throw new AxonAssertionError("Expected no scheduled deadlines, got " + scheduledDeadlines.size());
         }
     }
 
-    private void describe(List<ScheduleDeadlineInfo> scheduleDeadlines, Description description) {
+    private void describe(List<ScheduledDeadlineInfo> scheduleDeadlines, Description description) {
         if (scheduleDeadlines.isEmpty()) {
             description.appendText("\n<no scheduled events>");
         }
-        for (ScheduleDeadlineInfo item : scheduleDeadlines) {
+        for (ScheduledDeadlineInfo item : scheduleDeadlines) {
             description.appendText("\n<")
                        .appendText(item.deadlineMessage().toString())
                        .appendText("> at <")
