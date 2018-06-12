@@ -357,7 +357,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @SuppressWarnings("unused")
-    protected static class MySaga {
+    public static class MySaga {
 
         @StartSaga
         @SagaEventHandler(associationProperty = "id")
@@ -380,7 +380,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @SuppressWarnings("unused")
-    protected static class MyAggregate {
+    public static class MyAggregate {
 
         @AggregateIdentifier
         private String id;
@@ -427,7 +427,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
     }
 
-    protected static class MyEntity {
+    public static class MyEntity {
 
         @EntityId
         private final String id;
