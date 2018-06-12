@@ -19,6 +19,7 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
@@ -52,7 +53,7 @@ import static org.quartz.JobKey.jobKey;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class QuartzDeadlineManager implements DeadlineManager {
+public class QuartzDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzDeadlineManager.class);
 
@@ -110,13 +111,17 @@ public class QuartzDeadlineManager implements DeadlineManager {
                          Object messageOrPayload,
                          ScopeDescriptor deadlineScope,
                          String scheduleId) {
-        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
-        try {
-            JobDetail jobDetail = buildJobDetail(deadlineMessage, deadlineScope, new JobKey(scheduleId, deadlineName));
-            scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
-        } catch (SchedulerException e) {
-            throw new DeadlineException("An error occurred while setting a timer for a deadline", e);
-        }
+        runOnPrepareCommitOrNow(() -> {
+            DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+            try {
+                JobDetail jobDetail = buildJobDetail(deadlineMessage,
+                                                     deadlineScope,
+                                                     new JobKey(scheduleId, deadlineName));
+                scheduler.scheduleJob(jobDetail, buildTrigger(triggerDateTime, jobDetail.getKey()));
+            } catch (SchedulerException e) {
+                throw new DeadlineException("An error occurred while setting a timer for a deadline", e);
+            }
+        });
     }
 
     @Override
@@ -135,17 +140,19 @@ public class QuartzDeadlineManager implements DeadlineManager {
 
     @Override
     public void cancelSchedule(String deadlineName, String scheduleId) {
-        cancelSchedule(jobKey(scheduleId, deadlineName));
+        runOnPrepareCommitOrNow(() -> cancelSchedule(jobKey(scheduleId, deadlineName)));
     }
 
     @Override
     public void cancelAll(String deadlineName) {
-        try {
-            scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
-                     .forEach(this::cancelSchedule);
-        } catch (SchedulerException e) {
-            throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
-        }
+        runOnPrepareCommitOrNow(() -> {
+            try {
+                scheduler.getJobKeys(GroupMatcher.groupEquals(deadlineName))
+                         .forEach(this::cancelSchedule);
+            } catch (SchedulerException e) {
+                throw new DeadlineException("An error occurred while cancelling a timer for a deadline manager", e);
+            }
+        });
     }
 
     private void cancelSchedule(JobKey jobKey) {

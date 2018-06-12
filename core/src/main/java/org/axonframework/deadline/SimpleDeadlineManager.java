@@ -54,7 +54,7 @@ import static org.axonframework.common.Assert.notNull;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class SimpleDeadlineManager implements DeadlineManager {
+public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleDeadlineManager.class);
 
@@ -122,25 +122,29 @@ public class SimpleDeadlineManager implements DeadlineManager {
                          Object messageOrPayload,
                          ScopeDescriptor deadlineScope,
                          String scheduleId) {
-        ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
-                new DeadlineTask(deadlineName, deadlineScope, messageOrPayload, scheduleId),
-                triggerDuration.toMillis(),
-                TimeUnit.MILLISECONDS
-        );
-        scheduledTasks.put(new DeadlineId(deadlineName, scheduleId), scheduledFuture);
+        runOnPrepareCommitOrNow(() -> {
+            ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
+                    new DeadlineTask(deadlineName, deadlineScope, messageOrPayload, scheduleId),
+                    triggerDuration.toMillis(),
+                    TimeUnit.MILLISECONDS
+            );
+            scheduledTasks.put(new DeadlineId(deadlineName, scheduleId), scheduledFuture);
+        });
     }
 
     @Override
     public void cancelSchedule(String deadlineName, String scheduleId) {
-        cancelSchedule(new DeadlineId(deadlineName, scheduleId));
+        runOnPrepareCommitOrNow(() -> cancelSchedule(new DeadlineId(deadlineName, scheduleId)));
     }
 
     @Override
     public void cancelAll(String deadlineName) {
-        scheduledTasks.entrySet().stream()
-                      .map(Map.Entry::getKey)
-                      .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
-                      .forEach(this::cancelSchedule);
+        runOnPrepareCommitOrNow(
+                () -> scheduledTasks.entrySet().stream()
+                                    .map(Map.Entry::getKey)
+                                    .filter(scheduledTaskId -> scheduledTaskId.getDeadlineName().equals(deadlineName))
+                                    .forEach(this::cancelSchedule)
+        );
     }
 
     private void cancelSchedule(DeadlineId deadlineId) {
