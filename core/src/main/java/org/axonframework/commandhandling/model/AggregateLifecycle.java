@@ -256,7 +256,7 @@ public abstract class AggregateLifecycle extends Scope {
 
     @Override
     public ScopeDescriptor describeScope() {
-        return new AggregateDescriptor(type(), identifier());
+        return new AggregateDescriptor(type(), this::identifier);
     }
 
     /**
