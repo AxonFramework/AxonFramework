@@ -16,41 +16,22 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.LazyScopeAwareProvider;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
-import org.axonframework.eventhandling.saga.AbstractSagaManager;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
-
-import java.util.Arrays;
-import java.util.function.Function;
 
 public class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
-        Repository aggregateRepository = configuration.repository(MyAggregate.class);
-        AbstractSagaManager sagaManager =
-                configuration.getModules().stream().filter(m -> m instanceof SagaConfiguration)
-                             .map(m -> (SagaConfiguration) m)
-                             .filter(sc -> sc.getSagaType().equals(MySaga.class))
-                             .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
-                             .findAny()
-                             .orElseThrow(() -> new IllegalStateException(String.format(
-                                     "Setup of %s test class failed, as the SagaConfiguration which is to be expected couldn't be found",
-                                     this.getClass().getSimpleName()
-                             )));
-
         try {
             Scheduler scheduler = new StdSchedulerFactory().getScheduler();
-            // TODO provide ScopeAwareProvider for tests
             QuartzDeadlineManager quartzDeadlineManager =
-                    new QuartzDeadlineManager(scheduler, null/*Arrays.asList(aggregateRepository, sagaManager)*/);
+                    new QuartzDeadlineManager(scheduler, new LazyScopeAwareProvider(configuration));
             scheduler.start();
             return quartzDeadlineManager;
         } catch (SchedulerException e) {

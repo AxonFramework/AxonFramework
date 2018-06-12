@@ -31,8 +31,6 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.saga.AbstractSagaManager;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -44,9 +42,6 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.ScopeAware;
-import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -76,8 +71,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -549,48 +542,6 @@ public class DefaultConfigurer implements Configurer {
         @Override
         public void onStart(Runnable startHandler) {
             startHandlers.add(startHandler);
-        }
-    }
-
-    private class LazyScopeAwareProvider implements ScopeAwareProvider {
-
-        private List<ScopeAware> scopeAwareComponents;
-        private Configuration configuration;
-
-        private LazyScopeAwareProvider(Configuration configuration) {
-            scopeAwareComponents = new ArrayList<>();
-            this.configuration = configuration;
-        }
-
-
-        @Override
-        public Stream<ScopeAware> provideScopeAwareStream(ScopeDescriptor scopeDescriptor) {
-            if (scopeAwareComponents.isEmpty()) {
-                setScopeAwareComponents();
-            }
-
-            return scopeAwareComponents.stream();
-        }
-
-        private void setScopeAwareComponents() {
-            scopeAwareComponents.addAll(retrieveAggregateRepositories());
-            scopeAwareComponents.addAll(retrieveSagaManagers());
-        }
-
-        private List<Repository> retrieveAggregateRepositories() {
-            return configuration.getModules().stream()
-                                .filter(module -> module instanceof AggregateConfiguration)
-                                .map(module -> (AggregateConfiguration) module)
-                                .map((Function<AggregateConfiguration, Repository>) AggregateConfiguration::repository)
-                                .collect(Collectors.toList());
-        }
-
-        private List<AbstractSagaManager> retrieveSagaManagers() {
-            return configuration.getModules().stream()
-                                .filter(module -> module instanceof SagaConfiguration)
-                                .map(module -> (SagaConfiguration) module)
-                                .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
-                                .collect(Collectors.toList());
         }
     }
 }
