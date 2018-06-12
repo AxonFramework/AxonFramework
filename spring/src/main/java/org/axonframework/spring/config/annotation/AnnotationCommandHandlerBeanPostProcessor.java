@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -75,7 +76,7 @@ public class AnnotationCommandHandlerBeanPostProcessor
          */
         @Override
         public void doWith(Method method) throws IllegalArgumentException {
-            if (method.isAnnotationPresent(CommandHandler.class)) {
+            if (AnnotationUtils.findAnnotationAttributes(method, CommandHandler.class).isPresent()) {
                 result.set(true);
             }
         }
