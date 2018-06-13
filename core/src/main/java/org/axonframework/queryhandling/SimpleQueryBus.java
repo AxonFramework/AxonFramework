@@ -30,6 +30,8 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.FluxSink;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -38,7 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,7 +47,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -75,7 +75,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, CopyOnWriteArrayList<FluxSinkWrapper<?>>> updateHandlers = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, CopyOnWriteArrayList<BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>>>> delayedUpdates = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
@@ -230,20 +229,22 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             SubscriptionQueryBackpressure backpressure) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         SubscriptionQueryMessage<Q, I, U> interceptedQuery = intercept(query);
-        delayedUpdates.putIfAbsent(interceptedQuery, new CopyOnWriteArrayList<>());
+
         MonoWrapper<QueryResponseMessage<I>> initialResult =
                 MonoWrapper.create(monoSink -> initialResult(interceptedQuery, monitorCallback, monoSink));
-        FluxWrapper<SubscriptionQueryUpdateMessage<U>> updates =
-                FluxWrapper.create(fluxSink -> updates(interceptedQuery, fluxSink), backpressure);
 
-        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(), updates.getFlux());
+        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create();
+        FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
+        updateHandlers.computeIfAbsent(interceptedQuery, k -> new CopyOnWriteArrayList<>())
+                      .add(new FluxSinkWrapper<>(sink));
+
+        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(), processor.replay().autoConnect());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
-        scheduleAfterUpdateSubscribed(filter, (query, fluxSink) -> doEmit(query, fluxSink, update));
         updateHandlers.keySet()
                       .stream()
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
@@ -253,7 +254,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @Override
     public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        scheduleAfterUpdateSubscribed(filter, (query, fluxSink) -> fluxSink.complete());
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
@@ -262,7 +262,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @Override
     public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        scheduleAfterUpdateSubscribed(filter, (query, fluxSink) -> fluxSink.error(cause));
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
@@ -307,14 +306,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         }
     }
 
-    private <U> void updates(SubscriptionQueryMessage<?, ?, U> query,
-                             FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSink) {
-        updateHandlers.computeIfAbsent(query, k -> new CopyOnWriteArrayList<>()).add(fluxSink);
-        fluxSink.onDispose(() -> updateHandlers.remove(query));
-        Optional.ofNullable(delayedUpdates.remove(query))
-                .ifPresent(delays -> delays.forEach(c -> c.accept(query, fluxSink)));
-    }
-
     @SuppressWarnings("unchecked")
     private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, FluxSinkWrapper<?> updateHandler,
                             SubscriptionQueryUpdateMessage<U> update) {
@@ -330,15 +321,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             updateHandlers.remove(query);
             updateHandler.error(e);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void scheduleAfterUpdateSubscribed(Predicate<?> subscriptionQueryFilter,
-                                               BiConsumer<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> subscriptionQueryUpdate) {
-        delayedUpdates.keySet()
-                      .stream()
-                      .filter((Predicate<? super SubscriptionQueryMessage<?, ?, ?>>) subscriptionQueryFilter)
-                      .forEach(key -> delayedUpdates.get(key).add(subscriptionQueryUpdate));
     }
 
     @SuppressWarnings("unchecked")

@@ -20,6 +20,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
+import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -106,9 +108,11 @@ public class SubscriptionQueryTest {
 
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
-                .subscriptionQuery(queryMessage);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
-        chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, toBeThrown);
+                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.IGNORE));
+        Executors.newSingleThreadScheduledExecutor().schedule(() -> {
+            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+            chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, toBeThrown);
+        }, 500, TimeUnit.MILLISECONDS);
 
         // then
         StepVerifier.create(result.initialResult().map(Message::getPayload))
@@ -195,8 +199,8 @@ public class SubscriptionQueryTest {
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial2);
         assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update1);
-        assertEquals(Arrays.asList("Update2", "Update3", "Update4"), update2);
-        assertEquals(Arrays.asList("Update3", "Update4"), update3);
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update2);
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update3);
     }
 
     @Test
@@ -225,6 +229,28 @@ public class SubscriptionQueryTest {
 
         assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update1);
         assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update2);
+    }
+
+    @Test
+    public void testBufferOverflow() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
+                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR));
+
+        for (int i = 0; i < 300; i++) {
+            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update" + i);
+        }
+        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
+
+        StepVerifier.create(result.updates())
+                    .expectErrorMatches(t -> "The receiver is overrun by more signals than expected (bounded queue...)"
+                            .equals(t.getMessage()))
+                    .verify();
     }
 
     @Test
