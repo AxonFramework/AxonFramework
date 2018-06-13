@@ -227,16 +227,18 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure) {
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        SubscriptionQueryMessage<Q, I, U> interceptedQuery = intercept(query);
 
-        MonoWrapper<QueryResponseMessage<I>> initialResult =
-                MonoWrapper.create(monoSink -> initialResult(interceptedQuery, monitorCallback, monoSink));
+        MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
+                .thenAccept(monoSink::success)
+                .exceptionally(t -> {
+                    monoSink.error(t.getCause());
+                    return null;
+                }));
 
         EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create();
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
-        sink.onDispose(() -> updateHandlers.remove(interceptedQuery));
-        updateHandlers.computeIfAbsent(interceptedQuery, k -> new CopyOnWriteArrayList<>())
+        sink.onDispose(() -> updateHandlers.remove(query));
+        updateHandlers.computeIfAbsent(query, k -> new CopyOnWriteArrayList<>())
                       .add(new FluxSinkWrapper<>(sink));
 
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(), processor.replay().autoConnect());
@@ -267,44 +269,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                       .stream()
                       .filter(filter)
                       .forEach(query -> updateHandlers.remove(query).forEach(uh -> uh.error(cause)));
-    }
-
-    private <Q, I, U> void initialResult(SubscriptionQueryMessage<Q, I, U> query,
-                                         MessageMonitor.MonitorCallback monitorCallback, MonoSinkWrapper<QueryResponseMessage<I>> monoSink) {
-        Iterator<MessageHandler<? super QueryMessage<?, ?>>> handlerIterator = getHandlersForMessage(query).iterator();
-        boolean foundHandler = false;
-        while (!foundHandler && handlerIterator.hasNext()) {
-            DefaultUnitOfWork<QueryMessage<Q, I>> uow = DefaultUnitOfWork.startAndGet(query);
-            try {
-                interceptAndInvoke(uow, handlerIterator.next())
-                        .thenAccept(initialResponse -> {
-                            monoSink.success(initialResponse);
-                            monitorCallback.reportSuccess();
-                        })
-                        .exceptionally(error -> {
-                            monoSink.error(error);
-                            monitorCallback.reportFailure(error);
-                            return null;
-                        });
-                foundHandler = true;
-            } catch (NoHandlerForQueryException e) {
-                // Ignore this Query Handler, as we may have another one which is suitable
-            } catch (Exception e) {
-                foundHandler = true;
-                monitorCallback.reportFailure(e);
-                monoSink.error(e);
-                break;
-            }
-        }
-        if (!foundHandler) {
-            NoHandlerForQueryException error = new NoHandlerForQueryException(
-                    format("No suitable handler was found for %s with response type %s and update type %s",
-                           query.getQueryName(),
-                           query.getResponseType(),
-                           query.getUpdateResponseType()));
-            monitorCallback.reportFailure(error);
-            monoSink.error(error);
-        }
     }
 
     @SuppressWarnings("unchecked")
