@@ -235,6 +235,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
         EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create();
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
+        sink.onDispose(() -> updateHandlers.remove(interceptedQuery));
         updateHandlers.computeIfAbsent(interceptedQuery, k -> new CopyOnWriteArrayList<>())
                       .add(new FluxSinkWrapper<>(sink));
 
