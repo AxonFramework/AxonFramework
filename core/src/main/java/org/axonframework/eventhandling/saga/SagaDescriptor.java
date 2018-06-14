@@ -19,6 +19,12 @@ public class SagaDescriptor implements ScopeDescriptor {
     private final String type;
     private final Object identifier;
 
+    /**
+     * Instantiate a SagaDescriptor with the provided {@code type} and {@ocde identifier}.
+     *
+     * @param type       A {@link String} describing the type of the Saga
+     * @param identifier An {@link Object} denoting the identifier of the Saga
+     */
     @JsonCreator
     public SagaDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         this.type = type;

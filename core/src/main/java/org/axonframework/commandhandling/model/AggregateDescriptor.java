@@ -24,6 +24,16 @@ public class AggregateDescriptor implements ScopeDescriptor {
     private Object identifier;
     private transient Supplier<Object> identifierSupplier;
 
+    /**
+     * Instantiate an AggregateDescriptor with a {@code type} and {@ocde identifierSupplier}. Using the {@ocde
+     * identifierSupplier} instead of an {@link Object} for the {@code identifier} allows the creating processes to
+     * provide the identifier lazily.
+     * This is necessary when Aggregate's identifier is not create yet, for example when the AggregateDescriptor is
+     * created whilst the Aggregate is still under construction.
+     *
+     * @param type               A {@link String} describing the type of the Aggregate
+     * @param identifierSupplier A {@link Supplier} of {@link Object}, which can supply the identifier of the Aggregate
+     */
     public AggregateDescriptor(String type, Supplier<Object> identifierSupplier) {
         notNull(
                 identifierSupplier,
@@ -34,6 +44,12 @@ public class AggregateDescriptor implements ScopeDescriptor {
         this.identifierSupplier = identifierSupplier;
     }
 
+    /**
+     * Instantiate an AggregateDescriptor with the provided {@code type} and {@ocde identifier}.
+     *
+     * @param type       A {@link String} describing the type of the Aggregate
+     * @param identifier An {@link Object} denoting the identifier of the Aggregate
+     */
     @JsonCreator
     public AggregateDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         this.type = type;
@@ -56,6 +72,10 @@ public class AggregateDescriptor implements ScopeDescriptor {
         return String.format("AggregateDescriptor for type [%s] and identifier [%s]", type, identifier);
     }
 
+    /**
+     * This function is provided for Java serialization, such that it will ensure the {@code identifierSupplier} is
+     * called, thus setting the {@code identifier}, prior to serializing this AggregateDescriptor.
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         getIdentifier();
         out.defaultWriteObject();
