@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -253,8 +254,9 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                      .forEach(query -> updateHandlers.get(query)
-                                                      .forEach(uh -> doEmit(query, uh, update)));
+                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                .ifPresent(handlers -> handlers
+                                                        .forEach(uh -> doEmit(query, uh, update))));
     }
 
     @Override
@@ -262,7 +264,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .forEach(query -> updateHandlers.remove(query).forEach(FluxSinkWrapper::complete));
+                      .map(updateHandlers::remove)
+                      .filter(Objects::nonNull)
+                      .flatMap(List::stream)
+                      .forEach(FluxSinkWrapper::complete);
     }
 
     @Override
@@ -270,7 +275,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .forEach(query -> updateHandlers.remove(query).forEach(uh -> uh.error(cause)));
+                      .map(updateHandlers::remove)
+                      .filter(Objects::nonNull)
+                      .flatMap(List::stream)
+                      .forEach(uh -> uh.error(cause));
     }
 
     @SuppressWarnings("unchecked")
