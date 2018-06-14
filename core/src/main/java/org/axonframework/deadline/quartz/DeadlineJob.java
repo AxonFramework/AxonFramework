@@ -106,6 +106,7 @@ public class DeadlineJob implements Job {
                                           DeadlineMessage deadlineMessage,
                                           ScopeDescriptor deadlineScope) {
         scopeAwareComponents.provideScopeAwareStream(deadlineScope)
+                            .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                             .forEach(scopeAwareComponent -> {
                                 try {
                                     scopeAwareComponent.send(deadlineMessage, deadlineScope);

@@ -192,6 +192,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
         private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
             scopeAwareProvider.provideScopeAwareStream(deadlineScope)
+                              .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                               .forEach(scopeAwareComponent -> {
                                   try {
                                       scopeAwareComponent.send(deadlineMessage, deadlineScope);
