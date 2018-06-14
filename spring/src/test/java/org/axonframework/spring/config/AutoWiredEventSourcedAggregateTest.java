@@ -17,10 +17,10 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -33,7 +33,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.persistence.Entity;
 import javax.persistence.Id;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -43,14 +42,14 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
-public class AutoWiredStateStoredAggregateTest {
+public class AutoWiredEventSourcedAggregateTest {
 
     @Autowired
     private Repository<Context.MyAggregate> myAggregateRepository;
 
     @Test
     public void testAggregateIsWiredUsingStateStorage() {
-        assertEquals(GenericJpaRepository.class, myAggregateRepository.getClass());
+        assertEquals(EventSourcingRepository.class, myAggregateRepository.getClass());
     }
 
     @EnableAxon
@@ -68,7 +67,6 @@ public class AutoWiredStateStoredAggregateTest {
             return mock(EntityManagerProvider.class);
         }
 
-        @Entity
         @Aggregate
         public static class MyAggregate {
 
