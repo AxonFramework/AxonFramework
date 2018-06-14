@@ -16,9 +16,14 @@
 
 package org.axonframework.deadline.annotation;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+
+import java.util.Map;
 
 /**
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link DeadlineHandler} annotated methods.
@@ -32,20 +37,26 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.annotationAttributes(DeadlineHandler.class)
-                       .map(attr -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember(original))
+                       .map(attr -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember(original, attr))
                        .orElse(original);
     }
 
     private class DeadlineMethodMessageHandlingMember<T> extends WrappedMessageHandlingMember<T>
             implements DeadlineHandlingMember<T> {
 
-        /**
-         * Initializes the member using the given {@code delegate}.
-         *
-         * @param delegate the actual message handling member to delegate to
-         */
-        protected DeadlineMethodMessageHandlingMember(MessageHandlingMember<T> delegate) {
+        private final String deadlineName;
+
+        private DeadlineMethodMessageHandlingMember(MessageHandlingMember<T> delegate,
+                                                    Map<String, Object> annotationAttributes) {
             super(delegate);
+            deadlineName = "".equals(annotationAttributes.get("deadlineName"))
+                    ? delegate.payloadType().getName()
+                    : (String) annotationAttributes.get("deadlineName");
+        }
+
+        @Override
+        public boolean canHandle(Message<?> message) {
+            return super.canHandle(message) && deadlineName.equals(((DeadlineMessage) message).getDeadlineName());
         }
     }
 }
