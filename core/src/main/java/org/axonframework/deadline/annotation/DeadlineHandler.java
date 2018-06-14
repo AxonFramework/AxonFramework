@@ -40,6 +40,14 @@ import java.lang.annotation.Target;
 public @interface DeadlineHandler {
 
     /**
+     * The name of the Deadline this handler listens to. Defaults to the fully qualified class name of the payload type
+     * (i.e. first parameter).
+     *
+     * @return The deadline name
+     */
+    String deadlineName() default "";
+
+    /**
      * Specifies the type of message payload that can be handled by the member method. The payload of the message should
      * be assignable to this type. Defaults to any {@link Object}.
      */
