@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,6 +15,8 @@
  */
 
 package org.axonframework.commandhandling;
+
+import org.axonframework.common.annotation.AnnotationUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -82,13 +87,13 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
     private Long findVersion(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
         for (Method m : methodsOf(command.getPayloadType())) {
-            if (m.isAnnotationPresent(TargetAggregateVersion.class)) {
+            if (AnnotationUtils.isAnnotationPresent(m, TargetAggregateVersion.class)) {
                 ensureAccessible(m);
                 return asLong(m.invoke(command.getPayload()));
             }
         }
         for (Field f : fieldsOf(command.getPayloadType())) {
-            if (f.isAnnotationPresent(TargetAggregateVersion.class)) {
+            if (AnnotationUtils.isAnnotationPresent(f, TargetAggregateVersion.class)) {
                 return asLong(getFieldValue(f, command.getPayload()));
             }
         }
