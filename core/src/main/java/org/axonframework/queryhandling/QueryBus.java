@@ -133,7 +133,12 @@ public interface QueryBus {
         return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
             @Override
             public Mono<QueryResponseMessage<I>> initialResult() {
-                return Mono.fromFuture(query(query));
+                return MonoWrapper.<QueryResponseMessage<I>>create(monoSinkWrapper -> query(query)
+                        .thenAccept(monoSinkWrapper::success)
+                        .exceptionally(t -> {
+                            monoSinkWrapper.error(t);
+                            return null;
+                        })).getMono();
             }
 
             @Override
