@@ -49,14 +49,20 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         private DeadlineMethodMessageHandlingMember(MessageHandlingMember<T> delegate,
                                                     Map<String, Object> annotationAttributes) {
             super(delegate);
-            deadlineName = "".equals(annotationAttributes.get("deadlineName"))
-                    ? delegate.payloadType().getName()
-                    : (String) annotationAttributes.get("deadlineName");
+            deadlineName = (String) annotationAttributes.get("deadlineName");
         }
 
         @Override
         public boolean canHandle(Message<?> message) {
-            return super.canHandle(message) && deadlineName.equals(((DeadlineMessage) message).getDeadlineName());
+            return super.canHandle(message) && deadlineNameMatch((DeadlineMessage) message);
+        }
+
+        private boolean deadlineNameMatch(DeadlineMessage message) {
+            return deadlineNameMatchesAll() || deadlineName.equals(message.getDeadlineName());
+        }
+
+        private boolean deadlineNameMatchesAll() {
+            return deadlineName.equals("");
         }
     }
 }
