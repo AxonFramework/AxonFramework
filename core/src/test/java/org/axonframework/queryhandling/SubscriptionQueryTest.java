@@ -22,6 +22,7 @@ import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.*;
 import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
+import reactor.util.concurrent.Queues;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,7 +109,8 @@ public class SubscriptionQueryTest {
 
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
-                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.IGNORE));
+                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.IGNORE),
+                                   Queues.SMALL_BUFFER_SIZE);
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
             chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
             chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, toBeThrown);
@@ -179,7 +181,7 @@ public class SubscriptionQueryTest {
 
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
-                .subscriptionQuery(queryMessage);
+                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR), 8);
         List<String> initial1 = new ArrayList<>();
         List<String> initial2 = new ArrayList<>();
         List<String> update1 = new ArrayList<>();
@@ -190,17 +192,19 @@ public class SubscriptionQueryTest {
         chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
         result.updates().map(Message::getPayload).subscribe(update1::add);
         result.updates().map(Message::getPayload).subscribe(update2::add);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+        for (int i = 2; i < 10; i++) {
+            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update" + i);
+        }
         result.updates().map(Message::getPayload).subscribe(update3::add);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update3");
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update4");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update10");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update11");
         chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
 
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial2);
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update1);
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update2);
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update3);
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update1);
+        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update2);
+        assertEquals(Arrays.asList("Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update3);
     }
 
     @Test
@@ -240,9 +244,9 @@ public class SubscriptionQueryTest {
                 ResponseTypes.instanceOf(String.class));
 
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
-                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR));
+                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR), 200);
 
-        for (int i = 0; i < 300; i++) {
+        for (int i = 0; i < 201; i++) {
             chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update" + i);
         }
         chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);

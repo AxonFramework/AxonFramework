@@ -74,7 +74,7 @@ public class DefaultQueryGatewayTest {
 
     @Test
     public void testDispatchSubscriptionQuery() {
-        when(mockBus.subscriptionQuery(any(), any()))
+        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty()));
 
         testSubject.subscriptionQuery("query",
@@ -82,7 +82,7 @@ public class DefaultQueryGatewayTest {
                                       ResponseTypes.instanceOf(String.class));
         verify(mockBus)
                 .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>)
-                                                   x -> "query".equals(x.getPayload())), any());
+                                                   x -> "query".equals(x.getPayload())), any(), anyInt());
     }
 
     @SuppressWarnings("unused")

@@ -226,7 +226,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query,
-            SubscriptionQueryBackpressure backpressure) {
+            SubscriptionQueryBackpressure backpressure,
+            int updateBufferSize) {
 
         MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
                 .thenAccept(monoSink::success)
@@ -235,13 +236,14 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                     return null;
                 }));
 
-        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create();
+        EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
         updateHandlers.computeIfAbsent(query, k -> new CopyOnWriteArrayList<>())
                       .add(new FluxSinkWrapper<>(sink));
 
-        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(), processor.replay().autoConnect());
+        return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
+                                                    processor.replay(updateBufferSize).autoConnect());
     }
 
     @SuppressWarnings("unchecked")

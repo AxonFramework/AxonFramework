@@ -19,6 +19,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.concurrent.Queues;
 
 import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
@@ -93,7 +94,8 @@ public interface QueryBus {
      * queue all updates which happen after subscription query is done and once the subscription to the flux is made,
      * these updates will be emitted.
      * <p>
-     * Backpressure mechanism to be used is {@link SubscriptionQueryBackpressure#defaultBackpressure()}.
+     * Backpressure mechanism to be used is {@link SubscriptionQueryBackpressure#defaultBackpressure()}. The size of
+     * buffer which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
      * </p>
      *
      * @param query the query
@@ -104,7 +106,7 @@ public interface QueryBus {
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query) {
-        return subscriptionQuery(query, SubscriptionQueryBackpressure.defaultBackpressure());
+        return subscriptionQuery(query, SubscriptionQueryBackpressure.defaultBackpressure(), Queues.SMALL_BUFFER_SIZE);
     }
 
     /**
@@ -117,15 +119,17 @@ public interface QueryBus {
      * Provided backpressure mechanism will be used to deal with fast emitters.
      * </p>
      *
-     * @param query        the query
-     * @param backpressure the backpressure mechanism to be used for emitting updates
-     * @param <Q>          the payload type of the query
-     * @param <I>          the response type of the query
-     * @param <U>          the incremental response types of the query
+     * @param query            the query
+     * @param backpressure     the backpressure mechanism to be used for emitting updates
+     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
+     *                         made
+     * @param <Q>              the payload type of the query
+     * @param <I>              the response type of the query
+     * @param <U>              the incremental response types of the query
      * @return query result containing initial result and incremental updates
      */
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure) {
+            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize) {
         return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
             @Override
             public Mono<QueryResponseMessage<I>> initialResult() {

@@ -17,6 +17,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -215,10 +216,40 @@ public interface QueryGateway {
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
      */
+    default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+                                                                      ResponseType<I> initialResponseType,
+                                                                      ResponseType<U> updateResponseType,
+                                                                      SubscriptionQueryBackpressure backpressure) {
+        return subscriptionQuery(queryName,
+                                 query,
+                                 initialResponseType,
+                                 updateResponseType,
+                                 backpressure,
+                                 Queues.SMALL_BUFFER_SIZE);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side).
+     *
+     * @param queryName           A {@link String} describing query to be executed
+     * @param query               The {@code query} to be sent
+     * @param initialResponseType The initial response type used for this query
+     * @param updateResponseType  The update response type used for this query
+     * @param backpressure        The backpressure mechanism to deal with producing of incremental updates
+     * @param updateBufferSize    The size of buffer which accumulates updates before subscription to the {@code} flux
+     *                            is made
+     * @param <Q>                 The type of the query
+     * @param <I>                 The type of the initial response
+     * @param <U>                 The type of the incremental update
+     * @return registration which can be used to cancel receiving updates
+     */
     <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                               ResponseType<I> initialResponseType,
                                                               ResponseType<U> updateResponseType,
-                                                              SubscriptionQueryBackpressure backpressure);
+                                                              SubscriptionQueryBackpressure backpressure,
+                                                              int updateBufferSize);
 
     /**
      * Sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.

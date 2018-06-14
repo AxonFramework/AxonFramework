@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
  * subscription to the publisher, nothing happens.
  *
  * @author Milan Savic
- * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure)
+ * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
  * @since 3.3
  */
 public interface SubscriptionQueryResult<I, U> extends Registration {
