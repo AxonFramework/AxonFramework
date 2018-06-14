@@ -75,7 +75,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, CopyOnWriteArrayList<FluxSinkWrapper<?>>> updateHandlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor;
     private final QueryInvocationErrorHandler errorHandler;
@@ -229,6 +229,12 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             SubscriptionQueryMessage<Q, I, U> query,
             SubscriptionQueryBackpressure backpressure,
             int updateBufferSize) {
+        boolean alreadyExists = updateHandlers.keySet()
+                                              .stream()
+                                              .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
+        if(alreadyExists) {
+            throw new IllegalArgumentException("There is already a subscription with the same message identifier");
+        }
 
         MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
                 .thenAccept(monoSink::success)
@@ -240,8 +246,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
-        updateHandlers.computeIfAbsent(query, k -> new CopyOnWriteArrayList<>())
-                      .add(new FluxSinkWrapper<>(sink));
+        updateHandlers.put(query, new FluxSinkWrapper<>(sink));
 
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
                                                     processor.replay(updateBufferSize).autoConnect());
@@ -255,8 +260,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                       .stream()
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(handlers -> handlers
-                                                        .forEach(uh -> doEmit(query, uh, update))));
+                                                .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
     @Override
@@ -266,7 +270,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                       .filter(filter)
                       .map(updateHandlers::remove)
                       .filter(Objects::nonNull)
-                      .flatMap(List::stream)
                       .forEach(FluxSinkWrapper::complete);
     }
 
@@ -277,7 +280,6 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                       .filter(filter)
                       .map(updateHandlers::remove)
                       .filter(Objects::nonNull)
-                      .flatMap(List::stream)
                       .forEach(uh -> uh.error(cause));
     }
 

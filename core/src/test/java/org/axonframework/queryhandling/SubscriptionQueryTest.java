@@ -207,7 +207,7 @@ public class SubscriptionQueryTest {
         assertEquals(Arrays.asList("Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update3);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testDoubleSubscriptionMessage() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -217,22 +217,8 @@ public class SubscriptionQueryTest {
                 ResponseTypes.instanceOf(String.class));
 
         // when
-        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result1 = queryBus
-                .subscriptionQuery(queryMessage);
-        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result2 = queryBus
-                .subscriptionQuery(queryMessage);
-        List<String> update1 = new ArrayList<>();
-        List<String> update2 = new ArrayList<>();
-        result1.updates().map(Message::getPayload).subscribe(update1::add);
-        result2.updates().map(Message::getPayload).subscribe(update2::add);
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update3");
-        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update4");
-        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
-
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update1);
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4"), update2);
+        queryBus.subscriptionQuery(queryMessage);
+        queryBus.subscriptionQuery(queryMessage);
     }
 
     @Test
