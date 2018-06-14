@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 /**
  * Describes functionality off processes which can be 'in scope', like the
@@ -27,10 +28,17 @@ public abstract class Scope {
      *
      * @param <S> a type implementing {@link Scope}
      * @return the current {@link Scope}
+     *
+     * @throws IllegalStateException in case no current {@link Scope} is active, in which case #startScope() should be
+     *                               called first
      */
     @SuppressWarnings("unchecked")
-    public static <S extends Scope> S getCurrentScope() {
-        return (S) CURRENT_SCOPE.get().getFirst();
+    public static <S extends Scope> S getCurrentScope() throws IllegalStateException {
+        try {
+            return (S) CURRENT_SCOPE.get().getFirst();
+        } catch (NoSuchElementException e) {
+            throw new IllegalStateException("Cannot request current Scope if no Scope has been started yet");
+        }
     }
 
     /**
