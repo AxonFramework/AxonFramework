@@ -95,8 +95,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         verify(configuration.eventStore(), times(2)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent(id), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(new DeadlineOccurredEvent(new DeadlinePayload(id)),
-                     eventCaptor.getAllValues().get(1).getPayload());
+        assertEquals(
+                new DeadlineOccurredEvent(new DeadlinePayload(id)),
+                eventCaptor.getAllValues().get(1).getPayload()
+        );
     }
 
     @Test
@@ -124,10 +126,14 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         verify(configuration.eventStore(), times(3)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent(id), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(new DeadlineOccurredInChildEvent(new ChildDeadlinePayload("entity" + id)),
-                     eventCaptor.getAllValues().get(1).getPayload());
-        assertEquals(new DeadlineOccurredEvent(new DeadlinePayload(id)),
-                     eventCaptor.getAllValues().get(2).getPayload());
+        assertEquals(
+                new DeadlineOccurredInChildEvent(new ChildDeadlinePayload("entity" + id)),
+                eventCaptor.getAllValues().get(1).getPayload()
+        );
+        assertEquals(
+                new DeadlineOccurredEvent(new DeadlinePayload(id)),
+                eventCaptor.getAllValues().get(2).getPayload()
+        );
     }
 
     @Test
@@ -142,8 +148,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         verify(configuration.eventStore(), times(2)).publish(eventCaptor.capture());
         assertEquals(new SagaStartingEvent(id, cancelBeforeDeadline), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(new DeadlineOccurredEvent(new DeadlinePayload(id)),
-                     eventCaptor.getAllValues().get(1).getPayload());
+        assertEquals(
+                new DeadlineOccurredEvent(new DeadlinePayload(id)),
+                eventCaptor.getAllValues().get(1).getPayload()
+        );
     }
 
     @Test
@@ -242,8 +250,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 return false;
             }
             SagaStartingEvent that = (SagaStartingEvent) o;
-            return cancelBeforeDeadline == that.cancelBeforeDeadline &&
-                    Objects.equals(id, that.id);
+            return cancelBeforeDeadline == that.cancelBeforeDeadline && Objects.equals(id, that.id);
         }
 
         @Override
