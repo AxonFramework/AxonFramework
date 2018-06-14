@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -95,17 +96,25 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         super.execute(() -> invocation.accept(sagaInstance));
     }
 
+    @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
     public final boolean canHandle(EventMessage<?> event) {
         return isActive && metaModel.findHandlerMethods(event).stream()
-                                    .anyMatch(h -> getAssociationValues().contains(h.getAssociationValue(event)));
+                                    .anyMatch(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
+                                                    .map(sh -> getAssociationValues().contains(
+                                                            sh.getAssociationValue(event)
+                                                    ))
+                                                    .orElse(true));
     }
 
+    @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
     public final void handle(EventMessage<?> event) {
         if (isActive) {
             metaModel.findHandlerMethods(event).stream()
-                     .filter(h -> getAssociationValues().contains(h.getAssociationValue(event)))
+                     .filter(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
+                                   .map(sh -> getAssociationValues().contains(sh.getAssociationValue(event)))
+                                   .orElse(true))
                      .findFirst().ifPresent(h -> {
                 try {
                     executeWithResult(() -> h.handle(event, sagaInstance));
@@ -117,12 +126,18 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
                 } catch (Exception e) {
                     throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
                 } finally {
-                    if (h.isEndingHandler()) {
+                    if (isEndingHandler(h)) {
                         doEnd();
                     }
                 }
             });
         }
+    }
+
+    private Boolean isEndingHandler(MessageHandlingMember<? super T> handler) {
+        return handler.unwrap(SagaMethodMessageHandlingMember.class)
+                      .map(SagaMethodMessageHandlingMember::isEndingHandler)
+                      .orElse(false);
     }
 
     @Override

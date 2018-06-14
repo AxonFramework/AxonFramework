@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFac
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -126,21 +125,25 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     @SuppressWarnings("unchecked")
     @Override
     protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
-        List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
-        for (SagaMethodMessageHandlingMember handler : handlers) {
-            if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
-                return new SagaInitializationPolicy(handler.getCreationPolicy(), handler.getAssociationValue(event));
-            }
-        }
-        return SagaInitializationPolicy.NONE;
+        return sagaMetaModel.findHandlerMethods(event).stream()
+                            .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
+                            .filter(Objects::nonNull)
+                            .filter(sh -> sh.getCreationPolicy() != SagaCreationPolicy.NONE)
+                            .map(sh -> new SagaInitializationPolicy(
+                                    sh.getCreationPolicy(), sh.getAssociationValue(event)
+                            ))
+                            .findFirst()
+                            .orElse(SagaInitializationPolicy.NONE);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
-        List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
-        return handlers.stream().map(handler -> handler.getAssociationValue(event))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return sagaMetaModel.findHandlerMethods(event).stream()
+                            .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
+                            .filter(Objects::nonNull)
+                            .map(h -> h.getAssociationValue(event))
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
     }
 }

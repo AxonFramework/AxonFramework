@@ -16,9 +16,6 @@
 
 package org.axonframework.eventhandling.saga.metamodel;
 
-
-import org.axonframework.deadline.annotation.DeadlineHandlingMember;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
@@ -27,11 +24,12 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Default implementation of a {@link SagaMetaModelFactory}.
@@ -72,6 +70,7 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
     }
 
     private class InspectedSagaModel<T> implements SagaModel<T> {
+
         private final List<MessageHandlingMember<? super T>> handlers;
 
         public InspectedSagaModel(List<MessageHandlingMember<? super T>> handlers) {
@@ -91,22 +90,9 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> eventMessage) {
+        public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage) {
             return handlers.stream().filter(h -> h.canHandle(eventMessage))
-                           .map(h -> (SagaMethodMessageHandlingMember<T>) h.unwrap(SagaMethodMessageHandlingMember.class)
-                                                                           .orElse(null))
-                           .filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public List<MessageHandlingMember<T>> findDeadlineHandlers(DeadlineMessage<?> deadlineMessage) {
-            return handlers.stream()
-                           .filter(h -> h.canHandle(deadlineMessage))
-                    .map(h -> (MessageHandlingMember<T>) h.unwrap(DeadlineHandlingMember.class).orElse(null))
-                    .filter(Objects::nonNull)
-                    .collect(toList());
+                           .collect(Collectors.toCollection(ArrayList::new));
         }
 
         @Override
