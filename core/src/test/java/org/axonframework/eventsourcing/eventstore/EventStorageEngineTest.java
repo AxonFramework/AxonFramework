@@ -24,7 +24,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
@@ -196,7 +195,7 @@ public abstract class EventStorageEngineTest {
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
 
         List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
-                                                      .collect(Collectors.toList());
+                                                      .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
     }
