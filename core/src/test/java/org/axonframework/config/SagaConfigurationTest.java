@@ -45,7 +45,10 @@ public class SagaConfigurationTest {
     @Test
     public void testCreateTrackingSagaManager() {
         SagaConfiguration<Object> config = SagaConfiguration.trackingSagaManager(Object.class);
+
         config.initialize(configuration);
+        configuration.eventProcessorRegistry().initialize(configuration);
+
         EventProcessor actual = config.getProcessor();
         assertEquals(TrackingEventProcessor.class, actual.getClass());
         assertEquals("ObjectProcessor", actual.getName());
@@ -63,7 +66,10 @@ public class SagaConfigurationTest {
     @Test
     public void testCreateSubscribingProcessor() {
         SagaConfiguration<Object> config = SagaConfiguration.subscribingSagaManager(Object.class);
+
         config.initialize(configuration);
+        configuration.eventProcessorRegistry().initialize(configuration);
+
         EventProcessor actual = config.getProcessor();
         assertEquals(SubscribingEventProcessor.class, actual.getClass());
         assertEquals("ObjectProcessor", actual.getName());
@@ -90,7 +96,10 @@ public class SagaConfigurationTest {
                 .configureErrorHandler(c -> PropagatingErrorHandler.INSTANCE)
                 .configureTransactionManager(c -> NoTransactionManager.instance())
                 .configureTokenStore(c -> new InMemoryTokenStore());
+
         config.initialize(configuration);
+        configuration.eventProcessorRegistry().initialize(configuration);
+
         EventProcessor actual = config.getProcessor();
         assertEquals(TrackingEventProcessor.class, actual.getClass());
         assertEquals("ObjectProcessor", actual.getName());

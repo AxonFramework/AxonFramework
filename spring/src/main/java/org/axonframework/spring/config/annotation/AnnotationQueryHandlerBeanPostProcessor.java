@@ -15,6 +15,8 @@
  */
 package org.axonframework.spring.config.annotation;
 
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlerAdapter;
@@ -35,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor<QueryHandlerAdapter, AnnotationQueryHandlerAdapter> {
     @Override
     protected Class<?>[] getAdapterInterfaces() {
-        return new Class[]{QueryHandlerAdapter.class};
+        return new Class[]{QueryHandlerAdapter.class, MessageHandler.class};
     }
 
     @Override
@@ -63,7 +65,7 @@ public class AnnotationQueryHandlerBeanPostProcessor extends AbstractAnnotationH
 
         @Override
         public void doWith(Method method) throws IllegalArgumentException {
-            if (method.isAnnotationPresent(QueryHandler.class)) {
+            if (AnnotationUtils.findAnnotationAttributes(method, QueryHandler.class).isPresent()) {
                 result.set(true);
             }
         }

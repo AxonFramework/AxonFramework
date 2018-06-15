@@ -78,9 +78,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         try {
             optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
         } catch (Exception | LinkageError e) {
-            logger.warn("Error reading snapshot. Reconstructing aggregate from entire event stream. Caused by: {} {}",
-                        e.getClass().getName(), e.getMessage());
-            optionalSnapshot = Optional.empty();
+            optionalSnapshot = handleSnapshotReadingError(aggregateIdentifier, e);
         }
         DomainEventStream eventStream;
         if (optionalSnapshot.isPresent()) {
@@ -94,6 +92,29 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
 
         Stream<? extends DomainEventMessage<?>> domainEventMessages = stagedDomainEventMessages(aggregateIdentifier);
         return DomainEventStream.concat(eventStream, DomainEventStream.of(domainEventMessages));
+    }
+
+    /**
+     * Invoked when an error ({@link Exception} or {@link LinkageError}) occurs while attempting to read a snapshot
+     * event. This method can be overridden to change the default behavior, which is to log the exception (warn level)
+     * and ignore the snapshot.
+     * <p>
+     * Overriding implementations may choose to return normally, or raise an exception. Exceptions raised from this
+     * method are propagated to the caller of the {@link #readEvents(String)} or {@link #readEvents(String, long)}
+     * methods.
+     * <p>
+     * Returning an empty Optional will force the initialization of the aggregate to happen based on the entire event
+     * stream of that aggregate.
+     *
+     * @param aggregateIdentifier The identifier of the aggregate for which an snapshot failed to load
+     * @param e                   The exception or error that occurred while loading or deserializing the snapshot
+     * @return An optional DomainEventMessage to use as the snapshot for this aggregate
+     * @throws RuntimeException any runtimeException to fail loading the
+     */
+    protected Optional<DomainEventMessage<?>> handleSnapshotReadingError(String aggregateIdentifier, Throwable e) {
+        logger.warn("Error reading snapshot for aggregate [{}]. Reconstructing from entire event stream.",
+                    aggregateIdentifier, e);
+        return Optional.empty();
     }
 
     /**

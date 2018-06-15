@@ -24,6 +24,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -42,7 +47,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testEventHandlerCallsRedirectToAdapter() throws Exception {
+    public void testCommandHandlerCallsRedirectToAdapter() throws Exception {
         BeanFactory mockBeanFactory = mock(BeanFactory.class);
         testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
@@ -53,6 +58,24 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
 
         MessageHandler<CommandMessage<?>> commandHandler = (MessageHandler<CommandMessage<?>>) postProcessedBean;
         AnnotatedCommandHandler annotatedCommandHandler = (AnnotatedCommandHandler) postProcessedBean;
+        CommandMessage<MyCommand> myCommand = GenericCommandMessage.asCommandMessage(new MyCommand());
+        commandHandler.handle(myCommand);
+
+        assertEquals(1, annotatedCommandHandler.getInvocationCount());
+    }
+
+    @Test
+    public void testCommandHandlerCallsRedirectToAdapterWhenUsingCustomAnnotation() throws Exception {
+        BeanFactory mockBeanFactory = mock(BeanFactory.class);
+        testSubject.setBeanFactory(mockBeanFactory);
+        Object result1 = testSubject.postProcessBeforeInitialization(new CustomAnnotatedCommandHandler(), "beanName");
+        Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
+
+        assertTrue(postProcessedBean instanceof MessageHandler<?>);
+        assertTrue(postProcessedBean instanceof CustomAnnotatedCommandHandler);
+
+        MessageHandler<CommandMessage<?>> commandHandler = (MessageHandler<CommandMessage<?>>) postProcessedBean;
+        CustomAnnotatedCommandHandler annotatedCommandHandler = (CustomAnnotatedCommandHandler) postProcessedBean;
         CommandMessage<MyCommand> myCommand = GenericCommandMessage.asCommandMessage(new MyCommand());
         commandHandler.handle(myCommand);
 
@@ -74,7 +97,29 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         }
     }
 
+    public static class CustomAnnotatedCommandHandler {
+
+        private int invocationCount;
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        @MyCustomCommand
+        public void handleCommand(MyCommand command) {
+            invocationCount++;
+        }
+
+        public int getInvocationCount() {
+            return invocationCount;
+        }
+    }
+
     private static class MyCommand {
+
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @CommandHandler
+    private static @interface MyCustomCommand {
 
     }
 }

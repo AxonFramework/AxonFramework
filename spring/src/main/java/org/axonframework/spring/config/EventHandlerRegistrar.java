@@ -79,10 +79,6 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
     @Override
     public void start() {
-        if (!initialized) {
-            initialized = true;
-            delegate.initialize(axonConfiguration);
-        }
         delegate.start();
         running = true;
     }
@@ -105,5 +101,12 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
 
     @Override
     public void afterPropertiesSet() {
+        if (!initialized) {
+            initialized = true;
+            delegate.initialize(axonConfiguration);
+            // since the configuration is already initialized in this phase, we need to tell eventProcessorRegistry to
+            // pick up our event handlers
+            axonConfiguration.eventProcessorRegistry().initialize(axonConfiguration);
+        }
     }
 }

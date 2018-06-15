@@ -23,6 +23,7 @@ import org.hamcrest.Matcher;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Interface describing the operations available on the "validate result" (a.k.a. "then") stage of the test execution.
@@ -34,10 +35,11 @@ import java.util.List;
  * execution result, which is one of <ul><li>a regular return value,<li>a {@code void} return value, or<li>an
  * exception.</ul></ul>
  *
+ * @param <T> The type of Aggregate under test
  * @author Allard Buijze
  * @since 0.6
  */
-public interface ResultValidator {
+public interface ResultValidator<T> {
 
     /**
      * Expect the given set of events to have been published.
@@ -50,14 +52,28 @@ public interface ResultValidator {
      * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEvents(Object... expectedEvents);
+    ResultValidator<T> expectEvents(Object... expectedEvents);
+
+    /**
+     * Expect the given set of events to have been published.
+     * <p>
+     * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
+     * means that all assigned values on the events' fields should have a proper equals implementation.<br/>
+     * Additionally the metadata will be compared too.
+     * <p>
+     * Note that the event identifier is ignored in the comparison.
+     *
+     * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectEvents(EventMessage... expectedEvents);
 
     /**
      * Expect no events to have been published from the command.
      *
      * @return the current ResultValidator, for fluent interfacing
      */
-    default ResultValidator expectNoEvents() {
+    default ResultValidator<T> expectNoEvents() {
         return expectEvents();
     }
 
@@ -69,7 +85,7 @@ public interface ResultValidator {
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
+    ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
     /**
      * Expect the command handler to return the given {@code expectedReturnValue} after execution. The actual and
@@ -78,7 +94,7 @@ public interface ResultValidator {
      * @param expectedReturnValue The expected return value of the command execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectReturnValue(Object expectedReturnValue);
+    ResultValidator<T> expectReturnValue(Object expectedReturnValue);
 
     /**
      * Expect the command handler to return a value that matches the given {@code matcher} after execution.
@@ -86,7 +102,7 @@ public interface ResultValidator {
      * @param matcher The matcher to verify the actual return value against
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectReturnValueMatching(Matcher<?> matcher);
+    ResultValidator<T> expectReturnValueMatching(Matcher<?> matcher);
 
     /**
      * Expect an exception message to occur during command handler execution that matches with the given {@code
@@ -95,7 +111,7 @@ public interface ResultValidator {
      * @param matcher The matcher to validate the actual exception message
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectExceptionMessage(Matcher<?> matcher);
+    ResultValidator<T> expectExceptionMessage(Matcher<?> matcher);
 
     /**
      * Expect the given {@code exceptionMessage} to occur during command handler execution. The actual exception
@@ -104,7 +120,7 @@ public interface ResultValidator {
      * @param exceptionMessage The exception message expected from the command handler execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectExceptionMessage(String exceptionMessage);
+    ResultValidator<T> expectExceptionMessage(String exceptionMessage);
 
     /**
      * Expect the given {@code expectedException} to occur during command handler execution. The actual exception
@@ -113,7 +129,7 @@ public interface ResultValidator {
      * @param expectedException The type of exception expected from the command handler execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectException(Class<? extends Throwable> expectedException);
+    ResultValidator<T> expectException(Class<? extends Throwable> expectedException);
 
     /**
      * Expect an exception to occur during command handler execution that matches with the given {@code matcher}.
@@ -121,14 +137,28 @@ public interface ResultValidator {
      * @param matcher The matcher to validate the actual exception
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectException(Matcher<?> matcher);
+    ResultValidator<T> expectException(Matcher<?> matcher);
 
     /**
      * Expect a successful execution of the given command handler, regardless of the actual return value.
      *
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectSuccessfulHandlerExecution();
+    ResultValidator<T> expectSuccessfulHandlerExecution();
+
+    /**
+     * Provides access the the state of the Aggregate as it was stored in the repository, allowing for validation of the
+     * state of the aggregate, as it was left in the repository.
+     * <p>
+     * Note that validating state on Event Sourced Aggregate is highly discouraged. Event Sourced aggregates should
+     * measure behavior exclusively by measuring emitted events.
+     *
+     * @param aggregateStateValidator a consumer that is provided with the aggregate instance, allowing it to make
+     *                                assertions based on the aggregate's state.
+     * @return the current ResultValidator, for fluent interfacing
+     * @throws IllegalStateException when an error in Command execution caused the Unit of Work to be rolled back.
+     */
+    ResultValidator<T> expectState(Consumer<T> aggregateStateValidator);
 
     /**
      * Asserts that a deadline scheduled after given {@code duration} matches the given {@code matcher}.

@@ -55,4 +55,12 @@ public @interface Aggregate {
      * annotated class.
      */
     String type() default "";
+
+    /**
+     * Selects the name of the {@link org.axonframework.commandhandling.CommandTargetResolver} bean. If left empty,
+     * {@link org.axonframework.commandhandling.CommandTargetResolver} bean from application context will be used. If
+     * the bean is not defined in the application context, {@link org.axonframework.commandhandling.AnnotationCommandTargetResolver}
+     * will be used.
+     */
+    String commandTargetResolver() default "";
 }
