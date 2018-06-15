@@ -135,7 +135,6 @@ public class SubscriptionQueryTest {
                 "chatMessages",
                 ResponseTypes.multipleInstancesOf(String.class),
                 ResponseTypes.instanceOf(String.class));
-        RuntimeException toBeThrown = new RuntimeException();
 
         // when
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
