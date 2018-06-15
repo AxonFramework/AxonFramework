@@ -44,11 +44,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Initializes an EventSourcedAggregate instance for the given {@code aggregateRoot}, based on the given {@code
      * inspector}, which publishes events to the given {@code eventBus}.
      *
-     * @param aggregateRoot     The aggregate root instance
-     * @param inspector         The inspector describing the aggregate structure
-     * @param eventBus          The event bus to send generated events to
-     * @param snapshotTrigger   The trigger to notify of events and initialization
-     * @param <T>               the aggregate root type
+     * @param aggregateRoot      The aggregate root instance
+     * @param inspector          The inspector describing the aggregate structure
+     * @param eventBus           The event bus to send generated events to
+     * @param snapshotTrigger    The trigger to notify of events and initialization
+     * @param <T>                the aggregate root type
      * @return the initialized EventSourcedAggregate instance
      */
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
@@ -181,10 +181,10 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Initializes an Aggregate instance for the given {@code aggregateRoot}, based on the given {@code model}, which
      * publishes events to the given {@code eventBus}.
      *
-     * @param aggregateRoot     The aggregate root instance
-     * @param model             The model describing the aggregate structure
-     * @param eventBus          The event store to store generated events in
-     * @param snapshotTrigger   The trigger to notify of events and initialization
+     * @param aggregateRoot      The aggregate root instance
+     * @param model              The model describing the aggregate structure
+     * @param eventBus           The event store to store generated events in
+     * @param snapshotTrigger    The trigger to notify of events and initialization
      */
     protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
                                     SnapshotTrigger snapshotTrigger) {
@@ -214,9 +214,9 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Creates a new EventSourcedAggregate instance based on the given {@code model}, which publishes events to the
      * given {@code eventBus}. This aggregate is not assigned a root instance yet.
      *
-     * @param model             The model describing the aggregate structure
-     * @param eventBus          The event store to store generated events in
-     * @param snapshotTrigger   The trigger to notify of events and initialization
+     * @param model              The model describing the aggregate structure
+     * @param eventBus           The event store to store generated events in
+     * @param snapshotTrigger    The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
     protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, SnapshotTrigger snapshotTrigger) {

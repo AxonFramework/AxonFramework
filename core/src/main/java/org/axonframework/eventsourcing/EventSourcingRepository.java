@@ -54,8 +54,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
      * aggregate instances of given {@code aggregateType}.
      *
-     * @param aggregateType     The type of aggregate stored in this repository
-     * @param eventStore        The event store that holds the event streams for this repository
+     * @param aggregateType      The type of aggregate stored in this repository
+     * @param eventStore         The event store that holds the event streams for this repository
      * @see LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
@@ -115,8 +115,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
      * create new aggregate instances.
      *
-     * @param aggregateFactory  The factory for new aggregate instances
-     * @param eventStore        The event store that holds the event streams for this repository
+     * @param aggregateFactory   The factory for new aggregate instances
+     * @param eventStore         The event store that holds the event streams for this repository
      * @see LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore) {
@@ -141,9 +141,9 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
      * create new aggregate instances.
      *
-     * @param aggregateModel    The meta model describing the aggregate's structure
-     * @param aggregateFactory  The factory for new aggregate instances
-     * @param eventStore        The event store that holds the event streams for this repository
+     * @param aggregateModel     The meta model describing the aggregate's structure
+     * @param aggregateFactory   The factory for new aggregate instances
+     * @param eventStore         The event store that holds the event streams for this repository
      * @see LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
@@ -248,8 +248,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @see LockingRepository#LockingRepository(Class)
      */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory,
-                                   EventStore eventStore,
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                    ParameterResolverFactory parameterResolverFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         this(aggregateFactory, eventStore, parameterResolverFactory, snapshotTriggerDefinition, null);
@@ -367,7 +366,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
         EventSourcedAggregate<T> aggregate = EventSourcedAggregate
                 .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier, eventStream.peek()),
-                aggregateModel(), eventStore, repositoryProvider, trigger);
+                            aggregateModel(), eventStore, repositoryProvider, trigger);
         aggregate.initializeState(eventStream);
         if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
