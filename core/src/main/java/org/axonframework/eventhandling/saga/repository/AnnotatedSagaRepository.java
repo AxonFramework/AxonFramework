@@ -75,13 +75,9 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param sagaStore        the saga store for saving and loading of sagas
      * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
      */
-    public AnnotatedSagaRepository(Class<T> sagaType,
-                                   SagaStore<? super T> sagaStore,
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector) {
-        this(sagaType,
-             sagaStore,
-             new AnnotationSagaMetaModelFactory().modelOf(sagaType),
-             resourceInjector,
+        this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory().modelOf(sagaType), resourceInjector,
              new PessimisticLockFactory());
     }
 
@@ -97,14 +93,10 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
      *                                 handlers with
      */
-    public AnnotatedSagaRepository(Class<T> sagaType,
-                                   SagaStore<? super T> sagaStore,
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector,
                                    ParameterResolverFactory parameterResolverFactory) {
-        this(sagaType,
-             sagaStore,
-             new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
-             resourceInjector,
+        this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType), resourceInjector,
              new PessimisticLockFactory());
     }
 
@@ -119,11 +111,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
      * @param lockFactory      lock factory used when a saga is loaded
      */
-    public AnnotatedSagaRepository(Class<T> sagaType,
-                                   SagaStore<? super T> sagaStore,
-                                   SagaModel<T> sagaModel,
-                                   ResourceInjector resourceInjector,
-                                   LockFactory lockFactory) {
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, SagaModel<T> sagaModel,
+                                   ResourceInjector resourceInjector, LockFactory lockFactory) {
         super(lockFactory);
         this.injector = resourceInjector;
         this.sagaType = sagaType;
@@ -158,8 +147,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     @Override
     public AnnotatedSaga<T> doCreateInstance(String sagaIdentifier, Supplier<T> sagaFactory) {
         try {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            UnitOfWork<?> processRoot = unitOfWork.root();
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
             T sagaRoot = sagaFactory.get();
             injector.injectResources(sagaRoot);
             AnnotatedSaga<T> saga =
@@ -212,8 +200,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     public Set<String> find(AssociationValue associationValue) {
         Set<String> sagasFound = new TreeSet<>();
         sagasFound.addAll(managedSagas.values().stream()
-                                      .filter(saga -> saga.getAssociationValues().contains(associationValue))
-                                      .map(Saga::getSagaIdentifier).collect(Collectors.toList()));
+                                  .filter(saga -> saga.getAssociationValues().contains(associationValue))
+                                  .map(Saga::getSagaIdentifier).collect(Collectors.toList()));
         sagasFound.addAll(sagaStore.findSagas(sagaType, associationValue));
         return sagasFound;
     }
@@ -264,9 +252,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         if (entry != null) {
             T saga = entry.saga();
             injector.injectResources(saga);
-            return new AnnotatedSaga<>(
-                    sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(), sagaModel
-            );
+            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(),
+                                       sagaModel);
         }
         return null;
     }

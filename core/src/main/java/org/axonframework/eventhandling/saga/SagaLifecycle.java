@@ -79,7 +79,6 @@ public abstract class SagaLifecycle extends Scope {
         removeAssociationWith(associationKey, associationValue.toString());
     }
 
-
     /**
      * Marks the saga as ended. Ended saga's may be cleaned up by the repository when they are committed.
      */
@@ -162,7 +161,6 @@ public abstract class SagaLifecycle extends Scope {
             throw new SagaExecutionException("Exception while executing a task for a saga", e);
         }
     }
-
 
     /**
      * Retrieve a {@link String} denoting the type of this Aggregate.

@@ -43,7 +43,7 @@ public @interface DeadlineHandler {
      * The name of the Deadline this handler listens to. Defaults to the fully qualified class name of the payload type
      * (i.e. first parameter).
      *
-     * @return The deadline name
+     * @return The name of the deadline as a {@link String}
      */
     String deadlineName() default "";
 

@@ -48,7 +48,6 @@ import static org.axonframework.common.Assert.notNull;
  * Note that this mechanism is non-persistent. Scheduled tasks will be lost then the JVM is shut down, unless special
  * measures have been taken to prevent that. For more flexible and powerful scheduling options, see {@link
  * org.axonframework.deadline.quartz.QuartzDeadlineManager}.
- * </p>
  *
  * @author Milan Savic
  * @author Steven van Beelen
@@ -211,7 +210,6 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
         private final String deadlineName;
         private final String deadlineId;
-
 
         private DeadlineId(String deadlineName, String deadlineId) {
             this.deadlineId = deadlineId;

@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.annotation;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -29,6 +28,7 @@ import java.util.Map;
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link DeadlineHandler} annotated methods.
  *
  * @author Milan Savic
+ * @author Steven van Beelen
  * @since 3.3
  */
 public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
