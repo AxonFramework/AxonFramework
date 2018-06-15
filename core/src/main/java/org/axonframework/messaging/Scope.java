@@ -37,7 +37,7 @@ public abstract class Scope {
         try {
             return (S) CURRENT_SCOPE.get().getFirst();
         } catch (NoSuchElementException e) {
-            throw new IllegalStateException("Cannot request current Scope if no Scope has been started yet");
+            throw new IllegalStateException("Cannot request current Scope if none is active");
         }
     }
 
@@ -68,13 +68,13 @@ public abstract class Scope {
     protected void endScope() {
         if (this != CURRENT_SCOPE.get().peek()) {
             throw new IllegalStateException(
-                    "Incorrectly trying to end another Scope then which Scope the calling process is contained in."
+                    "Incorrectly trying to end another Scope then which the calling process is contained in."
             );
         }
         CURRENT_SCOPE.get().pop();
 
         if (CURRENT_SCOPE.get().isEmpty()) {
-            logger.info("Clearing out ThreadLocal current Scope, as no Scopes are present");
+            logger.debug("Clearing out ThreadLocal current Scope, as no Scopes are present");
             CURRENT_SCOPE.remove();
         }
     }

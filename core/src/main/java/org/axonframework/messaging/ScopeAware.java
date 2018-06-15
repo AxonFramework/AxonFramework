@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-
 /**
  * Interface describing components which are {@link Scope} aware. Provides functionality to check if a given component
  * can resolve a scope through a given {@link ScopeDescriptor}. If this holds, that component should be able to send a

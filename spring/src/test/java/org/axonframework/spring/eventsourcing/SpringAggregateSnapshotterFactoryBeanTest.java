@@ -97,9 +97,8 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         when(mockApplicationContext.getBean(EventStore.class)).thenReturn(mockEventStore);
         when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class)).thenReturn(
                 Collections.singletonMap("myRepository",
-                        new EventSourcingRepository<>(StubAggregate.class, mockEventStore, mockRepositoryProvider))
+                                         new EventSourcingRepository<>(StubAggregate.class, mockEventStore, mockRepositoryProvider))
         );
-
         testSnapshotCreated_NoTransaction();
     }
 

@@ -33,5 +33,4 @@ public interface ScopeDescriptor extends Serializable {
      * @return a {@link String} description of a {@link Scope} object
      */
     String scopeDescription();
-
 }
