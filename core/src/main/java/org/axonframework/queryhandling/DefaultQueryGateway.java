@@ -74,7 +74,8 @@ public class DefaultQueryGateway implements QueryGateway {
         SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
                 .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
-                                                    result.updates().map(SubscriptionQueryUpdateMessage::getPayload));
+                                                    result.updates().map(SubscriptionQueryUpdateMessage::getPayload),
+                                                    result);
     }
 
     @SuppressWarnings("unchecked")

@@ -244,6 +244,26 @@ public class SubscriptionQueryTest {
     }
 
     @Test
+    public void testSubscriptionDisposal() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
+                .subscriptionQuery(queryMessage);
+
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        result.close();
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+
+        StepVerifier.create(result.updates().map(Message::getPayload))
+                    .expectNext("Update1")
+                    .verifyComplete();
+    }
+
+    @Test
     public void testSubscriptionQueryWithInterceptors() {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");

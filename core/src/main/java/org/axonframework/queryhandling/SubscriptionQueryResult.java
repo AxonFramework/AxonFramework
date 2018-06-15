@@ -44,10 +44,4 @@ public interface SubscriptionQueryResult<I, U> extends Registration {
      * @return the flux representing the incremental updates
      */
     Flux<U> updates();
-
-    @Override
-    default boolean cancel() {
-        updates().subscribe().dispose();
-        return true;
-    }
 }

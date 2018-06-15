@@ -75,7 +75,7 @@ public class DefaultQueryGatewayTest {
     @Test
     public void testDispatchSubscriptionQuery() {
         when(mockBus.subscriptionQuery(any(), any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty()));
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
         testSubject.subscriptionQuery("query",
                                       ResponseTypes.instanceOf(String.class),

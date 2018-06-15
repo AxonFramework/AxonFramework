@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.Registration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -31,16 +32,19 @@ public class DefaultSubscriptionQueryResult<I, U> implements SubscriptionQueryRe
 
     private final Mono<I> initialResult;
     private final Flux<U> updates;
+    private final Registration registrationDelegate;
 
     /**
      * Initializes the result with mono and flux used for result retrieval.
      *
-     * @param initialResult mono representing initial result
-     * @param updates       flux representing incremental updates
+     * @param initialResult        mono representing initial result
+     * @param updates              flux representing incremental updates
+     * @param registrationDelegate delegate which cancels the registration of this result
      */
-    public DefaultSubscriptionQueryResult(Mono<I> initialResult, Flux<U> updates) {
+    public DefaultSubscriptionQueryResult(Mono<I> initialResult, Flux<U> updates, Registration registrationDelegate) {
         this.initialResult = initialResult;
         this.updates = updates;
+        this.registrationDelegate = registrationDelegate;
     }
 
     @Override
@@ -51,5 +55,10 @@ public class DefaultSubscriptionQueryResult<I, U> implements SubscriptionQueryRe
     @Override
     public Flux<U> updates() {
         return updates;
+    }
+
+    @Override
+    public boolean cancel() {
+        return registrationDelegate.cancel();
     }
 }

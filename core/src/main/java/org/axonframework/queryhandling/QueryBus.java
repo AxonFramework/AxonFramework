@@ -131,6 +131,7 @@ public interface QueryBus {
     default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
             SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backpressure, int updateBufferSize) {
         return new SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>>() {
+
             @Override
             public Mono<QueryResponseMessage<I>> initialResult() {
                 return MonoWrapper.<QueryResponseMessage<I>>create(monoSinkWrapper -> query(query)
@@ -144,6 +145,11 @@ public interface QueryBus {
             @Override
             public Flux<SubscriptionQueryUpdateMessage<U>> updates() {
                 throw new UnsupportedOperationException("The default implementation does not support updates.");
+            }
+
+            @Override
+            public boolean cancel() {
+                return true;
             }
         };
     }

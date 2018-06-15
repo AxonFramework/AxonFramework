@@ -248,8 +248,14 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         sink.onDispose(() -> updateHandlers.remove(query));
         updateHandlers.put(query, new FluxSinkWrapper<>(sink));
 
+        Registration registration = () -> {
+            sink.complete();
+            return true;
+        };
+
         return new DefaultSubscriptionQueryResult<>(initialResult.getMono(),
-                                                    processor.replay(updateBufferSize).autoConnect());
+                                                    processor.replay(updateBufferSize).autoConnect(),
+                                                    registration);
     }
 
     @SuppressWarnings("unchecked")
