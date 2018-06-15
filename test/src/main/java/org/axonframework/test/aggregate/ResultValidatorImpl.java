@@ -192,7 +192,6 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         return this;
     }
 
-
     @Override
     public ResultValidator<T> expectReturnValue(Object expectedReturnValue) {
         if (expectedReturnValue == null) {

@@ -57,10 +57,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * @param txManager                The transaction manager to manage the persistence transactions with
      * @see ClasspathParameterResolverFactory
      */
-    public SpringAggregateSnapshotter(EventStore eventStore,
-                                      ParameterResolverFactory parameterResolverFactory,
-                                      Executor executor,
-                                      TransactionManager txManager) {
+    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
+                                      Executor executor, TransactionManager txManager) {
         super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager);
     }
 
@@ -75,10 +73,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * @param repositoryProvider       Provides repositories for specific aggregate types
      * @see ClasspathParameterResolverFactory
      */
-    public SpringAggregateSnapshotter(EventStore eventStore,
-                                      ParameterResolverFactory parameterResolverFactory,
-                                      Executor executor,
-                                      TransactionManager txManager,
+    public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
+                                      Executor executor, TransactionManager txManager,
                                       RepositoryProvider repositoryProvider) {
         super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager, repositoryProvider);
     }
@@ -87,11 +83,10 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
     protected AggregateFactory<?> getAggregateFactory(Class<?> aggregateType) {
         AggregateFactory<?> aggregateFactory = super.getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
-            Optional<AggregateFactory> factory =
-                    applicationContext.getBeansOfType(AggregateFactory.class)
-                                      .values().stream()
-                                      .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
-                                      .findFirst();
+            Optional<AggregateFactory> factory = applicationContext.getBeansOfType(AggregateFactory.class)
+                                                                   .values().stream()
+                                                                   .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
+                                                                   .findFirst();
             if (!factory.isPresent()) {
                 factory = applicationContext.getBeansOfType(EventSourcingRepository.class)
                                             .values().stream()

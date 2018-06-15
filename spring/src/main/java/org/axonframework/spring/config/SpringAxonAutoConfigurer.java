@@ -329,8 +329,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                         c.eventBus(),
                                         c::repository,
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
-                                        c.parameterResolverFactory())
-                        );
+                                        c.parameterResolverFactory()));
                     }
                 }
             } else {

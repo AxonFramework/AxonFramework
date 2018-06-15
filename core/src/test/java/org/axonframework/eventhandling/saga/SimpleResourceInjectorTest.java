@@ -19,11 +19,11 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.junit.*;
+import org.junit.Test;
 
+import javax.inject.Inject;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.inject.Inject;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -115,7 +115,6 @@ public class SimpleResourceInjectorTest {
 
         @Override
         public void handle(EventMessage event) {
-
         }
 
         @Override
@@ -148,6 +147,7 @@ public class SimpleResourceInjectorTest {
         public void setSomeWeirdResource(SomeWeirdResource someWeirdResource) {
             throw new MockException();
         }
+
     }
 
     private static class SomeFieldResource {

@@ -31,7 +31,6 @@ import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
 import org.mockito.junit.*;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;

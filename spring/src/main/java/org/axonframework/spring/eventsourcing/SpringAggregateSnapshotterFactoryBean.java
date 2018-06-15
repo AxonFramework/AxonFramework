@@ -47,8 +47,7 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SpringAggregateSnapshotterFactoryBean
-        implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
+public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
     private Executor executor = DirectExecutor.INSTANCE;
     private PlatformTransactionManager transactionManager;
@@ -72,9 +71,8 @@ public class SpringAggregateSnapshotterFactoryBean
             eventStore = applicationContext.getBean(EventStore.class);
         }
 
-        Configuration configuration = applicationContext.getBean(Configuration.class);
         if (repositoryProvider == null) {
-            repositoryProvider = configuration::repository;
+            repositoryProvider = applicationContext.getBean(Configuration.class)::repository;
         }
 
         if (parameterResolverFactory == null) {
@@ -86,9 +84,8 @@ public class SpringAggregateSnapshotterFactoryBean
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(
-                eventStore, parameterResolverFactory, executor, txManager, repositoryProvider
-        );
+        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore, parameterResolverFactory,
+                                                                                executor, txManager, repositoryProvider);
         snapshotter.setApplicationContext(applicationContext);
         return snapshotter;
     }
