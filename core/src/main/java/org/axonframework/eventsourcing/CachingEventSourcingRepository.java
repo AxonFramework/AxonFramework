@@ -53,9 +53,9 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * <p>
      * A repository initialized using this constructor does not create snapshots for aggregates.
      *
-     * @param aggregateFactory  The factory for new aggregate instances
-     * @param eventStore        The event store that holds the event streams for this repository
-     * @param cache             The cache in which entries will be stored
+     * @param aggregateFactory   The factory for new aggregate instances
+     * @param eventStore         The event store that holds the event streams for this repository
+     * @param cache              The cache in which entries will be stored
      * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache) {

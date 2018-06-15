@@ -44,11 +44,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Initializes an EventSourcedAggregate instance for the given {@code aggregateRoot}, based on the given {@code
      * inspector}, which publishes events to the given {@code eventBus}.
      *
-     * @param aggregateRoot   The aggregate root instance
-     * @param inspector       The inspector describing the aggregate structure
-     * @param eventBus        The event bus to send generated events to
-     * @param snapshotTrigger The trigger to notify of events and initialization
-     * @param <T>             the aggregate root type
+     * @param aggregateRoot     The aggregate root instance
+     * @param inspector         The inspector describing the aggregate structure
+     * @param eventBus          The event bus to send generated events to
+     * @param snapshotTrigger   The trigger to notify of events and initialization
+     * @param <T>               the aggregate root type
      * @return the initialized EventSourcedAggregate instance
      */
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
@@ -130,13 +130,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * <p>
      * Use this method to initialize an EventSourcedAggregate without having to replay the aggregate from events.
      *
-     * @param aggregateRoot     The aggregate root instance
-     * @param model             The model describing the aggregate structure
-     * @param seqNo             The last event sequence number of the aggregate
-     * @param isDeleted         Flag to indicate whether or not the aggregate is deleted
-     * @param eventBus          The event bus to send generated events to
-     * @param snapshotTrigger   The trigger to notify of events and initialization
-     * @param <T>               the aggregate root type
+     * @param aggregateRoot      The aggregate root instance
+     * @param model              The model describing the aggregate structure
+     * @param seqNo              The last event sequence number of the aggregate
+     * @param isDeleted          Flag to indicate whether or not the aggregate is deleted
+     * @param eventBus           The event bus to send generated events to
+     * @param snapshotTrigger    The trigger to notify of events and initialization
+     * @param <T>                the aggregate root type
      * @return the reconstructed EventSourcedAggregate instance
      */
     public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
@@ -165,8 +165,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
                                                            boolean isDeleted, EventBus eventBus,
                                                            RepositoryProvider repositoryProvider,
                                                            SnapshotTrigger snapshotTrigger) {
-        EventSourcedAggregate<T> aggregate =
-                initialize(aggregateRoot, model, eventBus, repositoryProvider, snapshotTrigger);
+        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot,
+                                                        model,
+                                                        eventBus,
+                                                        repositoryProvider,
+                                                        snapshotTrigger);
         aggregate.initSequence(seqNo);
         if (isDeleted) {
             aggregate.doMarkDeleted();
@@ -178,14 +181,12 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Initializes an Aggregate instance for the given {@code aggregateRoot}, based on the given {@code model}, which
      * publishes events to the given {@code eventBus}.
      *
-     * @param aggregateRoot   The aggregate root instance
-     * @param model           The model describing the aggregate structure
-     * @param eventBus        The event store to store generated events in
-     * @param snapshotTrigger The trigger to notify of events and initialization
+     * @param aggregateRoot     The aggregate root instance
+     * @param model             The model describing the aggregate structure
+     * @param eventBus          The event store to store generated events in
+     * @param snapshotTrigger   The trigger to notify of events and initialization
      */
-    protected EventSourcedAggregate(T aggregateRoot,
-                                    AggregateModel<T> model,
-                                    EventBus eventBus,
+    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
                                     SnapshotTrigger snapshotTrigger) {
         super(aggregateRoot, model, eventBus);
         this.initSequence();
@@ -202,11 +203,8 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param repositoryProvider Provides repositories for specific aggregate types
      * @param snapshotTrigger    The trigger to notify of events and initialization
      */
-    protected EventSourcedAggregate(T aggregateRoot,
-                                    AggregateModel<T> model,
-                                    EventBus eventBus,
-                                    RepositoryProvider repositoryProvider,
-                                    SnapshotTrigger snapshotTrigger) {
+    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus,
+                                    RepositoryProvider repositoryProvider, SnapshotTrigger snapshotTrigger) {
         super(aggregateRoot, model, eventBus, repositoryProvider);
         this.initSequence();
         this.snapshotTrigger = snapshotTrigger;
@@ -216,9 +214,9 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * Creates a new EventSourcedAggregate instance based on the given {@code model}, which publishes events to the
      * given {@code eventBus}. This aggregate is not assigned a root instance yet.
      *
-     * @param model           The model describing the aggregate structure
-     * @param eventBus        The event store to store generated events in
-     * @param snapshotTrigger The trigger to notify of events and initialization
+     * @param model             The model describing the aggregate structure
+     * @param eventBus          The event store to store generated events in
+     * @param snapshotTrigger   The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
     protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, SnapshotTrigger snapshotTrigger) {
@@ -237,9 +235,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * @param snapshotTrigger    The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
-    protected EventSourcedAggregate(AggregateModel<T> model,
-                                    EventBus eventBus,
-                                    RepositoryProvider repositoryProvider,
+    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventBus, RepositoryProvider repositoryProvider,
                                     SnapshotTrigger snapshotTrigger) {
         super(model, eventBus, repositoryProvider);
         this.initSequence();
@@ -325,4 +321,5 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             return this;
         }
     }
+
 }
