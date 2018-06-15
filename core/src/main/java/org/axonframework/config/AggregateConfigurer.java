@@ -30,7 +30,11 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.ArrayList;
@@ -46,7 +50,6 @@ import static java.lang.String.format;
  * @param <A> The type of Aggregate configured
  */
 public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
-
     private final Class<A> aggregate;
 
     private final Component<AggregateAnnotationCommandHandler> commandHandler;
@@ -130,18 +133,17 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      */
     public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType) {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
-        return configurer.configureRepository(c -> new GenericJpaRepository<>(
-                c.getComponent(EntityManagerProvider.class,
-                               () -> {
-                                   throw new AxonConfigurationException(format(
-                                           "JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
-                                           aggregateType.getSimpleName()
-                                   ));
-                               }),
-                configurer.metaModel.get(),
-                c.eventBus(),
-                (RepositoryProvider) c::repository
-        ));
+        return configurer.configureRepository(
+                c -> new GenericJpaRepository<>(c.getComponent(EntityManagerProvider.class,
+                                                               () -> {
+                                                                   throw new AxonConfigurationException(format(
+                                                                           "JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
+                                                                           aggregateType.getSimpleName()
+                                                                   ));
+                                                               }),
+                                                configurer.metaModel.get(),
+                                                c.eventBus(),
+                                                (RepositoryProvider) c::repository));
     }
 
     /**
@@ -157,9 +159,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType,
                                                                     EntityManagerProvider entityManagerProvider) {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
-        return configurer.configureRepository(c -> new GenericJpaRepository<>(
-                entityManagerProvider, configurer.metaModel.get(), c.eventBus(), (RepositoryProvider) c::repository
-        ));
+        return configurer.configureRepository(
+                c -> new GenericJpaRepository<>(entityManagerProvider,
+                                                configurer.metaModel.get(),
+                                                c.eventBus(),
+                                                (RepositoryProvider) c::repository));
     }
 
     private String name(String prefix) {

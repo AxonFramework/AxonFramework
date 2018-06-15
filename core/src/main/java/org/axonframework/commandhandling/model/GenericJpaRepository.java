@@ -308,7 +308,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      *                              used in the Entity
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, AggregateModel<T> aggregateModel,
-                                EventBus eventBus, LockFactory lockFactory, Function<String, ?> identifierConverter) {
+                                EventBus eventBus,LockFactory lockFactory, Function<String, ?> identifierConverter) {
         this(entityManagerProvider, aggregateModel, eventBus, null, lockFactory, identifierConverter);
     }
 
