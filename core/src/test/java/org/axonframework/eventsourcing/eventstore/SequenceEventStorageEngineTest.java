@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -162,4 +163,34 @@ public class SequenceEventStorageEngineTest {
         inOrder.verifyNoMoreInteractions();
     }
 
+    @Test
+    public void testCreateHeadToken() {
+        testSubject.createHeadToken();
+
+        verify(activeStorage).createHeadToken();
+    }
+
+    @Test
+    public void testCreateTokenAtWhenIsPresentInActiveStorage() {
+        Instant now = Instant.now();
+        TrackingToken mockTrackingToken = new GlobalSequenceTrackingToken(3);
+        when(activeStorage.createTokenAt(now)).thenReturn(mockTrackingToken);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(now);
+
+        assertEquals(mockTrackingToken, tokenAt);
+        verify(historicStorage, times(0)).createTokenAt(now);
+    }
+
+    @Test
+    public void testCreateTokenAtWhenIsNotPresentInActiveStorage() {
+        Instant now = Instant.now();
+        TrackingToken mockTrackingToken = new GlobalSequenceTrackingToken(3);
+        when(activeStorage.createTokenAt(now)).thenReturn(null);
+        when(historicStorage.createTokenAt(now)).thenReturn(mockTrackingToken);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(now);
+
+        assertEquals(mockTrackingToken, tokenAt);
+    }
 }

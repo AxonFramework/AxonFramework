@@ -261,6 +261,38 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                    ))));
     }
 
+    @Override
+    public TrackingToken createHeadToken() {
+        String sql = "SELECT max(" + schema.globalIndexColumn() + ") FROM " + schema.domainEventTable();
+        Long index = transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(),
+                                   connection -> connection.prepareStatement(sql),
+                                   resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null,
+                                   e -> new EventStoreException("Failed to get head token")));
+        return Optional.ofNullable(index)
+                       .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
+                       .orElse(null);
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        String sql = "SELECT max(" + schema.globalIndexColumn() + ") FROM " + schema.domainEventTable() + " WHERE "
+                + schema.timestampColumn() + " < ?";
+        Long index = transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(),
+                                   connection -> {
+                                       PreparedStatement stmt = connection.prepareStatement(sql);
+                                       stmt.setString(1, formatInstant(dateTime));
+                                       return stmt;
+                                   },
+                                   resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null,
+                                   e -> new EventStoreException(format("Failed to get token at [%s]", dateTime))));
+        if (index == null) {
+            return null;
+        }
+        return GapAwareTrackingToken.newInstance(index, Collections.emptySet());
+    }
+
     /**
      * Creates a statement to append the given {@code snapshot} to the event storage using given {@code connection} to
      * the database. Use the given {@code serializer} to serialize the payload and metadata of the event.

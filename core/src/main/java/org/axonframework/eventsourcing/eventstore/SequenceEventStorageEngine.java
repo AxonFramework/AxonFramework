@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -103,6 +104,20 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
             return result;
         }
         return historicStorage.lastSequenceNumberFor(aggregateIdentifier);
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        return activeStorage.createHeadToken();
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        TrackingToken tokenFromActiveStorage = activeStorage.createTokenAt(dateTime);
+        if (tokenFromActiveStorage == null) {
+            return historicStorage.createTokenAt(dateTime);
+        }
+        return tokenFromActiveStorage;
     }
 
     private class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {

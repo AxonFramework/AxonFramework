@@ -43,6 +43,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -74,6 +75,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
+    private final Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder;
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final int segmentsSize;
@@ -162,6 +164,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(name));
         this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + name + "]/Token";
+        this.initialTrackingTokenBuilder = config.getInitialTrackingTokenBuilder();
 
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         registerInterceptor((unitOfWork, interceptorChain) -> {
@@ -651,7 +654,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
                         tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
                                 () -> {
-                                    tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                                    TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
+                                    tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
                                     return tokenStore.fetchSegments(processorName);
                                 });
                     }

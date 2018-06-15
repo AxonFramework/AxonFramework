@@ -22,8 +22,11 @@ import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -40,6 +43,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
@@ -52,7 +60,7 @@ import static org.junit.Assert.assertFalse;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_doc_per_commit.xml"})
-public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStorageEngineTest {
+public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEventStorageEngineTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStorageEngineTest_DocPerCommit.class);
 
@@ -146,5 +154,26 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
                 serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, serializer, 100, mongoTemplate,
                 new DocumentPerCommitStorageStrategy()
         );
+    }
+
+    @Override
+    public void testCreateTokenAtExactTime() {
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event1 = createEvent(0);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.01Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event2 = createEvent(1);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.01Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event3 = createEvent(2);
+
+        testSubject.appendEvents(event1, event2, event3);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
+                                                      .collect(Collectors.toList());
+
+        assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
     }
 }

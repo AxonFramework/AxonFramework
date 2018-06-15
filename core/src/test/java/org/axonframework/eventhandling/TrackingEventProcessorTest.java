@@ -188,7 +188,7 @@ public class TrackingEventProcessorTest {
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore).extendClaim(eq(testSubject.getName()), anyInt());
-        verify(tokenStore).storeToken(any(), any(), anyInt());
+        verify(tokenStore, times(2)).storeToken(any(), any(), anyInt());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 

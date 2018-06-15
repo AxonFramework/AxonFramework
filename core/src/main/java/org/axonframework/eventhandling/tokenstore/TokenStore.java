@@ -51,6 +51,29 @@ public interface TokenStore {
     }
 
     /**
+     * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
+     * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
+     * <p>
+     * This method will store {@code initialToken} for all segments as starting point for processor, but no claim them.
+     * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
+     * <p>
+     * The exact behavior when this method is called while tokens were already present, is undefined in case the token
+     * already present is not owned by the initializing process.
+     *
+     * @param processorName The name of the processor to initialize segments for
+     * @param segmentCount  The number of segments to initialize
+     * @param initialToken  The initial token which is used as a starting point for processor
+     * @throws UnableToClaimTokenException when a segment has already been created
+     */
+    default void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken)
+            throws UnableToClaimTokenException {
+        for (int segment = 0; segment < segmentCount; segment++) {
+            storeToken(initialToken, processorName, segment);
+            releaseClaim(processorName, segment);
+        }
+    }
+
+    /**
      * Stores the given {@code token} in the store. The token marks the current position of the process with given
      * {@code processorName} and {@code segment}. The given {@code token} may be {@code null}.
      * <p/>

@@ -22,6 +22,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -95,5 +96,15 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
     @Override
     public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return delegate.lastSequenceNumberFor(aggregateIdentifier);
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        return delegate.createHeadToken();
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        return delegate.createTokenAt(dateTime);
     }
 }

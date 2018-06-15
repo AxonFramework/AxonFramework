@@ -24,6 +24,8 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -91,6 +93,25 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
         return Optional.ofNullable(snapshots.get(aggregateIdentifier));
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        if (events.size() == 0) {
+            return null;
+        }
+        return events.lastKey();
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        return events.values()
+                     .stream()
+                     .filter(event -> event.getTimestamp().isBefore(dateTime))
+                     .max(Comparator.comparingLong(e -> ((GlobalSequenceTrackingToken) e.trackingToken())
+                             .getGlobalIndex()))
+                     .map(TrackedEventMessage::trackingToken)
+                     .orElse(null);
     }
 
     /**

@@ -17,6 +17,9 @@ package org.axonframework.messaging;
 
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
+import java.time.Duration;
+import java.time.Instant;
+
 /**
  * Interface for a source of {@link Message messages} that processors can track.
  *
@@ -35,4 +38,47 @@ public interface StreamableMessageSource<M extends Message<?>> {
      */
     MessageStream<M> openStream(TrackingToken trackingToken);
 
+    /**
+     * Creates the token at the beginning of an event stream.
+     *
+     * @return the token at the beginning of an event stream
+     */
+    default TrackingToken createTailToken() {
+        return null;
+    }
+
+    /**
+     * Creates the token at the end of an event stream.
+     *
+     * @return the token at the end of an event stream
+     */
+    default TrackingToken createHeadToken() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
+     * {@code dateTime}, it will be tracked also.
+     *
+     * @param dateTime The date and time for determining criteria how the tracking token should be created. A tracking
+     *                 token should point at very first event before this date and time.
+     * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria {@code
+     * null} is returned
+     */
+    default TrackingToken createTokenAt(Instant dateTime) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Creates a token that tracks all events before given {@code duration}. If there is an event exactly at that time
+     * (before given {@code duration}), it will be tracked also.
+     *
+     * @param duration The duration for determining criteria how the tracking token should be created. A tracking token
+     *                 should point at very first event before this duration.
+     * @return a tracking token that depicts position before given {@code duration}, if there aren't events matching
+     * this criteria {@code null} is returned
+     */
+    default TrackingToken createTokenSince(Duration duration) {
+        return createTokenAt(Instant.now().minus(duration));
+    }
 }

@@ -32,6 +32,8 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.annotation.PostConstruct;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -207,5 +209,15 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return storageStrategy.lastSequenceNumberFor(template.eventCollection(), aggregateIdentifier);
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        return createTokenAt(Instant.now());
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        return MongoTrackingToken.of(dateTime, Collections.emptyMap());
     }
 }

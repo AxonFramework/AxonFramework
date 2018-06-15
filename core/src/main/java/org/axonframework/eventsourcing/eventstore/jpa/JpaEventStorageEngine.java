@@ -52,6 +52,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.sql.DataSource;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
 
@@ -389,6 +390,27 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             return Optional.empty();
         }
         return Optional.ofNullable(results.get(0));
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        List<Long> results = entityManager().createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
+                                          .getResultList();
+        if (results.size() == 0 || results.get(0) == null) {
+            return null;
+        }
+        return GapAwareTrackingToken.newInstance(results.get(0), Collections.emptySet());
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        List<Long> results = entityManager().createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e WHERE e.timeStamp < :dateTime", Long.class)
+                                            .setParameter("dateTime", formatInstant(dateTime))
+                                            .getResultList();
+        if (results.size() == 0 || results.get(0) == null) {
+            return null;
+        }
+        return GapAwareTrackingToken.newInstance(results.get(0), Collections.emptySet());
     }
 
     /**

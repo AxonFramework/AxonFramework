@@ -15,12 +15,17 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
@@ -35,6 +40,11 @@ import static org.junit.Assert.*;
 public abstract class EventStorageEngineTest {
 
     private EventStorageEngine testSubject;
+
+    @After
+    public void tearDown() {
+        GenericEventMessage.clock = Clock.systemUTC();
+    }
 
     @Test
     public void testStoreAndLoadEvents() {
@@ -127,8 +137,77 @@ public abstract class EventStorageEngineTest {
                      testSubject.readEvents(token, false).map(EventMessage::getIdentifier).collect(toList()));
     }
 
+    @Test
+    public void testCreateHeadToken() {
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event1 = createEvent(0);
+        testSubject.appendEvents(event1);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event2 = createEvent(1);
+        testSubject.appendEvents(event2);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event3 = createEvent(2);
+        testSubject.appendEvents(event3);
+
+        TrackingToken headToken = testSubject.createHeadToken();
+
+        List<? extends TrackedEventMessage<?>> readEvents = testSubject.readEvents(headToken, false)
+                                                                       .collect(Collectors.toList());
+
+        assertTrue(readEvents.isEmpty());
+    }
+
+    @Test
+    public void testCreateTokenAt() {
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event1 = createEvent(0);
+        testSubject.appendEvents(event1);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event2 = createEvent(1);
+        testSubject.appendEvents(event2);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event3 = createEvent(2);
+        testSubject.appendEvents(event3);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
+                                                      .collect(toList());
+
+        assertEventStreamsById(Arrays.asList(event2, event3), readEvents);
+    }
+
+    @Test
+    public void testCreateTokenAtExactTime() {
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event1 = createEvent(0);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event2 = createEvent(1);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event3 = createEvent(2);
+
+        testSubject.appendEvents(event1, event2, event3);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
+                                                      .collect(Collectors.toList());
+
+        assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
+    }
+
     protected void setTestSubject(EventStorageEngine testSubject) {
         this.testSubject = testSubject;
     }
 
+    protected void assertEventStreamsById(List<EventMessage<?>> s1, List<EventMessage<?>> s2) {
+        assertEquals(s1.stream().map(EventMessage::getIdentifier).collect(toList()),
+                     s2.stream().map(EventMessage::getIdentifier).collect(toList()));
+    }
 }

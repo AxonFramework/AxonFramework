@@ -6,6 +6,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
@@ -53,5 +54,20 @@ public class FilteringEventStorageEngineTest {
         testSubject.storeSnapshot(snapshot);
 
         verify(mockStorage).storeSnapshot(snapshot);
+    }
+
+    @Test
+    public void testCreateHeadTokenDelegated() {
+        testSubject.createHeadToken();
+
+        verify(mockStorage).createHeadToken();
+    }
+
+    @Test
+    public void testCreateTokenAtDelegated() {
+        Instant now = Instant.now();
+        testSubject.createTokenAt(now);
+
+        verify(mockStorage).createTokenAt(now);
     }
 }
