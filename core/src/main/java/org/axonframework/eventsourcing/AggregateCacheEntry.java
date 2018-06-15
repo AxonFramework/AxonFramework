@@ -20,9 +20,9 @@ public class AggregateCacheEntry<T> implements Serializable {
         this.aggregateRoot = aggregate.getAggregateRoot();
         this.version = aggregate.version();
         this.deleted = aggregate.isDeleted();
-        this.snapshotTrigger = (aggregate.getSnapshotTrigger() instanceof Serializable)
-                ? aggregate.getSnapshotTrigger()
-                : NoSnapshotTriggerDefinition.TRIGGER;
+        this.snapshotTrigger =
+                (aggregate.getSnapshotTrigger() instanceof Serializable) ? aggregate.getSnapshotTrigger() :
+                        NoSnapshotTriggerDefinition.TRIGGER;
     }
 
     public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model,
@@ -37,14 +37,9 @@ public class AggregateCacheEntry<T> implements Serializable {
         if (aggregate != null) {
             return aggregate;
         }
-        return EventSourcedAggregate.reconstruct(
-                aggregateRoot,
-                model,
-                version,
-                deleted,
-                eventStore,
-                repositoryProvider,
-                snapshotTriggerDefinition.reconfigure(aggregateRoot.getClass(), this.snapshotTrigger)
+        return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore, repositoryProvider,
+                                                 snapshotTriggerDefinition
+                                                         .reconfigure(aggregateRoot.getClass(), this.snapshotTrigger)
         );
     }
 }
