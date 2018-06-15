@@ -138,8 +138,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                () -> {
                                                                    throw new AxonConfigurationException(format(
                                                                            "JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
-                                                                           aggregateType.getSimpleName()
-                                                                   ));
+                                                                           aggregateType.getSimpleName()));
                                                                }),
                                                 configurer.metaModel.get(),
                                                 c.eventBus(),
@@ -227,8 +226,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param snapshotTriggerDefinition The function creating the SnapshotTriggerDefinition
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureSnapshotTrigger(
-            Function<Configuration, SnapshotTriggerDefinition> snapshotTriggerDefinition) {
+    public AggregateConfigurer<A> configureSnapshotTrigger(Function<Configuration, SnapshotTriggerDefinition> snapshotTriggerDefinition) {
         this.snapshotTriggerDefinition.update(snapshotTriggerDefinition);
         return this;
     }

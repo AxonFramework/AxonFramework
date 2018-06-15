@@ -132,15 +132,6 @@ public interface Configuration {
     <T> Repository<T> repository(Class<T> aggregateType);
 
     /**
-     * Returns the Saga Repository configured for the given {@code sagaType}.
-     *
-     * @param sagaType The saga type to find the repository for
-     * @param <T>      The saga type
-     * @return the saga repository from which sagas of the given type can be loaded
-     */
-    <T> SagaRepository<T> sagaRepository(Class<T> sagaType);
-
-    /**
      * Returns the Component declared under the given {@code componentType}, typically the interface the component
      * implements.
      *

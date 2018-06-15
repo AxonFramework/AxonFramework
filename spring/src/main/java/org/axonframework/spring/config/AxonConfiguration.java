@@ -126,11 +126,6 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
-    public <T> SagaRepository<T> sagaRepository(Class<T> sagaType) {
-        return config.sagaRepository(sagaType);
-    }
-
-    @Override
     public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
         return config.getComponent(componentType, defaultImpl);
     }

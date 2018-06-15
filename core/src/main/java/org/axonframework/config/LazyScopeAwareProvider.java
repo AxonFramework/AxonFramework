@@ -52,7 +52,6 @@ public class LazyScopeAwareProvider implements ScopeAwareProvider {
         this.configuration = configuration;
     }
 
-
     @Override
     public Stream<ScopeAware> provideScopeAwareStream(ScopeDescriptor scopeDescriptor) {
         if (scopeAwareComponents.isEmpty()) {

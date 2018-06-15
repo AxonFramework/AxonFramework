@@ -504,18 +504,6 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public <T> SagaRepository<T> sagaRepository(Class<T> sagaType) {
-            return DefaultConfigurer.this.modules.stream().filter(m -> m instanceof SagaConfiguration)
-                                                 .map(m -> (SagaConfiguration) m)
-                                                 .filter(sc -> sc.getSagaType().equals(sagaType))
-                                                 .map((Function<SagaConfiguration, SagaRepository<T>>) SagaConfiguration::getSagaRepository)
-                                                 .findAny()
-                                                 .orElseThrow(() -> new IllegalArgumentException(
-                                                         "Saga " + sagaType.getSimpleName()
-                                                                 + " has not been configured"));
-        }
-
-        @Override
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
             return componentType.cast(components.computeIfAbsent(
                     componentType, k -> new Component<>(config, componentType.getSimpleName(), c -> defaultImpl.get())
