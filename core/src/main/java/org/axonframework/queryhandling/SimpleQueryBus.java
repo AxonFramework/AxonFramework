@@ -246,10 +246,11 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         EmitterProcessor<SubscriptionQueryUpdateMessage<U>> processor = EmitterProcessor.create(updateBufferSize);
         FluxSink<SubscriptionQueryUpdateMessage<U>> sink = processor.sink(backpressure.getOverflowStrategy());
         sink.onDispose(() -> updateHandlers.remove(query));
-        updateHandlers.put(query, new FluxSinkWrapper<>(sink));
+        FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>> fluxSinkWrapper = new FluxSinkWrapper<>(sink);
+        updateHandlers.put(query, fluxSinkWrapper);
 
         Registration registration = () -> {
-            sink.complete();
+            fluxSinkWrapper.complete();
             return true;
         };
 
@@ -274,7 +275,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .map(updateHandlers::remove)
+                      .map(updateHandlers::get)
                       .filter(Objects::nonNull)
                       .forEach(FluxSinkWrapper::complete);
     }
@@ -284,7 +285,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .map(updateHandlers::remove)
+                      .map(updateHandlers::get)
                       .filter(Objects::nonNull)
                       .forEach(uh -> uh.error(cause));
     }

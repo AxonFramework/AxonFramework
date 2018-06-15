@@ -114,6 +114,7 @@ public class SubscriptionQueryTest {
         Executors.newSingleThreadScheduledExecutor().schedule(() -> {
             chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
             chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, toBeThrown);
+            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
         }, 500, TimeUnit.MILLISECONDS);
 
         // then
@@ -126,6 +127,33 @@ public class SubscriptionQueryTest {
                     .verify();
     }
 
+    @Test
+    public void testCompletingSubscriptionQuery() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+        RuntimeException toBeThrown = new RuntimeException();
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
+                .subscriptionQuery(queryMessage);
+        Executors.newSingleThreadScheduledExecutor().schedule(() -> {
+            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+            chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
+            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+        }, 500, TimeUnit.MILLISECONDS);
+
+        // then
+        StepVerifier.create(result.initialResult().map(Message::getPayload))
+                    .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
+                    .verifyComplete();
+        StepVerifier.create(result.updates().map(Message::getPayload))
+                    .expectNext("Update1")
+                    .verifyComplete();
+    }
 
     @Test
     public void testOrderingOfOperationOnUpdateHandler() {
