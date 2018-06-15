@@ -32,10 +32,13 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.junit.*;
+import org.junit.runner.*;
 import org.mockito.*;
+import org.mockito.junit.*;
 
 import java.util.Objects;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -45,11 +48,13 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
+@RunWith(MockitoJUnitRunner.class)
 public class CommandHandlerInterceptorTest {
 
     private CommandGateway commandGateway;
     private EventStore eventStore;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
@@ -65,8 +70,8 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptor() {
-        commandGateway.sendAndWait(new CreateMyAggregateCommand("id"));
-        String result = commandGateway.sendAndWait(new UpdateMyAggregateStateCommand("id", "state"));
+        commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
+        String result = commandGateway.sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
@@ -83,8 +88,8 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptorWithChainProceeding() {
-        commandGateway.sendAndWait(new CreateMyAggregateCommand("id"));
-        commandGateway.sendAndWait(new ClearMyAggregateStateCommand("id", true));
+        commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
+        commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", true)));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(3)).publish(eventCaptor.capture());
@@ -97,8 +102,8 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptorWithoutChainProceeding() {
-        commandGateway.sendAndWait(new CreateMyAggregateCommand("id"));
-        commandGateway.sendAndWait(new ClearMyAggregateStateCommand("id", false));
+        commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
+        commandGateway.sendAndWait(asCommandMessage(new ClearMyAggregateStateCommand("id", false)));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(2)).publish(eventCaptor.capture());
@@ -109,8 +114,8 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptorWithNestedEntity() {
-        commandGateway.sendAndWait(new CreateMyAggregateCommand("id"));
-        commandGateway.sendAndWait(new MyNestedCommand("id", "state"));
+        commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
+        commandGateway.sendAndWait(asCommandMessage(new MyNestedCommand("id", "state")));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(4)).publish(eventCaptor.capture());
@@ -125,8 +130,8 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptorWithNestedNestedEntity() {
-        commandGateway.sendAndWait(new CreateMyAggregateCommand("id"));
-        commandGateway.sendAndWait(new MyNestedNestedCommand("id", "state"));
+        commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
+        commandGateway.sendAndWait(asCommandMessage(new MyNestedNestedCommand("id", "state")));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(6)).publish(eventCaptor.capture());
@@ -151,9 +156,9 @@ public class CommandHandlerInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptorThrowingAnException() {
-        commandGateway.sendAndWait(new CreateMyAggregateCommand("id"));
+        commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
         try {
-            commandGateway.sendAndWait(new InterceptorThrowingCommand("id"));
+            commandGateway.sendAndWait(asCommandMessage(new InterceptorThrowingCommand("id")));
             fail("Expected exception");
         } catch (InterceptorException e) {
             // we are expecting this

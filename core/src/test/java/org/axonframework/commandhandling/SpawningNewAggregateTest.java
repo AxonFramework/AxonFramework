@@ -27,12 +27,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Objects;
@@ -74,13 +72,13 @@ public class SpawningNewAggregateTest {
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory
                 .inspectAggregate(Aggregate2.class);
 
-        when(aggregate2Repository.newInstance(any()))
-                .thenAnswer(invocation -> EventSourcedAggregate.initialize(
-                        (Callable<Aggregate2>) invocation.getArguments()[0],
-                        aggregate2Model,
-                        eventStore,
-                        repositoryProvider
-                ));
+        when(aggregate2Repository.newInstance(any())).thenAnswer(invocation ->
+                                                                         EventSourcedAggregate
+                                                                                 .initialize((Callable<Aggregate2>) invocation
+                                                                                                     .getArguments()[0],
+                                                                                             aggregate2Model,
+                                                                                             eventStore,
+                                                                                             repositoryProvider));
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
 
@@ -154,13 +152,13 @@ public class SpawningNewAggregateTest {
 
     @SuppressWarnings("unchecked")
     private void initializeAggregate1Repository(RepositoryProvider repositoryProvider) throws Exception {
-        when(aggregate1Repository.newInstance(any()))
-                .thenAnswer(invocation -> EventSourcedAggregate.initialize(
-                        (Callable<Aggregate1>) invocation.getArguments()[0],
-                        aggregate1Model,
-                        eventStore,
-                        repositoryProvider
-                ));
+        when(aggregate1Repository.newInstance(any())).thenAnswer(invocation ->
+                                                                         EventSourcedAggregate
+                                                                                 .initialize((Callable<Aggregate1>) invocation
+                                                                                                     .getArguments()[0],
+                                                                                             aggregate1Model,
+                                                                                             eventStore,
+                                                                                             repositoryProvider));
     }
 
     private static class CreateAggregate1Command {
