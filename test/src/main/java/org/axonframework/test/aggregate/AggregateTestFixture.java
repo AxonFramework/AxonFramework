@@ -27,10 +27,9 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateDescriptor;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
-import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -262,8 +261,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
-                throw new FixtureExecutionException("An exception occurred while trying to initialize repository with given aggregate (using 'givenState')",
-                                                    e);
+                throw new FixtureExecutionException(
+                        "An exception occurred while trying to initialize repository with given aggregate (using 'givenState')",
+                        e);
             }
         });
         return this;
@@ -322,7 +322,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public TestExecutor andGivenCurrentTime(Instant currentTime) {
+    public TestExecutor<T> andGivenCurrentTime(Instant currentTime) {
         deadlineManager.initializeAt(currentTime);
         return this;
     }
@@ -356,8 +356,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
                                                                            fieldFilter,
-                                                                           deadlineManager,
-                                                                           () -> repository.getAggregate());
+                                                                           () -> repository.getAggregate(),
+                                                                           deadlineManager);
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
@@ -387,7 +387,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private ResultValidator buildResultValidator() {
         MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-        ResultValidatorImpl resultValidator = new ResultValidatorImpl(publishedEvents, fieldFilter, deadlineManager);
+        ResultValidatorImpl resultValidator = new ResultValidatorImpl<>(publishedEvents,
+                                                                        fieldFilter,
+                                                                        () -> repository.getAggregate(),
+                                                                        deadlineManager);
         resultValidator.assertValidRecording();
         return resultValidator;
     }
@@ -630,7 +633,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     private static class InMemoryRepository<T> implements Repository<T> {
 
-
         private final EventBus eventBus;
         private final RepositoryProvider repositoryProvider;
         private final AggregateModel<T> aggregateModel;
@@ -642,11 +644,15 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             this.repositoryProvider = repositoryProvider;
         }
 
-
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
-            Assert.state(storedAggregate == null, () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
-            storedAggregate = AnnotatedAggregate.initialize(factoryMethod, aggregateModel, eventBus, repositoryProvider, true);
+            Assert.state(storedAggregate == null,
+                         () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
+            storedAggregate = AnnotatedAggregate.initialize(factoryMethod,
+                                                            aggregateModel,
+                                                            eventBus,
+                                                            repositoryProvider,
+                                                            true);
             return storedAggregate;
         }
 
@@ -662,17 +668,32 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                      "Aggregate not found. No aggregate has been stored yet.");
             }
             if (!aggregateIdentifier.equals(storedAggregate.identifier().toString())) {
-                throw new AggregateNotFoundException(aggregateIdentifier,
-                                                     "Aggregate not found. Did you mean to load " + storedAggregate.identifier() + "?");
+                throw new AggregateNotFoundException(
+                        aggregateIdentifier,
+                        "Aggregate not found. Did you mean to load " + storedAggregate.identifier() + "?"
+                );
             }
             if (storedAggregate.isDeleted()) {
-                throw new AggregateNotFoundException(aggregateIdentifier,
-                                                     "Aggregate not found. It has been deleted.");
+                throw new AggregateNotFoundException(aggregateIdentifier, "Aggregate not found. It has been deleted.");
             }
             if (expectedVersion != null && !Objects.equals(expectedVersion, storedAggregate.version())) {
-                throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, storedAggregate.version());
+                throw new ConflictingAggregateVersionException(aggregateIdentifier,
+                                                               expectedVersion,
+                                                               storedAggregate.version());
             }
             return storedAggregate;
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (scopeDescription instanceof AggregateDescriptor) {
+                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return true;
         }
     }
 

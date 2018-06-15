@@ -368,7 +368,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerCommandHandler(int phase, Function<Configuration, Object> annotatedCommandHandlerBuilder) {
+    public Configurer registerCommandHandler(int phase,
+                                             Function<Configuration, Object> annotatedCommandHandlerBuilder) {
         startHandlers.add(new RunnableHandler(phase, () -> {
             Registration registration =
                     new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config),
@@ -427,7 +428,9 @@ public class DefaultConfigurer implements Configurer {
         this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
         this.initHandlers.add(new ConsumerHandler(aggregateConfiguration.phase(), aggregateConfiguration::initialize));
         this.startHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::start));
-        this.shutdownHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown));
+        this.shutdownHandlers.add(
+                new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown)
+        );
         return this;
     }
 
@@ -572,6 +575,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     private static class ConsumerHandler {
+
         private final int phase;
         private final Consumer<Configuration> handler;
 
@@ -590,6 +594,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     private static class RunnableHandler {
+
         private final int phase;
         private final Runnable handler;
 

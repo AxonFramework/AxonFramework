@@ -46,7 +46,6 @@ import java.util.function.Function;
 public class SagaConfiguration<S> implements ModuleConfiguration {
 
     private final Class<S> sagaType;
-    private final Component<EventProcessor> processor;
     private final ProcessorInfo processorInfo;
     private final Function<Configuration, SubscribableMessageSource<EventMessage<?>>> subscribableMessageSourceBuilder;
     private final Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> streamableMessageSourceBuilder;

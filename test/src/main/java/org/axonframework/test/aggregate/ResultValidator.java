@@ -167,7 +167,7 @@ public interface ResultValidator<T> {
      * @param matcher  The matcher that must match with the deadline scheduled at the given time
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage<?>> matcher);
+    ResultValidator<T> expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
@@ -179,7 +179,7 @@ public interface ResultValidator<T> {
      * @param deadline The expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectScheduledDeadline(Duration duration, Object deadline);
+    ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline);
 
     /**
      * Asserts that a deadline of the given {@code deadlineType} has been scheduled after the given {@code duration}.
@@ -188,7 +188,7 @@ public interface ResultValidator<T> {
      * @param deadlineType The type of the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+    ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
      * Asserts that a deadline matching the given {@code matcher} has been scheduled at the given {@code
@@ -201,7 +201,7 @@ public interface ResultValidator<T> {
      * @param matcher       The matcher defining the deadline expected
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectScheduledDeadlineMatching(Instant scheduledTime, Matcher<? super DeadlineMessage<?>> matcher);
+    ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime, Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled at the given {@code
@@ -217,7 +217,7 @@ public interface ResultValidator<T> {
      * @param deadline      The expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectScheduledDeadline(Instant scheduledTime, Object deadline);
+    ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline);
 
     /**
      * Asserts that a deadline of the given {@code deadlineType} has been scheduled at the given {@code scheduledTime}.
@@ -226,7 +226,7 @@ public interface ResultValidator<T> {
      * @param deadlineType  The type of the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+    ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules
@@ -234,7 +234,7 @@ public interface ResultValidator<T> {
      *
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectNoScheduledDeadlines();
+    ResultValidator<T> expectNoScheduledDeadlines();
 
     /**
      * Asserts that deadlines match given {@code matcher} have been met (which have passed in time) on this aggregate.
@@ -242,7 +242,7 @@ public interface ResultValidator<T> {
      * @param matcher The matcher that defines the expected list of deadlines
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
+    ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
 
     /**
      * Asserts that given {@code expected} deadlines have been met (which have passed in time). Deadlines are compared
@@ -251,5 +251,5 @@ public interface ResultValidator<T> {
      * @param expected The sequence of deadlines expected to be met
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectDeadlinesMet(Object... expected);
+    ResultValidator<T> expectDeadlinesMet(Object... expected);
 }
