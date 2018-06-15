@@ -334,13 +334,9 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore,
-                                              AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               RepositoryProvider repositoryProvider) {
-        return createRepository(eventStore,
-                                aggregateFactory,
-                                NoSnapshotTriggerDefinition.INSTANCE,
-                                repositoryProvider);
+        return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider);
     }
 
     /**
@@ -409,8 +405,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                       The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore,
-                                              AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               RepositoryProvider repositoryProvider) {
         return createRepository(eventStore,
@@ -473,15 +468,11 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore,
-                                              AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory,
                                               RepositoryProvider repositoryProvider) {
-        return createRepository(eventStore,
-                                aggregateFactory,
-                                NoSnapshotTriggerDefinition.INSTANCE,
-                                parameterResolverFactory,
-                                repositoryProvider);
+        return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE,
+                                parameterResolverFactory, repositoryProvider);
     }
 
     /**
@@ -545,8 +536,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(EventStore eventStore,
-                                              AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
                                               RepositoryProvider repositoryProvider) {
@@ -592,15 +582,13 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
-    public Registration registerHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         invokerInterceptors.add(handlerInterceptor);
         return () -> invokerInterceptors.remove(handlerInterceptor);
     }
