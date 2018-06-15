@@ -15,7 +15,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.junit.*;
@@ -153,8 +152,8 @@ public abstract class EventStorageEngineTest {
 
         TrackingToken headToken = testSubject.createHeadToken();
 
-        List<? extends TrackedEventMessage<?>> readEvents = testSubject.readEvents(headToken, false)
-                                                                       .collect(Collectors.toList());
+        List<EventMessage<?>> readEvents = testSubject.readEvents(headToken, false)
+                                                      .collect(toList());
 
         assertTrue(readEvents.isEmpty());
     }

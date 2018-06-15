@@ -27,7 +27,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
@@ -81,7 +80,7 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
 
         List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
-                                                      .collect(Collectors.toList());
+                                                      .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event1, event3, event2), readEvents);
     }
