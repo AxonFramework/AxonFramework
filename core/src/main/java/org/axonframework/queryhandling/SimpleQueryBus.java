@@ -293,7 +293,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     /**
-     * Provides the set of currently running subscription queries.
+     * Provides the set of currently running subscription queries. Returned set represents current state of active
+     * subscriptions on this bus. Do note that the set won't be updated once the state of active subscription changes.
      *
      * @return the set of currently running subscription queries
      */
