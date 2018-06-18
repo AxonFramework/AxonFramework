@@ -19,7 +19,7 @@ message CommandResponse {
     /* A message id */
     string message_identifier = 1;
     string error_code = 2;
-    string message = 3;
+    ErrorMessage message = 3;
     io.axoniq.platform.SerializedObject payload = 4;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
     repeated ProcessingInstruction processing_instructions = 6;
@@ -43,7 +43,7 @@ message QueryResponse {
     /* A message id */
     string message_identifier = 1;
     string error_code = 2;
-    string message = 3;
+    ErrorMessage message = 3;
     io.axoniq.platform.SerializedObject payload = 4;
     map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
     repeated ProcessingInstruction processing_instructions = 6;
@@ -120,6 +120,12 @@ message Confirmation {
 message ProcessingInstruction {
     ProcessingKey key = 1;
     io.axoniq.platform.MetaDataValue value = 2;
+}
+
+message ErrorMessage {
+    string message = 1;
+    string location = 2;
+    repeated string details = 3;
 }
 
 enum ProcessingKey {

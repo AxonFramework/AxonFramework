@@ -50,6 +50,7 @@ message ClientIdentification {
     string component_name = 2;
 }
 
+
 message Application {
     string name = 1;
     string description = 2;
