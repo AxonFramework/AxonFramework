@@ -15,6 +15,8 @@
 
 package io.axoniq.axonhub.client;
 
+import io.axoniq.axonhub.Command;
+import io.axoniq.axonhub.CommandResponse;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
 import io.axoniq.axonhub.grpc.CommandProviderInbound;
@@ -70,6 +72,7 @@ public class PlatformConnectionManager {
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonHubConfiguration connectInformation;
+    private volatile int axonhubVersion;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
     public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
@@ -89,6 +92,7 @@ public class PlatformConnectionManager {
                             .setClientName(connectInformation.getClientName())
                             .setComponentName(connectInformation.getComponentName())
                             .build());
+                    axonhubVersion = clusterInfo.getPrimary().getVersion();
                     if(isPrimary(nodeInfo, clusterInfo)) {
                         channel = candidate;
                     } else {
@@ -99,6 +103,8 @@ public class PlatformConnectionManager {
                     }
                     startInstructionStream(clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
+                    logger.info("Re-subscribing commands and queries");
+                    reconnectListeners.forEach(Runnable::run);
                     break;
                 } catch( StatusRuntimeException sre) {
                     shutdown(candidate);
@@ -151,7 +157,7 @@ public class PlatformConnectionManager {
                 throw new RuntimeException("Couldn't set up SSL context", e);
             }
         } else {
-            builder.usePlaintext(true);
+            builder.usePlaintext();
         }
         return builder.build();
     }
@@ -210,9 +216,7 @@ public class PlatformConnectionManager {
         try {
             reconnectTask = null;
             getChannel();
-            reconnectListeners.forEach(Runnable::run);
         } catch (Exception ignored) {
-
         }
     }
 
@@ -244,6 +248,12 @@ public class PlatformConnectionManager {
                 .openStream(commandsFromRoutingServer);
     }
 
+    public StreamObserver<Command> getDispatchStream(StreamObserver<CommandResponse> commandsFromRoutingServer, ClientInterceptor[] interceptors) {
+        return CommandServiceGrpc.newStub(getChannel())
+                                 .withInterceptors(interceptors)
+                                 .dispatchStream(commandsFromRoutingServer);
+    }
+
     public StreamObserver<QueryProviderOutbound> getQueryStream(StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver, ClientInterceptor[] interceptors) {
         return QueryServiceGrpc.newStub(getChannel())
                 .withInterceptors(interceptors)
@@ -257,5 +267,9 @@ public class PlatformConnectionManager {
 
     public void send(PlatformInboundInstruction instruction){
         inputStream.onNext(instruction);
+    }
+
+    public boolean axonhubSupportsCommandStream() {
+        return axonhubVersion > 0;
     }
 }

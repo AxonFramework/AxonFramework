@@ -18,12 +18,11 @@ package io.axoniq.axonhub.client.command;
 import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.CommandResponse;
 import io.axoniq.axonhub.CommandSubscription;
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.DispatchInterceptors;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
+import io.axoniq.axonhub.client.SynchronizedStreamObserver;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
@@ -46,14 +45,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+
+import static io.axoniq.axonhub.client.util.ProcessingInstructionHelper.priority;
 
 
 /**
@@ -71,6 +75,8 @@ public class AxonHubCommandBus implements CommandBus {
     private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors = new DispatchInterceptors<>();
     private Logger logger = LoggerFactory.getLogger(AxonHubCommandBus.class);
+    private SynchronizedStreamObserver<Command> dispatcherStreamObserver;
+    private final Map<String, CommandWithCallback> commandCache = new ConcurrentHashMap<>();
 
     public AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
                              CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
@@ -110,44 +116,124 @@ public class AxonHubCommandBus implements CommandBus {
         });
     }
 
+    @SuppressWarnings("unchecked")
+    private synchronized StreamObserver<Command> getCommandStream() {
+        if (dispatcherStreamObserver == null) {
+            StreamObserver<CommandResponse> commandResponses = new StreamObserver<CommandResponse>() {
+                @Override
+                public void onNext(CommandResponse response) {
+                    logger.debug("Received from server: {}", response);
+
+                    CommandWithCallback callback = commandCache.remove(response.getRequestIdentifier());
+                    if( callback != null) {
+                        if (!response.hasMessage()) {
+                                    logger.debug("response received - {}", response);
+                                    Object payload = null;
+                                    if (response.hasPayload()) {
+                                        try {
+                                            //noinspection unchecked
+                                            payload = serializer.deserializePayload(response.getPayload());
+                                        } catch (Exception ex) {
+                                            logger.info("Failed to deserialize payload - {} - {}", response.getPayload().getData(), ex.getCause().getMessage());
+                                        }
+                                    }
+
+                                    callback.commandCallback.onSuccess(callback.commandMessage, payload);
+                                } else {
+                            callback.commandCallback.onFailure(callback.commandMessage, new CommandExecutionException(response.getMessage().getMessage(), new RemoteCommandException(response.getErrorCode(), response.getMessage())));
+                                }
+                    }
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    logger.warn("Received error from server: {}", throwable.getMessage());
+                    Set<CommandWithCallback> toDelete = new HashSet<>(commandCache.values());
+                    toDelete.forEach(commandWithCallback -> {
+                        commandWithCallback.commandCallback.onFailure(commandWithCallback.commandMessage, throwable);
+                        commandCache.remove(commandWithCallback.commandMessage.getIdentifier());
+                    });
+                    dispatcherStreamObserver = null;
+                }
+
+                @Override
+                public void onCompleted() {
+                    logger.debug("Received completed from server");
+                    dispatcherStreamObserver = null;
+                }
+            };
+
+            StreamObserver<Command> stream = platformConnectionManager.getDispatchStream(commandResponses,  interceptors);
+            dispatcherStreamObserver = new SynchronizedStreamObserver<>(stream);
+
+        }
+        return dispatcherStreamObserver;
+    }
+
 
     @Override
     public <C, R> void dispatch(CommandMessage<C> commandMessage, CommandCallback<? super C, R> commandCallback) {
         logger.debug("Dispatch with callback: {}", commandMessage.getCommandName());
         CommandMessage<C> command = dispatchInterceptors.intercept(commandMessage);
-        CommandServiceGrpc.newStub(platformConnectionManager.getChannel())
-                .withInterceptors(interceptors)
-                .dispatch(serializer.serialize(command, routingStrategy.getRoutingKey(command), priorityCalculator.determinePriority(command)),
-                        new StreamObserver<CommandResponse>() {
-                            @Override
-                            public void onNext(CommandResponse commandResponse) {
-                                if (!commandResponse.hasMessage()) {
-                                    logger.debug("response received - {}", commandResponse);
-                                    R payload = null;
-                                    if (commandResponse.hasPayload()) {
-                                        try {
-                                            //noinspection unchecked
-                                            payload = (R) serializer.deserializePayload(commandResponse.getPayload());
-                                        } catch (Exception ex) {
-                                            logger.info("Failed to deserialize payload - {} - {}", commandResponse.getPayload().getData(), ex.getCause().getMessage());
-                                        }
-                                    }
+        if( platformConnectionManager.axonhubSupportsCommandStream()) {
+            StreamObserver<Command> requestStream = getCommandStream();
+            if (requestStream != null) {
+                commandCache.put(commandMessage.getIdentifier(),
+                                 new CommandWithCallback<>(commandMessage, commandCallback));
+                requestStream.onNext(serializer.serialize(command,
+                                                          routingStrategy.getRoutingKey(command),
+                                                          priorityCalculator.determinePriority(command)));
+            } else {
+                throw new RuntimeException("No connection to AxonHub available");
+            }
+        } else {
+            CommandServiceGrpc.newStub(platformConnectionManager.getChannel())
+                              .withInterceptors(interceptors)
+                              .dispatch(serializer.serialize(command,
+                                                             routingStrategy.getRoutingKey(command),
+                                                             priorityCalculator.determinePriority(command)),
+                                        new StreamObserver<CommandResponse>() {
+                                            @Override
+                                            public void onNext(CommandResponse commandResponse) {
+                                                if (!commandResponse.hasMessage()) {
+                                                    logger.debug("response received - {}", commandResponse);
+                                                    R payload = null;
+                                                    if (commandResponse.hasPayload()) {
+                                                        try {
+                                                            //noinspection unchecked
+                                                            payload = (R) serializer.deserializePayload(commandResponse
+                                                                                                                .getPayload());
+                                                        } catch (Exception ex) {
+                                                            logger.info("Failed to deserialize payload - {} - {}",
+                                                                        commandResponse.getPayload().getData(),
+                                                                        ex.getCause().getMessage());
+                                                        }
+                                                    }
 
-                                    commandCallback.onSuccess(command, payload);
-                                } else {
-                                    commandCallback.onFailure(command, new CommandExecutionException(commandResponse.getMessage().getMessage(), new RemoteCommandException(commandResponse.getErrorCode(), commandResponse.getMessage())));
-                                }
-                            }
+                                                    commandCallback.onSuccess(command, payload);
+                                                } else {
+                                                    commandCallback.onFailure(command,
+                                                                              new CommandExecutionException(
+                                                                                      commandResponse.getMessage()
+                                                                                                     .getMessage(),
+                                                                                      new RemoteCommandException(
+                                                                                              commandResponse
+                                                                                                      .getErrorCode(),
+                                                                                              commandResponse
+                                                                                                      .getMessage())));
+                                                }
+                                            }
 
-                            @Override
-                            public void onError(Throwable throwable) {
-                                commandCallback.onFailure(command, throwable);
-                            }
+                                            @Override
+                                            public void onError(Throwable throwable) {
+                                                commandCallback.onFailure(command, throwable);
+                                            }
 
-                            @Override
-                            public void onCompleted() {
-                            }
-                        });
+                                            @Override
+                                            public void onCompleted() {
+                                            }
+                                        });
+        }
     }
 
     @Override
@@ -161,11 +247,12 @@ public class AxonHubCommandBus implements CommandBus {
         private final CopyOnWriteArraySet<String> subscribedCommands = new CopyOnWriteArraySet<>();
         private final PriorityBlockingQueue<Command> commandQueue;
         private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getCommandThreads());
+        private volatile boolean subscribing;
 
 
         private volatile StreamObserver<CommandProviderOutbound> subscriberStreamObserver;
 
-        public CommandRouterSubscriber() {
+        CommandRouterSubscriber() {
             platformConnectionManager.addReconnectListener(this::resubscribe);
             platformConnectionManager.addDisconnectListener(this::unsubscribeAll);
             commandQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
@@ -189,6 +276,8 @@ public class AxonHubCommandBus implements CommandBus {
         }
 
         private void resubscribe() {
+            if( subscribedCommands.isEmpty() || subscribing) return;
+
             try {
                 StreamObserver<CommandProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
                 subscribedCommands.forEach(command -> subscriberStreamObserver.onNext(CommandProviderOutbound.newBuilder().setSubscribe(
@@ -200,11 +289,12 @@ public class AxonHubCommandBus implements CommandBus {
                                 .build()
                 ).build()));
             } catch (Exception ex) {
-                logger.debug("Error while resubscribing - {}", ex.getMessage());
+                logger.warn("Error while resubscribing - {}", ex.getMessage());
             }
         }
 
         public void subscribe(String command) {
+            subscribing = true;
             subscribedCommands.add(command);
             try {
                 StreamObserver<CommandProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
@@ -218,6 +308,8 @@ public class AxonHubCommandBus implements CommandBus {
                 ).build());
             } catch (Exception sre) {
                 logger.warn("Subscribe at axonhub platform failed - {}, trying again at later moment", sre.getMessage());
+            } finally {
+                subscribing = false;
             }
         }
 
@@ -243,6 +335,7 @@ public class AxonHubCommandBus implements CommandBus {
 
         private synchronized StreamObserver<CommandProviderOutbound> getSubscriberObserver() {
             if (subscriberStreamObserver == null) {
+                logger.warn("Create new subscriber");
                 StreamObserver<CommandProviderInbound> commandsFromRoutingServer = new StreamObserver<CommandProviderInbound>() {
                     @Override
                     public void onNext(CommandProviderInbound commandToSubscriber) {
@@ -291,7 +384,7 @@ public class AxonHubCommandBus implements CommandBus {
             }
         }
 
-        public void unsubscribeAll() {
+        void unsubscribeAll() {
             for (String command : subscribedCommands) {
                 try {
                     getSubscriberObserver().onNext(CommandProviderOutbound.newBuilder().setUnsubscribe(
@@ -342,20 +435,19 @@ public class AxonHubCommandBus implements CommandBus {
         }
     }
 
-    static long getProcessingInstructionNumber(List<ProcessingInstruction> processingInstructions, ProcessingKey key) {
-        return processingInstructions.stream()
-                .filter(pi -> key.equals(pi.getKey()))
-                .map(pi -> pi.getValue().getNumberValue())
-                .findFirst()
-                .orElse(0L);
-    }
-
-    static long priority(List<ProcessingInstruction> processingInstructions) {
-        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
-    }
-
     public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
+    private static class CommandWithCallback<C,R> {
+        private final CommandMessage<C> commandMessage;
+        private final CommandCallback<? super C, R> commandCallback;
+
+        CommandWithCallback(CommandMessage<C> commandMessage,
+                                          CommandCallback<? super C, R> commandCallback) {
+
+            this.commandMessage = commandMessage;
+            this.commandCallback = commandCallback;
+        }
+    }
 }
