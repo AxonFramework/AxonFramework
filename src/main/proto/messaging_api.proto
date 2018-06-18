@@ -7,6 +7,7 @@ option java_multiple_files = true;
 service CommandService {
     rpc OpenStream( stream CommandProviderOutbound) returns (stream CommandProviderInbound) {}
     rpc Dispatch( Command) returns (CommandResponse) {}
+    rpc DispatchStream( stream Command) returns (stream CommandResponse) {}
 }
 
 service QueryService {
