@@ -34,6 +34,7 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -288,6 +290,15 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                       .map(updateHandlers::get)
                       .filter(Objects::nonNull)
                       .forEach(uh -> uh.error(cause));
+    }
+
+    /**
+     * Provides the set of currently running subscription queries.
+     *
+     * @return the set of currently running subscription queries
+     */
+    public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
+        return Collections.unmodifiableSet(updateHandlers.keySet());
     }
 
     @SuppressWarnings("unchecked")

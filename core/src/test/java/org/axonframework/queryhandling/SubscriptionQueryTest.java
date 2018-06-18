@@ -27,6 +27,7 @@ import reactor.util.concurrent.Queues;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -317,6 +318,33 @@ public class SubscriptionQueryTest {
         StepVerifier.create(result.initialResult().map(Message::getPayload))
                     .expectNext(interceptedResponse)
                     .verifyComplete();
+    }
+
+    @Test
+    public void testActiveSubscriptions() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        SubscriptionQueryMessage<Integer, Integer, Integer> queryMessage2 = new GenericSubscriptionQueryMessage<>(
+                5,
+                "numberOfMessages",
+                ResponseTypes.instanceOf(Integer.class),
+                ResponseTypes.instanceOf(Integer.class));
+
+        // when
+        queryBus.subscriptionQuery(queryMessage1);
+        queryBus.subscriptionQuery(queryMessage2);
+
+        // then
+        HashSet<SubscriptionQueryMessage<?, ?, ?>> expectedSubscriptions = new HashSet<SubscriptionQueryMessage<?, ?, ?>>() {{
+            add(queryMessage1);
+            add(queryMessage2);
+        }};
+        assertEquals(expectedSubscriptions, queryBus.activeSubscriptions());
     }
 
     @SuppressWarnings("unused")
