@@ -15,6 +15,7 @@
 
 package io.axoniq.axonhub.client.query;
 
+import io.axoniq.axonhub.ErrorMessage;
 import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
@@ -128,6 +129,10 @@ public class AxonHubQueryBus implements QueryBus {
         return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
     }
 
+    private static long numberOfResults(List<ProcessingInstruction> processingInstructions) {
+        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.NR_OF_RESULTS);
+    }
+
     @Override
     public <R> Registration subscribe(String queryName, Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
@@ -146,19 +151,24 @@ public class AxonHubQueryBus implements QueryBus {
                                    @Override
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
-                                       completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                       if( queryResponse.hasMessage()) {
+                                           completableFuture.completeExceptionally(new RemoteQueryException(queryResponse.getErrorCode(), queryResponse.getMessage()));
+                                       } else {
+                                           completableFuture.complete(serializer.deserializeResponse(queryResponse));
+                                       }
                                    }
 
                                    @Override
                                    public void onError(Throwable throwable) {
-                                       logger.warn("Received error while waiting for first response: {}", throwable.getMessage());
+                                       logger.warn("Received error while waiting for first response: {}", throwable.getMessage(), throwable);
                                        completableFuture.completeExceptionally(throwable);
                                    }
 
                                    @Override
                                    public void onCompleted() {
-                                       if (!completableFuture.isDone())
-                                           completableFuture.complete(null);
+                                       if (!completableFuture.isDone()) {
+                                           completableFuture.completeExceptionally(new RemoteQueryException(ErrorCode.OTHER.errorCode(), ErrorMessage.newBuilder().setMessage("No result from query executor").build()));
+                                       }
                                    }
                                });
 
@@ -181,13 +191,18 @@ public class AxonHubQueryBus implements QueryBus {
                                    @Override
                                    public void onNext(QueryResponse queryResponse) {
                                        logger.debug("Received response: {}", queryResponse);
-                                       resultSpliterator.put( serializer.deserializeResponse(queryResponse));
+
+                                       if( queryResponse.hasMessage()) {
+                                           logger.warn("Received exception: {}", queryResponse.getMessage());
+                                       } else {
+                                           resultSpliterator.put(serializer.deserializeResponse(queryResponse));
+                                       }
                                    }
 
                                    @Override
                                    public void onError(Throwable throwable) {
                                        if (!isDeadlineExceeded(throwable)) {
-                                           logger.warn("Received error while waiting for responses: {}", throwable.getMessage());
+                                           logger.warn("Received error while waiting for responses: {}", throwable.getMessage(), throwable);
                                        }
                                        resultSpliterator.cancel(throwable);
                                    }
@@ -241,12 +256,22 @@ public class AxonHubQueryBus implements QueryBus {
             String requestId = query.getMessageIdentifier();
             try {
                 //noinspection unchecked
-                localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
-                            .forEach(response -> outboundStreamObserver.onNext(
-                                    QueryProviderOutbound.newBuilder()
-                                                         .setQueryResponse(serializer.serializeResponse(response, requestId))
-                                                         .build()));
-
+                if( numberOfResults(query.getProcessingInstructionsList()) == 1) {
+                    QueryResponseMessage<Object> response = localSegment.query(serializer.deserializeRequest(query))
+                                                                        .get();
+                    outboundStreamObserver.onNext(
+                            QueryProviderOutbound.newBuilder()
+                                                 .setQueryResponse(serializer.serializeResponse(response,
+                                                                                                requestId))
+                                                 .build());
+                } else {
+                    localSegment.scatterGather(serializer.deserializeRequest(query), 0, TimeUnit.SECONDS)
+                                .forEach(response -> outboundStreamObserver.onNext(
+                                        QueryProviderOutbound.newBuilder()
+                                                             .setQueryResponse(serializer.serializeResponse(response,
+                                                                                                            requestId))
+                                                             .build()));
+                }
                 outboundStreamObserver.onNext(QueryProviderOutbound.newBuilder().setQueryComplete(
                         QueryComplete.newBuilder().setMessageId(UUID.randomUUID().toString()).setRequestId(requestId)).build());
             } catch (Exception ex) {
@@ -305,13 +330,13 @@ public class AxonHubQueryBus implements QueryBus {
                     @Override
                     public void onError(Throwable throwable) {
                         outboundStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
+//                        platformConnectionManager.scheduleReconnect();
                     }
 
                     @Override
                     public void onCompleted() {
                         outboundStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
+//                        platformConnectionManager.scheduleReconnect();
                     }
                 };
 

@@ -99,7 +99,7 @@ public class PlatformConnectionManager {
                         channel = createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
                                 ManagedChannelBuilder.forAddress(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort()).usePlaintext(true).build();
                     }
-                    startInstructionStream();
+                    startInstructionStream(clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
                     break;
                 } catch( StatusRuntimeException sre) {
@@ -132,6 +132,12 @@ public class PlatformConnectionManager {
 
     private ManagedChannel createChannel(String hostName, int port) {
         NettyChannelBuilder builder = NettyChannelBuilder.forAddress(hostName, port);
+
+        if( connectInformation.getKeepAliveTime() > 0) {
+            builder.keepAliveTime(connectInformation.getKeepAliveTime(), TimeUnit.MILLISECONDS)
+                   .keepAliveTimeout(connectInformation.getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
+                   .keepAliveWithoutCalls(true);
+        }
         if (connectInformation.isSslEnabled()) {
             try {
                 if( connectInformation.getCertFile() == null) throw new RuntimeException("SSL enabled but no certificate file specified");
@@ -152,11 +158,11 @@ public class PlatformConnectionManager {
         return builder.build();
     }
 
-    private synchronized void startInstructionStream() {
-        logger.debug("Start instruction stream");
-        inputStream = PlatformServiceGrpc.newStub(channel)
-                .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
-                .openStream(new StreamObserver<PlatformOutboundInstruction>() {
+    private synchronized void startInstructionStream(String name) {
+        logger.debug("Start instruction stream to {}", name);
+        inputStream = new SynchronizedStreamObserver<>(PlatformServiceGrpc.newStub(channel)
+                                                                        .withInterceptors(new ContextAddingInterceptor(connectInformation.getContext()), new TokenAddingInterceptor(connectInformation.getToken()))
+                                                                        .openStream(new StreamObserver<PlatformOutboundInstruction>() {
                     @Override
                     public void onNext(PlatformOutboundInstruction messagePlatformOutboundInstruction) {
                         handlers.getOrDefault(messagePlatformOutboundInstruction.getRequestCase(), new ArrayDeque<>())
@@ -178,13 +184,14 @@ public class PlatformConnectionManager {
                                 reconnect.run();
                                 break;
                             case REQUEST_NOT_SET:
+
                                 break;
                         }
                     }
 
                     @Override
                     public void onError(Throwable throwable) {
-                        logger.debug("Lost instruction stream - {}", throwable.getMessage());
+                        logger.debug("Lost instruction stream from {} - {}", name, throwable.getMessage());
                         disconnectListeners.forEach(Runnable::run);
                         if( throwable instanceof StatusRuntimeException) {
                             StatusRuntimeException sre = (StatusRuntimeException)throwable;
@@ -195,18 +202,19 @@ public class PlatformConnectionManager {
 
                     @Override
                     public void onCompleted() {
-                        logger.debug("Closed instruction stream");
+                        logger.warn("Closed instruction stream to {}", name);
                         disconnectListeners.forEach(Runnable::run);
                         scheduleReconnect();
                     }
-                });
+                }));
         inputStream.onNext(PlatformInboundInstruction.newBuilder().setRegister(ClientIdentification.newBuilder()
                 .setClientName(connectInformation.getClientName())
                 .setComponentName(connectInformation.getComponentName())
         ).build());
     }
 
-    private void tryReconnect() {
+    private synchronized void tryReconnect() {
+        if( channel != null ) return;
         try {
             reconnectTask = null;
             getChannel();
@@ -229,8 +237,15 @@ public class PlatformConnectionManager {
     }
 
     public synchronized void scheduleReconnect() {
-        channel = null;
         if( reconnectTask == null || reconnectTask.isDone()) {
+            if( channel != null) {
+                try {
+                    channel.shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
+                } catch(Exception ignored) {
+
+                }
+            }
+            channel = null;
             reconnectTask = scheduler.schedule(this::tryReconnect, 1, TimeUnit.SECONDS);
         }
     }

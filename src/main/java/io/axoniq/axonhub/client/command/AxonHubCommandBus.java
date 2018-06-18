@@ -122,7 +122,7 @@ public class AxonHubCommandBus implements CommandBus {
                         new StreamObserver<CommandResponse>() {
                             @Override
                             public void onNext(CommandResponse commandResponse) {
-                                if ("".equals(commandResponse.getErrorCode())) {
+                                if (!commandResponse.hasMessage()) {
                                     logger.debug("response received - {}", commandResponse);
                                     R payload = null;
                                     if (commandResponse.hasPayload()) {
@@ -136,7 +136,7 @@ public class AxonHubCommandBus implements CommandBus {
 
                                     commandCallback.onSuccess(command, payload);
                                 } else {
-                                    commandCallback.onFailure(command, new CommandExecutionException(commandResponse.getMessage(), null));
+                                    commandCallback.onFailure(command, new CommandExecutionException(commandResponse.getMessage().getMessage(), new RemoteCommandException(commandResponse.getErrorCode(), commandResponse.getMessage())));
                                 }
                             }
 
@@ -265,14 +265,12 @@ public class AxonHubCommandBus implements CommandBus {
                     public void onError(Throwable throwable) {
                         logger.warn("Received error from server: {}", throwable.getMessage());
                         subscriberStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
                     }
 
                     @Override
                     public void onCompleted() {
                         logger.debug("Received completed from server");
                         subscriberStreamObserver = null;
-                        platformConnectionManager.scheduleReconnect();
                     }
                 };
 
