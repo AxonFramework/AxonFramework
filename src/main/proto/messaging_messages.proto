@@ -77,12 +77,13 @@ message QueryUpdateCompleteExceptionally {
 }
 
 message SubscriptionQueryRequest {
-    oneof response {
-        SubscriptionQuery subscribe_initial = 1;
-        SubscriptionQuery subscribe_update = 2;
-        SubscriptionQuery unsubscribe = 3;
+    oneof request {
+        SubscriptionQuery subscribe = 1;
+        SubscriptionQuery unsubscribe = 2;
+        SubscriptionQuery get_initial_result = 3;
+        SubscriptionQuery flow_control = 4;
     }
-    string context = 4;
+    string context = 5;
 }
 
 message SubscriptionQueryResponse {
