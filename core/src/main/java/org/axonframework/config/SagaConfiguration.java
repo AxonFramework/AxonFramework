@@ -452,6 +452,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         eventProcessorRegistry().configureMessageMonitor(processorInfo.getName(),
                                                          c -> (MessageMonitor<Message<?>>) messageMonitor.get());
         eventProcessorRegistry().configureErrorHandler(processorInfo.getName(), c -> errorHandler.get());
+        eventProcessorRegistry().configureRollbackConfiguration(processorInfo.getName(),
+                                                                c -> rollbackConfiguration.get());
+        eventProcessorRegistry().configureTransactionManager(processorInfo.getName(), c -> transactionManager.get());
         handlerInterceptors.forEach(i -> eventProcessorRegistry()
                 .registerHandlerInterceptor(processorInfo.getName(), i));
         if (processorInfo.isCreateNewProcessor()) {
