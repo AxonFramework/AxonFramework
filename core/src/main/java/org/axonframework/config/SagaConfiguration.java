@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -56,8 +57,19 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<RollbackConfiguration> rollbackConfiguration;
     private final Component<ErrorHandler> errorHandler;
     private final Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
+    /**
+     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#registerTokenStore(String,
+     * Function)} should be used instead.
+     */
+    @Deprecated
     private final Component<TokenStore> tokenStore;
     private final Component<TransactionManager> transactionManager;
+    /**
+     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureMessageMonitor(String,
+     * Function)} or {@link EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)} should be
+     * used instead.
+     */
+    @Deprecated
     private final Component<MessageMonitor<? super EventMessage<?>>> messageMonitor;
     private final List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>> handlerInterceptors = new ArrayList<>();
     private Configuration config;
@@ -261,7 +273,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                              c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance));
         messageMonitor = new Component<>(() -> config, "messageMonitor",
                                          c -> c.messageMonitor(eventProcessorType, processorInfo.getName()));
-        tokenStore = new Component<>(() -> config, "messageMonitor",
+        tokenStore = new Component<>(() -> config, "tokenStore",
                                      c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
         errorHandler = new Component<>(() -> config, "errorHandler",
                                        c -> c.getComponent(ErrorHandler.class,
@@ -403,7 +415,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param messageMonitor The function to create the MessageMonitor
      * @return this SagaConfiguration instance, ready for further configuration
+     * @deprecated use {@link EventProcessorRegistry#configureMessageMonitor(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
         this.messageMonitor.update(messageMonitor);
         return this;
@@ -414,6 +428,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         this.config = config;
         eventProcessorRegistry().registerHandlerInvoker(processorInfo.getName(), c -> sagaManager.get());
         eventProcessorRegistry().registerTokenStore(processorInfo.getName(), c -> tokenStore.get());
+        eventProcessorRegistry().configureMessageMonitor(processorInfo.getName(),
+                                                         c -> (MessageMonitor<Message<?>>) messageMonitor.get());
         handlerInterceptors.forEach(i -> eventProcessorRegistry()
                 .registerHandlerInterceptor(processorInfo.getName(), i));
         if (processorInfo.isCreateNewProcessor()) {
