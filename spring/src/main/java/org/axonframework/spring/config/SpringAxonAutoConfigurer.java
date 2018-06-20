@@ -166,8 +166,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         findComponent(ErrorHandler.class).ifPresent(
                 handler -> configurer.registerComponent(ErrorHandler.class, c -> getBean(handler, c))
         );
-        findComponent(EventProcessorRegistry.class).ifPresent(eventProcessorRegistry -> configurer
-                .configureEventProcessorRegistry(c -> getBean(eventProcessorRegistry, c)));
 
         String resourceInjector = findComponent(ResourceInjector.class, registry,
                                                 () -> genericBeanDefinition(SpringResourceInjector.class)
@@ -186,6 +184,15 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             registry.registerBeanDefinition(ehConfigBeanName, genericBeanDefinition(EventHandlingConfiguration.class)
                     .getBeanDefinition());
         }
+
+        Optional<String> eventProcessorRegistry = findComponent(EventProcessorRegistry.class);
+        String eventProcessorRegistryBeanName = eventProcessorRegistry.orElse("eventProcessorRegistry");
+        if (!eventProcessorRegistry.isPresent()) {
+            registry.registerBeanDefinition(eventProcessorRegistryBeanName,
+                                            genericBeanDefinition(DefaultEventProcessorRegistry.class)
+                                                    .getBeanDefinition());
+        }
+        configurer.configureEventProcessorRegistry(c -> getBean(eventProcessorRegistryBeanName, c));
 
         beanFactory.registerSingleton(AXON_CONFIGURER_BEAN, configurer);
         registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN, genericBeanDefinition(AxonConfiguration.class)

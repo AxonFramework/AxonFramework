@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.config.EventProcessorRegistry;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AssociationValue;
@@ -89,6 +90,9 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired(required = false)
     private SagaStore<Object> sagaStore;
 
+    @Autowired(required = false)
+    private EventProcessorRegistry eventProcessorRegistry;
+
     @Autowired
     private org.axonframework.config.Configuration axonConfig;
 
@@ -126,6 +130,8 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventStore);
         assertNotNull(commandBus);
         assertNotNull(mySagaConfiguration);
+        assertNotNull(eventProcessorRegistry);
+        assertEquals(eventProcessorRegistry, axonConfig.eventProcessorRegistry());
         assertTrue("Expected Axon to have configured an EventStore", eventBus instanceof EventStore);
 
         assertTrue("Expected provided commandbus implementation", commandBus instanceof AsynchronousCommandBus);
