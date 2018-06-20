@@ -55,6 +55,11 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
     private final Component<RollbackConfiguration> rollbackConfiguration;
+    /**
+     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureErrorHandler(String,
+     * Function)} should be used instead.
+     */
+    @Deprecated
     private final Component<ErrorHandler> errorHandler;
     private final Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
     /**
@@ -363,7 +368,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param errorHandler The function to create the ErrorHandler
      * @return this SagaConfiguration instance, ready for further configuration
+     * @deprecated use {@link EventProcessorRegistry#configureErrorHandler(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureErrorHandler(Function<Configuration, ErrorHandler> errorHandler) {
         this.errorHandler.update(errorHandler);
         return this;
@@ -430,6 +437,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         eventProcessorRegistry().registerTokenStore(processorInfo.getName(), c -> tokenStore.get());
         eventProcessorRegistry().configureMessageMonitor(processorInfo.getName(),
                                                          c -> (MessageMonitor<Message<?>>) messageMonitor.get());
+        eventProcessorRegistry().configureErrorHandler(processorInfo.getName(), c -> errorHandler.get());
         handlerInterceptors.forEach(i -> eventProcessorRegistry()
                 .registerHandlerInterceptor(processorInfo.getName(), i));
         if (processorInfo.isCreateNewProcessor()) {
