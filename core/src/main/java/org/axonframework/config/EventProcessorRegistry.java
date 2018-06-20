@@ -28,6 +28,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.List;
@@ -133,6 +134,18 @@ public interface EventProcessorRegistry {
      */
     EventProcessorRegistry configureErrorHandler(String name,
                                                  Function<Configuration, ErrorHandler> errorHandlerBuilder);
+
+    /**
+     * Configures a {@link RollbackConfiguration} for the {@link EventProcessor} of the given {@code name}. This
+     * overrides the default RollbackConfiguration configured through the {@link Configurer}.
+     *
+     * @param name                         The name of the event processor
+     * @param rollbackConfigurationBuilder The {@link RollbackConfiguration} to use for the {@link EventProcessor} with
+     *                                     the given {@code name}
+     * @return event processor registry for chaining purposes
+     */
+    EventProcessorRegistry configureRollbackConfiguration(String name,
+                                                          Function<Configuration, RollbackConfiguration> rollbackConfigurationBuilder);
 
     /**
      * Configures the builder function to create the Message Monitor for the {@link EventProcessor} of the given name.

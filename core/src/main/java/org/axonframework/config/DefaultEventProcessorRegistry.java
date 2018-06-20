@@ -36,6 +36,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 
@@ -62,6 +63,7 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
     private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
+    private final Map<String, Function<Configuration, RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
@@ -71,6 +73,12 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
             () -> configuration,
             "errorHandler",
             c -> c.getComponent(ErrorHandler.class, PropagatingErrorHandler::instance)
+    );
+
+    private final Component<RollbackConfiguration> defaultRollbackConfiguration = new Component<>(
+            () -> configuration,
+            "rollbackConfiguration",
+            c -> c.getComponent(RollbackConfiguration.class, () -> RollbackConfigurationType.ANY_THROWABLE)
     );
 
     @Override
@@ -164,6 +172,13 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
     }
 
     @Override
+    public EventProcessorRegistry configureRollbackConfiguration(String name,
+                                                                 Function<Configuration, RollbackConfiguration> rollbackConfigurationBuilder) {
+        this.rollbackConfigurations.put(name, rollbackConfigurationBuilder);
+        return this;
+    }
+
+    @Override
     public EventProcessorRegistry configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory) {
         this.messageMonitorFactories.put(name, messageMonitorFactory);
         return this;
@@ -222,6 +237,7 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
                                                                 Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         return new SubscribingEventProcessor(name,
                                              eventHandlerInvoker,
+                                             getRollbackConfiguration(conf, name),
                                              messageSource.apply(conf),
                                              DirectEventProcessingStrategy.INSTANCE,
                                              getErrorHandler(conf, name),
@@ -241,7 +257,7 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
                                           ).apply(conf),
                                           conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                           getMessageMonitor(conf, EventProcessor.class, name),
-                                          RollbackConfigurationType.ANY_THROWABLE,
+                                          getRollbackConfiguration(conf, name),
                                           getErrorHandler(conf, name),
                                           config.apply(conf));
     }
@@ -260,5 +276,11 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
         return errorHandlers.containsKey(componentName)
                 ? errorHandlers.get(componentName).apply(config)
                 : defaultErrorHandler.get();
+    }
+
+    private RollbackConfiguration getRollbackConfiguration(Configuration config, String componentName) {
+        return rollbackConfigurations.containsKey(componentName)
+                ? rollbackConfigurations.get(componentName).apply(config)
+                : defaultRollbackConfiguration.get();
     }
 }

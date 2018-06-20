@@ -54,6 +54,11 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<AnnotatedSagaManager<S>> sagaManager;
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
+    /**
+     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureRollbackConfiguration(String,
+     * Function)} should be used instead.
+     */
+    @Deprecated
     private final Component<RollbackConfiguration> rollbackConfiguration;
     /**
      * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureErrorHandler(String,
@@ -397,7 +402,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param rollbackConfiguration The function providing the RollbackConfiguration to use
      * @return this SagaConfiguration instance, ready for further configuration
+     * @deprecated use {@link EventProcessorRegistry#configureRollbackConfiguration(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureRollbackConfiguration(Function<Configuration, RollbackConfiguration> rollbackConfiguration) {
         this.rollbackConfiguration.update(rollbackConfiguration);
         return this;
