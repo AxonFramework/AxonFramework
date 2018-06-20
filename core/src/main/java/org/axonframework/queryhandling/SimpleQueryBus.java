@@ -34,7 +34,6 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
