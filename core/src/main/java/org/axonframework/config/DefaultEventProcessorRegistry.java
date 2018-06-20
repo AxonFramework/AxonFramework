@@ -64,6 +64,7 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     private final Map<String, Function<Configuration, RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
+    private final Map<String, Function<Configuration, TransactionManager>> transactionManagers = new HashMap<>();
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
     private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
@@ -79,6 +80,12 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
             () -> configuration,
             "rollbackConfiguration",
             c -> c.getComponent(RollbackConfiguration.class, () -> RollbackConfigurationType.ANY_THROWABLE)
+    );
+
+    private final Component<TransactionManager> defaultTransactionManager = new Component<>(
+            () -> configuration,
+            "transactionManager",
+            c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
 
     @Override
@@ -179,6 +186,13 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
     }
 
     @Override
+    public EventProcessorRegistry configureTransactionManager(String name,
+                                                              Function<Configuration, TransactionManager> transactionManagerBuilder) {
+        this.transactionManagers.put(name, transactionManagerBuilder);
+        return this;
+    }
+
+    @Override
     public EventProcessorRegistry configureMessageMonitor(String name, MessageMonitorFactory messageMonitorFactory) {
         this.messageMonitorFactories.put(name, messageMonitorFactory);
         return this;
@@ -255,7 +269,7 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
                                                   name,
                                                   c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new)
                                           ).apply(conf),
-                                          conf.getComponent(TransactionManager.class, NoTransactionManager::instance),
+                                          getTransactionManager(conf, name),
                                           getMessageMonitor(conf, EventProcessor.class, name),
                                           getRollbackConfiguration(conf, name),
                                           getErrorHandler(conf, name),
@@ -282,5 +296,11 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
         return rollbackConfigurations.containsKey(componentName)
                 ? rollbackConfigurations.get(componentName).apply(config)
                 : defaultRollbackConfiguration.get();
+    }
+
+    private TransactionManager getTransactionManager(Configuration config, String componentName) {
+        return transactionManagers.containsKey(componentName)
+                ? transactionManagers.get(componentName).apply(config)
+                : defaultTransactionManager.get();
     }
 }

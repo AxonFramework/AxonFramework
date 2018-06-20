@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -146,6 +147,18 @@ public interface EventProcessorRegistry {
      */
     EventProcessorRegistry configureRollbackConfiguration(String name,
                                                           Function<Configuration, RollbackConfiguration> rollbackConfigurationBuilder);
+
+    /**
+     * Configures a {@link TransactionManager} for the {@link EventProcessor} of the given {@code name}. This overrides
+     * the default TransactionManager configured through the {@link Configurer}.
+     *
+     * @param name                      The name of the event processor
+     * @param transactionManagerBuilder The {@link TransactionManager} to use of the {@link EventProcessor} with the
+     *                                  given {@code name}
+     * @return event processor registry for chaining purposes
+     */
+    EventProcessorRegistry configureTransactionManager(String name,
+                                                       Function<Configuration, TransactionManager> transactionManagerBuilder);
 
     /**
      * Configures the builder function to create the Message Monitor for the {@link EventProcessor} of the given name.

@@ -73,6 +73,11 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      */
     @Deprecated
     private final Component<TokenStore> tokenStore;
+    /**
+     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureTransactionManager(String,
+     * Function)} should be used instead.
+     */
+    @Deprecated
     private final Component<TransactionManager> transactionManager;
     /**
      * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureMessageMonitor(String,
@@ -418,7 +423,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param transactionManager The function providing the TransactionManager to use
      * @return this SagaConfiguration instance, ready for further configuration
+     * @deprecated use {@link EventProcessorRegistry#configureTransactionManager(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureTransactionManager(Function<Configuration, TransactionManager> transactionManager) {
         this.transactionManager.update(transactionManager);
         return this;
