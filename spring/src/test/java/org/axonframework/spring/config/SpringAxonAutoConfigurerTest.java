@@ -151,7 +151,7 @@ public class SpringAxonAutoConfigurerTest {
     @Test
     public void testSagaIsConfigured() {
         AtomicInteger counter = new AtomicInteger();
-        mySagaConfiguration.registerHandlerInterceptor(config -> (uow, chain) -> {
+        eventProcessorRegistry.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
             counter.incrementAndGet();
             return chain.proceed();
         });

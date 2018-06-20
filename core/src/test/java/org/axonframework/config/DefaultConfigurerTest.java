@@ -92,17 +92,19 @@ public class DefaultConfigurerTest {
     public void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .registerComponent(TrackingEventProcessorConfiguration.class,
-                                                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
+                                                                   c -> TrackingEventProcessorConfiguration
+                                                                           .forParallelProcessing(2))
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .configureEventProcessorRegistry(c -> new DefaultEventProcessorRegistry()
+                                                        .usingTrackingProcessors())
                                                 .registerModule(
                                                         new EventHandlingConfiguration()
-                                                                .usingTrackingProcessors()
                                                                 .registerEventHandler(c -> (EventListener) event -> {
                                                                 })
                                                 )
                                                 .start();
         try {
-            TrackingEventProcessor processor = ((EventHandlingConfiguration) config.getModules().get(0)).getProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
+            TrackingEventProcessor processor = config.eventProcessorRegistry().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
                                                                                                         .orElseThrow(RuntimeException::new);
             assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
         } finally {
@@ -124,7 +126,7 @@ public class DefaultConfigurerTest {
                                                 )
                                                 .start();
         try {
-            TrackingEventProcessor processor = ((EventHandlingConfiguration) config.getModules().get(0)).getProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
+            TrackingEventProcessor processor = config.eventProcessorRegistry().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
                                                                                                         .orElseThrow(RuntimeException::new);
             assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
         } finally {
@@ -267,7 +269,7 @@ public class DefaultConfigurerTest {
     @Test
     public void testRegisterSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .registerModule(new EventHandlingConfiguration().usingTrackingProcessors())
+                                                .registerModule(new EventHandlingConfiguration())
                                                 .registerModule(new EventHandlingConfiguration())
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())

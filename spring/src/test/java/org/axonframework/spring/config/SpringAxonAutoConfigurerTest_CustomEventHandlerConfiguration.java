@@ -6,6 +6,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessorRegistry;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
@@ -86,19 +87,16 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
         }
 
         @Autowired
-        public void configure(EventHandlingConfiguration config) {
-            config.byDefaultAssignTo("test")
-                    .registerEventProcessor("test", (c, name, eh) -> {
-                        SubscribingEventProcessor processor = new SubscribingEventProcessor(name,
-                                                                                            new SimpleEventHandlerInvoker(eh),
-                                                                                            c.eventBus());
-                        processor.registerInterceptor((unitOfWork, interceptorChain) -> {
-                            unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
-                            return interceptorChain.proceed();
-                        });
-                        return processor;
-                    });
-
+        public void configure(EventHandlingConfiguration config, EventProcessorRegistry registry) {
+            config.byDefaultAssignTo("test");
+            registry.registerEventProcessor("test", (name, c, eh) -> {
+                SubscribingEventProcessor processor = new SubscribingEventProcessor(name, eh, c.eventBus());
+                processor.registerInterceptor((unitOfWork, interceptorChain) -> {
+                    unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
+                    return interceptorChain.proceed();
+                });
+                return processor;
+            });
         }
 
         @Bean

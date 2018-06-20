@@ -19,7 +19,7 @@ package org.axonframework.boot;
 import org.axonframework.boot.autoconfig.AMQPAutoConfiguration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessorRegistry;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -66,33 +66,36 @@ public class TrackingEventProcessorIntegrationTest {
     @Autowired
     private CountDownLatch countDownLatch2;
     @Autowired
-    private EventHandlingConfiguration eventHandlingConfiguration;
+    private EventProcessorRegistry eventProcessorRegistry;
     @Autowired
     private TokenStore tokenStore;
 
     @Test
     public void testPublishSomeEvents() throws InterruptedException {
-        eventHandlingConfiguration.getProcessors().forEach(EventProcessor::shutDown);
+        eventProcessorRegistry.shutdown();
 
         publishEvent("test1", "test2");
         transactionManager.executeInTransaction(() -> {
-            tokenStore.storeToken(GapAwareTrackingToken.newInstance(1, new TreeSet<>(Collections.singleton(0L))), "first", 0);
+            tokenStore.storeToken(GapAwareTrackingToken.newInstance(1, new TreeSet<>(Collections.singleton(0L))),
+                                  "first",
+                                  0);
             tokenStore.storeToken(GapAwareTrackingToken.newInstance(0, new TreeSet<>()), "second", 0);
         });
 
-        eventHandlingConfiguration.getProcessors().forEach(EventProcessor::start);
+        eventProcessorRegistry.start();
         assertFalse(countDownLatch1.await(1, TimeUnit.SECONDS));
         publishEvent("test3");
         publishEvent("test4");
         assertTrue("Expected all 4 events to have been delivered", countDownLatch1.await(2, TimeUnit.SECONDS));
         assertTrue("Expected all 4 events to have been delivered", countDownLatch2.await(1, TimeUnit.SECONDS));
 
-        eventHandlingConfiguration.getProcessors().forEach(ep -> assertFalse(((TrackingEventProcessor) ep).isError()));
+        eventProcessorRegistry.eventProcessors().forEach((name, ep) -> assertFalse(((TrackingEventProcessor) ep)
+                                                                                           .isError()));
 
-        eventHandlingConfiguration.getProcessors().forEach(EventProcessor::shutDown);
-        eventHandlingConfiguration.getProcessors().forEach(ep -> assertFalse("Processor ended with error",
-                                                                             ((TrackingEventProcessor) ep).isError()));
-
+        eventProcessorRegistry.shutdown();
+        eventProcessorRegistry.eventProcessors().forEach((name, ep) -> assertFalse("Processor ended with error",
+                                                                                   ((TrackingEventProcessor) ep)
+                                                                                           .isError()));
     }
 
     private void publishEvent(String... events) {
@@ -120,8 +123,8 @@ public class TrackingEventProcessorIntegrationTest {
         }
 
         @Autowired
-        public void configure(EventHandlingConfiguration config) {
-            config.usingTrackingProcessors();
+        public void configure(EventProcessorRegistry registry) {
+            registry.usingTrackingProcessors();
         }
     }
 
