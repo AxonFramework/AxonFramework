@@ -336,7 +336,9 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param tokenStore The function returning a TokenStore based on the given Configuration
      * @return this SagaConfiguration instance, ready for further configuration
+     * @deprecated use {@link EventProcessorRegistry#registerTokenStore(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureTokenStore(Function<Configuration, TokenStore> tokenStore) {
         this.tokenStore.update(tokenStore);
         return this;
@@ -411,6 +413,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public void initialize(Configuration config) {
         this.config = config;
         eventProcessorRegistry().registerHandlerInvoker(processorInfo.getName(), c -> sagaManager.get());
+        eventProcessorRegistry().registerTokenStore(processorInfo.getName(), c -> tokenStore.get());
         handlerInterceptors.forEach(i -> eventProcessorRegistry()
                 .registerHandlerInterceptor(processorInfo.getName(), i));
         if (processorInfo.isCreateNewProcessor()) {
