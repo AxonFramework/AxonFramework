@@ -50,11 +50,6 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
         this.expectedResponseType = expectedResponseType;
     }
 
-    /**
-     * Gets actual response type or generic placeholder.
-     *
-     * @return actual response type or generic placeholder
-     */
     @Override
     public Class<?> getExpectedResponseType() {
         return expectedResponseType;

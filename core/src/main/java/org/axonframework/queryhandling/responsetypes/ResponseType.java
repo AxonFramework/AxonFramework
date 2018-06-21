@@ -68,5 +68,10 @@ public interface ResponseType<R> extends Serializable {
      */
     Class<R> responseMessagePayloadType();
 
+    /**
+     * Gets actual response type or generic placeholder.
+     *
+     * @return actual response type or generic placeholder
+     */
     Class<?> getExpectedResponseType();
 }
