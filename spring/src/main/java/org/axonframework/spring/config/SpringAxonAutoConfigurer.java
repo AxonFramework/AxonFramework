@@ -301,6 +301,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 if (beanFactory.containsBean(repositoryName)) {
                     aggregateConf.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
                 } else {
+                    registry.registerBeanDefinition(repositoryName,
+                                                    genericBeanDefinition(RepositoryFactoryBean.class)
+                                                            .addConstructorArgValue(aggregateConf)
+                                                            .getBeanDefinition());
+
                     if (!registry.isBeanNameInUse(factoryName)) {
                         registry.registerBeanDefinition(factoryName,
                                                         genericBeanDefinition(SpringPrototypeAggregateFactory.class)

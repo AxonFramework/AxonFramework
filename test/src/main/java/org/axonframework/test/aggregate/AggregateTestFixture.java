@@ -17,12 +17,11 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
@@ -50,6 +49,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -62,7 +62,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @author Allard Buijze
  * @since 0.6
  */
-public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExecutor {
+public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExecutor<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AggregateTestFixture.class);
     private final Class<T> aggregateType;
@@ -73,7 +73,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
     private RepositoryProvider repositoryProvider;
-    private Repository<T> repository;
+    private IdentifierValidatingRepository<T> repository;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage<?>> givenEvents;
     private Deque<DomainEventMessage<?>> storedEvents;
@@ -102,8 +102,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
-        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository);
+    public FixtureConfiguration<T> registerRepository(Repository<T> repository) {
+        this.repository = new IdentifierValidatingRepository<>(repository);
         return this;
     }
 
@@ -188,29 +188,46 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public TestExecutor given(Object... domainEvents) {
+    public TestExecutor<T> given(Object... domainEvents) {
         return given(Arrays.asList(domainEvents));
     }
 
     @Override
-    public TestExecutor andGiven(Object... domainEvents) {
+    public TestExecutor<T> andGiven(Object... domainEvents) {
         return andGiven(Arrays.asList(domainEvents));
     }
 
     @Override
-    public TestExecutor givenNoPriorActivity() {
+    public TestExecutor<T> givenNoPriorActivity() {
         return given(Collections.emptyList());
     }
 
     @Override
-    public TestExecutor given(List<?> domainEvents) {
+    public TestExecutor<T> givenState(Supplier<T> aggregate) {
+        clearGivenWhenState();
+        DefaultUnitOfWork.startAndGet(null).execute(() -> {
+            if (repository == null) {
+                registerRepository(new InMemoryRepository<>(aggregateType, eventStore, getRepositoryProvider()));
+            }
+            try {
+                repository.newInstance(aggregate::get);
+            } catch (Exception e) {
+                throw new FixtureExecutionException("An exception occurred while trying to initialize repository with given aggregate (using 'givenState')",
+                                                    e);
+            }
+        });
+        return this;
+    }
+
+    @Override
+    public TestExecutor<T> given(List<?> domainEvents) {
         ensureRepositoryConfiguration();
         clearGivenWhenState();
         return andGiven(domainEvents);
     }
 
     @Override
-    public TestExecutor andGiven(List<?> domainEvents) {
+    public TestExecutor<T> andGiven(List<?> domainEvents) {
         for (Object event : domainEvents) {
             Object payload = event;
             MetaData metaData = null;
@@ -219,29 +236,29 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 metaData = ((Message) event).getMetaData();
             }
             this.givenEvents.add(new GenericDomainEventMessage<>(aggregateType.getSimpleName(), aggregateIdentifier,
-                    sequenceNumber++, payload, metaData));
+                                                                 sequenceNumber++, payload, metaData));
         }
         return this;
     }
 
     @Override
-    public TestExecutor givenCommands(Object... commands) {
+    public TestExecutor<T> givenCommands(Object... commands) {
         return givenCommands(Arrays.asList(commands));
     }
 
     @Override
-    public TestExecutor andGivenCommands(Object... commands) {
+    public TestExecutor<T> andGivenCommands(Object... commands) {
         return andGivenCommands(Arrays.asList(commands));
     }
 
     @Override
-    public TestExecutor givenCommands(List<?> commands) {
+    public TestExecutor<T> givenCommands(List<?> commands) {
         clearGivenWhenState();
         return andGivenCommands(commands);
     }
 
     @Override
-    public TestExecutor andGivenCommands(List<?> commands) {
+    public TestExecutor<T> andGivenCommands(List<?> commands) {
         finalizeConfiguration();
         for (Object command : commands) {
             ExecutionExceptionAwareCallback callback = new ExecutionExceptionAwareCallback();
@@ -255,17 +272,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public ResultValidator when(Object command) {
+    public ResultValidator<T> when(Object command) {
         return when(command, MetaData.emptyInstance());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public ResultValidator when(Object command, Map<String, ?> metaData) {
+    public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
         commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-        ResultValidatorImpl resultValidator = new ResultValidatorImpl(publishedEvents, fieldFilter);
+        ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents, fieldFilter,
+                                                                           () -> repository.getAggregate());
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
@@ -318,7 +335,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
             try {
-                Aggregate<T> aggregate2 = repository.load(aggregateIdentifier);
+                Aggregate<T> aggregate2 = repository.delegate.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was considered deleted, " +
                                                          "but the Repository still contains a non-deleted copy of " +
@@ -448,6 +465,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private static class IdentifierValidatingRepository<T> implements Repository<T> {
 
         private final Repository<T> delegate;
+        private Aggregate<T> aggregate;
+        private boolean rolledBack;
 
         public IdentifierValidatingRepository(Repository<T> delegate) {
             this.delegate = delegate;
@@ -455,19 +474,23 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
-            return delegate.newInstance(factoryMethod);
+            CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
+            aggregate = delegate.newInstance(factoryMethod);
+            return aggregate;
         }
 
         @Override
         public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
-            Aggregate<T> aggregate = delegate.load(aggregateIdentifier, expectedVersion);
+            CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
+            aggregate = delegate.load(aggregateIdentifier, expectedVersion);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
 
         @Override
         public Aggregate<T> load(String aggregateIdentifier) {
-            Aggregate<T> aggregate = delegate.load(aggregateIdentifier, null);
+            CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
+            aggregate = delegate.load(aggregateIdentifier, null);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
@@ -480,6 +503,61 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                 "Make sure the identifier passed in the Command matches that of the given Events.",
                         aggregateIdentifier, aggregate.identifierAsString()));
             }
+        }
+
+        public Aggregate<T> getAggregate() {
+            Assert.state(!rolledBack, () -> "The state of this aggregate cannot be retrieved because it " +
+                                                        "has been modified in a Unit of Work that was rolled back");
+
+            return aggregate;
+        }
+    }
+
+    private static class InMemoryRepository<T> implements Repository<T> {
+
+
+        private final EventBus eventBus;
+        private final RepositoryProvider repositoryProvider;
+        private final AggregateModel<T> aggregateModel;
+        private AnnotatedAggregate<T> storedAggregate;
+
+        protected InMemoryRepository(Class<T> aggregateType, EventBus eventBus, RepositoryProvider repositoryProvider) {
+            this.aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+            this.eventBus = eventBus;
+            this.repositoryProvider = repositoryProvider;
+        }
+
+
+        @Override
+        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
+            Assert.state(storedAggregate == null, () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
+            storedAggregate = AnnotatedAggregate.initialize(factoryMethod, aggregateModel, eventBus, repositoryProvider, true);
+            return storedAggregate;
+        }
+
+        @Override
+        public Aggregate<T> load(String aggregateIdentifier) {
+            return load(aggregateIdentifier, null);
+        }
+
+        @Override
+        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+            if (storedAggregate == null) {
+                throw new AggregateNotFoundException(aggregateIdentifier,
+                                                     "Aggregate not found. No aggregate has been stored yet.");
+            }
+            if (!aggregateIdentifier.equals(storedAggregate.identifier().toString())) {
+                throw new AggregateNotFoundException(aggregateIdentifier,
+                                                     "Aggregate not found. Did you mean to load " + storedAggregate.identifier() + "?");
+            }
+            if (storedAggregate.isDeleted()) {
+                throw new AggregateNotFoundException(aggregateIdentifier,
+                                                     "Aggregate not found. It has been deleted.");
+            }
+            if (expectedVersion != null && !Objects.equals(expectedVersion, storedAggregate.version())) {
+                throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, storedAggregate.version());
+            }
+            return storedAggregate;
         }
     }
 
@@ -516,28 +594,28 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         protected void doAppendEvents(List<? extends EventMessage<?>> events) {
             publishedEvents.addAll(events);
             events.stream().filter(DomainEventMessage.class::isInstance).map(e -> (DomainEventMessage<?>) e)
-                    .forEach(event -> {
-                        if (aggregateIdentifier == null) {
-                            aggregateIdentifier = event.getAggregateIdentifier();
-                            injectAggregateIdentifier();
-                        }
+                  .forEach(event -> {
+                      if (aggregateIdentifier == null) {
+                          aggregateIdentifier = event.getAggregateIdentifier();
+                          injectAggregateIdentifier();
+                      }
 
-                        DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+                      DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
 
-                        if (lastEvent != null) {
-                            if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
-                                throw new EventStoreException(
-                                        "Writing events for an unexpected aggregate. This could " +
-                                                "indicate that a wrong aggregate is being triggered.");
-                            } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
-                                throw new EventStoreException(format("Unexpected sequence number on stored event. " +
-                                                                             "Expected %s, but got %s.",
-                                                                     lastEvent.getSequenceNumber() + 1,
-                                                                     event.getSequenceNumber()));
-                            }
-                        }
-                        storedEvents.add(event);
-                    });
+                      if (lastEvent != null) {
+                          if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
+                              throw new EventStoreException(
+                                      "Writing events for an unexpected aggregate. This could " +
+                                              "indicate that a wrong aggregate is being triggered.");
+                          } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
+                              throw new EventStoreException(format("Unexpected sequence number on stored event. " +
+                                                                           "Expected %s, but got %s.",
+                                                                   lastEvent.getSequenceNumber() + 1,
+                                                                   event.getSequenceNumber()));
+                          }
+                      }
+                      storedEvents.add(event);
+                  });
         }
 
         private void injectAggregateIdentifier() {

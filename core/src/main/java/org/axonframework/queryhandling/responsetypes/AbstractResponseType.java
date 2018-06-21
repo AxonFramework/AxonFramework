@@ -39,6 +39,15 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     }
 
     /**
+     * Gets actual response type or generic placeholder.
+     *
+     * @return actual response type or generic placeholder
+     */
+    public Class<?> getExpectedResponseType() {
+        return expectedResponseType;
+    }
+
+    /**
      * Tries to unwrap generic type if provided {@code type} is of type {@link Future}.
      *
      * @param type to be unwrapped
