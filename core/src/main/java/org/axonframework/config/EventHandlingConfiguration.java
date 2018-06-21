@@ -58,21 +58,21 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureMessageMonitor(String,
-     * Function)} or {@link EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)} should be
-     * used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureMessageMonitor(String, Function)} or {@link
+     * EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)}. This field is used for backwards
+     * compatibility only.
      */
     @Deprecated
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureErrorHandler(String,
-     * Function)} should be used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureErrorHandler(String, Function)}. This field is
+     * used for backwards compatibility only.
      */
     @Deprecated
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#registerTokenStore(String,
-     * Function)} should be used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#registerTokenStore(String, Function)}. This field is used
+     * for backwards compatibility only.
      */
     @Deprecated
     private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
@@ -96,8 +96,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     );
 
     /**
-     * @deprecated purpose of this default error handler is backward compatibility only. {@link
-     * EventProcessorRegistry#configureErrorHandler(Function)} is the substitute.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureErrorHandler(String, Function)} . This field is
+     * used for backwards compatibility only.
      */
     @Deprecated
     private final Component<ErrorHandler> defaultErrorHandler = new Component<>(

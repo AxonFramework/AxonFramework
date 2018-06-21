@@ -55,34 +55,34 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureRollbackConfiguration(String,
-     * Function)} should be used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureRollbackConfiguration(String, Function)}. This
+     * field is used for backwards compatibility only.
      */
     @Deprecated
     private final Component<RollbackConfiguration> rollbackConfiguration;
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureErrorHandler(String,
-     * Function)} should be used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureErrorHandler(String, Function)}. This field is
+     * used for backwards compatibility only.
      */
     @Deprecated
     private final Component<ErrorHandler> errorHandler;
     private final Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#registerTokenStore(String,
-     * Function)} should be used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#registerTokenStore(String, Function)}. This field is used
+     * for backwards compatibility only.
      */
     @Deprecated
     private final Component<TokenStore> tokenStore;
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureTransactionManager(String,
-     * Function)} should be used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureTransactionManager(String, Function)}. This field
+     * is used for backwards compatibility only.
      */
     @Deprecated
     private final Component<TransactionManager> transactionManager;
     /**
-     * @deprecated here only for backward compatibility reasons. {@link EventProcessorRegistry#configureMessageMonitor(String,
-     * Function)} or {@link EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)} should be
-     * used instead.
+     * @deprecated in favor of {@link EventProcessorRegistry#configureMessageMonitor(String, Function)} or {@link
+     * EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)}. This field is used for backwards
+     * compatibility only.
      */
     @Deprecated
     private final Component<MessageMonitor<? super EventMessage<?>>> messageMonitor;
