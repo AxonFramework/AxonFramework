@@ -15,8 +15,6 @@
 
 package io.axoniq.axonhub.client;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.CommandResponse;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
 import io.axoniq.axonhub.grpc.CommandProviderInbound;
@@ -72,7 +70,6 @@ public class PlatformConnectionManager {
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
     private final AxonHubConfiguration connectInformation;
-    private volatile int axonhubVersion;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
     public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
@@ -92,14 +89,17 @@ public class PlatformConnectionManager {
                             .setClientName(connectInformation.getClientName())
                             .setComponentName(connectInformation.getComponentName())
                             .build());
-                    axonhubVersion = clusterInfo.getPrimary().getVersion();
                     if(isPrimary(nodeInfo, clusterInfo)) {
                         channel = candidate;
                     } else {
                         shutdown(candidate);
-                        logger.info("Connecting to {} ({}:{})", clusterInfo.getPrimary().getNodeName(), clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
+                        logger.info("Connecting to {} ({}:{})", clusterInfo.getPrimary().getNodeName(),
+                                    clusterInfo.getPrimary().getHostName(),
+                                    clusterInfo.getPrimary().getGrpcPort());
                         channel = createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
-                                ManagedChannelBuilder.forAddress(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort()).usePlaintext(true).build();
+                                ManagedChannelBuilder.forAddress(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort())
+                                                     .usePlaintext()
+                                                     .build();
                     }
                     startInstructionStream(clusterInfo.getPrimary().getNodeName());
                     unavailable = false;
@@ -228,7 +228,7 @@ public class PlatformConnectionManager {
         disconnectListeners.add(action);
     }
 
-    public synchronized void scheduleReconnect() {
+    private synchronized void scheduleReconnect() {
         if( reconnectTask == null || reconnectTask.isDone()) {
             if( channel != null) {
                 try {
@@ -248,12 +248,6 @@ public class PlatformConnectionManager {
                 .openStream(commandsFromRoutingServer);
     }
 
-    public StreamObserver<Command> getDispatchStream(StreamObserver<CommandResponse> commandsFromRoutingServer, ClientInterceptor[] interceptors) {
-        return CommandServiceGrpc.newStub(getChannel())
-                                 .withInterceptors(interceptors)
-                                 .dispatchStream(commandsFromRoutingServer);
-    }
-
     public StreamObserver<QueryProviderOutbound> getQueryStream(StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver, ClientInterceptor[] interceptors) {
         return QueryServiceGrpc.newStub(getChannel())
                 .withInterceptors(interceptors)
@@ -269,7 +263,4 @@ public class PlatformConnectionManager {
         inputStream.onNext(instruction);
     }
 
-    public boolean axonhubSupportsCommandStream() {
-        return axonhubVersion > 0;
-    }
 }

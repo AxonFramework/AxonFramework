@@ -291,7 +291,7 @@ public class AxonHubQueryBus implements QueryBus {
 
         private synchronized StreamObserver<QueryProviderOutbound> getSubscriberObserver() {
             if (outboundStreamObserver == null) {
-                logger.warn("Create new subscriber");
+                logger.info("Create new subscriber");
                 StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
                     @Override
                     public void onNext(QueryProviderInbound inboundRequest) {
@@ -336,7 +336,7 @@ public class AxonHubQueryBus implements QueryBus {
             }
         }
 
-        public void unsubscribeAll() {
+        private void unsubscribeAll() {
             subscribedQueries.forEach((d, count) -> {
                 try {
                     getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(
@@ -349,7 +349,7 @@ public class AxonHubQueryBus implements QueryBus {
             outboundStreamObserver = null;
         }
 
-        public void resubscribe() {
+        private void resubscribe() {
             if( subscribedQueries.isEmpty() || subscribing) return;
             try {
                 StreamObserver<QueryProviderOutbound> subscriberStreamObserver = getSubscriberObserver();

@@ -110,7 +110,6 @@ public class AxonHubConfiguration {
      */
     private long keepAliveTime = 0;
 
-
     public AxonHubConfiguration() {
     }
 
