@@ -92,7 +92,7 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         @Override
         public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage) {
             return handlers.stream().filter(h -> h.canHandle(eventMessage))
-                           .collect(Collectors.toCollection(ArrayList::new));
+                           .collect(Collectors.toList());
         }
 
         @Override

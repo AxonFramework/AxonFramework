@@ -29,6 +29,13 @@ import java.io.ObjectOutputStream;
 
 import static org.junit.Assert.*;
 
+/**
+ * This test class tests whether the {@link AggregateDescriptor} is serializable as expected, by Java, XStream and
+ * Jackson. It does so because an AggregateDescriptor can be instantiated with a {@link java.util.function.Supplier}
+ * for the {@code identifier}. We do not want to serialize a Supplier, but rather the actual identifier it supplies,
+ * hence functionality is added which ensure the Supplier is called to fill the {@code identifier} field just prior to
+ * the complete serialization. This test ensure this works as designed.
+ */
 public class AggregateDescriptorSerializationTest {
 
     private AggregateDescriptor testSubject;

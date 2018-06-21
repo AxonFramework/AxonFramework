@@ -163,21 +163,21 @@ public abstract class SagaLifecycle extends Scope {
     }
 
     /**
-     * Retrieve a {@link String} denoting the type of this Aggregate.
+     * Retrieve a {@link String} denoting the type of this Saga.
      *
-     * @return a {@link String} denoting the type of this Aggregate
+     * @return a {@link String} denoting the type of this Saga
      */
     protected abstract String type();
 
     /**
-     * Retrieve a {@link Object} denoting the identifier of this Aggregate.
+     * Retrieve a {@link String} denoting the identifier of this Saga.
      *
-     * @return a {@link Object} denoting the identifier of this Aggregate
+     * @return a {@link String} denoting the identifier of this Saga
      */
-    protected abstract Object identifier();
+    protected abstract String getSagaIdentifier();
 
     @Override
     public ScopeDescriptor describeScope() {
-        return new SagaDescriptor(type(), identifier());
+        return new SagaDescriptor(type(), getSagaIdentifier());
     }
 }

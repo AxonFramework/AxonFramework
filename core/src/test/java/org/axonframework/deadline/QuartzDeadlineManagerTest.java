@@ -18,7 +18,7 @@ package org.axonframework.deadline;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.LazyScopeAwareProvider;
+import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -31,7 +31,7 @@ public class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite 
         try {
             Scheduler scheduler = new StdSchedulerFactory().getScheduler();
             QuartzDeadlineManager quartzDeadlineManager =
-                    new QuartzDeadlineManager(scheduler, new LazyScopeAwareProvider(configuration));
+                    new QuartzDeadlineManager(scheduler, new ConfigurationScopeAwareProvider(configuration));
             scheduler.start();
             return quartzDeadlineManager;
         } catch (SchedulerException e) {

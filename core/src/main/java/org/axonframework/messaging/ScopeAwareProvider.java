@@ -28,7 +28,7 @@ public interface ScopeAwareProvider {
 
     /**
      * Retrieve a {@link Stream} of {@link ScopeAware} components, by performing a check whether that component is able
-     * to handled a {@link Scope} described by a {@link ScopeDescriptor}.
+     * to handle a {@link Scope} described by a {@link ScopeDescriptor}.
      *
      * @param scopeDescriptor a {@link ScopeDescriptor} describing the {@link Scope} a component {@link ScopeAware}
      *                        should be able to handle

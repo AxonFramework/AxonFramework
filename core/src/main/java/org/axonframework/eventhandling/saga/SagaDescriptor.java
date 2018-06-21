@@ -41,7 +41,7 @@ public class SagaDescriptor implements ScopeDescriptor {
 
     @Override
     public String scopeDescription() {
-        return String.format("AggregateDescriptor for type [%s] and identifier [%s]", type, identifier);
+        return String.format("SagaDescriptor for type [%s] and identifier [%s]", type, identifier);
     }
 
     @Override

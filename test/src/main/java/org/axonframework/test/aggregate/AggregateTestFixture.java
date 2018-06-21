@@ -164,12 +164,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 ClasspathParameterResolverFactory.forClass(aggregateType)
         );
 
-        return registerRepository(new EventSourcingRepository<>(
-                aggregateFactory,
-                eventStore,
-                parameterResolverFactory,
-                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()
-        ));
+        return registerRepository(new EventSourcingRepository<>(aggregateFactory,
+                                                                eventStore,
+                                                                parameterResolverFactory,
+                                                                NoSnapshotTriggerDefinition.INSTANCE,
+                                                                getRepositoryProvider()));
     }
 
     @Override

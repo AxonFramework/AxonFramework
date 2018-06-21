@@ -17,12 +17,12 @@
 package org.axonframework.deadline;
 
 import org.axonframework.config.Configuration;
-import org.axonframework.config.LazyScopeAwareProvider;
+import org.axonframework.config.ConfigurationScopeAwareProvider;
 
 public class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
-        return new SimpleDeadlineManager(new LazyScopeAwareProvider(configuration));
+        return new SimpleDeadlineManager(new ConfigurationScopeAwareProvider(configuration));
     }
 }

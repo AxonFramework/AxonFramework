@@ -31,13 +31,13 @@ import java.util.stream.Stream;
 
 /**
  * Implementation of the {@link ScopeAwareProvider} which will retrieve a {@link List} of {@link ScopeAware} components
- * in a lazy manor. It does this by pulling these components from the provided {@link Configuration} as soon as
+ * in a lazy manner. It does this by pulling these components from the provided {@link Configuration} as soon as
  * #provideScopeAwareStream(ScopeDescriptor) has been called.
  *
  * @author Steven van Beelen
  * @since 3.3
  */
-public class LazyScopeAwareProvider implements ScopeAwareProvider {
+public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
 
     private List<ScopeAware> scopeAwareComponents;
     private Configuration configuration;
@@ -47,7 +47,7 @@ public class LazyScopeAwareProvider implements ScopeAwareProvider {
      *
      * @param configuration a {@link Configuration} used to retrieve {@link ScopeAware} components from
      */
-    public LazyScopeAwareProvider(Configuration configuration) {
+    public ConfigurationScopeAwareProvider(Configuration configuration) {
         scopeAwareComponents = new ArrayList<>();
         this.configuration = configuration;
     }

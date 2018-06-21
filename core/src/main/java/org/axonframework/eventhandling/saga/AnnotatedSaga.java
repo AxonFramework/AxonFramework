@@ -112,25 +112,29 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     public final void handle(EventMessage<?> event) {
         if (isActive) {
             metaModel.findHandlerMethods(event).stream()
-                     .filter(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
-                                   .map(sh -> getAssociationValues().contains(sh.getAssociationValue(event)))
-                                   .orElse(true))
-                     .findFirst().ifPresent(h -> {
-                try {
-                    executeWithResult(() -> h.handle(event, sagaInstance));
-                    if (event instanceof TrackedEventMessage) {
-                        this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
-                    }
-                } catch (RuntimeException | Error e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
-                } finally {
-                    if (isEndingHandler(h)) {
-                        doEnd();
-                    }
-                }
-            });
+                     .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
+                                               .map(sh -> getAssociationValues()
+                                                       .contains(sh.getAssociationValue(event)))
+                                               .orElse(true))
+                     .findFirst()
+                     .ifPresent(handler -> handle(handler, event));
+        }
+    }
+
+    private void handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
+        try {
+            executeWithResult(() -> handler.handle(event, sagaInstance));
+            if (event instanceof TrackedEventMessage) {
+                this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
+            }
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
+        } finally {
+            if (isEndingHandler(handler)) {
+                doEnd();
+            }
         }
     }
 
@@ -180,11 +184,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     @Override
     protected String type() {
         return sagaInstance.getClass().getSimpleName();
-    }
-
-    @Override
-    protected Object identifier() {
-        return getSagaIdentifier();
     }
 
     /**
