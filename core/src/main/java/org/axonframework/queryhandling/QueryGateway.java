@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.queryhandling.responsetypes.AbstractResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import reactor.util.concurrent.Queues;
@@ -38,7 +39,7 @@ public interface QueryGateway {
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with
      * the given {@code responseType} from a single source. The query name will be derived from the provided
-     * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
+     * {@code query} and {@code responseType}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
      * @param responseType A {@link java.lang.Class} describing the desired response type
@@ -48,7 +49,7 @@ public interface QueryGateway {
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, Class<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        return query(query.getClass().getName() + "-" + responseType.getName(), query, responseType);
     }
 
     /**
@@ -71,7 +72,7 @@ public interface QueryGateway {
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
      * form of {@code responseType} from a single source. The query name will be derived from the provided
-     * {@code query}. Execution may be asynchronous, depending on the QueryBus implementation.
+     * {@code query} and {@code responseType}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
@@ -81,7 +82,13 @@ public interface QueryGateway {
      * {@code responseType}
      */
     default <R, Q> CompletableFuture<R> query(Q query, ResponseType<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        String queryName = query.getClass().getName() + "-";
+        if (AbstractResponseType.class.isAssignableFrom(responseType.getClass())) {
+            queryName += ((AbstractResponseType) responseType).getExpectedResponseType().getName();
+        } else {
+            queryName += responseType.responseMessagePayloadType().getName();
+        }
+        return query(queryName, query, responseType);
     }
 
     /**
@@ -102,8 +109,8 @@ public interface QueryGateway {
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response in the
      * form of {@code responseType} from several sources. The stream is completed when a {@code timeout} occurs or when
-     * all results are received. The query name will be derived from the provided {@code query}. Execution may be
-     * asynchronous, depending on the QueryBus implementation.
+     * all results are received. The query name will be derived from the provided {@code query} and {@code
+     * responseType}. Execution may be asynchronous, depending on the QueryBus implementation.
      *
      * @param query        The {@code query} to be sent
      * @param responseType The {@link org.axonframework.queryhandling.responsetypes.ResponseType} used for this query
@@ -114,7 +121,13 @@ public interface QueryGateway {
      * @return A stream of results.
      */
     default <R, Q> Stream<R> scatterGather(Q query, ResponseType<R> responseType, long timeout, TimeUnit timeUnit) {
-        return scatterGather(query.getClass().getName(), query, responseType, timeout, timeUnit);
+        String queryName = query.getClass().getName() + "-";
+        if (AbstractResponseType.class.isAssignableFrom(responseType.getClass())) {
+            queryName += ((AbstractResponseType) responseType).getExpectedResponseType().getName();
+        } else {
+            queryName += responseType.responseMessagePayloadType().getName();
+        }
+        return scatterGather(queryName, query, responseType, timeout, timeUnit);
     }
 
     /**
@@ -149,7 +162,7 @@ public interface QueryGateway {
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                       Class<U> updateResponseType) {
-        return subscriptionQuery(query.getClass().getName(),
+        return subscriptionQuery(query.getClass().getName() + "-" + updateResponseType.getName(),
                                  query,
                                  initialResponseType,
                                  updateResponseType);
@@ -194,7 +207,13 @@ public interface QueryGateway {
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType) {
-        return subscriptionQuery(query.getClass().getName(),
+        String queryName = query.getClass().getName() + "-";
+        if (AbstractResponseType.class.isAssignableFrom(initialResponseType.getClass())) {
+            queryName += ((AbstractResponseType) initialResponseType).getExpectedResponseType().getName();
+        } else {
+            queryName += initialResponseType.responseMessagePayloadType().getName();
+        }
+        return subscriptionQuery(queryName,
                                  query,
                                  initialResponseType,
                                  updateResponseType,
@@ -283,7 +302,7 @@ public interface QueryGateway {
      */
     @Deprecated
     default <R, Q> CompletableFuture<R> send(Q query, Class<R> responseType) {
-        return query(query.getClass().getName(), query, responseType);
+        return query(query, responseType);
     }
 
     /**
