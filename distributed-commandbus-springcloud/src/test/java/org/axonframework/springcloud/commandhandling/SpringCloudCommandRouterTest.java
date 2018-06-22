@@ -73,6 +73,7 @@ public class SpringCloudCommandRouterTest {
     @Mock
     private RoutingStrategy routingStrategy;
     private Field atomicConsistentHashField;
+    private Field blackListedServiceInstancesField;
 
     private String serializedCommandFilterData;
     private String serializedCommandFilterClassName;
@@ -87,6 +88,10 @@ public class SpringCloudCommandRouterTest {
 
         String atomicConsistentHashFieldName = "atomicConsistentHash";
         atomicConsistentHashField = SpringCloudCommandRouter.class.getDeclaredField(atomicConsistentHashFieldName);
+
+        String blackListedServiceInstancesFieldName = "blackListedServiceInstances";
+        blackListedServiceInstancesField = SpringCloudCommandRouter.class.getDeclaredField(
+                blackListedServiceInstancesFieldName);
 
         serviceInstanceMetadata = new HashMap<>();
         when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
@@ -405,6 +410,44 @@ public class SpringCloudCommandRouterTest {
 
         Set<Member> resultMemberSet = resultAtomicConsistentHash.get().getMembers();
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testBlackListCleaning() {
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        String serviceInstanceToBeBlackListedId = "toBeBlackListed";
+        ServiceInstance serviceInstanceToBeBlackListed = mock(ServiceInstance.class);
+        when(serviceInstanceToBeBlackListed.getServiceId()).thenReturn(serviceInstanceToBeBlackListedId);
+        when(serviceInstanceToBeBlackListed.getHost()).thenReturn("host");
+        when(serviceInstanceToBeBlackListed.getPort()).thenReturn(0);
+        when(serviceInstanceToBeBlackListed.getMetadata()).thenReturn(
+                Collections.emptyMap(),
+                serviceInstanceMetadata
+        );
+
+        when(discoveryClient.getServices()).thenReturn(
+                ImmutableList.of(SERVICE_INSTANCE_ID, serviceInstanceToBeBlackListedId),
+                ImmutableList.of(SERVICE_INSTANCE_ID),
+                ImmutableList.of(SERVICE_INSTANCE_ID, serviceInstanceToBeBlackListedId)
+        );
+        when(discoveryClient.getInstances(serviceInstanceToBeBlackListedId)).thenReturn(ImmutableList.of(serviceInstanceToBeBlackListed));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        Set<ServiceInstance> blackListed = getFieldValue(blackListedServiceInstancesField, testSubject);
+        assertEquals(1, blackListed.size());
+        assertEquals(serviceInstanceToBeBlackListedId, blackListed.iterator().next().getServiceId());
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        blackListed = getFieldValue(blackListedServiceInstancesField, testSubject);
+        assertTrue(blackListed.isEmpty());
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        blackListed = getFieldValue(blackListedServiceInstancesField, testSubject);
+        assertTrue(blackListed.isEmpty());
     }
 
     private void assertMember(boolean localMember, Member resultMember, Boolean registered) {
