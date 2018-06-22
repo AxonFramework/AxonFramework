@@ -292,10 +292,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     /**
-     * Provides the set of currently running subscription queries. Returned set represents current state of active
-     * subscriptions on this bus. Do note that the set won't be updated once the state of active subscription changes.
+     * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in
+     * the returned set of this method.
      *
-     * @return the set of currently running subscription queries
+     * @return the set of running subscription queries
      */
     public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
