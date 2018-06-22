@@ -48,16 +48,36 @@ import java.util.function.Function;
 public interface EventProcessorRegistry {
 
     /**
-     * Registers handler invoker within this registry which will be assigned to the event processor with given {@code
-     * processorName} during the initialization phase.
+     * Registers handler invoker within this registry which will be assigned to the event processing group with given
+     * {@code processingGroup} during the initialization phase.
      *
-     * @param processorName              The name of the Event Processor
+     * @param processingGroup            The name of the Processing Group
      * @param eventHandlerInvokerBuilder Builder which builds event handler invoker. Builder can use configuration to
      *                                   obtain other components
      * @return event processor registry for chaining purposes
      */
-    EventProcessorRegistry registerHandlerInvoker(String processorName,
+    EventProcessorRegistry registerHandlerInvoker(String processingGroup,
                                                   Function<Configuration, EventHandlerInvoker> eventHandlerInvokerBuilder);
+
+    /**
+     * Defines a mapping for assigning processing groups to processors.
+     *
+     * @param processingGroup The processing group to be assigned
+     * @param processorName   The processor name to assign group to
+     * @return event processor registry for chaining purposes
+     */
+    EventProcessorRegistry assignProcessingGroup(String processingGroup, String processorName);
+
+    /**
+     * Defines a rule for assigning processing groups to processors if processing group to processor name mapping does
+     * not contain the entry.
+     *
+     * @param assignmentRule The function which takes processing group and returns processor name
+     * @return event processor registry for chaining purposes
+     *
+     * @see #assignProcessingGroup(String, String)
+     */
+    EventProcessorRegistry assignProcessingGroup(Function<String, String> assignmentRule);
 
     /**
      * Defines the Event Processor builder for an Event Processor with the given {@code name}. Event Processors
@@ -318,32 +338,51 @@ public interface EventProcessorRegistry {
     Map<String, EventProcessor> eventProcessors();
 
     /**
-     * Obtains event processor by name. This method is to be called after Event Processor Registry is initialized.
+     * Obtains Event Processor by name. This method is to be called after Event Processor Registry is initialized.
      *
      * @param name The name of the event processor
      * @return optional whether event processor with given name exists
      */
     @SuppressWarnings("unchecked")
     default <T extends EventProcessor> Optional<T> eventProcessor(String name) {
-        Map<String, EventProcessor> eventProcessors = eventProcessors();
-        if (eventProcessors.containsKey(name)) {
-            return (Optional<T>) Optional.of(eventProcessors.get(name));
-        }
-        return Optional.empty();
+        return (Optional<T>) Optional.ofNullable(eventProcessors().get(name));
     }
 
     /**
-     * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}. This
-     * method also returns an empty optional if the Processor was configured, but it hasn't been assigned any Event
-     * Handlers.
+     * Returns the Event Processor with the given {@code name}, if present and of the given {@code expectedType}.
      *
      * @param name         The name of the processor to return
      * @param expectedType The type of processor expected
      * @param <T>          The type of processor expected
-     * @return an Optional referencing the processor, if present and of expected type.
+     * @return an Optional referencing the processor, if present and of expected type
      */
     default <T extends EventProcessor> Optional<T> eventProcessor(String name, Class<T> expectedType) {
         return eventProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
+    }
+
+    /**
+     * Obtains Event Processor by processing group name. This method is to be called after Event Processor Registry is
+     * initialized.
+     *
+     * @param processingGroup The name of the processing group
+     * @param <T>             The type of processor expected
+     * @return an Optional referencing the processor
+     */
+    <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup);
+
+    /**
+     * Returns the Event Processor by the given {@code processingGroup}, if present and of the given {@code
+     * expectedType}.
+     *
+     * @param processingGroup The name of the processing group
+     * @param expectedType    The type of processor expected
+     * @param <T>             The type of processor expected
+     * @return an Optional referencing the processor, if present and of expected type
+     */
+    default <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup,
+                                                                                   Class<T> expectedType) {
+        return eventProcessorByProcessingGroup(processingGroup).filter(expectedType::isInstance)
+                                                               .map(expectedType::cast);
     }
 
     /**

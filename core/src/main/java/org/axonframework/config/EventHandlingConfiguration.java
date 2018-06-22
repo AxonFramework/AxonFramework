@@ -454,7 +454,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * Registers a function that defines the Event Processor name to assign Event Handler beans to when no other, more
      * explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
-     * @param assignmentFunction The function that returns a Processor Name for each Event Handler bean
+     * @param assignmentFunction The function that returns the Processing Group for each Event Handler bean
      * @return this EventHandlingConfiguration instance for further configuration
      */
     @SuppressWarnings("UnusedReturnValue")

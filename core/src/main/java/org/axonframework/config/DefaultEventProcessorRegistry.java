@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,6 +60,8 @@ import static java.lang.String.format;
 public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
 
     private final Map<String, List<Function<Configuration, EventHandlerInvoker>>> invokerBuilders = new HashMap<>();
+    private final Map<String, String> processingGroupsAssignments = new HashMap<>();
+    private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
     private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
@@ -89,11 +92,23 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
     );
 
     @Override
-    public EventProcessorRegistry registerHandlerInvoker(String processorName,
+    public EventProcessorRegistry registerHandlerInvoker(String processingGroup,
                                                          Function<Configuration, EventHandlerInvoker> eventHandlerInvokerBuilder) {
         List<Function<Configuration, EventHandlerInvoker>> invokerBuilderFunctions =
-                invokerBuilders.computeIfAbsent(processorName, k -> new ArrayList<>());
+                invokerBuilders.computeIfAbsent(processingGroup, k -> new ArrayList<>());
         invokerBuilderFunctions.add(eventHandlerInvokerBuilder);
+        return this;
+    }
+
+    @Override
+    public EventProcessorRegistry assignProcessingGroup(String processingGroup, String processorName) {
+        processingGroupsAssignments.put(processingGroup, processorName);
+        return this;
+    }
+
+    @Override
+    public EventProcessorRegistry assignProcessingGroup(Function<String, String> assignmentRule) {
+        defaultProcessingGroupAssignment = assignmentRule;
         return this;
     }
 
@@ -206,29 +221,23 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
+        return (Optional<T>) Optional.ofNullable(eventProcessors()
+                                                         .get(processorNameForProcessingGroup(processingGroup)));
+    }
+
     @Override
     public void initialize(Configuration config) {
         this.configuration = config;
-        invokerBuilders.forEach((processorName, builderFunctions) -> eventProcessors
-                .put(processorName, new Component<>(config, processorName, c -> {
-                    List<EventHandlerInvoker> invokers = builderFunctions
-                            .stream()
-                            .map(invokerBuilder -> invokerBuilder.apply(config))
-                            .collect(Collectors.toList());
-                    MultiEventHandlerInvoker multiEventHandlerInvoker = new MultiEventHandlerInvoker(invokers);
-
-                    EventProcessor eventProcessor = eventProcessorBuilders
-                            .getOrDefault(processorName, defaultEventProcessorBuilder)
-                            .build(processorName,
-                                   configuration,
-                                   multiEventHandlerInvoker);
-
-                    handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
-                                               .stream()
-                                               .map(hi -> hi.apply(config))
-                                               .forEach(eventProcessor::registerInterceptor);
-                    return eventProcessor;
-                })));
+        invokerBuilders.forEach((processingGroup, builderFunctions) -> {
+            String processorName = processorNameForProcessingGroup(processingGroup);
+            eventProcessors.put(processorName,
+                                new Component<>(config,
+                                                processorName,
+                                                c -> buildEventProcessor(config, builderFunctions, processorName)));
+        });
     }
 
     @Override
@@ -302,5 +311,32 @@ public class DefaultEventProcessorRegistry implements EventProcessorRegistry {
         return transactionManagers.containsKey(componentName)
                 ? transactionManagers.get(componentName).apply(config)
                 : defaultTransactionManager.get();
+    }
+
+    private String processorNameForProcessingGroup(String processingGroup) {
+        return processingGroupsAssignments.getOrDefault(processingGroup,
+                                                        defaultProcessingGroupAssignment.apply(processingGroup));
+    }
+
+    private EventProcessor buildEventProcessor(Configuration config,
+                                               List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
+                                               String processorName) {
+        List<EventHandlerInvoker> invokers = builderFunctions
+                .stream()
+                .map(invokerBuilder -> invokerBuilder.apply(config))
+                .collect(Collectors.toList());
+        MultiEventHandlerInvoker multiEventHandlerInvoker = new MultiEventHandlerInvoker(invokers);
+
+        EventProcessor eventProcessor = eventProcessorBuilders
+                .getOrDefault(processorName, defaultEventProcessorBuilder)
+                .build(processorName,
+                       configuration,
+                       multiEventHandlerInvoker);
+
+        handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
+                                   .stream()
+                                   .map(hi -> hi.apply(config))
+                                   .forEach(eventProcessor::registerInterceptor);
+        return eventProcessor;
     }
 }
