@@ -73,7 +73,7 @@ message QueryUpdateCompleteExceptionally {
     string client_name = 2;
     string component_name = 3;
     string error_code = 5;
-    string message = 6;
+    ErrorMessage message = 6;
 }
 
 message SubscriptionQueryRequest {
