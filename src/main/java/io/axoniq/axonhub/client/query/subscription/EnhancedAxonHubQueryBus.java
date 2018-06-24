@@ -68,22 +68,16 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
                                    QueryUpdateEmitter updateEmitter,
                                    Serializer messageSerializer, Serializer genericSerializer,
                                    QueryPriorityCalculator priorityCalculator) {
-        axonHubQueryBus = new AxonHubQueryBus(platformConnectionManager,
-                                              configuration,
-                                              localSegment,
-                                              messageSerializer,
-                                              genericSerializer,
-                                              priorityCalculator);
+
         this.configuration = configuration;
-        serializer = new SubscriptionMessageSerializer(configuration,
-                                                       messageSerializer,
-                                                       genericSerializer);
+        this.axonHubQueryBus = new AxonHubQueryBus(platformConnectionManager, configuration, localSegment,
+                                                   messageSerializer, genericSerializer, priorityCalculator);
+        this.serializer = new SubscriptionMessageSerializer(configuration, messageSerializer, genericSerializer);
         platformConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
         platformConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
 
-        SubscriptionQueryRequestTarget target = new SubscriptionQueryRequestTarget(localSegment,
-                                                                                   axonHubQueryBus::publish,
-                                                                                   serializer);
+        SubscriptionQueryRequestTarget target =
+                new SubscriptionQueryRequestTarget(localSegment, axonHubQueryBus::publish, serializer);
         axonHubQueryBus.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
         platformConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
 
@@ -107,23 +101,6 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
-            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backPressure, int updateBufferSize) {
-        String subscriptionId = query.getIdentifier();
-
-        if (this.subscriptions.contains(subscriptionId)) {
-            String errorMessage = "Already exists a subscription query with the same subscriptionId: " + subscriptionId;
-            logger.warn(errorMessage);
-            throw new IllegalArgumentException(errorMessage);
-        }
-
-        logger.debug("Subscription Query requested with subscriptionId " + subscriptionId);
-        subscriptions.add(subscriptionId);
-        QueryServiceGrpc.QueryServiceStub queryService = this.axonHubQueryBus.queryServiceStub();
-        return new AxonHubSubscriptionQueryResult<>(query, queryService, configuration, serializer, backPressure, updateBufferSize).get();
-    }
-
-    @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
         this.updateEmitter.emit(filter, update);
@@ -137,6 +114,31 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
     @Override
     public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
         this.updateEmitter.completeExceptionally(filter, cause);
+    }
+
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> subscriptionQuery(
+            SubscriptionQueryMessage<Q, I, U> query, SubscriptionQueryBackpressure backPressure, int updateBufferSize) {
+        String subscriptionId = query.getIdentifier();
+
+        if (this.subscriptions.contains(subscriptionId)) {
+            String errorMessage = "Already exists a subscription query with the same subscriptionId: " + subscriptionId;
+            logger.warn(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
+        }
+        logger.debug("Subscription Query requested with subscriptionId " + subscriptionId);
+        subscriptions.add(subscriptionId);
+        QueryServiceGrpc.QueryServiceStub queryService = this.axonHubQueryBus.queryServiceStub();
+
+        AxonHubSubscriptionQueryResult result = new AxonHubSubscriptionQueryResult(
+                serializer.serialize(query),
+                queryService::subscription,
+                configuration,
+                backPressure,
+                updateBufferSize,
+                () -> subscriptions.remove(subscriptionId));
+
+        return new DeserializedResult<>(result.get(), serializer);
     }
 
     private Runnable interceptReconnectRequest(Runnable reconnect) {

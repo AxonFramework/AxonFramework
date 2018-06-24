@@ -27,13 +27,15 @@ import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created by Sara Pellegrini on 14/06/2018.
- * sara.pellegrini@gmail.com
+ * Listener of Subscription Query requests
+ *
+ * @author Sara Pellegrini
  */
 class SubscriptionQueryRequestTarget {
 
@@ -48,8 +50,8 @@ class SubscriptionQueryRequestTarget {
     private final Map<String, SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>>> subscriptions = new ConcurrentHashMap<>();
 
     SubscriptionQueryRequestTarget(QueryBus localSegment,
-                                          Publisher<QueryProviderOutbound> publisher,
-                                          SubscriptionMessageSerializer serializer) {
+                                   Publisher<QueryProviderOutbound> publisher,
+                                   SubscriptionMessageSerializer serializer) {
         this.localSegment = localSegment;
         this.publisher = publisher;
         this.serializer = serializer;
@@ -58,30 +60,38 @@ class SubscriptionQueryRequestTarget {
 
     void onSubscriptionQueryRequest(QueryProviderInbound inbound) {
         SubscriptionQueryRequest subscriptionQuery = inbound.getSubscriptionQueryRequest();
-        switch (subscriptionQuery.getRequestCase()) {
-            case SUBSCRIBE:
-                subscribe(subscriptionQuery.getSubscribe());
-                break;
-            case GET_INITIAL_RESULT:
-                getInitialResult(subscriptionQuery.getGetInitialResult());
-                break;
-            case UNSUBSCRIBE:
-                unsubscribe(subscriptionQuery.getUnsubscribe());
-                break;
+        try {
+            switch (subscriptionQuery.getRequestCase()) {
+                case SUBSCRIBE:
+                    subscribe(subscriptionQuery.getSubscribe());
+                    break;
+                case GET_INITIAL_RESULT:
+                    getInitialResult(subscriptionQuery.getGetInitialResult());
+                    break;
+                case UNSUBSCRIBE:
+                    unsubscribe(subscriptionQuery.getUnsubscribe());
+                    break;
+            }
+        } catch (Exception e) {
+            logger.warn("Error handling SubscriptionQueryRequest.",e);
         }
     }
 
     private void subscribe(SubscriptionQuery query) {
         String subscriptionId = query.getQueryRequest().getMessageIdentifier();
-        subscriptions
-                .computeIfAbsent(subscriptionId, id -> localSegment.subscriptionQuery(serializer.deserialize(query)))
-                .updates()
-                .subscribe(
-                        u -> publisher.publish(serializer.serialize(u, subscriptionId)),
-                        e -> publisher.publish(serializer.serializeCompleteExceptionally(subscriptionId, e)),
-                        () -> publisher.publish(serializer.serializeComplete(subscriptionId)));
-    }
+        SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>> result = localSegment
+                .subscriptionQuery(serializer.deserialize(query));
+        Disposable disposable = result.updates().subscribe(
+                u -> publisher.publish(serializer.serialize(u, subscriptionId)),
+                e -> publisher.publish(serializer.serializeCompleteExceptionally(subscriptionId, e)),
+                () -> publisher.publish(serializer.serializeComplete(subscriptionId)));
 
+        Registration registration = () -> {
+            disposable.dispose();
+            return true;
+        };
+        subscriptions.computeIfAbsent(subscriptionId,id -> new DisposableResult<>(result, registration));
+    }
 
     private void getInitialResult(SubscriptionQuery query) {
         String subscriptionId = query.getQueryRequest().getMessageIdentifier();
@@ -101,6 +111,4 @@ class SubscriptionQueryRequestTarget {
         subscriptions.values().forEach(Registration::cancel);
         subscriptions.clear();
     }
-
-
 }

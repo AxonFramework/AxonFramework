@@ -26,6 +26,7 @@ import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.AxonHubException;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.query.GrpcBackedResponseMessage;
+import io.axoniq.axonhub.client.query.RemoteQueryException;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.util.GrpcMetadataSerializer;
@@ -40,8 +41,9 @@ import org.axonframework.serialization.Serializer;
 import static io.axoniq.axonhub.grpc.QueryProviderOutbound.newBuilder;
 
 /**
- * Created by Sara Pellegrini on 14/05/2018.
- * sara.pellegrini@gmail.com
+ * Serializer for Subscription Query Messages
+ *
+ * @author Sara Pellegrini
  */
 
 public class SubscriptionMessageSerializer {
@@ -118,9 +120,6 @@ public class SubscriptionMessageSerializer {
                                          .setCompleteExceptionally(builder.build())).build();
     }
 
-    Throwable deserialize(QueryUpdateCompleteExceptionally exceptionally){
-        return new AxonHubException(exceptionally.getErrorCode(), exceptionally.getMessage());
-    }
 
     SubscriptionQuery serialize(SubscriptionQueryMessage message) {
         QueryRequest queryRequest = QueryRequest.newBuilder().setTimestamp(System.currentTimeMillis())
