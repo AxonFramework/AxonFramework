@@ -33,6 +33,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's
@@ -233,17 +234,28 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private void updateMemberships() {
         AtomicReference<ConsistentHash> updatedConsistentHash = new AtomicReference<>(new ConsistentHash());
 
-        discoveryClient.getServices().stream()
-                       .map(discoveryClient::getInstances)
-                       .flatMap(Collection::stream)
-                       .filter(serviceInstanceFilter)
-                       .filter(this::ifNotBlackListed)
-                       .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
-                                                                                      updatedConsistentHash));
+        List<ServiceInstance> instances = discoveryClient.getServices().stream()
+                                                         .map(discoveryClient::getInstances)
+                                                         .flatMap(Collection::stream)
+                                                         .filter(serviceInstanceFilter)
+                                                         .collect(Collectors.toList());
+
+        cleanBlackList(instances);
+
+        instances.stream()
+                 .filter(this::ifNotBlackListed)
+                 .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
+                                                                                updatedConsistentHash));
 
         ConsistentHash newConsistentHash = updatedConsistentHash.get();
         atomicConsistentHash.set(newConsistentHash);
         consistentHashChangeListener.onConsistentHashChanged(newConsistentHash);
+    }
+
+    private void cleanBlackList(List<ServiceInstance> instances) {
+        blackListedServiceInstances.removeIf(blackListedInstance -> instances.stream().noneMatch(instance -> equals(
+                instance,
+                blackListedInstance)));
     }
 
     private boolean ifNotBlackListed(ServiceInstance serviceInstance) {
