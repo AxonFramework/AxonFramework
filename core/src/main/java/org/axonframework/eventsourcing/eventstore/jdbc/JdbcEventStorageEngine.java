@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
      * deserialization.
      *
-     * @param snapshotSerializer          Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
@@ -144,7 +144,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events.
      *
-     * @param snapshotSerializer          Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
@@ -315,28 +315,22 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        Transaction tx = transactionManager.startTransaction();
-        try {
-            return executeQuery(
-                    getConnection(),
-                    connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
-                    listResults(this::getDomainEventData),
-                    e -> new EventStoreException(
-                            format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
-                    )
-            );
-        } finally {
-            tx.commit();
-        }
+        return transactionManager.fetchInTransaction(
+                () -> executeQuery(
+                        getConnection(),
+                        connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
+                        listResults(this::getDomainEventData),
+                        e -> new EventStoreException(
+                                format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
+                        )
+                ));
     }
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       () -> "Unsupported token format: " + lastToken);
-        Transaction tx = transactionManager.startTransaction();
-        try {
-
+        return transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.
             GapAwareTrackingToken cleanedToken;
             if (lastToken != null && ((GapAwareTrackingToken) lastToken).getGaps().size() > gapCleaningThreshold) {
@@ -360,9 +354,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                     },
                     e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e)
             );
-        } finally {
-            tx.commit();
-        }
+        });
     }
 
     private GapAwareTrackingToken cleanGaps(TrackingToken lastToken) {
@@ -404,16 +396,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        Transaction tx = transactionManager.startTransaction();
-        try {
+        return transactionManager.fetchInTransaction(() -> {
             List<DomainEventData<?>> result =
                     executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
                                  listResults(this::getSnapshotData), e -> new EventStoreException(
                                     format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
             return result.stream().findFirst();
-        } finally {
-            tx.commit();
-        }
+        });
     }
 
     /**
@@ -423,6 +412,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection          The connection to the database.
      * @param identifier          The identifier of the aggregate.
      * @param firstSequenceNumber The expected sequence number of the first returned entry.
+     * @param batchSize           The number of items to include in the batch
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
