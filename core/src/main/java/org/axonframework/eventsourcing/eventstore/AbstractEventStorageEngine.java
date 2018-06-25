@@ -43,6 +43,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     private final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Serializer eventSerializer;
+    private final SnapshotJury snapshotJury;
 
     /**
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
@@ -60,7 +61,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Deprecated
     protected AbstractEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                          PersistenceExceptionResolver persistenceExceptionResolver) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, serializer);
+        this(serializer, upcasterChain, persistenceExceptionResolver, serializer, null);
     }
 
     /**
@@ -75,15 +76,19 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      *                                     persistence exceptions are not explicitly resolved.
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.
+     * @param snapshotJury                 Decides whether to use a snapshot or not. If {@code null}
+     *                                     a new {@link NoOpSnapshotJury} is used.
      */
     protected AbstractEventStorageEngine(Serializer snapshotSerializer,
                                          EventUpcaster upcasterChain,
                                          PersistenceExceptionResolver persistenceExceptionResolver,
-                                         Serializer eventSerializer) {
+                                         Serializer eventSerializer,
+                                         SnapshotJury snapshotJury) {
         this.serializer = getOrDefault(snapshotSerializer, XStreamSerializer::new);
         this.upcasterChain = getOrDefault(upcasterChain, () -> NoOpEventUpcaster.INSTANCE);
         this.persistenceExceptionResolver = persistenceExceptionResolver;
         this.eventSerializer = getOrDefault(eventSerializer, XStreamSerializer::new);
+        this.snapshotJury = getOrDefault(snapshotJury, () -> NoOpSnapshotJury.INSTANCE);
     }
 
     @Override
@@ -100,7 +105,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier).map(entry -> {
+        return readSnapshotData(aggregateIdentifier).filter(snapshotJury::decide).map(entry -> {
             DomainEventStream stream =
                     EventUtils.upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false);
             return stream.hasNext() ? stream.next() : null;

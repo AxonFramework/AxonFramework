@@ -171,8 +171,46 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                   Serializer eventSerializer, Integer batchSize, ConnectionProvider connectionProvider,
                                   TransactionManager transactionManager, Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
+        this(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null, batchSize, connectionProvider,
+             transactionManager, dataType, schema, maxGapOffset, lowestGlobalSequence);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events.
+     *
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
+     * @param snapshotJury                 Used to decide whether to use a snapshot or not.If {@code null} a
+     *                                     {@link NoOpSnapshotJury} is instantiated by the
+     *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
+     * @param batchSize                    The number of events that should be read at each database access. When more
+     *                                     than this number of events must be read to rebuild an aggregate's state, the
+     *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
+     *                                     sure to choose snapshot trigger and batch size such that a single batch will
+     *                                     generally retrieve all events required to rebuild an aggregate's state.
+     * @param connectionProvider           The provider of connections to the underlying database.
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain databases for reading blob data.
+     * @param dataType                     The data type for serialized event payload and metadata.
+     * @param schema                       Object that describes the database schema of event entries.
+     * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
+     *                                     event with the highest known index. If the gap is bigger it is assumed that
+     *                                     the missing event will not be committed to the store anymore. This event
+     *                                     storage engine will no longer look for those events the next time a batch is
+     *                                     fetched.
+     * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
+     *                                     is 1 unless the table has contained entries before.
+     */
+    public JdbcEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  Serializer eventSerializer, SnapshotJury snapshotJury, Integer batchSize,
+                                  ConnectionProvider connectionProvider,
+                                  TransactionManager transactionManager, Class<?> dataType, EventSchema schema,
+                                  Integer maxGapOffset, Long lowestGlobalSequence) {
         super(snapshotSerializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
-              eventSerializer, batchSize);
+              eventSerializer, snapshotJury, batchSize);
         this.connectionProvider = connectionProvider;
         this.transactionManager = transactionManager;
         this.dataType = dataType;
