@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,8 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.eventsourcing.eventstore.SnapshotJury;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -43,6 +37,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -52,9 +47,6 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGG
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Rene de Waele
@@ -196,22 +188,20 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
 
     @Test
-    public void testLoadSnapshotIfSnapshotJuryAgreed() {
-        SnapshotJury snapshotJury = mock(SnapshotJury.class);
-        when(snapshotJury.decide(any())).thenReturn(true);
+    public void testLoadSnapshotIfMatchesPredicate() {
+        Predicate<DomainEventData<?>> acceptAll = i -> true;
 
-        setTestSubject(testSubject = createEngine(snapshotJury));
+        setTestSubject(testSubject = createEngine(acceptAll));
 
         testSubject.storeSnapshot(createEvent(1));
         assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
     }
 
     @Test
-    public void testDontLoadSnapshotIfSnapshotJuryDidNotAgree() {
-        SnapshotJury snapshotJury = mock(SnapshotJury.class);
-        when(snapshotJury.decide(any())).thenReturn(false);
+    public void testDoNotLoadSnapshotIfNotMatchingPredicate() {
+        Predicate<DomainEventData<?>> rejectAll = i -> false;
 
-        setTestSubject(testSubject = createEngine(snapshotJury));
+        setTestSubject(testSubject = createEngine(rejectAll));
 
         testSubject.storeSnapshot(createEvent(1));
         assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
@@ -246,21 +236,21 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory, batchSize);
     }
 
-    protected JdbcEventStorageEngine createEngine(SnapshotJury snapshotJury){
+    protected JdbcEventStorageEngine createEngine(Predicate<? super DomainEventData<?>> snapshotFilter) {
         return createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
-               snapshotJury, new EventSchema(), byte[].class, HsqlEventTableFactory.INSTANCE, 100);
+                            snapshotFilter, new EventSchema(), byte[].class, HsqlEventTableFactory.INSTANCE, 100);
     }
 
     protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                   PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  SnapshotJury snapshotJury,
+                                                  Predicate<? super DomainEventData<?>> snapshotFilter,
                                                   EventSchema eventSchema,
                                                   Class<?> dataType,
                                                   EventTableFactory tableFactory,
                                                   int batchSize) {
         XStreamSerializer serializer = new XStreamSerializer();
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(
-                serializer, upcasterChain, persistenceExceptionResolver, serializer, snapshotJury, batchSize,
+                serializer, upcasterChain, persistenceExceptionResolver, serializer, snapshotFilter, batchSize,
                 dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
         );
 

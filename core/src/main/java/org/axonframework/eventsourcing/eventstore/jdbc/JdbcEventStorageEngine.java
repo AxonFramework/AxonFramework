@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -182,9 +183,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
-     * @param snapshotJury                 Used to decide whether to use a snapshot or not.If {@code null} a
-     *                                     {@link NoOpSnapshotJury} is instantiated by the
-     *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
+     * @param snapshotFilter               Filter describing which snapshots are suitable to use, or {@code null} to
+     *                                     allow all snapshots to be considered viable.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
@@ -205,12 +205,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     public JdbcEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver,
-                                  Serializer eventSerializer, SnapshotJury snapshotJury, Integer batchSize,
+                                  Serializer eventSerializer,
+                                  Predicate<? super DomainEventData<?>> snapshotFilter,
+                                  Integer batchSize,
                                   ConnectionProvider connectionProvider,
-                                  TransactionManager transactionManager, Class<?> dataType, EventSchema schema,
+                                  TransactionManager transactionManager,
+                                  Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
         super(snapshotSerializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
-              eventSerializer, snapshotJury, batchSize);
+              eventSerializer, snapshotFilter, batchSize);
         this.connectionProvider = connectionProvider;
         this.transactionManager = transactionManager;
         this.dataType = dataType;

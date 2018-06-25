@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -46,7 +48,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain}, {@code
      * persistenceExceptionResolver}, {@code eventSerializer} and {@code batchSize}.
      *
-     * @param snapshotSerializer          Used to serialize and deserialize snapshots. If {@code null}
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
      *                                     a {@link XStreamSerializer} is instantiated by the
      *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
@@ -83,9 +85,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
      *                                     If {@code null} a {@link XStreamSerializer} is instantiated by the
      *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
-     * @param snapshotJury                 Decides whether to use a snapshot or not. If {@code null}
-     *                                     If {@code null} a {@link NoOpSnapshotJury} is instantiated by the
-     *                                     {@link org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine}.
+     * @param snapshotFilter               Filter describing which snapshots should be considered. If {@code null}, all
+     *                                     snapshots will be considered viable.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. If {@code null} a batch size of 100
@@ -95,8 +96,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      */
     public BatchingEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
                                       PersistenceExceptionResolver persistenceExceptionResolver,
-                                      Serializer eventSerializer, SnapshotJury snapshotJury, Integer batchSize) {
-        super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, snapshotJury);
+                                      Serializer eventSerializer, Predicate<? super DomainEventData<?>> snapshotFilter, Integer batchSize) {
+        super(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, snapshotFilter);
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);
     }
 

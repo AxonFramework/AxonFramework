@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +28,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -43,7 +45,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     private final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Serializer eventSerializer;
-    private final SnapshotJury snapshotJury;
+    private final Predicate<? super DomainEventData<?>> snapshotFilter;
 
     /**
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
@@ -68,7 +70,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
      * persistenceExceptionResolver}.
      *
-     * @param snapshotSerializer          Used to serialize and deserialize snapshots. If {@code null}
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
      *                                     null} a {@link NoOpEventUpcaster} is used.
@@ -76,19 +78,19 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      *                                     persistence exceptions are not explicitly resolved.
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.
-     * @param snapshotJury                 Decides whether to use a snapshot or not. If {@code null}
-     *                                     a new {@link NoOpSnapshotJury} is used.
+     * @param snapshotFilter               Decides whether to use a snapshot or not. If {@code null}, every snapshot is
+     *                                     accepted as viable.
      */
     protected AbstractEventStorageEngine(Serializer snapshotSerializer,
                                          EventUpcaster upcasterChain,
                                          PersistenceExceptionResolver persistenceExceptionResolver,
                                          Serializer eventSerializer,
-                                         SnapshotJury snapshotJury) {
+                                         Predicate<? super DomainEventData<?>> snapshotFilter) {
         this.serializer = getOrDefault(snapshotSerializer, XStreamSerializer::new);
         this.upcasterChain = getOrDefault(upcasterChain, () -> NoOpEventUpcaster.INSTANCE);
         this.persistenceExceptionResolver = persistenceExceptionResolver;
         this.eventSerializer = getOrDefault(eventSerializer, XStreamSerializer::new);
-        this.snapshotJury = getOrDefault(snapshotJury, () -> NoOpSnapshotJury.INSTANCE);
+        this.snapshotFilter = getOrDefault(snapshotFilter, i -> true);
     }
 
     @Override
@@ -105,7 +107,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier).filter(snapshotJury::decide).map(entry -> {
+        return readSnapshotData(aggregateIdentifier).filter(snapshotFilter).map(entry -> {
             DomainEventStream stream =
                     EventUtils.upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false);
             return stream.hasNext() ? stream.next() : null;
