@@ -16,8 +16,6 @@
 package io.axoniq.axonhub.client.query;
 
 import io.axoniq.axonhub.ErrorMessage;
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.axonhub.QuerySubscription;
@@ -54,7 +52,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -71,6 +68,9 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static io.axoniq.axonhub.client.util.ProcessingInstructionHelper.numberOfResults;
+import static io.axoniq.axonhub.client.util.ProcessingInstructionHelper.priority;
 
 /**
  * AxonHub implementation for the QueryBus. Delegates incoming queries to the specified localSegment.
@@ -117,21 +117,6 @@ public class AxonHubQueryBus implements QueryBus {
 
     }
 
-    private static long getProcessingInstructionNumber(List<ProcessingInstruction> processingInstructions, ProcessingKey key) {
-        return processingInstructions.stream()
-                                     .filter(pi -> key.equals(pi.getKey()))
-                                     .map(pi -> pi.getValue().getNumberValue())
-                                     .findFirst()
-                                     .orElse(0L);
-    }
-
-    private static long priority(List<ProcessingInstruction> processingInstructions) {
-        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.PRIORITY);
-    }
-
-    private static long numberOfResults(List<ProcessingInstruction> processingInstructions) {
-        return getProcessingInstructionNumber(processingInstructions, ProcessingKey.NR_OF_RESULTS);
-    }
 
     @Override
     public <R> Registration subscribe(String queryName, Type responseType,
@@ -229,8 +214,9 @@ public class AxonHubQueryBus implements QueryBus {
         private final PriorityBlockingQueue<QueryRequest> queryQueue;
         private final ExecutorService executor = Executors.newFixedThreadPool(configuration.getQueryThreads());
         private StreamObserver<QueryProviderOutbound> outboundStreamObserver;
+        private volatile boolean subscribing;
 
-        public QueryProvider() {
+        QueryProvider() {
             queryQueue = new PriorityBlockingQueue<>(1000, Comparator.comparingLong(c -> -priority(c.getProcessingInstructionsList())));
             IntStream.range(0, configuration.getQueryThreads()).forEach(i -> executor.submit(this::queryExecutor));
         }
@@ -290,6 +276,7 @@ public class AxonHubQueryBus implements QueryBus {
 
         @SuppressWarnings("unchecked")
         public <R> Registration subscribe(String queryName, Type responseType, String componentName, MessageHandler<? super QueryMessage<?, R>> handler) {
+            subscribing = true;
             Set registrations = subscribedQueries.computeIfAbsent(new QueryDefinition(queryName, responseType.getTypeName(), componentName), k -> new CopyOnWriteArraySet<>());
             registrations.add(handler);
 
@@ -306,12 +293,15 @@ public class AxonHubQueryBus implements QueryBus {
                                                                     .build());
             } catch (Exception ex) {
                 logger.warn("Subscribe failed - {}", ex.getMessage());
+            } finally {
+                subscribing = false;
             }
             return localSegment.subscribe(queryName, responseType, handler);
         }
 
         private synchronized StreamObserver<QueryProviderOutbound> getSubscriberObserver() {
             if (outboundStreamObserver == null) {
+                logger.info("Create new subscriber");
                 StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
                     @Override
                     public void onNext(QueryProviderInbound inboundRequest) {
@@ -330,13 +320,11 @@ public class AxonHubQueryBus implements QueryBus {
                     @Override
                     public void onError(Throwable throwable) {
                         outboundStreamObserver = null;
-//                        platformConnectionManager.scheduleReconnect();
                     }
 
                     @Override
                     public void onCompleted() {
                         outboundStreamObserver = null;
-//                        platformConnectionManager.scheduleReconnect();
                     }
                 };
 
@@ -361,7 +349,7 @@ public class AxonHubQueryBus implements QueryBus {
             }
         }
 
-        public void unsubscribeAll() {
+        private void unsubscribeAll() {
             subscribedQueries.forEach((d, count) -> {
                 try {
                     getSubscriberObserver().onNext(QueryProviderOutbound.newBuilder().setUnsubscribe(
@@ -374,18 +362,17 @@ public class AxonHubQueryBus implements QueryBus {
             outboundStreamObserver = null;
         }
 
-        public void resubscribe() {
+        private void resubscribe() {
+            if( subscribedQueries.isEmpty() || subscribing) return;
             try {
                 StreamObserver<QueryProviderOutbound> subscriberStreamObserver = getSubscriberObserver();
-                synchronized (subscriberStreamObserver) {
-                    subscribedQueries.forEach((queryDefinition, handlers) ->
+                subscribedQueries.forEach((queryDefinition, handlers) ->
                                                       subscriberStreamObserver.onNext(QueryProviderOutbound.newBuilder().setSubscribe(
                                                               subscriptionBuilder(queryDefinition, handlers.size())
                                                       ).build())
-                    );
-                }
-            } catch (Exception ignored) {
-
+                );
+            } catch (Exception ex) {
+                logger.warn("Error while resubscribing - {}", ex.getMessage());
             }
         }
 
