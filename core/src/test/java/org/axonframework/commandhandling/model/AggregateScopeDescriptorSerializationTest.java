@@ -30,22 +30,22 @@ import java.io.ObjectOutputStream;
 import static org.junit.Assert.*;
 
 /**
- * This test class tests whether the {@link AggregateDescriptor} is serializable as expected, by Java, XStream and
- * Jackson. It does so because an AggregateDescriptor can be instantiated with a {@link java.util.function.Supplier}
- * for the {@code identifier}. We do not want to serialize a Supplier, but rather the actual identifier it supplies,
- * hence functionality is added which ensure the Supplier is called to fill the {@code identifier} field just prior to
- * the complete serialization. This test ensure this works as designed.
+ * This test class tests whether the {@link AggregateScopeDescriptor} is serializable as expected, by Java, XStream and
+ * Jackson. It does so because an AggregateScopeDescriptor can be instantiated with a {@link
+ * java.util.function.Supplier} for the {@code identifier}. We do not want to serialize a Supplier, but rather the
+ * actual identifier it supplies, hence functionality is added which ensure the Supplier is called to fill the {@code
+ * identifier} field just prior to the complete serialization. This test ensure this works as designed.
  */
-public class AggregateDescriptorSerializationTest {
+public class AggregateScopeDescriptorSerializationTest {
 
-    private AggregateDescriptor testSubject;
+    private AggregateScopeDescriptor testSubject;
 
     private String expectedType = "aggregateType";
     private String expectedIdentifier = "identifier";
 
     @Before
     public void setUp() {
-        testSubject = new AggregateDescriptor(expectedType, () -> expectedIdentifier);
+        testSubject = new AggregateScopeDescriptor(expectedType, () -> expectedIdentifier);
     }
 
     @Test
@@ -58,7 +58,7 @@ public class AggregateDescriptorSerializationTest {
 
         FileInputStream fileInputStream = new FileInputStream("some-file");
         ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-        AggregateDescriptor result = (AggregateDescriptor) objectInputStream.readObject();
+        AggregateScopeDescriptor result = (AggregateScopeDescriptor) objectInputStream.readObject();
 
         assertEquals(expectedType, result.getType());
         assertEquals(expectedIdentifier, result.getIdentifier());
@@ -72,7 +72,7 @@ public class AggregateDescriptorSerializationTest {
         SerializedObject<String> serializedObject =
                 xStreamSerializer.serialize(testSubject, String.class);
         System.out.println(serializedObject.getData());
-        AggregateDescriptor result = xStreamSerializer.deserialize(serializedObject);
+        AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
 
         assertEquals(expectedType, result.getType());
         assertEquals(expectedIdentifier, result.getIdentifier());
@@ -84,7 +84,7 @@ public class AggregateDescriptorSerializationTest {
 
         String serializedString = objectMapper.writeValueAsString(testSubject);
 
-        AggregateDescriptor result = objectMapper.readValue(serializedString, AggregateDescriptor.class);
+        AggregateScopeDescriptor result = objectMapper.readValue(serializedString, AggregateScopeDescriptor.class);
 
         assertEquals(expectedType, result.getType());
         assertEquals(expectedIdentifier, result.getIdentifier());

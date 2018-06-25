@@ -54,7 +54,9 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
 
         @Override
         public boolean canHandle(Message<?> message) {
-            return super.canHandle(message) && deadlineNameMatch((DeadlineMessage) message);
+            return message instanceof DeadlineMessage
+                    && deadlineNameMatch((DeadlineMessage) message)
+                    && super.canHandle(message);
         }
 
         private boolean deadlineNameMatch(DeadlineMessage message) {

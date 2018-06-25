@@ -16,8 +16,6 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
-import java.util.concurrent.Callable;
-
 /**
  * Abstract base class of a component that models a saga's life cycle.
  */
@@ -114,32 +112,7 @@ public abstract class SagaLifecycle extends Scope {
      * @return the thread's current {@link SagaLifecycle}
      */
     protected static SagaLifecycle getInstance() {
-        SagaLifecycle instance = Scope.getCurrentScope();
-        if (instance == null) {
-            throw new IllegalStateException("Cannot retrieve current SagaLifecycle; none is yet defined");
-        }
-        return instance;
-    }
-
-    /**
-     * {@link SagaLifecycle} instance method to execute given {@code task} in the context of this SagaLifeCycle. This
-     * updates the thread's current saga lifecycle before executing the task. If a lifecycle is already registered with
-     * the current thread that one will be temporarily replaced with this lifecycle until the task completes. This
-     * method returns the execution result of the task.
-     *
-     * @param task the task to execute
-     * @param <V>  the type of execution result of the task
-     * @return the execution result
-     *
-     * @throws Exception if executing the task results in an exception
-     */
-    protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        super.startScope();
-        try {
-            return task.call();
-        } finally {
-            super.endScope();
-        }
+        return Scope.getCurrentScope();
     }
 
     /**
@@ -178,6 +151,6 @@ public abstract class SagaLifecycle extends Scope {
 
     @Override
     public ScopeDescriptor describeScope() {
-        return new SagaDescriptor(type(), getSagaIdentifier());
+        return new SagaScopeDescriptor(type(), getSagaIdentifier());
     }
 }

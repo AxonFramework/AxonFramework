@@ -16,8 +16,8 @@
 
 package org.axonframework.deadline;
 
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.ScopeAware;
@@ -56,6 +56,7 @@ import static org.axonframework.common.Assert.notNull;
 public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleDeadlineManager.class);
+    private static final String THREAD_FACTORY_GROUP_NAME = "deadlineManager";
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -66,20 +67,21 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     /**
      * Initializes SimpleDeadlineManager with {@code scopeAwareProvider} which will load and send messages to
      * {@link org.axonframework.messaging.Scope} implementing components. {@link NoTransactionManager} is used as
-     * transaction manager and {@link Executors#newSingleThreadScheduledExecutor()} is used as scheduled executor
-     * service.
+     * transaction manager and {@link Executors#newSingleThreadScheduledExecutor()} with {@link AxonThreadFactory} is
+     * used as scheduled executor service.
      *
      * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
      *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
      */
     public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider) {
-        this(scopeAwareProvider, Executors.newSingleThreadScheduledExecutor(), NoTransactionManager.INSTANCE);
+        this(scopeAwareProvider, NoTransactionManager.INSTANCE);
     }
 
     /**
      * Initializes SimpleDeadlineManager with {@code transactionManager} and {@code scopeAwareProvider} which will
      * load and send messages to {@link org.axonframework.messaging.Scope} implementing components.
-     * {@link Executors#newSingleThreadScheduledExecutor()} is used as scheduled executor service.
+     * {@link Executors#newSingleThreadScheduledExecutor()} with {@link AxonThreadFactory} is used as scheduled executor
+     * service.
      *
      * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
      *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
@@ -87,7 +89,9 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
      *                           DeadlineMessage} when deadline is not met
      */
     public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider, TransactionManager transactionManager) {
-        this(scopeAwareProvider, Executors.newSingleThreadScheduledExecutor(), transactionManager);
+        this(scopeAwareProvider,
+             Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory(THREAD_FACTORY_GROUP_NAME)),
+             transactionManager);
     }
 
     /**
@@ -180,9 +184,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
             try {
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(null);
-                Transaction transaction = transactionManager.startTransaction();
-                unitOfWork.onCommit(u -> transaction.commit());
-                unitOfWork.onRollback(u -> transaction.rollback());
+                unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.execute(() -> executeScheduledDeadline(deadlineMessage, deadlineScope));
             } finally {
                 scheduledTasks.remove(new DeadlineId(deadlineName, deadlineId));

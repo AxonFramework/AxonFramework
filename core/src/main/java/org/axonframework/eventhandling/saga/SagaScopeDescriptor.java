@@ -12,7 +12,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 3.3
  */
-public class SagaDescriptor implements ScopeDescriptor {
+public class SagaScopeDescriptor implements ScopeDescriptor {
 
     private static final long serialVersionUID = 4162755498638204691L;
 
@@ -20,13 +20,13 @@ public class SagaDescriptor implements ScopeDescriptor {
     private final Object identifier;
 
     /**
-     * Instantiate a SagaDescriptor with the provided {@code type} and {@ocde identifier}.
+     * Instantiate a SagaScopeDescriptor with the provided {@code type} and {@ocde identifier}.
      *
      * @param type       A {@link String} describing the type of the Saga
      * @param identifier An {@link Object} denoting the identifier of the Saga
      */
     @JsonCreator
-    public SagaDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
+    public SagaScopeDescriptor(@JsonProperty("type") String type, @JsonProperty("identifier") Object identifier) {
         this.type = type;
         this.identifier = identifier;
     }
@@ -41,7 +41,7 @@ public class SagaDescriptor implements ScopeDescriptor {
 
     @Override
     public String scopeDescription() {
-        return String.format("SagaDescriptor for type [%s] and identifier [%s]", type, identifier);
+        return String.format("SagaScopeDescriptor for type [%s] and identifier [%s]", type, identifier);
     }
 
     @Override
@@ -57,14 +57,14 @@ public class SagaDescriptor implements ScopeDescriptor {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final SagaDescriptor other = (SagaDescriptor) obj;
+        final SagaScopeDescriptor other = (SagaScopeDescriptor) obj;
         return Objects.equals(this.type, other.type)
                 && Objects.equals(this.identifier, other.identifier);
     }
 
     @Override
     public String toString() {
-        return "SagaDescriptor{" +
+        return "SagaScopeDescriptor{" +
                 "type='" + type + '\'' +
                 ", identifier=" + identifier +
                 '}';

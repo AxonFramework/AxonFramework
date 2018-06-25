@@ -20,7 +20,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateDescriptor;
+import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Assert;
@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 import static java.lang.String.format;
@@ -637,15 +638,22 @@ public class DisruptorCommandBus implements CommandBus {
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateDescriptor) {
-                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            if (scopeDescription instanceof AggregateScopeDescriptor) {
+                String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
+                Aggregate<T> aggregate = load(aggregateIdentifier);
+                if (aggregate != null) {
+                    aggregate.handle(message);
+                } else {
+                    logger.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. Hence, message '"
+                                         + message + "' cannot be handled.");
+                }
             }
         }
 
         @Override
         public boolean canResolve(ScopeDescriptor scopeDescription) {
-            return scopeDescription instanceof AggregateDescriptor
-                    && ((AggregateDescriptor) scopeDescription).getType().equals(type.getSimpleName());
+            return scopeDescription instanceof AggregateScopeDescriptor
+                    && Objects.equals(type.getSimpleName(), ((AggregateScopeDescriptor) scopeDescription).getType());
         }
     }
 

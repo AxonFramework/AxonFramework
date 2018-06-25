@@ -55,13 +55,13 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
     @Override
     public Stream<ScopeAware> provideScopeAwareStream(ScopeDescriptor scopeDescriptor) {
         if (scopeAwareComponents.isEmpty()) {
-            setScopeAwareComponents();
+            lookupScopeAwareComponents();
         }
 
         return scopeAwareComponents.stream();
     }
 
-    private void setScopeAwareComponents() {
+    private void lookupScopeAwareComponents() {
         scopeAwareComponents.addAll(retrieveAggregateRepositories());
         scopeAwareComponents.addAll(retrieveSagaManagers());
     }

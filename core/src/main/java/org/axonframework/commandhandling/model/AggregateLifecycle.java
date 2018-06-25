@@ -130,15 +130,12 @@ public abstract class AggregateLifecycle extends Scope {
      */
     protected static AggregateLifecycle getInstance() {
         AggregateLifecycle instance = Scope.getCurrentScope();
-        if (instance == null && CurrentUnitOfWork.isStarted()) {
+        if (CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Set<AggregateLifecycle> managedAggregates = unitOfWork.getResource("ManagedAggregates");
             if (managedAggregates != null && managedAggregates.size() == 1) {
                 instance = managedAggregates.iterator().next();
             }
-        }
-        if (instance == null) {
-            throw new IllegalStateException("Cannot retrieve current AggregateLifecycle; none is yet defined");
         }
         return instance;
     }
@@ -206,25 +203,6 @@ public abstract class AggregateLifecycle extends Scope {
     protected abstract <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception;
 
     /**
-     * Executes the given task and returns the result of the task. While the task is being executed the current
-     * aggregate will be registered with the current thread as the 'current' aggregate.
-     *
-     * @param task the task to execute on the aggregate
-     * @param <V>  the result of the task
-     * @return the task's result
-     *
-     * @throws Exception if executing the task causes an exception
-     */
-    protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        Runnable handle = registerAsCurrent();
-        try {
-            return task.call();
-        } finally {
-            handle.run();
-        }
-    }
-
-    /**
      * Registers the current AggregateLifecycle as the current lifecycle. The returned Runnable should be executed to
      * restore the lifecycle to the previous state.
      *
@@ -256,7 +234,7 @@ public abstract class AggregateLifecycle extends Scope {
 
     @Override
     public ScopeDescriptor describeScope() {
-        return new AggregateDescriptor(type(), this::identifier);
+        return new AggregateScopeDescriptor(type(), this::identifier);
     }
 
     /**

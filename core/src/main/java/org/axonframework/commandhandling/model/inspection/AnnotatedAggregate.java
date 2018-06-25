@@ -401,8 +401,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
         if (message instanceof CommandMessage) {
             messageHandling = () -> handle((CommandMessage) message);
-        } else {
+        } else if (message instanceof EventMessage) {
             messageHandling = () -> handle((EventMessage) message);
+        } else {
+            throw new IllegalArgumentException("Unsupported message type: " + message.getClass());
         }
 
         return executeWithResult(messageHandling);

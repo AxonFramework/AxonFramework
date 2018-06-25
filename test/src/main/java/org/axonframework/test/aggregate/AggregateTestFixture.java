@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateDescriptor;
+import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
 import org.axonframework.commandhandling.model.Repository;
@@ -619,8 +619,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateDescriptor) {
-                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            if (scopeDescription instanceof AggregateScopeDescriptor) {
+                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
             }
         }
 
@@ -685,8 +685,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateDescriptor) {
-                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            if (scopeDescription instanceof AggregateScopeDescriptor) {
+                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
             }
         }
 
@@ -867,9 +867,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateDescriptor) {
-                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
-            }
+            throw new UnsupportedOperationException(
+                    "Default repository does not mock loading of an aggregate, only creation of it");
         }
 
         @Override

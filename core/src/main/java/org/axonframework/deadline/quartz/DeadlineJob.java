@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.quartz;
 
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.ExecutionException;
@@ -87,9 +86,7 @@ public class DeadlineJob implements Job {
             ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
             DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
-            Transaction transaction = transactionManager.startTransaction();
-            unitOfWork.onCommit(u -> transaction.commit());
-            unitOfWork.onRollback(u -> transaction.rollback());
+            unitOfWork.attachTransaction(transactionManager);
             unitOfWork.execute(() -> executeScheduledDeadline(scopeAwareComponents, deadlineMessage, deadlineScope));
 
             if (LOGGER.isInfoEnabled()) {

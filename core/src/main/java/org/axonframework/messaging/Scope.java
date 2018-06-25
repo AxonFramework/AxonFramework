@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
 
 /**
  * Describes functionality off processes which can be 'in scope', like the
@@ -66,16 +67,38 @@ public abstract class Scope {
      * If the Deque is empty, it will be removed from the ThreadLocal.
      */
     protected void endScope() {
-        if (this != CURRENT_SCOPE.get().peek()) {
+        Deque<Scope> scopes = CURRENT_SCOPE.get();
+        if (this != scopes.peek()) {
             throw new IllegalStateException(
                     "Incorrectly trying to end another Scope then which the calling process is contained in."
             );
         }
-        CURRENT_SCOPE.get().pop();
+        scopes.pop();
 
-        if (CURRENT_SCOPE.get().isEmpty()) {
+        if (scopes.isEmpty()) {
             logger.debug("Clearing out ThreadLocal current Scope, as no Scopes are present");
             CURRENT_SCOPE.remove();
+        }
+    }
+
+    /**
+     * {@link Scope} instance method to execute given {@code task} in the context of this Scope. This updates the
+     * thread's current scope before executing the task. If a scope is already registered with the current thread that
+     * one will be temporarily replaced with this scope until the task completes. This method returns the execution
+     * result of the task.
+     *
+     * @param task the task to execute
+     * @param <V>  the type of execution result of the task
+     * @return the execution result
+     *
+     * @throws Exception if executing the task results in an exception
+     */
+    protected <V> V executeWithResult(Callable<V> task) throws Exception {
+        startScope();
+        try {
+            return task.call();
+        } finally {
+            endScope();
         }
     }
 

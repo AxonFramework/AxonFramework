@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -284,15 +285,22 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateDescriptor) {
-                load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            if (scopeDescription instanceof AggregateScopeDescriptor) {
+                String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
+                Aggregate<T> aggregate = load(aggregateIdentifier);
+                if (aggregate != null) {
+                    aggregate.handle(message);
+                } else {
+                    logger.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. Hence, message '"
+                                         + message + "' cannot be handled.");
+                }
             }
         }
 
         @Override
         public boolean canResolve(ScopeDescriptor scopeDescription) {
-            return scopeDescription instanceof AggregateDescriptor
-                    && ((AggregateDescriptor) scopeDescription).getType().equals(model.type());
+            return scopeDescription instanceof AggregateScopeDescriptor
+                    && Objects.equals(model.type(), ((AggregateScopeDescriptor) scopeDescription).getType());
         }
     }
 }

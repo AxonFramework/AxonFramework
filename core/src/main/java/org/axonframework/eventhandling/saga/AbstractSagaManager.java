@@ -22,6 +22,8 @@ import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, ScopeAware {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSagaManager.class);
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
@@ -202,15 +205,21 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             throw new IllegalArgumentException(exceptionMessage);
         }
 
-        if (scopeDescription instanceof SagaDescriptor) {
-            sagaRepository.load(((SagaDescriptor) scopeDescription).getIdentifier().toString())
-                          .handle((EventMessage) message);
+        if (scopeDescription instanceof SagaScopeDescriptor) {
+            String sagaIdentifier = ((SagaScopeDescriptor) scopeDescription).getIdentifier().toString();
+            Saga<T> saga = sagaRepository.load(sagaIdentifier);
+            if (saga != null) {
+                saga.handle((EventMessage) message);
+            } else {
+                LOGGER.debug("Saga (with id: " + sagaIdentifier + ") cannot be loaded. Hence, message '" + message
+                                     + "' cannot be handled.");
+            }
         }
     }
 
     @Override
     public boolean canResolve(ScopeDescriptor scopeDescription) {
-        return scopeDescription instanceof SagaDescriptor
-                && ((SagaDescriptor) scopeDescription).getType().equals(sagaType.getSimpleName());
+        return scopeDescription instanceof SagaScopeDescriptor
+                && Objects.equals(sagaType.getSimpleName(), ((SagaScopeDescriptor) scopeDescription).getType());
     }
 }

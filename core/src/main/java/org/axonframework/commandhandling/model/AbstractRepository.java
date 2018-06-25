@@ -24,9 +24,12 @@ import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import static org.axonframework.common.Assert.nonNull;
@@ -45,6 +48,7 @@ import static org.axonframework.common.Assert.nonNull;
  */
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRepository.class);
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
 
@@ -284,14 +288,21 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-        if (scopeDescription instanceof AggregateDescriptor) {
-            load(((AggregateDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+        if (canResolve(scopeDescription)) {
+            String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
+            A aggregate = load(aggregateIdentifier);
+            if (aggregate != null) {
+                aggregate.handle(message);
+            } else {
+                LOGGER.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. Hence, message '"
+                                     + message + "' cannot be handled.");
+            }
         }
     }
 
     @Override
     public boolean canResolve(ScopeDescriptor scopeDescription) {
-        return scopeDescription instanceof AggregateDescriptor
-                && ((AggregateDescriptor) scopeDescription).getType().equals(aggregateModel.type());
+        return scopeDescription instanceof AggregateScopeDescriptor
+                && Objects.equals(aggregateModel.type(), ((AggregateScopeDescriptor) scopeDescription).getType());
     }
 }

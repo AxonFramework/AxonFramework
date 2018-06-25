@@ -104,6 +104,10 @@ public interface DeadlineManager {
      * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
      * {@link DeadlineMessage}.
      * </p>
+     * <p>
+     * Scheduling a deadline with the same {@code deadlineName} and {@code scheduleId} will replace the previous
+     * schedule with the new one.
+     * </p>
      *
      * @param triggerDateTime  A {@link Instant} denoting the moment to trigger the deadline handling
      * @param deadlineName     A {@link String} representing the name of the deadline to schedule
@@ -111,13 +115,12 @@ public interface DeadlineManager {
      *                         {@link Object}
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @param scheduleId       A {@link String} schedule id to use when cancelling the schedule
-     * @throws IllegalArgumentException if the {@code scheduleId}is not compatible with this DeadlineManager
      */
     default void schedule(Instant triggerDateTime,
                           String deadlineName,
                           Object messageOrPayload,
                           ScopeDescriptor deadlineScope,
-                          String scheduleId) throws IllegalArgumentException {
+                          String scheduleId) {
         schedule(Duration.between(Instant.now(), triggerDateTime),
                  deadlineName,
                  messageOrPayload,
@@ -196,6 +199,10 @@ public interface DeadlineManager {
      * deadline being used. In the former case, the given {@code messageOrPayload} will be wrapped as the payload of a
      * {@link DeadlineMessage}.
      * </p>
+     * <p>
+     * Scheduling a deadline with the same {@code deadlineName} and {@code scheduleId} will replace the previous
+     * schedule with the new one.
+     * </p>
      *
      * @param triggerDuration  A {@link Duration} describing the waiting period before handling the deadline
      * @param deadlineName     A {@link String} representing the name of the deadline to schedule
@@ -203,13 +210,12 @@ public interface DeadlineManager {
      *                         {@link Object}
      * @param deadlineScope    A {@link ScopeDescriptor} describing the scope within which the deadline was scheduled
      * @param scheduleId       A {@link String} schedule id to use when cancelling the schedule
-     * @throws IllegalArgumentException if the {@code scheduleId}is not compatible with this DeadlineManager
      */
     void schedule(Duration triggerDuration,
                   String deadlineName,
                   Object messageOrPayload,
                   ScopeDescriptor deadlineScope,
-                  String scheduleId) throws IllegalArgumentException;
+                  String scheduleId);
 
     /**
      * Generates a {@link String} schedule id.
@@ -226,9 +232,8 @@ public interface DeadlineManager {
      *
      * @param deadlineName A {@link String} representing the name of the deadline to cancel
      * @param scheduleId   The {@link String} denoting the scheduled deadline to cancel
-     * @throws IllegalArgumentException if the schedule id belongs to another scheduler
      */
-    void cancelSchedule(String deadlineName, String scheduleId) throws IllegalArgumentException;
+    void cancelSchedule(String deadlineName, String scheduleId);
 
     /**
      * Cancels all the deadlines corresponding to the given {@code deadlineName}.
