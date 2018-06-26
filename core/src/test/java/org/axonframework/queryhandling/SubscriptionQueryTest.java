@@ -78,7 +78,7 @@ public class SubscriptionQueryTest {
         chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
         chatQueryHandler.emitter.emit(String.class,
                                       "axonFrameworkCR"::equals,
-                                      GenericSubscriptionQueryUpdateMessage.from("Update12"));
+                                      GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update12"));
         StepVerifier.create(result1.initialResult().map(Message::getPayload))
                     .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
                     .expectComplete()
@@ -88,7 +88,9 @@ public class SubscriptionQueryTest {
                     .expectComplete()
                     .verify();
 
-        chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, GenericSubscriptionQueryUpdateMessage.from(1));
+        chatQueryHandler.emitter.emit(Integer.class,
+                                      m -> m == 5,
+                                      GenericSubscriptionQueryUpdateMessage.asUpdateMessage(1));
         chatQueryHandler.emitter.complete(Integer.class, m -> m == 5);
         chatQueryHandler.emitter.emit(Integer.class, m -> m == 5, 2);
         StepVerifier.create(result2.initialResult().map(Message::getPayload))
@@ -96,6 +98,31 @@ public class SubscriptionQueryTest {
                     .verifyComplete();
         StepVerifier.create(result2.updates().map(Message::getPayload))
                     .expectNext(1)
+                    .verifyComplete();
+    }
+
+    @Test
+    public void testEmittingNullUpdate() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
+                .subscriptionQuery(queryMessage);
+
+        // then
+        chatQueryHandler.emitter.emit(String.class,
+                                      "axonFrameworkCR"::equals,
+                                      GenericSubscriptionQueryUpdateMessage
+                                              .asNullableUpdateMessage(String.class, null));
+        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
+
+        StepVerifier.create(result.updates())
+                    .expectNextMatches(m -> m.getPayload() == null)
                     .verifyComplete();
     }
 
@@ -231,9 +258,38 @@ public class SubscriptionQueryTest {
 
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial2);
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update1);
-        assertEquals(Arrays.asList("Update1", "Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update2);
-        assertEquals(Arrays.asList("Update2", "Update3", "Update4", "Update5", "Update6", "Update7", "Update8", "Update9", "Update10", "Update11"), update3);
+        assertEquals(Arrays.asList("Update1",
+                                   "Update2",
+                                   "Update3",
+                                   "Update4",
+                                   "Update5",
+                                   "Update6",
+                                   "Update7",
+                                   "Update8",
+                                   "Update9",
+                                   "Update10",
+                                   "Update11"), update1);
+        assertEquals(Arrays.asList("Update1",
+                                   "Update2",
+                                   "Update3",
+                                   "Update4",
+                                   "Update5",
+                                   "Update6",
+                                   "Update7",
+                                   "Update8",
+                                   "Update9",
+                                   "Update10",
+                                   "Update11"), update2);
+        assertEquals(Arrays.asList("Update2",
+                                   "Update3",
+                                   "Update4",
+                                   "Update5",
+                                   "Update6",
+                                   "Update7",
+                                   "Update8",
+                                   "Update9",
+                                   "Update10",
+                                   "Update11"), update3);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -259,7 +315,9 @@ public class SubscriptionQueryTest {
                 ResponseTypes.instanceOf(String.class));
 
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
-                .subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR), 200);
+                .subscriptionQuery(queryMessage,
+                                   new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR),
+                                   200);
 
         for (int i = 0; i < 201; i++) {
             chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update" + i);
@@ -376,10 +434,10 @@ public class SubscriptionQueryTest {
             Executors.newSingleThreadExecutor().submit(() -> {
                 emitter.emit(String.class,
                              "axonFrameworkCR"::equals,
-                             GenericSubscriptionQueryUpdateMessage.from("Update1"));
+                             GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update1"));
                 emitter.emit(String.class,
                              "axonFrameworkCR"::equals,
-                             GenericSubscriptionQueryUpdateMessage.from("Update2"));
+                             GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update2"));
                 emitter.complete(String.class, "axonFrameworkCR"::equals);
             });
 

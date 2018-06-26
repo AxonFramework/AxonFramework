@@ -37,14 +37,18 @@ public interface QueryUpdateEmitter {
     <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, SubscriptionQueryUpdateMessage<U> update);
 
     /**
-     * Emits given incremental update to subscription queries matching given filter.
+     * Emits given incremental update to subscription queries matching given filter. If an {@code update} is {@code
+     * null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
+     * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update
      * @param <U>    the type of the update
      */
     default <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter, U update) {
-        emit(filter, GenericSubscriptionQueryUpdateMessage.from(update));
+        if (update != null) {
+            emit(filter, GenericSubscriptionQueryUpdateMessage.asUpdateMessage(update));
+        }
     }
 
     /**
@@ -65,7 +69,9 @@ public interface QueryUpdateEmitter {
     }
 
     /**
-     * Emits given incremental update to subscription queries matching given query type and filter.
+     * Emits given incremental update to subscription queries matching given query type and filter. If an {@code update}
+     * is {@code null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
+     * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -74,7 +80,9 @@ public interface QueryUpdateEmitter {
      * @param <U>       the type of the update
      */
     default <Q, U> void emit(Class<Q> queryType, Predicate<? super Q> filter, U update) {
-        emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.from(update));
+        if (update != null) {
+            emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.asUpdateMessage(update));
+        }
     }
 
     /**

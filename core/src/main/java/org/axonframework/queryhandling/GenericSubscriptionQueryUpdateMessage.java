@@ -36,21 +36,50 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
     private static final long serialVersionUID = 5872479410321475147L;
 
     /**
-     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided object which represents incremental update.
+     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided {@code payload} which represents incremental
+     * update. The provided {@code payload} may not be {@code null}, for nullable payloads use {@link
+     * #asNullableUpdateMessage(Class, Object)}.
      *
-     * @param o   incremental update
-     * @param <T> type of the {@link GenericSubscriptionQueryUpdateMessage}
+     * @param payload incremental update
+     * @param <T>     type of the {@link GenericSubscriptionQueryUpdateMessage}
      * @return created message
      */
     @SuppressWarnings("unchecked")
-    public static <T> SubscriptionQueryUpdateMessage<T> from(Object o) {
-        if (SubscriptionQueryUpdateMessage.class.isInstance(o)) {
-            return (SubscriptionQueryUpdateMessage<T>) o;
-        } else if (o instanceof Message) {
-            Message message = (Message) o;
+    public static <T> SubscriptionQueryUpdateMessage<T> asUpdateMessage(Object payload) {
+        SubscriptionQueryUpdateMessage<T> message = extractMessage(payload);
+        if (message != null) {
+            return message;
+        }
+        return new GenericSubscriptionQueryUpdateMessage<>((T) payload);
+    }
+
+    /**
+     * Creates {@link GenericSubscriptionQueryUpdateMessage} based on provided {@code declaredType} and {@code payload}
+     * representing the payload. The payload can be {@code null}.
+     *
+     * @param declaredType the type of the payload
+     * @param payload      the payload - incremental update
+     * @param <T>          the type of the payload
+     * @return created message
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> SubscriptionQueryUpdateMessage<T> asNullableUpdateMessage(Class<T> declaredType, Object payload) {
+        SubscriptionQueryUpdateMessage<T> message = extractMessage(payload);
+        if (message != null) {
+            return message;
+        }
+        return new GenericSubscriptionQueryUpdateMessage<>(declaredType, (T) payload);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> SubscriptionQueryUpdateMessage<T> extractMessage(Object payload) {
+        if (SubscriptionQueryUpdateMessage.class.isInstance(payload)) {
+            return (SubscriptionQueryUpdateMessage<T>) payload;
+        } else if (payload instanceof Message) {
+            Message message = (Message) payload;
             return new GenericSubscriptionQueryUpdateMessage<>(message);
         }
-        return new GenericSubscriptionQueryUpdateMessage<>((T) o);
+        return null;
     }
 
     /**
@@ -60,6 +89,29 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
      */
     public GenericSubscriptionQueryUpdateMessage(U payload) {
         this(new GenericMessage<>(payload, MetaData.emptyInstance()));
+    }
+
+    /**
+     * Initializes {@link GenericSubscriptionQueryUpdateMessage} with incremental update of provided {@code
+     * declaredType}.
+     *
+     * @param declaredType the type of the update
+     * @param payload      the payload of the update
+     */
+    public GenericSubscriptionQueryUpdateMessage(Class<U> declaredType, U payload) {
+        this(declaredType, payload, MetaData.emptyInstance());
+    }
+
+    /**
+     * Initializes {@link GenericSubscriptionQueryUpdateMessage} with incremental update of provided {@code
+     * declaredType} and {@code metaData}.
+     *
+     * @param declaredType the type of the update
+     * @param payload      the payload of the update
+     * @param metaData     the metadata of the update
+     */
+    public GenericSubscriptionQueryUpdateMessage(Class<U> declaredType, U payload, Map<String, ?> metaData) {
+        super(new GenericMessage<>(declaredType, payload, metaData));
     }
 
     /**
