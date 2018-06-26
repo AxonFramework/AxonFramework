@@ -404,7 +404,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createTokenAt(Instant dateTime) {
-        List<Long> results = entityManager().createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e WHERE e.timeStamp < :dateTime", Long.class)
+        List<Long> results = entityManager().createQuery("SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e WHERE e.timeStamp >= :dateTime", Long.class)
                                             .setParameter("dateTime", formatInstant(dateTime))
                                             .getResultList();
         if (results.size() == 0 || results.get(0) == null) {

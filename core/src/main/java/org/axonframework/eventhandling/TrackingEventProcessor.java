@@ -164,7 +164,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(name));
         this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + name + "]/Token";
-        this.initialTrackingTokenBuilder = config.getInitialTrackingTokenBuilder();
+        this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
 
         registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         registerInterceptor((unitOfWork, interceptorChain) -> {

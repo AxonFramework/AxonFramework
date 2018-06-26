@@ -276,8 +276,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createTokenAt(Instant dateTime) {
-        String sql = "SELECT max(" + schema.globalIndexColumn() + ") FROM " + schema.domainEventTable() + " WHERE "
-                + schema.timestampColumn() + " < ?";
+        String sql = "SELECT min(" + schema.globalIndexColumn() + ") - 1 FROM " + schema.domainEventTable() + " WHERE "
+                + schema.timestampColumn() + " >= ?";
         Long index = transactionManager.fetchInTransaction(
                 () -> executeQuery(getConnection(),
                                    connection -> {

@@ -94,7 +94,7 @@ public class TrackingEventProcessorConfiguration {
      * @param initialTrackingTokenBuilder The Builder of initial tracking token
      * @return {@code this} for method chaining
      */
-    public TrackingEventProcessorConfiguration andInitialTrackingTokenBuilder(
+    public TrackingEventProcessorConfiguration andInitialTrackingToken(
             Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder) {
         this.initialTrackingTokenBuilder = initialTrackingTokenBuilder;
         return this;
@@ -117,7 +117,7 @@ public class TrackingEventProcessorConfiguration {
     /**
      * @return the Builder of initial tracking token
      */
-    public Function<StreamableMessageSource, TrackingToken> getInitialTrackingTokenBuilder() {
+    public Function<StreamableMessageSource, TrackingToken> getInitialTrackingToken() {
         return initialTrackingTokenBuilder;
     }
 

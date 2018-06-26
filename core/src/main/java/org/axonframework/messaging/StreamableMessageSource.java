@@ -39,7 +39,8 @@ public interface StreamableMessageSource<M extends Message<?>> {
     MessageStream<M> openStream(TrackingToken trackingToken);
 
     /**
-     * Creates the token at the beginning of an event stream.
+     * Creates the token at the beginning of an event stream. The begging of an event stream in this context means the
+     * token of very first event in the stream.
      *
      * @return the token at the beginning of an event stream
      */
@@ -48,7 +49,8 @@ public interface StreamableMessageSource<M extends Message<?>> {
     }
 
     /**
-     * Creates the token at the end of an event stream.
+     * Creates the token at the end of an event stream. The end of an event stream in this context means the token of
+     * very last event in the stream.
      *
      * @return the token at the end of an event stream
      */
