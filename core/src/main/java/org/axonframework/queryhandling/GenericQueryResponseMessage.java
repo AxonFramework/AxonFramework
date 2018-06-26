@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,56 +33,6 @@ import java.util.Map;
 public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implements QueryResponseMessage<R> {
 
     private static final long serialVersionUID = -735698768536456937L;
-
-    /**
-     * Initialize the response message with given {@code result}.
-     *
-     * @param result The result reported by the Query Handler
-     */
-    @SuppressWarnings("unchecked")
-    public GenericQueryResponseMessage(R result) {
-        this((Class<R>) result.getClass(), result, MetaData.emptyInstance());
-    }
-
-    public GenericQueryResponseMessage(Class<R> declaredResultType, R result) {
-        this(declaredResultType, result, MetaData.emptyInstance());
-    }
-
-    /**
-     * Initialize the response message with given {@code result} and {@code metaData}.
-     *
-     * @param result   The result reported by the Query Handler
-     * @param metaData The meta data to contain in the message
-     */
-    public GenericQueryResponseMessage(R result, Map<String, ?> metaData) {
-        super(new GenericMessage<>(result, metaData));
-    }
-
-    /**
-     * Initialize the response message with a specific {@code declaredResultType}, the given {@code result} as payload
-     * and {@code metaData}.
-     *
-     * @param declaredResultType A {@link java.lang.Class} denoting the declared result type of this query response
-     *                           message
-     * @param result             The result reported by the Query Handler
-     * @param metaData           The meta data to contain in the message
-     */
-    public GenericQueryResponseMessage(Class<R> declaredResultType, R result, Map<String, ?> metaData) {
-        super(new GenericMessage<>(declaredResultType, result, metaData));
-    }
-
-    /**
-     * Copy-constructor that takes the payload, meta data and message identifier of the given {@code delegate} for this
-     * message.
-     * <p>
-     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work.
-     *
-     * @param delegate The message to retrieve message details from
-     */
-    public GenericQueryResponseMessage(Message<R> delegate) {
-        super(delegate);
-    }
 
     /**
      * Creates a QueryResponseMessage for the given {@code result}. If result already implements QueryResponseMessage,
@@ -123,6 +73,63 @@ public class GenericQueryResponseMessage<R> extends MessageDecorator<R> implemen
         } else {
             return new GenericQueryResponseMessage(declaredType, result);
         }
+    }
+
+    /**
+     * Initialize the response message with given {@code result}.
+     *
+     * @param result The result reported by the Query Handler, may not be {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    public GenericQueryResponseMessage(R result) {
+        this((Class<R>) result.getClass(), result, MetaData.emptyInstance());
+    }
+
+    /**
+     * Initialize a response message with given {@code result} and {@code declaredResultType}. This constructor allows
+     * the actual result to be {@code null}.
+     *
+     * @param declaredResultType The declared type of the result
+     * @param result             The actual result. May be {@code null}
+     */
+    public GenericQueryResponseMessage(Class<R> declaredResultType, R result) {
+        this(declaredResultType, result, MetaData.emptyInstance());
+    }
+
+    /**
+     * Initialize the response message with given {@code result} and {@code metaData}.
+     *
+     * @param result   The result reported by the Query Handler, may not be {@code null}
+     * @param metaData The meta data to contain in the message
+     */
+    public GenericQueryResponseMessage(R result, Map<String, ?> metaData) {
+        super(new GenericMessage<>(result, metaData));
+    }
+
+    /**
+     * Initialize the response message with a specific {@code declaredResultType}, the given {@code result} as payload
+     * and {@code metaData}.
+     *
+     * @param declaredResultType A {@link java.lang.Class} denoting the declared result type of this query response
+     *                           message
+     * @param result             The result reported by the Query Handler, may be {@code null}
+     * @param metaData           The meta data to contain in the message
+     */
+    public GenericQueryResponseMessage(Class<R> declaredResultType, R result, Map<String, ?> metaData) {
+        super(new GenericMessage<>(declaredResultType, result, metaData));
+    }
+
+    /**
+     * Copy-constructor that takes the payload, meta data and message identifier of the given {@code delegate} for this
+     * message.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate The message to retrieve message details from
+     */
+    public GenericQueryResponseMessage(Message<R> delegate) {
+        super(delegate);
     }
 
     @Override
