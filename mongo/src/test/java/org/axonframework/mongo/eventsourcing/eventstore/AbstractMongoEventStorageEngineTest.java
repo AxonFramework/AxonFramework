@@ -85,6 +85,33 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
         assertEventStreamsById(Arrays.asList(event1, event3, event2), readEvents);
     }
 
+    @Override
+    public void testCreateTokenWithUnorderedEvents() {
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event1 = createEvent(0);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event2 = createEvent(1);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:50.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event3 = createEvent(2);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:45.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event4 = createEvent(3);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:42.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event5 = createEvent(4);
+
+        testSubject.appendEvents(event1, event2, event3, event4, event5);
+
+        TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:45.00Z"));
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(tokenAt, false)
+                                                      .collect(toList());
+
+        assertEventStreamsById(Arrays.asList(event4, event3), readEvents);
+    }
+
     protected void setTestSubject(MongoEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }

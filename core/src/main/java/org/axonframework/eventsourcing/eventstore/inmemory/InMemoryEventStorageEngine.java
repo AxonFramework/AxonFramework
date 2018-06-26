@@ -107,10 +107,12 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     public TrackingToken createTokenAt(Instant dateTime) {
         return events.values()
                      .stream()
-                     .filter(event -> event.getTimestamp().isBefore(dateTime))
-                     .max(Comparator.comparingLong(e -> ((GlobalSequenceTrackingToken) e.trackingToken())
+                     .filter(event -> event.getTimestamp().equals(dateTime) || event.getTimestamp().isAfter(dateTime))
+                     .min(Comparator.comparingLong(e -> ((GlobalSequenceTrackingToken) e.trackingToken())
                              .getGlobalIndex()))
                      .map(TrackedEventMessage::trackingToken)
+                     .map(tt -> (GlobalSequenceTrackingToken) tt)
+                     .map(tt -> new GlobalSequenceTrackingToken(tt.getGlobalIndex() - 1))
                      .orElse(null);
     }
 
