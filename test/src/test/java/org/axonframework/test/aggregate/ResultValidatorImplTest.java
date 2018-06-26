@@ -3,7 +3,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.List;
 
@@ -12,7 +12,9 @@ import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage
 
 public class ResultValidatorImplTest {
 
-    private ResultValidator validator = new ResultValidatorImpl(actualEvents(), new MatchAllFieldFilter(emptyList()));
+    private ResultValidator<?> validator = new ResultValidatorImpl<>(actualEvents(),
+                                                                     new MatchAllFieldFilter(emptyList()),
+                                                                     null);
 
     @Test(expected = AxonAssertionError.class)
     public void shouldCompareValuesForEquality() {

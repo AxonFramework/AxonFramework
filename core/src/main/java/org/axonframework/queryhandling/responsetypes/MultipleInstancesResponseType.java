@@ -1,5 +1,7 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +32,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      *
      * @param expectedCollectionGenericType the response type which is expected to be matched against and returned
      */
-    public MultipleInstancesResponseType(Class<R> expectedCollectionGenericType) {
+    @JsonCreator
+    public MultipleInstancesResponseType(@JsonProperty("expectedResponseType") Class<R> expectedCollectionGenericType) {
         super(expectedCollectionGenericType);
     }
 
