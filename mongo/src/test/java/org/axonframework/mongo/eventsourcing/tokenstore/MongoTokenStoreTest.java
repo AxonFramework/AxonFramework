@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
@@ -127,6 +128,19 @@ public class MongoTokenStoreTest {
         int[] actual = tokenStore.fetchSegments("test1");
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+    }
+
+    @Test
+    public void testInitializeTokensAtGivenPosition() {
+        tokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
+
+        int[] actual = tokenStore.fetchSegments("test1");
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+
+        for (int segment : actual) {
+            assertEquals(new GlobalSequenceTrackingToken(10), tokenStore.fetchToken("test1", segment));
+        }
     }
 
     @Test(expected = UnableToClaimTokenException.class)

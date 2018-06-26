@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,13 +110,18 @@ public class JdbcTokenStore implements TokenStore {
 
     @Override
     public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        initializeTokenSegments(processorName, segmentCount, null);
+    }
+
+    @Override
+    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             executeQuery(connection,
                          c -> selectForUpdate(c, processorName, 0),
                          resultSet -> {
                              for (int segment = 0; segment < segmentCount; segment++) {
-                                 insertTokenEntry(resultSet, null, processorName, segment);
+                                 insertTokenEntry(resultSet, initialToken, processorName, segment);
                              }
                              if (!connection.getAutoCommit()) {
                                  connection.commit();
