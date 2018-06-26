@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -97,6 +98,31 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
                                    ResourceInjector resourceInjector,
                                    ParameterResolverFactory parameterResolverFactory) {
         this(sagaType, sagaStore, new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType), resourceInjector,
+             new PessimisticLockFactory());
+    }
+
+    /**
+     * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
+     * sagaStore}. The repository will use given {@code resourceInjector} and {@link AnnotationSagaMetaModelFactory} to
+     * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
+     * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
+     *
+     * @param sagaType                 the saga target type
+     * @param sagaStore                the saga store for saving and loading of sagas
+     * @param resourceInjector         the resource injector used to initialize {@link Saga Sagas} that delegate to the
+     *                                 target
+     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
+     *                                 handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
+                                   ResourceInjector resourceInjector,
+                                   ParameterResolverFactory parameterResolverFactory,
+                                   HandlerDefinition handlerDefinition) {
+        this(sagaType,
+             sagaStore,
+             new AnnotationSagaMetaModelFactory(parameterResolverFactory, handlerDefinition).modelOf(sagaType),
+             resourceInjector,
              new PessimisticLockFactory());
     }
 

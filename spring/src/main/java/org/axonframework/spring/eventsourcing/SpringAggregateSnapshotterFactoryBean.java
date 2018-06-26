@@ -24,9 +24,14 @@ import org.axonframework.config.Configuration;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
+import org.axonframework.spring.config.annotation.SpringHandlerDefinitionBean;
+import org.axonframework.spring.config.annotation.SpringHandlerEnhancerDefinitionBean;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
@@ -56,6 +61,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
     private EventStore eventStore;
     private RepositoryProvider repositoryProvider;
     private ParameterResolverFactory parameterResolverFactory;
+    private HandlerDefinition handlerDefinition;
 
     @Override
     public SpringAggregateSnapshotter getObject() {
@@ -81,11 +87,22 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
                              new SpringBeanParameterResolverFactory(applicationContext));
         }
 
+        if (handlerDefinition == null) {
+            HandlerDefinition definitions = new SpringHandlerDefinitionBean(applicationContext).getObject();
+            HandlerEnhancerDefinition enhancers = new SpringHandlerEnhancerDefinitionBean(applicationContext)
+                    .getObject();
+            handlerDefinition = MultiHandlerDefinition.ordered(enhancers, definitions);
+        }
+
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore, parameterResolverFactory,
-                                                                                executor, txManager, repositoryProvider);
+        SpringAggregateSnapshotter snapshotter = new SpringAggregateSnapshotter(eventStore,
+                                                                                parameterResolverFactory,
+                                                                                handlerDefinition,
+                                                                                executor,
+                                                                                txManager,
+                                                                                repositoryProvider);
         snapshotter.setApplicationContext(applicationContext);
         return snapshotter;
     }
@@ -137,6 +154,15 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Spring
      */
     public void setRepositoryProvider(RepositoryProvider repositoryProvider) {
         this.repositoryProvider = repositoryProvider;
+    }
+
+    /**
+     * Sets handler definition to be able to create concrete handlers.
+     *
+     * @param handlerDefinition The handler definition used to create concrete handlers
+     */
+    public void setHandlerDefinition(HandlerDefinition handlerDefinition) {
+        this.handlerDefinition = handlerDefinition;
     }
 
     @Override

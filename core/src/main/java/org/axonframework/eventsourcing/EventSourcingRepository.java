@@ -28,6 +28,8 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -251,7 +253,12 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                    ParameterResolverFactory parameterResolverFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory, eventStore, parameterResolverFactory, snapshotTriggerDefinition, null);
+        this(aggregateFactory,
+             eventStore,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
+             snapshotTriggerDefinition,
+             null);
     }
 
 
@@ -262,15 +269,17 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @param aggregateFactory          The factory for new aggregate instances
      * @param eventStore                The event store that holds the event streams for this repository
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition         The handler definition used to create concrete handlers
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @param repositoryProvider        Provides repositories for specific aggregate types
      * @see LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                    ParameterResolverFactory parameterResolverFactory,
+                                   HandlerDefinition handlerDefinition,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition,
                                    RepositoryProvider repositoryProvider) {
-        super(aggregateFactory.getAggregateType(), parameterResolverFactory);
+        super(aggregateFactory.getAggregateType(), parameterResolverFactory, handlerDefinition);
         Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
         this.eventStore = eventStore;
@@ -323,7 +332,13 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
                                    ParameterResolverFactory parameterResolverFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory, eventStore, lockFactory, parameterResolverFactory, snapshotTriggerDefinition, null);
+        this(aggregateFactory,
+             eventStore,
+             lockFactory,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
+             snapshotTriggerDefinition,
+             null);
     }
 
     /**
@@ -333,14 +348,16 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @param eventStore                The event store that holds the event streams for this repository
      * @param lockFactory               The locking strategy to apply to this repository
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition         The handler definition used to create concrete handlers
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @param repositoryProvider        Provides repositories for specific aggregate types
      */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
                                    ParameterResolverFactory parameterResolverFactory,
+                                   HandlerDefinition handlerDefinition,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition,
                                    RepositoryProvider repositoryProvider) {
-        super(aggregateFactory.getAggregateType(), lockFactory, parameterResolverFactory);
+        super(aggregateFactory.getAggregateType(), lockFactory, parameterResolverFactory, handlerDefinition);
         Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
