@@ -172,7 +172,7 @@ public class AxonHubCommandBus implements CommandBus {
     @Override
     public Registration registerHandlerInterceptor(
             MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
-        return null;
+        return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
     protected class CommandRouterSubscriber {
