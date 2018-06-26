@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -410,9 +411,23 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configuration buildConfiguration() {
         if (!initialized) {
+            verifyIdentifierFactory();
             invokeInitHandlers();
         }
         return config;
+    }
+
+    /**
+     * Verifies that a valid {@link IdentifierFactory} class has been configured.
+     *
+     * @throws IllegalArgumentException if the configured factory is not valid
+     */
+    private void verifyIdentifierFactory() {
+        try {
+            IdentifierFactory.getInstance();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("The configured IdentifierFactory could not be instantiated.", e);
+        }
     }
 
     /**
