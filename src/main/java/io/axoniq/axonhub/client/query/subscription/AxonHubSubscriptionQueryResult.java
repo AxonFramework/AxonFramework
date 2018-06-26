@@ -85,6 +85,7 @@ class AxonHubSubscriptionQueryResult implements
         Function<FlowControl, SubscriptionQueryRequest> requestMapping = flowControl ->
                 newBuilder().setFlowControl(SubscriptionQuery.newBuilder(subscriptionQuery).setNumberOfPermits(flowControl.getPermits())).build();
         requestObserver = new FlowControllingStreamObserver<>(subscription, configuration, requestMapping, t -> false);
+        requestObserver.sendInitialPermits();
         requestObserver.onNext(newBuilder().setSubscribe(subscriptionQuery).build());
         updateMessageFluxSink.onDispose(requestObserver::onCompleted);
         Registration registration = () -> {
