@@ -37,8 +37,7 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
 
     /**
      * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided {@code payload} which represents incremental
-     * update. The provided {@code payload} may not be {@code null}, for nullable payloads use {@link
-     * #asNullableUpdateMessage(Class, Object)}.
+     * update. The provided {@code payload} may not be {@code null}.
      *
      * @param payload incremental update
      * @param <T>     type of the {@link GenericSubscriptionQueryUpdateMessage}
@@ -46,40 +45,12 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
      */
     @SuppressWarnings("unchecked")
     public static <T> SubscriptionQueryUpdateMessage<T> asUpdateMessage(Object payload) {
-        SubscriptionQueryUpdateMessage<T> message = extractMessage(payload);
-        if (message != null) {
-            return message;
-        }
-        return new GenericSubscriptionQueryUpdateMessage<>((T) payload);
-    }
-
-    /**
-     * Creates {@link GenericSubscriptionQueryUpdateMessage} based on provided {@code declaredType} and {@code payload}
-     * representing the payload. The payload can be {@code null}.
-     *
-     * @param declaredType the type of the payload
-     * @param payload      the payload - incremental update
-     * @param <T>          the type of the payload
-     * @return created message
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> SubscriptionQueryUpdateMessage<T> asNullableUpdateMessage(Class<T> declaredType, Object payload) {
-        SubscriptionQueryUpdateMessage<T> message = extractMessage(payload);
-        if (message != null) {
-            return message;
-        }
-        return new GenericSubscriptionQueryUpdateMessage<>(declaredType, (T) payload);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> SubscriptionQueryUpdateMessage<T> extractMessage(Object payload) {
         if (SubscriptionQueryUpdateMessage.class.isInstance(payload)) {
             return (SubscriptionQueryUpdateMessage<T>) payload;
         } else if (payload instanceof Message) {
-            Message message = (Message) payload;
-            return new GenericSubscriptionQueryUpdateMessage<>(message);
+            return new GenericSubscriptionQueryUpdateMessage<>((Message) payload);
         }
-        return null;
+        return new GenericSubscriptionQueryUpdateMessage<>((T) payload);
     }
 
     /**

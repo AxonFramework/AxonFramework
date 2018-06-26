@@ -19,21 +19,17 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for subscription query functionality.
@@ -117,8 +113,7 @@ public class SubscriptionQueryTest {
         // then
         chatQueryHandler.emitter.emit(String.class,
                                       "axonFrameworkCR"::equals,
-                                      GenericSubscriptionQueryUpdateMessage
-                                              .asNullableUpdateMessage(String.class, null));
+                                      new GenericSubscriptionQueryUpdateMessage<>(String.class, null));
         chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
 
         StepVerifier.create(result.updates())
