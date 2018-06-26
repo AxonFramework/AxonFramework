@@ -29,7 +29,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.*;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -83,6 +85,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private MultiParameterResolverFactory parameterResolverFactory;
+    private HandlerDefinition handlerDefinition;
 
     /**
      * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
@@ -99,6 +102,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 new SimpleResourceParameterResolverFactory(resources),
                 ClasspathParameterResolverFactory.forClass(aggregateType));
+        handlerDefinition = ClasspathHandlerDefinition.forClass(aggregateType);
     }
 
     @Override
@@ -120,6 +124,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 MultiParameterResolverFactory.ordered(
                         new SimpleResourceParameterResolverFactory(resources),
                         ClasspathParameterResolverFactory.forClass(aggregateType)),
+                handlerDefinition,
                 NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()));
     }
 
@@ -128,7 +133,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
-                annotatedCommandHandler, parameterResolverFactory);
+                annotatedCommandHandler, parameterResolverFactory, handlerDefinition);
         adapter.subscribe(commandBus);
         return this;
     }
@@ -185,6 +190,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName) {
         return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        this.handlerDefinition = handlerDefinition;
+        return this;
     }
 
     @Override
@@ -296,6 +307,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
                                                              eventStore,
                                                              parameterResolverFactory,
+                                                             handlerDefinition,
                                                              NoSnapshotTriggerDefinition.INSTANCE,
                                                              getRepositoryProvider()));
         }
