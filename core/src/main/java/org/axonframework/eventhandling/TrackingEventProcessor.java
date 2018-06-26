@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -163,7 +162,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + name + "]/Token";
 
-        registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         registerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
                 tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
@@ -277,6 +275,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
 
             UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
+            unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, segment);
