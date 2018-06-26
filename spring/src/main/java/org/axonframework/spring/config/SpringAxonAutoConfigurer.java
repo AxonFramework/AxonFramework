@@ -42,8 +42,8 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.spring.config.annotation.SpringContextHandlerDefinitionBuilder;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.spring.config.annotation.SpringContextHandlerDefinitionBuilder;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -139,7 +139,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         RuntimeBeanReference handlerDefinition =
                 SpringContextHandlerDefinitionBuilder.getBeanReference(registry);
-        configurer.registerComponent(HandlerDefinition.class, c -> beanFactory
+        configurer.registerHandlerDefinition((c, clazz) -> beanFactory
                 .getBean(handlerDefinition.getBeanName(), HandlerDefinition.class));
 
         findComponent(CommandBus.class)
@@ -328,7 +328,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                         c::repository,
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
                                         c.parameterResolverFactory(),
-                                        c.handlerDefinition()));
+                                        c.handlerDefinition(aggregateType)));
                     }
                 }
             } else {

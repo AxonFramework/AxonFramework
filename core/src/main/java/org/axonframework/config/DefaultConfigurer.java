@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -39,11 +40,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -104,6 +101,10 @@ public class DefaultConfigurer implements Configurer {
             c -> new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()))
     );
 
+    private final Component<Function<Class, HandlerDefinition>> handlerDefinition = new Component<>(
+            config, "handlerDefinition",
+            c -> this::defaultHandlerDefinition);
+
     private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
     private final List<ConsumerHandler> initHandlers = new ArrayList<>();
@@ -112,30 +113,6 @@ public class DefaultConfigurer implements Configurer {
     private final List<ModuleConfiguration> modules = new ArrayList<>();
 
     private boolean initialized = false;
-
-    /**
-     * Initialize the Configurer.
-     */
-    protected DefaultConfigurer() {
-        components.put(ParameterResolverFactory.class,
-                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
-        components.put(HandlerDefinition.class,
-                       new Component<Object>(config, "handlerDefinition", c -> defaultHandlerDefinition()));
-        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
-        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
-        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
-        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
-        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
-        components.put(ResourceInjector.class,
-                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
-
-        eventProcessorRegistry = new Component<>(config,
-                                                 "eventProcessorRegistry",
-                                                 c -> defaultEventProcessorRegistry());
-        components.put(EventProcessorRegistry.class, eventProcessorRegistry);
-    }
 
     /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
@@ -196,6 +173,28 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Initialize the Configurer.
+     */
+    protected DefaultConfigurer() {
+        components.put(ParameterResolverFactory.class,
+                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
+        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
+        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
+        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
+        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
+        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
+        components.put(ResourceInjector.class,
+                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+
+        eventProcessorRegistry = new Component<>(config,
+                                                 "eventProcessorRegistry",
+                                                 c -> defaultEventProcessorRegistry());
+        components.put(EventProcessorRegistry.class, eventProcessorRegistry);
+    }
+
+    /**
      * Returns a {@link DefaultCommandGateway} that will use the configuration's {@link CommandBus} to dispatch
      * commands.
      *
@@ -242,10 +241,11 @@ public class DefaultConfigurer implements Configurer {
     /**
      * Provides the default HandlerDefinition. Subclasses may override this method to provide their own default.
      *
+     * @param inspectedClass The class being inspected for handlers
      * @return The default HandlerDefinition to use
      */
-    protected HandlerDefinition defaultHandlerDefinition() {
-        return ClasspathHandlerDefinition.forClass(getClass());
+    protected HandlerDefinition defaultHandlerDefinition(Class<?> inspectedClass) {
+        return ClasspathHandlerDefinition.forClass(inspectedClass);
     }
 
     /**
@@ -359,10 +359,12 @@ public class DefaultConfigurer implements Configurer {
     @Override
     public Configurer registerCommandHandler(int phase, Function<Configuration, Object> annotatedCommandHandlerBuilder) {
         startHandlers.add(new RunnableHandler(phase, () -> {
+            Object handler = annotatedCommandHandlerBuilder.apply(config);
+            Assert.notNull(handler, () -> "annotatedCommandHandler may not be null");
             Registration registration =
-                    new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config),
+                    new AnnotationCommandHandlerAdapter(handler,
                                                         config.parameterResolverFactory(),
-                                                        config.handlerDefinition())
+                                                        config.handlerDefinition(handler.getClass()))
                             .subscribe(config.commandBus());
             shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
         }));
@@ -373,9 +375,12 @@ public class DefaultConfigurer implements Configurer {
     @SuppressWarnings("unchecked")
     public Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder) {
         startHandlers.add(new RunnableHandler(phase, () -> {
-            Registration registration = new AnnotationQueryHandlerAdapter(annotatedQueryHandlerBuilder.apply(config),
+            Object annotatedHandler = annotatedQueryHandlerBuilder.apply(config);
+            Assert.notNull(annotatedHandler, () -> "annotatedQueryHandler may not be null");
+
+            Registration registration = new AnnotationQueryHandlerAdapter(annotatedHandler,
                                                                           config.parameterResolverFactory(),
-                                                                          config.handlerDefinition())
+                                                                          config.handlerDefinition(annotatedHandler.getClass()))
                     .subscribe(config.queryBus());
             shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
         }));
@@ -419,6 +424,12 @@ public class DefaultConfigurer implements Configurer {
         this.initHandlers.add(new ConsumerHandler(aggregateConfiguration.phase(), aggregateConfiguration::initialize));
         this.startHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::start));
         this.shutdownHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown));
+        return this;
+    }
+
+    @Override
+    public Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
+        this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
         return this;
     }
 
@@ -475,6 +486,42 @@ public class DefaultConfigurer implements Configurer {
      */
     public Map<Class<?>, Component<?>> getComponents() {
         return components;
+    }
+
+    private static class ConsumerHandler {
+        private final int phase;
+        private final Consumer<Configuration> handler;
+
+        private ConsumerHandler(int phase, Consumer<Configuration> handler) {
+            this.phase = phase;
+            this.handler = handler;
+        }
+
+        public int phase() {
+            return phase;
+        }
+
+        public void accept(Configuration configuration) {
+            handler.accept(configuration);
+        }
+    }
+
+    private static class RunnableHandler {
+        private final int phase;
+        private final Runnable handler;
+
+        private RunnableHandler(int phase, Runnable handler) {
+            this.phase = phase;
+            this.handler = handler;
+        }
+
+        public int phase() {
+            return phase;
+        }
+
+        public void run() {
+            handler.run();
+        }
     }
 
     private class ConfigurationImpl implements Configuration {
@@ -548,41 +595,10 @@ public class DefaultConfigurer implements Configurer {
         public void onStart(int phase, Runnable startHandler) {
             startHandlers.add(new RunnableHandler(phase, startHandler));
         }
-    }
 
-    private static class ConsumerHandler {
-        private final int phase;
-        private final Consumer<Configuration> handler;
-
-        private ConsumerHandler(int phase, Consumer<Configuration> handler) {
-            this.phase = phase;
-            this.handler = handler;
-        }
-
-        public int phase() {
-            return phase;
-        }
-
-        public void accept(Configuration configuration) {
-            handler.accept(configuration);
-        }
-    }
-
-    private static class RunnableHandler {
-        private final int phase;
-        private final Runnable handler;
-
-        private RunnableHandler(int phase, Runnable handler) {
-            this.phase = phase;
-            this.handler = handler;
-        }
-
-        public int phase() {
-            return phase;
-        }
-
-        public void run() {
-            handler.run();
+        @Override
+        public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
+            return handlerDefinition.get().apply(inspectedType);
         }
     }
 }

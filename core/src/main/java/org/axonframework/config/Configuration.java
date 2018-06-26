@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,7 @@ public interface Configuration {
     default QueryGateway queryGateway() {
         return getComponent(QueryGateway.class);
     }
+
     /**
      * Returns the Repository configured for the given {@code aggregateType}.
      *
@@ -218,13 +219,12 @@ public interface Configuration {
     }
 
     /**
-     * Returns the Handler Definition defined in this Configuration
+     * Returns the Handler Definition defined in this Configuration for the given {@code inspectedType}.
      *
+     * @param inspectedType The class to being inspected for handlers
      * @return the Handler Definition defined in this Configuration
      */
-    default HandlerDefinition handlerDefinition() {
-        return getComponent(HandlerDefinition.class);
-    }
+    HandlerDefinition handlerDefinition(Class<?> inspectedType);
 
     /**
      * Returns all modules that have been registered with this Configuration.

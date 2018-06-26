@@ -69,7 +69,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         metaModel = new Component<>(() -> parent, "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
                                     c -> c.getComponent(AggregateMetaModelFactory.class,
                                                         () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
-                                                                                                     c.handlerDefinition()))
+                                                                                                     c.handlerDefinition(aggregate)))
                                           .createModel(aggregate));
         commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
                                                 c -> c.getComponent(CommandTargetResolver.class,
@@ -88,7 +88,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                                aggregateFactory.get(),
                                                                                snapshotTriggerDefinition.get(),
                                                                                c.parameterResolverFactory(),
-                                                                               c.handlerDefinition(),
+                                                                               c.handlerDefinition(aggregate),
                                                                                c::repository);
             }
             return new EventSourcingRepository<>(metaModel.get(),
