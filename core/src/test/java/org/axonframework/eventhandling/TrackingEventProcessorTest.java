@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.MockException;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -37,6 +39,8 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySortedSet;
@@ -61,6 +65,8 @@ public class TrackingEventProcessorTest {
     private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
     private List<Long> sleepInstructions;
+    private TransactionManager mockTransactionManager;
+    private Transaction mockTransaction;
 
     static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
         return new TrackingEventStream() {
@@ -109,9 +115,21 @@ public class TrackingEventProcessorTest {
         when(mockListener.canHandle(any())).thenReturn(true);
         when(mockListener.supportsReset()).thenReturn(true);
         eventHandlerInvoker = spy(new SimpleEventHandlerInvoker(mockListener));
+        mockTransaction = mock(Transaction.class);
+        mockTransactionManager = mock(TransactionManager.class);
+        when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);
+        when(mockTransactionManager.fetchInTransaction(any(Supplier.class))).thenAnswer(i -> {
+            Supplier s = i.getArgument(0);
+            return s.get();
+        });
+        doAnswer(i -> {
+            Runnable r = i.getArgument(0);
+            r.run();
+            return null;
+        }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         sleepInstructions = new ArrayList<>();
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE) {
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, mockTransactionManager) {
             @Override
             protected void doSleepFor(long millisToSleep) {
                 if (isRunning()) {
@@ -139,6 +157,30 @@ public class TrackingEventProcessorTest {
         Thread.sleep(200);
         eventBus.publish(createEvents(2));
         assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testListenerIsInvokedInTransactionScope() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counterAtHandle = new AtomicInteger();
+        when(mockTransactionManager.startTransaction()).thenAnswer(i -> {
+            counter.incrementAndGet();
+            return mockTransaction;
+        });
+        doAnswer(i -> counter.decrementAndGet()).when(mockTransaction).rollback();
+        doAnswer(i -> counter.decrementAndGet()).when(mockTransaction).commit();
+        doAnswer(invocation -> {
+            counterAtHandle.set(counter.get());
+            countDownLatch.countDown();
+            return null;
+        }).when(mockListener).handle(any());
+        testSubject.start();
+        // give it a bit of time to start
+        Thread.sleep(200);
+        eventBus.publish(createEvents(2));
+        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
+        assertEquals(1, counterAtHandle.get());
     }
 
     @Test

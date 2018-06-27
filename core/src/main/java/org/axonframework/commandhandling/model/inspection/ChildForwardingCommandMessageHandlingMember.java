@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -61,9 +62,9 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
         this.childEntityResolver = childEntityResolver;
         this.commandName =
                 childHandler.unwrap(CommandMessageHandlingMember.class).map(CommandMessageHandlingMember::commandName)
-                        .orElse(null);
+                            .orElse(null);
         this.isFactoryHandler = childHandler.unwrap(CommandMessageHandlingMember.class)
-                .map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
+                                            .map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
     }
 
     @Override
@@ -101,8 +102,9 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     public Object handle(Message<?> message, P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
-            throw new IllegalStateException(
-                    "Aggregate cannot handle this command, as there is no entity instance to forward it to.");
+            throw new AggregateEntityNotFoundException(
+                    "Aggregate cannot handle this command, as there is no entity instance to forward it to."
+            );
         }
         List<AnnotatedCommandHandlerInterceptor<? super C>> interceptors =
                 childHandlingInterceptors.stream()

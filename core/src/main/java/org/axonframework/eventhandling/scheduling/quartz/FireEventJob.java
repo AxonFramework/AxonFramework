@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -75,9 +74,7 @@ public class FireEventJob implements Job {
 
             UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
-                Transaction transaction = txManager.startTransaction();
-                unitOfWork.onCommit(u -> transaction.commit());
-                unitOfWork.onRollback(u -> transaction.rollback());
+                unitOfWork.attachTransaction(txManager);
             }
             unitOfWork.execute(() -> eventBus.publish(eventMessage));
 

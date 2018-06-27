@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.spring.config.AbstractAnnotationHandlerBeanPostProcessor;
 import org.springframework.util.ReflectionUtils;
@@ -51,8 +52,9 @@ public class AnnotationCommandHandlerBeanPostProcessor
 
     @Override
     protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean,
-                                                                   ParameterResolverFactory parameterResolverFactory) {
-        return new AnnotationCommandHandlerAdapter(bean, parameterResolverFactory);
+                                                                   ParameterResolverFactory parameterResolverFactory,
+                                                                   HandlerDefinition handlerDefinition) {
+        return new AnnotationCommandHandlerAdapter(bean, parameterResolverFactory, handlerDefinition);
     }
 
     private boolean hasCommandHandlerMethod(Class<?> beanClass) {

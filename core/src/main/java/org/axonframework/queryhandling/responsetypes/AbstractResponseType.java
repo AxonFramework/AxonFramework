@@ -37,6 +37,15 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
         this.expectedResponseType = expectedResponseType;
     }
 
+    /**
+     * Gets actual response type or generic placeholder.
+     *
+     * @return actual response type or generic placeholder
+     */
+    public Class<?> getExpectedResponseType() {
+        return expectedResponseType;
+    }
+
     protected boolean isIterableOfExpectedType(Type responseType) {
         Type iterableType = TypeReflectionUtils.getExactSuperType(responseType, Iterable.class);
         return iterableType != null && isParameterizedTypeOfExpectedType(iterableType);

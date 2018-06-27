@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,7 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annota
 
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        A annotation = AnnotationUtils.findAnnotation(parameters[parameterIndex], annotationType);
-        if (annotation != null) {
+        if (AnnotationUtils.isAnnotationPresent(parameters[parameterIndex], annotationType)) {
             Class<?> parameterType = parameters[parameterIndex].getType();
             if (parameterType.isAssignableFrom(declaredParameterType)) {
                 return getResolver();

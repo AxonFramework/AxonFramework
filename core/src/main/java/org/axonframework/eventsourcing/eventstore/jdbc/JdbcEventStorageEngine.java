@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -125,7 +126,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
      * deserialization.
      *
-     * @param snapshotSerializer          Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
@@ -144,7 +145,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events.
      *
-     * @param snapshotSerializer          Used to serialize and deserialize snapshots.
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
      * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
@@ -171,8 +172,48 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                   Serializer eventSerializer, Integer batchSize, ConnectionProvider connectionProvider,
                                   TransactionManager transactionManager, Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset, Long lowestGlobalSequence) {
+        this(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null, batchSize, connectionProvider,
+             transactionManager, dataType, schema, maxGapOffset, lowestGlobalSequence);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events.
+     *
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata.
+     * @param snapshotFilter               Filter describing which snapshots are suitable to use, or {@code null} to
+     *                                     allow all snapshots to be considered viable.
+     * @param batchSize                    The number of events that should be read at each database access. When more
+     *                                     than this number of events must be read to rebuild an aggregate's state, the
+     *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
+     *                                     sure to choose snapshot trigger and batch size such that a single batch will
+     *                                     generally retrieve all events required to rebuild an aggregate's state.
+     * @param connectionProvider           The provider of connections to the underlying database.
+     * @param transactionManager           The instance managing transactions around fetching event data. Required by
+     *                                     certain databases for reading blob data.
+     * @param dataType                     The data type for serialized event payload and metadata.
+     * @param schema                       Object that describes the database schema of event entries.
+     * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
+     *                                     event with the highest known index. If the gap is bigger it is assumed that
+     *                                     the missing event will not be committed to the store anymore. This event
+     *                                     storage engine will no longer look for those events the next time a batch is
+     *                                     fetched.
+     * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
+     *                                     is 1 unless the table has contained entries before.
+     */
+    public JdbcEventStorageEngine(Serializer snapshotSerializer, EventUpcaster upcasterChain,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  Serializer eventSerializer,
+                                  Predicate<? super DomainEventData<?>> snapshotFilter,
+                                  Integer batchSize,
+                                  ConnectionProvider connectionProvider,
+                                  TransactionManager transactionManager,
+                                  Class<?> dataType, EventSchema schema,
+                                  Integer maxGapOffset, Long lowestGlobalSequence) {
         super(snapshotSerializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
-              eventSerializer, batchSize);
+              eventSerializer, snapshotFilter, batchSize);
         this.connectionProvider = connectionProvider;
         this.transactionManager = transactionManager;
         this.dataType = dataType;
@@ -347,28 +388,22 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        Transaction tx = transactionManager.startTransaction();
-        try {
-            return executeQuery(
-                    getConnection(),
-                    connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
-                    listResults(this::getDomainEventData),
-                    e -> new EventStoreException(
-                            format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
-                    )
-            );
-        } finally {
-            tx.commit();
-        }
+        return transactionManager.fetchInTransaction(
+                () -> executeQuery(
+                        getConnection(),
+                        connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
+                        listResults(this::getDomainEventData),
+                        e -> new EventStoreException(
+                                format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
+                        )
+                ));
     }
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       () -> "Unsupported token format: " + lastToken);
-        Transaction tx = transactionManager.startTransaction();
-        try {
-
+        return transactionManager.fetchInTransaction(() -> {
             // If there are many gaps, it worthwhile checking if it is possible to clean them up.
             GapAwareTrackingToken cleanedToken;
             if (lastToken != null && ((GapAwareTrackingToken) lastToken).getGaps().size() > gapCleaningThreshold) {
@@ -392,9 +427,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                     },
                     e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e)
             );
-        } finally {
-            tx.commit();
-        }
+        });
     }
 
     private GapAwareTrackingToken cleanGaps(TrackingToken lastToken) {
@@ -436,16 +469,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        Transaction tx = transactionManager.startTransaction();
-        try {
+        return transactionManager.fetchInTransaction(() -> {
             List<DomainEventData<?>> result =
                     executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
                                  listResults(this::getSnapshotData), e -> new EventStoreException(
                                     format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
             return result.stream().findFirst();
-        } finally {
-            tx.commit();
-        }
+        });
     }
 
     /**
@@ -455,6 +485,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connection          The connection to the database.
      * @param identifier          The identifier of the aggregate.
      * @param firstSequenceNumber The expected sequence number of the first returned entry.
+     * @param batchSize           The number of items to include in the batch
      * @return A {@link PreparedStatement} that returns event entries for the given query when executed.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */

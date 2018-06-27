@@ -18,7 +18,9 @@ package org.axonframework.spring.config;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.aop.IntroductionInfo;
 import org.springframework.aop.IntroductionInterceptor;
@@ -48,6 +50,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         implements BeanPostProcessor, BeanFactoryAware {
 
     private ParameterResolverFactory parameterResolverFactory;
+    private HandlerDefinition handlerDefinition;
     private BeanFactory beanFactory;
 
     /**
@@ -72,8 +75,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         if (parameterResolverFactory == null) {
             parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
         }
+        if (handlerDefinition == null) {
+            handlerDefinition = ClasspathHandlerDefinition.forClassLoader(classLoader);
+        }
         if (isPostProcessingCandidate(targetClass)) {
-            T adapter = initializeAdapterFor(bean, parameterResolverFactory);
+            T adapter = initializeAdapterFor(bean, parameterResolverFactory, handlerDefinition);
             return createAdapterProxy(bean, adapter, getAdapterInterfaces(), true, classLoader);
         } else if (!isInstance(bean, getAdapterInterfaces())
                 && isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
@@ -83,7 +89,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                 // we want to invoke the Java Proxy if possible, so we create a CGLib proxy that does that for us
                 Object proxyInvokingBean = createJavaProxyInvoker(bean, targetBean);
 
-                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory);
+                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory, handlerDefinition);
                 return createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterfaces(), false,
                                                    classLoader);
             } catch (Exception e) {
@@ -145,9 +151,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * @param bean                     The bean that the EventListenerAdapter has to adapt
      * @param parameterResolverFactory The parameter resolver factory that provides the parameter resolvers for the
      *                                 annotated handlers
+     * @param handlerDefinition        The handler definition used to create concrete handlers
      * @return an event handler adapter for the given {@code bean}
      */
-    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory);
+    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition);
 
     @SuppressWarnings("unchecked")
     private I createAdapterProxy(Object annotatedHandler, final T adapter, final Class<?>[] adapterInterface,
@@ -170,6 +178,15 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
         this.parameterResolverFactory = parameterResolverFactory;
+    }
+
+    /**
+     * Sets the HandlerDefinition to create concrete handlers.
+     *
+     * @param handlerDefinition The handler definition used to create concrete handlers
+     */
+    public void setHandlerDefinition(HandlerDefinition handlerDefinition) {
+        this.handlerDefinition = handlerDefinition;
     }
 
     @Override

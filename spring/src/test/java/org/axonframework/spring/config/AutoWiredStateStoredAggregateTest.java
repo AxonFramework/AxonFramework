@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +18,7 @@ package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -44,11 +46,11 @@ import static org.mockito.Mockito.mock;
 public class AutoWiredStateStoredAggregateTest {
 
     @Autowired
-    private org.axonframework.config.Configuration axonConfig;
+    private Repository<Context.MyAggregate> myAggregateRepository;
 
     @Test
     public void testAggregateIsWiredUsingStateStorage() {
-        assertEquals(GenericJpaRepository.class, axonConfig.repository(Context.MyAggregate.class).getClass());
+        assertEquals(GenericJpaRepository.class, myAggregateRepository.getClass());
     }
 
     @EnableAxon

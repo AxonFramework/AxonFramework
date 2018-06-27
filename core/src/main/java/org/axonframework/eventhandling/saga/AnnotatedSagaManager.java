@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
@@ -70,8 +71,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * @param sagaType                       The saga target type
      * @param sagaRepository                 The repository providing access to the Saga instances
      * @param parameterResolverFactory       The ParameterResolverFactory instance to resolve parameter values for
-     *                                       annotated
-     *                                       handlers with
+     *                                       annotated handlers with
      * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
@@ -81,6 +81,29 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
              sagaRepository,
              () -> newInstance(sagaType),
              new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
+             listenerInvocationErrorHandler);
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
+     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta
+     * model.
+     *
+     * @param sagaType                       The saga target type
+     * @param sagaRepository                 The repository providing access to the Saga instances
+     * @param parameterResolverFactory       The ParameterResolverFactory instance to resolve parameter values for
+     *                                       annotated handlers with
+     * @param handlerDefinition              The handler definition used to create concrete handlers
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
+     */
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
+                                ParameterResolverFactory parameterResolverFactory,
+                                HandlerDefinition handlerDefinition,
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        this(sagaType,
+             sagaRepository,
+             () -> newInstance(sagaType),
+             new AnnotationSagaMetaModelFactory(parameterResolverFactory, handlerDefinition).modelOf(sagaType),
              listenerInvocationErrorHandler);
     }
 

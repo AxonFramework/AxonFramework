@@ -25,7 +25,9 @@ import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -67,6 +69,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
+    private HandlerDefinition handlerDefinition;
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore;
     private AnnotatedSagaManager<T> sagaManager;
@@ -90,6 +93,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
                                                                   sagaType, fieldFilters);
+        handlerDefinition = ClasspathHandlerDefinition.forClass(sagaType);
     }
 
     /**
@@ -122,9 +126,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                                                                                 .forClass(sagaType));
             SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                              new TransienceValidatingResourceInjector(),
-                                                                             parameterResolverFactory);
+                                                                             parameterResolverFactory,
+                                                                             handlerDefinition);
             sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, parameterResolverFactory,
-                                                     new LoggingErrorHandler());
+                                                     handlerDefinition, new LoggingErrorHandler());
         }
     }
 
@@ -260,6 +265,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName) {
         return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        this.handlerDefinition = handlerDefinition;
+        return this;
     }
 
     private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -255,6 +257,24 @@ public interface UnitOfWork<T extends Message<?>> {
     @SuppressWarnings("unchecked")
     default <R> R getOrDefaultResource(String key, R defaultValue) {
         return (R) resources().getOrDefault(key, defaultValue);
+    }
+
+    /**
+     * Attach a transaction to this Unit of Work, using the given {@code transactionManager}. The transaction will be
+     * managed in the lifecycle of this Unit of Work. Failure to start a transaction will cause this Unit of Work
+     * to be rolled back.
+     *
+     * @param transactionManager The Transaction Manager to create, commit and/or rollback the transaction
+     */
+    default void attachTransaction(TransactionManager transactionManager) {
+        try {
+            Transaction transaction = transactionManager.startTransaction();
+            onCommit(u -> transaction.commit());
+            onRollback(u -> transaction.rollback());
+        } catch (Throwable t) {
+            rollback(t);
+            throw t;
+        }
     }
 
     /**

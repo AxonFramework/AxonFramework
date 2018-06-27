@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,19 +71,25 @@ public class EventProcessorProperties {
         /**
          * Indicates the number of segments that should be created when the processor starts for the first time.
          */
-        private int initialSegmentCount;
+        private int initialSegmentCount = 1;
 
         /**
          * The maximum number of threads the processor should process events with. Defaults to the number of initial
          * segments if this is not further specified.
          */
-        private int threadCount = 0;
+        private int threadCount = -1;
 
         /**
          * The maximum number of events a processor should process as part of a single batch.
          */
         private int batchSize = 1;
 
+        /**
+         * The name of the bean that represents the sequencing policy for processing events. If no name is specified,
+         * the processor defaults to a {@link org.axonframework.eventhandling.async.SequentialPerAggregatePolicy}, which
+         * guarantees to process events originating from the same Aggregate instance sequentially, while events from
+         * different Aggregate instances may be processed concurrently.
+         */
         private String sequencingPolicy;
 
         /**
@@ -150,12 +156,15 @@ public class EventProcessorProperties {
          * @return the number of threads to use to process Events.
          */
         public int getThreadCount() {
-            return threadCount <= 0 ? initialSegmentCount : threadCount;
+            return threadCount < 0 ? initialSegmentCount : threadCount;
         }
 
         /**
          * Sets the number of threads to use to process Events, when in "tracking" mode. Defaults to the number of
          * initial segments.
+         * <p>
+         * A provided {@code threadCount} < 0 will result in a number of threads equal to the configured number of
+         * {@link #setInitialSegmentCount(int) initial segments}.
          *
          * @param threadCount the number of threads to use to process Events.
          */
