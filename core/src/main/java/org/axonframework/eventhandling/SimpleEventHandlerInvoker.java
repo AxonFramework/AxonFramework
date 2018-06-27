@@ -140,7 +140,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
      *
      * @param eventListeners                 list of event listeners to register with this invoker
-     * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler methods with
+     * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler
+     *                                       methods with
      * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
      * @param sequencingPolicy               The policy describing the expectations of sequential processing
      */

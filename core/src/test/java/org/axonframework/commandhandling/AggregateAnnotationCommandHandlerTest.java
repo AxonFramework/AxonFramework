@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
+import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateMember;
 import org.axonframework.commandhandling.model.EntityId;
@@ -421,7 +422,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -445,7 +446,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -526,7 +527,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -549,7 +550,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );

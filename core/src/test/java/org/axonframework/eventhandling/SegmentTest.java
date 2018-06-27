@@ -193,6 +193,12 @@ public class SegmentTest {
     @Test
     public void testSegmentResolve() {
         {
+            final int[] segments = {};
+            final Segment[] segmentMasks = Segment.computeSegments(segments);
+            assertThat(segmentMasks.length, is(0));
+        }
+
+        {
             final int[] segments = {0};
             final Segment[] segmentMasks = Segment.computeSegments(segments);
             assertThat(segmentMasks.length, is(1));

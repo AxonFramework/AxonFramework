@@ -17,12 +17,14 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.common.AssertUtils;
+import org.axonframework.common.MockException;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,8 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -114,6 +115,32 @@ public class QuartzEventSchedulerTest {
         inOrder.verify(eventBus).publish(isA(EventMessage.class));
         inOrder.verify(mockTransaction).commit();
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testScheduleJob_TransactionalUnitOfWork_FailingTransaction() throws InterruptedException, SchedulerException {
+        final TransactionManager transactionManager = mock(TransactionManager.class);
+        final CountDownLatch latch = new CountDownLatch(1);
+        when(transactionManager.startTransaction()).thenAnswer(i -> {
+            latch.countDown();
+            throw new MockException();
+        });
+        testSubject.setTransactionManager(transactionManager);
+        testSubject.initialize();
+        Saga mockSaga = mock(Saga.class);
+        when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
+        ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), new StubEvent());
+        assertTrue(token.toString().contains("Quartz"));
+        assertTrue(token.toString().contains(GROUP_ID));
+        latch.await(1, TimeUnit.SECONDS);
+
+        AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> verify(transactionManager).startTransaction());
+        InOrder inOrder = inOrder(transactionManager, eventBus);
+        inOrder.verify(transactionManager).startTransaction();
+        inOrder.verifyNoMoreInteractions();
+
+        assertFalse(CurrentUnitOfWork.isStarted());
     }
 
     @Test

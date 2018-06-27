@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,12 +54,11 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
     private void injectFieldResources(Object saga) {
         fieldsOf(saga.getClass()).forEach(
                 field -> Stream.of(injectorAnnotationNames())
-                        .forEach(a -> Optional.ofNullable(AnnotationUtils.findAnnotation(field, a))
-                                .ifPresent(annotatedFields -> {
-                                    Class<?> requiredType = field.getType();
-                                    findResource(requiredType).ifPresent(resource -> injectFieldResource(saga, field, resource));
-                                }))
-        );
+                               .filter(ann -> AnnotationUtils.isAnnotationPresent(field, ann))
+                               .forEach(annotatedFields -> {
+                                   Class<?> requiredType = field.getType();
+                                   findResource(requiredType).ifPresent(resource -> injectFieldResource(saga, field, resource));
+                               }));
     }
 
     /**
@@ -84,11 +83,11 @@ public abstract class AbstractResourceInjector implements ResourceInjector {
     private void injectMethodResources(Object saga) {
         methodsOf(saga.getClass()).forEach(
                 method -> Stream.of(injectorAnnotationNames())
-                        .forEach(a -> Optional.ofNullable(AnnotationUtils.findAnnotation(method, a))
-                                .ifPresent(annotatedMethods -> {
+                                .filter(a -> AnnotationUtils.isAnnotationPresent(method, a))
+                                .forEach(a -> {
                                     Class<?> requiredType = method.getParameterTypes()[0];
                                     findResource(requiredType).ifPresent(resource -> injectMethodResource(saga, method, resource));
-                                })));
+                                }));
     }
 
     private void injectMethodResource(Object saga, Method injectMethod, Object resource) {

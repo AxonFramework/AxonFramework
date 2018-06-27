@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
 
     @Override
     public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
-        return AnnotationUtils.findAnnotation(executable, annotationType) != null;
+        return AnnotationUtils.isAnnotationPresent(executable, annotationType);
     }
 
     @SuppressWarnings("unchecked")

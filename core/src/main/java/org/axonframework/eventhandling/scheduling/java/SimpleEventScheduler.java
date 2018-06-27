@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.scheduling.java;
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -134,9 +133,7 @@ public class SimpleEventScheduler implements EventScheduler {
             }
             try {
                 UnitOfWork<EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(null);
-                Transaction transaction = transactionManager.startTransaction();
-                unitOfWork.onCommit(u -> transaction.commit());
-                unitOfWork.onRollback(u -> transaction.rollback());
+                unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.execute(() -> eventBus.publish(eventMessage));
             } finally {
                 tokens.remove(tokenId);

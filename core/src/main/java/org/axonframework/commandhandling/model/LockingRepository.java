@@ -21,6 +21,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -83,7 +84,22 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory}.
+     * Initialize a repository with a pessimistic locking strategy and a parameter resolver factory.
+     *
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    protected LockingRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
+                                HandlerDefinition handlerDefinition) {
+        this(aggregateType,
+             new PessimisticLockFactory(),
+             parameterResolverFactory,
+             handlerDefinition);
+    }
+
+    /**
+     * Initialize the repository with the given {@code lockFactory}.
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param lockFactory   the lock factory to use
@@ -95,7 +111,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory} and {@code aggregateModel}
+     * Initialize the repository with the given {@code lockFactory} and {@code aggregateModel}
      *
      * @param aggregateModel The model describing the structure of the aggregate
      * @param lockFactory    the lock factory to use
@@ -107,7 +123,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given {@code LockFactory} and {@code ParameterResolverFactory}.
+     * Initialize the repository with the given {@code lockFactory} and {@code parameterResolverFactory}.
      *
      * @param aggregateType            The type of aggregate stored in this repository
      * @param lockFactory              The lock factory to use
@@ -116,6 +132,23 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
                                 ParameterResolverFactory parameterResolverFactory) {
         super(aggregateType, parameterResolverFactory);
+        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
+        this.lockFactory = lockFactory;
+    }
+
+    /**
+     * Initialize the repository with the given {@code lockFactory}, {@code parameterResolverFactory} and {@code
+     * handlerDefinition}.
+     *
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param lockFactory              The lock factory to use
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
+                                ParameterResolverFactory parameterResolverFactory,
+                                HandlerDefinition handlerDefinition) {
+        super(aggregateType, parameterResolverFactory, handlerDefinition);
         Assert.notNull(lockFactory, () -> "LockFactory may not be null");
         this.lockFactory = lockFactory;
     }
