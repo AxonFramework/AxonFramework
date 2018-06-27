@@ -69,9 +69,8 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
     public static final int DEFAULT_BACKOFF_TIME_MILLIS = 5000;
-
+    private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
     private final Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder;
@@ -329,13 +328,44 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Resets tokens to the initial state. This effectively causes a replay.
+     * Resets tokens to their initial state. This effectively causes a replay.
      * <p>
      * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
      * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
      * as a processor can only reset the tokens if it is able to claim them all.
      */
     public void resetTokens() {
+        resetTokens(initialTrackingTokenBuilder);
+    }
+
+    /**
+     * Reset tokens to the position as return by the given {@code initialTrackingTokenSupplier}. This effectively causes
+     * a replay since that position.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
+     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
+     * as a processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param initialTrackingTokenSupplier A function returning the token representing the position to reset to
+     */
+    public void resetTokens(Function<StreamableMessageSource, TrackingToken> initialTrackingTokenSupplier) {
+        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+    }
+
+    /**
+     * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that position.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
+     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
+     * as a processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param startPosition The token representing the position to reset the processor to.
+     */
+    public void resetTokens(TrackingToken startPosition) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0,
                      () -> "TrackingProcessor must be shut down before triggering a reset");
@@ -349,7 +379,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             eventHandlerInvoker().performReset();
 
             for (int i = 0; i < tokens.length; i++) {
-                tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i]), getName(), segments[i]);
+                tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]);
             }
         });
     }

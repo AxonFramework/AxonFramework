@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +19,7 @@ package org.axonframework.eventhandling;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
@@ -38,6 +40,60 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     private final TrackingToken tokenAtReset;
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     private final TrackingToken currentToken;
+
+    /**
+     * Creates a new TrackingToken that represents the given {@code startPosition} of a stream, in reset state,
+     * when appropriate.
+     *
+     * @param tokenAtReset  The token present when the reset was triggered
+     * @param startPosition The position where the token should be reset to
+     * @return A token that represents a reset to the tail of the stream
+     */
+    public static TrackingToken createReplayToken(TrackingToken tokenAtReset, TrackingToken startPosition) {
+        if (tokenAtReset == null) {
+            // the tokenAtReset is not (completely) past startposition. Reset may not be used to advance tokens
+            return null;
+        }
+        if (tokenAtReset instanceof ReplayToken) {
+            return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition);
+        }
+        Assert.isTrue(startPosition == null || tokenAtReset.covers(startPosition), () -> "Given startPosition must be after the token at reset");
+        return new ReplayToken(tokenAtReset, startPosition);
+    }
+
+    /**
+     * Creates a new TrackingToken that represents the tail position of a stream, in reset state, when appropriate.
+     *
+     * @param tokenAtReset The token present when the reset was triggered
+     * @return A token that represents a reset to the tail of the stream
+     */
+    public static TrackingToken createReplayToken(TrackingToken tokenAtReset) {
+        return createReplayToken(tokenAtReset, null);
+    }
+
+    /**
+     * Indicates whether the given message is "redelivered", as a result of a previous reset. If {@code true}, this
+     * means this message has been delivered to this processor before its token was reset.
+     *
+     * @param message The message to inspect
+     * @return {@code true} if the message is a replay
+     */
+    public static boolean isReplay(Message<?> message) {
+        return message instanceof TrackedEventMessage
+                && isReplay(((TrackedEventMessage) message).trackingToken());
+    }
+
+    /**
+     * Indicates whether the given {@code trackingToken} represents a position that is part of a replay.
+     *
+     * @param trackingToken The token to verify
+     * @return {@code true} if the token indicates a replay
+     */
+    public static boolean isReplay(TrackingToken trackingToken) {
+        return trackingToken instanceof ReplayToken
+                && ((ReplayToken) trackingToken).isReplay();
+
+    }
 
     /**
      * Initialize a ReplayToken, using the given {@code tokenAtReset} to represent the position at which a reset was
@@ -84,33 +140,11 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
     }
 
     /**
-     * Creates a new TrackingToken that reflects the reset state, when appropriate.
+     * Advance this token to the given {@code newToken}.
      *
-     * @param tokenAtReset
-     * @return
+     * @param newToken The token representing the position to advance to
+     * @return a token representing the new position
      */
-    public static TrackingToken createReplayToken(TrackingToken tokenAtReset) {
-        if (tokenAtReset == null) {
-            // we haven't processed anything, so there is no need for a reset token
-            return null;
-        }
-        if (tokenAtReset instanceof ReplayToken) {
-            return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset);
-        }
-        return new ReplayToken(tokenAtReset);
-    }
-
-    public static boolean isReplay(Message<?> message) {
-        return message instanceof TrackedEventMessage
-                && isReplay(((TrackedEventMessage) message).trackingToken());
-    }
-
-    public static boolean isReplay(TrackingToken trackingToken) {
-        return trackingToken instanceof ReplayToken
-                && ((ReplayToken) trackingToken).isReplay();
-
-    }
-
     public TrackingToken advancedTo(TrackingToken newToken) {
         if (this.tokenAtReset == null
                 || (newToken.covers(this.tokenAtReset) && !tokenAtReset.covers(newToken))) {

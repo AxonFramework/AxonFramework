@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,6 +108,20 @@ public class JpaTokenStoreTest {
         int[] actual = jpaTokenStore.fetchSegments("test1");
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+    }
+
+    @Transactional
+    @Test
+    public void testInitializeTokensAtGivenPosition() {
+        jpaTokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
+
+        int[] actual = jpaTokenStore.fetchSegments("test1");
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+
+        for (int segment : actual) {
+            assertEquals(new GlobalSequenceTrackingToken(10), jpaTokenStore.fetchToken("test1", segment));
+        }
     }
 
     @Transactional
