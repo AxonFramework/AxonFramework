@@ -16,7 +16,12 @@
 package org.axonframework.springcloud.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -30,7 +35,13 @@ import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.context.event.EventListener;
 
 import java.net.URI;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -212,9 +223,11 @@ public class SpringCloudCommandRouter implements CommandRouter {
                                     .orElseThrow(() -> new IllegalStateException(
                                             "There should be no scenario where the local member does not exist."
                                     ));
+
         if (logger.isDebugEnabled()) {
-            logger.debug("Resetting local membership for '{}'.", startUpPhaseLocalMember);
+            logger.debug("Resetting local membership for [{}].", startUpPhaseLocalMember);
         }
+
         updateMemberships();
         atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(startUpPhaseLocalMember));
     }
@@ -295,8 +308,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private Optional<ConsistentHash> updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                                         AtomicReference<ConsistentHash> atomicConsistentHash) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Updating membership for service instance: '{}'", serviceInstance);
+            logger.debug("Updating membership for service instance: [{}]", serviceInstance);
         }
+
         Member member = buildMember(serviceInstance);
 
         Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
