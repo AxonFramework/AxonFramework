@@ -33,7 +33,7 @@ public interface TokenStore {
      * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
      * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
      * <p>
-     * This method will initialize the tokens, but no claim them. It will create the segments ranging from {@code 0}
+     * This method will initialize the tokens, but not claim them. It will create the segments ranging from {@code 0}
      * until {@code segmentCount - 1}.
      * <p>
      * The exact behavior when this method is called while tokens were already present, is undefined in case the token
@@ -54,7 +54,7 @@ public interface TokenStore {
      * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
      * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
      * <p>
-     * This method will store {@code initialToken} for all segments as starting point for processor, but no claim them.
+     * This method will store {@code initialToken} for all segments as starting point for processor, but not claim them.
      * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
      * <p>
      * The exact behavior when this method is called while tokens were already present, is undefined in case the token

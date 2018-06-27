@@ -137,7 +137,7 @@ public interface EventStorageEngine {
     }
 
     /**
-     * Creates a token that it is at the head of event stream - that tracks all new events.
+     * Creates a token that is at the head of an event stream - that tracks all new events.
      *
      * @return a tracking token at the head of event stream, if event stream is empty {@code null} is returned
      */
@@ -145,7 +145,7 @@ public interface EventStorageEngine {
 
     /**
      * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
-     * {@code dateTime}, it will be tracked also.
+     * {@code dateTime}, it will be tracked too.
      *
      * @param dateTime The date and time for determining criteria how the tracking token should be created. A tracking
      *                 token should point to very first event before this date and time.

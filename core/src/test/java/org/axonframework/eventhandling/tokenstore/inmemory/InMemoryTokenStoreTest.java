@@ -33,7 +33,6 @@ public class InMemoryTokenStoreTest {
 
     @Before
     public void setUp() {
-
         testSubject = new InMemoryTokenStore();
     }
 

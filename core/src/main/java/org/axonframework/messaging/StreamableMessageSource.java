@@ -60,7 +60,7 @@ public interface StreamableMessageSource<M extends Message<?>> {
 
     /**
      * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
-     * {@code dateTime}, it will be tracked also.
+     * {@code dateTime}, it will be tracked too.
      *
      * @param dateTime The date and time for determining criteria how the tracking token should be created. A tracking
      *                 token should point at very first event before this date and time.
@@ -73,7 +73,7 @@ public interface StreamableMessageSource<M extends Message<?>> {
 
     /**
      * Creates a token that tracks all events before given {@code duration}. If there is an event exactly at that time
-     * (before given {@code duration}), it will be tracked also.
+     * (before given {@code duration}), it will be tracked too.
      *
      * @param duration The duration for determining criteria how the tracking token should be created. A tracking token
      *                 should point at very first event before this duration.
