@@ -212,6 +212,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
                                     .orElseThrow(() -> new IllegalStateException(
                                             "There should be no scenario where the local member does not exist."
                                     ));
+        if (logger.isDebugEnabled()) {
+            logger.debug("Resetting local membership for '{}'.", startUpPhaseLocalMember);
+        }
         updateMemberships();
         atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(startUpPhaseLocalMember));
     }
@@ -291,6 +294,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     private Optional<ConsistentHash> updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                                         AtomicReference<ConsistentHash> atomicConsistentHash) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Updating membership for service instance: '{}'", serviceInstance);
+        }
         Member member = buildMember(serviceInstance);
 
         Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
