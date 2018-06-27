@@ -235,7 +235,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                                               .stream()
                                               .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
         if(alreadyExists) {
-            throw new IllegalArgumentException("There is already a subscription with the same message identifier");
+            throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
         MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
@@ -311,7 +311,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             monitorCallback.reportSuccess();
         } catch (Exception e) {
             logger.error(format(
-                    "An error happened while trying to emit an update to a query: %s.",
+                    "An error happened while trying to emit an update to a query: %s. The update handler will be removed.",
                     query), e);
             monitorCallback.reportFailure(e);
             updateHandlers.remove(query);

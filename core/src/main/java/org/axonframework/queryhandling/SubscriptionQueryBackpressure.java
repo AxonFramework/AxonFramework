@@ -41,7 +41,7 @@ public class SubscriptionQueryBackpressure {
     /**
      * Creates default backpressure - {@link FluxSink.OverflowStrategy#BUFFER}.
      *
-     * @return initialized backpressure
+     * @return initialized backpressure - {@link FluxSink.OverflowStrategy#BUFFER}
      */
     public static SubscriptionQueryBackpressure defaultBackpressure() {
         return new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.BUFFER);
