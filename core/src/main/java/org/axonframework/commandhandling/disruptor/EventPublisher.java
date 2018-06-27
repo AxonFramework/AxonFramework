@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.slf4j.Logger;
@@ -139,9 +138,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 unitOfWork.rollback(exceptionResult);
             } else {
                 if (transactionManager != null) {
-                    Transaction transaction = transactionManager.startTransaction();
-                    unitOfWork.onCommit(u -> transaction.commit());
-                    unitOfWork.onRollback(u -> transaction.rollback());
+                    unitOfWork.attachTransaction(transactionManager);
                 }
                 unitOfWork.commit();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
@@ -180,7 +181,6 @@ public interface Configurer {
      *
      * @param module The module to register
      * @return the current instance of the Configurer, for chaining purposes
-     *
      * @see SagaConfiguration
      * @see EventHandlingConfiguration
      */
@@ -384,7 +384,6 @@ public interface Configurer {
      * @param aggregateConfiguration The instance describing the configuration of an Aggregate
      * @param <A>                    The type of aggregate the configuration is for
      * @return the current instance of the Configurer, for chaining purposes
-     *
      * @see AggregateConfigurer
      */
     <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration);
@@ -401,6 +400,15 @@ public interface Configurer {
     default <A> Configurer configureAggregate(Class<A> aggregate) {
         return configureAggregate(AggregateConfigurer.defaultConfiguration(aggregate));
     }
+
+    /**
+     * Registers the definition of a Handler class. Defaults to annotation based recognition of handler methods.
+     *
+     * @param handlerDefinitionClass A function providing the definition based on the current Configuration as well
+     *                               as the class being inspected.
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
 
     /**
      * Returns the completely initialized Configuration built using this configurer. It is not recommended to change
