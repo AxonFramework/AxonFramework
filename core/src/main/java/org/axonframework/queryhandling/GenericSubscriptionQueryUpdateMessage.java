@@ -41,7 +41,7 @@ public class GenericSubscriptionQueryUpdateMessage<U> extends MessageDecorator<U
      *
      * @param payload incremental update
      * @param <T>     type of the {@link GenericSubscriptionQueryUpdateMessage}
-     * @return created message
+     * @return created a {@link SubscriptionQueryUpdateMessage} with the given {@code payload}.
      */
     @SuppressWarnings("unchecked")
     public static <T> SubscriptionQueryUpdateMessage<T> asUpdateMessage(Object payload) {

@@ -19,7 +19,7 @@ package org.axonframework.queryhandling;
 import reactor.core.publisher.MonoSink;
 
 /**
- * Wrapper around {@link MonoSink}. Since project-reactor is not required dependency in this Axon version, we need
+ * Wrapper around {@link MonoSink}. Since project-reactor is not a required dependency in this Axon version, we need
  * wrappers for backwards compatibility. As soon as dependency is no longer optional, this wrapper should be removed.
  *
  * @param <T> The value type

@@ -116,7 +116,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     /**
-     * Initialize the query bus with the given {@code messageMonitor} and given {@code errorHandler}.
+     * Initialize the query bus with the given {@code messageMonitor}, {@code updateMessageMonitor}, {@code
+     * transactionManager} and given {@code errorHandler}.
      *
      * @param messageMonitor       The message monitor notified for incoming messages and their result
      * @param updateMessageMonitor The message monitor notified for incoming update message in regard to subscription

@@ -89,10 +89,10 @@ public interface QueryBus {
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
-     * queryName/initialResponseType/updateResponseType. The result is lazily created and until there is a subscription
-     * to initial result there will be no execution of query handler. In order not to miss updates, query bus will
-     * queue all updates which happen after subscription query is done and once the subscription to the flux is made,
-     * these updates will be emitted.
+     * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
+     * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
+     * bus will queue all updates which happen after the subscription query is done and once the subscription to the
+     * flux is made, these updates will be emitted.
      * <p>
      * Backpressure mechanism to be used is {@link SubscriptionQueryBackpressure#defaultBackpressure()}. The size of
      * buffer which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
@@ -111,10 +111,10 @@ public interface QueryBus {
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
-     * queryName/initialResponseType/updateResponseType. The result is lazily created and until there is a subscription
-     * to initial result there will be no execution of query handler. In order not to miss updates, query bus will
-     * queue all updates which happen after subscription query is done and once the subscription to the flux is made,
-     * these updates will be emitted.
+     * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
+     * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
+     * bus will queue all updates which happen after the subscription query is done and once the subscription to the
+     * flux is made, these updates will be emitted.
      * <p>
      * Provided backpressure mechanism will be used to deal with fast emitters.
      * </p>
