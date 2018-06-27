@@ -35,6 +35,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -69,13 +70,19 @@ public interface Configuration {
     }
 
     /**
-     * Returns the Event Processor Registry in this Configuration. If not set otherwise, the default one is {@link
-     * DefaultEventProcessorRegistry}.
+     * Returns the Event Processing Configuration in this Configuration.
      *
-     * @return the Event Processor Registry defined in this Configuration
+     * @return the Event Processing Configuration defined in this Configuration
      */
-    default EventProcessorRegistry eventProcessorRegistry() {
-        return getComponent(EventProcessorRegistry.class);
+    default EventProcessingConfiguration eventProcessingConfiguration() {
+        List<EventProcessingConfiguration> modules = getModules().stream()
+                                                                 .filter(m -> m.instance() instanceof EventProcessingConfiguration)
+                                                                 .map(m -> (EventProcessingConfiguration) m.instance())
+                                                                 .collect(Collectors.toList());
+        if (modules.size() > 1) {
+            throw new IllegalStateException("Found more than one EventProcessingConfiguration modules");
+        }
+        return modules.get(0);
     }
 
     /**

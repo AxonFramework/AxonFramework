@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.EventProcessorRegistry;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.spring.stereotype.Saga;
@@ -30,27 +30,30 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import static org.junit.Assert.*;
 
 /**
- * Tests configuration of {@link org.axonframework.config.DefaultEventProcessorRegistry}.
+ * Tests configuration of {@link EventProcessingConfiguration}.
  *
  * @author Milan Savic
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-public class DefaultEventProcessorRegistryConfigTest {
+public class EventProcessingConfigurationConfigTest {
 
     @Autowired
-    private EventProcessorRegistry registry;
+    private EventProcessingConfiguration eventProcessingConfiguration;
 
     @Test
     public void testProcessorConfiguration() {
-        assertEquals(2, registry.eventProcessors().size());
-        assertTrue(registry.eventProcessor("processor2").isPresent());
-        assertTrue(registry.eventProcessor("subscribingProcessor").isPresent());
+        assertEquals(2, eventProcessingConfiguration.eventProcessors().size());
+        assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
+        assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
 
-        assertEquals("processor2", registry.eventProcessorByProcessingGroup("processor1").get().getName());
-        assertEquals("processor2", registry.eventProcessorByProcessingGroup("processor2").get().getName());
-        assertEquals("subscribingProcessor", registry.eventProcessorByProcessingGroup("processor3").get().getName());
+        assertEquals("processor2",
+                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1").get().getName());
+        assertEquals("processor2",
+                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor2").get().getName());
         assertEquals("subscribingProcessor",
-                     registry.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
+                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3").get().getName());
+        assertEquals("subscribingProcessor",
+                     eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
     }
 
     @EnableAxon
@@ -58,11 +61,11 @@ public class DefaultEventProcessorRegistryConfigTest {
     public static class Context {
 
         @Autowired
-        public void configure(EventProcessorRegistry registry) {
-            registry.usingTrackingProcessors();
-            registry.assignProcessingGroup("processor1", "processor2");
-            registry.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : "processor2");
-            registry.registerSubscribingEventProcessor("subscribingProcessor");
+        public void configure(EventProcessingConfiguration config) {
+            config.usingTrackingProcessors();
+            config.assignProcessingGroup("processor1", "processor2");
+            config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : "processor2");
+            config.registerSubscribingEventProcessor("subscribingProcessor");
         }
 
         @Saga

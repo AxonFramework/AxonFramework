@@ -28,7 +28,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessorRegistry;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
@@ -168,7 +168,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Autowired
     public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
-                                       EventProcessorRegistry eventProcessorRegistry,
+                                       EventProcessingConfiguration eventProcessingConfiguration,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
@@ -181,9 +181,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 eventHandlingConfiguration.registerTrackingProcessor(k, messageSource, c -> config, sequencingPolicy);
             } else {
                 if (v.getSource() == null) {
-                    eventProcessorRegistry.registerSubscribingEventProcessor(k);
+                    eventProcessingConfiguration.registerSubscribingEventProcessor(k);
                 } else {
-                    eventProcessorRegistry.registerSubscribingEventProcessor(k, c -> applicationContext
+                    eventProcessingConfiguration.registerSubscribingEventProcessor(k, c -> applicationContext
                             .getBean(v.getSource(), SubscribableMessageSource.class));
                 }
             }

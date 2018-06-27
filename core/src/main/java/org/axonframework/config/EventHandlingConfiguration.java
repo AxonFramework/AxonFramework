@@ -58,21 +58,21 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     /**
-     * @deprecated in favor of {@link EventProcessorRegistry#configureMessageMonitor(String, Function)} or {@link
-     * EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)}. This field is used for backwards
-     * compatibility only.
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} or {@link
+     * EventProcessingConfiguration#configureMessageMonitor(String, MessageMonitorFactory)}. This field is used for
+     * backwards compatibility only.
      */
     @Deprecated
     private final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     /**
-     * @deprecated in favor of {@link EventProcessorRegistry#configureErrorHandler(String, Function)}. This field is
-     * used for backwards compatibility only.
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureErrorHandler(String, Function)}. This field
+     * is used for backwards compatibility only.
      */
     @Deprecated
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     /**
-     * @deprecated in favor of {@link EventProcessorRegistry#registerTokenStore(String, Function)}. This field is used
-     * for backwards compatibility only.
+     * @deprecated in favor of {@link EventProcessingConfiguration#registerTokenStore(String, Function)}. This field is
+     * used for backwards compatibility only.
      */
     @Deprecated
     private final Map<String, Function<Configuration, TokenStore>> tokenStore = new HashMap<>();
@@ -96,8 +96,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     );
 
     /**
-     * @deprecated in favor of {@link EventProcessorRegistry#configureErrorHandler(String, Function)} . This field is
-     * used for backwards compatibility only.
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureErrorHandler(String, Function)} . This field
+     * is used for backwards compatibility only.
      */
     @Deprecated
     private final Component<ErrorHandler> defaultErrorHandler = new Component<>(
@@ -124,7 +124,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @see EventHandlingConfiguration#registerHandlerInterceptor(BiFunction)
      * @see EventHandlingConfiguration#registerHandlerInterceptor(String, Function)
-     * @deprecated use {@link EventProcessorRegistry#interceptorsFor(String)} instead
+     * @deprecated use {@link EventProcessingConfiguration#interceptorsFor(String)} instead
      */
     @Deprecated
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(Configuration configuration,
@@ -156,7 +156,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * size of 1).
      *
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#usingTrackingProcessors()} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#usingTrackingProcessors()} instead
      */
     @Deprecated
     public EventHandlingConfiguration usingTrackingProcessors() {
@@ -176,7 +177,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param config           The configuration for the processors to use
      * @param sequencingPolicy The policy for processing events sequentially
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#usingTrackingProcessors(Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#usingTrackingProcessors(Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration usingTrackingProcessors(
@@ -197,7 +199,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerTrackingEventProcessor(String)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessor(String)} instead
      */
     @SuppressWarnings("UnusedReturnValue")
     @Deprecated
@@ -211,7 +214,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name   The name of the TrackingProcessor
      * @param source The source of messages for this processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerTrackingEventProcessorUsingSource(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessorUsingSource(String, Function)} instead
      */
     @SuppressWarnings("unchecked")
     @Deprecated
@@ -235,7 +239,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param processorConfiguration The configuration for the processor
      * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerTrackingEventProcessor(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessor(String, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerTrackingProcessor(String name,
@@ -254,7 +259,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param processorConfiguration The configuration for the processor
      * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerTrackingEventProcessor(String, Function, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessor(String, Function, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerTrackingProcessor(String name,
@@ -263,7 +269,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                 Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy) {
         eventProcessorBuilders.put(name,
                                    (conf, handlers) ->
-                                           conf.eventProcessorRegistry()
+                                           conf.eventProcessingConfiguration()
                                                .registerEventProcessor(name,
                                                                        (n, c, ehi) ->
                                                                                buildTrackingEventProcessor(c,
@@ -330,12 +336,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param eventProcessorBuilder The builder function for the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerEventProcessorFactory(EventProcessorRegistry.EventProcessorBuilder)}
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerEventProcessorFactory(EventProcessingConfiguration.EventProcessorBuilder)}
      * instead
      */
     @Deprecated
     public EventHandlingConfiguration registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder) {
-        onInit.add(conf -> conf.eventProcessorRegistry()
+        onInit.add(conf -> conf.eventProcessingConfiguration()
                                .registerEventProcessorFactory(
                                        (name, config, eventHandlerInvoker) ->
                                                buildEventProcessor(name, config,
@@ -383,13 +390,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name                  The name of the Event Processor for which to use this builder
      * @param eventProcessorBuilder The builder function for the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerEventProcessor(String, EventProcessorRegistry.EventProcessorBuilder)}
-     * instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerEventProcessor(String,
+     * EventProcessingConfiguration.EventProcessorBuilder)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerEventProcessor(String name, EventProcessorBuilder eventProcessorBuilder) {
         eventProcessorBuilders.put(name, (config, handlers) -> config
-                .eventProcessorRegistry()
+                .eventProcessingConfiguration()
                 .registerEventProcessor(name,
                                         (n, c, ehi) -> eventProcessorBuilder.createEventProcessor(c, n, handlers)));
         return this;
@@ -407,7 +415,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param processorName      The name of the processor to register the interceptor on
      * @param interceptorBuilder The function providing the interceptor to register, or {@code null}
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerHandlerInterceptor(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(String, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerHandlerInterceptor(String processorName,
@@ -430,7 +439,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param interceptorBuilder The builder function that provides an interceptor for each available processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerHandlerInterceptor(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(String, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerHandlerInterceptor(
@@ -527,14 +537,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
         onInit.forEach(h -> h.accept(config));
         assignments.forEach((name, handlers) -> {
-            config.eventProcessorRegistry().registerHandlerInvoker(name, c ->
+            config.eventProcessingConfiguration().registerHandlerInvoker(name, c ->
                     new SimpleEventHandlerInvoker(handlers,
                                                   c.parameterResolverFactory(),
                                                   getListenerInvocationErrorHandler(c, name)));
             if (eventProcessorBuilders.containsKey(name)) {
                 eventProcessorBuilders.get(name).accept(config, handlers);
             }
-            interceptorsFor(config, name).forEach(i -> config.eventProcessorRegistry()
+            interceptorsFor(config, name).forEach(i -> config.eventProcessingConfiguration()
                                                              .registerHandlerInterceptor(name, c -> i));
         });
     }
@@ -554,7 +564,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerSubscribingEventProcessor(String)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerSubscribingEventProcessor(String)} instead
      */
     @SuppressWarnings("UnusedReturnValue")
     @Deprecated
@@ -569,14 +580,15 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name          The name of the Event Processor
      * @param messageSource The source the processor should read from
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerSubscribingEventProcessor(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerSubscribingEventProcessor(String, Function)} instead
      */
     @SuppressWarnings("UnusedReturnValue")
     @Deprecated
     public EventHandlingConfiguration registerSubscribingEventProcessor(
             String name,
             Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
-        onInit.add(conf -> conf.eventProcessorRegistry()
+        onInit.add(conf -> conf.eventProcessingConfiguration()
                                .registerSubscribingEventProcessor(name, messageSource));
         return this;
     }
@@ -591,12 +603,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name       The name of the processor to configure the token store for
      * @param tokenStore The function providing the TokenStore based on a given Configuration
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#registerTokenStore(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerTokenStore(String, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerTokenStore(String name, Function<Configuration, TokenStore> tokenStore) {
         this.tokenStore.put(name, tokenStore);
-        onInit.add(conf -> conf.eventProcessorRegistry().registerTokenStore(name, tokenStore));
+        onInit.add(conf -> conf.eventProcessingConfiguration().registerTokenStore(name, tokenStore));
         return this;
     }
 
@@ -605,12 +618,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * configuration hasn't been {@link #initialize(Configuration) initialized} yet.
      *
      * @return a read-only list of processors initialized in this configuration.
-     * @deprecated use {@link EventProcessorRegistry#eventProcessors()} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#eventProcessors()} instead
      */
     @Deprecated
     public List<EventProcessor> getProcessors() {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
-        return new ArrayList<>(config.eventProcessorRegistry().eventProcessors().values());
+        return new ArrayList<>(config.eventProcessingConfiguration().eventProcessors().values());
     }
 
     /**
@@ -619,13 +633,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the processor to return
      * @return an Optional referencing the processor, if present.
-     * @deprecated use {@link EventProcessorRegistry#eventProcessor(String)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#eventProcessor(String)} instead
      */
     @Deprecated
     public <T extends EventProcessor> Optional<T> getProcessor(String name) {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
         //noinspection unchecked
-        return (Optional<T>) config.eventProcessorRegistry().eventProcessor(name);
+        return (Optional<T>) config.eventProcessingConfiguration().eventProcessor(name);
     }
 
     /**
@@ -637,12 +652,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param expectedType The type of processor expected
      * @param <T>          The type of processor expected
      * @return an Optional referencing the processor, if present and of expected type.
-     * @deprecated use {@link EventProcessorRegistry#eventProcessor(String, Class)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#eventProcessor(String, Class)} instead
      */
     @Deprecated
     public <T extends EventProcessor> Optional<T> getProcessor(String name, Class<T> expectedType) {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
-        return config.eventProcessorRegistry().eventProcessor(name, expectedType);
+        return config.eventProcessingConfiguration().eventProcessor(name, expectedType);
     }
 
     /**
@@ -685,7 +701,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name                  The name of the event processor
      * @param messageMonitorBuilder The builder function to use
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#configureMessageMonitor(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration configureMessageMonitor(String name,
@@ -703,13 +720,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name                  The name of the event processor
      * @param messageMonitorFactory The factory to use
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#configureMessageMonitor(String, MessageMonitorFactory)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureMessageMonitor(String, MessageMonitorFactory)} instead
      */
     @Deprecated
     public EventHandlingConfiguration configureMessageMonitor(String name,
                                                               MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactories.put(name, messageMonitorFactory);
-        onInit.add(conf -> conf.eventProcessorRegistry().configureMessageMonitor(name, messageMonitorFactory));
+        onInit.add(conf -> conf.eventProcessingConfiguration().configureMessageMonitor(name, messageMonitorFactory));
         return this;
     }
 
@@ -721,12 +739,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
      *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
      * @return this {@link EventHandlingConfiguration} instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#configureErrorHandler(Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureErrorHandler(Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration configureErrorHandler(Function<Configuration, ErrorHandler> errorHandlerBuilder) {
         defaultErrorHandler.update(errorHandlerBuilder);
-        onInit.add(conf -> conf.eventProcessorRegistry().configureErrorHandler(errorHandlerBuilder));
+        onInit.add(conf -> conf.eventProcessingConfiguration().configureErrorHandler(errorHandlerBuilder));
         return this;
     }
 
@@ -739,13 +758,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
      *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
      * @return this {@link EventHandlingConfiguration} instance for further configuration
-     * @deprecated use {@link EventProcessorRegistry#configureErrorHandler(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureErrorHandler(String, Function)} instead
      */
     @Deprecated
     public EventHandlingConfiguration configureErrorHandler(String name,
                                                             Function<Configuration, ErrorHandler> errorHandlerBuilder) {
         errorHandlers.put(name, errorHandlerBuilder);
-        onInit.add(conf -> conf.eventProcessorRegistry().configureErrorHandler(name, errorHandlerBuilder));
+        onInit.add(conf -> conf.eventProcessingConfiguration().configureErrorHandler(name, errorHandlerBuilder));
         return this;
     }
 
@@ -753,7 +773,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * Interface describing a Builder function for Event Processors.
      *
      * @see #createEventProcessor(Configuration, String, List)
-     * @deprecated use {@link org.axonframework.config.EventProcessorRegistry.EventProcessorBuilder} instead
+     *
+     * @deprecated use {@link org.axonframework.config.EventProcessingConfiguration.EventProcessorBuilder} instead
      */
     @FunctionalInterface
     @Deprecated

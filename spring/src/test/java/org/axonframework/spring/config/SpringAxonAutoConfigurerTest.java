@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.config.EventProcessorRegistry;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.saga.AssociationValue;
@@ -91,7 +91,7 @@ public class SpringAxonAutoConfigurerTest {
     private SagaStore<Object> sagaStore;
 
     @Autowired(required = false)
-    private EventProcessorRegistry eventProcessorRegistry;
+    private EventProcessingConfiguration eventProcessingConfiguration;
 
     @Autowired
     private org.axonframework.config.Configuration axonConfig;
@@ -130,8 +130,8 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventStore);
         assertNotNull(commandBus);
         assertNotNull(mySagaConfiguration);
-        assertNotNull(eventProcessorRegistry);
-        assertEquals(eventProcessorRegistry, axonConfig.eventProcessorRegistry());
+        assertNotNull(eventProcessingConfiguration);
+        assertEquals(eventProcessingConfiguration, axonConfig.eventProcessingConfiguration());
         assertTrue("Expected Axon to have configured an EventStore", eventBus instanceof EventStore);
 
         assertTrue("Expected provided commandbus implementation", commandBus instanceof AsynchronousCommandBus);
@@ -151,7 +151,7 @@ public class SpringAxonAutoConfigurerTest {
     @Test
     public void testSagaIsConfigured() {
         AtomicInteger counter = new AtomicInteger();
-        eventProcessorRegistry.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
+        eventProcessingConfiguration.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
             counter.incrementAndGet();
             return chain.proceed();
         });

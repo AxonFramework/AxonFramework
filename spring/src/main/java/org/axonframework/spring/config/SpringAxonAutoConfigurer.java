@@ -172,12 +172,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                                         .getBeanDefinition());
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
-        registerModules(configurer);
-        registerCorrelationDataProviders(configurer);
-        registerEventUpcasters(configurer);
-        registerAggregateBeanDefinitions(configurer, registry);
-        registerSagaBeanDefinitions(configurer);
-
         Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
         String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
         if (!eventHandlingConfiguration.isPresent()) {
@@ -185,14 +179,19 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     .getBeanDefinition());
         }
 
-        Optional<String> eventProcessorRegistry = findComponent(EventProcessorRegistry.class);
-        String eventProcessorRegistryBeanName = eventProcessorRegistry.orElse("eventProcessorRegistry");
-        if (!eventProcessorRegistry.isPresent()) {
+        Optional<String> eventProcessingConfiguration = findComponent(EventProcessingConfiguration.class);
+        String eventProcessorRegistryBeanName = eventProcessingConfiguration.orElse("eventProcessingConfiguration");
+        if (!eventProcessingConfiguration.isPresent()) {
             registry.registerBeanDefinition(eventProcessorRegistryBeanName,
-                                            genericBeanDefinition(DefaultEventProcessorRegistry.class)
+                                            genericBeanDefinition(EventProcessingConfiguration.class)
                                                     .getBeanDefinition());
         }
-        configurer.configureEventProcessorRegistry(c -> getBean(eventProcessorRegistryBeanName, c));
+
+        registerModules(configurer);
+        registerCorrelationDataProviders(configurer);
+        registerEventUpcasters(configurer);
+        registerAggregateBeanDefinitions(configurer, registry);
+        registerSagaBeanDefinitions(configurer);
 
         beanFactory.registerSingleton(AXON_CONFIGURER_BEAN, configurer);
         registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN, genericBeanDefinition(AxonConfiguration.class)
@@ -424,18 +423,34 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         @Override
         public void initialize(Configuration config) {
-            delegate = delegateSupplier.get();
-            delegate.initialize(config);
+            getDelegate().initialize(config);
         }
 
         @Override
         public void start() {
-            delegate.start();
+            getDelegate().start();
         }
 
         @Override
         public void shutdown() {
-            delegate.shutdown();
+            getDelegate().shutdown();
+        }
+
+        @Override
+        public int phase() {
+            return getDelegate().phase();
+        }
+
+        @Override
+        public ModuleConfiguration instance() {
+            return getDelegate();
+        }
+
+        private ModuleConfiguration getDelegate() {
+            if (delegate == null) {
+                delegate = delegateSupplier.get();
+            }
+            return delegate;
         }
     }
 }

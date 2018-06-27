@@ -6,10 +6,9 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessorRegistry;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.saga.StartSaga;
@@ -87,9 +86,9 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
         }
 
         @Autowired
-        public void configure(EventHandlingConfiguration config, EventProcessorRegistry registry) {
-            config.byDefaultAssignTo("test");
-            registry.registerEventProcessor("test", (name, c, eh) -> {
+        public void configure(EventHandlingConfiguration ehConfig, EventProcessingConfiguration epConfig) {
+            ehConfig.byDefaultAssignTo("test");
+            epConfig.registerEventProcessor("test", (name, c, eh) -> {
                 SubscribingEventProcessor processor = new SubscribingEventProcessor(name, eh, c.eventBus());
                 processor.registerInterceptor((unitOfWork, interceptorChain) -> {
                     unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
