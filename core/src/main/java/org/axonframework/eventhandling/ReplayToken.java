@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.axonframework.common.Assert;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
@@ -51,13 +50,14 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
      */
     public static TrackingToken createReplayToken(TrackingToken tokenAtReset, TrackingToken startPosition) {
         if (tokenAtReset == null) {
-            // the tokenAtReset is not (completely) past startposition. Reset may not be used to advance tokens
             return null;
         }
         if (tokenAtReset instanceof ReplayToken) {
             return createReplayToken(((ReplayToken) tokenAtReset).tokenAtReset, startPosition);
         }
-        Assert.isTrue(startPosition == null || tokenAtReset.covers(startPosition), () -> "Given startPosition must be after the token at reset");
+        if (startPosition != null && startPosition.covers(tokenAtReset)) {
+            return startPosition;
+        }
         return new ReplayToken(tokenAtReset, startPosition);
     }
 

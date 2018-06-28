@@ -27,8 +27,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 import static java.util.Collections.emptySet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ReplayTokenTest {
 
@@ -47,12 +46,13 @@ public class ReplayTokenTest {
         assertTrue(ReplayToken.isReplay(actual));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testTokenCannotBeAdvancedUsingResetToPosition() {
+    @Test
+    public void testRegularTokenIsProvidedWhenResetBeyondCurrentPosition() {
         TrackingToken token1 = new GlobalSequenceTrackingToken(1);
         TrackingToken token2 = new GlobalSequenceTrackingToken(2);
 
-        ReplayToken.createReplayToken(token1, token2);
+        TrackingToken actual = ReplayToken.createReplayToken(token1, token2);
+        assertSame(token2, actual);
     }
 
     @Test
