@@ -81,7 +81,7 @@ public interface Configuration {
                                                                  .map(m -> (EventProcessingConfiguration) m.instance())
                                                                  .collect(Collectors.toList());
         if (modules.size() > 1) {
-            throw new IllegalStateException("Found more than one EventProcessingConfiguration modules");
+            throw new AxonConfigurationException("Found more than one EventProcessingConfiguration modules");
         }
         return modules.get(0);
     }
