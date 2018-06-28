@@ -23,7 +23,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
-import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;

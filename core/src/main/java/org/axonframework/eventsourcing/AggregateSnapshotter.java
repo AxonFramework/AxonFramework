@@ -148,8 +148,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param handlerDefinition        The handler definition used to create concrete handlers
      * @param repositoryProvider       Provides repositories for specific aggregate types
      */
-    public AggregateSnapshotter(EventStore eventStore,
-                                List<AggregateFactory<?>> aggregateFactories,
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory,
                                 HandlerDefinition handlerDefinition,
                                 RepositoryProvider repositoryProvider) {
@@ -172,8 +171,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      *                                 process with
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
-                                ParameterResolverFactory parameterResolverFactory,
-                                Executor executor,
+                                ParameterResolverFactory parameterResolverFactory, Executor executor,
                                 TransactionManager transactionManager) {
         this(eventStore,
              aggregateFactories,

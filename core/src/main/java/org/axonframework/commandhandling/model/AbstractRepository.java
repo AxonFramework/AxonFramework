@@ -49,7 +49,8 @@ import static org.axonframework.common.Assert.nonNull;
  */
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
+
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
 
@@ -313,8 +314,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             if (aggregate != null) {
                 aggregate.handle(message);
             } else {
-                LOGGER.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. Hence, message '"
-                                     + message + "' cannot be handled.");
+                logger.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. "
+                                     + "Hence, message '" + message + "' cannot be handled.");
             }
         }
     }
