@@ -45,7 +45,7 @@ public interface StreamableMessageSource<M extends Message<?>> {
      * @return the token at the beginning of an event stream
      */
     default TrackingToken createTailToken() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     /**

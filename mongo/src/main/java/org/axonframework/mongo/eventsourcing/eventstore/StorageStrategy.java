@@ -131,4 +131,11 @@ public interface StorageStrategy {
      * aggregate.
      */
     Optional<Long> lastSequenceNumberFor(MongoCollection<Document> eventsCollection, String aggregateIdentifier);
+
+    /**
+     * Creates a token that is at the tail of an event stream - that tracks events from the beginning of time.
+     *
+     * @return a tracking token at the tail of an event stream, if event stream is empty {@code null} is returned
+     */
+    TrackingToken createTailToken(MongoCollection<Document> eventsCollection);
 }

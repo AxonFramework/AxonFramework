@@ -136,6 +136,28 @@ public abstract class EventStorageEngineTest {
     }
 
     @Test
+    public void testCreateTailToken() {
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event1 = createEvent(0);
+        testSubject.appendEvents(event1);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event2 = createEvent(1);
+        testSubject.appendEvents(event2);
+
+        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
+        DomainEventMessage<String> event3 = createEvent(2);
+        testSubject.appendEvents(event3);
+
+        TrackingToken headToken = testSubject.createTailToken();
+
+        List<EventMessage<?>> readEvents = testSubject.readEvents(headToken, false)
+                                                      .collect(toList());
+
+        assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
+    }
+
+    @Test
     public void testCreateHeadToken() {
         GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
         DomainEventMessage<String> event1 = createEvent(0);

@@ -137,9 +137,16 @@ public interface EventStorageEngine {
     }
 
     /**
+     * Creates a token that is at the tail of an event stream - that tracks events from the beginning of time.
+     *
+     * @return a tracking token at the tail of an event stream, if event stream is empty {@code null} is returned
+     */
+    TrackingToken createTailToken();
+
+    /**
      * Creates a token that is at the head of an event stream - that tracks all new events.
      *
-     * @return a tracking token at the head of event stream, if event stream is empty {@code null} is returned
+     * @return a tracking token at the head of an event stream, if event stream is empty {@code null} is returned
      */
     TrackingToken createHeadToken();
 

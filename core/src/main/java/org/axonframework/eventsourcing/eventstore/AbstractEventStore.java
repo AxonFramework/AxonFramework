@@ -166,6 +166,11 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     @Override
+    public TrackingToken createTailToken() {
+        return storageEngine.createTailToken();
+    }
+
+    @Override
     public TrackingToken createHeadToken() {
         return storageEngine.createHeadToken();
     }

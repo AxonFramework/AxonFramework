@@ -212,6 +212,11 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
+    public TrackingToken createTailToken() {
+        return storageStrategy.createTailToken(template.eventCollection());
+    }
+
+    @Override
     public TrackingToken createHeadToken() {
         return createTokenAt(Instant.now());
     }

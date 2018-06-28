@@ -107,6 +107,11 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
+    public TrackingToken createTailToken() {
+        return historicStorage.createTailToken();
+    }
+
+    @Override
     public TrackingToken createHeadToken() {
         return activeStorage.createHeadToken();
     }

@@ -57,6 +57,13 @@ public class FilteringEventStorageEngineTest {
     }
 
     @Test
+    public void testCreateTailTokenDelegated() {
+        testSubject.createTailToken();
+
+        verify(mockStorage).createTailToken();
+    }
+
+    @Test
     public void testCreateHeadTokenDelegated() {
         testSubject.createHeadToken();
 

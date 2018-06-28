@@ -99,6 +99,11 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
+    public TrackingToken createTailToken() {
+        return delegate.createTailToken();
+    }
+
+    @Override
     public TrackingToken createHeadToken() {
         return delegate.createHeadToken();
     }

@@ -164,6 +164,13 @@ public class SequenceEventStorageEngineTest {
     }
 
     @Test
+    public void testCreateTailToken() {
+        testSubject.createTailToken();
+
+        verify(historicStorage).createTailToken();
+    }
+
+    @Test
     public void testCreateHeadToken() {
         testSubject.createHeadToken();
 

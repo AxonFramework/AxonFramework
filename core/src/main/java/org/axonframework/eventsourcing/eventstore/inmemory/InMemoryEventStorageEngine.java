@@ -96,6 +96,15 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
+    public TrackingToken createTailToken() {
+        if (events.size() == 0) {
+            return null;
+        }
+        GlobalSequenceTrackingToken firstToken = (GlobalSequenceTrackingToken) events.firstKey();
+        return new GlobalSequenceTrackingToken(firstToken.getGlobalIndex() - 1);
+    }
+
+    @Override
     public TrackingToken createHeadToken() {
         if (events.size() == 0) {
             return null;

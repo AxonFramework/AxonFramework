@@ -303,6 +303,19 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
+    public TrackingToken createTailToken() {
+        String sql = "SELECT min(" + schema.globalIndexColumn() + ") - 1 FROM " + schema.domainEventTable();
+        Long index = transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(),
+                                   connection -> connection.prepareStatement(sql),
+                                   resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null,
+                                   e -> new EventStoreException("Failed to get head token")));
+        return Optional.ofNullable(index)
+                       .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
+                       .orElse(null);
+    }
+
+    @Override
     public TrackingToken createHeadToken() {
         String sql = "SELECT max(" + schema.globalIndexColumn() + ") FROM " + schema.domainEventTable();
         Long index = transactionManager.fetchInTransaction(
