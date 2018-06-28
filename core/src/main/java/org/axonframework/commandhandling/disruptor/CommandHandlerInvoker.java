@@ -28,6 +28,8 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -122,7 +124,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                 null,
                                 aggregateFactory,
                                 snapshotTriggerDefinition,
-                                parameterResolverFactory);
+                                parameterResolverFactory,
+                                ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()));
     }
 
     /**
@@ -135,6 +138,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * @param aggregateFactory          The factory creating aggregate instances
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The factory used to resolve parameters on command handler methods
+     * @param handlerDefinition         The handler definition used to create concrete handlers
      * @return A Repository instance for the given aggregate
      */
     @SuppressWarnings("unchecked")
@@ -142,16 +146,19 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                               RepositoryProvider repositoryProvider,
                                               AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                              ParameterResolverFactory parameterResolverFactory) {
+                                              ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition) {
         return repositories.computeIfAbsent(
                 aggregateFactory.getAggregateType(),
-                k -> new DisruptorRepository<>(aggregateFactory,
-                                               cache,
-                                               eventStore,
-                                               parameterResolverFactory,
-                                               snapshotTriggerDefinition,
-                                               repositoryProvider)
-        );
+                k -> new DisruptorRepository<>(
+                        aggregateFactory,
+                        cache,
+                        eventStore,
+                        parameterResolverFactory,
+                        handlerDefinition,
+                        snapshotTriggerDefinition,
+                        repositoryProvider
+                ));
     }
 
     private void removeEntry(String aggregateIdentifier) {
@@ -198,6 +205,21 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.snapshotTriggerDefinition = snapshotTriggerDefinition;
             this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
                                                                              parameterResolverFactory);
+            this.repositoryProvider = repositoryProvider;
+        }
+
+        private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
+                                    ParameterResolverFactory parameterResolverFactory,
+                                    HandlerDefinition handlerDefinition,
+                                    SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                    RepositoryProvider repositoryProvider) {
+            this.aggregateFactory = aggregateFactory;
+            this.cache = cache;
+            this.eventStore = eventStore;
+            this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+            this.model = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateFactory.getAggregateType(),
+                                                                             parameterResolverFactory,
+                                                                             handlerDefinition);
             this.repositoryProvider = repositoryProvider;
         }
 

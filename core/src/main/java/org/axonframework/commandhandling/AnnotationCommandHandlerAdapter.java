@@ -21,7 +21,9 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMeta
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayDeque;
@@ -58,12 +60,29 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
      * @param parameterResolverFactory The strategy for resolving handler method parameter values
      */
-    @SuppressWarnings("unchecked")
     public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory) {
+        this(annotatedCommandHandler,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()));
+    }
+
+    /**
+     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
+     *
+     * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
+     * @param parameterResolverFactory The strategy for resolving handler method parameter values
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    @SuppressWarnings("unchecked")
+    public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           HandlerDefinition handlerDefinition) {
         Assert.notNull(annotatedCommandHandler, () -> "annotatedCommandHandler may not be null");
-        this.modelInspector = AnnotatedAggregateMetaModelFactory.inspectAggregate((Class<Object>)annotatedCommandHandler.getClass(),
-                                                                                  parameterResolverFactory);
+        this.modelInspector = AnnotatedAggregateMetaModelFactory
+                .inspectAggregate((Class<Object>) annotatedCommandHandler.getClass(),
+                                  parameterResolverFactory,
+                                  handlerDefinition);
 
         this.target = annotatedCommandHandler;
     }

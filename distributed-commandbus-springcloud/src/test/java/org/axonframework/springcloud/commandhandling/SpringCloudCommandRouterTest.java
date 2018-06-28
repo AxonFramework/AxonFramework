@@ -18,14 +18,17 @@ package org.axonframework.springcloud.commandhandling;
 import com.google.common.collect.ImmutableList;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
@@ -36,11 +39,15 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.common.ReflectionUtils.setFieldValue;
 import static org.junit.Assert.*;
@@ -73,6 +80,7 @@ public class SpringCloudCommandRouterTest {
     @Mock
     private RoutingStrategy routingStrategy;
     private Field atomicConsistentHashField;
+    private Field blackListedServiceInstancesField;
 
     private String serializedCommandFilterData;
     private String serializedCommandFilterClassName;
@@ -88,14 +96,17 @@ public class SpringCloudCommandRouterTest {
         String atomicConsistentHashFieldName = "atomicConsistentHash";
         atomicConsistentHashField = SpringCloudCommandRouter.class.getDeclaredField(atomicConsistentHashFieldName);
 
+        String blackListedServiceInstancesFieldName = "blackListedServiceInstances";
+        blackListedServiceInstancesField = SpringCloudCommandRouter.class.getDeclaredField(
+                blackListedServiceInstancesFieldName);
         serviceInstanceMetadata = new HashMap<>();
         when(localServiceInstance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
         when(localServiceInstance.getUri()).thenReturn(SERVICE_INSTANCE_URI);
         when(localServiceInstance.getMetadata()).thenReturn(serviceInstanceMetadata);
 
-        when(discoveryClient.getServices()).thenReturn(Collections.singletonList(SERVICE_INSTANCE_ID));
+        when(discoveryClient.getServices()).thenReturn(singletonList(SERVICE_INSTANCE_ID));
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
-                .thenReturn(Collections.singletonList(localServiceInstance));
+                .thenReturn(singletonList(localServiceInstance));
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
 
@@ -147,7 +158,9 @@ public class SpringCloudCommandRouterTest {
         verify(consistentHashChangeListener).onConsistentHashChanged(argThat(item -> item.getMembers()
                                                                                          .stream()
                                                                                          .map(Member::name)
-                                                                                         .anyMatch(memberName -> memberName.contains(SERVICE_INSTANCE_ID))));
+                                                                                         .anyMatch(memberName -> memberName
+                                                                                                 .contains(
+                                                                                                         SERVICE_INSTANCE_ID))));
     }
 
     @Test
@@ -407,6 +420,45 @@ public class SpringCloudCommandRouterTest {
         assertEquals(expectedMemberSetSize, resultMemberSet.size());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testBlackListCleaning() {
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        String serviceInstanceToBeBlackListedId = "toBeBlackListed";
+        ServiceInstance serviceInstanceToBeBlackListed = mock(ServiceInstance.class);
+        when(serviceInstanceToBeBlackListed.getServiceId()).thenReturn(serviceInstanceToBeBlackListedId);
+        when(serviceInstanceToBeBlackListed.getHost()).thenReturn("host");
+        when(serviceInstanceToBeBlackListed.getPort()).thenReturn(0);
+        when(serviceInstanceToBeBlackListed.getMetadata()).thenReturn(
+                Collections.emptyMap(),
+                serviceInstanceMetadata
+        );
+
+        when(discoveryClient.getServices()).thenReturn(
+                ImmutableList.of(SERVICE_INSTANCE_ID, serviceInstanceToBeBlackListedId),
+                ImmutableList.of(SERVICE_INSTANCE_ID),
+                ImmutableList.of(SERVICE_INSTANCE_ID, serviceInstanceToBeBlackListedId)
+        );
+        when(discoveryClient.getInstances(serviceInstanceToBeBlackListedId)).thenReturn(ImmutableList
+                                                                                                .of(serviceInstanceToBeBlackListed));
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        Set<ServiceInstance> blackListed = getFieldValue(blackListedServiceInstancesField, testSubject);
+        assertEquals(1, blackListed.size());
+        assertEquals(serviceInstanceToBeBlackListedId, blackListed.iterator().next().getServiceId());
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        blackListed = getFieldValue(blackListedServiceInstancesField, testSubject);
+        assertTrue(blackListed.isEmpty());
+
+        testSubject.updateMemberships(mock(HeartbeatEvent.class));
+        blackListed = getFieldValue(blackListedServiceInstancesField, testSubject);
+        assertTrue(blackListed.isEmpty());
+    }
+
     private void assertMember(boolean localMember, Member resultMember, Boolean registered) {
         String expectedMemberName = SpringCloudCommandRouterTest.SERVICE_INSTANCE_ID;
         URI expectedEndpoint = SpringCloudCommandRouterTest.SERVICE_INSTANCE_URI;
@@ -428,5 +480,74 @@ public class SpringCloudCommandRouterTest {
             URI resultEndpoint = connectionEndpointOptional.orElseThrow(IllegalStateException::new);
             assertEquals(resultEndpoint, expectedEndpoint);
         }
+    }
+
+    @Test
+    public void testConsistentHashCreatedOnDistinctHostsShouldBeEqual() {
+        serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(100));
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
+        serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_CLASS_NAME_KEY, serializedCommandFilterClassName);
+
+        when(discoveryClient.getServices()).thenReturn(singletonList(SERVICE_INSTANCE_ID));
+
+        int numberOfInstances = 6;
+        List<ServiceInstance> serviceInstances = mockServiceInstances(numberOfInstances);
+        when(discoveryClient.getInstances(SERVICE_INSTANCE_ID)).thenReturn(serviceInstances);
+
+        List<SpringCloudCommandRouter> routers = createRoutersFor(serviceInstances);
+        initAll(routers);
+
+        List<ConsistentHash> hashes = getHashesFor(routers);
+
+        assertEquals(hashes.size(), numberOfInstances);
+        hashes.forEach(hash -> assertEquals(hash, hashes.get(0)));
+    }
+
+    private List<ConsistentHash> getHashesFor(List<SpringCloudCommandRouter> routers) {
+        return routers.stream()
+                      .map(this::getHash)
+                      .map(AtomicReference::get)
+                      .collect(toList());
+    }
+
+    private void initAll(List<SpringCloudCommandRouter> routers) {
+        routers.forEach(r -> {
+            r.updateMemberships(mock(HeartbeatEvent.class));
+            r.resetLocalMembership(mock(InstanceRegisteredEvent.class));
+        });
+    }
+
+    private List<SpringCloudCommandRouter> createRoutersFor(List<ServiceInstance> serviceInstances) {
+        return serviceInstances.stream()
+                               .map(ServiceInstance::getHost)
+                               .map(this::createRouterFor)
+                               .collect(toList());
+    }
+
+    private AtomicReference<ConsistentHash> getHash(SpringCloudCommandRouter r) {
+        return getFieldValue(atomicConsistentHashField, r);
+    }
+
+    private SpringCloudCommandRouter createRouterFor(String host) {
+        Registration localServiceInstance = mock(Registration.class);
+        when(localServiceInstance.getUri()).thenReturn(URI.create("http://" + host));
+        return new SpringCloudCommandRouter(discoveryClient,
+                                            localServiceInstance,
+                                            routingStrategy,
+                                            s -> true,
+                                            consistentHashChangeListener);
+    }
+
+    private List<ServiceInstance> mockServiceInstances(int number) {
+        return IntStream.rangeClosed(1, number)
+                        .mapToObj(i -> {
+                            ServiceInstance instance = mock(ServiceInstance.class);
+                            when(instance.getHost()).thenReturn("host" + i);
+                            when(instance.getServiceId()).thenReturn(SERVICE_INSTANCE_ID);
+                            when(instance.getUri()).thenReturn(URI.create("http://host" + i));
+                            when(instance.getMetadata()).thenReturn(serviceInstanceMetadata);
+                            return instance;
+                        })
+                        .collect(toList());
     }
 }

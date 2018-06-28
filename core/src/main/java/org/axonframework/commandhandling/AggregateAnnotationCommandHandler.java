@@ -25,6 +25,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -88,6 +89,29 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
                                              ParameterResolverFactory parameterResolverFactory) {
         this(repository, commandTargetResolver,
              AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, parameterResolverFactory));
+    }
+
+    /**
+     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the given
+     * {@code repository} to add and load aggregate instances, the given {@code parameterResolverFactory} to resolve
+     * parameters which are required by handlers and the given {@code handlerDefinition} used to create handlers.
+     *
+     * @param aggregateType            The type of aggregate
+     * @param repository               The repository providing access to aggregate instances
+     * @param commandTargetResolver    The target resolution strategy
+     * @param parameterResolverFactory The strategy for resolving parameter values for handler methods
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    public AggregateAnnotationCommandHandler(Class<T> aggregateType,
+                                             Repository<T> repository,
+                                             CommandTargetResolver commandTargetResolver,
+                                             ParameterResolverFactory parameterResolverFactory,
+                                             HandlerDefinition handlerDefinition) {
+        this(repository,
+             commandTargetResolver,
+             AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType,
+                                                                 parameterResolverFactory,
+                                                                 handlerDefinition));
     }
 
     /**

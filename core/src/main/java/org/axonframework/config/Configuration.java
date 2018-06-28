@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
@@ -122,6 +123,7 @@ public interface Configuration {
     default QueryGateway queryGateway() {
         return getComponent(QueryGateway.class);
     }
+
     /**
      * Returns the Repository configured for the given {@code aggregateType}.
      *
@@ -217,6 +219,14 @@ public interface Configuration {
     default ParameterResolverFactory parameterResolverFactory() {
         return getComponent(ParameterResolverFactory.class);
     }
+
+    /**
+     * Returns the Handler Definition defined in this Configuration for the given {@code inspectedType}.
+     *
+     * @param inspectedType The class to being inspected for handlers
+     * @return the Handler Definition defined in this Configuration
+     */
+    HandlerDefinition handlerDefinition(Class<?> inspectedType);
 
     /**
      * Returns the Deadline Manager defined in this Configuration.

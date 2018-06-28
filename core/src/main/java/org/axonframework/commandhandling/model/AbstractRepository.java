@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMeta
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -76,6 +77,23 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                 nonNull(aggregateType, () -> "aggregateType may not be null"),
                 nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")
         ));
+    }
+
+    /**
+     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type.
+     *
+     * @param aggregateType            The type of aggregate stored in this repository
+     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
+                                 HandlerDefinition handlerDefinition) {
+        this(AnnotatedAggregateMetaModelFactory
+                     .inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
+                                       nonNull(parameterResolverFactory,
+                                               () -> "parameterResolverFactory may not be null"),
+                                       nonNull(handlerDefinition, () -> "handler definition may not be null")));
     }
 
     /**
@@ -163,7 +181,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param expectedVersion The expected version of the aggregate
      * @throws ConflictingModificationException     when conflicting changes have been detected
      * @throws ConflictingAggregateVersionException the expected version is not {@code null}
-     *                                              and the version number of the aggregate does not match the expected version
+     *                                              and the version number of the aggregate does not match the expected
+     *                                              version
      */
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.version() != null &&

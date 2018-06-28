@@ -20,7 +20,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -39,21 +41,38 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
     private final Map<Class<?>, SagaModel<?>> registry = new ConcurrentHashMap<>();
 
     private final ParameterResolverFactory parameterResolverFactory;
+    private final HandlerDefinition handlerDefinition;
 
     /**
-     * Initializes a {@link AnnotationSagaMetaModelFactory} with {@link ClasspathParameterResolverFactory}.
+     * Initializes a {@link AnnotationSagaMetaModelFactory} with {@link ClasspathParameterResolverFactory} and {@link
+     * ClasspathHandlerDefinition}.
      */
     public AnnotationSagaMetaModelFactory() {
-        parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(getClass().getClassLoader());
+        this(ClasspathParameterResolverFactory.forClassLoader(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
-     * Initializes a {@link AnnotationSagaMetaModelFactory} with given {@code parameterResolverFactory}.
+     * Initializes a {@link AnnotationSagaMetaModelFactory} with given {@code parameterResolverFactory} and {@link
+     * ClasspathHandlerDefinition}.
      *
      * @param parameterResolverFactory factory for event handler parameter resolvers
      */
     public AnnotationSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
+        this(parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
+    }
+
+    /**
+     * Initializes a {@link AnnotationSagaMetaModelFactory} with given {@code parameterResolverFactory} and given {@code
+     * handlerDefinition}.
+     *
+     * @param parameterResolverFactory factory for event handler parameter resolvers
+     * @param handlerDefinition        the handler definition used to create concrete handlers
+     */
+    public AnnotationSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
+                                          HandlerDefinition handlerDefinition) {
         this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinition = handlerDefinition;
     }
 
     @SuppressWarnings("unchecked")
@@ -64,7 +83,9 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
 
     private <T> SagaModel<T> doCreateModel(Class<T> sagaType) {
         AnnotatedHandlerInspector<T> handlerInspector =
-                AnnotatedHandlerInspector.inspectType(sagaType, parameterResolverFactory);
+                AnnotatedHandlerInspector.inspectType(sagaType,
+                                                      parameterResolverFactory,
+                                                      handlerDefinition);
 
         return new InspectedSagaModel<>(handlerInspector.getHandlers());
     }

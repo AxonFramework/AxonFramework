@@ -33,7 +33,9 @@ import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.*;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.slf4j.Logger;
@@ -342,13 +344,10 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * {@code aggregateFactory}. The given {@code decorator} is used to decorate event streams.
+     * {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
-     * <p>
-     * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
-     * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for creating snapshots
@@ -367,13 +366,10 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Creates a repository instance for an Event Sourced aggregate, source from given {@code eventStore}, that is
-     * created by the given {@code aggregateFactory}. The given {@code decorator} is used to decorate event streams.
+     * created by the given {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
-     * <p>
-     * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
-     * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
@@ -413,6 +409,7 @@ public class DisruptorCommandBus implements CommandBus {
                                 aggregateFactory,
                                 snapshotTriggerDefinition,
                                 ClasspathParameterResolverFactory.forClass(aggregateFactory.getAggregateType()),
+                                ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
                                 repositoryProvider);
     }
 
@@ -428,7 +425,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      *
      * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, ParameterResolverFactory,
-     * RepositoryProvider)} instead.
+     * HandlerDefinition, RepositoryProvider)} instead.
      */
     @Deprecated
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
@@ -459,27 +456,34 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * {@code aggregateFactory} and sourced from given {@code eventStore}. Parameters of the annotated methods are
-     * resolved using the given {@code parameterResolverFactory}.
+     * resolved using the given {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create
+     * handler instances.
      *
      * @param eventStore               The Event Store to retrieve and persist events
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
      * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                 with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
      * @param repositoryProvider       Provides specific for given aggregate types
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition,
                                               RepositoryProvider repositoryProvider) {
-        return createRepository(eventStore, aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE,
-                                parameterResolverFactory, repositoryProvider);
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                NoSnapshotTriggerDefinition.INSTANCE,
+                                parameterResolverFactory,
+                                handlerDefinition,
+                                repositoryProvider);
     }
 
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
-     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     * {@code parameterResolverFactory}.
      *
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for snapshots
@@ -489,7 +493,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      *
      * @deprecated Use {@link #createRepository(EventStore, AggregateFactory, SnapshotTriggerDefinition,
-     * ParameterResolverFactory, RepositoryProvider)} instead
+     * ParameterResolverFactory, HandlerDefinition, RepositoryProvider)} instead
      */
     @Deprecated
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
@@ -501,7 +505,7 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate, sourced from given {@code eventStore}, that is
      * created by the given {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
-     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     * {@code parameterResolverFactory}.
      *
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
@@ -514,25 +518,25 @@ public class DisruptorCommandBus implements CommandBus {
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory) {
-        for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
-            invoker.createRepository(eventStore,
-                                     aggregateFactory,
-                                     snapshotTriggerDefinition,
-                                     parameterResolverFactory);
-        }
-        return new DisruptorRepository<>(aggregateFactory.getAggregateType());
+        return createRepository(eventStore,
+                                aggregateFactory,
+                                snapshotTriggerDefinition,
+                                parameterResolverFactory,
+                                ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
+                                null);
     }
 
     /**
      * Creates a repository instance for an Event Sourced aggregate, sourced from given {@code eventStore}, that is
      * created by the given {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
-     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     * {@code parameterResolverFactory}. The given {@code handlerDefinition} is used to create handler instances.
      *
      * @param eventStore                The Event Store to retrieve and persist events
      * @param aggregateFactory          The factory creating uninitialized instances of the Aggregate
      * @param snapshotTriggerDefinition The trigger definition for snapshots
      * @param parameterResolverFactory  The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                  with
+     * @param handlerDefinition         The handler definition used to create concrete handlers
      * @param repositoryProvider        Provides repositories for specific aggregate types
      * @param <T>                       The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
@@ -540,13 +544,15 @@ public class DisruptorCommandBus implements CommandBus {
     public <T> Repository<T> createRepository(EventStore eventStore, AggregateFactory<T> aggregateFactory,
                                               SnapshotTriggerDefinition snapshotTriggerDefinition,
                                               ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition,
                                               RepositoryProvider repositoryProvider) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
             invoker.createRepository(eventStore,
                                      repositoryProvider,
                                      aggregateFactory,
                                      snapshotTriggerDefinition,
-                                     parameterResolverFactory);
+                                     parameterResolverFactory,
+                                     handlerDefinition);
         }
         return new DisruptorRepository<>(aggregateFactory.getAggregateType());
     }

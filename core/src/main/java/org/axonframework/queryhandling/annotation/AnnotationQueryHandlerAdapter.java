@@ -18,7 +18,9 @@ package org.axonframework.queryhandling.annotation;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.*;
@@ -58,9 +60,26 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter,
      * @param target                   The instance with {@link QueryHandler} annotated methods
      * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with
      */
-    @SuppressWarnings("unchecked")
     public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory) {
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) target.getClass(), parameterResolverFactory);
+        this(target,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(target.getClass()));
+    }
+
+    /**
+     * Initializes the adapter, forwarding call to the given {@code target}, resolving parameters using the given
+     * {@code parameterResolverFactory} and creating handlers using {@code handlerDefinition}.
+     *
+     * @param target                   The instance with {@link QueryHandler} annotated methods
+     * @param parameterResolverFactory The parameter resolver factory to resolve handler parameters with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    @SuppressWarnings("unchecked")
+    public AnnotationQueryHandlerAdapter(T target, ParameterResolverFactory parameterResolverFactory,
+                                         HandlerDefinition handlerDefinition) {
+        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) target.getClass(),
+                                                           parameterResolverFactory,
+                                                           handlerDefinition);
         this.target = target;
     }
 

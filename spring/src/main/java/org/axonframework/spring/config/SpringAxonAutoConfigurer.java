@@ -37,12 +37,14 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.spring.config.annotation.SpringContextHandlerDefinitionBuilder;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -135,6 +137,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 SpringContextParameterResolverFactoryBuilder.getBeanReference(registry);
         configurer.registerComponent(ParameterResolverFactory.class, c -> beanFactory
                 .getBean(parameterResolver.getBeanName(), ParameterResolverFactory.class));
+
+        RuntimeBeanReference handlerDefinition =
+                SpringContextHandlerDefinitionBuilder.getBeanReference(registry);
+        configurer.registerHandlerDefinition((c, clazz) -> beanFactory
+                .getBean(handlerDefinition.getBeanName(), HandlerDefinition.class));
 
         findComponent(CommandBus.class)
                 .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
@@ -329,7 +336,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                         c.eventBus(),
                                         c::repository,
                                         c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
-                                        c.parameterResolverFactory()));
+                                        c.parameterResolverFactory(),
+                                        c.handlerDefinition(aggregateType)));
                     }
                 }
             } else {
@@ -406,7 +414,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         @Override
         public String[] selectImports(AnnotationMetadata importingClassMetadata) {
-            return new String[]{SpringAxonAutoConfigurer.class.getName()};
+            return new String[]{ SpringAxonAutoConfigurer.class.getName() };
         }
     }
 

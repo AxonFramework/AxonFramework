@@ -21,7 +21,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -48,14 +48,12 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
     private ApplicationContext applicationContext;
 
     /**
-     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
-     * The given Aggregate Factories are lazily retrieved from the application context.
+     * Initializes a snapshotter. The given Aggregate Factories are lazily retrieved from the application context.
      *
      * @param eventStore               The Event Store to store snapshots in
      * @param parameterResolverFactory The parameterResolverFactory used to reconstruct aggregates
      * @param executor                 The executor that processes the snapshotting requests
      * @param txManager                The transaction manager to manage the persistence transactions with
-     * @see ClasspathParameterResolverFactory
      */
     public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
                                       Executor executor, TransactionManager txManager) {
@@ -68,15 +66,21 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      *
      * @param eventStore               The Event Store to store snapshots in
      * @param parameterResolverFactory The parameterResolverFactory used to reconstruct aggregates
+     * @param handlerDefinition        The handler definition used to create concrete handlers
      * @param executor                 The executor that processes the snapshotting requests
      * @param txManager                The transaction manager to manage the persistence transactions with
      * @param repositoryProvider       Provides repositories for specific aggregate types
-     * @see ClasspathParameterResolverFactory
      */
     public SpringAggregateSnapshotter(EventStore eventStore, ParameterResolverFactory parameterResolverFactory,
-                                      Executor executor, TransactionManager txManager,
-                                      RepositoryProvider repositoryProvider) {
-        super(eventStore, Collections.emptyList(), parameterResolverFactory, executor, txManager, repositoryProvider);
+                                      HandlerDefinition handlerDefinition, Executor executor,
+                                      TransactionManager txManager, RepositoryProvider repositoryProvider) {
+        super(eventStore,
+              Collections.emptyList(),
+              parameterResolverFactory,
+              handlerDefinition,
+              executor,
+              txManager,
+              repositoryProvider);
     }
 
     @Override

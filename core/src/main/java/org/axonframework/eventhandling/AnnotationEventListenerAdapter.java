@@ -17,7 +17,9 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -51,13 +53,30 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
      */
-    @SuppressWarnings("unchecked")
     public AnnotationEventListenerAdapter(Object annotatedEventListener,
                                           ParameterResolverFactory parameterResolverFactory) {
+        this(annotatedEventListener,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(annotatedEventListener.getClass()));
+    }
+
+    /**
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given {@code
+     * parameterResolverFactory} is used to resolve parameter values for handler methods. Handler definition is used to
+     * create concrete handlers.
+     *
+     * @param annotatedEventListener   the annotated event listener
+     * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     * @param handlerDefinition        the handler definition used to create concrete handlers
+     */
+    public AnnotationEventListenerAdapter(Object annotatedEventListener,
+                                          ParameterResolverFactory parameterResolverFactory,
+                                          HandlerDefinition handlerDefinition) {
         this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
         this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
-                                                               parameterResolverFactory);
+                                                               parameterResolverFactory,
+                                                               handlerDefinition);
     }
 
     @Override

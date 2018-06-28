@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
@@ -147,6 +148,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public List<CorrelationDataProvider> correlationDataProviders() {
         return config.correlationDataProviders();
+    }
+
+    @Override
+    public HandlerDefinition handlerDefinition(Class<?> inspectedType) {
+        return config.handlerDefinition(inspectedType);
     }
 
     @Override
