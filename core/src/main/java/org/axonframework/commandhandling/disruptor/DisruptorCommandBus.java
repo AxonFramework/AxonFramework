@@ -657,16 +657,17 @@ public class DisruptorCommandBus implements CommandBus {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
         }
 
+        @SuppressWarnings("Duplicates")
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateScopeDescriptor) {
+            if (canResolve(scopeDescription)) {
                 String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
                 Aggregate<T> aggregate = load(aggregateIdentifier);
                 if (aggregate != null) {
                     aggregate.handle(message);
                 } else {
-                    logger.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. Hence, message '"
-                                         + message + "' cannot be handled.");
+                    logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
+                                 aggregateIdentifier, message);
                 }
             }
         }

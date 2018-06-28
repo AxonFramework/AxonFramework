@@ -314,8 +314,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             if (aggregate != null) {
                 aggregate.handle(message);
             } else {
-                logger.debug("Aggregate (with id: " + aggregateIdentifier + ") cannot be loaded. "
-                                     + "Hence, message '" + message + "' cannot be handled.");
+                logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
+                             aggregateIdentifier, message);
             }
         }
     }

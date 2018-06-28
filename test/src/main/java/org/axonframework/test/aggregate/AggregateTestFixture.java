@@ -631,14 +631,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateScopeDescriptor) {
+            if (canResolve(scopeDescription)) {
                 load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
             }
         }
 
         @Override
         public boolean canResolve(ScopeDescriptor scopeDescription) {
-            return true;
+            return scopeDescription instanceof AggregateScopeDescriptor;
         }
     }
 
@@ -697,14 +697,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (scopeDescription instanceof AggregateScopeDescriptor) {
+            if (canResolve(scopeDescription)) {
                 load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
             }
         }
 
         @Override
         public boolean canResolve(ScopeDescriptor scopeDescription) {
-            return true;
+            return scopeDescription instanceof AggregateScopeDescriptor;
         }
     }
 

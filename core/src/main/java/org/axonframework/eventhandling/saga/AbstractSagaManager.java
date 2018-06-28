@@ -18,7 +18,13 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.ResetNotSupportedException;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -40,7 +46,8 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, ScopeAware {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSagaManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
+
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private final Supplier<T> sagaFactory;
@@ -205,14 +212,14 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             throw new IllegalArgumentException(exceptionMessage);
         }
 
-        if (scopeDescription instanceof SagaScopeDescriptor) {
+        if (canResolve(scopeDescription)) {
             String sagaIdentifier = ((SagaScopeDescriptor) scopeDescription).getIdentifier().toString();
             Saga<T> saga = sagaRepository.load(sagaIdentifier);
             if (saga != null) {
                 saga.handle((EventMessage) message);
             } else {
-                LOGGER.debug("Saga (with id: " + sagaIdentifier + ") cannot be loaded. Hence, message '" + message
-                                     + "' cannot be handled.");
+                logger.debug("Saga (with id: [{}]) cannot be loaded, as it most likely already ended."
+                                     + " Hence, message [{}] cannot be handled.", sagaIdentifier, message);
             }
         }
     }
