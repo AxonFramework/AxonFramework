@@ -200,6 +200,72 @@ public class JdbcUtils {
     }
 
     /**
+     * Moves the {@code resultSet} courser forward and then read the object at the
+     * given column (base 1). Please note that this method changes the
+     * {@code resultSet} cursor position. If the {@code resultSet} reaches the end,
+     * this method returns {@code null}. This method reads the object at the given
+     * column (base 1), which object can be {@code null} as well.
+     * <p>
+     * Please use the method {@link #extract(ResultSet, int, Class)} if you do not
+     * need to move the {@code resultSet} cursor.
+     * <p>
+     * This method makes use of the {@link ResultSet#wasNull()} method to verify
+     * whether the object that was read was {@code null} or not. There are cases
+     * where the database driver (such as MySQL) returns the default primitive value
+     * instead of {@code null}. This method avoids this problem.
+     * 
+     * @param resultSet
+     * @param column
+     * @param columnType
+     * @return
+     * @throws SQLException
+     *             if an error occurs while reading the object
+     * @throws NullPointerException
+     *             if the {@code resultSet} or {@code columnType} are {@code null}
+     * @see #extract(ResultSet, int, Class)
+     */
+    public static <T> T nextAndExtract(ResultSet resultSet, int column, Class<T> columnType)
+            throws SQLException, NullPointerException {
+        if (resultSet.next()) {
+            return extract(resultSet, column, columnType);
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the object read from the {@code resultSet}, which object can be
+     * {@code null}, at the given column (base 1).
+     * <p>
+     * This method makes use of the {@link ResultSet#wasNull()} method to verify
+     * whether the object that was read was {@code null} or not. There are cases
+     * where the database driver (such as MySQL) returns the default primitive value
+     * instead of {@code null}. This method avoids this problem.
+     * 
+     * @param resultSet
+     *            the result set from where the object is read (which cannot be
+     *            {@code null})
+     * @param column
+     *            the column index (which starts from 1)
+     * @param columnType
+     *            the object type (which cannot be {@code null})
+     * @return the object read from the {@code resultSet}, which object can be
+     *         {@code null}, at the given column (base 1).
+     * @throws SQLException
+     *             if an error occurs while reading the object
+     * @throws NullPointerException
+     *             if the {@code resultSet} or {@code columnType} are {@code null}
+     */
+    public static <T> T extract(ResultSet resultSet, int column, Class<T> columnType) throws SQLException, NullPointerException {
+        final T value = resultSet.getObject(column, columnType);
+        if (value == null || resultSet.wasNull()) {
+            return null;
+        }
+
+        return value;
+    }
+
+    /**
      * Private default constructor
      */
     private JdbcUtils() {

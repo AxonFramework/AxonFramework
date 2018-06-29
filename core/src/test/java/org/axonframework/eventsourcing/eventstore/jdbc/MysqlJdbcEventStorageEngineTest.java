@@ -29,63 +29,63 @@ import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
  */
 public class MysqlJdbcEventStorageEngineTest {
 
-	private MysqlDataSource dataSource;
-	private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
-	private JdbcEventStorageEngine testSubject;
+    private MysqlDataSource dataSource;
+    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
+    private JdbcEventStorageEngine testSubject;
 
-	@Before
-	public void setUp() throws Exception {
-		/* Load the DB properties */
-		final Properties properties = new Properties();
-		properties.load(getClass().getResourceAsStream("/mysql.temp.database.properties"));
+    @Before
+    public void setUp() throws Exception {
+        /* Load the DB properties */
+        final Properties properties = new Properties();
+        properties.load(getClass().getResourceAsStream("/mysql.temp.database.properties"));
 
-		dataSource = new MysqlDataSource();
-		dataSource.setUrl(properties.getProperty("jdbc.url"));
-		dataSource.setUser(properties.getProperty("jdbc.username"));
-		dataSource.setPassword(properties.getProperty("jdbc.password"));
-		defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-		testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, new EventSchema(),
-				byte[].class, MySqlEventTableFactory.INSTANCE);
-	}
+        dataSource = new MysqlDataSource();
+        dataSource.setUrl(properties.getProperty("jdbc.url"));
+        dataSource.setUser(properties.getProperty("jdbc.username"));
+        dataSource.setPassword(properties.getProperty("jdbc.password"));
+        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
+        testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, new EventSchema(),
+                byte[].class, MySqlEventTableFactory.INSTANCE);
+    }
 
-	/**
-	 * Issue #636 - The JdbcEventStorageEngine when used with the MySQL database
-	 * returns 0 instead of an empty optional when retrieving the last sequence
-	 * number for an aggregate that does not exist. This test replicates this
-	 * problem.
-	 */
-	@Test
-	public void testLoadLastSequenceNumber() {
-		final String aggregateId = UUID.randomUUID().toString();
-		testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
-		assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
-		assertFalse(testSubject.lastSequenceNumberFor("inexistent").isPresent());
-	}
+    /**
+     * Issue #636 - The JdbcEventStorageEngine when used with the MySQL database
+     * returns 0 instead of an empty optional when retrieving the last sequence
+     * number for an aggregate that does not exist. This test replicates this
+     * problem.
+     */
+    @Test
+    public void testLoadLastSequenceNumber() {
+        final String aggregateId = UUID.randomUUID().toString();
+        testSubject.appendEvents(createEvent(aggregateId, 0), createEvent(aggregateId, 1));
+        assertEquals(1L, (long) testSubject.lastSequenceNumberFor(aggregateId).orElse(-1L));
+        assertFalse(testSubject.lastSequenceNumberFor("inexistent").isPresent());
+    }
 
-	protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-			PersistenceExceptionResolver persistenceExceptionResolver, EventSchema eventSchema, Class<?> dataType,
-			EventTableFactory tableFactory) {
-		return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory,
-				100);
-	}
+    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
+            PersistenceExceptionResolver persistenceExceptionResolver, EventSchema eventSchema, Class<?> dataType,
+            EventTableFactory tableFactory) {
+        return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory,
+                100);
+    }
 
-	protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-			PersistenceExceptionResolver persistenceExceptionResolver,
-			Predicate<? super DomainEventData<?>> snapshotFilter, EventSchema eventSchema, Class<?> dataType,
-			EventTableFactory tableFactory, int batchSize) {
-		XStreamSerializer serializer = new XStreamSerializer();
-		JdbcEventStorageEngine result = new JdbcEventStorageEngine(serializer, upcasterChain,
-				persistenceExceptionResolver, serializer, snapshotFilter, batchSize, dataSource::getConnection,
-				NoTransactionManager.INSTANCE, dataType, eventSchema, null, null);
+    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
+            PersistenceExceptionResolver persistenceExceptionResolver,
+            Predicate<? super DomainEventData<?>> snapshotFilter, EventSchema eventSchema, Class<?> dataType,
+            EventTableFactory tableFactory, int batchSize) {
+        XStreamSerializer serializer = new XStreamSerializer();
+        JdbcEventStorageEngine result = new JdbcEventStorageEngine(serializer, upcasterChain,
+                persistenceExceptionResolver, serializer, snapshotFilter, batchSize, dataSource::getConnection,
+                NoTransactionManager.INSTANCE, dataType, eventSchema, null, null);
 
-		try {
-			Connection connection = dataSource.getConnection();
-			connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
-			connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-			result.createSchema(tableFactory);
-			return result;
-		} catch (SQLException e) {
-			throw new IllegalStateException(e);
-		}
-	}
+        try {
+            Connection connection = dataSource.getConnection();
+            connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
+            connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
+            result.createSchema(tableFactory);
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }
