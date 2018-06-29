@@ -50,9 +50,10 @@ message QueryResponse {
     string request_identifier = 7;
 }
 message SubscriptionQuery {
-    int64 number_of_permits = 1;
-    QueryRequest query_request = 2;
-    io.axoniq.platform.SerializedObject update_response_type = 3;
+    string subscription_identifier = 1;
+    int64 number_of_permits = 2;
+    QueryRequest query_request = 3;
+    io.axoniq.platform.SerializedObject update_response_type = 4;
 }
 
 
@@ -87,12 +88,13 @@ message SubscriptionQueryRequest {
 }
 
 message SubscriptionQueryResponse {
-    string subscription_identifier = 1;
+    string message_identifier = 1;
+    string subscription_identifier = 2;
     oneof response {
-        QueryResponse initial_response = 2;
-        QueryUpdate update = 3;
-        QueryUpdateComplete complete = 4;
-        QueryUpdateCompleteExceptionally complete_exceptionally = 5;
+        QueryResponse initial_response = 3;
+        QueryUpdate update = 4;
+        QueryUpdateComplete complete = 5;
+        QueryUpdateCompleteExceptionally complete_exceptionally = 6;
     }
 }
 
