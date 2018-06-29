@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -296,21 +297,10 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                        PreparedStatement stmt = connection.prepareStatement(sql);
                                        stmt.setString(1, aggregateIdentifier);
                                        return stmt;
-                                   },
-                                   		/* Fixed issue #636 */
-                   						// resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null
-                   						resultSet -> {
-                   							if (resultSet.next()) {
-                   								final Long value = resultSet.getObject(1, Long.class);
-                   								if (false == resultSet.wasNull()) {
-                   									return value;
-                   								}
-                   							}
-                   							return null;
-                   						},
-                                   e -> new EventStoreException(
-                                           format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
-                                   ))));
+                                   }, 
+                                   resultSet -> JdbcUtils.nextAndExtract(resultSet, 1, Long.class),
+                                   e -> new EventStoreException(format("Failed to read events for aggregate [%s]", aggregateIdentifier), e) 
+                                   )));
     }
 
     @Override
