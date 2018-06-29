@@ -128,8 +128,7 @@ public class AxonHubCommandBus implements CommandBus {
                                                     if (commandResponse.hasPayload()) {
                                                         try {
                                                             //noinspection unchecked
-                                                            payload = (R) serializer.deserializePayload(commandResponse
-                                                                                                                .getPayload());
+                                                            payload = (R) serializer.deserialize(commandResponse);
                                                         } catch (Exception ex) {
                                                             logger.info("Failed to deserialize payload - {} - {}",
                                                                         commandResponse.getPayload().getData(),
@@ -338,15 +337,7 @@ public class AxonHubCommandBus implements CommandBus {
                 @Override
                 public void onSuccess(CommandMessage<? extends C> commandMessage, Object o) {
                     logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    CommandResponse.Builder responseBuilder = CommandResponse.newBuilder()
-                                                                             .setMessageIdentifier(UUID.randomUUID().toString())
-                                                                             .setRequestIdentifier(command.getIdentifier());
-                    if (o != null) {
-                        responseBuilder.setPayload(serializer.serializePayload(o));
-                    }
-                    CommandProviderOutbound response = CommandProviderOutbound.newBuilder()
-                                                                              .setCommandResponse(responseBuilder).build();
-                    responseObserver.onNext(response);
+                    responseObserver.onNext(serializer.serialize(o, command.getIdentifier()));
 
                 }
 

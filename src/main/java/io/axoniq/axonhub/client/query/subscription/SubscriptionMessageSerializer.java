@@ -31,12 +31,15 @@ import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.util.GrpcMetadataSerializer;
 import io.axoniq.axonhub.client.util.GrpcObjectSerializer;
+import io.axoniq.axonhub.client.util.GrpcPayloadSerializer;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.Serializer;
+
+import java.util.UUID;
 
 import static io.axoniq.axonhub.grpc.QueryProviderOutbound.newBuilder;
 
@@ -56,9 +59,9 @@ public class SubscriptionMessageSerializer {
 
     private final GrpcMetadataSerializer metadataSerializer;
 
-    private final GrpcObjectSerializer payloadSerializer;
+    private final GrpcPayloadSerializer payloadSerializer;
 
-    private final GrpcObjectSerializer responseTypeSerializer;
+    private final GrpcObjectSerializer<Object> responseTypeSerializer;
 
     public SubscriptionMessageSerializer(AxonHubConfiguration conf,
                                          Serializer messageSerializer,
@@ -67,14 +70,14 @@ public class SubscriptionMessageSerializer {
         this.messageSerializer = messageSerializer;
         this.genericSerializer = genericSerializer;
         this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(messageSerializer));
-        this.payloadSerializer  = new GrpcObjectSerializer(new MessageSerializer(messageSerializer));
-        this.responseTypeSerializer = new GrpcObjectSerializer(genericSerializer);
+        this.payloadSerializer  = new GrpcPayloadSerializer(messageSerializer);
+        this.responseTypeSerializer = new GrpcObjectSerializer<>(genericSerializer);
     }
 
 
     QueryProviderOutbound serialize(QueryResponseMessage initialResult, String subscriptionId) {
         QueryResponse response = QueryResponse.newBuilder()
-                                              .setPayload(payloadSerializer.apply(initialResult.getPayload()))
+                                              .setPayload(payloadSerializer.apply(initialResult))
                                               .putAllMetaData(metadataSerializer.apply(initialResult.getMetaData()))
                                               .setMessageIdentifier(initialResult.getIdentifier())
                                               .setRequestIdentifier(subscriptionId)
@@ -91,7 +94,7 @@ public class SubscriptionMessageSerializer {
 
     QueryProviderOutbound serialize(SubscriptionQueryUpdateMessage<?> update, String subscriptionId) {
         QueryUpdate.Builder builder = QueryUpdate.newBuilder()
-                                                 .setPayload(payloadSerializer.apply(update.getPayload()))
+                                                 .setPayload(payloadSerializer.apply(update))
                                                  .putAllMetaData(metadataSerializer.apply(update.getMetaData()))
                                                  .setMessageIdentifier(update.getIdentifier())
                                                  .setClientName(conf.getClientName())
@@ -127,11 +130,12 @@ public class SubscriptionMessageSerializer {
                                                 .setQuery(message.getQueryName())
                                                 .setClientId(conf.getClientName())
                                                 .setComponentName(conf.getComponentName())
-                                                .setPayload(payloadSerializer.apply(message.getPayload()))
+                                                .setPayload(payloadSerializer.apply(message))
                                                 .setResponseType(responseTypeSerializer.apply(message.getResponseType()))
                                                 .putAllMetaData(metadataSerializer.apply(message.getMetaData())).build();
 
         SubscriptionQuery.Builder builder = SubscriptionQuery.newBuilder()
+                                                             .setSubscriptionIdentifier(message.getIdentifier())
                                                              .setNumberOfPermits(conf.getInitialNrOfPermits())
                                                              .setUpdateResponseType(responseTypeSerializer.apply(message.getUpdateResponseType()))
                                                              .setQueryRequest(queryRequest);

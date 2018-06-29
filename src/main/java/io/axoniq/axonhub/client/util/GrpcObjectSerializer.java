@@ -16,29 +16,39 @@
 package io.axoniq.axonhub.client.util;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.platform.SerializedObject;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.messaging.Message;
+import org.axonframework.serialization.MessageSerializer;
+import org.axonframework.serialization.SerializedObject;
 
 import java.util.function.Function;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Created by Sara Pellegrini on 11/05/2018.
  * sara.pellegrini@gmail.com
  */
-public class GrpcObjectSerializer implements Function<Object, SerializedObject> {
+public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.platform.SerializedObject> {
 
-    private final Serializer serializer;
+    public interface Serializer<A> {
+        <T> SerializedObject<T> serialize(A object, Class<T> expectedRepresentation);
+    }
 
-    public GrpcObjectSerializer(Serializer serializer) {
+    private final Serializer<O> serializer;
+
+    public GrpcObjectSerializer(org.axonframework.serialization.Serializer serializer) {
+        this(serializer::serialize);
+    }
+
+    GrpcObjectSerializer(Serializer<O> serializer) {
         this.serializer = serializer;
     }
 
     @Override
-    public SerializedObject apply(Object o) {
-        org.axonframework.serialization.SerializedObject<byte[]> serializedPayload = serializer.serialize(o, byte[].class);
-        return SerializedObject.newBuilder()
+    public io.axoniq.platform.SerializedObject apply(O o) {
+        SerializedObject<byte[]> serializedPayload = serializer.serialize(o, byte[].class);
+        return io.axoniq.platform.SerializedObject.newBuilder()
                                .setData(ByteString.copyFrom(serializedPayload.getData()))
                                .setType(serializedPayload.getType().getName())
                                .setRevision(getOrDefault(serializedPayload.getType().getRevision(), ""))

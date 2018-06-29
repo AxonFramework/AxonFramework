@@ -78,7 +78,7 @@ class SubscriptionQueryRequestTarget {
     }
 
     private void subscribe(SubscriptionQuery query) {
-        String subscriptionId = query.getQueryRequest().getMessageIdentifier();
+        String subscriptionId = query.getSubscriptionIdentifier();
         SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>> result = localSegment
                 .subscriptionQuery(serializer.deserialize(query));
         Disposable disposable = result.updates().subscribe(
@@ -94,7 +94,7 @@ class SubscriptionQueryRequestTarget {
     }
 
     private void getInitialResult(SubscriptionQuery query) {
-        String subscriptionId = query.getQueryRequest().getMessageIdentifier();
+        String subscriptionId = query.getSubscriptionIdentifier();
         subscriptions.get(subscriptionId).initialResult().subscribe(
                 i -> publisher.publish(serializer.serialize(i, subscriptionId)),
                 e -> logger.debug("Error in initial result for subscription id: {}", subscriptionId)
@@ -102,7 +102,7 @@ class SubscriptionQueryRequestTarget {
     }
 
     private void unsubscribe(SubscriptionQuery unsubscribe) {
-        String subscriptionId = unsubscribe.getQueryRequest().getMessageIdentifier();
+        String subscriptionId = unsubscribe.getSubscriptionIdentifier();
         logger.debug("unsubscribe locally subscriptionId " + subscriptionId);
         subscriptions.remove(subscriptionId).cancel();
     }

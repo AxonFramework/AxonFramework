@@ -16,17 +16,16 @@
 package io.axoniq.axonhub.client.query;
 
 import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.platform.MetaDataValue;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonhub.client.util.GrpcMetadata;
+import io.axoniq.axonhub.client.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Wrapper around GRPC QueryRequest to implement the QueryMessage interface
@@ -37,22 +36,27 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
 
     private final QueryRequest query;
     private final Serializer messageSerializer;
-    private LazyDeserializingObject<Q> serializedPayload;
-    private LazyDeserializingObject<ResponseType<R>> serializedResponseType;
-    private MetaData metaData;
+    private final LazyDeserializingObject<Q> serializedPayload;
+    private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
+    private final Supplier<MetaData> metadata;
 
     public GrpcBackedQueryMessage(QueryRequest query, Serializer messageSerializer, Serializer genericSerializer) {
         this.query = query;
         this.messageSerializer = messageSerializer;
-        this.serializedPayload = new LazyDeserializingObject<>(fromGrpcSerializedObject(query.getPayload()), messageSerializer);
-        this.serializedResponseType = new LazyDeserializingObject<>(fromGrpcSerializedObject(query.getResponseType()), genericSerializer);
+        this.serializedPayload = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getPayload()), messageSerializer);
+        this.serializedResponseType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), genericSerializer);
+        this.metadata = new GrpcMetadata(query.getMetaDataMap(), messageSerializer);
     }
 
-    private org.axonframework.serialization.SerializedObject<byte[]> fromGrpcSerializedObject(SerializedObject payload) {
-        return new SimpleSerializedObject<>(payload.getData().toByteArray(),
-                                            byte[].class,
-                                            payload.getType(),
-                                            payload.getRevision());
+    public GrpcBackedQueryMessage(QueryRequest query, Serializer messageSerializer,
+                                  LazyDeserializingObject<Q> serializedPayload,
+                                  LazyDeserializingObject<ResponseType<R>> serializedResponseType,
+                                  Supplier<MetaData> metadata) {
+        this.query = query;
+        this.messageSerializer = messageSerializer;
+        this.serializedPayload = serializedPayload;
+        this.serializedResponseType = serializedResponseType;
+        this.metadata = metadata;
     }
 
     @Override
@@ -72,10 +76,7 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
 
     @Override
     public MetaData getMetaData() {
-        if (metaData == null) {
-            metaData = deserializeMetaData(query.getMetaDataMap());
-        }
-        return metaData;
+        return metadata.get();
     }
 
     @Override
@@ -89,40 +90,14 @@ public class GrpcBackedQueryMessage<Q, R> implements QueryMessage<Q, R> {
     }
 
     @Override
-    public QueryMessage<Q, R> withMetaData(Map<String, ?> var1) {
-        return null;
+    public QueryMessage<Q, R> withMetaData(Map<String, ?> metaData) {
+        return new GrpcBackedQueryMessage<>(query, messageSerializer, serializedPayload, serializedResponseType,
+                                         () -> MetaData.from(metaData));
     }
 
     @Override
-    public QueryMessage<Q, R> andMetaData(Map<String, ?> var1) {
-        return null;
-    }
-
-    private MetaData deserializeMetaData(Map<String, MetaDataValue> metaDataMap) {
-        if (metaDataMap.isEmpty()) {
-            return MetaData.emptyInstance();
-        }
-        Map<String, Object> metaData = new HashMap<>(metaDataMap.size());
-        metaDataMap.forEach((k, v) -> metaData.put(k, convertFromMetaDataValue(v)));
-        return MetaData.from(metaData);
-    }
-
-    private Object convertFromMetaDataValue(MetaDataValue value) {
-        switch (value.getDataCase()) {
-            case TEXT_VALUE:
-                return value.getTextValue();
-            case BYTES_VALUE:
-                return messageSerializer.deserialize(fromGrpcSerializedObject(value.getBytesValue()));
-            case DOUBLE_VALUE:
-                return value.getDoubleValue();
-            case NUMBER_VALUE:
-                return value.getNumberValue();
-            case BOOLEAN_VALUE:
-                return value.getBooleanValue();
-            case DATA_NOT_SET:
-                return null;
-        }
-        return null;
+    public QueryMessage<Q, R> andMetaData(Map<String, ?> metaData) {
+        return withMetaData(getMetaData().mergedWith(metaData));
     }
 
 }

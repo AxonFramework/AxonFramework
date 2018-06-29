@@ -33,13 +33,15 @@ import java.util.Map;
  */
 public class GrpcBackedSubscriptionQueryMessage<Q,I,U> implements SubscriptionQueryMessage<Q,I,U> {
 
+    private final SubscriptionQuery subscriptionQuery;
     private final GrpcBackedQueryMessage<Q, I> grpcBackedQueryMessage;
     private final LazyDeserializingObject<ResponseType<U>> updateType;
 
 
     public GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery, Serializer messageSerializer, Serializer genericSerializer) {
+        this.subscriptionQuery = subscriptionQuery;
         QueryRequest query = subscriptionQuery.getQueryRequest();
-        this.updateType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), messageSerializer);
+        this.updateType = new LazyDeserializingObject<>(new GrpcSerializedObject(query.getResponseType()), genericSerializer);
         grpcBackedQueryMessage = new GrpcBackedQueryMessage<>(query, messageSerializer, genericSerializer);
     }
 
@@ -60,7 +62,7 @@ public class GrpcBackedSubscriptionQueryMessage<Q,I,U> implements SubscriptionQu
 
     @Override
     public String getIdentifier() {
-        return grpcBackedQueryMessage.getIdentifier();
+        return subscriptionQuery.getSubscriptionIdentifier();
     }
 
     @Override

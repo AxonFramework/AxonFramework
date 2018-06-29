@@ -38,6 +38,7 @@ public class GrpcSerializedObject implements SerializedObject<byte[]> {
 
     @Override
     public SerializedType getType() {
+
         return new SerializedType() {
             @Override
             public String getName() {
@@ -46,7 +47,8 @@ public class GrpcSerializedObject implements SerializedObject<byte[]> {
 
             @Override
             public String getRevision() {
-                return payload.getRevision();
+                String revision = payload.getRevision();
+                return "".equals(revision) ? null : revision;
             }
         };
     }
