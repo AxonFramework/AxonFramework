@@ -296,7 +296,18 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                        PreparedStatement stmt = connection.prepareStatement(sql);
                                        stmt.setString(1, aggregateIdentifier);
                                        return stmt;
-                                   }, resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null,
+                                   },
+                                   		/* Fixed issue #636 */
+                   						// resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null
+                   						resultSet -> {
+                   							if (resultSet.next()) {
+                   								final Long value = resultSet.getObject(1, Long.class);
+                   								if (false == resultSet.wasNull()) {
+                   									return value;
+                   								}
+                   							}
+                   							return null;
+                   						},
                                    e -> new EventStoreException(
                                            format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
                                    ))));
