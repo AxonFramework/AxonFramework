@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +20,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Test;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -137,17 +141,12 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testCreateTailToken() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
-        testSubject.appendEvents(event1);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-        testSubject.appendEvents(event2);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
-        testSubject.appendEvents(event3);
+        testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken headToken = testSubject.createTailToken();
 
@@ -159,17 +158,12 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testCreateHeadToken() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
-        testSubject.appendEvents(event1);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-        testSubject.appendEvents(event2);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
-        testSubject.appendEvents(event3);
+        testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken headToken = testSubject.createHeadToken();
 
@@ -181,17 +175,12 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testCreateTokenAt() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
-        testSubject.appendEvents(event1);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-        testSubject.appendEvents(event2);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
-        testSubject.appendEvents(event3);
+        testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
 
@@ -203,14 +192,10 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testCreateTokenAtExactTime() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
         testSubject.appendEvents(event1, event2, event3);
 
@@ -224,20 +209,11 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testCreateTokenWithUnorderedEvents() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:50.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:45.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event4 = createEvent(3);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:42.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event5 = createEvent(4);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:50.00Z"));
+        DomainEventMessage<String> event4 = createEvent(3, Instant.parse("2007-12-03T10:15:45.00Z"));
+        DomainEventMessage<String> event5 = createEvent(4, Instant.parse("2007-12-03T10:15:42.00Z"));
 
         testSubject.appendEvents(event1, event2, event3, event4, event5);
 

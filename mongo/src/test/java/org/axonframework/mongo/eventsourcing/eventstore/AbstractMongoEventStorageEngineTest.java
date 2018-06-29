@@ -17,13 +17,11 @@
 package org.axonframework.mongo.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.junit.*;
+import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -42,16 +40,13 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
 
     @Override
     public void testCreateTailToken() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:10.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:10.00Z"));
         testSubject.appendEvents(event1);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         testSubject.appendEvents(event2);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
         testSubject.appendEvents(event3);
 
         TrackingToken headToken = testSubject.createTailToken();
@@ -65,16 +60,13 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
     @Override
     @Test
     public void testCreateTokenAt() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:00.01Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:00.01Z"));
         testSubject.appendEvents(event1);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
         testSubject.appendEvents(event2);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
         testSubject.appendEvents(event3);
 
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
@@ -88,14 +80,10 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
     @Override
     @Test
     public void testCreateTokenAtExactTime() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.01Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:35.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.01Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
         testSubject.appendEvents(event1, event2, event3);
 
@@ -109,20 +97,12 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
 
     @Override
     public void testCreateTokenWithUnorderedEvents() {
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:30.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event1 = createEvent(0);
 
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:40.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event2 = createEvent(1);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:50.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event3 = createEvent(2);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:45.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event4 = createEvent(3);
-
-        GenericEventMessage.clock = Clock.fixed(Instant.parse("2007-12-03T10:15:42.00Z"), Clock.systemUTC().getZone());
-        DomainEventMessage<String> event5 = createEvent(4);
+        DomainEventMessage<String> event1 = createEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage<String> event2 = createEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage<String> event3 = createEvent(2, Instant.parse("2007-12-03T10:15:50.00Z"));
+        DomainEventMessage<String> event4 = createEvent(3, Instant.parse("2007-12-03T10:15:45.00Z"));
+        DomainEventMessage<String> event5 = createEvent(4, Instant.parse("2007-12-03T10:15:42.00Z"));
 
         testSubject.appendEvents(event1, event2, event3, event4, event5);
 
