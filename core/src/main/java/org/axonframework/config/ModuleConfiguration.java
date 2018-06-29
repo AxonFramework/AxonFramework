@@ -54,4 +54,14 @@ public interface ModuleConfiguration {
      * @see Configuration#shutdown()
      */
     void shutdown();
+
+    /**
+     * Returns the actual module configuration instance. Usually, it is the instance itself. However, in case of module
+     * configuration wrappers, we would like to provide the wrapped module configuration as the instance.
+     *
+     * @return the actual module configuration instance
+     */
+    default ModuleConfiguration unwrap() {
+        return this;
+    }
 }

@@ -51,6 +51,7 @@ import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
+import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -85,25 +86,30 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              AggregateConfiguration.class,
+                              EventProcessingConfiguration.class);
     }
 
     @Test
     public void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .registerComponent(TrackingEventProcessorConfiguration.class,
-                                                                   c -> TrackingEventProcessorConfiguration.forParallelProcessing(2))
+                                                                   c -> TrackingEventProcessorConfiguration
+                                                                           .forParallelProcessing(2))
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                .registerModule(new EventProcessingConfiguration()
+                                                        .usingTrackingProcessors())
                                                 .registerModule(
                                                         new EventHandlingConfiguration()
-                                                                .usingTrackingProcessors()
                                                                 .registerEventHandler(c -> (EventListener) event -> {
                                                                 })
                                                 )
                                                 .start();
         try {
-            TrackingEventProcessor processor = ((EventHandlingConfiguration) config.getModules().get(0)).getProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
-                                                                                                        .orElseThrow(RuntimeException::new);
+            TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
+                                                     .orElseThrow(RuntimeException::new);
             assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
         } finally {
             config.shutdown();
@@ -124,8 +130,8 @@ public class DefaultConfigurerTest {
                                                 )
                                                 .start();
         try {
-            TrackingEventProcessor processor = ((EventHandlingConfiguration) config.getModules().get(0)).getProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
-                                                                                                        .orElseThrow(RuntimeException::new);
+            TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(getClass().getPackage().getName(), TrackingEventProcessor.class)
+                                                     .orElseThrow(RuntimeException::new);
             assertWithin(5, TimeUnit.SECONDS, () -> assertEquals(2, config.getComponent(TokenStore.class).fetchSegments(processor.getName()).length));
         } finally {
             config.shutdown();
@@ -174,7 +180,10 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              EventProcessingConfiguration.class,
+                              AggregateConfiguration.class);
         verify(transactionManager).startTransaction();
     }
 
@@ -195,7 +204,9 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(1, config.getModules().size());
+        assertTrue(config.getModules()
+                         .stream()
+                         .anyMatch(m -> m instanceof AggregateConfiguration));
         verify(transactionManager).startTransaction();
     }
 
@@ -240,7 +251,10 @@ public class DefaultConfigurerTest {
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              EventProcessingConfiguration.class,
+                              AggregateConfiguration.class);
         verify(transactionManager).startTransaction();
     }
 
@@ -267,13 +281,18 @@ public class DefaultConfigurerTest {
     @Test
     public void testRegisterSeveralModules() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                                                .registerModule(new EventHandlingConfiguration().usingTrackingProcessors())
+                                                .registerModule(new EventHandlingConfiguration())
                                                 .registerModule(new EventHandlingConfiguration())
                                                 .configureAggregate(StubAggregate.class)
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                                                 .start();
 
-        assertThat(config.getModules().size(), CoreMatchers.is(3));
+        assertThat(config.getModules().size(), CoreMatchers.is(4));
+        assertExpectedModules(config,
+                              EventHandlingConfiguration.class,
+                              EventHandlingConfiguration.class,
+                              AggregateConfiguration.class,
+                              EventProcessingConfiguration.class);
     }
 
     @Test

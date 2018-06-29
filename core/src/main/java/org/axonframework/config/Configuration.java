@@ -36,6 +36,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -70,13 +71,35 @@ public interface Configuration {
     }
 
     /**
-     * Returns the Event Processor Registry in this Configuration. If not set otherwise, the default one is {@link
-     * DefaultEventProcessorRegistry}.
+     * Finds all configuration modules of given {@code moduleType} within this configuration.
      *
-     * @return the Event Processor Registry defined in this Configuration
+     * @param moduleType The type of the configuration module
+     * @param <T>        The type of the configuration module
+     * @return configuration modules of {@code moduleType} defined in this configuration
      */
-    default EventProcessorRegistry eventProcessorRegistry() {
-        return getComponent(EventProcessorRegistry.class);
+    @SuppressWarnings("unchecked")
+    default <T extends ModuleConfiguration> List<T> findModules(Class<T> moduleType) {
+        return getModules().stream()
+                           .filter(m -> moduleType.isInstance(m.unwrap()))
+                           .map(m -> (T) m.unwrap())
+                           .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the Event Processing Configuration in this Configuration.
+     *
+     * @return the Event Processing Configuration defined in this Configuration
+     */
+    default EventProcessingConfiguration eventProcessingConfiguration() {
+        List<EventProcessingConfiguration> modules = findModules(EventProcessingConfiguration.class);
+        switch (modules.size()) {
+            case 0:
+                return null;
+            case 1:
+                return modules.get(0);
+            default:
+                throw new AxonConfigurationException("Found more than one EventProcessingConfiguration modules");
+        }
     }
 
     /**
