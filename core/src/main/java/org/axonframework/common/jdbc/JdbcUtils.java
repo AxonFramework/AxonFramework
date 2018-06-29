@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,15 +213,13 @@ public class JdbcUtils {
      * whether the object that was read was {@code null} or not. There are cases
      * where the database driver (such as MySQL) returns the default primitive value
      * instead of {@code null}. This method avoids this problem.
-     * 
-     * @param resultSet
-     * @param column
-     * @param columnType
-     * @return
-     * @throws SQLException
-     *             if an error occurs while reading the object
-     * @throws NullPointerException
-     *             if the {@code resultSet} or {@code columnType} are {@code null}
+     *
+     * @param resultSet  The ResultSet to extract data from
+     * @param column     The index of the column containing to read
+     * @param columnType The expected type of data in the column
+     * @return The next value in the specified column or {@code null} if no data was present
+     * @throws SQLException         if an error occurs while reading the object
+     * @throws NullPointerException if the {@code resultSet} or {@code columnType} are {@code null}
      * @see #extract(ResultSet, int, Class)
      */
     public static <T> T nextAndExtract(ResultSet resultSet, int column, Class<T> columnType)
@@ -241,20 +239,15 @@ public class JdbcUtils {
      * whether the object that was read was {@code null} or not. There are cases
      * where the database driver (such as MySQL) returns the default primitive value
      * instead of {@code null}. This method avoids this problem.
-     * 
-     * @param resultSet
-     *            the result set from where the object is read (which cannot be
-     *            {@code null})
-     * @param column
-     *            the column index (which starts from 1)
-     * @param columnType
-     *            the object type (which cannot be {@code null})
+     *
+     * @param resultSet  the result set from where the object is read (which cannot be
+     *                   {@code null})
+     * @param column     the column index (which starts from 1)
+     * @param columnType the object type (which cannot be {@code null})
      * @return the object read from the {@code resultSet}, which object can be
-     *         {@code null}, at the given column (base 1).
-     * @throws SQLException
-     *             if an error occurs while reading the object
-     * @throws NullPointerException
-     *             if the {@code resultSet} or {@code columnType} are {@code null}
+     * {@code null}, at the given column (base 1).
+     * @throws SQLException         if an error occurs while reading the object
+     * @throws NullPointerException if the {@code resultSet} or {@code columnType} are {@code null}
      */
     public static <T> T extract(ResultSet resultSet, int column, Class<T> columnType) throws SQLException, NullPointerException {
         final T value = resultSet.getObject(column, columnType);
