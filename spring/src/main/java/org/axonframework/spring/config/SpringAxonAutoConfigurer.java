@@ -450,7 +450,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
 
         @Override
-        public ModuleConfiguration instance() {
+        public ModuleConfiguration unwrap() {
             return getDelegate();
         }
 

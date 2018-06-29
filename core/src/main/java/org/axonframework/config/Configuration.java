@@ -71,19 +71,35 @@ public interface Configuration {
     }
 
     /**
+     * Finds all configuration modules of given {@code moduleType} within this configuration.
+     *
+     * @param moduleType The type of the configuration module
+     * @param <T>        The type of the configuration module
+     * @return configuration modules of {@code moduleType} defined in this configuration
+     */
+    @SuppressWarnings("unchecked")
+    default <T extends ModuleConfiguration> List<T> findModules(Class<T> moduleType) {
+        return getModules().stream()
+                           .filter(m -> moduleType.isInstance(m.unwrap()))
+                           .map(m -> (T) m.unwrap())
+                           .collect(Collectors.toList());
+    }
+
+    /**
      * Returns the Event Processing Configuration in this Configuration.
      *
      * @return the Event Processing Configuration defined in this Configuration
      */
     default EventProcessingConfiguration eventProcessingConfiguration() {
-        List<EventProcessingConfiguration> modules = getModules().stream()
-                                                                 .filter(m -> m.instance() instanceof EventProcessingConfiguration)
-                                                                 .map(m -> (EventProcessingConfiguration) m.instance())
-                                                                 .collect(Collectors.toList());
-        if (modules.size() > 1) {
-            throw new AxonConfigurationException("Found more than one EventProcessingConfiguration modules");
+        List<EventProcessingConfiguration> modules = findModules(EventProcessingConfiguration.class);
+        switch (modules.size()) {
+            case 0:
+                return null;
+            case 1:
+                return modules.get(0);
+            default:
+                throw new AxonConfigurationException("Found more than one EventProcessingConfiguration modules");
         }
-        return modules.get(0);
     }
 
     /**

@@ -61,7 +61,7 @@ public interface ModuleConfiguration {
      *
      * @return the actual module configuration instance
      */
-    default ModuleConfiguration instance() {
+    default ModuleConfiguration unwrap() {
         return this;
     }
 }

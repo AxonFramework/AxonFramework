@@ -416,7 +416,7 @@ public class DefaultConfigurer implements Configurer {
         if (!initialized) {
             verifyIdentifierFactory();
             boolean missingEventProcessingConfiguration = modules.stream()
-                                                                 .noneMatch(m -> m.instance() instanceof EventProcessingConfiguration);
+                                                                 .noneMatch(m -> m.unwrap() instanceof EventProcessingConfiguration);
             if (missingEventProcessingConfiguration) {
                 registerModule(new EventProcessingConfiguration());
             }
