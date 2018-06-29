@@ -21,7 +21,6 @@ import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
@@ -44,7 +43,7 @@ import java.io.IOException;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context_dbobject.xml"})
-public class MongoEventStorageEngineTest_DBObjectSerialization extends BatchingEventStorageEngineTest {
+public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractMongoEventStorageEngineTest {
 
     private static final Logger logger =
             LoggerFactory.getLogger(MongoEventStorageEngineTest_DBObjectSerialization.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,12 +79,17 @@ public class JpaTokenStore implements TokenStore {
 
     @Override
     public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        initializeTokenSegments(processorName, segmentCount, null);
+    }
+
+    @Override
+    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         if (fetchSegments(processorName).length > 0) {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
         }
         for (int segment = 0; segment < segmentCount; segment++) {
-            TokenEntry token = new TokenEntry(processorName, segment, null, serializer);
+            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
             entityManager.persist(token);
         }
         entityManager.flush();

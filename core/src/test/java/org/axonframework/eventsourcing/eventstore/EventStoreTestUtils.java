@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,9 +33,6 @@ public abstract class EventStoreTestUtils {
     public static final String AGGREGATE = "aggregate";
     private static final String TYPE = "type";
     private static final MetaData METADATA = MetaData.emptyInstance();
-
-    private EventStoreTestUtils() {
-    }
 
     public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
         return IntStream.range(0, numberOfEvents)
@@ -64,6 +62,11 @@ public abstract class EventStoreTestUtils {
 
     public static DomainEventMessage<String> createEvent(long sequenceNumber) {
         return createEvent(AGGREGATE, sequenceNumber);
+    }
+
+    public static DomainEventMessage<String> createEvent(long sequenceNumber, Instant timestamp) {
+        return new GenericDomainEventMessage<>(TYPE, AGGREGATE, sequenceNumber, PAYLOAD, METADATA,
+                                               IdentifierFactory.getInstance().generateIdentifier(), timestamp);
     }
 
     public static DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber) {
@@ -96,5 +99,8 @@ public abstract class EventStoreTestUtils {
                                                metaData,
                                                eventId,
                                                GenericDomainEventMessage.clock.instant());
+    }
+
+    private EventStoreTestUtils() {
     }
 }

@@ -24,6 +24,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -162,5 +163,20 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
             return highestStaged;
         }
         return storageEngine.lastSequenceNumberFor(aggregateIdentifier);
+    }
+
+    @Override
+    public TrackingToken createTailToken() {
+        return storageEngine.createTailToken();
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        return storageEngine.createHeadToken();
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        return storageEngine.createTokenAt(dateTime);
     }
 }

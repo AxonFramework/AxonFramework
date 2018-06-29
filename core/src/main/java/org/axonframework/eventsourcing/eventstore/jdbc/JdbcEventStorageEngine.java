@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -296,10 +297,55 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                        PreparedStatement stmt = connection.prepareStatement(sql);
                                        stmt.setString(1, aggregateIdentifier);
                                        return stmt;
-                                   }, resultSet -> resultSet.next() ? resultSet.getObject(1, Long.class) : null,
-                                   e -> new EventStoreException(
-                                           format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
-                                   ))));
+                                   },
+                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                                   e -> new EventStoreException(format("Failed to read events for aggregate [%s]", aggregateIdentifier), e)
+                )));
+    }
+
+    @Override
+    public TrackingToken createTailToken() {
+        String sql = "SELECT min(" + schema.globalIndexColumn() + ") - 1 FROM " + schema.domainEventTable();
+        Long index = transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(),
+                                   connection -> connection.prepareStatement(sql),
+                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                                   e -> new EventStoreException("Failed to get head token")));
+        return Optional.ofNullable(index)
+                       .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
+                       .orElse(null);
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        String sql = "SELECT max(" + schema.globalIndexColumn() + ") FROM " + schema.domainEventTable();
+        Long index = transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(),
+                                   connection -> connection.prepareStatement(sql),
+                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                                   e -> new EventStoreException("Failed to get head token")));
+        return Optional.ofNullable(index)
+                       .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
+                       .orElse(null);
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        String sql = "SELECT min(" + schema.globalIndexColumn() + ") - 1 FROM " + schema.domainEventTable() + " WHERE "
+                + schema.timestampColumn() + " >= ?";
+        Long index = transactionManager.fetchInTransaction(
+                () -> executeQuery(getConnection(),
+                                   connection -> {
+                                       PreparedStatement stmt = connection.prepareStatement(sql);
+                                       stmt.setString(1, formatInstant(dateTime));
+                                       return stmt;
+                                   },
+                                   resultSet -> nextAndExtract(resultSet, 1, Long.class),
+                                   e -> new EventStoreException(format("Failed to get token at [%s]", dateTime))));
+        if (index == null) {
+            return null;
+        }
+        return GapAwareTrackingToken.newInstance(index, Collections.emptySet());
     }
 
     /**
@@ -360,7 +406,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 () -> executeQuery(
                         getConnection(),
                         connection -> readEventData(connection, aggregateIdentifier, firstSequenceNumber, batchSize),
-                        listResults(this::getDomainEventData),
+                        JdbcUtils.listResults(this::getDomainEventData),
                         e -> new EventStoreException(
                                 format("Failed to read events for aggregate [%s]", aggregateIdentifier), e
                         )
@@ -440,7 +486,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         return transactionManager.fetchInTransaction(() -> {
             List<DomainEventData<?>> result =
                     executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
-                                 listResults(this::getSnapshotData), e -> new EventStoreException(
+                                 JdbcUtils.listResults(this::getSnapshotData), e -> new EventStoreException(
                                     format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
             return result.stream().findFirst();
         });

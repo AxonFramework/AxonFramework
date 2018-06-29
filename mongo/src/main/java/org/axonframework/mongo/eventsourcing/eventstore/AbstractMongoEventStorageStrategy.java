@@ -38,6 +38,7 @@ import org.bson.Document;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
 import static com.mongodb.client.model.Filters.*;
 import static java.util.stream.StreamSupport.stream;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.common.DateTimeUtils.parseInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -194,6 +196,18 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
                 .sort(Sorts.descending(eventConfiguration.sequenceNumberProperty()))
                 .first();
         return Optional.ofNullable(lastDocument).map(this::extractHighestSequenceNumber);
+    }
+
+    @Override
+    public TrackingToken createTailToken(MongoCollection<Document> eventsCollection) {
+        Document first = eventsCollection.find()
+                                         .sort(Sorts.ascending(eventConfiguration.timestampProperty()))
+                                         .first();
+        return Optional.ofNullable(first)
+                       .map(d -> d.get(eventConfiguration.timestampProperty()))
+                       .map(t -> parseInstant((String) t))
+                       .map(t -> MongoTrackingToken.of(t, Collections.emptyMap()))
+                       .orElse(null);
     }
 
     /**

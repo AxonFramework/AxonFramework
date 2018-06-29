@@ -4,6 +4,7 @@ sudo: required
 
 services:
   - docker
+  - mysql
 
 jdk:
   - oraclejdk8
@@ -13,6 +14,7 @@ before_install:
   - docker run -d -p 4369:4369 -p 5671:5671 -p 5672:5672 rabbitmq
   - docker run -d -p 27017:27017 mongo
   - docker ps
+  - mysql -e 'CREATE DATABASE axon;'
 
 install: true
 
