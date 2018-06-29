@@ -16,7 +16,9 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.slf4j.MDC;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -107,7 +109,8 @@ public abstract class CurrentUnitOfWork {
 
     /**
      * Binds the given {@code unitOfWork} to the current thread. If other UnitOfWork instances were bound, they
-     * will be marked as inactive until the given UnitOfWork is cleared.
+     * will be marked as inactive until the given UnitOfWork is cleared. Sets all metadata key/value
+     * pairs for this {@code unitOfWork} on the {@link MDC} to make them available for logging.
      *
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
@@ -115,12 +118,21 @@ public abstract class CurrentUnitOfWork {
         if (CURRENT.get() == null) {
             CURRENT.set(new LinkedList<>());
         }
+
+        UnitOfWork<?> previousUnitOfWork = CURRENT.get().peek();
+        if (previousUnitOfWork != null) {
+            clearActiveMetaDataLoggingContext(extractMetaData(previousUnitOfWork));
+        }
+
         CURRENT.get().push(unitOfWork);
+        setActiveMetaDataLoggingContext(extractMetaData(unitOfWork));
     }
 
     /**
      * Clears the UnitOfWork currently bound to the current thread, if that UnitOfWork is the given
-     * {@code unitOfWork}.
+     * {@code unitOfWork}. Also clears the given metadata for this {@code unitOfWork} from the
+     * logging {@link MDC} and replaces them with the metadata of the previous unit of work, if
+     * it exists.
      *
      * @param unitOfWork The UnitOfWork expected to be bound to the current thread.
      * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception
@@ -132,8 +144,13 @@ public abstract class CurrentUnitOfWork {
         }
         if (CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
+            clearActiveMetaDataLoggingContext(extractMetaData(unitOfWork));
+
             if (CURRENT.get().isEmpty()) {
                 CURRENT.remove();
+            } else {
+                UnitOfWork<?> nextUnitOfWork = CURRENT.get().peek();
+                setActiveMetaDataLoggingContext(extractMetaData(nextUnitOfWork));
             }
         } else {
             throw new IllegalStateException("Could not clear this UnitOfWork. It is not the active one.");
@@ -153,5 +170,33 @@ public abstract class CurrentUnitOfWork {
     }
 
     private CurrentUnitOfWork() {
+    }
+
+    private static void setActiveMetaDataLoggingContext(MetaData metaData) {
+        metaData.forEach((k, v) -> MDC.put(k, v != null ? v.toString() : "null"));
+    }
+
+    private static void clearActiveMetaDataLoggingContext(MetaData metaData) {
+        metaData.forEach((k, v) -> MDC.remove(k));
+    }
+
+    /**
+     * Extracts {@code MetaData} nested in a {@code uow}. There is no nullity check on the
+     * {@code uow} parameter as a unit of work cannot be null when it sets/removes itself as the
+     * current unit of work.
+     *
+     * @param uow A {@link UnitOfWork} instance to examine for metadata
+     * @return    The {@link MetaData} attached to this unit of work if it exists, otherwise an
+     *            empty instance
+     */
+    private static MetaData extractMetaData(UnitOfWork<?> uow) {
+        Message<?> message = uow.getMessage();
+        if (message != null) {
+            MetaData metaData = message.getMetaData();
+            if (metaData != null) {
+                return metaData;
+            }
+        }
+        return MetaData.emptyInstance();
     }
 }
