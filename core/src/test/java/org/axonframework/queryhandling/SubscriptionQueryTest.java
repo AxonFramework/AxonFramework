@@ -152,6 +152,43 @@ public class SubscriptionQueryTest {
     }
 
     @Test
+    public void testCompletingSubscriptionQueryExceptionallyWhenOneOfSubscriptionFails() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage1 = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage2 = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result1 = queryBus
+                .subscriptionQuery(queryMessage1);
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result2 = queryBus
+                .subscriptionQuery(queryMessage2);
+
+        List<String> query1Updates = new ArrayList<>();
+        List<String> query2Updates = new ArrayList<>();
+        result1.updates().map(Message::getPayload).subscribe(query1Updates::add, t -> {
+            query1Updates.add("Error1");
+            throw (RuntimeException) t;
+        });
+        result2.updates().map(Message::getPayload).subscribe(query2Updates::add, t -> query2Updates.add("Error2"));
+
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, new RuntimeException());
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+
+        // then
+        assertEquals(Arrays.asList("Update1", "Error1"), query1Updates);
+        assertEquals(Arrays.asList("Update1", "Error2"), query2Updates);
+    }
+
+    @Test
     public void testCompletingSubscriptionQuery() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(

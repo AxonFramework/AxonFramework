@@ -277,9 +277,14 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .map(updateHandlers::get)
-                      .filter(Objects::nonNull)
-                      .forEach(FluxSinkWrapper::complete);
+                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                .ifPresent(updateHandler -> {
+                                                    try {
+                                                        updateHandler.complete();
+                                                    } catch (Exception e) {
+                                                        emitError(query, e, updateHandler);
+                                                    }
+                                                }));
     }
 
     @Override
@@ -287,9 +292,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
-                      .map(updateHandlers::get)
-                      .filter(Objects::nonNull)
-                      .forEach(uh -> uh.error(cause));
+                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
+                                                .ifPresent(updateHandler -> emitError(query, cause, updateHandler)));
     }
 
     /**
@@ -315,7 +319,17 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
                     query), e);
             monitorCallback.reportFailure(e);
             updateHandlers.remove(query);
-            updateHandler.error(e);
+            emitError(query, e, updateHandler);
+        }
+    }
+
+    private void emitError(SubscriptionQueryMessage<?, ?, ?> query, Throwable cause,
+                           FluxSinkWrapper<?> updateHandler) {
+        try {
+            updateHandler.error(cause);
+        } catch (Exception e) {
+            logger.error(format("An error happened while trying to inform update handler about the error. Query: %s",
+                                query));
         }
     }
 
