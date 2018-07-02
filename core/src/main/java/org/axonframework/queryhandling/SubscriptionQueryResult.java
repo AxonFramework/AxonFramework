@@ -20,6 +20,8 @@ import org.axonframework.common.Registration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.function.Consumer;
+
 /**
  * Result of the subscription query. It contains publishers for initial result and incremental updates. Until there is a
  * subscription to the publisher, nothing happens.
@@ -44,4 +46,23 @@ public interface SubscriptionQueryResult<I, U> extends Registration {
      * @return the flux representing the incremental updates
      */
     Flux<U> updates();
+
+    /**
+     * Delegates handling of initial result and incremental updates to the provided consumers. Subscription to the
+     * incremental updates is done after the initial result is retrieved and its consumer is invoked. If anything goes
+     * wrong during invoking or consuming initial result or incremental updates, subscription is cancelled.
+     *
+     * @param initialResultConsumer The consumer to be invoked when the initial result is retrieved
+     * @param updateConsumer        The consumer to be invoked when incremental updates are emitted
+     */
+    default void handle(Consumer<? super I> initialResultConsumer, Consumer<? super U> updateConsumer) {
+        initialResult().subscribe(initialResult -> {
+            try {
+                initialResultConsumer.accept(initialResult);
+                updates().subscribe(updateConsumer::accept);
+            } catch (Exception e) {
+                cancel();
+            }
+        }, t -> cancel());
+    }
 }

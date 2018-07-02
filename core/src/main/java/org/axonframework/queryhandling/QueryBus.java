@@ -94,6 +94,14 @@ public interface QueryBus {
      * bus will queue all updates which happen after the subscription query is done and once the subscription to the
      * flux is made, these updates will be emitted.
      * <p>
+     * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
+     * interrupted.
+     * </p>
+     * <p>
+     * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
+     * destination.
+     * </p>
+     * <p>
      * Backpressure mechanism to be used is {@link SubscriptionQueryBackpressure#defaultBackpressure()}. The size of
      * buffer which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
      * </p>
@@ -115,6 +123,14 @@ public interface QueryBus {
      * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
      * bus will queue all updates which happen after the subscription query is done and once the subscription to the
      * flux is made, these updates will be emitted.
+     * <p>
+     * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
+     * interrupted.
+     * </p>
+     * <p>
+     * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
+     * destination.
+     * </p>
      * <p>
      * Provided backpressure mechanism will be used to deal with fast emitters.
      * </p>

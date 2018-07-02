@@ -146,6 +146,8 @@ public interface QueryGateway {
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                       Class<U> updateResponseType) {
@@ -168,6 +170,8 @@ public interface QueryGateway {
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                                       Class<I> initialResponseType,
@@ -191,6 +195,8 @@ public interface QueryGateway {
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, ResponseType<I> initialResponseType,
                                                                       ResponseType<U> updateResponseType) {
@@ -215,6 +221,8 @@ public interface QueryGateway {
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                                       ResponseType<I> initialResponseType,
@@ -244,6 +252,8 @@ public interface QueryGateway {
      * @param <I>                 The type of the initial response
      * @param <U>                 The type of the incremental update
      * @return registration which can be used to cancel receiving updates
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
+     * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
     <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                               ResponseType<I> initialResponseType,

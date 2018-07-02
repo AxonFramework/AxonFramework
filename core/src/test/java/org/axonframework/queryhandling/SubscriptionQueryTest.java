@@ -19,17 +19,22 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * Tests for subscription query functionality.
@@ -434,6 +439,135 @@ public class SubscriptionQueryTest {
         Set<SubscriptionQueryMessage<?, ?, ?>> expectedSubscriptions = new HashSet<>(Arrays.asList(queryMessage1,
                                                                                                    queryMessage2));
         assertEquals(expectedSubscriptions, queryBus.activeSubscriptions());
+    }
+
+    @Test
+    public void testSubscriptionQueryResultHandle() throws InterruptedException {
+        // given
+        SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "emitFirstThenReturnInitial",
+                ResponseTypes.instanceOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        List<String> initialResult = new ArrayList<>();
+        List<String> updates = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(3);
+        queryBus.subscriptionQuery(queryMessage).handle(initial -> {
+                                                            initialResult.add(initial.getPayload());
+                                                            latch.countDown();
+                                                        },
+                                                        update -> {
+                                                            updates.add(update.getPayload());
+                                                            latch.countDown();
+                                                        });
+
+        // then
+        latch.await(500, TimeUnit.MILLISECONDS);
+        assertEquals(Collections.singletonList("Initial"), initialResult);
+        assertEquals(Arrays.asList("Update1", "Update2"), updates);
+    }
+
+    @Test
+    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnInitialResult()
+            throws InterruptedException {
+        // given
+        SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "emitFirstThenReturnInitial",
+                ResponseTypes.instanceOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        List<String> initialResult = new ArrayList<>();
+        List<String> updates = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(3);
+        queryBus.subscriptionQuery(queryMessage).handle(initial -> {
+                                                            initialResult.add(initial.getPayload());
+                                                            latch.countDown();
+                                                            throw new RuntimeException();
+                                                        },
+                                                        update -> {
+                                                            updates.add(update.getPayload());
+                                                            latch.countDown();
+                                                        });
+
+        // then
+        latch.await(500, TimeUnit.MILLISECONDS);
+        assertEquals(Collections.singletonList("Initial"), initialResult);
+        assertTrue(updates.isEmpty());
+    }
+
+    @Test
+    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnUpdate() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        List<String> initialResult = new ArrayList<>();
+        List<String> updates = new ArrayList<>();
+        queryBus.subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.DROP), 1)
+                .handle(initial -> initialResult.addAll(initial.getPayload()),
+                        update -> {
+                            updates.add(update.getPayload());
+                            throw new RuntimeException();
+                        });
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+
+        // then
+        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
+        assertEquals(Collections.singletonList("Update1"), updates);
+    }
+
+    @Test
+    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
+        // given
+        SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "failingQuery",
+                ResponseTypes.instanceOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        List<String> initialResult = new ArrayList<>();
+        List<String> updates = new ArrayList<>();
+        queryBus.subscriptionQuery(queryMessage).handle(initial -> initialResult.add(initial.getPayload()),
+                                                        update -> updates.add(update.getPayload()));
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+        chatQueryHandler.emitter.complete(String.class, "axonFrameworkCR"::equals);
+
+        // then
+        assertTrue(initialResult.isEmpty());
+        assertTrue(updates.isEmpty());
+    }
+
+    @Test
+    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnUpdate() {
+        // given
+        SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "failingQuery",
+                ResponseTypes.instanceOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        List<String> initialResult = new ArrayList<>();
+        List<String> updates = new ArrayList<>();
+        queryBus.subscriptionQuery(queryMessage).handle(initial -> initialResult.add(initial.getPayload()),
+                                                        update -> updates.add(update.getPayload()));
+        chatQueryHandler.emitter.completeExceptionally(String.class, "axonFrameworkCR"::equals, new RuntimeException());
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+
+        // then
+        assertTrue(initialResult.isEmpty());
+        assertTrue(updates.isEmpty());
     }
 
     @SuppressWarnings("unused")

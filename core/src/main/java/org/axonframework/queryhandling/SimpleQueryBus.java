@@ -241,6 +241,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         MonoWrapper<QueryResponseMessage<I>> initialResult = MonoWrapper.create(monoSink -> query(query)
                 .thenAccept(monoSink::success)
                 .exceptionally(t -> {
+                    logger.error(format("An error happened while trying to report an initial result. Query: %s", query),
+                                 t);
                     monoSink.error(t.getCause());
                     return null;
                 }));
