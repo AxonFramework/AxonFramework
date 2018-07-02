@@ -39,12 +39,12 @@ public class SubscriptionQueryBackpressure {
     }
 
     /**
-     * Creates default backpressure - {@link FluxSink.OverflowStrategy#BUFFER}.
+     * Creates default backpressure - {@link FluxSink.OverflowStrategy#ERROR}.
      *
-     * @return initialized backpressure - {@link FluxSink.OverflowStrategy#BUFFER}
+     * @return initialized backpressure - {@link FluxSink.OverflowStrategy#ERROR}
      */
     public static SubscriptionQueryBackpressure defaultBackpressure() {
-        return new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.BUFFER);
+        return new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR);
     }
 
     /**
