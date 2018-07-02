@@ -470,6 +470,78 @@ public class TrackingEventProcessorTest {
     }
 
     @Test
+    public void testResetToPositionCausesCertainEventsToBeReplayed() throws Exception {
+        when(mockListener.supportsReset()).thenReturn(true);
+        final List<String> handled = new CopyOnWriteArrayList<>();
+        final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            EventMessage message = i.getArgument(0);
+            handled.add(message.getIdentifier());
+            if (ReplayToken.isReplay(message)) {
+                handledInRedelivery.add(message.getIdentifier());
+            }
+            return null;
+        }).when(mockListener).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        testSubject.shutDown();
+        testSubject.resetTokens(source -> new GlobalSequenceTrackingToken(1L));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(6, handled.size()));
+        assertFalse(handledInRedelivery.contains(handled.get(0)));
+        assertFalse(handledInRedelivery.contains(handled.get(1)));
+        assertEquals(handled.subList(2, 3), handled.subList(4, 5));
+        assertEquals(handled.subList(4, 5), handledInRedelivery);
+        assertTrue(testSubject.processingStatus().get(0).isReplaying());
+        eventBus.publish(createEvents(1));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
+    }
+
+    @Test
+    public void testResetOnInitializeWithTokenResetToThatToken() throws Exception {
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore,
+                                                 NoTransactionManager.INSTANCE, NoOpMessageMonitor.instance(),
+                                                 RollbackConfigurationType.ANY_THROWABLE,
+                                                 PropagatingErrorHandler.instance(),
+                                                 TrackingEventProcessorConfiguration.forSingleThreadedProcessing()
+                                                                                    .andInitialTrackingToken(ms -> new GlobalSequenceTrackingToken(1L))
+        ) {
+            @Override
+            protected void doSleepFor(long millisToSleep) {
+                if (isRunning()) {
+                    sleepInstructions.add(millisToSleep);
+                }
+            }
+        };
+        when(mockListener.supportsReset()).thenReturn(true);
+        final List<String> handled = new CopyOnWriteArrayList<>();
+        final List<String> handledInRedelivery = new CopyOnWriteArrayList<>();
+        doAnswer(i -> {
+            EventMessage message = i.getArgument(0);
+            handled.add(message.getIdentifier());
+            if (ReplayToken.isReplay(message)) {
+                handledInRedelivery.add(message.getIdentifier());
+            }
+            return null;
+        }).when(mockListener).handle(any());
+
+        eventBus.publish(createEvents(4));
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(2, handled.size()));
+        testSubject.shutDown();
+        testSubject.resetTokens();
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(4, handled.size()));
+        assertEquals(handled.subList(0, 1), handled.subList(2, 3));
+        assertEquals(handled.subList(2, 3), handledInRedelivery);
+        assertTrue(testSubject.processingStatus().get(0).isReplaying());
+        eventBus.publish(createEvents(1));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().get(0).isReplaying()));
+    }
+
+    @Test
     public void testResetBeforeStartingPerformsANormalRun() throws Exception {
         when(mockListener.supportsReset()).thenReturn(true);
         final List<String> handled = new CopyOnWriteArrayList<>();

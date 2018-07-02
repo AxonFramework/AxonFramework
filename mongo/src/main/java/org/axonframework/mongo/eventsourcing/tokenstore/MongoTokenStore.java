@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,13 +105,19 @@ public class MongoTokenStore implements TokenStore {
 
     @Override
     public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        initializeTokenSegments(processorName, segmentCount, null);
+    }
+
+    @Override
+    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
         if (fetchSegments(processorName).length > 0) {
             throw new UnableToClaimTokenException("Unable to initialize segments. Some tokens were already present for the given processor.");
         }
 
         List<Document> entries = IntStream.range(0, segmentCount)
-                                          .mapToObj(segment -> new GenericTokenEntry<>(null, serializer, contentType,
-                                                                                       processorName, segment))
+                                          .mapToObj(segment -> new GenericTokenEntry<>(initialToken, serializer,
+                                                                                       contentType, processorName,
+                                                                                       segment))
                                           .map(this::tokenEntryToDocument)
                                           .collect(Collectors.toList());
         mongoTemplate.trackingTokensCollection()

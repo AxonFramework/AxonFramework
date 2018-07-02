@@ -18,8 +18,10 @@ package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -42,6 +44,15 @@ public class ReplayTokenTest {
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
         assertTrue(actual instanceof ReplayToken);
         assertTrue(ReplayToken.isReplay(actual));
+    }
+
+    @Test
+    public void testRegularTokenIsProvidedWhenResetBeyondCurrentPosition() {
+        TrackingToken token1 = new GlobalSequenceTrackingToken(1);
+        TrackingToken token2 = new GlobalSequenceTrackingToken(2);
+
+        TrackingToken actual = ReplayToken.createReplayToken(token1, token2);
+        assertSame(token2, actual);
     }
 
     @Test

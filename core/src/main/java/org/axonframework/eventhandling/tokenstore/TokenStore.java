@@ -33,7 +33,7 @@ public interface TokenStore {
      * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
      * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
      * <p>
-     * This method will initialize the tokens, but no claim them. It will create the segments ranging from {@code 0}
+     * This method will initialize the tokens, but not claim them. It will create the segments ranging from {@code 0}
      * until {@code segmentCount - 1}.
      * <p>
      * The exact behavior when this method is called while tokens were already present, is undefined in case the token
@@ -46,6 +46,29 @@ public interface TokenStore {
     default void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
         for (int segment = 0; segment < segmentCount; segment++) {
             fetchToken(processorName, segment);
+            releaseClaim(processorName, segment);
+        }
+    }
+
+    /**
+     * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
+     * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
+     * <p>
+     * This method will store {@code initialToken} for all segments as starting point for processor, but not claim them.
+     * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
+     * <p>
+     * The exact behavior when this method is called while tokens were already present, is undefined in case the token
+     * already present is not owned by the initializing process.
+     *
+     * @param processorName The name of the processor to initialize segments for
+     * @param segmentCount  The number of segments to initialize
+     * @param initialToken  The initial token which is used as a starting point for processor
+     * @throws UnableToClaimTokenException when a segment has already been created
+     */
+    default void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken)
+            throws UnableToClaimTokenException {
+        for (int segment = 0; segment < segmentCount; segment++) {
+            storeToken(initialToken, processorName, segment);
             releaseClaim(processorName, segment);
         }
     }

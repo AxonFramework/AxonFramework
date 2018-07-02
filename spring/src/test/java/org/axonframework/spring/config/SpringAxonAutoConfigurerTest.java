@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.SagaConfiguration;
@@ -120,6 +121,9 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired(required = false)
     private SagaStore<Object> sagaStore;
 
+    @Autowired(required = false)
+    private EventProcessingConfiguration eventProcessingConfiguration;
+
     @Autowired
     private org.axonframework.config.Configuration axonConfig;
 
@@ -157,6 +161,8 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventStore);
         assertNotNull(commandBus);
         assertNotNull(mySagaConfiguration);
+        assertNotNull(eventProcessingConfiguration);
+        assertEquals(eventProcessingConfiguration, axonConfig.eventProcessingConfiguration());
         assertTrue("Expected Axon to have configured an EventStore", eventBus instanceof EventStore);
 
         assertTrue("Expected provided commandbus implementation", commandBus instanceof AsynchronousCommandBus);
@@ -176,7 +182,7 @@ public class SpringAxonAutoConfigurerTest {
     @Test
     public void testSagaIsConfigured() {
         AtomicInteger counter = new AtomicInteger();
-        mySagaConfiguration.registerHandlerInterceptor(config -> (uow, chain) -> {
+        eventProcessingConfiguration.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
             counter.incrementAndGet();
             return chain.proceed();
         });
