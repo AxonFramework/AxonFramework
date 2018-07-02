@@ -21,10 +21,8 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -123,21 +121,13 @@ public abstract class AggregateLifecycle extends Scope {
     }
 
     /**
-     * Returns the {@link AggregateLifecycle} for the current aggregate. If none was defined this method will throw
-     * an exception.
+     * Get the current {@link AggregateLifecycle} instance for the current thread. If none exists an {@link
+     * IllegalStateException} is thrown.
      *
-     * @return the {@link AggregateLifecycle} for the current aggregate
+     * @return the thread's current {@link AggregateLifecycle}
      */
     protected static AggregateLifecycle getInstance() {
-        AggregateLifecycle instance = Scope.getCurrentScope();
-        if (CurrentUnitOfWork.isStarted()) {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            Set<AggregateLifecycle> managedAggregates = unitOfWork.getResource("ManagedAggregates");
-            if (managedAggregates != null && managedAggregates.size() == 1) {
-                instance = managedAggregates.iterator().next();
-            }
-        }
-        return instance;
+        return Scope.getCurrentScope();
     }
 
     /**
