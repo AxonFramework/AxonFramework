@@ -193,17 +193,6 @@ public abstract class AggregateLifecycle extends Scope {
     protected abstract <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception;
 
     /**
-     * Registers the current AggregateLifecycle as the current lifecycle. The returned Runnable should be executed to
-     * restore the lifecycle to the previous state.
-     *
-     * @return a runnable that must be executed to return the lifecycle to the original state
-     */
-    protected Runnable registerAsCurrent() {
-        super.startScope();
-        return () -> super.endScope();
-    }
-
-    /**
      * Executes the given task. While the task is being executed the current aggregate will be registered with the
      * current thread as the 'current' aggregate.
      *
