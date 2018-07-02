@@ -486,7 +486,7 @@ public class SubscriptionQueryTest {
         queryBus.subscriptionQuery(queryMessage).handle(initial -> {
                                                             initialResult.add(initial.getPayload());
                                                             latch.countDown();
-                                                            throw new RuntimeException();
+                                                            throw new IllegalStateException("oops");
                                                         },
                                                         update -> {
                                                             updates.add(update.getPayload());
@@ -515,7 +515,7 @@ public class SubscriptionQueryTest {
                 .handle(initial -> initialResult.addAll(initial.getPayload()),
                         update -> {
                             updates.add(update.getPayload());
-                            throw new RuntimeException();
+                            throw new IllegalStateException("oops");
                         });
         chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
         chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
