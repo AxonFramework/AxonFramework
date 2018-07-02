@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ public interface QueryBus {
 
             @Override
             public Flux<SubscriptionQueryUpdateMessage<U>> updates() {
-                throw new UnsupportedOperationException("The default implementation does not support updates.");
+                return Flux.empty();
             }
 
             @Override
