@@ -39,9 +39,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
 import org.mockito.*;
 
@@ -53,7 +51,6 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
@@ -124,11 +121,10 @@ public class CommandHandlerInvokerTest {
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         when(mockCommandHandler.handle(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
-        when(mockEventStore.readEvents(anyObject())).thenReturn(DomainEventStream
-                                                                        .of(new GenericDomainEventMessage<>("type",
-                                                                                                            aggregateIdentifier,
-                                                                                                            0,
-                                                                                                            aggregateIdentifier)));
+        when(mockEventStore.readEvents(any()))
+                .thenReturn(DomainEventStream.of(
+                        new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, aggregateIdentifier)
+                ));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
@@ -237,7 +233,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testSendWorksAsExpected() throws Exception {
+    public void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
         String testAggregateId = "some-identifier";
         DeadlineMessage<DeadlinePayload> testMsg =
                 GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
@@ -249,59 +245,19 @@ public class CommandHandlerInvokerTest {
                                              new GenericAggregateFactory<>(StubAggregate.class),
                                              snapshotTriggerDefinition,
                                              ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        CurrentUnitOfWork.set(commandHandlingEntry);
         when(mockEventStore.readEvents(any()))
                 .thenReturn(DomainEventStream.of(new GenericDomainEventMessage<>(
                         StubAggregate.class.getSimpleName(), testAggregateId, 0, testAggregateId
                 )));
 
-        testRepository.send(testMsg, testDescriptor);
+        commandHandlingEntry.start();
+        try {
+            testRepository.send(testMsg, testDescriptor);
+        } finally {
+            commandHandlingEntry.pause();
+        }
 
         assertEquals(1, messageHandlingCounter.get());
-    }
-
-    @Test(expected = MessageHandlerInvocationException.class)
-    public void testSendThrowsMessageHandlerInvocationExceptionIfHandleFails() throws Exception {
-        String testAggregateId = "some-identifier";
-        DeadlineMessage<FailingPayload> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new FailingPayload());
-        AggregateScopeDescriptor testDescriptor =
-                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), testAggregateId);
-
-        Repository<StubAggregate> testRepository =
-                testSubject.createRepository(mockEventStore,
-                                             new GenericAggregateFactory<>(StubAggregate.class),
-                                             snapshotTriggerDefinition,
-                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        CurrentUnitOfWork.set(commandHandlingEntry);
-        when(mockEventStore.readEvents(any())).thenReturn(DomainEventStream.of(new GenericDomainEventMessage<>(
-                StubAggregate.class.getSimpleName(), testAggregateId, 0, testAggregateId
-        )));
-
-        testRepository.send(testMsg, testDescriptor);
-
-        assertEquals(0, messageHandlingCounter.get());
-    }
-
-    @Test
-    public void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
-        String testAggregateId = "some-identifier";
-        DeadlineMessage<DeadlinePayload> testMsg =
-                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
-        AggregateScopeDescriptor testDescriptor =
-                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), testAggregateId);
-
-        Repository<StubAggregate> testRepository =
-                testSubject.createRepository(mockEventStore,
-                                             new GenericAggregateFactory<>(StubAggregate.class),
-                                             snapshotTriggerDefinition,
-                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
-        CurrentUnitOfWork.set(commandHandlingEntry);
-        when(mockEventStore.readEvents(any())).thenReturn(DomainEventStream.of(Collections.emptyList()));
-
-        testRepository.send(testMsg, testDescriptor);
-
-        assertEquals(0, messageHandlingCounter.get());
     }
 
     private static class FailingPayload {

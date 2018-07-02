@@ -314,17 +314,11 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             }
         }
 
-        @SuppressWarnings("Duplicates")
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
             if (canResolve(scopeDescription)) {
                 String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
-                try {
-                    load(aggregateIdentifier).handle(message);
-                } catch (AggregateNotFoundException e) {
-                    logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
-                                 aggregateIdentifier, message);
-                }
+                load(aggregateIdentifier).handle(message);
             }
         }
 
