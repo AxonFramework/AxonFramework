@@ -319,10 +319,9 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
             if (canResolve(scopeDescription)) {
                 String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
-                Aggregate<T> aggregate = load(aggregateIdentifier);
-                if (aggregate != null) {
-                    aggregate.handle(message);
-                } else {
+                try {
+                    load(aggregateIdentifier).handle(message);
+                } catch (AggregateNotFoundException e) {
                     logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
                                  aggregateIdentifier, message);
                 }

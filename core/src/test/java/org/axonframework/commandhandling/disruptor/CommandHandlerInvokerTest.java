@@ -19,34 +19,46 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.deadline.annotation.DeadlineHandler;
+import org.axonframework.eventhandling.saga.SagaScopeDescriptor;
+import org.axonframework.eventsourcing.AggregateCacheEntry;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcedAggregate;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.SnapshotTrigger;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.junit.*;
+import org.mockito.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-/**
- *
- */
 public class CommandHandlerInvokerTest {
 
     private CommandHandlerInvoker testSubject;
@@ -59,6 +71,9 @@ public class CommandHandlerInvokerTest {
     private SnapshotTriggerDefinition snapshotTriggerDefinition;
     private SnapshotTrigger mockTrigger;
 
+    private static AtomicInteger messageHandlingCounter;
+
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
         mockEventStore = mock(EventStore.class);
@@ -83,15 +98,20 @@ public class CommandHandlerInvokerTest {
         mockTrigger = mock(SnapshotTrigger.class);
         snapshotTriggerDefinition = mock(SnapshotTriggerDefinition.class);
         when(snapshotTriggerDefinition.prepareTrigger(any())).thenReturn(mockTrigger);
+        messageHandlingCounter = new AtomicInteger(0);
     }
 
     @Test
     public void usesProvidedParameterResolverFactoryToResolveParameters() {
-        ParameterResolverFactory parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+        ParameterResolverFactory parameterResolverFactory =
+                spy(ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         testSubject.createRepository(mockEventStore, new GenericAggregateFactory<>(StubAggregate.class),
                                      snapshotTriggerDefinition, parameterResolverFactory);
 
-        verify(parameterResolverFactory).createInstance(argThat(item -> "handle".equals(item.getName())), isA(Parameter[].class), anyInt());
+        // The StubAggregate has three 'handle()' functions, hence verifying this 3 times
+        verify(parameterResolverFactory, times(3)).createInstance(
+                argThat(item -> "handle".equals(item.getName())), isA(Parameter[].class), anyInt()
+        );
         verifyNoMoreInteractions(parameterResolverFactory);
     }
 
@@ -179,6 +199,120 @@ public class CommandHandlerInvokerTest {
         assertSame(repository1, repository2);
     }
 
+    @Test
+    public void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
+        Repository<StubAggregate> testRepository =
+                testSubject.createRepository(mockEventStore,
+                                             new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition,
+                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+
+        assertTrue(testRepository.canResolve(new AggregateScopeDescriptor(
+                StubAggregate.class.getSimpleName(), "some-identifier")
+        ));
+    }
+
+    @Test
+    public void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
+        Repository<StubAggregate> testRepository =
+                testSubject.createRepository(mockEventStore,
+                                             new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition,
+                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+
+        assertFalse(testRepository.canResolve(new SagaScopeDescriptor("some-saga-type", "some-identifier")));
+    }
+
+    @Test
+    public void testCanResolveReturnsFalseForNonMatchingAggregateType() {
+        Repository<StubAggregate> testRepository =
+                testSubject.createRepository(mockEventStore,
+                                             new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition,
+                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+
+        assertFalse(testRepository.canResolve(
+                new AggregateScopeDescriptor("other-non-matching-type", "some-identifier")
+        ));
+    }
+
+    @Test
+    public void testSendWorksAsExpected() throws Exception {
+        String testAggregateId = "some-identifier";
+        DeadlineMessage<DeadlinePayload> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+        AggregateScopeDescriptor testDescriptor =
+                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), testAggregateId);
+
+        Repository<StubAggregate> testRepository =
+                testSubject.createRepository(mockEventStore,
+                                             new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition,
+                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+        CurrentUnitOfWork.set(commandHandlingEntry);
+        when(mockEventStore.readEvents(any()))
+                .thenReturn(DomainEventStream.of(new GenericDomainEventMessage<>(
+                        StubAggregate.class.getSimpleName(), testAggregateId, 0, testAggregateId
+                )));
+
+        testRepository.send(testMsg, testDescriptor);
+
+        assertEquals(1, messageHandlingCounter.get());
+    }
+
+    @Test(expected = MessageHandlerInvocationException.class)
+    public void testSendThrowsMessageHandlerInvocationExceptionIfHandleFails() throws Exception {
+        String testAggregateId = "some-identifier";
+        DeadlineMessage<FailingPayload> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new FailingPayload());
+        AggregateScopeDescriptor testDescriptor =
+                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), testAggregateId);
+
+        Repository<StubAggregate> testRepository =
+                testSubject.createRepository(mockEventStore,
+                                             new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition,
+                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+        CurrentUnitOfWork.set(commandHandlingEntry);
+        when(mockEventStore.readEvents(any())).thenReturn(DomainEventStream.of(new GenericDomainEventMessage<>(
+                StubAggregate.class.getSimpleName(), testAggregateId, 0, testAggregateId
+        )));
+
+        testRepository.send(testMsg, testDescriptor);
+
+        assertEquals(0, messageHandlingCounter.get());
+    }
+
+    @Test
+    public void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
+        String testAggregateId = "some-identifier";
+        DeadlineMessage<DeadlinePayload> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+        AggregateScopeDescriptor testDescriptor =
+                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), testAggregateId);
+
+        Repository<StubAggregate> testRepository =
+                testSubject.createRepository(mockEventStore,
+                                             new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition,
+                                             ClasspathParameterResolverFactory.forClass(StubAggregate.class));
+        CurrentUnitOfWork.set(commandHandlingEntry);
+        when(mockEventStore.readEvents(any())).thenReturn(DomainEventStream.of(Collections.emptyList()));
+
+        testRepository.send(testMsg, testDescriptor);
+
+        assertEquals(0, messageHandlingCounter.get());
+    }
+
+    private static class FailingPayload {
+
+    }
+
+    private static class DeadlinePayload {
+
+    }
+
+    @SuppressWarnings("unused")
     public static class StubAggregate implements Serializable {
 
         @AggregateIdentifier
@@ -195,11 +329,19 @@ public class CommandHandlerInvokerTest {
             apply(id);
         }
 
+        @DeadlineHandler
+        public void handle(FailingPayload deadline) {
+            throw new IllegalArgumentException();
+        }
+
+        @DeadlineHandler
+        public void handle(DeadlinePayload deadline) {
+            messageHandlingCounter.getAndIncrement();
+        }
+
         @EventSourcingHandler
         public void handle(String id) {
             this.id = id;
         }
-
     }
-
 }
