@@ -18,19 +18,30 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import junit.framework.TestCase;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventhandling.saga.SagaScopeDescriptor;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.SnapshotTrigger;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
@@ -40,30 +51,35 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.lang.reflect.Executable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static java.util.Collections.singletonList;
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -72,12 +88,14 @@ import static org.mockito.Mockito.*;
 public class DisruptorCommandBusTest {
 
     private static final int COMMAND_COUNT = 100 * 1000;
+
     private StubHandler stubHandler;
     private InMemoryEventStore eventStore;
     private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
     private TransactionManager mockTransactionManager;
     private ParameterResolverFactory parameterResolverFactory;
+    private static AtomicInteger messageHandlingCounter;
 
     @Before
     public void setUp() {
@@ -87,6 +105,7 @@ public class DisruptorCommandBusTest {
         eventStore.publish(singletonList(
                 new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent())));
         parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(DisruptorCommandBusTest.class));
+        messageHandlingCounter = new AtomicInteger(0);
     }
 
     @After
@@ -393,6 +412,94 @@ public class DisruptorCommandBusTest {
         assertEquals("Seems that some events are not stored", 0, eventStore.countDownLatch.getCount());
     }
 
+    @Test
+    public void testCanResolveReturnsTrueForMatchingAggregateDescriptor() {
+        testSubject = new DisruptorCommandBus();
+        Repository<StubAggregate> testRepository = testSubject.createRepository(
+                eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
+        );
+
+        assertTrue(testRepository.canResolve(new AggregateScopeDescriptor(
+                StubAggregate.class.getSimpleName(), aggregateIdentifier)
+        ));
+    }
+
+    @Test
+    public void testCanResolveReturnsFalseNonAggregateScopeDescriptorImplementation() {
+        testSubject = new DisruptorCommandBus();
+        Repository<StubAggregate> testRepository = testSubject.createRepository(
+                eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
+        );
+
+        assertFalse(testRepository.canResolve(new SagaScopeDescriptor("some-saga-type", aggregateIdentifier)));
+    }
+
+    @Test
+    public void testCanResolveReturnsFalseForNonMatchingAggregateType() {
+        testSubject = new DisruptorCommandBus();
+        Repository<StubAggregate> testRepository = testSubject.createRepository(
+                eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
+        );
+
+        assertFalse(testRepository.canResolve(new AggregateScopeDescriptor(
+                "other-non-matching-type", aggregateIdentifier
+        )));
+    }
+
+    @Test
+    public void testSendDeliversMessageAtDescribedAggregateInstance() throws Exception {
+        DeadlineMessage<DeadlinePayload> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+        AggregateScopeDescriptor testDescriptor =
+                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), aggregateIdentifier);
+
+        testSubject = new DisruptorCommandBus();
+        Repository<StubAggregate> testRepository = testSubject.createRepository(
+                eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
+        );
+
+        testRepository.send(testMsg, testDescriptor);
+
+        assertEquals(1, messageHandlingCounter.get());
+    }
+
+    @Test(expected = MessageHandlerInvocationException.class)
+    public void testSendThrowsMessageHandlerInvocationExceptionIfHandleFails() throws Exception {
+        DeadlineMessage<FailingEvent> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new FailingEvent());
+        AggregateScopeDescriptor testDescriptor =
+                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), aggregateIdentifier);
+
+        testSubject = new DisruptorCommandBus();
+        Repository<StubAggregate> testRepository = testSubject.createRepository(
+                eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
+        );
+
+        testRepository.send(testMsg, testDescriptor);
+    }
+
+    @Test
+    public void testSendFailsSilentlyOnAggregateNotFoundException() throws Exception {
+        DeadlineMessage<DeadlinePayload> testMsg =
+                GenericDeadlineMessage.asDeadlineMessage("deadline-name", new DeadlinePayload());
+        AggregateScopeDescriptor testDescriptor =
+                new AggregateScopeDescriptor(StubAggregate.class.getSimpleName(), "some-other-aggregate-id");
+
+        testSubject = new DisruptorCommandBus();
+        Repository<StubAggregate> testRepository = testSubject.createRepository(
+                eventStore, new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory
+        );
+
+        testRepository.send(testMsg, testDescriptor);
+
+        assertEquals(0, messageHandlingCounter.get());
+    }
+
+    private static class DeadlinePayload {
+
+    }
+
+    @SuppressWarnings("unused")
     private static class StubAggregate {
 
         @AggregateIdentifier
@@ -417,6 +524,16 @@ public class DisruptorCommandBusTest {
 
         public void createFailingEvent() {
             apply(new FailingEvent());
+        }
+
+        @DeadlineHandler
+        public void handle(FailingEvent deadline) {
+            throw new IllegalArgumentException();
+        }
+
+        @DeadlineHandler
+        public void handle(DeadlinePayload deadline) {
+            messageHandlingCounter.getAndIncrement();
         }
 
         @EventSourcingHandler
@@ -558,9 +675,6 @@ public class DisruptorCommandBusTest {
 
     }
 
-    /**
-     * @author Allard Buijze
-     */
     static class FailingEvent {
 
     }

@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
@@ -54,9 +55,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -604,13 +607,15 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         invokerInterceptors.add(handlerInterceptor);
         return () -> invokerInterceptors.remove(handlerInterceptor);
     }
@@ -632,7 +637,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
     }
 
-    private static class DisruptorRepository<T> implements Repository<T> {
+    private class DisruptorRepository<T> implements Repository<T> {
 
         private final Class<T> type;
 
@@ -657,18 +662,81 @@ public class DisruptorCommandBus implements CommandBus {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
         }
 
-        @SuppressWarnings("Duplicates")
         @Override
         public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
-            if (canResolve(scopeDescription)) {
-                String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
-                Aggregate<T> aggregate = load(aggregateIdentifier);
-                if (aggregate != null) {
-                    aggregate.handle(message);
-                } else {
-                    logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
-                                 aggregateIdentifier, message);
+            CompletableFuture future = new CompletableFuture();
+            send(message, scopeDescription, future);
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof Exception) {
+                    throw (Exception) e.getCause();
                 }
+                throw e;
+            }
+        }
+
+        @SuppressWarnings("Duplicates")
+        private void send(Message<?> message, ScopeDescriptor scopeDescription, CompletableFuture<?> future) {
+            if (!canResolve(scopeDescription)) {
+                future.complete(null);
+                return;
+            }
+
+            String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
+
+            RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
+            int invokerSegment = 0;
+            int publisherSegment = 0;
+            if (commandHandlerInvokers.length > 1 || publisherCount > 1) {
+                if (aggregateIdentifier != null) {
+                    int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
+                    if (commandHandlerInvokers.length > 1) {
+                        invokerSegment = idHash % commandHandlerInvokers.length;
+                    }
+                    if (publisherCount > 1) {
+                        publisherSegment = idHash % publisherCount;
+                    }
+                }
+            }
+
+            long sequence = ringBuffer.next();
+            try {
+                CommandHandlingEntry event = ringBuffer.get(sequence);
+                event.resetAsCallable(
+                        () -> {
+                            try {
+                                return load(aggregateIdentifier).handle(message);
+                            } catch (AggregateNotFoundException e) {
+                                logger.debug("Aggregate (with id: [{}]) cannot be loaded. "
+                                                     + "Hence, message '[{}]' cannot be handled.",
+                                             aggregateIdentifier, message);
+                            }
+                            return null;
+                        },
+                        invokerSegment,
+                        publisherSegment,
+                        new BlacklistDetectingCallback<>(
+                                new CommandCallback<Object, Object>() {
+                                    @Override
+                                    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+                                        future.complete(null);
+                                    }
+
+                                    @Override
+                                    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                                        logger.warn("Failed sending message [{}] to aggregate with id [{}]",
+                                                    message, aggregateIdentifier);
+                                        future.completeExceptionally(cause);
+                                    }
+                                },
+                                disruptor.getRingBuffer(),
+                                (commandMessage, callback) -> send(message, scopeDescription, future),
+                                rescheduleOnCorruptState
+                        )
+                );
+            } finally {
+                ringBuffer.publish(sequence);
             }
         }
 
