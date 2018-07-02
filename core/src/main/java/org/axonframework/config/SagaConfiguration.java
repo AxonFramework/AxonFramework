@@ -40,6 +40,7 @@ import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -67,11 +68,37 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<AnnotatedSagaManager<S>> sagaManager;
     private final Component<SagaRepository<S>> sagaRepository;
     private final Component<SagaStore<? super S>> sagaStore;
+    /**
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureRollbackConfiguration(String, Function)}.
+     * This field is used for backwards compatibility only.
+     */
+    @Deprecated
     private final Component<RollbackConfiguration> rollbackConfiguration;
+    /**
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureErrorHandler(String, Function)}. This field
+     * is used for backwards compatibility only.
+     */
+    @Deprecated
     private final Component<ErrorHandler> errorHandler;
     private final Component<ListenerInvocationErrorHandler> listenerInvocationErrorHandler;
+    /**
+     * @deprecated in favor of {@link EventProcessingConfiguration#registerTokenStore(String, Function)}. This field is
+     * used for backwards compatibility only.
+     */
+    @Deprecated
     private final Component<TokenStore> tokenStore;
+    /**
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureTransactionManager(String, Function)}. This
+     * field is used for backwards compatibility only.
+     */
+    @Deprecated
     private final Component<TransactionManager> transactionManager;
+    /**
+     * @deprecated in favor of {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} or {@link
+     * EventProcessingConfiguration#configureMessageMonitor(String, MessageMonitorFactory)}. This field is used for
+     * backwards compatibility only.
+     */
+    @Deprecated
     private final Component<MessageMonitor<? super EventMessage<?>>> messageMonitor;
     private final List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>> handlerInterceptors = new ArrayList<>();
     private Configuration config;
@@ -102,14 +129,14 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor (with
      * provided name) to process incoming Events.
      *
-     * @param sagaType      The type of Saga to handle events with
-     * @param processorName The name of the processor to be used for this saga
-     * @param <S>           The type of Saga configured in this configuration
+     * @param sagaType        The type of Saga to handle events with
+     * @param processingGroup The name of the processing group to be used for this saga
+     * @param <S>             The type of Saga configured in this configuration
      * @return a SagaConfiguration instance, ready for further configuration
      */
-    public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType, String processorName) {
+    public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType, String processingGroup) {
         return subscribingSagaManager(sagaType,
-                                      processorName,
+                                      processingGroup,
                                       Configuration::eventBus,
                                       c -> DirectEventProcessingStrategy.INSTANCE);
     }
@@ -146,9 +173,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             Class<S> sagaType,
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
             Function<Configuration, EventProcessingStrategy> eventProcessingStrategy) {
-        ProcessorInfo processorInfo = new ProcessorInfo(true,
-                                                        ProcessorInfo.ProcessorType.SUBSCRIBING,
-                                                        eventProcessorName(sagaType));
+        ProcessorInfo processorInfo = new ProcessorInfo(true, ProcessorInfo.ProcessorType.SUBSCRIBING, processingGroupName(sagaType));
         return new SagaConfiguration<>(sagaType,
                                        processorInfo,
                                        SubscribingEventProcessor.class,
@@ -162,11 +187,11 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * provided name) to process incoming Events from the message source provided by given {@code
      * messageSourceBuilder}.
      * <p>
-     * This methods allows a custom {@link EventProcessingStrategy} to be provided, in case handlers shouldn't be
+     * This method allows a custom {@link EventProcessingStrategy} to be provided, in case handlers shouldn't be
      * invoked in the thread that delivers the message.
      *
      * @param sagaType                The type of Saga to handle events with
-     * @param processorName           The name of the processor to be used for this saga
+     * @param processingGroup         The name of the processing group to be used for this saga
      * @param messageSourceBuilder    The function providing the message source based on the configuration
      * @param eventProcessingStrategy The strategy to use to invoke the event handlers.
      * @param <S>                     The type of Saga configured in this configuration
@@ -174,10 +199,12 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      */
     public static <S> SagaConfiguration<S> subscribingSagaManager(
             Class<S> sagaType,
-            String processorName,
+            String processingGroup,
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
             Function<Configuration, EventProcessingStrategy> eventProcessingStrategy) {
-        ProcessorInfo processorInfo = new ProcessorInfo(false, ProcessorInfo.ProcessorType.SUBSCRIBING, processorName);
+        ProcessorInfo processorInfo = new ProcessorInfo(false,
+                                                        ProcessorInfo.ProcessorType.SUBSCRIBING,
+                                                        processingGroup);
         return new SagaConfiguration<>(sagaType,
                                        processorInfo,
                                        SubscribingEventProcessor.class,
@@ -204,13 +231,13 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * name) to process incoming Events. Note that a Token Store should be configured in the global configuration, or
      * the Saga Manager will default to an in-memory token store, which is not recommended for production environments.
      *
-     * @param sagaType      The type of Saga to handle events with
-     * @param processorName The name of the processor to be used for this saga
-     * @param <S>           The type of Saga configured in this configuration
+     * @param sagaType        The type of Saga to handle events with
+     * @param processingGroup The name of the processing group to be used for this saga
+     * @param <S>             The type of Saga configured in this configuration
      * @return a SagaConfiguration instance, ready for further configuration
      */
-    public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType, String processorName) {
-        return trackingSagaManager(sagaType, processorName, Configuration::eventBus);
+    public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType, String processingGroup) {
+        return trackingSagaManager(sagaType, processingGroup, Configuration::eventBus);
     }
 
     /**
@@ -229,7 +256,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
         ProcessorInfo processorInfo = new ProcessorInfo(true,
                                                         ProcessorInfo.ProcessorType.TRACKING,
-                                                        eventProcessorName(sagaType));
+                                                        processingGroupName(sagaType));
         return new SagaConfiguration<>(sagaType,
                                        processorInfo,
                                        TrackingEventProcessor.class,
@@ -245,15 +272,15 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * token store, which is not recommended for production environments.
      *
      * @param sagaType             The type of Saga to handle events with
-     * @param processorName        The name of the processor to be used for this saga
+     * @param processingGroup      The name of the processing group to be used for this saga
      * @param messageSourceBuilder The function providing the message source based on the configuration
      * @param <S>                  The type of Saga configured in this configuration
      * @return a SagaConfiguration instance, ready for further configuration
      */
     public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType,
-                                                               String processorName,
+                                                               String processingGroup,
                                                                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceBuilder) {
-        ProcessorInfo processorInfo = new ProcessorInfo(false, ProcessorInfo.ProcessorType.TRACKING, processorName);
+        ProcessorInfo processorInfo = new ProcessorInfo(false, ProcessorInfo.ProcessorType.TRACKING, processingGroup);
         return new SagaConfiguration<>(sagaType,
                                        processorInfo,
                                        TrackingEventProcessor.class,
@@ -281,8 +308,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                 c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
         );
         messageMonitor = new Component<>(() -> config, "messageMonitor",
-                                         c -> c.messageMonitor(eventProcessorType, processorInfo.getName()));
-        tokenStore = new Component<>(() -> config, "messageMonitor",
+                                         c -> c.messageMonitor(eventProcessorType, processorInfo.getProcessingGroup()));
+        tokenStore = new Component<>(() -> config, "tokenStore",
                                      c -> c.getComponent(TokenStore.class, InMemoryTokenStore::new));
         errorHandler = new Component<>(() -> config, "errorHandler",
                                        c -> c.getComponent(ErrorHandler.class,
@@ -347,13 +374,13 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @param handlerInterceptorBuilder The function to create the interceptor based on the current configuration
      * @return this SagaConfiguration instance, ready for further configuration
      *
-     * @deprecated use {@link EventProcessorRegistry#registerHandlerInterceptor(String, Function)} instead
+     * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(String, Function)} instead
      */
     @Deprecated
     public SagaConfiguration<S> registerHandlerInterceptor(
             Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptorBuilder) {
         if (config != null) {
-            eventProcessorRegistry().registerHandlerInterceptor(processorInfo.getName(), handlerInterceptorBuilder);
+            eventProcessingConfiguration().registerHandlerInterceptor(processorInfo.getProcessingGroup(), handlerInterceptorBuilder);
         } else {
             handlerInterceptors.add(handlerInterceptorBuilder);
         }
@@ -380,7 +407,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param tokenStore The function returning a TokenStore based on the given Configuration
      * @return this SagaConfiguration instance, ready for further configuration
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerTokenStore(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureTokenStore(Function<Configuration, TokenStore> tokenStore) {
         this.tokenStore.update(tokenStore);
         return this;
@@ -393,7 +423,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param errorHandler The function to create the ErrorHandler
      * @return this SagaConfiguration instance, ready for further configuration
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureErrorHandler(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureErrorHandler(Function<Configuration, ErrorHandler> errorHandler) {
         this.errorHandler.update(errorHandler);
         return this;
@@ -420,7 +453,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param rollbackConfiguration The function providing the RollbackConfiguration to use
      * @return this SagaConfiguration instance, ready for further configuration
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureRollbackConfiguration(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureRollbackConfiguration(
             Function<Configuration, RollbackConfiguration> rollbackConfiguration) {
         this.rollbackConfiguration.update(rollbackConfiguration);
@@ -435,7 +471,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param transactionManager The function providing the TransactionManager to use
      * @return this SagaConfiguration instance, ready for further configuration
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureTransactionManager(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureTransactionManager(
             Function<Configuration, TransactionManager> transactionManager) {
         this.transactionManager.update(transactionManager);
@@ -447,7 +486,10 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @param messageMonitor The function to create the MessageMonitor
      * @return this SagaConfiguration instance, ready for further configuration
+     *
+     * @deprecated use {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} instead
      */
+    @Deprecated
     public SagaConfiguration<S> configureMessageMonitor(
             Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
         this.messageMonitor.update(messageMonitor);
@@ -457,18 +499,25 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     @Override
     public void initialize(Configuration config) {
         this.config = config;
-        eventProcessorRegistry().registerHandlerInvoker(processorInfo.getName(), c -> sagaManager.get());
-        handlerInterceptors.forEach(i -> eventProcessorRegistry()
-                .registerHandlerInterceptor(processorInfo.getName(), i));
+        eventProcessingConfiguration().registerHandlerInvoker(processorInfo.getProcessingGroup(), c -> sagaManager.get());
+        eventProcessingConfiguration().registerTokenStore(processorInfo.getProcessingGroup(), c -> tokenStore.get());
+        eventProcessingConfiguration().configureMessageMonitor(processorInfo.getProcessingGroup(),
+                                                         c -> (MessageMonitor<Message<?>>) messageMonitor.get());
+        eventProcessingConfiguration().configureErrorHandler(processorInfo.getProcessingGroup(), c -> errorHandler.get());
+        eventProcessingConfiguration().configureRollbackConfiguration(processorInfo.getProcessingGroup(),
+                                                                c -> rollbackConfiguration.get());
+        eventProcessingConfiguration().configureTransactionManager(processorInfo.getProcessingGroup(), c -> transactionManager.get());
+        handlerInterceptors.forEach(i -> eventProcessingConfiguration()
+                .registerHandlerInterceptor(processorInfo.getProcessingGroup(), i));
         if (processorInfo.isCreateNewProcessor()) {
             switch (processorInfo.getType()) {
                 case TRACKING:
-                    eventProcessorRegistry().registerEventProcessor(processorInfo.getName(),
-                                                                    this::buildTrackingEventProcessor);
+                    eventProcessingConfiguration().registerEventProcessor(processorInfo.getProcessingGroup(),
+                                                                          this::buildTrackingEventProcessor);
                     break;
                 case SUBSCRIBING:
-                    eventProcessorRegistry().registerEventProcessor(processorInfo.getName(),
-                                                                    this::buildSubscribingEventProcessor);
+                    eventProcessingConfiguration().registerEventProcessor(processorInfo.getProcessingGroup(),
+                                                                          this::buildSubscribingEventProcessor);
                     break;
                 default:
                     throw new IllegalStateException("Unsupported event processor type.");
@@ -517,8 +566,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @throws IllegalStateException when this configuration hasn't been initialized yet
      */
     public EventProcessor getProcessor() {
-        return eventProcessorRegistry().eventProcessor(processorInfo.getName())
-                                       .orElse(null);
+        return eventProcessingConfiguration().eventProcessorByProcessingGroup(processorInfo.getProcessingGroup())
+                                             .orElse(null);
     }
 
     /**
@@ -559,14 +608,14 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         return sagaManager.get();
     }
 
-    private static String eventProcessorName(Class<?> sagaType) {
+    private static String processingGroupName(Class<?> sagaType) {
         return AnnotationUtils.findAnnotationAttributes(sagaType, ProcessingGroup.class)
                               .map(attrs -> (String) attrs.get("processingGroup"))
                               .orElse(sagaType.getSimpleName() + "Processor");
     }
 
-    private EventProcessorRegistry eventProcessorRegistry() {
-        return config.eventProcessorRegistry();
+    private EventProcessingConfiguration eventProcessingConfiguration() {
+        return config.eventProcessingConfiguration();
     }
 
     private static class ProcessorInfo {
@@ -578,12 +627,12 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
 
         private final boolean createNewProcessor;
         private final ProcessorType type;
-        private final String name;
+        private final String processingGroup;
 
-        private ProcessorInfo(boolean createNewProcessor, ProcessorType type, String name) {
+        private ProcessorInfo(boolean createNewProcessor, ProcessorType type, String processingGroup) {
             this.createNewProcessor = createNewProcessor;
             this.type = type;
-            this.name = name;
+            this.processingGroup = processingGroup;
         }
 
         public boolean isCreateNewProcessor() {
@@ -594,8 +643,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             return type;
         }
 
-        public String getName() {
-            return name;
+        public String getProcessingGroup() {
+            return processingGroup;
         }
     }
 }

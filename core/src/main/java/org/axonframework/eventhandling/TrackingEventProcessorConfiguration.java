@@ -2,6 +2,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.StreamableMessageSource;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -23,6 +25,7 @@ public class TrackingEventProcessorConfiguration {
     private final int maxThreadCount;
     private int batchSize;
     private int initialSegmentCount;
+    private Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder = StreamableMessageSource::createTailToken;
     private Function<String, ThreadFactory> threadFactory;
 
     private TrackingEventProcessorConfiguration(int numberOfSegments) {
@@ -85,6 +88,19 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets the Builder to use to create the initial tracking token. This token is used by the processor as a starting
+     * point.
+     *
+     * @param initialTrackingTokenBuilder The Builder of initial tracking token
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andInitialTrackingToken(
+            Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder) {
+        this.initialTrackingTokenBuilder = initialTrackingTokenBuilder;
+        return this;
+    }
+
+    /**
      * @return the maximum number of events to process in a single batch.
      */
     public int getBatchSize() {
@@ -96,6 +112,13 @@ public class TrackingEventProcessorConfiguration {
      */
     public int getInitialSegmentsCount() {
         return initialSegmentCount;
+    }
+
+    /**
+     * @return the Builder of initial tracking token
+     */
+    public Function<StreamableMessageSource, TrackingToken> getInitialTrackingToken() {
+        return initialTrackingTokenBuilder;
     }
 
     /**

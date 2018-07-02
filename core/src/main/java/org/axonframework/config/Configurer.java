@@ -174,16 +174,6 @@ public interface Configurer {
     Configurer configureCorrelationDataProviders(Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder);
 
     /**
-     * Configures the EventProcessorRegistry that is used for registering event processors and (re)using them within
-     * event handling components such as Sagas and Event Handlers.
-     *
-     * @param eventProcessorRegistryBuilder the builder function returning the EventProcessorRegistry
-     * @return the current instance of the Configurer, for chaining purposes
-     */
-    Configurer configureEventProcessorRegistry(
-            Function<Configuration, EventProcessorRegistry> eventProcessorRegistryBuilder);
-
-    /**
      * Registers an Axon module with this configuration. The module is initialized when the configuration is created and
      * has access to the global configuration when initialized.
      * <p>

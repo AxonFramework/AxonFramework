@@ -104,9 +104,9 @@ public class EventHandlerRegistrar implements InitializingBean, SmartLifecycle {
         if (!initialized) {
             initialized = true;
             delegate.initialize(axonConfiguration);
-            // since the configuration is already initialized in this phase, we need to tell eventProcessorRegistry to
-            // pick up our event handlers
-            axonConfiguration.eventProcessorRegistry().initialize(axonConfiguration);
+            // since the configuration is already initialized in this phase, we need to tell
+            // eventProcessingConfiguration to pick up our event handlers
+            axonConfiguration.eventProcessingConfiguration().initialize(axonConfiguration);
         }
     }
 }

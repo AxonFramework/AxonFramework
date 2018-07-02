@@ -97,8 +97,6 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
-    private final Component<EventProcessorRegistry> eventProcessorRegistry;
-
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
             new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
@@ -205,10 +203,6 @@ public class DefaultConfigurer implements Configurer {
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
-        eventProcessorRegistry = new Component<>(
-                config, "eventProcessorRegistry", c -> defaultEventProcessorRegistry()
-        );
-        components.put(EventProcessorRegistry.class, eventProcessorRegistry);
     }
 
     /**
@@ -302,15 +296,6 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Provides the default implementation of {@link EventProcessorRegistry}.
-     *
-     * @return the default implementation of {@link EventProcessorRegistry}
-     */
-    protected EventProcessorRegistry defaultEventProcessorRegistry() {
-        return new DefaultEventProcessorRegistry();
-    }
-
-    /**
      * Provides the default EventBus implementation. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
@@ -361,13 +346,6 @@ public class DefaultConfigurer implements Configurer {
     public Configurer configureCorrelationDataProviders(
             Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
         correlationProviders.update(correlationDataProviderBuilder);
-        return this;
-    }
-
-    @Override
-    public Configurer configureEventProcessorRegistry(
-            Function<Configuration, EventProcessorRegistry> eventProcessorRegistryBuilder) {
-        eventProcessorRegistry.update(eventProcessorRegistryBuilder);
         return this;
     }
 
@@ -470,6 +448,11 @@ public class DefaultConfigurer implements Configurer {
     public Configuration buildConfiguration() {
         if (!initialized) {
             verifyIdentifierFactory();
+            boolean missingEventProcessingConfiguration = modules.stream()
+                                                                 .noneMatch(m -> m.unwrap() instanceof EventProcessingConfiguration);
+            if (missingEventProcessingConfiguration) {
+                registerModule(new EventProcessingConfiguration());
+            }
             invokeInitHandlers();
         }
         return config;
@@ -495,7 +478,6 @@ public class DefaultConfigurer implements Configurer {
     protected void invokeInitHandlers() {
         initialized = true;
         initHandlers.stream().sorted(comparingInt(ConsumerHandler::phase)).forEach(h -> h.accept(config));
-        eventProcessorRegistry.get().initialize(config);
     }
 
     /**
@@ -503,7 +485,6 @@ public class DefaultConfigurer implements Configurer {
      */
     protected void invokeStartHandlers() {
         startHandlers.stream().sorted(comparingInt(RunnableHandler::phase)).forEach(RunnableHandler::run);
-        eventProcessorRegistry.get().start();
     }
 
     /**
@@ -511,7 +492,6 @@ public class DefaultConfigurer implements Configurer {
      */
     protected void invokeShutdownHandlers() {
         shutdownHandlers.stream().sorted(comparingInt(RunnableHandler::phase).reversed()).forEach(RunnableHandler::run);
-        eventProcessorRegistry.get().shutdown();
     }
 
     /**
