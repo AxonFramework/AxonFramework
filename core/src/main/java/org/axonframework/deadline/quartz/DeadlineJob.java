@@ -82,10 +82,10 @@ public class DeadlineJob implements Job {
             TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
             ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
 
-            DeadlineMessage deadlineMessage = deadlineMessage(serializer, jobData);
+            DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
             ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
-            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.execute(() -> executeScheduledDeadline(scopeAwareComponents, deadlineMessage, deadlineScope));
 

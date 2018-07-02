@@ -183,7 +183,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
             }
 
             try {
-                UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(null);
+                UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.execute(() -> executeScheduledDeadline(deadlineMessage, deadlineScope));
             } finally {
