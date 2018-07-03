@@ -77,7 +77,8 @@ public class PlatformConnectionManager {
     }
 
     public synchronized Channel getChannel() {
-        if( channel == null) {
+        if( channel == null || channel.isShutdown()) {
+            channel = null;
             logger.info("Connecting {}using SSL...", connectInformation.isSslEnabled()?"":"not ");
             boolean unavailable = false;
             for(NodeInfo nodeInfo : connectInformation.routingServers()) {

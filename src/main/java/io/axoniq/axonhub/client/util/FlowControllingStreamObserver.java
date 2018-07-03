@@ -109,9 +109,8 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
             synchronized (wrappedStreamObserver) {
                 wrappedStreamObserver.onNext(newPermitsRequest);
             }
-            logger.debug("Requesting new permits: {}", newPermitsRequest);
+            logger.info("Granting new permits: {}", newPermitsRequest);
         }
-
     }
 
 }
