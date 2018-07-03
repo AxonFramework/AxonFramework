@@ -525,6 +525,38 @@ public class SubscriptionQueryTest {
     }
 
     @Test
+    public void testSubscriptionQueryResultHandleWhenThereIsAnErrorConsumingABufferedUpdate() {
+        // given
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonFrameworkCR",
+                "chatMessages",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        // when
+        List<String> initialResult = new ArrayList<>();
+        List<String> updates = new ArrayList<>();
+        queryBus.subscriptionQuery(queryMessage, new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.DROP), 1)
+                .handle(initial -> {
+                            // make sure the update is emitted before subscribing to updates
+                            chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
+                            initialResult.addAll(initial.getPayload());
+
+                        },
+                        update -> {
+                            updates.add(update.getPayload());
+                            throw new IllegalStateException("oops");
+                        });
+        chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update2");
+
+        // then
+        assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
+        assertEquals(Collections.singletonList("Update1"), updates);
+
+        assertTrue("Expected subscriptions to be cancelled", queryBus.activeSubscriptions().isEmpty());
+    }
+
+    @Test
     public void testSubscriptionQueryResultHandleWhenThereIsAnErrorOnInitialResult() {
         // given
         SubscriptionQueryMessage<String, String, String> queryMessage = new GenericSubscriptionQueryMessage<>(
