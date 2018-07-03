@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,21 +34,8 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
 
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -234,7 +221,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
         boolean alreadyExists = updateHandlers.keySet()
                                               .stream()
                                               .anyMatch(m -> m.getIdentifier().equals(query.getIdentifier()));
-        if(alreadyExists) {
+        if (alreadyExists) {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
 
@@ -316,9 +303,9 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
             ((FluxSinkWrapper<SubscriptionQueryUpdateMessage<U>>) updateHandler).next(update);
             monitorCallback.reportSuccess();
         } catch (Exception e) {
-            logger.error(format(
-                    "An error happened while trying to emit an update to a query: %s. The update handler will be removed.",
-                    query), e);
+            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
+                                "The subscription will be cancelled. Exception summary: {}",
+                        query.getQueryName(), e.toString(), logger.isDebugEnabled() ? e : "");
             monitorCallback.reportFailure(e);
             updateHandlers.remove(query);
             emitError(query, e, updateHandler);
