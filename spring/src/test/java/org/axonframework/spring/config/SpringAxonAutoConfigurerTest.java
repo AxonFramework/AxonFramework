@@ -29,12 +29,12 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.SagaConfiguration;
-import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -46,6 +46,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -53,7 +54,16 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryMessage;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition;
+import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -70,6 +80,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import reactor.test.StepVerifier;
 
 import java.lang.reflect.Executable;
 import java.util.ArrayList;
@@ -99,6 +110,9 @@ public class SpringAxonAutoConfigurerTest {
 
     @Autowired(required = false)
     private CommandBus commandBus;
+
+    @Autowired(required = false)
+    private QueryBus queryBus;
 
     @Qualifier("customSagaStore")
     @Autowired(required = false)
@@ -228,6 +242,26 @@ public class SpringAxonAutoConfigurerTest {
         assertTrue(Context.MySaga.events.containsAll(Arrays.asList("id", "id")));
         assertEquals(1, myListenerInvocationErrorHandler.received.size());
         assertEquals("Ooops! I failed.", myListenerInvocationErrorHandler.received.get(0).getMessage());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testWiringOfQueryHandlerAndQueryUpdateEmitter() {
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                "axonCR",
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class));
+
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>>result = queryBus
+                .subscriptionQuery(queryMessage);
+        eventBus.publish(asEventMessage("New chat message"));
+
+        StepVerifier.create(result.initialResult().map(Message::getPayload))
+                    .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
+                    .verifyComplete();
+        StepVerifier.create(result.updates().map(Message::getPayload))
+                    .expectNext("New chat message")
+                    .verifyComplete();
     }
 
     @Test
@@ -430,12 +464,14 @@ public class SpringAxonAutoConfigurerTest {
         @Component
         public static class MyEventHandler {
 
-            public List<String> received = new ArrayList<>();
-            private EventBus eventBus;
+            public final List<String> received = new ArrayList<>();
+            private final EventBus eventBus;
+            private final QueryUpdateEmitter queryUpdateEmitter;
 
             @Autowired
-            public MyEventHandler(EventBus eventBus) {
+            public MyEventHandler(EventBus eventBus, QueryUpdateEmitter queryUpdateEmitter) {
                 this.eventBus = eventBus;
+                this.queryUpdateEmitter = queryUpdateEmitter;
             }
 
             @EventHandler
@@ -443,6 +479,17 @@ public class SpringAxonAutoConfigurerTest {
                 assertNotNull(eventBus);
                 assertNotNull(beanInjectionCheck);
                 received.add(event);
+                queryUpdateEmitter.emit(String.class, "axonCR"::equals, event);
+                queryUpdateEmitter.complete(String.class, "axonCR"::equals);
+            }
+        }
+
+        @Component
+        public static class MyQueryHandler {
+
+            @QueryHandler
+            public List<String> getChatMessages(String chatRoom) {
+                return Arrays.asList("Message1", "Message2", "Message3");
             }
         }
 

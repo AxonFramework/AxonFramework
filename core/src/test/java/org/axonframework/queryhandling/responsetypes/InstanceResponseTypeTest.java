@@ -175,6 +175,11 @@ public class InstanceResponseTypeTest extends AbstractResponseTypeTest<AbstractR
     }
 
     @Test
+    public void testMatchesReturnsTrueIfResponseTypeIsFutureOfProvidedType() throws NoSuchMethodException {
+        testMatches("someFutureQuery", MATCHES);
+    }
+
+    @Test
     public void testConvertReturnsSingleResponseAsIs() {
         QueryResponse testResponse = new QueryResponse();
 

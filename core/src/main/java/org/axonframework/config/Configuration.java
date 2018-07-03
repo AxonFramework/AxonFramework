@@ -32,6 +32,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
@@ -115,6 +116,16 @@ public interface Configuration {
 
     default QueryBus queryBus() {
         return getComponent(QueryBus.class);
+    }
+
+    /**
+     * Returns the Query Update Emitter in this Configuration. Note that this Configuration should be started (see
+     * {@link #start()} before emitting updates over Query Update Emitter.
+     *
+     * @return the QueryUpdateEmitter defined in this configuration
+     */
+    default QueryUpdateEmitter queryUpdateEmitter() {
+        return getComponent(QueryUpdateEmitter.class);
     }
 
     /**

@@ -63,12 +63,27 @@ public class DefaultQueryGateway implements QueryGateway {
                        .map(QueryResponseMessage::getPayload);
     }
 
+    @Override
+    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+                                                                     ResponseType<I> initialResponseType,
+                                                                     ResponseType<U> updateResponseType,
+                                                                     SubscriptionQueryBackpressure backpressure,
+                                                                     int updateBufferSize) {
+        SubscriptionQueryMessage<Q, I, U> subscriptionQueryMessage =
+                new GenericSubscriptionQueryMessage<>(query, queryName, initialResponseType, updateResponseType);
+        SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
+                .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, updateBufferSize);
+        return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
+                                                    result.updates().map(SubscriptionQueryUpdateMessage::getPayload),
+                                                    result);
+    }
+
     @SuppressWarnings("unchecked")
-    private <C, R> QueryMessage<? extends C, R> processInterceptors(QueryMessage<C, R> queryMessage) {
-        QueryMessage<? extends C, R> message = queryMessage;
-        for (MessageDispatchInterceptor<? super QueryMessage<?, ?>> dispatchInterceptor : dispatchInterceptors) {
-            message = (QueryMessage<? extends C, R>) dispatchInterceptor.handle(message);
+    private <Q, R, T extends QueryMessage<Q, R>> T processInterceptors(T query) {
+        T intercepted = query;
+        for (MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor : dispatchInterceptors) {
+            intercepted = (T) interceptor.handle(intercepted);
         }
-        return message;
+        return intercepted;
     }
 }

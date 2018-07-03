@@ -34,14 +34,18 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
-import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -56,13 +60,15 @@ import static org.mockito.Mockito.*;
  */
 public abstract class AbstractDeadlineManagerTestSuite {
 
-    private static final int DEADLINE_TIMEOUT = 1000;
-    private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 500;
+    private static final int DEADLINE_TIMEOUT = 100;
+    private static final int DEADLINE_WAIT_THRESHOLD = 10 * DEADLINE_TIMEOUT;
+    private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 50;
     private static final String IDENTIFIER = "id";
     private static final boolean CANCEL_BEFORE_DEADLINE = true;
     private static final boolean DO_NOT_CANCEL_BEFORE_DEADLINE = false;
 
     protected Configuration configuration;
+    private List<Object> published;
 
     @Before
     public void setUp() {
@@ -73,6 +79,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
                                          .registerModule(SagaConfiguration.subscribingSagaManager(MySaga.class))
                                          .registerComponent(DeadlineManager.class, this::buildDeadlineManager)
                                          .start();
+
+        published = new CopyOnWriteArrayList<>();
+        configuration.eventBus().subscribe(msgs -> msgs.forEach(msg -> published.add(msg.getPayload())));
     }
 
     @After
@@ -89,167 +98,96 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
 
     @Test
-    public void testDeadlineOnAggregate() throws InterruptedException {
+    public void testDeadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(2)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent(IDENTIFIER), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(
-                new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)),
-                eventCaptor.getAllValues().get(1).getPayload()
-        );
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
-    public void testDeadlineCancellationOnAggregate() throws InterruptedException {
+    public void testDeadlineCancellationOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(1)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent(IDENTIFIER), eventCaptor.getAllValues().get(0).getPayload());
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
     @Test
-    public void testDeadlineOnChildEntity() throws InterruptedException {
+    public void testDeadlineOnChildEntity() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(3)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent(IDENTIFIER), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(
-                new DeadlineOccurredInChildEvent(new ChildDeadlinePayload("entity" + IDENTIFIER)),
-                eventCaptor.getAllValues().get(1).getPayload()
-        );
-        assertEquals(
-                new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)),
-                eventCaptor.getAllValues().get(2).getPayload()
-        );
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredInChildEvent(new ChildDeadlinePayload(
+                                      "entity" + IDENTIFIER)),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
-    public void testDeadlineWithSpecifiedDeadlineName() throws InterruptedException {
+    public void testDeadlineWithSpecifiedDeadlineName() {
         String expectedDeadlinePayload = "deadlinePayload";
 
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(2)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent(IDENTIFIER), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(
-                new SpecificDeadlineOccurredEvent(expectedDeadlinePayload),
-                eventCaptor.getAllValues().get(1).getPayload()
-        );
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new SpecificDeadlineOccurredEvent(expectedDeadlinePayload));
     }
 
     @Test
-    public void testDeadlineWithoutPayload() throws InterruptedException {
+    public void testDeadlineWithoutPayload() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(2)).publish(eventCaptor.capture());
-        assertEquals(new MyAggregateCreatedEvent(IDENTIFIER), eventCaptor.getAllValues().get(0).getPayload());
-        assertEquals(new SpecificDeadlineOccurredEvent(null), eventCaptor.getAllValues().get(1).getPayload());
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new SpecificDeadlineOccurredEvent(null));
     }
 
     @Test
-    public void testDeadlineOnSaga() throws InterruptedException {
+    public void testDeadlineOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.eventStore().publish(testEventMessage);
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(2)).publish(eventCaptor.capture());
-        assertEquals(
-                new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
-                eventCaptor.getAllValues().get(0).getPayload()
-        );
-        assertEquals(
-                new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)),
-                eventCaptor.getAllValues().get(1).getPayload()
-        );
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
-    public void testDeadlineCancellationOnSaga() throws InterruptedException {
+    public void testDeadlineCancellationOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(1)).publish(eventCaptor.capture());
-        assertEquals(
-                new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
-                eventCaptor.getAllValues().get(0).getPayload()
-        );
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
     }
 
     @Test
-    public void testDeadlineWithSpecifiedDeadlineNameOnSaga() throws InterruptedException {
+    public void testDeadlineWithSpecifiedDeadlineNameOnSaga() {
         String expectedDeadlinePayload = "deadlinePayload";
 
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(
                 new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload))
         );
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
-
-        verify(configuration.eventStore(), times(3)).publish(eventCaptor.capture());
-        assertEquals(
-                new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
-                eventCaptor.getAllValues().get(0).getPayload()
-        );
-        assertEquals(
-                new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload),
-                eventCaptor.getAllValues().get(1).getPayload()
-        );
-        assertEquals(
-                new SpecificDeadlineOccurredEvent(expectedDeadlinePayload),
-                eventCaptor.getAllValues().get(2).getPayload()
-        );
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
+                              new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload),
+                              new SpecificDeadlineOccurredEvent(expectedDeadlinePayload));
     }
 
     @Test
-    public void testDeadlineWithoutPayloadOnSaga() throws InterruptedException {
+    public void testDeadlineWithoutPayloadOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
+                              new ScheduleSpecificDeadline(IDENTIFIER, null),
+                              new SpecificDeadlineOccurredEvent(null));
+    }
 
-        verify(configuration.eventStore(), times(3)).publish(eventCaptor.capture());
-        assertEquals(
-                new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
-                eventCaptor.getAllValues().get(0).getPayload()
-        );
-        assertEquals(new ScheduleSpecificDeadline(IDENTIFIER, null), eventCaptor.getAllValues().get(1).getPayload());
-        assertEquals(new SpecificDeadlineOccurredEvent(null), eventCaptor.getAllValues().get(2).getPayload());
+    private void assertPublishedEvents(Object... expectedEvents) {
+        assertWithin(DEADLINE_WAIT_THRESHOLD,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertEquals(asList(expectedEvents), published));
     }
 
     private static class CreateMyAggregateCommand {
