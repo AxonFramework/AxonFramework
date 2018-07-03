@@ -57,6 +57,7 @@ import static org.mockito.Mockito.*;
 public abstract class AbstractDeadlineManagerTestSuite {
 
     private static final int DEADLINE_TIMEOUT = 1000;
+    private static final int DEADLINE_WAIT_THRESHOLD = DEADLINE_TIMEOUT + DEADLINE_TIMEOUT / 5;
     private static final int CHILD_ENTITY_DEADLINE_TIMEOUT = 500;
     private static final String IDENTIFIER = "id";
     private static final boolean CANCEL_BEFORE_DEADLINE = true;
@@ -91,7 +92,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     public void testDeadlineOnAggregate() throws InterruptedException {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -107,7 +108,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     public void testDeadlineCancellationOnAggregate() throws InterruptedException {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -120,7 +121,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public void testDeadlineOnChildEntity() throws InterruptedException {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -143,7 +144,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -160,7 +161,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public void testDeadlineWithoutPayload() throws InterruptedException {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -175,7 +176,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.eventStore().publish(testEventMessage);
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -194,7 +195,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     public void testDeadlineCancellationOnSaga() throws InterruptedException {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -214,7 +215,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.eventStore().publish(asEventMessage(
                 new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload))
         );
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
@@ -238,7 +239,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public void testDeadlineWithoutPayloadOnSaga() throws InterruptedException {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
-        Thread.sleep(DEADLINE_TIMEOUT + 100);
+        Thread.sleep(DEADLINE_WAIT_THRESHOLD);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
