@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
@@ -259,6 +260,15 @@ public interface Configuration {
      * @return the Handler Definition defined in this Configuration
      */
     HandlerDefinition handlerDefinition(Class<?> inspectedType);
+
+    /**
+     * Returns the Deadline Manager defined in this Configuration.
+     *
+     * @return the Deadline Manager defined in this Configuration
+     */
+    default DeadlineManager deadlineManager() {
+        return getComponent(DeadlineManager.class);
+    }
 
     /**
      * Returns all modules that have been registered with this Configuration.

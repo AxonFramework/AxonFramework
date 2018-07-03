@@ -30,7 +30,7 @@ import java.util.List;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
- * Helper class for validating evets scheduled in a given event scheduler.
+ * Helper class for validating events scheduled in a given event scheduler.
  *
  * @author Allard Buijze
  * @since 1.1

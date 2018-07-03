@@ -16,9 +16,12 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -156,4 +159,97 @@ public interface ResultValidator<T> {
      * @throws IllegalStateException when an error in Command execution caused the Unit of Work to be rolled back.
      */
     ResultValidator<T> expectState(Consumer<T> aggregateStateValidator);
+
+    /**
+     * Asserts that a deadline scheduled after given {@code duration} matches the given {@code matcher}.
+     *
+     * @param duration The delay expected before the deadline is met
+     * @param matcher  The matcher that must match with the deadline scheduled at the given time
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage<?>> matcher);
+
+    /**
+     * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
+     * <p/>
+     * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
+     * an "equals" check on all fields in the deadlines.
+     *
+     * @param duration The time to wait before the deadline should be met
+     * @param deadline The expected deadline
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline);
+
+    /**
+     * Asserts that a deadline of the given {@code deadlineType} has been scheduled after the given {@code duration}.
+     *
+     * @param duration     The time to wait before the deadline is met
+     * @param deadlineType The type of the expected deadline
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+
+    /**
+     * Asserts that a deadline matching the given {@code matcher} has been scheduled at the given {@code
+     * scheduledTime}.
+     * <p/>
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
+     * TestExecutor#currentTime()} to get the time to use as "current time".
+     *
+     * @param scheduledTime The time at which the deadline should be met
+     * @param matcher       The matcher defining the deadline expected
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime, Matcher<? super DeadlineMessage<?>> matcher);
+
+    /**
+     * Asserts that a deadline equal to the given {@code deadline} has been scheduled at the given {@code
+     * scheduledTime}.
+     * <p/>
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
+     * TestExecutor#currentTime()} to get the time to use as "current time".
+     * <p/>
+     * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
+     * an "equals" check on all fields in the deadlines.
+     *
+     * @param scheduledTime The time at which the deadline is scheduled
+     * @param deadline      The expected deadline
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline);
+
+    /**
+     * Asserts that a deadline of the given {@code deadlineType} has been scheduled at the given {@code scheduledTime}.
+     *
+     * @param scheduledTime The time at which the deadline is scheduled
+     * @param deadlineType  The type of the expected deadline
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules
+     * have been cancelled or all scheduled deadlines have been met already.
+     *
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectNoScheduledDeadlines();
+
+    /**
+     * Asserts that deadlines match given {@code matcher} have been met (which have passed in time) on this aggregate.
+     *
+     * @param matcher The matcher that defines the expected list of deadlines
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
+
+    /**
+     * Asserts that given {@code expected} deadlines have been met (which have passed in time). Deadlines are compared
+     * comparing their type and fields using "equals".
+     *
+     * @param expected The sequence of deadlines expected to be met
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectDeadlinesMet(Object... expected);
 }

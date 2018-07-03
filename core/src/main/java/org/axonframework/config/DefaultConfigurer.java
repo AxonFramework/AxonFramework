@@ -30,6 +30,8 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -42,12 +44,20 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -56,7 +66,11 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -93,8 +107,10 @@ public class DefaultConfigurer implements Configurer {
                             c -> Collections.singletonList(new MessageOriginProvider()));
 
     private final Map<Class<?>, Component<?>> components = new HashMap<>();
-    private final Component<Serializer> eventSerializer = new Component<>(config, "eventSerializer", Configuration::messageSerializer);
-    private final Component<Serializer> messageSerializer = new Component<>(config, "messageSerializer", Configuration::serializer);
+    private final Component<Serializer> eventSerializer =
+            new Component<>(config, "eventSerializer", Configuration::messageSerializer);
+    private final Component<Serializer> messageSerializer =
+            new Component<>(config, "messageSerializer", Configuration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain",
@@ -130,6 +146,7 @@ public class DefaultConfigurer implements Configurer {
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
     }
 
     /**
@@ -287,6 +304,17 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
+     * Provides the default {@link DeadlineManager} implementation. Subclasses may override this method to provide their
+     * own default.
+     *
+     * @param config The configuration that supplies registered components.
+     * @return The default DeadlineManager to use
+     */
+    protected DeadlineManager defaultDeadlineManager(Configuration config) {
+        return new SimpleDeadlineManager(new ConfigurationScopeAwareProvider(config));
+    }
+
+    /**
      * Provides the default EventBus implementation. Subclasses may override this method to provide their own default.
      *
      * @param config The configuration based on which the component is initialized.
@@ -354,7 +382,8 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerCommandHandler(int phase, Function<Configuration, Object> annotatedCommandHandlerBuilder) {
+    public Configurer registerCommandHandler(int phase,
+                                             Function<Configuration, Object> annotatedCommandHandlerBuilder) {
         startHandlers.add(new RunnableHandler(phase, () -> {
             Object handler = annotatedCommandHandlerBuilder.apply(config);
             Assert.notNull(handler, () -> "annotatedCommandHandler may not be null");
@@ -377,7 +406,8 @@ public class DefaultConfigurer implements Configurer {
 
             Registration registration = new AnnotationQueryHandlerAdapter(annotatedHandler,
                                                                           config.parameterResolverFactory(),
-                                                                          config.handlerDefinition(annotatedHandler.getClass()))
+                                                                          config.handlerDefinition(annotatedHandler
+                                                                                                           .getClass()))
                     .subscribe(config.queryBus());
             shutdownHandlers.add(new RunnableHandler(phase, registration::cancel));
         }));
@@ -420,12 +450,15 @@ public class DefaultConfigurer implements Configurer {
         this.aggregateConfigurations.put(aggregateConfiguration.aggregateType(), aggregateConfiguration);
         this.initHandlers.add(new ConsumerHandler(aggregateConfiguration.phase(), aggregateConfiguration::initialize));
         this.startHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::start));
-        this.shutdownHandlers.add(new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown));
+        this.shutdownHandlers.add(
+                new RunnableHandler(aggregateConfiguration.phase(), aggregateConfiguration::shutdown)
+        );
         return this;
     }
 
     @Override
-    public Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
+    public Configurer registerHandlerDefinition(
+            BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
         this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
         return this;
     }
@@ -502,6 +535,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     private static class ConsumerHandler {
+
         private final int phase;
         private final Consumer<Configuration> handler;
 
@@ -520,6 +554,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     private static class RunnableHandler {
+
         private final int phase;
         private final Runnable handler;
 

@@ -18,19 +18,17 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Scope;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
  * Abstract base class of a component that models an aggregate's life cycle.
  */
-public abstract class AggregateLifecycle {
-
-    private static final ThreadLocal<AggregateLifecycle> CURRENT = new ThreadLocal<>();
+public abstract class AggregateLifecycle extends Scope {
 
     /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
@@ -44,6 +42,7 @@ public abstract class AggregateLifecycle {
      * @param payload  the payload of the event to apply
      * @param metaData any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
+     *
      * @see ApplyMore
      */
     public static ApplyMore apply(Object payload, MetaData metaData) {
@@ -61,6 +60,7 @@ public abstract class AggregateLifecycle {
      *
      * @param payload the payload of the event to apply
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
+     *
      * @see ApplyMore
      */
     public static ApplyMore apply(Object payload) {
@@ -121,24 +121,13 @@ public abstract class AggregateLifecycle {
     }
 
     /**
-     * Returns the {@link AggregateLifecycle} for the current aggregate. If none was defined this method will throw
-     * an exception.
+     * Get the current {@link AggregateLifecycle} instance for the current thread. If none exists an {@link
+     * IllegalStateException} is thrown.
      *
-     * @return the {@link AggregateLifecycle} for the current aggregate
+     * @return the thread's current {@link AggregateLifecycle}
      */
     protected static AggregateLifecycle getInstance() {
-        AggregateLifecycle instance = CURRENT.get();
-        if (instance == null && CurrentUnitOfWork.isStarted()) {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            Set<AggregateLifecycle> managedAggregates = unitOfWork.getResource("ManagedAggregates");
-            if (managedAggregates != null && managedAggregates.size() == 1) {
-                instance = managedAggregates.iterator().next();
-            }
-        }
-        if (instance == null) {
-            throw new IllegalStateException("Cannot retrieve current AggregateLifecycle; none is yet defined");
-        }
-        return instance;
+        return Scope.getCurrentScope();
     }
 
     /**
@@ -184,6 +173,7 @@ public abstract class AggregateLifecycle {
      * @param payload  the payload of the event to apply
      * @param metaData any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
+     *
      * @see ApplyMore
      */
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
@@ -203,42 +193,6 @@ public abstract class AggregateLifecycle {
     protected abstract <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception;
 
     /**
-     * Executes the given task and returns the result of the task. While the task is being executed the current
-     * aggregate will be registered with the current thread as the 'current' aggregate.
-     *
-     * @param task the task to execute on the aggregate
-     * @param <V>  the result of the task
-     * @return the task's result
-     * @throws Exception if executing the task causes an exception
-     */
-    protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        Runnable handle = registerAsCurrent();
-        try {
-            return task.call();
-        } finally {
-            handle.run();
-        }
-    }
-
-    /**
-     * Registers the current AggregateLifecycle as the current lifecycle. The returned Runnable should be executed to
-     * restore the lifecycle to the previous state.
-     *
-     * @return a runnable that must be executed to return the lifecycle to the original state
-     */
-    protected Runnable registerAsCurrent() {
-        AggregateLifecycle existing = CURRENT.get();
-        CURRENT.set(this);
-        return () -> {
-            if (existing == null) {
-                CURRENT.remove();
-            } else {
-                CURRENT.set(existing);
-            }
-        };
-    }
-
-    /**
      * Executes the given task. While the task is being executed the current aggregate will be registered with the
      * current thread as the 'current' aggregate.
      *
@@ -256,4 +210,23 @@ public abstract class AggregateLifecycle {
             throw new AggregateInvocationException("Exception while invoking a task for an aggregate", e);
         }
     }
+
+    @Override
+    public ScopeDescriptor describeScope() {
+        return new AggregateScopeDescriptor(type(), this::identifier);
+    }
+
+    /**
+     * Retrieve a {@link String} denoting the type of this Aggregate.
+     *
+     * @return a {@link String} denoting the type of this Aggregate
+     */
+    protected abstract String type();
+
+    /**
+     * Retrieve a {@link Object} denoting the identifier of this Aggregate.
+     *
+     * @return a {@link Object} denoting the identifier of this Aggregate
+     */
+    protected abstract Object identifier();
 }

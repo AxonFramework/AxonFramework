@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -285,7 +286,9 @@ public class SpringAxonAutoConfigurerTest {
                      handlerEnhancerDefinition.getDelegates().get(3).getClass());
         assertEquals(MethodCommandHandlerInterceptorDefinition.class,
                      handlerEnhancerDefinition.getDelegates().get(4).getClass());
-        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(5).getClass());
+        assertEquals(DeadlineMethodMessageHandlerDefinition.class,
+                     handlerEnhancerDefinition.getDelegates().get(5).getClass());
+        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(6).getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -367,10 +370,10 @@ public class SpringAxonAutoConfigurerTest {
             public void on(String event) {
                 fail("Event Handler on aggregate shouldn't be invoked");
             }
-
         }
 
         public static class CreateMyOtherAggregateCommand {
+
             @TargetAggregateIdentifier
             private final String id;
 
@@ -380,6 +383,7 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         public static class UpdateMyOtherAggregateCommand {
+
             @TargetAggregateIdentifier
             private final String id;
 
@@ -389,6 +393,7 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         public static class MyOtherAggregateCreatedEvent {
+
             private final String id;
 
             public MyOtherAggregateCreatedEvent(String id) {
@@ -402,7 +407,7 @@ public class SpringAxonAutoConfigurerTest {
             @AggregateIdentifier
             private String id;
 
-            public MyOtherAggregate(){
+            public MyOtherAggregate() {
                 // default constructor
             }
 
@@ -507,7 +512,6 @@ public class SpringAxonAutoConfigurerTest {
             public void handle(String event) {
                 throw new RuntimeException();
             }
-
         }
 
         @Component
@@ -522,9 +526,10 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         @Bean
-        public SagaConfiguration mySagaConfiguration(@Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
+        public SagaConfiguration mySagaConfiguration(
+                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
             return SagaConfiguration.subscribingSagaManager(MySaga.class)
-                    .configureSagaStore(c -> customSagaStore);
+                                    .configureSagaStore(c -> customSagaStore);
         }
 
         @Bean

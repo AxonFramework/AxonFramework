@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
@@ -49,6 +50,7 @@ public class FixtureExecutionResultImplTest {
     private RecordingCommandBus commandBus;
     private SimpleEventBus eventBus;
     private StubEventScheduler eventScheduler;
+    private StubDeadlineManager deadlineManager;
     private InMemorySagaStore sagaStore;
     private TimerTriggeredEvent applicationEvent;
     private String identifier;
@@ -58,8 +60,9 @@ public class FixtureExecutionResultImplTest {
         commandBus = new RecordingCommandBus();
         eventBus = new SimpleEventBus();
         eventScheduler = new StubEventScheduler();
+        deadlineManager = new StubDeadlineManager();
         sagaStore = new InMemorySagaStore();
-        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus,
+        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
                                                        commandBus, StubSaga.class, AllFieldsFilter.instance());
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
@@ -68,7 +71,7 @@ public class FixtureExecutionResultImplTest {
 
     @Test
     public void testStartRecording() {
-        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus,
+        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, deadlineManager, eventBus,
                                                        commandBus, StubSaga.class, AllFieldsFilter.instance());
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaStartEvent(identifier)));

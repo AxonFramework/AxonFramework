@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
@@ -24,6 +23,7 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMeta
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -265,7 +265,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Object handle(CommandMessage<?> commandMessage) {
+        public Object handle(Message<?> message) {
             throw new UnsupportedOperationException("Aggregate instance is read-only");
         }
 

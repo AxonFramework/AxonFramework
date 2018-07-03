@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.Message;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -55,6 +56,7 @@ public interface Aggregate<T> {
 
     /**
      * Get the unique identifier of this aggregate
+     *
      * @return The aggregate's identifier
      */
     Object identifier();
@@ -68,13 +70,15 @@ public interface Aggregate<T> {
     Long version();
 
     /**
-     * Handle the given {@code commandMessage} on the aggregate root or one of its child entities.
+     * Handle the given {@code message} on the aggregate root or one of its child entities.
      *
-     * @param commandMessage The command to be handled by the aggregate
-     * @return The result of command handling. Returns {@code null} in case the command yields no result.
-     * @throws Exception in case one is triggered during command processing
+     * @param message The message to be handled by the aggregate
+     * @return The result of message handling. Might returns {@code null} if for example handling a
+     * {@link CommandMessage} yields no results
+     *
+     * @throws Exception in case one is triggered during message processing
      */
-    Object handle(CommandMessage<?> commandMessage) throws Exception;
+    Object handle(Message<?> message) throws Exception;
 
     /**
      * Invoke a method on the underlying aggregate root or one of its instances. Use this over {@link

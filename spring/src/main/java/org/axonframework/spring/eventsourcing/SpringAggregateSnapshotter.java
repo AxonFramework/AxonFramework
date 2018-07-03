@@ -88,9 +88,9 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         AggregateFactory<?> aggregateFactory = super.getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
             Optional<AggregateFactory> factory = applicationContext.getBeansOfType(AggregateFactory.class)
-                    .values().stream()
-                    .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
-                    .findFirst();
+                                                                   .values().stream()
+                                                                   .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
+                                                                   .findFirst();
             if (!factory.isPresent()) {
                 factory = applicationContext.getBeansOfType(EventSourcingRepository.class)
                                             .values().stream()
