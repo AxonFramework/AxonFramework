@@ -44,7 +44,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.common.AssertUtils.assertWithin;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
@@ -102,18 +101,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
     public void testDeadlineOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new MyAggregateCreatedEvent(IDENTIFIER),
-                                          new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER))),
-                                   published));
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
     public void testDeadlineCancellationOnAggregate() {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(singletonList(new MyAggregateCreatedEvent(IDENTIFIER)), published));
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER));
     }
 
     @Test
@@ -121,11 +117,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
         configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new MyAggregateCreatedEvent(IDENTIFIER),
-                                          new DeadlineOccurredInChildEvent(new ChildDeadlinePayload(
-                                                  "entity" + IDENTIFIER)),
-                                          new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER))), published));
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredInChildEvent(new ChildDeadlinePayload(
+                                      "entity" + IDENTIFIER)),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
@@ -135,9 +130,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new MyAggregateCreatedEvent(IDENTIFIER),
-                                          new SpecificDeadlineOccurredEvent(expectedDeadlinePayload)), published));
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new SpecificDeadlineOccurredEvent(expectedDeadlinePayload));
     }
 
     @Test
@@ -145,9 +139,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
         configuration.commandGateway().sendAndWait(new ScheduleSpecificDeadline(IDENTIFIER, null));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new MyAggregateCreatedEvent(IDENTIFIER),
-                                          new SpecificDeadlineOccurredEvent(null)), published));
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new SpecificDeadlineOccurredEvent(null));
     }
 
     @Test
@@ -156,19 +149,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.eventStore().publish(testEventMessage);
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
-                                          new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER))),
-                                   published));
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
+                              new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
     @Test
     public void testDeadlineCancellationOnSaga() {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(singletonList(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)),
-                                   published));
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE));
     }
 
     @Test
@@ -180,11 +169,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload))
         );
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
-                                          new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload),
-                                          new SpecificDeadlineOccurredEvent(expectedDeadlinePayload)),
-                                   published));
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
+                              new ScheduleSpecificDeadline(IDENTIFIER, expectedDeadlinePayload),
+                              new SpecificDeadlineOccurredEvent(expectedDeadlinePayload));
     }
 
     @Test
@@ -192,15 +179,15 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.eventStore().publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         configuration.eventStore().publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, null)));
 
-        assertWithinDeadlineWaitThreshold(
-                () -> assertEquals(asList(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
-                                          new ScheduleSpecificDeadline(IDENTIFIER, null),
-                                          new SpecificDeadlineOccurredEvent(null)),
-                                   published));
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
+                              new ScheduleSpecificDeadline(IDENTIFIER, null),
+                              new SpecificDeadlineOccurredEvent(null));
     }
 
-    private void assertWithinDeadlineWaitThreshold(Runnable assertion) {
-        assertWithin(DEADLINE_WAIT_THRESHOLD, TimeUnit.MILLISECONDS, assertion);
+    private void assertPublishedEvents(Object... expectedEvents) {
+        assertWithin(DEADLINE_WAIT_THRESHOLD,
+                     TimeUnit.MILLISECONDS,
+                     () -> assertEquals(asList(expectedEvents), published));
     }
 
     private static class CreateMyAggregateCommand {
