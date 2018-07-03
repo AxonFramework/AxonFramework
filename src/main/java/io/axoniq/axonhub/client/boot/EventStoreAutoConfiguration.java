@@ -21,6 +21,7 @@ import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.axon.AxonHubEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.serialization.Serializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -36,7 +37,9 @@ import org.springframework.context.annotation.Configuration;
 public class EventStoreAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public EventStore eventStore(AxonHubConfiguration axonHubConfiguration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
+    public EventStore eventStore(AxonHubConfiguration axonHubConfiguration,
+                                 PlatformConnectionManager platformConnectionManager,
+                                 @Qualifier("eventSerializer") Serializer serializer) {
         return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, serializer);
     }
 }
