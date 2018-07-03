@@ -19,22 +19,19 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for subscription query functionality.
@@ -523,6 +520,8 @@ public class SubscriptionQueryTest {
         // then
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
+
+        assertTrue("Expected subscriptions to be cancelled", queryBus.activeSubscriptions().isEmpty());
     }
 
     @Test
