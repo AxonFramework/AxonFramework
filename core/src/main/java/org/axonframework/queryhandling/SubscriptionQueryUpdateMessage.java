@@ -16,33 +16,20 @@
 
 package org.axonframework.queryhandling;
 
+import java.util.Map;
+
 /**
- * Query update emitter implementation with empty methods.
+ * Message which holds incremental update of an subscription query.
  *
- * @param <U> the type of incremental updates
+ * @param <U> type of incremental update
  * @author Milan Savic
  * @since 3.3
  */
-public class NoOpQueryUpdateEmitter<U> implements QueryUpdateEmitter<U> {
+public interface SubscriptionQueryUpdateMessage<U> extends QueryResponseMessage<U> {
 
     @Override
-    public boolean emit(U update) {
-        // this is empty implementation, since regular query handler will not invoke it
-        return false;
-    }
+    SubscriptionQueryUpdateMessage<U> withMetaData(Map<String, ?> metaData);
 
     @Override
-    public void complete() {
-        // this is empty implementation, since regular query handler will not invoke it
-    }
-
-    @Override
-    public void error(Throwable error) {
-        // this is empty implementation, since regular query handler will not invoke it
-    }
-
-    @Override
-    public void onRegistrationCanceled(Runnable r) {
-        r.run();
-    }
+    SubscriptionQueryUpdateMessage<U> andMetaData(Map<String, ?> metaData);
 }

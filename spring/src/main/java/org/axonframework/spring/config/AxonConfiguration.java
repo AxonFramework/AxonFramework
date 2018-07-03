@@ -32,6 +32,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.BeansException;
@@ -40,6 +41,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -79,10 +81,22 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.eventBus();
     }
 
+    @Override
+    public QueryUpdateEmitter queryUpdateEmitter() {
+        return config.queryUpdateEmitter();
+    }
+
     @NoBeanOfType(QueryBus.class)
     @Bean("queryBus")
+    @Primary
     public QueryBus defaultQueryBus() {
         return config.queryBus();
+    }
+
+    @NoBeanOfType(QueryUpdateEmitter.class)
+    @Bean("queryUpdateEmitter")
+    public QueryUpdateEmitter defaultQueryUpdateEmitter() {
+        return config.queryUpdateEmitter();
     }
 
     @NoBeanOfType(CommandBus.class)

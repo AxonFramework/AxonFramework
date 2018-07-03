@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
@@ -56,6 +57,7 @@ import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
@@ -130,6 +132,25 @@ public class DefaultConfigurer implements Configurer {
     private boolean initialized = false;
 
     /**
+     * Initialize the Configurer.
+     */
+    protected DefaultConfigurer() {
+        components.put(ParameterResolverFactory.class,
+                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
+        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
+        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
+        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
+        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
+        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter));
+        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
+        components.put(ResourceInjector.class,
+                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
+    }
+
+    /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
      * {@link SimpleEventBus}.
      *
@@ -188,24 +209,6 @@ public class DefaultConfigurer implements Configurer {
     }
 
     /**
-     * Initialize the Configurer.
-     */
-    protected DefaultConfigurer() {
-        components.put(ParameterResolverFactory.class,
-                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
-        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
-        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
-        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
-        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
-        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
-        components.put(ResourceInjector.class,
-                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
-        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
-    }
-
-    /**
      * Returns a {@link DefaultCommandGateway} that will use the configuration's {@link CommandBus} to dispatch
      * commands.
      *
@@ -234,8 +237,25 @@ public class DefaultConfigurer implements Configurer {
      */
     protected QueryBus defaultQueryBus(Configuration config) {
         return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
+                                  config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"),
                                   config.getComponent(TransactionManager.class, NoTransactionManager::instance),
                                   config.getComponent(QueryInvocationErrorHandler.class));
+    }
+
+    /**
+     * Provides the default QueryUpdateEmitter implementation. Subclasses may override this method to provide their own
+     * default.
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return The default QueryUpdateEmitter to use
+     */
+    protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
+        QueryBus queryBus = config.getComponent(QueryBus.class);
+        if (!(queryBus instanceof QueryUpdateEmitter)) {
+            throw new AxonConfigurationException(
+                    "Implementation of query bus does not provide emitting functionality. Provide a query update emitter or query bus which supports emitting.");
+        }
+        return (QueryUpdateEmitter) queryBus;
     }
 
     /**
