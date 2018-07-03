@@ -19,13 +19,18 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import static org.axonframework.common.Assert.nonNull;
@@ -44,6 +49,8 @@ import static org.axonframework.common.Assert.nonNull;
  */
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
+
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
 
@@ -54,7 +61,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected AbstractRepository(Class<T> aggregateType) {
-        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null")));
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                nonNull(aggregateType, () -> "aggregateType may not be null")
+        ));
     }
 
     /**
@@ -65,8 +74,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
      */
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
-                                                                 nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")));
+        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                nonNull(aggregateType, () -> "aggregateType may not be null"),
+                nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")
+        ));
     }
 
     /**
@@ -118,6 +129,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
+     *
      * @throws Exception when the factoryMethod throws an exception
      */
     protected abstract A doCreateNew(Callable<T> factoryMethod) throws Exception;
@@ -170,7 +182,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param expectedVersion The expected version of the aggregate
      * @throws ConflictingModificationException     when conflicting changes have been detected
      * @throws ConflictingAggregateVersionException the expected version is not {@code null}
-     *                                              and the version number of the aggregate does not match the expected version
+     *                                              and the version number of the aggregate does not match the expected
+     *                                              version
      */
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.version() != null &&
@@ -257,6 +270,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
+     *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
     protected abstract A doLoad(String aggregateIdentifier, Long expectedVersion);
@@ -290,5 +304,24 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @SuppressWarnings("UnusedParameters")
     protected void postDelete(A aggregate) {
         //no op by default
+    }
+
+    @Override
+    public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        if (canResolve(scopeDescription)) {
+            String aggregateIdentifier = ((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString();
+            try {
+                load(aggregateIdentifier).handle(message);
+            } catch (AggregateNotFoundException e) {
+                logger.debug("Aggregate (with id: [{}]) cannot be loaded. Hence, message '[{}]' cannot be handled.",
+                             aggregateIdentifier, message);
+            }
+        }
+    }
+
+    @Override
+    public boolean canResolve(ScopeDescriptor scopeDescription) {
+        return scopeDescription instanceof AggregateScopeDescriptor
+                && Objects.equals(aggregateModel.type(), ((AggregateScopeDescriptor) scopeDescription).getType());
     }
 }

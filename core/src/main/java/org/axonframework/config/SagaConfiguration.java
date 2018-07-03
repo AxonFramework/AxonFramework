@@ -20,7 +20,19 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.DirectEventProcessingStrategy;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessingStrategy;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -47,6 +59,7 @@ import java.util.function.Function;
  */
 public class SagaConfiguration<S> implements ModuleConfiguration {
 
+    private final Class<S> sagaType;
     private final ProcessorInfo processorInfo;
     private final Function<Configuration, SubscribableMessageSource<EventMessage<?>>> subscribableMessageSourceBuilder;
     private final Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> streamableMessageSourceBuilder;
@@ -277,18 +290,23 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     }
 
     @SuppressWarnings("unchecked")
-    private SagaConfiguration(Class<S> sagaType, ProcessorInfo processorInfo, Class<? extends EventProcessor> eventProcessorType,
+    private SagaConfiguration(Class<S> sagaType, ProcessorInfo processorInfo,
+                              Class<? extends EventProcessor> eventProcessorType,
                               Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> streamableMessageSourceBuilder,
                               Function<Configuration, SubscribableMessageSource<EventMessage<?>>> subscribableMessageSourceBuilder,
                               Function<Configuration, EventProcessingStrategy> processingStrategy) {
+        this.sagaType = sagaType;
         this.processorInfo = processorInfo;
         this.streamableMessageSourceBuilder = streamableMessageSourceBuilder;
         this.subscribableMessageSourceBuilder = subscribableMessageSourceBuilder;
         this.processingStrategy = processingStrategy;
         String managerName = sagaType.getSimpleName() + "Manager";
         String repositoryName = sagaType.getSimpleName() + "Repository";
-        transactionManager = new Component<>(() -> config, "transactionManager",
-                                             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance));
+        transactionManager = new Component<>(
+                () -> config,
+                "transactionManager",
+                c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
+        );
         messageMonitor = new Component<>(() -> config, "messageMonitor",
                                          c -> c.messageMonitor(eventProcessorType, processorInfo.getProcessingGroup()));
         tokenStore = new Component<>(() -> config, "tokenStore",
@@ -296,12 +314,17 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         errorHandler = new Component<>(() -> config, "errorHandler",
                                        c -> c.getComponent(ErrorHandler.class,
                                                            () -> PropagatingErrorHandler.INSTANCE));
-        listenerInvocationErrorHandler = new Component<>(() -> config, "listenerInvocationErrorHandler",
-                                                     c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new));
+        listenerInvocationErrorHandler = new Component<>(
+                () -> config,
+                "listenerInvocationErrorHandler",
+                c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new)
+        );
         rollbackConfiguration = new Component<>(() -> config, "rollbackConfiguration",
                                                 c -> c.getComponent(RollbackConfiguration.class,
                                                                     () -> RollbackConfigurationType.ANY_THROWABLE));
-        sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
+        sagaStore = new Component<>(() -> config,
+                                    "sagaStore",
+                                    c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
         sagaRepository = new Component<>(() -> config,
                                          repositoryName,
                                          c -> new AnnotatedSagaRepository<>(sagaType,
@@ -309,14 +332,25 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                             c.resourceInjector(),
                                                                             c.parameterResolverFactory(),
                                                                             c.handlerDefinition(sagaType)));
-        sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get(),
-                                                                                                 c.parameterResolverFactory(),
-                                                                                                 c.handlerDefinition(sagaType),
-                                                                                                 listenerInvocationErrorHandler
-                                                                                                         .get()));
+        sagaManager = new Component<>(() -> config,
+                                      managerName,
+                                      c -> new AnnotatedSagaManager<>(sagaType,
+                                                                      sagaRepository.get(),
+                                                                      c.parameterResolverFactory(),
+                                                                      c.handlerDefinition(sagaType),
+                                                                      listenerInvocationErrorHandler.get()));
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
                                                               c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                                                                   TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
+    }
+
+    /**
+     * Gets the saga type.
+     *
+     * @return the saga type
+     */
+    public Class<S> getSagaType() {
+        return sagaType;
     }
 
     /**
@@ -361,7 +395,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @param trackingEventProcessorConfiguration The function to create the configuration instance
      * @return this SagaConfiguration instance, ready for further configuration
      */
-    public SagaConfiguration<S> configureTrackingProcessor(Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfiguration) {
+    public SagaConfiguration<S> configureTrackingProcessor(
+            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfiguration) {
         this.trackingEventProcessorConfiguration.update(trackingEventProcessorConfiguration);
         return this;
     }
@@ -422,7 +457,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @deprecated use {@link EventProcessingConfiguration#configureRollbackConfiguration(String, Function)} instead
      */
     @Deprecated
-    public SagaConfiguration<S> configureRollbackConfiguration(Function<Configuration, RollbackConfiguration> rollbackConfiguration) {
+    public SagaConfiguration<S> configureRollbackConfiguration(
+            Function<Configuration, RollbackConfiguration> rollbackConfiguration) {
         this.rollbackConfiguration.update(rollbackConfiguration);
         return this;
     }
@@ -439,7 +475,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @deprecated use {@link EventProcessingConfiguration#configureTransactionManager(String, Function)} instead
      */
     @Deprecated
-    public SagaConfiguration<S> configureTransactionManager(Function<Configuration, TransactionManager> transactionManager) {
+    public SagaConfiguration<S> configureTransactionManager(
+            Function<Configuration, TransactionManager> transactionManager) {
         this.transactionManager.update(transactionManager);
         return this;
     }
@@ -453,7 +490,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @deprecated use {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} instead
      */
     @Deprecated
-    public SagaConfiguration<S> configureMessageMonitor(Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
+    public SagaConfiguration<S> configureMessageMonitor(
+            Function<Configuration, MessageMonitor<? super EventMessage<?>>> messageMonitor) {
         this.messageMonitor.update(messageMonitor);
         return this;
     }
@@ -524,6 +562,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * Returns the processor that processed events for the Saga in this Configuration.
      *
      * @return The EventProcessor defined in this Configuration
+     *
      * @throws IllegalStateException when this configuration hasn't been initialized yet
      */
     public EventProcessor getProcessor() {
@@ -536,6 +575,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * it will return the Saga Store of the main Configuration.
      *
      * @return The Saga Store defined in this Configuration
+     *
      * @throws IllegalStateException when this configuration hasn't been initialized yet
      */
     public SagaStore<? super S> getSagaStore() {
@@ -547,6 +587,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * Returns the SagaRepository instance used to load Saga instances in this Configuration.
      *
      * @return the SagaRepository defined in this Configuration
+     *
      * @throws IllegalStateException when this configuration hasn't been initialized yet
      */
     public SagaRepository<S> getSagaRepository() {
@@ -559,6 +600,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * defined in this Configuration
      *
      * @return The SagaManager defined in this configuration
+     *
      * @throws IllegalStateException when this configuration hasn't been initialized yet
      */
     public AnnotatedSagaManager<S> getSagaManager() {
@@ -605,5 +647,4 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             return processingGroup;
         }
     }
-
 }

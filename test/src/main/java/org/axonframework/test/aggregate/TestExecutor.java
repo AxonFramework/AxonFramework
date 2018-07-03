@@ -16,6 +16,8 @@
 
 package org.axonframework.test.aggregate;
 
+import java.time.Duration;
+import java.time.Instant;
 import org.axonframework.messaging.Message;
 
 import java.util.List;
@@ -98,4 +100,39 @@ public interface TestExecutor<T> {
      * @return a TestExecutor instance that can execute the test with this configuration
      */
     TestExecutor<T> andGivenCommands(List<?> commands);
+
+    /**
+     * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start
+     * of the given state.
+     *
+     * @param currentTime The simulated "current time" at which the given state is initialized
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
+    TestExecutor<T> andGivenCurrentTime(Instant currentTime);
+
+    /**
+     * Returns the time as "known" by the fixture. This is the time at which the fixture was created, plus the amount of
+     * time the fixture was told to simulate a "wait".
+     *
+     * @return the simulated "current time" of the fixture.
+     */
+    Instant currentTime();
+
+    /**
+     * Simulates time shifts in the current given state. This can be useful when the time between given events is of
+     * importance.
+     *
+     * @param elapsedTime The amount of time that will elapse
+     * @return a ResultValidator that can be used to validate the resulting actions of the command execution
+     */
+    ResultValidator andThenTimeElapses(Duration elapsedTime);
+
+    /**
+     * Simulates time shifts in the current given state. This can be useful when the time between given events is of
+     * importance.
+     *
+     * @param newDateTime The time to advance the clock to
+     * @return a ResultValidator that can be used to validate the resulting actions of the command execution
+     */
+    ResultValidator andThenTimeAdvancesTo(Instant newDateTime);
 }

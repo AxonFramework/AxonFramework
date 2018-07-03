@@ -16,19 +16,48 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.model.*;
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
+import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
+import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.*;
-import org.axonframework.eventsourcing.eventstore.*;
-import org.axonframework.messaging.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcedAggregate;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -39,6 +68,7 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
+import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -47,7 +77,18 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -76,6 +117,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final List<Object> resources = new ArrayList<>();
     private RepositoryProvider repositoryProvider;
     private IdentifierValidatingRepository<T> repository;
+    private StubDeadlineManager deadlineManager;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage<?>> givenEvents;
     private Deque<DomainEventMessage<?>> storedEvents;
@@ -93,10 +135,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateType The aggregate to initialize the test fixture for
      */
     public AggregateTestFixture(Class<T> aggregateType) {
+        deadlineManager = new StubDeadlineManager();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         resources.add(commandBus);
         resources.add(eventStore);
+        resources.add(deadlineManager);
         this.aggregateType = aggregateType;
         clearGivenWhenState();
         parameterResolverFactory = MultiParameterResolverFactory.ordered(
@@ -119,13 +163,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(new EventSourcingRepository<>(
-                aggregateFactory, eventStore,
-                MultiParameterResolverFactory.ordered(
-                        new SimpleResourceParameterResolverFactory(resources),
-                        ClasspathParameterResolverFactory.forClass(aggregateType)),
-                handlerDefinition,
-                NoSnapshotTriggerDefinition.INSTANCE, getRepositoryProvider()));
+        MultiParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
+                new SimpleResourceParameterResolverFactory(resources),
+                ClasspathParameterResolverFactory.forClass(aggregateType)
+        );
+
+        return registerRepository(new EventSourcingRepository<>(aggregateFactory,
+                                                                eventStore,
+                                                                parameterResolverFactory,
+                                                                handlerDefinition,
+                                                                NoSnapshotTriggerDefinition.INSTANCE,
+                                                                getRepositoryProvider()));
     }
 
     @Override
@@ -223,8 +271,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
-                throw new FixtureExecutionException("An exception occurred while trying to initialize repository with given aggregate (using 'givenState')",
-                                                    e);
+                throw new FixtureExecutionException(
+                        "An exception occurred while trying to initialize repository with given aggregate (using 'givenState')",
+                        e);
             }
         });
         return this;
@@ -283,6 +332,29 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public TestExecutor<T> andGivenCurrentTime(Instant currentTime) {
+        deadlineManager.initializeAt(currentTime);
+        return this;
+    }
+
+    @Override
+    public Instant currentTime() {
+        return deadlineManager.getCurrentDateTime();
+    }
+
+    @Override
+    public ResultValidator andThenTimeElapses(Duration elapsedTime) {
+        deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
+        return buildResultValidator();
+    }
+
+    @Override
+    public ResultValidator andThenTimeAdvancesTo(Instant newDateTime) {
+        deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
+        return buildResultValidator();
+    }
+
+    @Override
     public ResultValidator<T> when(Object command) {
         return when(command, MetaData.emptyInstance());
     }
@@ -292,8 +364,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-        ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents, fieldFilter,
-                                                                           () -> repository.getAggregate());
+        ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
+                                                                           fieldFilter,
+                                                                           () -> repository.getAggregate(),
+                                                                           deadlineManager);
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
@@ -302,14 +376,45 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         return resultValidator;
     }
 
+    /**
+     * Handles the given {@code deadlineMessage} in the aggregate described by the given {@code aggregateDescriptor}.
+     * Deadline message is handled in the scope of a {@link UnitOfWork}. If handling the deadline results in an
+     * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
+     *
+     * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
+     * @param deadlineMessage     The {@link DeadlineMessage} to be handled
+     */
+    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage<?> deadlineMessage) {
+        ensureRepositoryConfiguration();
+        DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
+            try {
+                repository.send(deadlineMessage, aggregateDescriptor);
+            } catch (Exception e) {
+                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+            }
+        });
+    }
+
+    private ResultValidator buildResultValidator() {
+        MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
+        ResultValidatorImpl resultValidator = new ResultValidatorImpl<>(publishedEvents,
+                                                                        fieldFilter,
+                                                                        () -> repository.getAggregate(),
+                                                                        deadlineManager);
+        resultValidator.assertValidRecording();
+        return resultValidator;
+    }
+
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(new GenericAggregateFactory<>(aggregateType),
-                                                             eventStore,
-                                                             parameterResolverFactory,
-                                                             handlerDefinition,
-                                                             NoSnapshotTriggerDefinition.INSTANCE,
-                                                             getRepositoryProvider()));
+            registerRepository(new EventSourcingRepository<>(
+                    new GenericAggregateFactory<>(aggregateType),
+                    eventStore,
+                    parameterResolverFactory,
+                    handlerDefinition,
+                    NoSnapshotTriggerDefinition.INSTANCE,
+                    getRepositoryProvider()
+            ));
         }
     }
 
@@ -519,14 +624,25 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         public Aggregate<T> getAggregate() {
             Assert.state(!rolledBack, () -> "The state of this aggregate cannot be retrieved because it " +
-                                                        "has been modified in a Unit of Work that was rolled back");
+                    "has been modified in a Unit of Work that was rolled back");
 
             return aggregate;
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (canResolve(scopeDescription)) {
+                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return scopeDescription instanceof AggregateScopeDescriptor;
         }
     }
 
     private static class InMemoryRepository<T> implements Repository<T> {
-
 
         private final EventBus eventBus;
         private final RepositoryProvider repositoryProvider;
@@ -539,11 +655,15 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             this.repositoryProvider = repositoryProvider;
         }
 
-
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
-            Assert.state(storedAggregate == null, () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
-            storedAggregate = AnnotatedAggregate.initialize(factoryMethod, aggregateModel, eventBus, repositoryProvider, true);
+            Assert.state(storedAggregate == null,
+                         () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
+            storedAggregate = AnnotatedAggregate.initialize(factoryMethod,
+                                                            aggregateModel,
+                                                            eventBus,
+                                                            repositoryProvider,
+                                                            true);
             return storedAggregate;
         }
 
@@ -559,17 +679,32 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                      "Aggregate not found. No aggregate has been stored yet.");
             }
             if (!aggregateIdentifier.equals(storedAggregate.identifier().toString())) {
-                throw new AggregateNotFoundException(aggregateIdentifier,
-                                                     "Aggregate not found. Did you mean to load " + storedAggregate.identifier() + "?");
+                throw new AggregateNotFoundException(
+                        aggregateIdentifier,
+                        "Aggregate not found. Did you mean to load " + storedAggregate.identifier() + "?"
+                );
             }
             if (storedAggregate.isDeleted()) {
-                throw new AggregateNotFoundException(aggregateIdentifier,
-                                                     "Aggregate not found. It has been deleted.");
+                throw new AggregateNotFoundException(aggregateIdentifier, "Aggregate not found. It has been deleted.");
             }
             if (expectedVersion != null && !Objects.equals(expectedVersion, storedAggregate.version())) {
-                throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, storedAggregate.version());
+                throw new ConflictingAggregateVersionException(aggregateIdentifier,
+                                                               expectedVersion,
+                                                               storedAggregate.version());
             }
             return storedAggregate;
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            if (canResolve(scopeDescription)) {
+                load(((AggregateScopeDescriptor) scopeDescription).getIdentifier().toString()).handle(message);
+            }
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return scopeDescription instanceof AggregateScopeDescriptor;
         }
     }
 
@@ -740,6 +875,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
+        }
+
+        @Override
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+            throw new UnsupportedOperationException(
+                    "Default repository does not mock loading of an aggregate, only creation of it");
+        }
+
+        @Override
+        public boolean canResolve(ScopeDescriptor scopeDescription) {
+            return false;
         }
     }
 }

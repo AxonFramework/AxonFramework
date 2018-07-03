@@ -25,7 +25,8 @@ public class AggregateCacheEntry<T> implements Serializable {
                         NoSnapshotTriggerDefinition.TRIGGER;
     }
 
-    public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
+    public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model,
+                                                      EventStore eventStore,
                                                       SnapshotTriggerDefinition snapshotTriggerDefinition) {
         return recreateAggregate(model, eventStore, null, snapshotTriggerDefinition);
     }
@@ -38,6 +39,7 @@ public class AggregateCacheEntry<T> implements Serializable {
         }
         return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore, repositoryProvider,
                                                  snapshotTriggerDefinition
-                                                         .reconfigure(aggregateRoot.getClass(), snapshotTrigger));
+                                                         .reconfigure(aggregateRoot.getClass(), this.snapshotTrigger)
+        );
     }
 }

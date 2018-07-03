@@ -19,6 +19,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
@@ -35,10 +36,12 @@ import java.util.stream.Collectors;
  * applied while it is active are stored and can be retrieved using {@link #getAppliedEvents()} or
  * {@link #getAppliedEventPayloads()}.
  * <p>
- * When using with JUnit, consider using the {@link StubAggregateLifecycleRule} with {@link org.junit.Rule &#064;Rule} instead,
- * as it is easier and safer to use.
+ * When using with JUnit, consider using the {@link StubAggregateLifecycleRule} with {@link org.junit.Rule &#064;Rule}
+ * instead, as it is easier and safer to use.
  */
 public class StubAggregateLifecycle extends AggregateLifecycle {
+
+    private static final String AGGREGATE_TYPE = "stubAggregate";
 
     private Runnable registration;
     private List<EventMessage<?>> appliedMessages = new CopyOnWriteArrayList<>();
@@ -49,7 +52,8 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
      * until {@link #close()} is called.
      */
     public void activate() {
-        this.registration = registerAsCurrent();
+        super.startScope();
+        this.registration = () -> super.endScope();
     }
 
     /**
@@ -71,6 +75,16 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     @Override
     protected <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception {
         return null;
+    }
+
+    @Override
+    protected String type() {
+        return AGGREGATE_TYPE;
+    }
+
+    @Override
+    protected Object identifier() {
+        return IdentifierFactory.getInstance().generateIdentifier();
     }
 
     @Override

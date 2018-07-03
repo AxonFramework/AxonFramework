@@ -16,14 +16,25 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AsynchronousCommandBus;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.SagaConfiguration;
-import org.axonframework.eventhandling.*;
+import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -35,14 +46,20 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -235,7 +252,9 @@ public class SpringAxonAutoConfigurerTest {
                      handlerEnhancerDefinition.getDelegates().get(3).getClass());
         assertEquals(MethodCommandHandlerInterceptorDefinition.class,
                      handlerEnhancerDefinition.getDelegates().get(4).getClass());
-        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(5).getClass());
+        assertEquals(DeadlineMethodMessageHandlerDefinition.class,
+                     handlerEnhancerDefinition.getDelegates().get(5).getClass());
+        assertEquals(MyHandlerEnhancerDefinition.class, handlerEnhancerDefinition.getDelegates().get(6).getClass());
     }
 
     @SuppressWarnings("unchecked")
@@ -317,10 +336,10 @@ public class SpringAxonAutoConfigurerTest {
             public void on(String event) {
                 fail("Event Handler on aggregate shouldn't be invoked");
             }
-
         }
 
         public static class CreateMyOtherAggregateCommand {
+
             @TargetAggregateIdentifier
             private final String id;
 
@@ -330,6 +349,7 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         public static class UpdateMyOtherAggregateCommand {
+
             @TargetAggregateIdentifier
             private final String id;
 
@@ -339,6 +359,7 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         public static class MyOtherAggregateCreatedEvent {
+
             private final String id;
 
             public MyOtherAggregateCreatedEvent(String id) {
@@ -352,7 +373,7 @@ public class SpringAxonAutoConfigurerTest {
             @AggregateIdentifier
             private String id;
 
-            public MyOtherAggregate(){
+            public MyOtherAggregate() {
                 // default constructor
             }
 
@@ -444,7 +465,6 @@ public class SpringAxonAutoConfigurerTest {
             public void handle(String event) {
                 throw new RuntimeException();
             }
-
         }
 
         @Component
@@ -459,9 +479,10 @@ public class SpringAxonAutoConfigurerTest {
         }
 
         @Bean
-        public SagaConfiguration mySagaConfiguration(@Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
+        public SagaConfiguration mySagaConfiguration(
+                @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
             return SagaConfiguration.subscribingSagaManager(MySaga.class)
-                    .configureSagaStore(c -> customSagaStore);
+                                    .configureSagaStore(c -> customSagaStore);
         }
 
         @Bean

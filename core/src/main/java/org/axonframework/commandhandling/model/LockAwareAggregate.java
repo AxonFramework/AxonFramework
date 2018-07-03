@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.lock.Lock;
+import org.axonframework.messaging.Message;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,7 +26,7 @@ import java.util.function.Function;
  * Aggregate implementation that provides access to the lock held by the aggregate while a command is handled.
  *
  * @param <AR> The aggregate root type
- * @param <A> The {@link Aggregate} implementation type
+ * @param <A>  The {@link Aggregate} implementation type
  */
 public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregate<AR> {
 
@@ -37,7 +37,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
      * Initializes a new {@link LockAwareAggregate} for given {@code wrappedAggregate} and {@code lock}.
      *
      * @param wrappedAggregate the aggregate instance to which the LockAwareAggregate will delegate
-     * @param lock the lock held by the aggregate
+     * @param lock             the lock held by the aggregate
      */
     public LockAwareAggregate(A wrappedAggregate, Lock lock) {
         this.wrappedAggregate = wrappedAggregate;
@@ -78,8 +78,8 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     }
 
     @Override
-    public Object handle(CommandMessage<?> commandMessage) throws Exception {
-        return wrappedAggregate.handle(commandMessage);
+    public Object handle(Message<?> message) throws Exception {
+        return wrappedAggregate.handle(message);
     }
 
     @Override

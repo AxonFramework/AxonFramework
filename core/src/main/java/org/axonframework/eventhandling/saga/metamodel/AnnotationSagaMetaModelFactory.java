@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.saga.metamodel;
 
-
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
@@ -27,7 +26,10 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -89,6 +91,7 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
     }
 
     private class InspectedSagaModel<T> implements SagaModel<T> {
+
         private final List<MessageHandlingMember<? super T>> handlers;
 
         public InspectedSagaModel(List<MessageHandlingMember<? super T>> handlers) {
@@ -108,12 +111,9 @@ public class AnnotationSagaMetaModelFactory implements SagaMetaModelFactory {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> eventMessage) {
+        public List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> eventMessage) {
             return handlers.stream().filter(h -> h.canHandle(eventMessage))
-                           .map(h -> (SagaMethodMessageHandlingMember<T>) h.unwrap(SagaMethodMessageHandlingMember.class)
-                                                                           .orElse(null))
-                           .filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
+                           .collect(Collectors.toList());
         }
 
         @Override

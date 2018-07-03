@@ -49,13 +49,14 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     /**
      * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is
      * merged with the MetaData from the correlation data of the current unit of work, if present.
+     * In case the {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
      *
-     * @param payload  The payload for the message
-     * @param metaData The meta data for the message
+     * @param payload  The payload for the message as a generic {@code T}
+     * @param metaData The meta data {@link Map} for the message
      */
     @SuppressWarnings("unchecked")
     public GenericMessage(T payload, Map<String, ?> metaData) {
-        this((Class<T>) payload.getClass(), payload, metaData);
+        this(payload != null ? (Class<T>) payload.getClass() : (Class<T>) Void.class, payload, metaData);
     }
 
     /**
