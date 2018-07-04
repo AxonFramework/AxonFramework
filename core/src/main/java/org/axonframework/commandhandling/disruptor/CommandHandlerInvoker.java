@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -61,7 +60,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
     private static final Logger logger = LoggerFactory.getLogger(CommandHandlerInvoker.class);
     private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<>();
-    private static final Object PLACEHOLDER_VALUE = new Object();
 
     private final Map<Class<?>, DisruptorRepository> repositories = new ConcurrentHashMap<>();
     private final Cache cache;
@@ -198,7 +196,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final RepositoryProvider repositoryProvider;
         private final SnapshotTriggerDefinition snapshotTriggerDefinition;
         private final AggregateFactory<T> aggregateFactory;
-        private final Map<EventSourcedAggregate<T>, Object> firstLevelCache = new WeakHashMap<>();
+        private final FirstLevelCache<T> firstLevelCache = new FirstLevelCache<>();
         private final Cache cache;
         private final AggregateModel<T> model;
 
@@ -247,13 +245,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         @Override
         public Aggregate<T> load(String aggregateIdentifier) {
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
-            EventSourcedAggregate<T> aggregateRoot = null;
-            for (EventSourcedAggregate<T> cachedAggregate : firstLevelCache.keySet()) {
-                if (aggregateIdentifier.equals(cachedAggregate.identifierAsString())) {
-                    logger.debug("Aggregate {} found in first level cache", aggregateIdentifier);
-                    aggregateRoot = cachedAggregate;
-                }
-            }
+            EventSourcedAggregate<T> aggregateRoot = firstLevelCache.get(aggregateIdentifier);
             if (aggregateRoot == null) {
                 Object cachedItem = cache.get(aggregateIdentifier);
                 if (AggregateCacheEntry.class.isInstance(cachedItem)) {
@@ -284,7 +276,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 );
 
                 aggregateRoot.initializeState(eventStream);
-                firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
+                firstLevelCache.put(aggregateRoot.identifierAsString(), aggregateRoot);
                 cache.put(aggregateIdentifier, new AggregateCacheEntry<>(aggregateRoot));
             }
             return aggregateRoot;
@@ -298,19 +290,16 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                                                                   eventStore,
                                                                                   repositoryProvider,
                                                                                   trigger);
-            firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
+            firstLevelCache.put(aggregate.identifierAsString(), aggregate);
             cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
             return aggregate;
         }
 
         private void removeFromCache(String aggregateIdentifier) {
-            for (EventSourcedAggregate<T> cachedAggregate : firstLevelCache.keySet()) {
-                if (aggregateIdentifier.equals(cachedAggregate.identifierAsString())) {
-                    firstLevelCache.remove(cachedAggregate);
-                    logger.debug("Aggregate {} removed from first level cache for recovery purposes.",
-                                 aggregateIdentifier);
-                    return;
-                }
+            EventSourcedAggregate<T> removed = firstLevelCache.remove(aggregateIdentifier);
+            if (removed != null) {
+                logger.debug("Aggregate {} removed from first level cache for recovery purposes.",
+                    aggregateIdentifier);
             }
         }
 
