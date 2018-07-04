@@ -43,8 +43,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -68,8 +66,6 @@ import static org.mockito.Mockito.verify;
  * @author Allard Buijze
  */
 public class DisruptorCommandBusTest_MultiThreaded {
-
-    private static final Logger logger = LoggerFactory.getLogger("mytest");
 
     private static final int COMMAND_COUNT = 100;
     private static final int AGGREGATE_COUNT = 10;
