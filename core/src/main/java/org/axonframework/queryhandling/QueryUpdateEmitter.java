@@ -29,6 +29,11 @@ public interface QueryUpdateEmitter {
     /**
      * Emits incremental update (as return value of provided update function) to subscription queries matching given
      * filter.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update message
@@ -40,6 +45,11 @@ public interface QueryUpdateEmitter {
      * Emits given incremental update to subscription queries matching given filter. If an {@code update} is {@code
      * null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
      * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update
@@ -53,6 +63,11 @@ public interface QueryUpdateEmitter {
 
     /**
      * Emits given incremental update to subscription queries matching given query type and filter.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -72,6 +87,11 @@ public interface QueryUpdateEmitter {
      * Emits given incremental update to subscription queries matching given query type and filter. If an {@code update}
      * is {@code null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
      * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -87,6 +107,11 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes subscription queries matching given filter.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      */
@@ -94,6 +119,11 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes subscription queries matching given query type and filter.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -108,6 +138,11 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes with an error subscription queries matching given filter.
+     * <p>
+     * Note that if this operation is called whilst a current {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param cause  the cause of an error
@@ -116,6 +151,11 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes with an error subscription queries matching given query type and filter
+     * <p>
+     * Note that if this operation is called whilst a current{@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * is active and {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED}, then this operation should
+     * be performed on the {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase. Doing so
+     * ensures this operation is done after a calling task has rounded up its process,
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
