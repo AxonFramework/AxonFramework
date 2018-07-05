@@ -32,7 +32,7 @@ public class AxonHubRegistration implements Registration {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         wrappedRegistration.close();
         closeCallback.run();
     }

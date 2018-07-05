@@ -15,33 +15,57 @@
 
 package io.axoniq.axonhub.client.command;
 
+import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonhub.grpc.CommandProviderOutbound;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
+import org.junit.*;
 
-import static org.junit.Assert.assertEquals;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  * Author: marc
  */
 public class CommandSerializerTest {
 
-    private CommandSerializer serializer;
+    private final Serializer jacksonSerializer = new JacksonSerializer();
 
-    @Before
-    public void init() {
-        serializer = new CommandSerializer(new XStreamSerializer(), new AxonHubConfiguration());
+    private final AxonHubConfiguration configuration = new AxonHubConfiguration() {{
+        this.setClientName("client");
+        this.setComponentName("component");
+    }};
+
+    private final CommandSerializer testSubject = new CommandSerializer(jacksonSerializer, configuration);
+
+    @Test
+    public void testSerializeRequest(){
+        Map<String, ?> metadata = new HashMap<String, Object>() {{
+            this.put("firstKey", "firstValue");
+            this.put("secondKey", "secondValue");
+        }};
+        CommandMessage message = new GenericCommandMessage<>("payload", metadata);
+        Command command = testSubject.serialize(message, "routingKey", 1);
+        CommandMessage<?> deserialize = testSubject.deserialize(command);
+        assertEquals(message.getIdentifier(), deserialize.getIdentifier());
+        assertEquals(message.getCommandName(), deserialize.getCommandName());
+        assertEquals(message.getMetaData(), deserialize.getMetaData());
+        assertEquals(message.getPayloadType(), deserialize.getPayloadType());
+        assertEquals(message.getPayload(), deserialize.getPayload());
     }
 
-    @org.junit.Test
-    public void serializePayload() throws Exception {
-        SerializedObject serialized = serializer.serializePayload("Test");
-        Object deserialized = serializer.deserializePayload(serialized);
-        assertEquals("Test", deserialized);
-
+    @Test
+    public void testSerializeResponse(){
+        Object response = "response";
+        CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
+        Object deserialize = testSubject.deserialize(outbound.getCommandResponse());
+        assertEquals(response, deserialize);
     }
-
-
 
 }

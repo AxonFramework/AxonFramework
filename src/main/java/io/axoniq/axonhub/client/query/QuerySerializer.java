@@ -15,37 +15,48 @@
 
 package io.axoniq.axonhub.client.query;
 
-import com.google.protobuf.ByteString;
 import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
-import io.axoniq.axonhub.client.util.MessagePlatformSerializer;
+import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
+import io.axoniq.axonhub.client.util.GrpcMetadataSerializer;
+import io.axoniq.axonhub.client.util.GrpcObjectSerializer;
+import io.axoniq.axonhub.client.util.GrpcPayloadSerializer;
 import io.axoniq.platform.MetaDataValue;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.serialization.MessageSerializer;
-import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 import java.util.UUID;
-
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Converter between Axon QueryRequest/QueryResponse and AxonHub GRPC messages.
  * @author Marc Gathier
  */
-public class QuerySerializer extends MessagePlatformSerializer {
-
+public class QuerySerializer {
 
     private final Serializer genericSerializer;
 
+    private final Serializer messageSerializer;
+
+    private final AxonHubConfiguration configuration;
+
+    private final GrpcPayloadSerializer payloadSerializer;
+
+    private final GrpcObjectSerializer<Object> responseTypeSerializer;
+
+    private final GrpcMetadataSerializer metadataSerializer;
+
     public QuerySerializer(Serializer messageSerializer, Serializer genericSerializer,
                            AxonHubConfiguration configuration) {
-        super(messageSerializer, configuration);
         this.genericSerializer = genericSerializer;
+        this.messageSerializer = messageSerializer;
+        this.configuration = configuration;
+        this.payloadSerializer  = new GrpcPayloadSerializer(messageSerializer);
+        this.responseTypeSerializer = new GrpcObjectSerializer<>(genericSerializer);
+        this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(this.messageSerializer));
     }
 
     public <Q, R> QueryMessage<Q, R> deserializeRequest(QueryRequest query) {
@@ -54,24 +65,22 @@ public class QuerySerializer extends MessagePlatformSerializer {
 
     public QueryResponse serializeResponse(QueryResponseMessage<?> response, String requestMessageId) {
         return QueryResponse.newBuilder()
-                            .setPayload(serializePayload(response.getPayload()))
-                            .putAllMetaData(serializeMetaData(response.getMetaData()))
+                            .setPayload(payloadSerializer.apply(response))
+                            .putAllMetaData(metadataSerializer.apply(response.getMetaData()))
                             .setMessageIdentifier(response.getIdentifier())
                             .setRequestIdentifier(requestMessageId)
                             .build();
     }
 
     public <Q, R> QueryRequest serializeRequest(QueryMessage<Q, R> queryMessage, int nrResults, long timeout, int priority) {
-        SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(queryMessage, messageSerializer, byte[].class);
-        SerializedObject<byte[]> serializedResponseType = genericSerializer.serialize(queryMessage.getResponseType(), byte[].class);
         return QueryRequest.newBuilder()
                 .setTimestamp(System.currentTimeMillis())
-                .setMessageIdentifier(UUID.randomUUID().toString())
+                .setMessageIdentifier(queryMessage.getIdentifier())
                 .setQuery(queryMessage.getQueryName())
                 .setClientId(configuration.getClientName())
                 .setComponentName(configuration.getComponentName())
-                .setResponseType(toGrpcSerializedObject(serializedResponseType))
-                .setPayload(toGrpcSerializedObject(serializedPayload))
+                .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType()))
+                .setPayload(payloadSerializer.apply(queryMessage))
                 .addProcessingInstructions(ProcessingInstruction.newBuilder()
                         .setKey(ProcessingKey.NR_OF_RESULTS)
                         .setValue(MetaDataValue.newBuilder().setNumberValue(nrResults)))
@@ -82,17 +91,9 @@ public class QuerySerializer extends MessagePlatformSerializer {
                         .setKey(ProcessingKey.PRIORITY)
                         .setValue(MetaDataValue.newBuilder().setNumberValue(priority)))
 
-                .putAllMetaData(serializeMetaData(queryMessage.getMetaData()))
+                .putAllMetaData(metadataSerializer.apply(queryMessage.getMetaData()))
                 .build();
 
-    }
-
-    private io.axoniq.platform.SerializedObject toGrpcSerializedObject(SerializedObject<byte[]> serializedPayload) {
-        return io.axoniq.platform.SerializedObject.newBuilder()
-                                                  .setData(ByteString.copyFrom(serializedPayload.getData()))
-                                                  .setType(serializedPayload.getType().getName())
-                                                  .setRevision(getOrDefault(serializedPayload.getType().getRevision(), ""))
-                                                  .build();
     }
 
     public <R> QueryResponseMessage<R> deserializeResponse(QueryResponse commandResponse) {

@@ -30,6 +30,7 @@ import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
 import io.axoniq.axonhub.client.util.TokenAddingInterceptor;
 import io.axoniq.axonhub.grpc.QueryComplete;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
+import io.axoniq.axonhub.grpc.QueryProviderInbound.RequestCase;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import io.grpc.ClientInterceptor;
@@ -47,7 +48,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -59,6 +64,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -81,6 +87,7 @@ public class AxonHubQueryBus implements QueryBus {
     private final PlatformConnectionManager platformConnectionManager;
     private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<QueryMessage<?, ?>> dispatchInterceptors = new DispatchInterceptors<>();
+    private final Map<RequestCase, Collection<Consumer<QueryProviderInbound>>> queryHandlers = new EnumMap<>(RequestCase.class);
 
 
     /**
@@ -107,6 +114,7 @@ public class AxonHubQueryBus implements QueryBus {
         interceptors = new ClientInterceptor[]{new TokenAddingInterceptor(configuration.getToken()),
                 new ContextAddingInterceptor(configuration.getContext())};
 
+
     }
 
 
@@ -121,8 +129,7 @@ public class AxonHubQueryBus implements QueryBus {
     public <Q, R> CompletableFuture<QueryResponseMessage<R>> query(QueryMessage<Q, R> queryMessage) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         CompletableFuture<QueryResponseMessage<R>> completableFuture = new CompletableFuture<>();
-        QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
-                        .withInterceptors(interceptors)
+        queryServiceStub()
                         .query(serializer.serializeRequest(interceptedQuery, 1,
                                                            TimeUnit.HOURS.toMillis(1), priorityCalculator.determinePriority(interceptedQuery)),
                                new StreamObserver<QueryResponse>() {
@@ -153,12 +160,15 @@ public class AxonHubQueryBus implements QueryBus {
         return completableFuture;
     }
 
+    public QueryServiceGrpc.QueryServiceStub queryServiceStub() {
+        return QueryServiceGrpc.newStub(platformConnectionManager.getChannel()).withInterceptors(interceptors);
+    }
+
     @Override
     public <Q, R> Stream<QueryResponseMessage<R>> scatterGather(QueryMessage<Q, R> queryMessage, long timeout, TimeUnit timeUnit) {
         QueryMessage<Q, R> interceptedQuery = dispatchInterceptors.intercept(queryMessage);
         QueueBackedSpliterator<QueryResponseMessage<R>> resultSpliterator = new QueueBackedSpliterator<>(timeout, timeUnit);
-        QueryServiceGrpc.newStub(platformConnectionManager.getChannel())
-                        .withInterceptors(interceptors)
+        queryServiceStub()
                         .withDeadlineAfter(timeout, timeUnit)
                         .query(serializer.serializeRequest(interceptedQuery, -1, timeUnit.toMillis(timeout),
                                                            priorityCalculator.determinePriority(interceptedQuery)),
@@ -295,7 +305,10 @@ public class AxonHubQueryBus implements QueryBus {
                 StreamObserver<QueryProviderInbound> queryProviderInboundStreamObserver = new StreamObserver<QueryProviderInbound>() {
                     @Override
                     public void onNext(QueryProviderInbound inboundRequest) {
-                        switch (inboundRequest.getRequestCase()) {
+                        RequestCase requestCase = inboundRequest.getRequestCase();
+                        queryHandlers.getOrDefault(requestCase, Collections.emptySet())
+                                     .forEach(consumer -> consumer.accept(inboundRequest));
+                        switch (requestCase) {
                             case CONFIRMATION:
                                 break;
                             case QUERY:
@@ -399,6 +412,16 @@ public class AxonHubQueryBus implements QueryBus {
                 return Objects.hash(queryName, responseName, componentName);
             }
         }
+    }
+
+    public void publish(QueryProviderOutbound providerOutbound){
+        this.queryProvider.getSubscriberObserver().onNext(providerOutbound);
+    }
+
+    public void on(RequestCase requestCase, Consumer<QueryProviderInbound> consumer) {
+        Collection<Consumer<QueryProviderInbound>> consumers =
+                queryHandlers.computeIfAbsent(requestCase,rc -> new CopyOnWriteArraySet<>());
+        consumers.add(consumer);
     }
 
 }
