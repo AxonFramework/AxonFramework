@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,14 +141,18 @@ public interface EventStorageEngine {
      *
      * @return a tracking token at the tail of an event stream, if event stream is empty {@code null} is returned
      */
-    TrackingToken createTailToken();
+    default TrackingToken createTailToken() {
+        return null;
+    }
 
     /**
      * Creates a token that is at the head of an event stream - that tracks all new events.
      *
      * @return a tracking token at the head of an event stream, if event stream is empty {@code null} is returned
      */
-    TrackingToken createHeadToken();
+    default TrackingToken createHeadToken() {
+        throw new UnsupportedOperationException("Creation of Head Token not supported by this EventStorageEngine");
+    }
 
     /**
      * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
@@ -159,5 +163,7 @@ public interface EventStorageEngine {
      * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria {@code
      * null} is returned
      */
-    TrackingToken createTokenAt(Instant dateTime);
+    default TrackingToken createTokenAt(Instant dateTime) {
+        throw new UnsupportedOperationException("Creation of Time based Token not supported by this EventStorageEngine");
+    }
 }
