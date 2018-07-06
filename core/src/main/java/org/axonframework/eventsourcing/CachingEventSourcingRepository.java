@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.model.LockAwareAggregate;
+import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.caching.Cache;
@@ -233,16 +233,16 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     }
 
     @Override
-    protected void prepareForCommit(LockAwareAggregate<T, EventSourcedAggregate<T>> aggregate) {
-        super.prepareForCommit(aggregate);
+    protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
+        super.validateOnLoad(aggregate, expectedVersion);
     }
 
     @Override
     protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
         EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
-        String aggregateIdentifier = aggregate.identifierAsString();
-        cache.put(aggregateIdentifier, new AggregateCacheEntry<>(aggregate));
+        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
+        cache.put(aggregate.identifierAsString(), new AggregateCacheEntry<>(aggregate));
         return aggregate;
     }
 
@@ -282,7 +282,6 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
-        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregateIdentifier));
         return aggregate;
     }
 

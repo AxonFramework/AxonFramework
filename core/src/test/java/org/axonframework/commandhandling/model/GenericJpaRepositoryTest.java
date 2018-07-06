@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -27,13 +30,16 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 import org.mockito.internal.stubbing.answers.Returns;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Id;
 import javax.persistence.LockModeType;
 import javax.persistence.Version;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -51,14 +57,16 @@ public class GenericJpaRepositoryTest {
     private String aggregateId;
     private StubJpaAggregate aggregate;
     private Function<String, ?> identifierConverter;
+    private EventBus eventBus;
 
     @Before
     public void setUp() {
         mockEntityManager = mock(EntityManager.class);
         identifierConverter = mock(Function.class);
+        eventBus = new SimpleEventBus();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
-                                                 StubJpaAggregate.class, null, identifierConverter);
+                                                 StubJpaAggregate.class, eventBus, identifierConverter);
         DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
@@ -70,6 +78,19 @@ public class GenericJpaRepositoryTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
+    }
+
+    @Test
+    public void testAggregateStoredBeforeEventsPublished() throws Exception {
+        Consumer<List<? extends EventMessage<?>>> mockConsumer = mock(Consumer.class);
+        eventBus.subscribe(mockConsumer);
+
+        testSubject.newInstance(() -> new StubJpaAggregate("test", "payload1", "payload2"));
+        CurrentUnitOfWork.commit();
+
+        InOrder inOrder = inOrder(mockEntityManager, mockConsumer);
+        inOrder.verify(mockEntityManager).persist(any());
+        inOrder.verify(mockConsumer).accept(anyList());
     }
 
     @Test
