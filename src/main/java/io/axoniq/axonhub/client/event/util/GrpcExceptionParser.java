@@ -16,6 +16,7 @@
 package io.axoniq.axonhub.client.event.util;
 
 import io.grpc.Metadata;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 /**
@@ -24,13 +25,16 @@ import io.grpc.StatusRuntimeException;
 public class GrpcExceptionParser {
     private static Metadata.Key<String> ERROR_CODE_KEY = Metadata.Key.of("AxonIQ-ErrorCode", Metadata.ASCII_STRING_MARSHALLER);
 
-    public static EventStoreClientException parse(Throwable ex) {
+    public static RuntimeException parse(Throwable ex) {
         String code = "AXONIQ-0001";
         if( ex instanceof StatusRuntimeException) {
             if(ex.getCause() instanceof EventStoreClientException) {
                 return (EventStoreClientException)ex.getCause();
             }
             StatusRuntimeException statusRuntimeException = (StatusRuntimeException)ex;
+            if(Status.Code.UNIMPLEMENTED.equals(statusRuntimeException.getStatus().getCode()) ) {
+                return new UnsupportedOperationException(ex.getMessage(), ex);
+            }
             Metadata trailer = statusRuntimeException.getTrailers();
             String errorCode = trailer.get(ERROR_CODE_KEY);
             if (errorCode != null) {

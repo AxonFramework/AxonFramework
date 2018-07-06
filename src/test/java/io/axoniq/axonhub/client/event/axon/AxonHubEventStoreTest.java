@@ -19,6 +19,7 @@ import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.StubServer;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -75,4 +76,8 @@ public class AxonHubEventStoreTest {
         assertEquals(Arrays.asList("Test1", "Test2", "Test3"), received);
     }
 
+    @Test(expected = EventStoreException.class)
+    public void testLastSequenceNumberFor() {
+        testSubject.lastSequenceNumberFor("Agg1");
+    }
 }

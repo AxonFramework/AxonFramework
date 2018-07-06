@@ -29,13 +29,13 @@ import org.axonframework.config.ModuleConfiguration;
  * Created by Sara Pellegrini on 03/04/2018.
  * sara.pellegrini@gmail.com
  */
-public class AxonHubEvenProcessorInfoConfiguration implements ModuleConfiguration {
+public class AxonHubEventProcessorInfoConfiguration implements ModuleConfiguration {
 
     private final EventProcessorControlService eventProcessorControlService;
 
     private final ScheduledEventProcessorInfoSource processorInfoSource;
 
-    public AxonHubEvenProcessorInfoConfiguration(
+    public AxonHubEventProcessorInfoConfiguration(
             EventHandlingConfiguration eventHandlingConfiguration,
             PlatformConnectionManager connectionManager,
             AxonHubConfiguration configuration) {
