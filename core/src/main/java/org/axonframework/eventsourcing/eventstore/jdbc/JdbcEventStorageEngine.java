@@ -537,7 +537,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                       () -> format("Token [%s] is of the wrong type", lastToken));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
         String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
-                " WHERE (" + schema.globalIndexColumn() + " > ? AND " + schema.globalIndexColumn() + " <= ?) ";
+                " WHERE (" + schema.globalIndexColumn() + " > ? ) ";
         List<Long> gaps;
         if (previousToken != null) {
             gaps = new ArrayList<>(previousToken.getGaps());
@@ -548,13 +548,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         } else {
             gaps = Collections.emptyList();
         }
-        sql += "ORDER BY " + schema.globalIndexColumn() + " ASC";
+        sql += "ORDER BY " + schema.globalIndexColumn() + " ASC ";
+        sql += "LIMIT " + batchSize;
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setMaxRows(batchSize);
+        preparedStatement.setFetchSize(batchSize);
         long globalIndex = previousToken == null ? -1 : previousToken.getIndex();
         preparedStatement.setLong(1, globalIndex);
-        preparedStatement.setLong(2, globalIndex + batchSize);
         for (int i = 0; i < gaps.size(); i++) {
-            preparedStatement.setLong(i + 3, gaps.get(i));
+            preparedStatement.setLong(i + 2, gaps.get(i));
         }
         return preparedStatement;
     }
