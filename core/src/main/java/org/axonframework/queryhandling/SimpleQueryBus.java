@@ -319,7 +319,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
      * {@link UnitOfWork} if {@link SimpleQueryBus#inStartedPhaseOfUnitOfWork} returns {@code true}. This is done to
-     * ensure the task is executed in the {@link UnitOfWork.Phase#AFTER_COMMIT} phase if its called from some message
+     * ensure the task is executed in the {@link UnitOfWork.Phase#AFTER_COMMIT} phase if it's called from some message
      * handling function.
      * <p>
      * The latter check requires the current UnitOfWork its Phase to be {@link UnitOfWork.Phase#STARTED}. This is done
@@ -347,10 +347,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     /**
-     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if it's {@link
-     * UnitOfWork.Phase} is {@link UnitOfWork.Phase#STARTED}, otherwise {@code false.
+     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if its {@link
+     * UnitOfWork.Phase} is {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
      *
-     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if it's {@link
+     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if its {@link
      * UnitOfWork.Phase} is {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}
      */
     private boolean inStartedPhaseOfUnitOfWork() {
