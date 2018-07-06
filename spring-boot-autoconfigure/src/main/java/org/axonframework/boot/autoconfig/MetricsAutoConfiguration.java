@@ -46,14 +46,14 @@ public class MetricsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MetricRegistry metricRegistry() {
+    public static MetricRegistry metricRegistry() {
         return new MetricRegistry();
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(MetricRegistry.class)
-    public GlobalMetricRegistry globalMetricRegistry(MetricRegistry metricRegistry) {
+    public static GlobalMetricRegistry globalMetricRegistry(MetricRegistry metricRegistry) {
         return new GlobalMetricRegistry(metricRegistry);
     }
 
@@ -61,7 +61,7 @@ public class MetricsAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnBean(GlobalMetricRegistry.class)
     @ConditionalOnProperty(value = "axon.metrics.auto-configuration.enabled", matchIfMissing = true)
-    public MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
+    public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
         return new MetricsConfigurerModule(globalMetricRegistry);
     }
 }

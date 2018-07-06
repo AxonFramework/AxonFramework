@@ -16,22 +16,28 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests for subscription query functionality.
@@ -124,6 +130,41 @@ public class SubscriptionQueryTest {
     }
 
     @Test
+    public void testEmittingUpdateInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+        String testQueryPayload = "axonFrameworkCR";
+        String testQueryName = "chatMessages";
+        String testUpdate = "some-update";
+        List<String> expectedUpdates = Collections.singletonList(testUpdate);
+
+        // Sets given UnitOfWork as the current, active, started UnitOfWork
+        DefaultUnitOfWork unitOfWork =
+                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+        unitOfWork.start();
+
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                testQueryPayload,
+                testQueryName,
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
+                queryBus.subscriptionQuery(queryMessage);
+
+        chatQueryHandler.emitter.emit(String.class, testQueryPayload::equals, testUpdate);
+
+        Flux<SubscriptionQueryUpdateMessage<String>> emittedUpdates = result.updates();
+
+        List<String> updateList = new ArrayList<>();
+        emittedUpdates.map(Message::getPayload).subscribe(updateList::add);
+        assertTrue(updateList.isEmpty());
+
+        // Move the current UnitOfWork to the AFTER_COMMIT phase, triggering the emitter calls
+        unitOfWork.commit();
+
+        assertEquals(expectedUpdates, updateList);
+    }
+
+    @Test
     public void testCompletingSubscriptionQueryExceptionally() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -191,6 +232,42 @@ public class SubscriptionQueryTest {
     }
 
     @Test
+    public void testCompletingSubscriptionExceptionallyInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+        String testQueryPayload = "axonFrameworkCR";
+        String testQueryName = "chatMessages";
+        String testUpdate = "some-update";
+        List<String> expectedUpdates = Collections.singletonList(testUpdate);
+
+        // Sets given UnitOfWork as the current, active, started UnitOfWork
+        DefaultUnitOfWork unitOfWork =
+                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+        unitOfWork.start();
+
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                testQueryPayload,
+                testQueryName,
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
+                queryBus.subscriptionQuery(queryMessage);
+
+        chatQueryHandler.emitter.emit(String.class, testQueryPayload::equals, testUpdate);
+        chatQueryHandler.emitter.completeExceptionally(String.class, testQueryPayload::equals, new RuntimeException());
+
+        Flux<SubscriptionQueryUpdateMessage<String>> emittedUpdates = result.updates();
+        List<String> updateList = new ArrayList<>();
+        emittedUpdates.map(Message::getPayload).subscribe(updateList::add);
+        assertTrue(updateList.isEmpty());
+
+        // Move the current UnitOfWork to the AFTER_COMMIT phase, triggering the emitter calls
+        unitOfWork.commit();
+
+        assertEquals(expectedUpdates, updateList);
+        StepVerifier.create(emittedUpdates).expectError();
+    }
+
+    @Test
     public void testCompletingSubscriptionQuery() {
         // given
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -215,6 +292,42 @@ public class SubscriptionQueryTest {
         StepVerifier.create(result.updates().map(Message::getPayload))
                     .expectNext("Update1")
                     .verifyComplete();
+    }
+
+    @Test
+    public void testCompletingSubscriptionInUnitOfWorkLifecycleRunsUpdatesOnAfterCommit() {
+        String testQueryPayload = "axonFrameworkCR";
+        String testQueryName = "chatMessages";
+        String testUpdate = "some-update";
+        List<String> expectedUpdates = Collections.singletonList(testUpdate);
+
+        // Sets given UnitOfWork as the current, active, started UnitOfWork
+        DefaultUnitOfWork unitOfWork =
+                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+        unitOfWork.start();
+
+        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+                testQueryPayload,
+                testQueryName,
+                ResponseTypes.multipleInstancesOf(String.class),
+                ResponseTypes.instanceOf(String.class)
+        );
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
+                queryBus.subscriptionQuery(queryMessage);
+
+        chatQueryHandler.emitter.emit(String.class, testQueryPayload::equals, testUpdate);
+        chatQueryHandler.emitter.complete(String.class, testQueryPayload::equals);
+
+        Flux<SubscriptionQueryUpdateMessage<String>> emittedUpdates = result.updates();
+        List<String> updateList = new ArrayList<>();
+        emittedUpdates.map(Message::getPayload).subscribe(updateList::add);
+        assertTrue(updateList.isEmpty());
+
+        // Move the current UnitOfWork to the AFTER_COMMIT phase, triggering the emitter calls
+        unitOfWork.commit();
+
+        assertEquals(expectedUpdates, updateList);
+        StepVerifier.create(emittedUpdates).expectComplete();
     }
 
     @Test
@@ -541,7 +654,6 @@ public class SubscriptionQueryTest {
                             // make sure the update is emitted before subscribing to updates
                             chatQueryHandler.emitter.emit(String.class, "axonFrameworkCR"::equals, "Update1");
                             initialResult.addAll(initial.getPayload());
-
                         },
                         update -> {
                             updates.add(update.getPayload());
