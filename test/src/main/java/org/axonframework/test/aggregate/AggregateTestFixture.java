@@ -16,20 +16,8 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
-import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -39,30 +27,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -79,16 +48,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -123,7 +83,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private Deque<DomainEventMessage<?>> storedEvents;
     private List<EventMessage<?>> publishedEvents;
     private long sequenceNumber = 0;
-    private Aggregate<T> workingAggregate;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private MultiParameterResolverFactory parameterResolverFactory;
@@ -361,7 +320,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
-        commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
         finalizeConfiguration();
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
@@ -371,7 +329,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
-        detectIllegalStateChanges(fieldFilter);
+        if (!repository.rolledBack) {
+            Aggregate<T> workingAggregate = repository.aggregate;
+            detectIllegalStateChanges(fieldFilter, workingAggregate);
+        }
         resultValidator.assertValidRecording();
         return resultValidator;
     }
@@ -447,7 +408,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         commandHandlerInterceptors.forEach(commandBus::registerHandlerInterceptor);
     }
 
-    private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
+    private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter, Aggregate<T> workingAggregate) {
         logger.debug("Starting separate Unit of Work for the purpose of checking illegal state changes in Aggregate");
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
@@ -459,7 +420,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                          "the aggregate. Make sure the aggregate explicitly marks " +
                                                          "itself as deleted in an EventHandler.");
                 }
-                assertValidWorkingAggregateState(aggregate2, fieldFilter);
+                assertValidWorkingAggregateState(aggregate2, fieldFilter, workingAggregate);
             } catch (AggregateNotFoundException notFound) {
                 if (!workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was not considered deleted, " //NOSONAR
@@ -478,7 +439,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private void assertValidWorkingAggregateState(Aggregate<T> eventSourcedAggregate, MatchAllFieldFilter fieldFilter) {
+    private void assertValidWorkingAggregateState(Aggregate<T> eventSourcedAggregate, MatchAllFieldFilter fieldFilter,
+                                                  Aggregate<T> workingAggregate) {
         HashSet<ComparationEntry> comparedEntries = new HashSet<>();
         if (!workingAggregate.rootType().equals(eventSourcedAggregate.rootType())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to " +
@@ -801,21 +763,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private class AggregateRegisteringInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
-
-        @Override
-        public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
-                             InterceptorChain interceptorChain) throws Exception {
-            unitOfWork.onPrepareCommit(u -> {
-                Set<Aggregate<T>> aggregates = u.getResource("ManagedAggregates");
-                if (aggregates != null && aggregates.size() == 1) {
-                    workingAggregate = aggregates.iterator().next();
-                }
-            });
-            return interceptorChain.proceed();
-        }
-    }
-
     private class ExecutionExceptionAwareCallback implements CommandCallback<Object, Object> {
 
         private FixtureExecutionException exception;
@@ -878,7 +825,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
+        public void send(Message<?> message, ScopeDescriptor scopeDescription) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }
