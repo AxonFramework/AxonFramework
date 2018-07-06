@@ -1,4 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   io.axoniq.axonhub.client.boot.MessagingAutoConfiguration,\
   io.axoniq.axonhub.client.boot.SubscriptionQueryAutoConfiguration,\
-  io.axoniq.axonhub.client.boot.EventStoreAutoConfiguration
+  io.axoniq.axonhub.client.boot.EventStoreAutoConfiguration,\
+  io.axoniq.axonhub.client.boot.EventStorePre33AutoConfiguration

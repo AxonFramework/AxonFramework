@@ -20,7 +20,7 @@ import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.command.AxonHubCommandBus;
 import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
-import io.axoniq.axonhub.client.event.axon.AxonHubEvenProcessorInfoConfiguration;
+import io.axoniq.axonhub.client.event.axon.AxonHubEventProcessorInfoConfiguration;
 import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
@@ -128,10 +128,10 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    public AxonHubEvenProcessorInfoConfiguration processorInfoConfiguration(EventHandlingConfiguration eventHandlingConfiguration,
-                                                                            PlatformConnectionManager connectionManager,
-                                                                            AxonHubConfiguration configuration) {
-        return new AxonHubEvenProcessorInfoConfiguration(eventHandlingConfiguration, connectionManager, configuration);
+    public AxonHubEventProcessorInfoConfiguration processorInfoConfiguration(EventHandlingConfiguration eventHandlingConfiguration,
+                                                                             PlatformConnectionManager connectionManager,
+                                                                             AxonHubConfiguration configuration) {
+        return new AxonHubEventProcessorInfoConfiguration(eventHandlingConfiguration, connectionManager, configuration);
     }
 
 }
