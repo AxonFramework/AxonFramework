@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -34,8 +35,22 @@ import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
 
 import java.lang.reflect.Type;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -61,6 +76,8 @@ import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
+
+    private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
     private final ConcurrentMap<String, CopyOnWriteArrayList<QuerySubscription>> subscriptions = new ConcurrentHashMap<>();
     private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, FluxSinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
@@ -254,6 +271,12 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     @Override
     public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
                          SubscriptionQueryUpdateMessage<U> update) {
+        runOnAfterCommitOrNow(() -> doEmit(filter, update));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
+                            SubscriptionQueryUpdateMessage<U> update) {
         updateHandlers.keySet()
                       .stream()
                       .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
@@ -263,6 +286,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @Override
     public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
+        runOnAfterCommitOrNow(() -> doComplete(filter));
+    }
+
+    private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
@@ -278,11 +305,56 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     @Override
     public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
+        runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
+    }
+
+    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
                                                 .ifPresent(updateHandler -> emitError(query, cause, updateHandler)));
+    }
+
+    /**
+     * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
+     * {@link UnitOfWork} if {@link SimpleQueryBus#inStartedPhaseOfUnitOfWork} returns {@code true}. This is done to
+     * ensure any emitter calls made from a message handling function are executed in the
+     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
+     * <p>
+     * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done
+     * to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do
+     * this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
+     * different phase.
+     *
+     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if {@link
+     *                        SimpleQueryBus#inStartedPhaseOfUnitOfWork} returns {@code true}
+     */
+    private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
+        if (inStartedPhaseOfUnitOfWork()) {
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+            unitOfWork.getOrComputeResource(
+                    this.toString() + QUERY_UPDATE_TASKS_RESOURCE_KEY,
+                    resourceKey -> {
+                        List<Runnable> queryUpdateTasks = new ArrayList<>();
+                        unitOfWork.afterCommit(uow -> queryUpdateTasks.forEach(Runnable::run));
+                        return queryUpdateTasks;
+                    }
+            ).add(queryUpdateTask);
+        } else {
+            queryUpdateTask.run();
+        }
+    }
+
+    /**
+     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
+     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
+     *
+     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
+     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
+     */
+    private boolean inStartedPhaseOfUnitOfWork() {
+        return CurrentUnitOfWork.isStarted() && UnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
     }
 
     /**
@@ -373,7 +445,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
 
     /**
      * Registers an interceptor that is used to intercept Queries before they are passed to their
-     * respective handlers. The interceptor is invoked separately for each handler instance (in a separate unit of work).
+     * respective handlers. The interceptor is invoked separately for each handler instance (in a separate unit of
+     * work).
      *
      * @param interceptor the interceptor to invoke before passing a Query to the handler
      * @return handle to unregister the interceptor
@@ -390,7 +463,8 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
      * @param interceptor the interceptor to invoke when sending a Query
      * @return handle to unregister the interceptor
      */
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
         dispatchInterceptors.add(interceptor);
         return () -> dispatchInterceptors.remove(interceptor);
     }
