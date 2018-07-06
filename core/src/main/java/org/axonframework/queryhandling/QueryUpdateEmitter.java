@@ -20,6 +20,17 @@ import java.util.function.Predicate;
 
 /**
  * Component which informs subscription queries about updates, errors and when there are no more updates.
+ * <p>
+ * If any of the emitter functions in this interface are called from a message handling function (e.g. an {@link
+ * org.axonframework.eventhandling.EventHandler} annotated function), then that call will automatically be tied into the
+ * lifecycle of the current {@link org.axonframework.messaging.unitofwork.UnitOfWork} to ensure correct order of
+ * execution.
+ * <p>
+ * Added, implementations of this class should thus respect any current UnitOfWork in the
+ * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#STARTED} phase for any of the emitting functions. If
+ * this is the case then the emitter call action should be performed during the
+ * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT}. Otherwise the operation can be executed
+ * immediately.
  *
  * @author Milan Savic
  * @since 3.3
@@ -29,11 +40,6 @@ public interface QueryUpdateEmitter {
     /**
      * Emits incremental update (as return value of provided update function) to subscription queries matching given
      * filter.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update message
@@ -45,11 +51,6 @@ public interface QueryUpdateEmitter {
      * Emits given incremental update to subscription queries matching given filter. If an {@code update} is {@code
      * null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
      * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update
@@ -63,11 +64,6 @@ public interface QueryUpdateEmitter {
 
     /**
      * Emits given incremental update to subscription queries matching given query type and filter.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -87,11 +83,6 @@ public interface QueryUpdateEmitter {
      * Emits given incremental update to subscription queries matching given query type and filter. If an {@code update}
      * is {@code null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
      * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -107,11 +98,6 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes subscription queries matching given filter.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      */
@@ -119,11 +105,6 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes subscription queries matching given query type and filter.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -138,11 +119,6 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes with an error subscription queries matching given filter.
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param cause  the cause of an error
@@ -151,11 +127,6 @@ public interface QueryUpdateEmitter {
 
     /**
      * Completes with an error subscription queries matching given query type and filter
-     * <p>
-     * Note that this operation should respect any started {@link org.axonframework.messaging.unitofwork.UnitOfWork}
-     * lifecycle. This usually holds when this operation is called from any message handling function.
-     * If this is the case, then this action should be performed during the
-     * {@link org.axonframework.messaging.unitofwork.UnitOfWork.Phase#AFTER_COMMIT} phase.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries

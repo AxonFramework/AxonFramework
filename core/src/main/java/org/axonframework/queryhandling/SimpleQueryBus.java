@@ -319,10 +319,10 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
      * {@link UnitOfWork} if {@link SimpleQueryBus#inStartedPhaseOfUnitOfWork} returns {@code true}. This is done to
-     * ensure the task is executed in the {@link UnitOfWork.Phase#AFTER_COMMIT} phase if it's called from some message
-     * handling function.
+     * ensure any emitter calls made from a message handling function are executed in the
+     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
      * <p>
-     * The latter check requires the current UnitOfWork its Phase to be {@link UnitOfWork.Phase#STARTED}. This is done
+     * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done
      * to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do
      * this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
      * different phase.
@@ -347,11 +347,11 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
     }
 
     /**
-     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if its {@link
-     * UnitOfWork.Phase} is {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
+     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
+     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
      *
-     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if its {@link
-     * UnitOfWork.Phase} is {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}
+     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
+     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
      */
     private boolean inStartedPhaseOfUnitOfWork() {
         return CurrentUnitOfWork.isStarted() && UnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
