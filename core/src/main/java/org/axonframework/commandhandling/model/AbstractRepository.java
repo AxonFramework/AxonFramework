@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.common.Assert.nonNull;
 
@@ -110,15 +111,19 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public A newInstance(Callable<T> factoryMethod) throws Exception {
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        AtomicReference<A> aggregateReference = new AtomicReference<>();
+        // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
+        uow.onPrepareCommit(x -> prepareForCommit(aggregateReference.get()));
+
         A aggregate = doCreateNew(factoryMethod);
+        aggregateReference.set(aggregate);
         Assert.isTrue(aggregateModel.entityClass().isAssignableFrom(aggregate.rootType()),
                       () -> "Unsuitable aggregate for this repository: wrong type");
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = managedAggregates(uow);
         Assert.isTrue(aggregates.putIfAbsent(aggregate.identifierAsString(), aggregate) == null,
                       () -> "The Unit of Work already has an Aggregate with the same identifier");
         uow.onRollback(u -> aggregates.remove(aggregate.identifierAsString()));
-        prepareForCommit(aggregate);
 
         return aggregate;
     }
@@ -201,23 +206,31 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregate The Aggregate to save or delete when the Unit of Work is committed
      */
     protected void prepareForCommit(A aggregate) {
-        CurrentUnitOfWork.get().onPrepareCommit(u -> {
-            // if the aggregate isn't "managed" anymore, it means its state was invalidated by a rollback
-            if (managedAggregates(CurrentUnitOfWork.get()).containsValue(aggregate)) {
-                if (aggregate.isDeleted()) {
-                    doDelete(aggregate);
-                } else {
-                    doSave(aggregate);
-                }
-                if (aggregate.isDeleted()) {
-                    postDelete(aggregate);
-                } else {
-                    postSave(aggregate);
-                }
+        if (UnitOfWork.Phase.STARTED.isBefore(CurrentUnitOfWork.get().phase())) {
+            doCommit(aggregate);
+        } else {
+            CurrentUnitOfWork.get().onPrepareCommit(u -> {
+                // if the aggregate isn't "managed" anymore, it means its state was invalidated by a rollback
+                doCommit(aggregate);
+            });
+        }
+    }
+
+    private void doCommit(A aggregate) {
+        if (managedAggregates(CurrentUnitOfWork.get()).containsValue(aggregate)) {
+            if (aggregate.isDeleted()) {
+                doDelete(aggregate);
             } else {
-                reportIllegalState(aggregate);
+                doSave(aggregate);
             }
-        });
+            if (aggregate.isDeleted()) {
+                postDelete(aggregate);
+            } else {
+                postSave(aggregate);
+            }
+        } else {
+            reportIllegalState(aggregate);
+        }
     }
 
     /**

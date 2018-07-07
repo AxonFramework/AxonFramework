@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.eventsourcing.EventSourcedAggregate;
@@ -25,12 +41,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * This implementation is heavily inspired by http://www.java2s.com/Code/Java/Collections-Data-Structure/WeakValueHashMap.htm
  *
  * @param <T> the type of the aggregate root
+ * @author Premanand Chandrasekaran
+ * @since 3.3.1
  */
 class FirstLevelCache<T> {
 
     private Map<String, WeakValue> delegate;
     private ReferenceQueue<EventSourcedAggregate<T>> queue;
-
 
     /**
      * Creates a FirstLevelCache with a desired initial capacity.
@@ -50,7 +67,11 @@ class FirstLevelCache<T> {
     }
 
     /**
-     * @inheritDoc
+     * Puts the given {@code value} in the cache under given {@code key}
+     *
+     * @param key   The key to store the entry under
+     * @param value The value to store in the cache
+     * @return the previous value associated with this key, or {@code null} if it didn't exist
      */
     public EventSourcedAggregate<T> put(String key, EventSourcedAggregate<T> value) {
         processQueue();
@@ -58,11 +79,23 @@ class FirstLevelCache<T> {
         return getReferenceValue(delegate.put(key, valueRef));
     }
 
+    /**
+     * Returns the entry stored under the given {@code key}, or {@code null} if it doesn't exist.
+     *
+     * @param key The key to find the entry for
+     * @return the entry previously stored, or {@code null} if no entry exists or when it has been garbage collected
+     */
     public EventSourcedAggregate<T> get(Object key) {
         processQueue();
         return getReferenceValue(delegate.get(key));
     }
 
+    /**
+     * Remove an entry under given {@code key}, if it exists
+     *
+     * @param key The key of the entry to remove
+     * @return the entry stored, or {@code null} if no entry was known for this key
+     */
     public EventSourcedAggregate<T> remove(Object key) {
         return getReferenceValue(delegate.remove(key));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,10 +71,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
                                                           EventBus eventBus, RepositoryProvider repositoryProvider,
                                                           SnapshotTrigger snapshotTrigger) {
-        EventSourcedAggregate<T> aggregate =
-                new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, repositoryProvider, snapshotTrigger);
-        aggregate.registerWithUnitOfWork();
-        return aggregate;
+        return new EventSourcedAggregate<>(aggregateRoot, inspector, eventBus, repositoryProvider, snapshotTrigger);
     }
 
     /**
@@ -119,7 +116,6 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
                                                                          eventBus,
                                                                          repositoryProvider,
                                                                          snapshotTrigger);
-        aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);
         return aggregate;
     }

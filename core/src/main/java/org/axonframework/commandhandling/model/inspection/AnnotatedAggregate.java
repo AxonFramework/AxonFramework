@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateInvocationException;
-import org.axonframework.commandhandling.model.AggregateLifecycle;
-import org.axonframework.commandhandling.model.ApplyMore;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
@@ -207,7 +202,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                                        boolean generateSequences) throws Exception {
         AnnotatedAggregate<T> aggregate =
                 new AnnotatedAggregate<>(aggregateModel, eventBus, repositoryProvider);
-        aggregate.registerWithUnitOfWork();
         if (generateSequences) {
             aggregate.initSequence();
         }
@@ -246,10 +240,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                                        AggregateModel<T> aggregateModel,
                                                        EventBus eventBus,
                                                        RepositoryProvider repositoryProvider) {
-        AnnotatedAggregate<T> aggregate =
-                new AnnotatedAggregate<>(aggregateRoot, aggregateModel, eventBus, repositoryProvider);
-        aggregate.registerWithUnitOfWork();
-        return aggregate;
+        return new AnnotatedAggregate<>(aggregateRoot, aggregateModel, eventBus, repositoryProvider);
     }
 
     /**

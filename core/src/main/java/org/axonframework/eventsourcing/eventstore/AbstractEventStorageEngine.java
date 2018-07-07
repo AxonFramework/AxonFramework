@@ -63,12 +63,33 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Deprecated
     protected AbstractEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                          PersistenceExceptionResolver persistenceExceptionResolver) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, serializer, null);
+        this(serializer, upcasterChain, persistenceExceptionResolver, serializer);
     }
 
     /**
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
      * persistenceExceptionResolver}.
+     *
+     * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
+     *                                     a new {@link XStreamSerializer} is used.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
+     *                                     null} a {@link NoOpEventUpcaster} is used.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     * @param eventSerializer              Used to serialize and deserialize event payload and metadata. If {@code null}
+     *                                     a new {@link XStreamSerializer} is used.
+     */
+    protected AbstractEventStorageEngine(Serializer snapshotSerializer,
+                                         EventUpcaster upcasterChain,
+                                         PersistenceExceptionResolver persistenceExceptionResolver,
+                                         Serializer eventSerializer) {
+        this(snapshotSerializer, upcasterChain, persistenceExceptionResolver, eventSerializer, null);
+    }
+
+    /**
+     * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
+     * persistenceExceptionResolver}. The given {@code snapshotFilter} is used to define which snapshots are accepted
+     * for this version of the application.
      *
      * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.

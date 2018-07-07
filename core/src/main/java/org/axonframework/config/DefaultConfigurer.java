@@ -22,8 +22,8 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -44,21 +44,12 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.*;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -67,11 +58,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -132,25 +119,6 @@ public class DefaultConfigurer implements Configurer {
     private boolean initialized = false;
 
     /**
-     * Initialize the Configurer.
-     */
-    protected DefaultConfigurer() {
-        components.put(ParameterResolverFactory.class,
-                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
-        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
-        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
-        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
-        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
-        components.put(QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter));
-        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
-        components.put(ResourceInjector.class,
-                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
-        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
-    }
-
-    /**
      * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
      * {@link SimpleEventBus}.
      *
@@ -206,6 +174,25 @@ public class DefaultConfigurer implements Configurer {
      */
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
         return jpaConfiguration(entityManagerProvider, NoTransactionManager.INSTANCE);
+    }
+
+    /**
+     * Initialize the Configurer.
+     */
+    protected DefaultConfigurer() {
+        components.put(ParameterResolverFactory.class,
+                       new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
+        components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
+        components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
+        components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
+        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
+        components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
+        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
+        components.put(QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter));
+        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
+        components.put(ResourceInjector.class,
+                       new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+        components.put(DeadlineManager.class, new Component<>(config, "deadlineManager", this::defaultDeadlineManager));
     }
 
     /**
@@ -373,12 +360,10 @@ public class DefaultConfigurer implements Configurer {
     public Configurer registerModule(ModuleConfiguration module) {
         if (initialized) {
             module.initialize(config);
-        } else {
-            initHandlers.add(new ConsumerHandler(module.phase(), module::initialize));
+            startHandlers.add(new RunnableHandler(module.phase(), module::start));
+            shutdownHandlers.add(new RunnableHandler(module.phase(), module::start));
         }
         this.modules.add(module);
-        startHandlers.add(new RunnableHandler(module.phase(), module::start));
-        shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
         return this;
     }
 
@@ -473,9 +458,21 @@ public class DefaultConfigurer implements Configurer {
             if (missingEventProcessingConfiguration) {
                 registerModule(new EventProcessingConfiguration());
             }
+            prepareModules();
             invokeInitHandlers();
         }
         return config;
+    }
+
+    /**
+     * Prepare the registered modules for initialization. This ensures all lifecycle handlers are registered.
+     */
+    protected void prepareModules() {
+        modules.forEach(module -> {
+            initHandlers.add(new ConsumerHandler(module.phase(), module::initialize));
+            startHandlers.add(new RunnableHandler(module.phase(), module::start));
+            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
+        });
     }
 
     /**

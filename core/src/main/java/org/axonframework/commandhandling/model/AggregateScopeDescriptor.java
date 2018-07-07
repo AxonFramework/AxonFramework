@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -25,7 +41,7 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
     private transient Supplier<Object> identifierSupplier;
 
     /**
-     * Instantiate an AggregateScopeDescriptor with a {@code type} and {@ocde identifierSupplier}. Using the {@ocde
+     * Instantiate an AggregateScopeDescriptor with a {@code type} and {@code identifierSupplier}. Using the {@code
      * identifierSupplier} instead of an {@link Object} for the {@code identifier} allows the creating processes to
      * provide the identifier lazily.
      * This is necessary when Aggregate's identifier is not create yet, for example when the AggregateScopeDescriptor is
@@ -45,7 +61,7 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
     }
 
     /**
-     * Instantiate an AggregateScopeDescriptor with the provided {@code type} and {@ocde identifier}.
+     * Instantiate an AggregateScopeDescriptor with the provided {@code type} and {@code identifier}.
      *
      * @param type       A {@link String} describing the type of the Aggregate
      * @param identifier An {@link Object} denoting the identifier of the Aggregate
@@ -56,10 +72,20 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
         this.identifier = identifier;
     }
 
+    /**
+     * Returns the type of Aggregate, as String, targeted by this scope
+     *
+     * @return the Aggregate targeted by this scope
+     */
     public String getType() {
         return type;
     }
 
+    /**
+     * The identifier of the Aggregate targeted with this scope
+     *
+     * @return the identifier of the target Aggregate
+     */
     public Object getIdentifier() {
         if (identifier == null) {
             identifier = identifierSupplier.get();

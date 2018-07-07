@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.util.HashSet;
 import java.util.concurrent.Callable;
 
 /**
@@ -42,7 +40,6 @@ public abstract class AggregateLifecycle extends Scope {
      * @param payload  the payload of the event to apply
      * @param metaData any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
-     *
      * @see ApplyMore
      */
     public static ApplyMore apply(Object payload, MetaData metaData) {
@@ -60,7 +57,6 @@ public abstract class AggregateLifecycle extends Scope {
      *
      * @param payload the payload of the event to apply
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
-     *
      * @see ApplyMore
      */
     public static ApplyMore apply(Object payload) {
@@ -76,7 +72,6 @@ public abstract class AggregateLifecycle extends Scope {
      * @param aggregateType type of new aggregate to be created
      * @param factoryMethod factory method which creates new aggregate
      * @return a new aggregate instance
-     *
      * @throws Exception thrown if something goes wrong during instantiation of new aggregate
      */
     public static <T> Aggregate<T> createNew(Class<T> aggregateType, Callable<T> factoryMethod)
@@ -154,13 +149,6 @@ public abstract class AggregateLifecycle extends Scope {
     protected abstract void doMarkDeleted();
 
     /**
-     * Registers this aggregate with the current unit of work if one is started.
-     */
-    protected void registerWithUnitOfWork() {
-        CurrentUnitOfWork.ifStarted(u -> u.getOrComputeResource("ManagedAggregates", k -> new HashSet<>()).add(this));
-    }
-
-    /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
      * with the provided metadata). The event should be applied to the aggregate immediately and scheduled for
      * publication to other event handlers.
@@ -173,7 +161,6 @@ public abstract class AggregateLifecycle extends Scope {
      * @param payload  the payload of the event to apply
      * @param metaData any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
-     *
      * @see ApplyMore
      */
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
@@ -187,7 +174,6 @@ public abstract class AggregateLifecycle extends Scope {
      * @param aggregateType type of new aggregate to be created
      * @param factoryMethod factory method which creates new aggregate
      * @return a new aggregate instance
-     *
      * @throws Exception thrown if something goes wrong during instantiation of new aggregate
      */
     protected abstract <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception;

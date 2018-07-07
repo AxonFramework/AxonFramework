@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,15 +19,12 @@ package org.axonframework.commandhandling.model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * This test class tests whether the {@link AggregateScopeDescriptor} is serializable as expected, by Java, XStream and
@@ -39,7 +36,6 @@ import static org.junit.Assert.*;
 public class AggregateScopeDescriptorSerializationTest {
 
     private AggregateScopeDescriptor testSubject;
-
     private String expectedType = "aggregateType";
     private String expectedIdentifier = "identifier";
 
@@ -50,14 +46,12 @@ public class AggregateScopeDescriptorSerializationTest {
 
     @Test
     public void testJavaSerializationCorrectlySetsIdentifierField() throws IOException, ClassNotFoundException {
-        FileOutputStream fileOutputStream = new FileOutputStream("some-file");
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);
         objectOutputStream.writeObject(testSubject);
-        objectOutputStream.flush();
         objectOutputStream.close();
 
-        FileInputStream fileInputStream = new FileInputStream("some-file");
-        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+        ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
         AggregateScopeDescriptor result = (AggregateScopeDescriptor) objectInputStream.readObject();
 
         assertEquals(expectedType, result.getType());
