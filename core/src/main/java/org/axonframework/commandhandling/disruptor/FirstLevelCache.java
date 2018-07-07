@@ -67,11 +67,11 @@ class FirstLevelCache<T> {
     }
 
     /**
-     * Puts the given {@code value} in the cache under given {@code key}
+     * Associates the specified value with the specified key in this cache.
      *
-     * @param key   The key to store the entry under
-     * @param value The value to store in the cache
-     * @return the previous value associated with this key, or {@code null} if it didn't exist
+     * @param key   the key for this entry
+     * @param value the value for this entry
+     * @return the previous value associated with this {@code key} or {@code null} if this {@code key} does not exist.
      */
     public EventSourcedAggregate<T> put(String key, EventSourcedAggregate<T> value) {
         processQueue();
@@ -80,10 +80,10 @@ class FirstLevelCache<T> {
     }
 
     /**
-     * Returns the entry stored under the given {@code key}, or {@code null} if it doesn't exist.
+     * Get the value associated with a {@code key}.
      *
-     * @param key The key to find the entry for
-     * @return the entry previously stored, or {@code null} if no entry exists or when it has been garbage collected
+     * @param key the key for this entry
+     * @return the value associated with this {@code key} or {@code null} if this {@code key} does not exist.
      */
     public EventSourcedAggregate<T> get(Object key) {
         processQueue();
@@ -91,10 +91,10 @@ class FirstLevelCache<T> {
     }
 
     /**
-     * Remove an entry under given {@code key}, if it exists
+     * Remove the value associated with a {@code key}.
      *
-     * @param key The key of the entry to remove
-     * @return the entry stored, or {@code null} if no entry was known for this key
+     * @param key the key for this entry
+     * @return the value associated with this {@code key} or {@code null} if this {@code key} does not exist.
      */
     public EventSourcedAggregate<T> remove(Object key) {
         return getReferenceValue(delegate.remove(key));
@@ -110,6 +110,16 @@ class FirstLevelCache<T> {
         while ((valueRef = (WeakValue) queue.poll()) != null) {
             delegate.remove(valueRef.getKey());
         }
+    }
+
+    /**
+     * The current size of this cache.
+     *
+     * @return the current size
+     */
+    int size() {
+        processQueue();
+        return delegate.size();
     }
 
     private class WeakValue extends WeakReference<EventSourcedAggregate<T>> {
