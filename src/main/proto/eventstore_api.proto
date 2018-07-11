@@ -31,10 +31,13 @@ service EventStore {
     rpc QueryEvents (stream QueryEventsRequest) returns (stream QueryEventsResponse) {
     }
 
+    // Retrieves the first token available in event store (typically 0). Returns 0 when no events in store.
     rpc GetFirstToken (GetFirstTokenRequest) returns (TrackingToken) {}
 
+    // Retrieves the last committed token in event store. Returns -1 when no events in store.
     rpc GetLastToken (GetLastTokenRequest) returns (TrackingToken) {}
 
+    // Retrieves the token of the first token of an event from specified time in event store. Returns -1 when no events in store.
     rpc GetTokenAt (GetTokenAtRequest) returns (TrackingToken) {}
 }
 
