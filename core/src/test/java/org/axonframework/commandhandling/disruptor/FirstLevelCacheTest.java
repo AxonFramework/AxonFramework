@@ -6,9 +6,9 @@ import org.junit.Test;
 
 import java.util.stream.IntStream;
 
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 public class FirstLevelCacheTest {
@@ -48,7 +48,7 @@ public class FirstLevelCacheTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldClearWeakValues() {
+    public void shouldClearWeakValues() throws Exception {
 
         FirstLevelCache<FirstLevelCacheTest.MyAggregate> myCache = new FirstLevelCache<>();
 
@@ -58,20 +58,12 @@ public class FirstLevelCacheTest {
             .forEach(key -> myCache.put(key, mock(EventSourcedAggregate.class)));
 
         int i = 0;
-        while (i > 10 || myCache.size() > 0) {
+        while (i < 10 && myCache.size() > 0) {
             System.gc();
             sleep(50);
             i++;
         }
         assertEquals(0, myCache.size());
-    }
-
-    private void sleep(int millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            fail("Could not sleep!");
-        }
     }
 
     static class MyAggregate {

@@ -117,7 +117,7 @@ class FirstLevelCache<T> {
      *
      * @return the current size
      */
-    int size() {
+    protected int size() {
         processQueue();
         return delegate.size();
     }
