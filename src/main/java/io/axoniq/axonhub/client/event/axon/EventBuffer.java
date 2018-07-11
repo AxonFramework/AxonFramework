@@ -15,9 +15,7 @@
 
 package io.axoniq.axonhub.client.event.axon;
 
-import io.axoniq.platform.MetaDataValue;
 import io.axoniq.axondb.grpc.EventWithToken;
-import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.*;
@@ -27,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingQueue;
@@ -216,53 +213,6 @@ public class EventBuffer implements TrackingEventStream {
         @Override
         public int characteristics() {
             return ORDERED | NONNULL | IMMUTABLE;
-        }
-    }
-
-    private static class GrpcMetaDataAwareSerializer implements Serializer {
-
-        private final Serializer delegate;
-        private final GrpcMetaDataConverter metaDataConverter;
-
-        public GrpcMetaDataAwareSerializer(Serializer delegate) {
-            this.metaDataConverter = new GrpcMetaDataConverter(delegate);
-            this.delegate = delegate;
-        }
-
-        @Override
-        public <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation) {
-            return delegate.serialize(object, expectedRepresentation);
-        }
-
-        @Override
-        public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
-            return delegate.canSerializeTo(expectedRepresentation);
-        }
-
-        @Override
-        public <S, T> T deserialize(SerializedObject<S> serializedObject) {
-            if (Map.class.equals(serializedObject.getContentType())) {
-                // this is the MetaDataMap, deserialize differently
-                Map<String, MetaDataValue> metaDataMap = (Map<String, MetaDataValue>) serializedObject.getData();
-
-                return (T) metaDataConverter.convert(metaDataMap);
-            }
-            return delegate.deserialize(serializedObject);
-        }
-
-        @Override
-        public Class classForType(SerializedType type) throws UnknownSerializedTypeException {
-            return delegate.classForType(type);
-        }
-
-        @Override
-        public SerializedType typeForClass(Class type) {
-            return delegate.typeForClass(type);
-        }
-
-        @Override
-        public Converter getConverter() {
-            return delegate.getConverter();
         }
     }
 }

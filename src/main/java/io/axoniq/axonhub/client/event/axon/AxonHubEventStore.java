@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -95,15 +96,15 @@ public class AxonHubEventStore extends AbstractEventStore {
      * Initialize the Event Store using given {@code configuration}, {@code serializer} and {@code upcasterChain}
      * Allows for different serializers for snapshots and events (requires AxonFramework 3.3 or higher)
      *
-     * @param configuration
-     * @param platformConnectionManager
-     * @param snapshotSerializer
-     * @param serializer
-     * @param upcasterChain
+     * @param configuration The configuration describing the servers to connect with and how to manage flow control
+     * @param platformConnectionManager  manager for connections to AxonHub platform
+     * @param snapshotSerializer    The serializer to serialize Snapshot payloads with
+     * @param eventSerializer   The serializer to serialize Event payloads with
+     * @param upcasterChain The upcaster to modify received Event representations with
      */
     public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager,
-                             Serializer snapshotSerializer, Serializer serializer, EventUpcaster upcasterChain) {
-        super(new AxonIQEventStorageEngine(snapshotSerializer, serializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
+                             Serializer snapshotSerializer, Serializer eventSerializer, EventUpcaster upcasterChain) {
+        super(new AxonIQEventStorageEngine(snapshotSerializer, eventSerializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
     }
     @Override
     public TrackingEventStream openStream(TrackingToken trackingToken) {
@@ -162,7 +163,7 @@ public class AxonHubEventStore extends AbstractEventStore {
                 sender = eventStoreClient.createAppendEventConnection();
             }
             for (EventMessage<?> eventMessage : events) {
-                sender.append(map(eventMessage));
+                sender.append(map(eventMessage, serializer));
             }
             if (!CurrentUnitOfWork.isStarted()) {
                 commit(sender);
@@ -179,14 +180,14 @@ public class AxonHubEventStore extends AbstractEventStore {
             }
         }
 
-        public Event map(EventMessage eventMessage) {
+        public Event map(EventMessage eventMessage, Serializer serializer) {
             Event.Builder builder = Event.newBuilder();
             if (eventMessage instanceof GenericDomainEventMessage) {
                 builder.setAggregateIdentifier(((GenericDomainEventMessage) eventMessage).getAggregateIdentifier())
                        .setAggregateSequenceNumber(((GenericDomainEventMessage) eventMessage).getSequenceNumber())
                        .setAggregateType(((GenericDomainEventMessage) eventMessage).getType());
             }
-            SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(eventMessage, getSerializer(), byte[].class);
+            SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(eventMessage, serializer, byte[].class);
             builder.setMessageIdentifier(eventMessage.getIdentifier())
                    .setPayload(io.axoniq.platform.SerializedObject.newBuilder()
                                                                     .setType(serializedPayload.getType().getName())
@@ -201,7 +202,7 @@ public class AxonHubEventStore extends AbstractEventStore {
         @Override
         protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
             try {
-                eventStoreClient.appendSnapshot(map(snapshot)).whenComplete((c, e) -> {
+                eventStoreClient.appendSnapshot(map(snapshot, serializer)).whenComplete((c, e) -> {
                     if (e != null) {
                         logger.warn("Error occurred while creating a snapshot", e);
                     } else if (c != null) {
@@ -238,7 +239,7 @@ public class AxonHubEventStore extends AbstractEventStore {
             Assert.isTrue(trackingToken == null || trackingToken instanceof GlobalSequenceTrackingToken,
                           () -> "Invalid tracking token type. Must be GlobalSequenceTrackingToken.");
             long nextToken = trackingToken == null ? 0 : ((GlobalSequenceTrackingToken) trackingToken).getGlobalIndex() + 1;
-            EventBuffer consumer = new EventBuffer(upcasterChain, getSerializer());
+            EventBuffer consumer = new EventBuffer(upcasterChain, getEventSerializer());
 
             logger.info("open stream: {}", nextToken);
 
@@ -277,7 +278,28 @@ public class AxonHubEventStore extends AbstractEventStore {
 
         @Override
         public DomainEventStream readEvents(String aggregateIdentifier) {
-            return readEvents(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE);
+            Stream<? extends DomainEventData<?>> input = this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE);
+            List<? extends DomainEventData<?>> eventDataList = input.collect(Collectors.toList());
+            if( startsWithSnapshot(eventDataList)) {
+                DomainEventData<?> snapshot = eventDataList.remove(0);
+                DomainEventStream stream =
+                        EventUtils.upcastAndDeserializeDomainEvents(Stream.of(snapshot), new GrpcMetaDataAwareSerializer(getSerializer()), upcasterChain, false);
+
+                return DomainEventStream.concat(stream,
+                                                EventUtils.upcastAndDeserializeDomainEvents(eventDataList.stream(), new GrpcMetaDataAwareSerializer(getEventSerializer()), this.upcasterChain, false));
+            }
+
+            return EventUtils.upcastAndDeserializeDomainEvents(eventDataList.stream(), new GrpcMetaDataAwareSerializer(this.getEventSerializer()), this.upcasterChain, false);
+        }
+
+        private boolean startsWithSnapshot(List<? extends DomainEventData<?>> eventDataList) {
+            if( eventDataList.isEmpty()) return false;
+
+            if( eventDataList.get(0) instanceof GrpcBackedDomainEventData) {
+                GrpcBackedDomainEventData grpcBackedDomainEventData = (GrpcBackedDomainEventData)eventDataList.get(0);
+                return grpcBackedDomainEventData.isSnapshot();
+            }
+            return false;
         }
 
         @Override
@@ -295,6 +317,7 @@ public class AxonHubEventStore extends AbstractEventStore {
         public TrackingToken createTailToken() {
             try {
                 io.axoniq.axondb.grpc.TrackingToken token = eventStoreClient.getFirstToken().get();
+                if( token.getToken() < 0 ) return null;
                 return new GlobalSequenceTrackingToken(token.getToken()-1);
             } catch (Throwable e) {
                 throw ErrorCode.convert(e);
@@ -315,6 +338,7 @@ public class AxonHubEventStore extends AbstractEventStore {
         public TrackingToken createTokenAt(Instant instant) {
             try {
                 io.axoniq.axondb.grpc.TrackingToken token = eventStoreClient.getTokenAt(instant).get();
+                if( token.getToken() < 0 ) return null;
                 return new GlobalSequenceTrackingToken(token.getToken()-1);
             } catch (Throwable e) {
                 throw ErrorCode.convert(e);
