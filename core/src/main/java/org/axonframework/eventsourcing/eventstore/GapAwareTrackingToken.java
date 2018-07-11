@@ -121,7 +121,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
                     index, this.index, gaps));
         }
         long smalledAllowedGap = allowGaps ? (newIndex - maxGapOffset) : Math.max(index, newIndex - maxGapOffset);
-        gaps = gaps.tailSet(smalledAllowedGap);
+        gaps.removeAll(gaps.headSet(smalledAllowedGap));
         return new GapAwareTrackingToken(newIndex, gaps);
     }
 

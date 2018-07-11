@@ -143,6 +143,12 @@ public class GapAwareTrackingTokenTest {
     }
 
     @Test
+    public void testOccurrenceOfInconsistentRangeException() {
+        // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
+        GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L)).advanceTo(0L, 5, true).covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
+    }
+
+    @Test
     public void testLowerBound() {
         GapAwareTrackingToken token1 = GapAwareTrackingToken.newInstance(3L, singleton(1L));
         GapAwareTrackingToken token2 = GapAwareTrackingToken.newInstance(4L, singleton(2L));
