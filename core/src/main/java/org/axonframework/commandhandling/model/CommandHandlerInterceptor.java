@@ -17,25 +17,29 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.annotation.MessageHandler;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Annotation used to mark methods on Aggregate members which can intercept commands. If a non-root entity of the
  * Aggregate is to intercept a command, the field declaring that entity must be annotated with {@link
  * org.axonframework.commandhandling.model.AggregateMember}. Command handler interceptor may intercept multiple
- * commands
- * depending on inheritance hierarchy of commands or on command name pattern provided.
+ * commands depending on inheritance hierarchy of commands or on command name pattern provided. Any incoming command
+ * that matches the signature of the annotated method and the {@link #commandNamePattern()} will be intercepted by
+ * the annotated method.
  * <p>
  * It is possible to specify {@link org.axonframework.messaging.InterceptorChain} parameter as part of command handler
- * interceptor signature. If this parameter is not specified, command handler will be executed automatically.
- * Otherwise, implementor of command handler interceptor must invoke {@link org.axonframework.messaging.InterceptorChain#proceed()}
- * manually.
+ * interceptor signature. If this parameter is not specified, command handler will be executed automatically, as if
+ * the {@link InterceptorChain#proceed()} was invoked as the last instruction.
+ * <p>
+ * If a parameter of type {@link InterceptorChain} is defined, it must be called to have the command handler invoked.
+ * It may choose to return the result of the {@link InterceptorChain#proceed()} call directly, change it, or even
+ * discard it.
+ * <p>
+ * Annotated methods that do not declare an {@link InterceptorChain} parameter must declare a {@code void} return type,
+ * as they cannot alter the result of an invocation, other than by throwing an exception.
  * <p>
  * There are two ways to prevent command handler of specified command to be executed:
  * <ul>
@@ -44,9 +48,9 @@ import java.lang.annotation.Target;
  * org.axonframework.messaging.InterceptorChain#proceed()} method on it</li>
  * </ul>
  * <p>
- * It is possible to have multiple interceptors for the same command. In that case, if we have interceptor in parent
- * entity and child entity, parent one will be invoked first. Order of invoking interceptors within the same entity is
- * not specified.
+ * It is possible to have multiple interceptors for the same command. In that case, if there are interceptors in both
+ * parent and child entity, the method in the parent entity will be invoked first. The order of invocation of
+ * interceptors within the same entity is not specified.
  *
  * @author Milan Savic
  * @since 3.3

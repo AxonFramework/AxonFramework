@@ -62,11 +62,12 @@ public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhance
             super(delegate);
             Method method = delegate.unwrap(Method.class).orElseThrow(() -> new AxonConfigurationException(
                     "The @CommandHandlerInterceptor must be on method."));
-            if (!Void.TYPE.equals(method.getReturnType())) {
-                throw new AxonConfigurationException("@CommandHandlerInterceptor must return void.");
-            }
             shouldInvokeInterceptorChain = Arrays.stream(method.getParameters())
                                                  .noneMatch(p -> p.getType().equals(InterceptorChain.class));
+            if (shouldInvokeInterceptorChain && !Void.TYPE.equals(method.getReturnType())) {
+                throw new AxonConfigurationException("@CommandHandlerInterceptor must return void or declare " +
+                                                             "InterceptorChain parameter.");
+            }
             commandNamePattern = Pattern.compile((String) annotationAttributes.get("commandNamePattern"));
         }
 
