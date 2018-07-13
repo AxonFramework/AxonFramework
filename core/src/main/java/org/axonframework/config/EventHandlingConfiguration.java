@@ -449,14 +449,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Registers the Event Processor name to assign Event Handler beans to when no other, more explicit, rule matches
+     * Registers the Processing Group name to assign Event Handler beans to when no other, more explicit, rule matches
      * and no {@link ProcessingGroup} annotation is found.
      *
-     * @param name The Event Processor name to assign Event Handlers to
+     * @param processingGroup The name of the Processing Group to assign Event Handlers to
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration byDefaultAssignTo(String name) {
-        return byDefaultAssignTo((object) -> name);
+    public EventHandlingConfiguration byDefaultAssignTo(String processingGroup) {
+        return byDefaultAssignTo((object) -> processingGroup);
     }
 
     /**
@@ -473,30 +473,30 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Event Processor
+     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
      * with given {@code name}, with neutral priority (value 0).
      * <p>
-     * Note that, when beans match multiple criteria for different processors with equal priority, the outcome is
+     * Note that, when beans match multiple criteria for different Processing Groups with equal priority, the outcome is
      * undefined.
      *
-     * @param name     The name of the Event Processor to assign matching Event Handlers to
-     * @param criteria The criteria for Event Handler to match
+     * @param processingGroup The name of the Processing Group to assign matching Event Handlers to
+     * @param criteria        The criteria for Event Handler to match
      * @return this EventHandlingConfiguration instance for further configuration
      */
     @SuppressWarnings("UnusedReturnValue")
-    public EventHandlingConfiguration assignHandlersMatching(String name, Predicate<Object> criteria) {
-        return assignHandlersMatching(name, 0, criteria);
+    public EventHandlingConfiguration assignHandlersMatching(String processingGroup, Predicate<Object> criteria) {
+        return assignHandlersMatching(processingGroup, 0, criteria);
     }
 
     /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Event Processor
+     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
      * with given {@code name}, with given {@code priority}. Rules with higher value of {@code priority} take precedence
      * over those with a lower value.
      * <p>
-     * Note that, when beans match multiple criteria for different processors with equal priority, the outcome is
+     * Note that, when beans match multiple criteria for different processing groups with equal priority, the outcome is
      * undefined.
      *
-     * @param name     The name of the Event Processor to assign matching Event Handlers to
+     * @param name     The name of the Processing Group to assign matching Event Handlers to
      * @param priority The priority for this rule
      * @param criteria The criteria for Event Handler to match
      * @return this EventHandlingConfiguration instance for further configuration
@@ -656,13 +656,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures the default {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for any
-     * {@link org.axonframework.eventhandling.EventProcessor}. This can be overridden per EventProcessor by calling the
-     * {@link EventHandlingConfiguration#configureListenerInvocationErrorHandler(String, Function)} function.
+     * Configures the default {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for handlers
+     * in any processing group for which none is explicitly provided.
      *
      * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
-     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
-     *                                              with the given {@code name}
+     *                                              to use
      * @return this {@link EventHandlingConfiguration} instance for further configuration
      */
     public EventHandlingConfiguration configureListenerInvocationErrorHandler(
@@ -672,19 +670,18 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures a {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for the
-     * {@link org.axonframework.eventhandling.EventProcessor} of the given {@code name}. This overrides the default
-     * ListenerInvocationErrorHandler configured through the {@link org.axonframework.config.Configurer}.
+     * Configures a {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for handlers assigned to the
+     * given {@code processingGroup}. This overrides the default ListenerInvocationErrorHandler configured through the
+     * {@link org.axonframework.config.Configurer}.
      *
-     * @param name                                  The name of the event processor
+     * @param processingGroup                       The name of the processing group
      * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
-     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
-     *                                              with the given {@code name}
+     *                                              to use for handler assigned to this group
      * @return this {@link EventHandlingConfiguration} instance for further configuration
      */
-    public EventHandlingConfiguration configureListenerInvocationErrorHandler(String name,
+    public EventHandlingConfiguration configureListenerInvocationErrorHandler(String processingGroup,
                                                                               Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
-        listenerInvocationErrorHandlers.put(name, listenerInvocationErrorHandlerBuilder);
+        listenerInvocationErrorHandlers.put(processingGroup, listenerInvocationErrorHandlerBuilder);
         return this;
     }
 
