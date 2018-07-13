@@ -22,7 +22,6 @@ import io.axoniq.axonhub.client.event.axon.AxonHubEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -47,7 +46,7 @@ public class EventStoreAutoConfiguration {
                                  PlatformConnectionManager platformConnectionManager,
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer serializer) {
-        return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.getComponent(EventUpcaster.class) );
+        return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.upcasterChain());
     }
 }
 

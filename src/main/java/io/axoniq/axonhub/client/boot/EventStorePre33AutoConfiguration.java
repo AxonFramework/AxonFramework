@@ -21,7 +21,6 @@ import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.axon.AxonHubEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -44,7 +43,7 @@ public class EventStorePre33AutoConfiguration {
                                  PlatformConnectionManager platformConnectionManager,
                                  AxonConfiguration configuration,
                                  Serializer serializer) {
-        return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, serializer, configuration.getComponent(EventUpcaster.class));
+        return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, serializer, configuration.upcasterChain());
     }
 
 }
