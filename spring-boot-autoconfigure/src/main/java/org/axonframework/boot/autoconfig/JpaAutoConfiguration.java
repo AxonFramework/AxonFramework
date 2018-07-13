@@ -29,7 +29,6 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -54,7 +53,7 @@ public class JpaAutoConfiguration {
                                                  AxonConfiguration configuration,
                                                  EntityManagerProvider entityManagerProvider,
                                                  TransactionManager transactionManager) {
-        return new JpaEventStorageEngine(serializer, configuration.getComponent(EventUpcaster.class),
+        return new JpaEventStorageEngine(serializer, configuration.upcasterChain(),
                                          persistenceExceptionResolver, eventSerializer, null, entityManagerProvider,
                                          transactionManager, null, null, true);
     }
