@@ -162,6 +162,48 @@ public interface QueryGateway {
      * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
      * the emitting side).
      *
+     * Expects initial and incremental responses to have the same responseType.
+     *
+     * @param query               The {@code query} to be sent
+     * @param responseType The response type used for this query
+     * @param <Q>                 The type of the query
+     * @param <R>                 The type of the initial and incremental response
+     * @return registration which can be used to cancel receiving updates
+     * @see QueryGateway#subscriptionQuery(String, Object, Class)
+     */
+    default <Q, R> SubscriptionQueryResult<R, R> subscriptionQuery(Q query, Class<R> responseType) {
+        return subscriptionQuery(query.getClass().getName(),
+                                 query,
+                                 responseType);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side).
+     *
+     * Expects initial and incremental responses to have the same responseType.
+     *
+     * @param queryName           A {@link String} describing query to be executed
+     * @param query               The {@code query} to be sent
+     * @param responseType The response type used for this query
+     * @param <Q>                 The type of the query
+     * @param <R>                 The type of the initial and incremental response
+     * @return registration which can be used to cancel receiving updates
+     * @see QueryGateway#subscriptionQuery(Object, Class, Class)
+     */
+    default <Q, R> SubscriptionQueryResult<R, R> subscriptionQuery(String queryName, Q query, Class<R> responseType) {
+        return subscriptionQuery(queryName,
+                                 query,
+                                 responseType,
+                                 responseType);
+    }
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
+     * incremental updates (received at the moment the query is sent, until it is cancelled by the caller or closed by
+     * the emitting side).
+     *
      * @param queryName           A {@link String} describing query to be executed
      * @param query               The {@code query} to be sent
      * @param initialResponseType The initial response type used for this query
