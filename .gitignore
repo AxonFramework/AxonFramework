@@ -9,3 +9,5 @@ target/
 .settings/
 events/
 .DS_Store
+# keep the wrapper jar
+!.mvn/wrapper/maven-wrapper.jar
