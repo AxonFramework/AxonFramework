@@ -209,6 +209,10 @@ public class AxonHubQueryBus implements QueryBus {
         return dispatchInterceptors.registerDispatchInterceptor(dispatchInterceptor);
     }
 
+    public void disconnect() {
+        queryProvider.disconnect();
+    }
+
     class QueryProvider {
         private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries = new ConcurrentHashMap<>();
         private final PriorityBlockingQueue<QueryRequest> queryQueue;
@@ -374,6 +378,11 @@ public class AxonHubQueryBus implements QueryBus {
             } catch (Exception ex) {
                 logger.warn("Error while resubscribing - {}", ex.getMessage());
             }
+        }
+
+        public void disconnect() {
+            if( outboundStreamObserver != null)
+                outboundStreamObserver.onCompleted();//onError(new AxonHubException("AXONIQ-0001", "Cancelled by client"));
         }
 
         private QuerySubscription.Builder subscriptionBuilder(QueryDefinition queryDefinition, int nrHandlers) {

@@ -32,7 +32,6 @@ import io.axoniq.platform.grpc.PlatformServiceGrpc;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.GrpcSslContexts;
@@ -100,9 +99,6 @@ public class PlatformConnectionManager {
                                     clusterInfo.getPrimary().getHostName(),
                                     clusterInfo.getPrimary().getGrpcPort());
                         channel = createChannel(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort());
-                                ManagedChannelBuilder.forAddress(clusterInfo.getPrimary().getHostName(), clusterInfo.getPrimary().getGrpcPort())
-                                                     .usePlaintext()
-                                                     .build();
                     }
                     startInstructionStream(clusterInfo.getPrimary().getNodeName());
                     unavailable = false;

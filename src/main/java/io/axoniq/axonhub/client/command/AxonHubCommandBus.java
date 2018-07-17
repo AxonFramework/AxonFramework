@@ -174,6 +174,10 @@ public class AxonHubCommandBus implements CommandBus {
         return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
+    public void disconnect() {
+        commandRouterSubscriber.disconnect();
+    }
+
     protected class CommandRouterSubscriber {
         private final CopyOnWriteArraySet<String> subscribedCommands = new CopyOnWriteArraySet<>();
         private final PriorityBlockingQueue<Command> commandQueue;
@@ -355,6 +359,11 @@ public class AxonHubCommandBus implements CommandBus {
                     logger.info("DispatchLocal: failure {} - {}", command.getCommandName(), throwable.getMessage(), throwable);
                 }
             });
+        }
+
+        public void disconnect() {
+            if( subscriberStreamObserver != null)
+                subscriberStreamObserver.onCompleted(); //onError(new AxonHubException("AXONIQ-0001", "Cancelled by client"));
         }
     }
 
