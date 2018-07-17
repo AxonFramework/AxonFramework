@@ -27,6 +27,7 @@ import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -78,13 +79,21 @@ public class MessagingAutoConfiguration implements ApplicationContextAware {
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
     public AxonHubCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration, AxonHubConfiguration axonHubConfiguration,
-                                        Serializer serializer, PlatformConnectionManager platformConnectionManager, CommandPriorityCalculator priorityCalculator) {
+                                        Serializer serializer, PlatformConnectionManager platformConnectionManager,
+                                        RoutingStrategy routingStrategy,
+                                        CommandPriorityCalculator priorityCalculator) {
 
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
 
-        return new AxonHubCommandBus(platformConnectionManager, axonHubConfiguration, commandBus, serializer, new AnnotationRoutingStrategy(),
+        return new AxonHubCommandBus(platformConnectionManager, axonHubConfiguration, commandBus, serializer, routingStrategy,
                                      priorityCalculator);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RoutingStrategy routingStrategy() {
+        return new AnnotationRoutingStrategy();
     }
 
     @Bean
