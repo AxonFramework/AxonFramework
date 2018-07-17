@@ -12,13 +12,14 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-@ContextConfiguration(classes = AxonAutoConfigurationTest.Context.class)
+@ContextConfiguration(classes = AxonHandlerConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @RunWith(SpringRunner.class)
@@ -37,7 +38,6 @@ public class AxonHandlerConfigurationTest {
     }
 
     @SuppressWarnings("unused")
-    @Component
     public static class CommandAndQueryHandler {
 
         @CommandHandler
@@ -48,6 +48,16 @@ public class AxonHandlerConfigurationTest {
         @QueryHandler
         public String query(String query) {
             return "Query: " + query;
+        }
+
+    }
+
+    @Configuration
+    public static class Context {
+
+        @Bean
+        public CommandAndQueryHandler handler() {
+            return new CommandAndQueryHandler();
         }
     }
 }
