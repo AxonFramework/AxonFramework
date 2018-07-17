@@ -286,23 +286,26 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         private boolean genericParametersMatch(MethodInvocation invocation, Object adapter) {
             try {
                 Method proxyMethod = invocation.getMethod();
-                Method methodOnAdapter = adapter.getClass().getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
-                if (methodOnAdapter.isSynthetic()) {
-                    return StreamSupport.stream(ReflectionUtils.methodsOf(adapter.getClass()).spliterator(), false)
-                                        .filter(m -> !m.isSynthetic())
-                                        .filter(m -> !isAbstract(m.getModifiers()))
-                                        .filter(m -> invocation.getMethod().getName().equals(m.getName()))
-                                        .filter(m -> m.getParameterCount() == invocation.getArguments().length)
-                                        .anyMatch(m -> {
-                                            for (int i = 0; i < m.getParameterTypes().length; i++) {
-                                                if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
-                                                    return false;
-                                                }
-                                            }
-                                            return true;
-                                        });
+                Method methodOnAdapter = adapter.getClass()
+                                                .getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
+
+                if (!methodOnAdapter.isSynthetic()) {
+                    return true;
                 }
-                return true;
+
+                return StreamSupport.stream(ReflectionUtils.methodsOf(adapter.getClass()).spliterator(), false)
+                                    .filter(m -> !m.isSynthetic())
+                                    .filter(m -> !isAbstract(m.getModifiers()))
+                                    .filter(m -> invocation.getMethod().getName().equals(m.getName()))
+                                    .filter(m -> m.getParameterCount() == invocation.getArguments().length)
+                                    .anyMatch(m -> {
+                                        for (int i = 0; i < m.getParameterTypes().length; i++) {
+                                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
+                                                return false;
+                                            }
+                                        }
+                                        return true;
+                                    });
             } catch (NoSuchMethodException e) {
                 return false;
             }
