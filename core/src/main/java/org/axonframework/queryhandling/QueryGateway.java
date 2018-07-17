@@ -303,6 +303,9 @@ public interface QueryGateway {
                                                               SubscriptionQueryBackpressure backpressure,
                                                               int updateBufferSize);
 
+
+    <Q, I, U >SubscriptionQueryBuilder<Q,I,U> createSubscriptionQuery();
+
     /**
      * Sends given query to the query bus and expects a result of type resultClass. Execution may be asynchronous.
      *

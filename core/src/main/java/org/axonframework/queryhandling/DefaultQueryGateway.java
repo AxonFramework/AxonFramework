@@ -78,6 +78,11 @@ public class DefaultQueryGateway implements QueryGateway {
                                                     result);
     }
 
+    @Override
+    public <Q, I, U> SubscriptionQueryBuilder<Q, I, U> createSubscriptionQuery() {
+        return new SubscriptionQueryBuilder<>(queryBus, dispatchInterceptors);
+    }
+
     @SuppressWarnings("unchecked")
     private <Q, R, T extends QueryMessage<Q, R>> T processInterceptors(T query) {
         T intercepted = query;
