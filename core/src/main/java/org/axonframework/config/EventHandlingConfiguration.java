@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +20,18 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -32,7 +44,14 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -57,6 +76,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
+    private final Map<String, Function<Configuration, SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
+
     /**
      * @deprecated in favor of {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} or {@link
      * EventProcessingConfiguration#configureMessageMonitor(String, MessageMonitorFactory)}. This field is used for
@@ -93,6 +114,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
             () -> config,
             "listenerInvocationErrorHandler",
             c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new)
+    );
+    @SuppressWarnings("unchecked")
+    private final Component<SequencingPolicy<? super EventMessage<?>>> defaultSequencingPolicy = new Component<>(
+            () -> config,
+            "sequencingPolicy",
+            c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new)
     );
 
     /**
@@ -309,6 +336,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                 : defaultListenerInvocationErrorHandler.get();
     }
 
+    private SequencingPolicy<? super EventMessage<?>> getSequencingPolicy(Configuration config, String componentName) {
+        return sequencingPolicies.containsKey(componentName)
+                ? sequencingPolicies.get(componentName).apply(config)
+                : defaultSequencingPolicy.get();
+    }
+
     private MessageMonitor<? super Message<?>> getMessageMonitor(Configuration configuration,
                                                                  Class<?> componentType,
                                                                  String componentName) {
@@ -450,14 +483,14 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Registers the Event Processor name to assign Event Handler beans to when no other, more explicit, rule matches
+     * Registers the Processing Group name to assign Event Handler beans to when no other, more explicit, rule matches
      * and no {@link ProcessingGroup} annotation is found.
      *
-     * @param name The Event Processor name to assign Event Handlers to
+     * @param processingGroup The name of the Processing Group to assign Event Handlers to
      * @return this EventHandlingConfiguration instance for further configuration
      */
-    public EventHandlingConfiguration byDefaultAssignTo(String name) {
-        return byDefaultAssignTo((object) -> name);
+    public EventHandlingConfiguration byDefaultAssignTo(String processingGroup) {
+        return byDefaultAssignTo((object) -> processingGroup);
     }
 
     /**
@@ -474,30 +507,30 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Event Processor
+     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
      * with given {@code name}, with neutral priority (value 0).
      * <p>
-     * Note that, when beans match multiple criteria for different processors with equal priority, the outcome is
+     * Note that, when beans match multiple criteria for different Processing Groups with equal priority, the outcome is
      * undefined.
      *
-     * @param name     The name of the Event Processor to assign matching Event Handlers to
-     * @param criteria The criteria for Event Handler to match
+     * @param processingGroup The name of the Processing Group to assign matching Event Handlers to
+     * @param criteria        The criteria for Event Handler to match
      * @return this EventHandlingConfiguration instance for further configuration
      */
     @SuppressWarnings("UnusedReturnValue")
-    public EventHandlingConfiguration assignHandlersMatching(String name, Predicate<Object> criteria) {
-        return assignHandlersMatching(name, 0, criteria);
+    public EventHandlingConfiguration assignHandlersMatching(String processingGroup, Predicate<Object> criteria) {
+        return assignHandlersMatching(processingGroup, 0, criteria);
     }
 
     /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Event Processor
+     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
      * with given {@code name}, with given {@code priority}. Rules with higher value of {@code priority} take precedence
      * over those with a lower value.
      * <p>
-     * Note that, when beans match multiple criteria for different processors with equal priority, the outcome is
+     * Note that, when beans match multiple criteria for different processing groups with equal priority, the outcome is
      * undefined.
      *
-     * @param name     The name of the Event Processor to assign matching Event Handlers to
+     * @param name     The name of the Processing Group to assign matching Event Handlers to
      * @param priority The priority for this rule
      * @param criteria The criteria for Event Handler to match
      * @return this EventHandlingConfiguration instance for further configuration
@@ -540,7 +573,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
             config.eventProcessingConfiguration().registerHandlerInvoker(name, c ->
                     new SimpleEventHandlerInvoker(handlers,
                                                   c.parameterResolverFactory(),
-                                                  getListenerInvocationErrorHandler(c, name)));
+                                                  getListenerInvocationErrorHandler(c, name),
+                                                  getSequencingPolicy(c, name)));
             if (eventProcessorBuilders.containsKey(name)) {
                 eventProcessorBuilders.get(name).accept(config, handlers);
             }
@@ -662,13 +696,11 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures the default {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for any
-     * {@link org.axonframework.eventhandling.EventProcessor}. This can be overridden per EventProcessor by calling the
-     * {@link EventHandlingConfiguration#configureListenerInvocationErrorHandler(String, Function)} function.
+     * Configures the default {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for handlers
+     * in any processing group for which none is explicitly provided.
      *
      * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
-     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
-     *                                              with the given {@code name}
+     *                                              to use
      * @return this {@link EventHandlingConfiguration} instance for further configuration
      */
     public EventHandlingConfiguration configureListenerInvocationErrorHandler(
@@ -678,19 +710,57 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * Configures a {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for the
-     * {@link org.axonframework.eventhandling.EventProcessor} of the given {@code name}. This overrides the default
-     * ListenerInvocationErrorHandler configured through the {@link org.axonframework.config.Configurer}.
+     * Configures a {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler} for handlers assigned to the
+     * given {@code processingGroup}. This overrides the default ListenerInvocationErrorHandler configured through the
+     * {@link org.axonframework.config.Configurer}.
      *
-     * @param name                                  The name of the event processor
+     * @param processingGroup                       The name of the processing group
      * @param listenerInvocationErrorHandlerBuilder The {@link org.axonframework.eventhandling.ListenerInvocationErrorHandler}
-     *                                              to use for the {@link org.axonframework.eventhandling.EventProcessor}
-     *                                              with the given {@code name}
+     *                                              to use for handler assigned to this group
      * @return this {@link EventHandlingConfiguration} instance for further configuration
      */
-    public EventHandlingConfiguration configureListenerInvocationErrorHandler(String name,
+    public EventHandlingConfiguration configureListenerInvocationErrorHandler(String processingGroup,
                                                                               Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
-        listenerInvocationErrorHandlers.put(name, listenerInvocationErrorHandlerBuilder);
+        listenerInvocationErrorHandlers.put(processingGroup, listenerInvocationErrorHandlerBuilder);
+        return this;
+    }
+
+    /**
+     * Configures the default Sequencing Policy to use when invoking event handlers asynchronously. The
+     * {@link SequencingPolicy}, defines which Event Messages should be handled sequentially and which may be executed
+     * in parallel.
+     * <p>
+     * Note that the Sequencing Policy is generally ignored if both the Processor and the assigned EventHandlerInvoker
+     * are synchronous components (i.e. use the publishing thread to handle messages). This is the case when using a
+     * {@link SubscribingEventProcessor}, for example.
+     *
+     * @param sequencingPolicyBuilder A builder {@link Function} providing the default Sequencing Policy for this
+     *                                configuration
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureSequencingPolicy(
+            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicyBuilder) {
+        defaultSequencingPolicy.update(sequencingPolicyBuilder);
+        return this;
+    }
+
+    /**
+     * Configures the Sequencing Policy to use for handler assigned to the given {@code processingGroup}, when invoking
+     * these handlers asynchronously. The {@link SequencingPolicy}, defines which Event Messages should be handled \
+     * sequentially and which may be executed in parallel.
+     * <p>
+     * Note that the Sequencing Policy is generally ignored if both the Processor and the assigned EventHandlerInvoker
+     * are synchronous components (i.e. use the publishing thread to handle messages). This is the case when using a
+     * {@link SubscribingEventProcessor}, for example.
+     *
+     * @param processingGroup         The name of the processing group to configure this sequencing policy for
+     * @param sequencingPolicyBuilder A builder {@link Function} providing the Sequencing Policy for a given {@code
+     *                                processingGroup}
+     * @return this {@link EventHandlingConfiguration} instance for further configuration
+     */
+    public EventHandlingConfiguration configureSequencingPolicy(String processingGroup,
+                                                                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicyBuilder) {
+        sequencingPolicies.put(processingGroup, sequencingPolicyBuilder);
         return this;
     }
 
@@ -773,7 +843,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * Interface describing a Builder function for Event Processors.
      *
      * @see #createEventProcessor(Configuration, String, List)
-     *
      * @deprecated use {@link org.axonframework.config.EventProcessingConfiguration.EventProcessorBuilder} instead
      */
     @FunctionalInterface
