@@ -172,7 +172,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
 
-            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy = resolveSequencingPolicy(applicationContext, v);
+            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
+                    resolveSequencingPolicy(applicationContext, v);
             eventHandlingConfiguration.configureSequencingPolicy(k, sequencingPolicy);
 
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {

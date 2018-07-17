@@ -20,11 +20,16 @@ import org.axonframework.boot.autoconfig.AMQPAutoConfiguration;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -40,11 +45,13 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @SpringBootTest
 @TestPropertySource("classpath:test-processors.application.properties")
-@EnableAutoConfiguration(exclude = {AMQPAutoConfiguration.class, JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        AMQPAutoConfiguration.class, JmxAutoConfiguration.class, WebClientAutoConfiguration.class
+})
 @RunWith(SpringRunner.class)
 public class EventProcessorConfigurationTest {
 
@@ -59,15 +66,20 @@ public class EventProcessorConfigurationTest {
         Map<String, EventProcessor> processors = eventProcessingConfiguration.eventProcessors();
         assertEquals(2, processors.size());
         assertEquals(TrackingEventProcessor.class, processors.get("first").getClass());
-        MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(AbstractEventProcessor.class.getDeclaredMethod("eventHandlerInvoker")).invoke(processors.get("first"));
+        MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(
+                AbstractEventProcessor.class.getDeclaredMethod("eventHandlerInvoker")
+        ).invoke(processors.get("first"));
         SimpleEventHandlerInvoker simpleEventHandlerInvoker = (SimpleEventHandlerInvoker) invoker.delegates().get(0);
-        SequencingPolicy policy = ReflectionUtils.getFieldValue(SimpleEventHandlerInvoker.class.getDeclaredField("sequencingPolicy"), simpleEventHandlerInvoker);
+        SequencingPolicy policy = ReflectionUtils.getFieldValue(
+                SimpleEventHandlerInvoker.class.getDeclaredField("sequencingPolicy"), simpleEventHandlerInvoker
+        );
 
         assertEquals(expectedPolicy, policy);
     }
 
     @Configuration
     public static class Context {
+
         @Bean
         public CountDownLatch countDownLatch1() {
             return new CountDownLatch(3);
@@ -82,9 +94,9 @@ public class EventProcessorConfigurationTest {
         public SequencingPolicy<?> customPolicy() {
             return new FullConcurrencyPolicy();
         }
-
     }
 
+    @SuppressWarnings("unused")
     @Component
     @ProcessingGroup("first")
     public static class FirstHandler {
@@ -98,6 +110,7 @@ public class EventProcessorConfigurationTest {
         }
     }
 
+    @SuppressWarnings("unused")
     @Component
     @ProcessingGroup("second")
     public static class SecondHandler {
