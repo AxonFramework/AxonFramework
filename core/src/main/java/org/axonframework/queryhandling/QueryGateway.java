@@ -149,6 +149,7 @@ public interface QueryGateway {
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
      */
+    @Deprecated
     default <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(Q query, Class<I> initialResponseType,
                                                                       Class<U> updateResponseType) {
         return subscriptionQuery(query.getClass().getName(),
@@ -296,12 +297,21 @@ public interface QueryGateway {
      * @return registration which can be used to cancel receiving updates
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage)
      * @see QueryBus#subscriptionQuery(SubscriptionQueryMessage, SubscriptionQueryBackpressure, int)
+     * @see #createSubscriptionQuery()
      */
-    <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
+   default  <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
                                                               ResponseType<I> initialResponseType,
                                                               ResponseType<U> updateResponseType,
                                                               SubscriptionQueryBackpressure backpressure,
-                                                              int updateBufferSize);
+                                                              int updateBufferSize) {
+       return createSubscriptionQuery()
+           .queryName(queryName)
+           .query(query)
+           .initialResponseType(initialResponseType)
+           .updateResponseType(updateResponseType)
+           .backpressure(backpressure)
+           .bufferSize(updateBufferSize).subscribe();
+   }
 
 
     <Q, I, U >SubscriptionQueryBuilder<Q,I,U> createSubscriptionQuery();

@@ -1,6 +1,8 @@
 package org.axonframework.queryhandling;
 
-import java.util.Arrays;
+import static java.util.Objects.requireNonNull;
+
+import java.util.Optional;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
@@ -30,7 +32,6 @@ public class SubscriptionQueryBuilder<Q, I, U> {
     this.queryBus = queryBus;
     this.dispatchInterceptors = dispatchInterceptors;
   }
-
 
   private String queryName;
   private Q query;
@@ -112,34 +113,26 @@ public class SubscriptionQueryBuilder<Q, I, U> {
     return b;
   }
 
-//  @Override
-//  public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(String queryName, Q query,
-//      ResponseType<I> initialResponseType,
-//      ResponseType<U> updateResponseType,
-//      SubscriptionQueryBackpressure backpressure,
-//      int updateBufferSize) {
+  private void init() {
+    requireNonNull(query, "Query must not be null!");
+    requireNonNull(initialResponseType, "Initial responseType must not be null!");
+    requireNonNull(updateResponseType, "Update responseType must not be null!");
+    requireNonNull(query, "Query must not be null!");
 
-
-  @Override
-  public String toString() {
-    return "SubscriptionBuilder{" +
-        "queryBus=" + queryBus +
-        ", dispatchInterceptors=" + Arrays.toString(dispatchInterceptors) +
-        ", queryName='" + queryName + '\'' +
-        ", query=" + query +
-        ", initialResponseType=" + initialResponseType +
-        ", updateResponseType=" + updateResponseType +
-        ", backpressure=" + backpressure +
-        ", bufferSize=" + bufferSize +
-        '}';
+    this.queryName = Optional.ofNullable(queryName).orElse(query.getClass().getName());
   }
 
   public SubscriptionQueryResult<I, U> subscribe() {
-    SubscriptionQueryMessage<Q, I, U> subscriptionQueryMessage =
+    init();
+
+    final SubscriptionQueryMessage<Q, I, U> subscriptionQueryMessage =
         new GenericSubscriptionQueryMessage<Q,I,U>(query, queryName, initialResponseType, updateResponseType);
-    SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
+
+    final SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result = queryBus
         .subscriptionQuery(processInterceptors(subscriptionQueryMessage), backpressure, bufferSize);
-    return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
+
+    return new DefaultSubscriptionQueryResult<>(
+        result.initialResult().map(QueryResponseMessage::getPayload),
         result.updates().map(SubscriptionQueryUpdateMessage::getPayload),
         result);
   }
