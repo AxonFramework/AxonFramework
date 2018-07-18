@@ -16,21 +16,27 @@
 
 package org.axonframework.queryhandling;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink.OverflowStrategy;
 import reactor.core.publisher.Mono;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
 
