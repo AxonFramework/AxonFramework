@@ -153,6 +153,11 @@ public class CommandHandlerInterceptorTest {
         new EventSourcingRepository<>(MyAggregateWithInterceptorReturningNonVoid.class, eventStore);
     }
 
+    @Test
+    public void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
+        new EventSourcingRepository<>(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class, eventStore);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testInterceptorThrowingAnException() {
@@ -749,6 +754,15 @@ public class CommandHandlerInterceptorTest {
 
         @CommandHandlerInterceptor
         public Object intercept() {
+            return new Object();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid {
+
+        @CommandHandlerInterceptor
+        public Object intercept(InterceptorChain chain) {
             return new Object();
         }
     }
