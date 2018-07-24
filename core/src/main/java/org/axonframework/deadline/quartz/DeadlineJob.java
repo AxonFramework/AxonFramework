@@ -136,7 +136,7 @@ public class DeadlineJob implements Job {
         // Deadline Message JobDataMap keys
         private static final String DEADLINE_NAME = "deadlineName";
         private static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
-        private static final String DEADLINE_TIMESTAMP = "deadlineTimestamp";
+        private static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestamp";
         private static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
         private static final String DEADLINE_PAYLOAD_CLASS_NAME = "serializedDeadlinePayloadClassName";
         private static final String DEADLINE_PAYLOAD_REVISION = "serializedDeadlinePayloadRevision";
@@ -170,7 +170,7 @@ public class DeadlineJob implements Job {
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
             jobData.put(DEADLINE_IDENTIFIER, deadlineMessage.getIdentifier());
-            jobData.put(DEADLINE_TIMESTAMP, deadlineMessage.getTimestamp());
+            jobData.put(DEADLINE_TIMESTAMP_EPOCH_MILLIS, deadlineMessage.getTimestamp().toEpochMilli());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
                     serializer.serialize(deadlineMessage.getPayload(), byte[].class);
@@ -216,7 +216,7 @@ public class DeadlineJob implements Job {
                                                 (String) jobDataMap.get(DEADLINE_IDENTIFIER),
                                                 deserializeDeadlinePayload(serializer, jobDataMap),
                                                 deserializeDeadlineMetaData(serializer, jobDataMap),
-                                                (Instant) jobDataMap.get(DEADLINE_TIMESTAMP));
+                                                retrieveDeadlineTimestamp(jobDataMap));
         }
 
         private static Object deserializeDeadlinePayload(Serializer serializer, JobDataMap jobDataMap) {
@@ -234,6 +234,10 @@ public class DeadlineJob implements Job {
                     (byte[]) jobDataMap.get(SERIALIZED_DEADLINE_METADATA), byte[].class, MetaData.class.getName(), null
             );
             return serializer.deserialize(serializedDeadlineMetaData);
+        }
+
+        private static Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
+            return Instant.ofEpochMilli((long) jobDataMap.get(DEADLINE_TIMESTAMP_EPOCH_MILLIS));
         }
 
         /**
