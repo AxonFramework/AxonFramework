@@ -56,7 +56,7 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      */
     @SuppressWarnings("unchecked")
     public GenericMessage(T payload, Map<String, ?> metaData) {
-        this(payload != null ? (Class<T>) payload.getClass() : (Class<T>) Void.class, payload, metaData);
+        this((Class<T>) getDeclaredPayloadType(payload), payload, metaData);
     }
 
     /**
@@ -84,7 +84,18 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      */
     @SuppressWarnings("unchecked")
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
-        this(identifier, (Class<T>) payload.getClass(), payload, metaData);
+        this(identifier, (Class<T>) getDeclaredPayloadType(payload), payload, metaData);
+    }
+
+    /**
+     * Extract the {@link Class} of the provided {@code payload}. If {@code payload == null} this function returns
+     * {@link Void} as the payload type.
+     *
+     * @param payload the payload of this {@link Message}
+     * @return the declared type of the given {@code payload} or {@link Void} if {@code payload == null}
+     */
+    private static Class<?> getDeclaredPayloadType(Object payload) {
+        return payload != null ? payload.getClass() : Void.class;
     }
 
     /**
