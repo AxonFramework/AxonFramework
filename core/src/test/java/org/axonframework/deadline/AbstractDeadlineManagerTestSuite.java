@@ -118,8 +118,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.commandGateway().sendAndWait(new TriggerDeadlineInChildEntityCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
-                              new DeadlineOccurredInChildEvent(new ChildDeadlinePayload(
-                                      "entity" + IDENTIFIER)),
+                              new DeadlineOccurredInChildEvent(new EntityDeadlinePayload("entity" + IDENTIFIER)),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
     }
 
@@ -319,8 +318,18 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         private final String id;
 
+        // No-arg constructor used for Jackson Serialization
+        @SuppressWarnings("unused")
+        private DeadlinePayload() {
+            this("some-id");
+        }
+
         private DeadlinePayload(String id) {
             this.id = id;
+        }
+
+        public String getId() {
+            return id;
         }
 
         @Override
@@ -341,12 +350,22 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
     }
 
-    private static class ChildDeadlinePayload {
+    private static class EntityDeadlinePayload {
 
         private final String id;
 
-        private ChildDeadlinePayload(String id) {
+        // No-arg constructor used for Jackson Serialization
+        @SuppressWarnings("unused")
+        private EntityDeadlinePayload() {
+            this("some-id");
+        }
+
+        private EntityDeadlinePayload(String id) {
             this.id = id;
+        }
+
+        public String getId() {
+            return id;
         }
 
         @Override
@@ -357,7 +376,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            ChildDeadlinePayload that = (ChildDeadlinePayload) o;
+            EntityDeadlinePayload that = (EntityDeadlinePayload) o;
             return Objects.equals(id, that.id);
         }
 
@@ -395,9 +414,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     private static class DeadlineOccurredInChildEvent {
 
-        private final ChildDeadlinePayload deadlineInfo;
+        private final EntityDeadlinePayload deadlineInfo;
 
-        private DeadlineOccurredInChildEvent(ChildDeadlinePayload deadlineInfo) {
+        private DeadlineOccurredInChildEvent(EntityDeadlinePayload deadlineInfo) {
             this.deadlineInfo = deadlineInfo;
         }
 
@@ -555,7 +574,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
             deadlineManager.schedule(
                     Duration.ofMillis(CHILD_ENTITY_DEADLINE_TIMEOUT),
                     "deadlineName",
-                    new ChildDeadlinePayload("entity" + command.id)
+                    new EntityDeadlinePayload("entity" + command.id)
             );
         }
     }
@@ -570,7 +589,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
 
         @DeadlineHandler
-        public void on(ChildDeadlinePayload deadlineInfo, @Timestamp Instant timestamp) {
+        public void on(EntityDeadlinePayload deadlineInfo, @Timestamp Instant timestamp) {
             assertNotNull(timestamp);
             apply(new DeadlineOccurredInChildEvent(deadlineInfo));
         }
