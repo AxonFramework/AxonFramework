@@ -127,10 +127,10 @@ public class DeadlineJob implements Job {
      */
     public static class DeadlineJobDataBinder {
 
-        // Deprecated in favor of deadline payload and metadata keys | only maintained for backwards compatibility
+        // Deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
         @Deprecated
         private static final String SERIALIZED_DEADLINE_MESSAGE = "serializedDeadlineMessage";
-        // Deprecated in favor of deadline payload and metadata class name keys | only maintained for backwards compatibility
+        // Deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
         @Deprecated
         private static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
         // Deadline Message JobDataMap keys
