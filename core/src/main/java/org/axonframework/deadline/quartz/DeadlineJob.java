@@ -136,7 +136,7 @@ public class DeadlineJob implements Job {
         // Deadline Message JobDataMap keys
         private static final String DEADLINE_NAME = "deadlineName";
         private static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
-        private static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestamp";
+        private static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestampEpochMillis";
         private static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
         private static final String DEADLINE_PAYLOAD_CLASS_NAME = "serializedDeadlinePayloadClassName";
         private static final String DEADLINE_PAYLOAD_REVISION = "serializedDeadlinePayloadRevision";
