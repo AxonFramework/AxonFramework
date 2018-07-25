@@ -28,77 +28,87 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
-import org.mockito.*;
+import org.junit.runner.*;
+import org.junit.runners.*;
 import org.quartz.JobDataMap;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+@RunWith(Parameterized.class)
 public class DeadlineJobDataBinderTest {
 
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
 
-    private JavaSerializer javaSerializer;
-    private XStreamSerializer xStreamSerializer;
-    private JacksonSerializer jacksonSerializer;
+    @Parameterized.Parameters(name = "Using {0}")
+    public static Collection serializerImplementationAndAssertionSpecifics() {
+        return Arrays.asList(new Object[][]{
+                {
+                        "JavaSerializer",
+                        new JavaSerializer(),
+                        (Function<Class, String>) Class::getName,
+                        (Predicate<Object>) Objects::nonNull},
+                {
+                        "XStreamSerializer",
+                        new XStreamSerializer(),
+                        (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
+                        (Predicate<Object>) Objects::isNull
+                },
+                {
+                        "JacksonSerializer",
+                        new JacksonSerializer(),
+                        (Function<Class, String>) Class::getName,
+                        (Predicate<Object>) Objects::isNull
+                }
+        });
+    }
 
-    private DeadlineMessage<String> testDeadlineMessage;
-    private MetaData testMetaData;
-    private ScopeDescriptor testDeadlineScope;
+    private final Serializer serializer;
+    private final Function<Class, String> expectedSerializedClassType;
 
-    @Before
-    public void setUp() {
-        javaSerializer = spy(new JavaSerializer());
-        xStreamSerializer = spy(new XStreamSerializer());
-        jacksonSerializer = spy(new JacksonSerializer());
+    private final Predicate<Object> revisionMatcher;
+    private final DeadlineMessage<String> testDeadlineMessage;
+    private final MetaData testMetaData;
 
-        testDeadlineMessage = GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD);
+    private final ScopeDescriptor testDeadlineScope;
+
+    @SuppressWarnings("unused") // Test name used to give sensible name to parameterized test
+    public DeadlineJobDataBinderTest(String testName,
+                                     Serializer serializer,
+                                     Function<Class, String> expectedSerializedClassType,
+                                     Predicate<Object> revisionMatcher) {
+        this.serializer = spy(serializer);
+        this.expectedSerializedClassType = expectedSerializedClassType;
+        this.revisionMatcher = revisionMatcher;
+
+        DeadlineMessage<String> testDeadlineMessage =
+                GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD);
         testMetaData = MetaData.with("some-key", "some-value");
-        testDeadlineMessage = testDeadlineMessage.withMetaData(testMetaData);
+        this.testDeadlineMessage = testDeadlineMessage.withMetaData(testMetaData);
         testDeadlineScope = new AggregateScopeDescriptor("aggregate-type", "aggregate-identifier");
     }
 
     @Test
-    public void testToJobDataUsingJavaSerializer() {
+    public void testToJobData() {
         JobDataMap result =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(javaSerializer, testDeadlineMessage, testDeadlineScope);
+                DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
-        assertJobDataMap(result, javaSerializer);
-        assertEquals(testDeadlineMessage.getPayloadType().getName(), result.get(DEADLINE_PAYLOAD_CLASS_NAME));
-        assertNotNull(result.get(DEADLINE_PAYLOAD_REVISION));
-    }
-
-    @Test
-    public void testToJobDataUsingXStreamSerializer() {
-        JobDataMap result =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(xStreamSerializer, testDeadlineMessage, testDeadlineScope);
-
-        assertJobDataMap(result, xStreamSerializer);
-        assertEquals(
-                testDeadlineMessage.getPayloadType().getSimpleName().toLowerCase(),
-                result.get(DEADLINE_PAYLOAD_CLASS_NAME)
-        );
-        assertNull(result.get(DEADLINE_PAYLOAD_REVISION));
-    }
-
-    @Test
-    public void testToJobDataUsingJacksonSerializer() {
-        JobDataMap result =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(jacksonSerializer, testDeadlineMessage, testDeadlineScope);
-
-        assertJobDataMap(result, jacksonSerializer);
-        assertEquals(testDeadlineMessage.getPayloadType().getName(), result.get(DEADLINE_PAYLOAD_CLASS_NAME));
-        assertNull(result.get(DEADLINE_PAYLOAD_REVISION));
-    }
-
-    private void assertJobDataMap(JobDataMap result, Serializer serializer) {
         assertEquals(TEST_DEADLINE_NAME, result.get(DEADLINE_NAME));
         assertEquals(testDeadlineMessage.getIdentifier(), result.get(DEADLINE_IDENTIFIER));
         assertEquals(testDeadlineMessage.getTimestamp().toEpochMilli(), result.get(DEADLINE_TIMESTAMP_EPOCH_MILLIS));
+        String expectedPayloadType = expectedSerializedClassType.apply(testDeadlineMessage.getPayloadType());
+        assertEquals(expectedPayloadType, result.get(DEADLINE_PAYLOAD_CLASS_NAME));
+        Object resultRevision = result.get(DEADLINE_PAYLOAD_REVISION);
+        assertTrue(revisionMatcher.test(resultRevision));
+
         assertNotNull(result.get(SERIALIZED_DEADLINE_PAYLOAD));
         assertNotNull(result.get(SERIALIZED_DEADLINE_METADATA));
         assertNotNull(result.get(SERIALIZED_DEADLINE_SCOPE));
@@ -111,122 +121,46 @@ public class DeadlineJobDataBinderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testRetrievingDeadlineMessageUsingJavaSerializer() {
+    public void testRetrievingDeadlineMessage() {
         JobDataMap testJobDataMap =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(javaSerializer, testDeadlineMessage, testDeadlineScope);
+                DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
         DeadlineMessage<String> result =
-                DeadlineJob.DeadlineJobDataBinder.deadlineMessage(javaSerializer, testJobDataMap);
+                DeadlineJob.DeadlineJobDataBinder.deadlineMessage(serializer, testJobDataMap);
 
-        assertDeserializedDeadlineMessage(
-                testDeadlineMessage,
-                result,
-                javaSerializer,
-                TEST_DEADLINE_PAYLOAD.getClass().getName(),
-                type -> (type.getName().equals(MetaData.class.getName()) && type.getRevision() == null) ||
-                        type.getRevision() != null
-        );
+        assertEquals(testDeadlineMessage.getDeadlineName(), result.getDeadlineName());
+        assertEquals(testDeadlineMessage.getIdentifier(), result.getIdentifier());
+        assertEquals(testDeadlineMessage.getTimestamp(), result.getTimestamp());
+        assertEquals(testDeadlineMessage.getPayload(), result.getPayload());
+        assertEquals(testDeadlineMessage.getPayloadType(), result.getPayloadType());
+        assertEquals(testDeadlineMessage.getMetaData(), result.getMetaData());
+
+        verify(serializer, times(2))
+                .deserialize((SimpleSerializedObject<?>) argThat(this::assertDeadlineMessageSerializedObject));
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testRetrievingDeadlineMessageUsingXStreamSerializer() {
-        JobDataMap testJobDataMap =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(xStreamSerializer, testDeadlineMessage, testDeadlineScope);
+    private boolean assertDeadlineMessageSerializedObject(SimpleSerializedObject<?> serializedObject) {
+        String expectedSerializedPayloadType = expectedSerializedClassType.apply(TEST_DEADLINE_PAYLOAD.getClass());
 
-        DeadlineMessage<String> result =
-                DeadlineJob.DeadlineJobDataBinder.deadlineMessage(xStreamSerializer, testJobDataMap);
-
-        assertDeserializedDeadlineMessage(testDeadlineMessage,
-                                          result,
-                                          xStreamSerializer,
-                                          TEST_DEADLINE_PAYLOAD.getClass().getSimpleName().toLowerCase(),
-                                          type -> type.getRevision() == null);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testRetrievingDeadlineMessageUsingJacksonSerializer() {
-        JobDataMap testJobDataMap =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(jacksonSerializer, testDeadlineMessage, testDeadlineScope);
-
-        DeadlineMessage<String> result =
-                DeadlineJob.DeadlineJobDataBinder.deadlineMessage(jacksonSerializer, testJobDataMap);
-
-        assertDeserializedDeadlineMessage(testDeadlineMessage,
-                                          result,
-                                          jacksonSerializer,
-                                          TEST_DEADLINE_PAYLOAD.getClass().getName(),
-                                          type -> type.getRevision() == null);
-    }
-
-    private void assertDeserializedDeadlineMessage(DeadlineMessage<String> expected,
-                                                   DeadlineMessage<String> result,
-                                                   Serializer serializer,
-                                                   String expectedSerializedPayloadType,
-                                                   Predicate<SerializedType> revisionMatcher) {
-        assertEquals(expected.getDeadlineName(), result.getDeadlineName());
-        assertEquals(expected.getIdentifier(), result.getIdentifier());
-        assertEquals(expected.getTimestamp(), result.getTimestamp());
-        assertEquals(expected.getPayload(), result.getPayload());
-        assertEquals(expected.getPayloadType(), result.getPayloadType());
-        assertEquals(expected.getMetaData(), result.getMetaData());
-
-        verify(serializer, times(2)).deserialize(argThat(
-                (ArgumentMatcher<SimpleSerializedObject<?>>) serializedObject ->
-                        assertDeadlineMessageSerializedObject(serializedObject,
-                                                              expectedSerializedPayloadType,
-                                                              revisionMatcher)
-        ));
-    }
-
-    private boolean assertDeadlineMessageSerializedObject(SimpleSerializedObject<?> serializedObject,
-                                                          String expectedSerializedPayloadType,
-                                                          Predicate<SerializedType> revisionMatcher) {
         SerializedType type = serializedObject.getType();
         String serializedTypeName = type.getName();
+        boolean isSerializedMetaData = serializedTypeName.equals(MetaData.class.getName());
+
         return serializedObject.getData() != null &&
                 serializedObject.getContentType().equals(byte[].class) &&
-                (serializedTypeName.equals(expectedSerializedPayloadType) ||
-                        serializedTypeName.equals(MetaData.class.getName())) &&
-                revisionMatcher.test(type);
+                (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetaData) &&
+                (isSerializedMetaData || revisionMatcher.test(type.getRevision()));
     }
 
     @Test
-    public void testRetrievingDeadlineScopeUsingJavaSerializer() {
+    public void testRetrievingDeadlineScope() {
         JobDataMap testJobDataMap =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(javaSerializer, testDeadlineMessage, testDeadlineScope);
+                DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
-        ScopeDescriptor result = DeadlineJob.DeadlineJobDataBinder.deadlineScope(javaSerializer, testJobDataMap);
+        ScopeDescriptor result = DeadlineJob.DeadlineJobDataBinder.deadlineScope(serializer, testJobDataMap);
 
         assertEquals(testDeadlineScope, result);
-        verify(javaSerializer).deserialize(
-                (SimpleSerializedObject<?>) argThat(this::assertDeadlineScopeSerializedObject)
-        );
-    }
-
-    @Test
-    public void testRetrievingDeadlineScopeUsingXStreamSerializer() {
-        JobDataMap testJobDataMap =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(xStreamSerializer, testDeadlineMessage, testDeadlineScope);
-
-        ScopeDescriptor result = DeadlineJob.DeadlineJobDataBinder.deadlineScope(xStreamSerializer, testJobDataMap);
-
-        assertEquals(testDeadlineScope, result);
-        verify(xStreamSerializer).deserialize(
-                (SimpleSerializedObject<?>) argThat(this::assertDeadlineScopeSerializedObject)
-        );
-    }
-
-    @Test
-    public void testRetrievingDeadlineScopeUsingJacksonSerializer() {
-        JobDataMap testJobDataMap =
-                DeadlineJob.DeadlineJobDataBinder.toJobData(jacksonSerializer, testDeadlineMessage, testDeadlineScope);
-
-        ScopeDescriptor result = DeadlineJob.DeadlineJobDataBinder.deadlineScope(jacksonSerializer, testJobDataMap);
-
-        assertEquals(testDeadlineScope, result);
-        verify(jacksonSerializer).deserialize(
+        verify(serializer).deserialize(
                 (SimpleSerializedObject<?>) argThat(this::assertDeadlineScopeSerializedObject)
         );
     }
