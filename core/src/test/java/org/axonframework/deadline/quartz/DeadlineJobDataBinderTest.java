@@ -73,11 +73,10 @@ public class DeadlineJobDataBinderTest {
 
     private final Serializer serializer;
     private final Function<Class, String> expectedSerializedClassType;
-
     private final Predicate<Object> revisionMatcher;
+
     private final DeadlineMessage<String> testDeadlineMessage;
     private final MetaData testMetaData;
-
     private final ScopeDescriptor testDeadlineScope;
 
     @SuppressWarnings("unused") // Test name used to give sensible name to parameterized test
