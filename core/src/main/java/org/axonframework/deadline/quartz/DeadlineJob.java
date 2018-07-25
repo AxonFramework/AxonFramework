@@ -129,21 +129,21 @@ public class DeadlineJob implements Job {
 
         // Deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
         @Deprecated
-        private static final String SERIALIZED_DEADLINE_MESSAGE = "serializedDeadlineMessage";
+        static final String SERIALIZED_DEADLINE_MESSAGE = "serializedDeadlineMessage";
         // Deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
         @Deprecated
-        private static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
+        static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
         // Deadline Message JobDataMap keys
-        private static final String DEADLINE_NAME = "deadlineName";
-        private static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
-        private static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestampEpochMillis";
-        private static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
-        private static final String DEADLINE_PAYLOAD_CLASS_NAME = "serializedDeadlinePayloadClassName";
-        private static final String DEADLINE_PAYLOAD_REVISION = "serializedDeadlinePayloadRevision";
-        private static final String SERIALIZED_DEADLINE_METADATA = "serializedDeadlineMetadata";
+        static final String DEADLINE_NAME = "deadlineName";
+        static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
+        static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestampEpochMillis";
+        static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
+        static final String DEADLINE_PAYLOAD_CLASS_NAME = "deadlinePayloadClassName";
+        static final String DEADLINE_PAYLOAD_REVISION = "deadlinePayloadRevision";
+        static final String SERIALIZED_DEADLINE_METADATA = "serializedDeadlineMetadata";
         // Deadline Scope JobDataMap keys
-        private static final String SERIALIZED_DEADLINE_SCOPE = "serializedDeadlineScope";
-        private static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
+        static final String SERIALIZED_DEADLINE_SCOPE = "serializedDeadlineScope";
+        static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
 
         /**
          * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a {@link
