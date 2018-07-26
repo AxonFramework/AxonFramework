@@ -127,23 +127,56 @@ public class DeadlineJob implements Job {
      */
     public static class DeadlineJobDataBinder {
 
-        // Deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
+        /**
+         * Key pointing to the serialized {@link DeadlineMessage}.
+         *
+         * @deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
+         */
         @Deprecated
-        static final String SERIALIZED_DEADLINE_MESSAGE = "serializedDeadlineMessage";
-        // Deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
+        public static final String SERIALIZED_DEADLINE_MESSAGE = "serializedDeadlineMessage";
+        /**
+         * Key pointing to the class name of the serialized {@link DeadlineMessage}.
+         *
+         * @deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
+         */
         @Deprecated
-        static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
-        // Deadline Message JobDataMap keys
-        static final String DEADLINE_NAME = "deadlineName";
-        static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
-        static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestampEpochMillis";
-        static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
-        static final String DEADLINE_PAYLOAD_CLASS_NAME = "deadlinePayloadClassName";
-        static final String DEADLINE_PAYLOAD_REVISION = "deadlinePayloadRevision";
-        static final String SERIALIZED_DEADLINE_METADATA = "serializedDeadlineMetadata";
-        // Deadline Scope JobDataMap keys
-        static final String SERIALIZED_DEADLINE_SCOPE = "serializedDeadlineScope";
-        static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
+        public static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
+        /**
+         * Key pointing to the deadline name in the {@link JobDataMap}
+         */
+        public static final String DEADLINE_NAME = "deadlineName";
+        /**
+         * Key pointing to the {@link DeadlineMessage}'s identifier in the {@link JobDataMap}
+         */
+        public static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
+        /**
+         * Key pointing to the {@link DeadlineMessage} its timestamp in the {@link JobDataMap}
+         */
+        public static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestampEpochMillis";
+        /**
+         * Key pointing to the serialized payload of the {@link DeadlineMessage} in the {@link JobDataMap}
+         */
+        public static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
+        /**
+         * Key pointing to the payload type of the payload of the {@link DeadlineMessage} in the {@link JobDataMap}
+         */
+        public static final String DEADLINE_PAYLOAD_CLASS_NAME = "deadlinePayloadClassName";
+        /**
+         * Key pointing to the revision of the payload of the {@link DeadlineMessage} in the {@link JobDataMap}
+         */
+        public static final String DEADLINE_PAYLOAD_REVISION = "deadlinePayloadRevision";
+        /**
+         * Key pointing to the serialized {@link MetaData} of the {@link DeadlineMessage} in the {@link JobDataMap}
+         */
+        public static final String SERIALIZED_DEADLINE_METADATA = "serializedDeadlineMetadata";
+        /**
+         * Key pointing to the serialized deadline {@link ScopeDescriptor} in the {@link JobDataMap}
+         */
+        public static final String SERIALIZED_DEADLINE_SCOPE = "serializedDeadlineScope";
+        /**
+         * Key pointing to the class name of the deadline {@link ScopeDescriptor} in the {@link JobDataMap}
+         */
+        public static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
 
         /**
          * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a {@link
