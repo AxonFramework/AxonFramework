@@ -19,7 +19,6 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.JavaSerializer;
@@ -98,7 +97,7 @@ public class DeadlineJobDataBinderTest {
 
     @Test
     public void testToJobData() {
-        JobDataMap result = DeadlineJobDataBinder.toJobData(serializer, testDeadlineMessage, testDeadlineScope);
+        JobDataMap result = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
         assertEquals(TEST_DEADLINE_NAME, result.get(DEADLINE_NAME));
         assertEquals(testDeadlineMessage.getIdentifier(), result.get(DEADLINE_IDENTIFIER));
@@ -121,9 +120,9 @@ public class DeadlineJobDataBinderTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testRetrievingDeadlineMessage() {
-        JobDataMap testJobDataMap = DeadlineJobDataBinder.toJobData(serializer, testDeadlineMessage, testDeadlineScope);
+        JobDataMap testJobDataMap = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
-        DeadlineMessage<String> result = DeadlineJobDataBinder.deadlineMessage(serializer, testJobDataMap);
+        DeadlineMessage<String> result = deadlineMessage(serializer, testJobDataMap);
 
         assertEquals(testDeadlineMessage.getDeadlineName(), result.getDeadlineName());
         assertEquals(testDeadlineMessage.getIdentifier(), result.getIdentifier());
@@ -151,9 +150,9 @@ public class DeadlineJobDataBinderTest {
 
     @Test
     public void testRetrievingDeadlineScope() {
-        JobDataMap testJobDataMap = DeadlineJobDataBinder.toJobData(serializer, testDeadlineMessage, testDeadlineScope);
+        JobDataMap testJobDataMap = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
-        ScopeDescriptor result = DeadlineJobDataBinder.deadlineScope(serializer, testJobDataMap);
+        ScopeDescriptor result = deadlineScope(serializer, testJobDataMap);
 
         assertEquals(testDeadlineScope, result);
         verify(serializer).deserialize(
