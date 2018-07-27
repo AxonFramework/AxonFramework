@@ -141,7 +141,7 @@ public class KafkaPublisher<K, V> {
      * @param events   list of event messages to publish.
      * @param producer Kafka producer used for publishing.
      * @return Map containing futures for each event that was published to kafka. You can interact with a specific
-     * {@link Future} to check whether a given message was published successfully or not.
+     * {@link Future} to check whether a giSpringAxonAutoConfigurerTestven message was published successfully or not.
      */
     private Map<Future<RecordMetadata>, ? super EventMessage<?>> publishToKafka(List<? extends EventMessage<?>> events,
                                                                                 Producer<K, V> producer) {

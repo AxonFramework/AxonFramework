@@ -26,7 +26,11 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+
+import static org.axonframework.common.Assert.nonNull;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Polls {@link Consumer} and inserts records on {@link Buffer}.
@@ -41,22 +45,32 @@ class FetchEventsTask<K, V> implements Runnable {
     private final KafkaMessageConverter<K, V> converter;
     private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
     private final long timeout;
+    private final AtomicBoolean running = new AtomicBoolean(true);
+    private final java.util.function.Consumer<FetchEventsTask> closeHandler;
 
     private KafkaTrackingToken currentToken;
 
-    private FetchEventsTask(Builder<K, V> config) {
-        this.consumer = config.consumer;
-        this.currentToken = config.currentToken;
-        this.buffer = config.buffer;
-        this.converter = config.converter;
-        this.callback = config.callback;
-        this.timeout = config.timeout;
+    public FetchEventsTask(Consumer<K, V> consumer, KafkaTrackingToken token,
+                           Buffer<KafkaEventMessage> buffer,
+                           KafkaMessageConverter<K, V> converter,
+                           BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback,
+                           long timeout,
+                           java.util.function.Consumer<FetchEventsTask> closeHandler) {
+        Assert.isFalse(timeout < 0, () -> "Timeout may not be < 0");
+
+        this.consumer = nonNull(consumer, () -> "Consumer may not be null");
+        this.currentToken = nonNull(token, () -> "Token may not be null");
+        this.buffer = nonNull(buffer, () -> "Buffer may not be null");
+        this.converter = nonNull(converter, () -> "Converter may not be null");
+        this.callback = nonNull(callback, () -> "Callback may not be null");
+        this.timeout = timeout;
+        this.closeHandler = getOrDefault(closeHandler, x -> {});
     }
 
     @Override
     public void run() {
         try {
-            while (!Thread.currentThread().isInterrupted()) {
+            while (running.get()) {
                 ConsumerRecords<K, V> records = consumer.poll(timeout);
                 if (logger.isDebugEnabled()) {
                     logger.debug("Fetched {} records", records.count());
@@ -80,6 +94,7 @@ class FetchEventsTask<K, V> implements Runnable {
                         this.callback.apply(c.record, c.token);
                     }
                 } catch (InterruptedException e) {
+                    running.set(false);
                     if (logger.isDebugEnabled()) {
                         logger.debug("Event producer thread was interrupted. Shutting down.", e);
                     }
@@ -89,8 +104,14 @@ class FetchEventsTask<K, V> implements Runnable {
         } catch (Exception e) {
             logger.error("Cannot proceed with Fetching, encountered {} ", e);
         } finally {
+            running.set(false);
+            closeHandler.accept(this);
             consumer.close();
         }
+    }
+
+    public void close() {
+        this.running.set(false);
     }
 
     private static class CallbackEntry<K, V> {
@@ -104,54 +125,4 @@ class FetchEventsTask<K, V> implements Runnable {
         }
     }
 
-    public static <K, V> Builder<K, V> builder(Consumer<K, V> consumer, KafkaTrackingToken token,
-                                               Buffer<KafkaEventMessage> buffer,
-                                               KafkaMessageConverter<K, V> converter,
-                                               BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback,
-                                               long timeout) {
-        return new Builder<>(consumer, token, buffer, converter, callback, timeout);
-    }
-
-    public static class Builder<K, V> {
-
-        private final long timeout;
-        private final Consumer<K, V> consumer;
-        private final Buffer<KafkaEventMessage> buffer;
-        private final KafkaMessageConverter<K, V> converter;
-        private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
-        private final KafkaTrackingToken currentToken;
-
-        public Builder(Consumer<K, V> consumer, KafkaTrackingToken token,
-                       Buffer<KafkaEventMessage> buffer,
-                       KafkaMessageConverter<K, V> converter,
-                       BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback, long timeout) {
-            Assert.notNull(consumer, () -> "Consumer may not be null");
-            Assert.notNull(buffer, () -> "Buffer may not be null");
-            Assert.notNull(converter, () -> "Converter may not be null");
-            Assert.notNull(token, () -> "Token may not be null");
-            Assert.notNull(callback, () -> "Callback may not be null");
-            Assert.isFalse(timeout < 0, () -> "Timeout may not be < 0");
-            this.consumer = consumer;
-            this.currentToken = token;
-            this.buffer = buffer;
-            this.converter = converter;
-            this.callback = callback;
-            this.timeout = timeout;
-        }
-
-        @Override
-        public String toString() {
-            return "Config{" +
-                    "consumer=" + consumer +
-                    ", buffer=" + buffer +
-                    ", converter=" + converter +
-                    ", callback=" + callback +
-                    ", currentToken=" + currentToken +
-                    '}';
-        }
-
-        public FetchEventsTask<K, V> build() {
-            return new FetchEventsTask<>(this);
-        }
-    }
 }
