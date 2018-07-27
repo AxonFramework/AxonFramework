@@ -74,12 +74,10 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        delegates.stream().filter(i -> i.canHandle(message, segment)).forEach(i -> {
-            try {
+        for (EventHandlerInvoker i : delegates) {
+            if (i.canHandle(message, segment)) {
                 i.handle(message, segment);
-            } catch (Exception e) {
-                // do nothing, each handler invoker should invoke its own ListenerInvocationErrorHandler
             }
-        });
+        }
     }
 }
