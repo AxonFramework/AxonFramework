@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.*;
+import static org.axonframework.messaging.Headers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -100,15 +101,15 @@ public class DeadlineJobDataBinderTest {
         JobDataMap result = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
         assertEquals(TEST_DEADLINE_NAME, result.get(DEADLINE_NAME));
-        assertEquals(testDeadlineMessage.getIdentifier(), result.get(DEADLINE_IDENTIFIER));
-        assertEquals(testDeadlineMessage.getTimestamp().toEpochMilli(), result.get(DEADLINE_TIMESTAMP_EPOCH_MILLIS));
+        assertEquals(testDeadlineMessage.getIdentifier(), result.get(MESSAGE_ID));
+        assertEquals(testDeadlineMessage.getTimestamp().toEpochMilli(), result.get(MESSAGE_TIMESTAMP));
         String expectedPayloadType = expectedSerializedClassType.apply(testDeadlineMessage.getPayloadType());
-        assertEquals(expectedPayloadType, result.get(DEADLINE_PAYLOAD_CLASS_NAME));
-        Object resultRevision = result.get(DEADLINE_PAYLOAD_REVISION);
+        assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
+        Object resultRevision = result.get(MESSAGE_REVISION);
         assertTrue(revisionMatcher.test(resultRevision));
 
-        assertNotNull(result.get(SERIALIZED_DEADLINE_PAYLOAD));
-        assertNotNull(result.get(SERIALIZED_DEADLINE_METADATA));
+        assertNotNull(result.get(SERIALIZED_MESSAGE_PAYLOAD));
+        assertNotNull(result.get(MESSAGE_METADATA));
         assertNotNull(result.get(SERIALIZED_DEADLINE_SCOPE));
         assertEquals(testDeadlineScope.getClass().getName(), result.get(SERIALIZED_DEADLINE_SCOPE_CLASS_NAME));
 

@@ -42,6 +42,7 @@ import java.util.Map;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineScope;
+import static org.axonframework.messaging.Headers.*;
 
 /**
  * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and {@link
@@ -142,34 +143,6 @@ public class DeadlineJob implements Job {
         @Deprecated
         public static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
         /**
-         * Key pointing to the deadline name in the {@link JobDataMap}
-         */
-        public static final String DEADLINE_NAME = "deadlineName";
-        /**
-         * Key pointing to the {@link DeadlineMessage}'s identifier in the {@link JobDataMap}
-         */
-        public static final String DEADLINE_IDENTIFIER = "deadlineIdentifier";
-        /**
-         * Key pointing to the {@link DeadlineMessage} its timestamp in the {@link JobDataMap}
-         */
-        public static final String DEADLINE_TIMESTAMP_EPOCH_MILLIS = "deadlineTimestampEpochMillis";
-        /**
-         * Key pointing to the serialized payload of the {@link DeadlineMessage} in the {@link JobDataMap}
-         */
-        public static final String SERIALIZED_DEADLINE_PAYLOAD = "serializedDeadlinePayload";
-        /**
-         * Key pointing to the payload type of the payload of the {@link DeadlineMessage} in the {@link JobDataMap}
-         */
-        public static final String DEADLINE_PAYLOAD_CLASS_NAME = "deadlinePayloadClassName";
-        /**
-         * Key pointing to the revision of the payload of the {@link DeadlineMessage} in the {@link JobDataMap}
-         */
-        public static final String DEADLINE_PAYLOAD_REVISION = "deadlinePayloadRevision";
-        /**
-         * Key pointing to the serialized {@link MetaData} of the {@link DeadlineMessage} in the {@link JobDataMap}
-         */
-        public static final String SERIALIZED_DEADLINE_METADATA = "serializedDeadlineMetadata";
-        /**
          * Key pointing to the serialized deadline {@link ScopeDescriptor} in the {@link JobDataMap}
          */
         public static final String SERIALIZED_DEADLINE_SCOPE = "serializedDeadlineScope";
@@ -202,18 +175,18 @@ public class DeadlineJob implements Job {
                                                DeadlineMessage deadlineMessage,
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
-            jobData.put(DEADLINE_IDENTIFIER, deadlineMessage.getIdentifier());
-            jobData.put(DEADLINE_TIMESTAMP_EPOCH_MILLIS, deadlineMessage.getTimestamp().toEpochMilli());
+            jobData.put(MESSAGE_ID, deadlineMessage.getIdentifier());
+            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toEpochMilli());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
                     serializer.serialize(deadlineMessage.getPayload(), byte[].class);
-            jobData.put(SERIALIZED_DEADLINE_PAYLOAD, serializedDeadlinePayload.getData());
-            jobData.put(DEADLINE_PAYLOAD_CLASS_NAME, serializedDeadlinePayload.getType().getName());
-            jobData.put(DEADLINE_PAYLOAD_REVISION, serializedDeadlinePayload.getType().getRevision());
+            jobData.put(SERIALIZED_MESSAGE_PAYLOAD, serializedDeadlinePayload.getData());
+            jobData.put(MESSAGE_TYPE, serializedDeadlinePayload.getType().getName());
+            jobData.put(MESSAGE_REVISION, serializedDeadlinePayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedDeadlineMetaData =
                     serializer.serialize(deadlineMessage.getMetaData(), byte[].class);
-            jobData.put(SERIALIZED_DEADLINE_METADATA, serializedDeadlineMetaData.getData());
+            jobData.put(MESSAGE_METADATA, serializedDeadlineMetaData.getData());
         }
 
         private static void putDeadlineScope(JobDataMap jobData, ScopeDescriptor deadlineScope, Serializer serializer) {
@@ -246,7 +219,7 @@ public class DeadlineJob implements Job {
             }
 
             return new GenericDeadlineMessage<>((String) jobDataMap.get(DEADLINE_NAME),
-                                                (String) jobDataMap.get(DEADLINE_IDENTIFIER),
+                                                (String) jobDataMap.get(MESSAGE_ID),
                                                 deserializeDeadlinePayload(serializer, jobDataMap),
                                                 deserializeDeadlineMetaData(serializer, jobDataMap),
                                                 retrieveDeadlineTimestamp(jobDataMap));
@@ -254,23 +227,23 @@ public class DeadlineJob implements Job {
 
         private static Object deserializeDeadlinePayload(Serializer serializer, JobDataMap jobDataMap) {
             SimpleSerializedObject<byte[]> serializedDeadlinePayload = new SimpleSerializedObject<>(
-                    (byte[]) jobDataMap.get(SERIALIZED_DEADLINE_PAYLOAD),
+                    (byte[]) jobDataMap.get(SERIALIZED_MESSAGE_PAYLOAD),
                     byte[].class,
-                    (String) jobDataMap.get(DEADLINE_PAYLOAD_CLASS_NAME),
-                    (String) jobDataMap.get(DEADLINE_PAYLOAD_REVISION)
+                    (String) jobDataMap.get(MESSAGE_TYPE),
+                    (String) jobDataMap.get(MESSAGE_REVISION)
             );
             return serializer.deserialize(serializedDeadlinePayload);
         }
 
         private static Map<String, ?> deserializeDeadlineMetaData(Serializer serializer, JobDataMap jobDataMap) {
             SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                    (byte[]) jobDataMap.get(SERIALIZED_DEADLINE_METADATA), byte[].class, MetaData.class.getName(), null
+                    (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, MetaData.class.getName(), null
             );
             return serializer.deserialize(serializedDeadlineMetaData);
         }
 
         private static Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
-            return Instant.ofEpochMilli((long) jobDataMap.get(DEADLINE_TIMESTAMP_EPOCH_MILLIS));
+            return Instant.ofEpochMilli((long) jobDataMap.get(MESSAGE_TIMESTAMP));
         }
 
         /**
