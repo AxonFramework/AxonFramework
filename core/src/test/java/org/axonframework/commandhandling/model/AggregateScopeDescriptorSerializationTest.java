@@ -19,12 +19,15 @@ package org.axonframework.commandhandling.model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * This test class tests whether the {@link AggregateScopeDescriptor} is serializable as expected, by Java, XStream and
@@ -53,6 +56,7 @@ public class AggregateScopeDescriptorSerializationTest {
 
         ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
         AggregateScopeDescriptor result = (AggregateScopeDescriptor) objectInputStream.readObject();
+        objectInputStream.close();
 
         assertEquals(expectedType, result.getType());
         assertEquals(expectedIdentifier, result.getIdentifier());
@@ -65,7 +69,6 @@ public class AggregateScopeDescriptorSerializationTest {
 
         SerializedObject<String> serializedObject =
                 xStreamSerializer.serialize(testSubject, String.class);
-        System.out.println(serializedObject.getData());
         AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
 
         assertEquals(expectedType, result.getType());
