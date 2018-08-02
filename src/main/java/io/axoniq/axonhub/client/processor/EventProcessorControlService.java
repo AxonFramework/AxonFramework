@@ -18,9 +18,11 @@ package io.axoniq.axonhub.client.processor;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.platform.grpc.PauseEventProcessor;
 import io.axoniq.platform.grpc.PlatformOutboundInstruction;
+import io.axoniq.platform.grpc.ReleaseEventProcessorSegment;
 import io.axoniq.platform.grpc.StartEventProcessor;
 
 import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.PAUSE_EVENT_PROCESSOR;
+import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.RELEASE_SEGMENT;
 import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.START_EVENT_PROCESSOR;
 
 
@@ -44,6 +46,7 @@ public class EventProcessorControlService {
     public void start(){
         this.platformConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.platformConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
+        this.platformConnectionManager.onOutboundInstruction(RELEASE_SEGMENT, this::releaseSegment);
     }
 
     public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
@@ -58,8 +61,11 @@ public class EventProcessorControlService {
         eventProcessorController.startProcessor(processorName);
     }
 
-
-
-
+    public void releaseSegment(PlatformOutboundInstruction platformOutboundInstruction) {
+        ReleaseEventProcessorSegment releaseSegment = platformOutboundInstruction.getReleaseSegment();
+        String processorName = releaseSegment.getProcessorName();
+        int segmentIdentifier = releaseSegment.getSegmentIdentifier();
+        eventProcessorController.releaseSegment(processorName, segmentIdentifier);
+    }
 
 }
