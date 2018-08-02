@@ -4,6 +4,7 @@ import org.junit.*;
 
 import java.util.List;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -59,5 +60,49 @@ public class MultiEventHandlerInvokerTest {
         doThrow(new RuntimeException()).when(mockedEventHandlerInvokerTwo).handle(testEventMessage, testSegment);
 
         testSubject.handle(testEventMessage, testSegment);
+    }
+
+    @Test
+    public void testSupportResetWhenAllSupport() {
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(true);
+
+        assertTrue(testSubject.supportsReset());
+    }
+
+    @Test
+    public void testSupportResetWhenSomeSupport() {
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
+
+        assertTrue(testSubject.supportsReset());
+    }
+
+    @Test
+    public void testSupportResetWhenNoneSupport() {
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(false);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
+
+        assertFalse(testSubject.supportsReset());
+    }
+
+    @Test
+    public void testPerformReset() {
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
+
+        testSubject.performReset();
+
+        verify(mockedEventHandlerInvokerOne, times(1)).performReset();
+        verify(mockedEventHandlerInvokerTwo, times(0)).performReset();
+    }
+
+    @Test(expected = Exception.class)
+    public void testPerformResetThrowsException() {
+        when(mockedEventHandlerInvokerOne.supportsReset()).thenReturn(true);
+        when(mockedEventHandlerInvokerTwo.supportsReset()).thenReturn(false);
+        doThrow().when(mockedEventHandlerInvokerOne).performReset();
+
+        testSubject.performReset();
     }
 }
