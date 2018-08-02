@@ -84,8 +84,7 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     @Override
     public boolean supportsReset() {
         return delegates.stream()
-                        .map(EventHandlerInvoker::supportsReset)
-                        .reduce(false, Boolean::logicalOr);
+                        .anyMatch(EventHandlerInvoker::supportsReset);
     }
 
     @Override
