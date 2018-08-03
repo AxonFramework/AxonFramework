@@ -329,10 +329,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Indicates whether this tracking processor can constructs a new {@code Thread} to process
+     * Indicates whether this tracking processor can construct a new {@code Thread} to process
      * another segment of events.
      *
-     * @return {@code true} if tracking processor can constructs a new {@code Thread}, {@code false} otherwise
+     * @return {@code true} if this tracking processor can construct a new {@code Thread}, {@code false} otherwise
      */
     public boolean hasAvailableThreads() {
         return maxThreadCount > activeProcessorThreads();
@@ -340,7 +340,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     /**
      * Blacklist a segment identifier only if it is currently claimed by this instance.
-     * This causes the segment to be released and not longer to be claimed until it's removed from the black list.
+     * This causes the segment to be released and to no longer to be claimed until it's removed from the black list.
      *
      * @param segmentId the id of the segment to be blacklisted
      */
