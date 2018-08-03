@@ -58,7 +58,7 @@ public class EventProcessorController {
     public void releaseSegment(String processor, int segmentId){
         EventProcessor eventProcessor = getEventProcessor(processor);
         if (eventProcessor instanceof TrackingEventProcessor){
-            ((TrackingEventProcessor) eventProcessor).releaseSegment(segmentId);
+            ((TrackingEventProcessor) eventProcessor).blacklistSegment(segmentId);
         }
     }
 
