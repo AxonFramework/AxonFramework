@@ -80,4 +80,17 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
             }
         }
     }
+
+    @Override
+    public boolean supportsReset() {
+        return delegates.stream()
+                        .anyMatch(EventHandlerInvoker::supportsReset);
+    }
+
+    @Override
+    public void performReset() {
+        delegates.stream()
+                 .filter(EventHandlerInvoker::supportsReset)
+                 .forEach(EventHandlerInvoker::performReset);
+    }
 }
