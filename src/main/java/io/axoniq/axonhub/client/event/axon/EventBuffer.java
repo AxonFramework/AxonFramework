@@ -55,7 +55,8 @@ public class EventBuffer implements TrackingEventStream {
     private TrackedEventData<byte[]> peekData;
     private TrackedEventMessage<?> peekEvent;
     private Consumer<EventBuffer> closeCallback;
-    private RuntimeException exception;
+    private volatile RuntimeException exception;
+    private volatile boolean closed;
     private Consumer<Integer> consumeListener = i -> {
     };
 
@@ -127,14 +128,14 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) throws InterruptedException {
-        if (exception != null) {
-            RuntimeException runtimeException = exception;
-            this.exception = null;
-            throw runtimeException;
-        }
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
             while (peekEvent == null && !eventStream.hasNext() && System.currentTimeMillis() < deadline) {
+                if (exception != null) {
+                    RuntimeException runtimeException = exception;
+                    this.exception = null;
+                    throw runtimeException;
+                }
                 waitForData(deadline);
             }
             return peekEvent != null || eventStream.hasNext();
@@ -147,11 +148,6 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
-        if (exception != null) {
-            RuntimeException runtimeException = exception;
-            this.exception = null;
-            throw runtimeException;
-        }
         try {
             hasNextAvailable(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
             return peekEvent == null ? eventStream.next() : peekEvent;
@@ -166,17 +162,24 @@ public class EventBuffer implements TrackingEventStream {
 
     @Override
     public void close() {
+        closed = true;
         if (closeCallback != null) closeCallback.accept(this);
+        events.clear();
     }
 
-    public void push(EventWithToken event) {
+    public boolean push(EventWithToken event) {
+        if( closed) {
+            logger.debug("Received event while closed: {}", event.getToken());
+            return false;
+        }
         try {
             TrackingToken trackingToken = new GlobalSequenceTrackingToken(event.getToken());
             events.put(new TrackedDomainEventData<>(trackingToken, new GrpcBackedDomainEventData(event.getEvent())));
-        } catch (Exception e) {
-            logger.info(e.getMessage());
-            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            closeCallback.accept(this);
+            return false;
         }
+        return true;
     }
 
     public void fail(RuntimeException e) {

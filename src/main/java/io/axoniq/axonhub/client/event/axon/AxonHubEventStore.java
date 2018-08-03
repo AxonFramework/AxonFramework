@@ -33,7 +33,16 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventData;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.EventUtils;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackedEventData;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.SerializedObject;
@@ -45,10 +54,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -131,7 +140,7 @@ public class AxonHubEventStore extends AbstractEventStore {
                                          AxonHubConfiguration configuration,
                                          AxonDBClient eventStoreClient) {
             super(serializer, upcasterChain, null);
-            this.upcasterChain = upcasterChain;
+            this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);
             this.configuration = configuration;
             this.eventStoreClient = eventStoreClient;
             this.converter = new GrpcMetaDataConverter(serializer);
@@ -143,7 +152,7 @@ public class AxonHubEventStore extends AbstractEventStore {
                                          AxonHubConfiguration configuration,
                                          AxonDBClient eventStoreClient) {
             super(snapshotSerializer, upcasterChain, null, serializer, null);
-            this.upcasterChain = upcasterChain;
+            this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);
             this.configuration = configuration;
             this.eventStoreClient = eventStoreClient;
             this.converter = new GrpcMetaDataConverter(serializer);
@@ -279,24 +288,22 @@ public class AxonHubEventStore extends AbstractEventStore {
         @Override
         public DomainEventStream readEvents(String aggregateIdentifier) {
             Stream<? extends DomainEventData<?>> input = this.readEventData(aggregateIdentifier, ALLOW_SNAPSHOTS_MAGIC_VALUE);
-            List<? extends DomainEventData<?>> eventDataList = input.collect(Collectors.toList());
-            if( startsWithSnapshot(eventDataList)) {
-                DomainEventData<?> snapshot = eventDataList.remove(0);
-                DomainEventStream stream =
-                        EventUtils.upcastAndDeserializeDomainEvents(Stream.of(snapshot), new GrpcMetaDataAwareSerializer(getSerializer()), upcasterChain, false);
-
-                return DomainEventStream.concat(stream,
-                                                EventUtils.upcastAndDeserializeDomainEvents(eventDataList.stream(), new GrpcMetaDataAwareSerializer(getEventSerializer()), this.upcasterChain, false));
-            }
-
-            return EventUtils.upcastAndDeserializeDomainEvents(eventDataList.stream(), new GrpcMetaDataAwareSerializer(this.getEventSerializer()), this.upcasterChain, false);
+            return DomainEventStream.of(input.map(this::upcastAndDeserializeDomainEvent).filter(Objects::nonNull));
         }
 
-        private boolean startsWithSnapshot(List<? extends DomainEventData<?>> eventDataList) {
-            if( eventDataList.isEmpty()) return false;
+        private  DomainEventMessage<?> upcastAndDeserializeDomainEvent(DomainEventData<?> domainEventData) {
+            DomainEventStream upcastedStream = EventUtils.upcastAndDeserializeDomainEvents(Stream.of(domainEventData),
+                                                                                           new GrpcMetaDataAwareSerializer(
+                                                                                                   isSnapshot(
+                                                                                                           domainEventData) ? getSerializer() : getEventSerializer()),
+                                                                                           upcasterChain,
+                                                                                           false);
+            return upcastedStream.hasNext() ? upcastedStream.next() : null;
+        }
 
-            if( eventDataList.get(0) instanceof GrpcBackedDomainEventData) {
-                GrpcBackedDomainEventData grpcBackedDomainEventData = (GrpcBackedDomainEventData)eventDataList.get(0);
+        private boolean isSnapshot(DomainEventData<?> domainEventData) {
+            if( domainEventData instanceof GrpcBackedDomainEventData) {
+                GrpcBackedDomainEventData grpcBackedDomainEventData = (GrpcBackedDomainEventData)domainEventData;
                 return grpcBackedDomainEventData.isSnapshot();
             }
             return false;
