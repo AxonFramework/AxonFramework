@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -81,6 +82,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final ActivityCountingThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
+    private final Set<Integer> segmentsToRelease = new CopyOnWriteArraySet<>();
     private final int maxThreadCount;
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
@@ -203,7 +205,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         MessageStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
-            while (state.get().isRunning()) {
+            while (state.get().isRunning() && !segmentsToRelease.contains(segment.getSegmentId())) {
                 try {
                     eventStream = ensureEventStreamOpened(eventStream, segment);
                     processBatch(segment, eventStream);
@@ -212,7 +214,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (errorWaitTime == 1) {
                         logger.info("Token is owned by another node. Waiting for it to become available...");
                     }
-                    doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
+                    break;
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
@@ -283,7 +285,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             processInUnitOfWork(batch, unitOfWork, segment);
 
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
-
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
@@ -325,6 +326,36 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     @Deprecated
     public void pause() {
         this.state.updateAndGet(s -> s.isRunning() ? State.PAUSED : s);
+    }
+
+    /**
+     * Indicates whether this tracking processor can constructs a new {@code Thread} to process
+     * another segment of events.
+     *
+     * @return {@code true} if tracking processor can constructs a new {@code Thread}, {@code false} otherwise
+     */
+    public boolean hasAvailableThreads() {
+        return maxThreadCount > activeProcessorThreads();
+    }
+
+    /**
+     * Blacklist a segment identifier only if it is currently claimed by this instance.
+     * This causes the segment to be released and not longer to be claimed until it's removed from the black list.
+     *
+     * @param segmentId the id of the segment to be blacklisted
+     */
+    public void blacklistSegment(int segmentId) {
+        if (activeSegments.containsKey(segmentId)) {
+            segmentsToRelease.add(segmentId);
+        }
+    }
+
+    private void releaseSegment(int segmentId){
+        activeSegments.remove(segmentId);
+        if (segmentsToRelease.contains(segmentId)){
+            doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS * 2);
+            segmentsToRelease.remove(segmentId);
+        }
     }
 
     /**
@@ -560,10 +591,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         public int activeThreads() {
             return threadCount.get();
         }
-
     }
 
     private static class CountingRunnable implements Runnable {
+
         private final Runnable delegate;
         private final AtomicInteger counter;
 
@@ -654,7 +685,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
                 state.set(State.PAUSED_ERROR);
             } finally {
-                activeSegments.remove(segment.getSegmentId());
+                releaseSegment(segment.getSegmentId());
+                if (activeSegments.size() == maxThreadCount - 1) {
+                    new WorkerLauncher().run();
+                }
             }
         }
 
@@ -688,7 +722,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                     return tokenStore.fetchSegments(processorName);
                                 });
                     }
-
                 } catch (Exception e) {
                     logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
                                 processorName, e.getMessage(), waitTime);
@@ -707,7 +740,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         && activeSegments.size() < maxThreadCount; i++) {
                     Segment segment = segments[i];
 
-                    if (!activeSegments.containsKey(segment.getSegmentId())) {
+                    if (!activeSegments.containsKey(segment.getSegmentId()) &&
+                            !segmentsToRelease.contains(segment.getSegmentId())) {
                         try {
                             transactionManager.executeInTransaction(() -> {
                                 TrackingToken token = tokenStore.fetchToken(processorName, segment.getSegmentId());
@@ -716,10 +750,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         } catch (UnableToClaimTokenException ucte) {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
-                            activeSegments.remove(segment.getSegmentId());
+                            releaseSegment(segment.getSegmentId());
                             continue;
                         } catch (Exception e) {
-                            activeSegments.remove(segment.getSegmentId());
+                            releaseSegment(segment.getSegmentId());
                             if (AxonNonTransientException.isCauseOf(e)) {
                                 logger.error("An unrecoverable error has occurred wile attempting to claim a token for segment: {}. Shutting down processor [{}].", segment.getSegmentId(), getName(), e);
                                 state.set(State.PAUSED_ERROR);
@@ -744,7 +778,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 if (nonNull(workingInCurrentThread)) {
                     logger.info("Using current Thread for last segment segment worker: {}", workingInCurrentThread);
                     workingInCurrentThread.run();
-                    break;
+                    return;
                 }
                 doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
             }

@@ -656,6 +656,17 @@ public class TrackingEventProcessorTest {
 
     }
 
+    @Test
+    public void testReleaseSegment() throws InterruptedException {
+        testSubject.start();
+        Thread.sleep(200);
+        assertEquals(1, testSubject.activeProcessorThreads());
+        testSubject.blacklistSegment(0);
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+        assertEquals(Collections.singletonList(10000L), sleepInstructions);
+    }
+
     private static class StubTrackingEventStream implements TrackingEventStream {
         private final Queue<TrackedEventMessage<?>> eventMessages;
 
