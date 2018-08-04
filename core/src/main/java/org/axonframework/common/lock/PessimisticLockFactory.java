@@ -109,7 +109,7 @@ public class PessimisticLockFactory implements LockFactory {
 
         private final String identifier;
         private final PubliclyOwnedReentrantLock lock;
-        private boolean isClosed = false;
+        private volatile boolean isClosed = false;
 
         private DisposableLock(String identifier) {
             this.identifier = identifier;
