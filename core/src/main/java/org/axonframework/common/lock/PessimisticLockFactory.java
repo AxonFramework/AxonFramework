@@ -216,10 +216,8 @@ public class PessimisticLockFactory implements LockFactory {
                     do {
                         attempts--;
                         checkForDeadlock();
-                        if(backoffParameters.hasAcquireAttemptLimit()) {
-                            if(attempts < 1) {
-                                throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier);
-                            }
+                        if(backoffParameters.hasAcquireAttemptLimit() && attempts < 1) {
+                            throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier);
                         }
                     } while (!lock.tryLock(backoffParameters.spinTime, TimeUnit.MILLISECONDS));
                 }
