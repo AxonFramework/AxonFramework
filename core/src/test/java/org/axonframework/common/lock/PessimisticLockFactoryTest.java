@@ -16,12 +16,14 @@
 
 package org.axonframework.common.lock;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -142,5 +144,67 @@ public class PessimisticLockFactoryTest {
                 lock1.release();
             }
         });
+    }
+
+    @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
+    public void testAquireBackoff() throws InterruptedException {
+        PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
+                10,
+                -1,
+                0
+        );
+        final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
+        final CountDownLatch randevous = new CountDownLatch(1);
+        final CountDownLatch lockObtained = new CountDownLatch(1);
+        final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
+        final String id = "aggregateId";
+        new Thread(() -> {
+            try {
+                lockFactory.obtainLock(id);
+                lockObtained.countDown();
+                randevous.await();
+            } catch (Exception e) {
+                exceptionInThread.set(e);
+            }
+        }).start();
+        lockObtained.await();
+        try {
+            lockFactory.obtainLock(id);
+        } finally {
+            randevous.countDown();
+        }
+    }
+
+    @Ignore("Sleep is required to get the 2nd thread in the wait of the 2nd tryLock, ignoring since this is unreliable")
+    @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
+    public void testQueueBackoff() throws InterruptedException {
+        PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
+                -1,
+                1,
+                10000
+        );
+        final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
+        final CountDownLatch randevous = new CountDownLatch(1);
+        final CountDownLatch threadStarted = new CountDownLatch(2);
+        final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
+        final String id = "aggregateId";
+        createThread(lockFactory, randevous, threadStarted, exceptionInThread, id);
+        createThread(lockFactory, randevous, threadStarted, exceptionInThread, id);
+        threadStarted.await();
+        Thread.sleep(100);
+        lockFactory.obtainLock(id);
+        randevous.countDown();
+    }
+
+    private void createThread(PessimisticLockFactory lockFactory, CountDownLatch randevous, CountDownLatch threadStarted, AtomicReference<Exception> exceptionInThread, String id) {
+        new Thread(() -> {
+            try {
+                threadStarted.countDown();
+                lockFactory.obtainLock(id);
+                randevous.await();
+            } catch (Exception e) {
+                exceptionInThread.set(e);
+            }
+        }).start();
     }
 }
