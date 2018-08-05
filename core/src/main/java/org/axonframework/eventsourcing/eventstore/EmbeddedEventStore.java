@@ -390,8 +390,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
             } else {
                 consumerLock.lock();
                 try {
-                    consumableEventsCondition.await(timeout, timeUnit);
-                    if (privateIterator.hasNext()) {
+                    if (consumableEventsCondition.await(timeout, timeUnit) && privateIterator.hasNext()) {
                         TrackedEventMessage<?> nextEvent = privateIterator.next();
                         lastToken = nextEvent.trackingToken();
                         return nextEvent;
