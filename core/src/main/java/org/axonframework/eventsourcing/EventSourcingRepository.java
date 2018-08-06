@@ -246,7 +246,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * {@code snapshotTriggerDefinition}
      *
      * @param aggregateModel            The meta model describing the aggregate's structure
-     * @param lockFactory               The lock
+     * @param lockFactory               The locking strategy to apply to this repository
      * @param aggregateFactory          The factory for new aggregate instances
      * @param eventStore                The event store that holds the event streams for this repository
      * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
