@@ -205,7 +205,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         if (v.getSequencingPolicy() != null) {
             sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
         } else {
-            sequencingPolicy = c -> new SequentialPerAggregatePolicy();
+            sequencingPolicy = c -> SequentialPerAggregatePolicy.instance();
         }
         return sequencingPolicy;
     }

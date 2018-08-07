@@ -40,7 +40,7 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessa
 
     @Override
     public Object getSequenceIdentifierFor(EventMessage event) {
-        if (DomainEventMessage.class.isInstance(event)) {
+        if (event instanceof DomainEventMessage) {
             return ((DomainEventMessage) event).getAggregateIdentifier();
         }
         return null;
