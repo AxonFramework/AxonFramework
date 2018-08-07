@@ -191,8 +191,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
 
     /**
      * Registers a TrackingEventProcessor with the given {@code name}, reading from the Event Bus (or Store) from the
-     * main configuration and using the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines
-     * the policy for events that need to be executed sequentially.
+     * main configuration and using the given {@code processorConfiguration}.
      *
      * @param name                   The name of the Tracking Processor
      * @param processorConfiguration The configuration for the processor
@@ -205,8 +204,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
 
     /**
      * Registers a TrackingEventProcessor with the given {@code name}, reading from the given {@code source} and using
-     * the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines the policy for events that
-     * need to be executed sequentially.
+     * the given {@code processorConfiguration}.
      *
      * @param name                   The name of the Tracking Processor
      * @param source                 The source to read Events from
@@ -462,6 +460,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the event processor
      * @return optional whether event processor with given name exists
+     * @param <T> The type of processor expected
      */
     @SuppressWarnings("unchecked")
     public <T extends EventProcessor> Optional<T> eventProcessor(String name) {
