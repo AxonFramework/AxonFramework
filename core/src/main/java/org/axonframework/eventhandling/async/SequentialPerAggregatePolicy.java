@@ -28,6 +28,16 @@ import org.axonframework.eventsourcing.DomainEventMessage;
  */
 public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessage> {
 
+    private static final SequentialPerAggregatePolicy INSTANCE = new SequentialPerAggregatePolicy();
+
+    /**
+     * Return a singleton instance of the this Sequencing Policy.
+     * @return a singleton SequentialPerAggregatePolicy instance
+     */
+    public static SequentialPerAggregatePolicy instance() {
+        return INSTANCE;
+    }
+
     @Override
     public Object getSequenceIdentifierFor(EventMessage event) {
         if (DomainEventMessage.class.isInstance(event)) {

@@ -33,11 +33,7 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
@@ -54,6 +50,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     private final List<Component<Object>> eventHandlers = new ArrayList<>();
     private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    private final Map<String, Function<Configuration, SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
@@ -89,6 +86,10 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                           .orElseGet(() -> fallback.apply(o)));
             });
     private Configuration config;
+    private final Component<SequencingPolicy<? super EventMessage<?>>> defaultSequencingPolicy = new Component<>(
+            () -> config,
+            "sequencingPolicy",
+            c -> SequentialPerAggregatePolicy.instance());
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> config,
             "listenerInvocationErrorHandler",
@@ -121,7 +122,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param configuration The main configuration
      * @param processorName The name of the processor to retrieve interceptors for
      * @return a list of Interceptors
-     *
      * @see EventHandlingConfiguration#registerHandlerInterceptor(BiFunction)
      * @see EventHandlingConfiguration#registerHandlerInterceptor(String, Function)
      * @deprecated use {@link EventProcessingConfiguration#interceptorsFor(String)} instead
@@ -156,14 +156,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * size of 1).
      *
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#usingTrackingProcessors()} instead
      */
     @Deprecated
     public EventHandlingConfiguration usingTrackingProcessors() {
         return usingTrackingProcessors(c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                                            TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
-                                       c -> new SequentialPerAggregatePolicy());
+                                       c -> SequentialPerAggregatePolicy.instance());
     }
 
     /**
@@ -177,7 +176,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param config           The configuration for the processors to use
      * @param sequencingPolicy The policy for processing events sequentially
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#usingTrackingProcessors(Function)} instead
      */
     @Deprecated
@@ -199,7 +197,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the processor
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessor(String)} instead
      */
     @SuppressWarnings("UnusedReturnValue")
@@ -214,7 +211,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name   The name of the TrackingProcessor
      * @param source The source of messages for this processor
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessorUsingSource(String, Function)} instead
      */
     @SuppressWarnings("unchecked")
@@ -226,7 +222,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                 source,
                 c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                     TrackingEventProcessorConfiguration::forSingleThreadedProcessing),
-                c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new)
+                c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::instance)
         );
     }
 
@@ -239,7 +235,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param processorConfiguration The configuration for the processor
      * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessor(String, Function)} instead
      */
     @Deprecated
@@ -259,7 +254,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param processorConfiguration The configuration for the processor
      * @param sequencingPolicy       The sequencing policy to apply when processing events in parallel
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerTrackingEventProcessor(String, Function, Function)} instead
      */
     @Deprecated
@@ -336,7 +330,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param eventProcessorBuilder The builder function for the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerEventProcessorFactory(EventProcessingConfiguration.EventProcessorBuilder)}
      * instead
      */
@@ -390,7 +383,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name                  The name of the Event Processor for which to use this builder
      * @param eventProcessorBuilder The builder function for the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerEventProcessor(String,
      * EventProcessingConfiguration.EventProcessorBuilder)} instead
      */
@@ -415,7 +407,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param processorName      The name of the processor to register the interceptor on
      * @param interceptorBuilder The function providing the interceptor to register, or {@code null}
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(String, Function)} instead
      */
     @Deprecated
@@ -439,7 +430,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param interceptorBuilder The builder function that provides an interceptor for each available processor
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(String, Function)} instead
      */
     @Deprecated
@@ -508,6 +498,33 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * Registers the sequencing policy created by given {@code policyBuilder} to the processing group with given
+     * {@code name}. Any previously configured policy for the same name will be overwritten.
+     *
+     * @param name          The name of the processing group to assign the sequencing policy for
+     * @param policyBuilder The builder function to create the policy to use
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerSequencingPolicy(String name, Function<Configuration, SequencingPolicy<? super EventMessage<?>>> policyBuilder) {
+        this.sequencingPolicies.put(name, policyBuilder);
+        return this;
+    }
+
+    /**
+     * Registers the sequencing policy created by given {@code policyBuilder} to the processing groups for which no
+     * explicit policy is defined (using {@link #registerSequencingPolicy(String, Function)}).
+     * <p>
+     * Defaults to a {@link SequentialPerAggregatePolicy}.
+     *
+     * @param policyBuilder The builder function to create the policy to use
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerDefaultSequencingPolicy(Function<Configuration, SequencingPolicy<? super EventMessage<?>>> policyBuilder) {
+        this.defaultSequencingPolicy.update(policyBuilder);
+        return this;
+    }
+
+    /**
      * Register an Event Handler Bean with this configuration. The builder function receives the global Configuration
      * and is expected to return a fully initialized Event Handler bean, which is to be assigned to an Event Processor
      * using configured rules.
@@ -540,13 +557,21 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
             config.eventProcessingConfiguration().registerHandlerInvoker(name, c ->
                     new SimpleEventHandlerInvoker(handlers,
                                                   c.parameterResolverFactory(),
-                                                  getListenerInvocationErrorHandler(c, name)));
+                                                  getListenerInvocationErrorHandler(c, name),
+                                                  getSequencingPolicy(name, config)));
             if (eventProcessorBuilders.containsKey(name)) {
                 eventProcessorBuilders.get(name).accept(config, handlers);
             }
             interceptorsFor(config, name).forEach(i -> config.eventProcessingConfiguration()
                                                              .registerHandlerInterceptor(name, c -> i));
         });
+    }
+
+    private SequencingPolicy<? super EventMessage<?>> getSequencingPolicy(String name, Configuration configuration) {
+        if (sequencingPolicies.containsKey(name)) {
+            return sequencingPolicies.get(name).apply(configuration);
+        }
+        return defaultSequencingPolicy.get();
     }
 
     @Override
@@ -564,7 +589,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the Event Processor
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerSubscribingEventProcessor(String)} instead
      */
     @SuppressWarnings("UnusedReturnValue")
@@ -580,7 +604,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name          The name of the Event Processor
      * @param messageSource The source the processor should read from
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerSubscribingEventProcessor(String, Function)} instead
      */
     @SuppressWarnings("UnusedReturnValue")
@@ -603,7 +626,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name       The name of the processor to configure the token store for
      * @param tokenStore The function providing the TokenStore based on a given Configuration
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#registerTokenStore(String, Function)} instead
      */
     @Deprecated
@@ -618,7 +640,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * configuration hasn't been {@link #initialize(Configuration) initialized} yet.
      *
      * @return a read-only list of processors initialized in this configuration.
-     *
      * @deprecated use {@link EventProcessingConfiguration#eventProcessors()} instead
      */
     @Deprecated
@@ -633,7 +654,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param name The name of the processor to return
      * @return an Optional referencing the processor, if present.
-     *
      * @deprecated use {@link EventProcessingConfiguration#eventProcessor(String)} instead
      */
     @Deprecated
@@ -652,7 +672,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param expectedType The type of processor expected
      * @param <T>          The type of processor expected
      * @return an Optional referencing the processor, if present and of expected type.
-     *
      * @deprecated use {@link EventProcessingConfiguration#eventProcessor(String, Class)} instead
      */
     @Deprecated
@@ -701,7 +720,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name                  The name of the event processor
      * @param messageMonitorBuilder The builder function to use
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} instead
      */
     @Deprecated
@@ -720,7 +738,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param name                  The name of the event processor
      * @param messageMonitorFactory The factory to use
      * @return this EventHandlingConfiguration instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#configureMessageMonitor(String, MessageMonitorFactory)} instead
      */
     @Deprecated
@@ -739,7 +756,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
      *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
      * @return this {@link EventHandlingConfiguration} instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#configureErrorHandler(Function)} instead
      */
     @Deprecated
@@ -758,7 +774,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @param errorHandlerBuilder The {@link org.axonframework.eventhandling.ErrorHandler} to use for the
      *                            {@link org.axonframework.eventhandling.EventProcessor} with the given {@code name}
      * @return this {@link EventHandlingConfiguration} instance for further configuration
-     *
      * @deprecated use {@link EventProcessingConfiguration#configureErrorHandler(String, Function)} instead
      */
     @Deprecated
@@ -773,7 +788,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * Interface describing a Builder function for Event Processors.
      *
      * @see #createEventProcessor(Configuration, String, List)
-     *
      * @deprecated use {@link org.axonframework.config.EventProcessingConfiguration.EventProcessorBuilder} instead
      */
     @FunctionalInterface
