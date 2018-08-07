@@ -350,14 +350,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     private boolean canClaimSegment(int segmentId) {
-        if (segmentReleaseDeadlines.containsKey(segmentId)) {
-            Long deadline = segmentReleaseDeadlines.get(segmentId);
-            if (deadline > System.currentTimeMillis()) {
-                return false;
-            }
-            segmentReleaseDeadlines.remove(segmentId, deadline);
-        }
-        return true;
+        return !segmentReleaseDeadlines.containsKey(segmentId) ||
+                segmentReleaseDeadlines.get(segmentId) < System.currentTimeMillis();
     }
 
     /**
