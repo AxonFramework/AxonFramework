@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.saga.repository.inmemory;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Map;
 import java.util.Set;
@@ -59,12 +58,12 @@ public class InMemorySagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, Set<AssociationValue> associationValues) {
         managedSagas.put(sagaIdentifier, new ManagedSaga(saga, associationValues));
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, AssociationValues associationValues) {
         managedSagas.put(sagaIdentifier, new ManagedSaga(saga, associationValues.asSet()));
     }
 
@@ -86,11 +85,6 @@ public class InMemorySagaStore implements SagaStore<Object> {
 
             this.saga = saga;
             this.associationValues = associationValues;
-        }
-
-        @Override
-        public TrackingToken trackingToken() {
-            return null;
         }
 
         @Override

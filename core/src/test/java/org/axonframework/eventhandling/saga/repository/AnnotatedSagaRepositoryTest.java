@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,8 @@ public class AnnotatedSagaRepositoryTest {
         assertSame(saga, saga2);
         currentUnitOfWork.commit();
         verify(store, never()).loadSaga(any(), any());
-        verify(store, never()).updateSaga(any(), any(), any(), any(), any());
-        verify(store).insertSaga(eq(Object.class), any(), any(), any(), any());
+        verify(store, never()).updateSaga(any(), any(), any(), any());
+        verify(store).insertSaga(eq(Object.class), any(), any(), any());
     }
 
     @Test
@@ -85,8 +85,8 @@ public class AnnotatedSagaRepositoryTest {
         assertSame(saga, saga2);
         currentUnitOfWork.commit();
         verify(store, never()).loadSaga(any(), any());
-        verify(store, never()).updateSaga(any(), any(), any(), any(), any());
-        verify(store).insertSaga(eq(Object.class), any(), any(), any(), anySet());
+        verify(store, never()).updateSaga(any(), any(), any(), any());
+        verify(store).insertSaga(eq(Object.class), any(), any(), anySet());
     }
 
     @Test
@@ -104,8 +104,8 @@ public class AnnotatedSagaRepositoryTest {
         Set<AssociationValue> associationValues = new HashSet<>();
         associationValues.add(new AssociationValue("test", "value"));
         associationValues.add(new AssociationValue("second", "value"));
-        inOrder.verify(store).insertSaga(eq(Object.class), any(), any(), any(), eq(associationValues));
-        inOrder.verify(store).updateSaga(eq(Object.class), any(), any(), any(), any());
+        inOrder.verify(store).insertSaga(eq(Object.class), any(), any(), eq(associationValues));
+        inOrder.verify(store).updateSaga(eq(Object.class), any(), any(), any());
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -124,12 +124,12 @@ public class AnnotatedSagaRepositoryTest {
 
         assertSame(saga, saga2);
         verify(store).loadSaga(eq(Object.class), any());
-        verify(store, never()).updateSaga(eq(Object.class), any(), any(), any(), any());
+        verify(store, never()).updateSaga(eq(Object.class), any(), any(), any());
 
         currentUnitOfWork.commit();
 
-        verify(store).updateSaga(eq(Object.class), any(), any(), any(), any());
-        verify(store, never()).insertSaga(eq(Object.class), any(), any(), any(), any());
+        verify(store).updateSaga(eq(Object.class), any(), any(), any());
+        verify(store, never()).insertSaga(eq(Object.class), any(), any(), any());
     }
 
     @Test

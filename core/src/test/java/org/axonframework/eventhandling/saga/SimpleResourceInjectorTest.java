@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.junit.Test;
 
 import javax.inject.Inject;
@@ -120,11 +119,6 @@ public class SimpleResourceInjectorTest {
         @Override
         public boolean isActive() {
             return true;
-        }
-
-        @Override
-        public TrackingToken trackingToken() {
-            return null;
         }
 
         public SomeFieldResource getSomeFieldResource() {

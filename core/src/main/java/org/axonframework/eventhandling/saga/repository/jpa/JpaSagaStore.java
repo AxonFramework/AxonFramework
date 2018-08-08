@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,21 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 
 /**
  * JPA implementation of the Saga Store. It uses an {@link javax.persistence.EntityManager} to persist the actual saga
@@ -246,8 +245,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token,
-                           AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, AssociationValues associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         AbstractSagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
 
@@ -274,7 +272,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     private String serializedSagaAsString(AbstractSagaEntry<?> entry) {
-        if (SagaEntry.class.isInstance(entry)) {
+        if (entry instanceof SagaEntry) {
             return new String((byte[]) entry.getSerializedSaga(), Charset.forName("UTF-8"));
         } else {
             return "[Custom serialization format (not visible)]";
@@ -282,7 +280,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token,
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga,
                            Set<AssociationValue> associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         AbstractSagaEntry<?> entry = createSagaEntry(saga, sagaIdentifier, serializer);
@@ -346,11 +344,6 @@ public class JpaSagaStore implements SagaStore<Object> {
         public EntryImpl(Set<AssociationValue> associationValues, S loadedSaga) {
             this.associationValues = associationValues;
             this.loadedSaga = loadedSaga;
-        }
-
-        @Override
-        public TrackingToken trackingToken() {
-            return null;
         }
 
         @Override

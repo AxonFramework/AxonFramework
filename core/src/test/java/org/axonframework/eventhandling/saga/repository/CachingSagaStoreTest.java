@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class CachingSagaStoreTest {
     @Test
     public void testSagaAddedToCacheOnAdd() {
 
-        testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), null, singleton(new AssociationValue("key", "value")));
+        testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
         verify(sagaCache).put(eq("123"), any());
         verify(associationsCache, never()).put(any(), any());
@@ -74,7 +74,7 @@ public class CachingSagaStoreTest {
 
     @Test
     public void testAssociationsAddedToCacheOnLoad() {
-        testSubject.insertSaga(StubSaga.class, "id", new StubSaga(), null, singleton(new AssociationValue("key", "value")));
+        testSubject.insertSaga(StubSaga.class, "id", new StubSaga(), singleton(new AssociationValue("key", "value")));
 
         verify(associationsCache, never()).put(any(), any());
 
@@ -93,7 +93,7 @@ public class CachingSagaStoreTest {
     @Test
     public void testSagaAddedToCacheOnLoad() {
         StubSaga saga = new StubSaga();
-        testSubject.insertSaga(StubSaga.class, "id", saga, null, singleton(new AssociationValue("key", "value")));
+        testSubject.insertSaga(StubSaga.class, "id", saga, singleton(new AssociationValue("key", "value")));
 
         ehCache.removeAll();
         reset(sagaCache, associationsCache);
@@ -125,9 +125,9 @@ public class CachingSagaStoreTest {
     public void testCommitDelegatedAfterAddingToCache() {
         StubSaga saga = new StubSaga();
         AssociationValue associationValue = new AssociationValue("key", "value");
-        testSubject.insertSaga(StubSaga.class, "123", saga, null, singleton(associationValue));
+        testSubject.insertSaga(StubSaga.class, "123", saga, singleton(associationValue));
 
         verify(associationsCache, never()).put(any(), any());
-        verify(mockSagaStore).insertSaga(StubSaga.class, "123", saga, null, singleton(associationValue));
+        verify(mockSagaStore).insertSaga(StubSaga.class, "123", saga, singleton(associationValue));
     }
 }

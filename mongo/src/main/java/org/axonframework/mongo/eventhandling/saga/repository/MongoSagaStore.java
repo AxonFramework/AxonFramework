@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -79,11 +78,6 @@ public class MongoSagaStore implements SagaStore<Object> {
         S loadedSaga = sagaEntry.getSaga(serializer);
         return new Entry<S>() {
             @Override
-            public TrackingToken trackingToken() {
-                return null;
-            }
-
-            @Override
             public Set<AssociationValue> associationValues() {
                 return sagaEntry.getAssociationValues();
             }
@@ -125,7 +119,7 @@ public class MongoSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, AssociationValues associationValues) {
         SagaEntry<?> sagaEntry = new SagaEntry<>(sagaIdentifier, saga, associationValues.asSet(), serializer);
         mongoTemplate.sagaCollection().updateOne(
                 SagaEntry.queryByIdentifier(sagaIdentifier),
@@ -133,7 +127,7 @@ public class MongoSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, Set<AssociationValue> associationValues) {
         SagaEntry<?> sagaEntry = new SagaEntry<>(sagaIdentifier, saga, associationValues, serializer);
         Document sagaObject = sagaEntry.asDocument();
         mongoTemplate.sagaCollection().insertOne(sagaObject);

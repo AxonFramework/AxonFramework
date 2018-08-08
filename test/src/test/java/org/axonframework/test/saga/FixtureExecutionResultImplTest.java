@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongDateTime() throws Exception {
+    public void testExpectScheduledEvent_WrongDateTime() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
@@ -215,7 +215,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongClass() throws Exception {
+    public void testExpectScheduledEvent_WrongClass() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
@@ -224,7 +224,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongEvent() throws Exception {
+    public void testExpectScheduledEvent_WrongEvent() {
         eventScheduler.schedule(Duration.ofSeconds(1),
                                 new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
@@ -236,7 +236,7 @@ public class FixtureExecutionResultImplTest {
 
     @SuppressWarnings({"unchecked"})
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_FailedMatcher() throws Exception {
+    public void testExpectScheduledEvent_FailedMatcher() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
@@ -246,7 +246,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test
-    public void testExpectScheduledEvent_Found() throws Exception {
+    public void testExpectScheduledEvent_Found() {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTimeBy(Duration.ofMillis(500), i -> {
@@ -267,58 +267,58 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testAssociationWith_WrongValue() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key", "value2");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testAssociationWith_WrongKey() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key2", "value");
     }
 
     @Test
     public void testAssociationWith_Present() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key", "value");
     }
 
     @Test
     public void testNoAssociationWith_WrongValue() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key", "value2");
     }
 
     @Test
     public void testNoAssociationWith_WrongKey() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key2", "value");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testNoAssociationWith_Present() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key", "value");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectActiveSagas_WrongCount() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.emptySet());
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
 
         testSubject.expectActiveSagas(2);
     }
 
     @Test
     public void testExpectActiveSagas_CorrectCount() {
-        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.emptySet());
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), Collections.emptySet());
         sagaStore.deleteSaga(StubSaga.class, "test", Collections.emptySet());
-        sagaStore.insertSaga(StubSaga.class, "test2", new StubSaga(), null, Collections.emptySet());
+        sagaStore.insertSaga(StubSaga.class, "test2", new StubSaga(), Collections.emptySet());
 
         testSubject.expectActiveSagas(1);
     }

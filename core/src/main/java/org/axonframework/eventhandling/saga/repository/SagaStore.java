@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.saga.repository;
 
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Set;
 
@@ -72,11 +71,9 @@ public interface SagaStore<T> {
      * @param sagaType          The type of the Saga
      * @param sagaIdentifier    The identifier of the Saga
      * @param saga              The Saga instance
-     * @param token             The tracking token of the event last handled by the Saga. May be {@code null}.
      * @param associationValues The initial association values of the Saga
      */
-    void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
-                    Set<AssociationValue> associationValues);
+    void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, Set<AssociationValue> associationValues);
 
     /**
      * Updates a given Saga after its state was modified. The tracking token of the event last handled by the Saga is
@@ -89,8 +86,7 @@ public interface SagaStore<T> {
      * @param token             The tracking token of the event last handled by the Saga. May be {@code null}.
      * @param associationValues The initial association values of the Saga
      */
-    void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
-                    AssociationValues associationValues);
+    void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, AssociationValues associationValues);
 
     /**
      * Interface describing a Saga entry fetched from a SagaStore.
@@ -98,14 +94,6 @@ public interface SagaStore<T> {
      * @param <T> The type of the Saga
      */
     interface Entry<T> {
-
-        /**
-         * Returns the tracking token of the last event handled by the Saga. May be {@code null} if this Saga has not
-         * been tracking the event store.
-         *
-         * @return the last handled event token. May be {@code null}.
-         */
-        TrackingToken trackingToken();
 
         /**
          * Returns the Set of association values of the fetched Saga entry.

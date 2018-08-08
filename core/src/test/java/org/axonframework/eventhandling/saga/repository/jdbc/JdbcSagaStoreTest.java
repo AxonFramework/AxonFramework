@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ public class JdbcSagaStoreTest {
     public void testInsertUpdateAndLoadSaga() {
         StubSaga saga = new StubSaga();
         Set<AssociationValue> associationValues = singleton(new AssociationValue("key", "value"));
-        testSubject.insertSaga(StubSaga.class, "123", saga, null, associationValues);
-        testSubject.updateSaga(StubSaga.class, "123", saga, null, new AssociationValuesImpl(associationValues));
+        testSubject.insertSaga(StubSaga.class, "123", saga, associationValues);
+        testSubject.updateSaga(StubSaga.class, "123", saga, new AssociationValuesImpl(associationValues));
 
         SagaStore.Entry<StubSaga> entry = testSubject.loadSaga(StubSaga.class, "123");
         assertNotNull(entry);
@@ -85,15 +85,15 @@ public class JdbcSagaStoreTest {
     @Test
     public void testLoadSagaByAssociationValue() {
         AssociationValues associationsValues = new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
-        testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), null, associationsValues.asSet());
-        testSubject.insertSaga(StubSaga.class, "456", new StubSaga(), null, singleton(new AssociationValue("key", "value2")));
+        testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), associationsValues.asSet());
+        testSubject.insertSaga(StubSaga.class, "456", new StubSaga(), singleton(new AssociationValue("key", "value2")));
 
         associationsValues.add(new AssociationValue("key", "value2"));
-        testSubject.updateSaga(StubSaga.class, "123", new StubSaga(), null, associationsValues);
+        testSubject.updateSaga(StubSaga.class, "123", new StubSaga(), associationsValues);
         associationsValues.commit();
 
         associationsValues.remove(new AssociationValue("key", "value2"));
-        testSubject.updateSaga(StubSaga.class, "123", new StubSaga(), null, associationsValues);
+        testSubject.updateSaga(StubSaga.class, "123", new StubSaga(), associationsValues);
         associationsValues.commit();
 
         Set<String> actual = testSubject.findSagas(StubSaga.class, new AssociationValue("key", "value"));
