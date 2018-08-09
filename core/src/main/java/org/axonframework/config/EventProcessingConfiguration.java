@@ -36,6 +36,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
@@ -44,7 +45,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -65,6 +68,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
     private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     private final Map<String, Function<Configuration, RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
@@ -323,6 +327,17 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * ... bla bla bla ...
+     * @param interceptorBuilder The function providing the interceptor to register, or {@code null}
+     * @return event processing configuration for chaining purposes
+     */
+    public EventProcessingConfiguration registerHandlerInterceptor(
+            BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+        defaultHandlerInterceptors.add(interceptorBuilder);
+        return this;
+    }
+
+    /**
      * Returns a list of interceptors for a processor with given {@code processorName}.
      *
      * @param processorName The name of the processor
@@ -330,10 +345,23 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      */
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
         Assert.state(configuration != null, () -> "Configuration is not initialized yet");
-        return handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
-                                          .stream()
-                                          .map(hi -> hi.apply(configuration))
-                                          .collect(Collectors.toList());
+
+        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+
+        defaultHandlerInterceptors.stream()
+                                  .map(f -> f.apply(configuration, processorName))
+                                  .filter(Objects::nonNull)
+                                  .forEach(interceptors::add);
+
+        handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
+                                   .stream()
+                                   .map(hi -> hi.apply(configuration))
+                                   .filter(Objects::nonNull)
+                                   .forEach(interceptors::add);
+
+        interceptors.add(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
+
+        return interceptors;
     }
 
 
