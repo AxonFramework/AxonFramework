@@ -56,7 +56,7 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3").get().getName());
         assertEquals("subscribingProcessor",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
-        assertEquals(2, eventProcessingConfiguration.interceptorsFor("processor3").size());
+        assertEquals(1, eventProcessingConfiguration.interceptorsFor("processor3").size());
     }
 
     @EnableAxon

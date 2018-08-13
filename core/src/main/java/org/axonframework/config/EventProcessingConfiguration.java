@@ -333,8 +333,6 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      * The {@code interceptorBuilder} is invoked once for each processor created, and may return {@code null}, in which
      * case the return value is ignored.
      * <p>
-     * Note that a CorrelationDataInterceptor is registered by default. To change correlation data attached to messages,
-     * see {@link Configurer#configureCorrelationDataProviders(Function)}.
      *
      * @param interceptorBuilder The builder function that provides an interceptor for each available processor
      * @return this EventHandlingConfiguration instance for further configuration
@@ -366,8 +364,6 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                    .map(hi -> hi.apply(configuration))
                                    .filter(Objects::nonNull)
                                    .forEach(interceptors::add);
-
-        interceptors.add(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
 
         return interceptors;
     }
