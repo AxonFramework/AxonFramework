@@ -105,7 +105,7 @@ message EventProcessorInfo {
     string processor_name = 1;
     string mode = 2;
     int32 active_threads = 3;
-    bool available_threads = 4;
+    int32 available_threads = 4;
     bool running = 5;
     bool error = 6;
     repeated EventTrackerInfo event_trackers_info = 7;
