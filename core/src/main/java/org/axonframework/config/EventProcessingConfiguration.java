@@ -327,9 +327,17 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     }
 
     /**
-     * ... bla bla bla ...
-     * @param interceptorBuilder The function providing the interceptor to register, or {@code null}
-     * @return event processing configuration for chaining purposes
+     * Register the given {@code interceptorBuilder} to build an Message Handling Interceptor for Event Processors
+     * created in this configuration.
+     * <p>
+     * The {@code interceptorBuilder} is invoked once for each processor created, and may return {@code null}, in which
+     * case the return value is ignored.
+     * <p>
+     * Note that a CorrelationDataInterceptor is registered by default. To change correlation data attached to messages,
+     * see {@link Configurer#configureCorrelationDataProviders(Function)}.
+     *
+     * @param interceptorBuilder The builder function that provides an interceptor for each available processor
+     * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventProcessingConfiguration registerHandlerInterceptor(
             BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
