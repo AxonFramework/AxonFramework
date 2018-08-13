@@ -20,6 +20,7 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
 import org.junit.runner.*;
@@ -68,7 +69,7 @@ public class EventProcessingConfigurationConfigTest {
             config.assignProcessingGroup("processor1", "processor2");
             config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : "processor2");
             config.registerSubscribingEventProcessor("subscribingProcessor");
-            config.registerHandlerInterceptor((configuration, name) -> new CorrelationDataInterceptor<>());
+            config.registerHandlerInterceptor((configuration, name) -> new LoggingInterceptor<>());
         }
 
         @Saga
