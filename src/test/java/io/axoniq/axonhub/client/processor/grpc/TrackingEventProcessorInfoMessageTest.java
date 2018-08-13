@@ -50,7 +50,7 @@ public class TrackingEventProcessorInfoMessageTest {
         when(trackingEventProcessor.processingStatus()).thenReturn(processingStatus);
         when(trackingEventProcessor.getName()).thenReturn("ProcessorName");
         when(trackingEventProcessor.activeProcessorThreads()).thenReturn(3);
-        when(trackingEventProcessor.hasAvailableThreads()).thenReturn(true);
+        when(trackingEventProcessor.availableProcessorThreads()).thenReturn(5);
         when(trackingEventProcessor.isRunning()).thenReturn(false);
         when(trackingEventProcessor.isError()).thenReturn(true);
         TrackingEventProcessorInfoMessage testSubject = new TrackingEventProcessorInfoMessage(trackingEventProcessor);
@@ -60,7 +60,7 @@ public class TrackingEventProcessorInfoMessageTest {
         assertEquals(1, eventProcessorInfo.getEventTrackersInfoCount());
         assertFalse(eventProcessorInfo.getRunning());
         assertTrue(eventProcessorInfo.getError());
-        assertTrue(eventProcessorInfo.getAvailableThreads());
+        assertTrue(eventProcessorInfo.getAvailableThreads()>0);
         EventProcessorInfo.EventTrackerInfo eventTrackersInfo = eventProcessorInfo.getEventTrackersInfo(0);
         assertEquals(0,eventTrackersInfo.getSegmentId());
         assertEquals(1, eventTrackersInfo.getOnePartOf());
