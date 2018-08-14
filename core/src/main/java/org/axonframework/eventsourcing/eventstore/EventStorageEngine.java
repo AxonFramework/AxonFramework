@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -133,5 +134,36 @@ public interface EventStorageEngine {
      */
     default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber).max(Long::compareTo);
+    }
+
+    /**
+     * Creates a token that is at the tail of an event stream - that tracks events from the beginning of time.
+     *
+     * @return a tracking token at the tail of an event stream, if event stream is empty {@code null} is returned
+     */
+    default TrackingToken createTailToken() {
+        return null;
+    }
+
+    /**
+     * Creates a token that is at the head of an event stream - that tracks all new events.
+     *
+     * @return a tracking token at the head of an event stream, if event stream is empty {@code null} is returned
+     */
+    default TrackingToken createHeadToken() {
+        throw new UnsupportedOperationException("Creation of Head Token not supported by this EventStorageEngine");
+    }
+
+    /**
+     * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
+     * {@code dateTime}, it will be tracked too.
+     *
+     * @param dateTime The date and time for determining criteria how the tracking token should be created. A tracking
+     *                 token should point to very first event before this date and time.
+     * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria {@code
+     * null} is returned
+     */
+    default TrackingToken createTokenAt(Instant dateTime) {
+        throw new UnsupportedOperationException("Creation of Time based Token not supported by this EventStorageEngine");
     }
 }

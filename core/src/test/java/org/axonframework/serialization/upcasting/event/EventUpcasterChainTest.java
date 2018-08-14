@@ -10,7 +10,7 @@ import static org.mockito.Mockito.mock;
 public class EventUpcasterChainTest {
 
     @Test
-    public void testCreateChainAndUpcast() throws Exception {
+    public void testCreateChainAndUpcast() {
         EventUpcasterChain eventUpcasterChain = new EventUpcasterChain(new SomeEventUpcaster(),
                                                                        new SomeOtherEventUpcaster());
         IntermediateEventRepresentation mockRepresentation = mock(IntermediateEventRepresentation.class);

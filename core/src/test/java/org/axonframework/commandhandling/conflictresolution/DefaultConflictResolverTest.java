@@ -37,7 +37,7 @@ public class DefaultConflictResolverTest {
     private DefaultConflictResolver subject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         eventStore.publish(IntStream.range(0, 10).mapToObj(
                 sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber)).collect(toList()));

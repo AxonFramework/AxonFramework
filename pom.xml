@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>3.3-SNAPSHOT</version>
+    <version>3.4-SNAPSHOT</version>
     <modules>
         <module>core</module>
         <module>spring</module>
@@ -30,6 +30,7 @@
         <module>integrationtests</module>
         <module>mongo</module>
         <module>amqp</module>
+        <module>kafka</module>
         <module>metrics</module>
         <module>spring-boot-starter</module>
         <module>spring-boot-starter-jgroups</module>
@@ -90,7 +91,7 @@
     </profiles>
 
     <properties>
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <spring.version>5.0.3.RELEASE</spring.version>
         <spring.boot.version>2.0.0.RELEASE</spring.boot.version>
@@ -104,6 +105,8 @@
         <jgroups.version>4.0.6.Final</jgroups.version>
         <mockito.version>2.15.0</mockito.version>
         <powermock.version>1.7.3</powermock.version>
+        <kafka.version>1.0.0</kafka.version>
+        <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
         <jackson.version>2.9.4</jackson.version>
     </properties>
 
@@ -226,14 +229,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <!--TODO : Delete once spring cloud 2.0 is released-->
-    <repositories>
-        <repository>
-            <id>repository.spring.milestone</id>
-            <name>Spring Milestone Repository</name>
-            <url>https://repo.spring.io/libs-milestone</url>
-        </repository>
-    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -255,6 +251,11 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-context</artifactId>
                 <version>${spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>${projectreactor.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -281,6 +282,12 @@
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4</artifactId>
                 <version>${powermock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-test</artifactId>
+                <version>${projectreactor.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -336,7 +343,6 @@
                 <version>2.5.3</version>
                 <configuration>
                     <mavenExecutorId>forked-path</mavenExecutorId>
-                    <goals>install</goals>
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
                 </configuration>

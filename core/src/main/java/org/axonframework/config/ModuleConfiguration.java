@@ -32,6 +32,16 @@ public interface ModuleConfiguration {
     void initialize(Configuration config);
 
     /**
+     * Defines a phase in which this module's {@link #initialize(Configuration)}, {@link #start()}, {@link #shutdown()}
+     * will be invoked.
+     *
+     * @return this module's phase
+     */
+    default int phase() {
+        return 0;
+    }
+
+    /**
      * Invoked when the Configuration is started.
      *
      * @see Configuration#start()
@@ -44,4 +54,14 @@ public interface ModuleConfiguration {
      * @see Configuration#shutdown()
      */
     void shutdown();
+
+    /**
+     * Returns the actual module configuration instance. Usually, it is the instance itself. However, in case of module
+     * configuration wrappers, we would like to provide the wrapped module configuration as the instance.
+     *
+     * @return the actual module configuration instance
+     */
+    default ModuleConfiguration unwrap() {
+        return this;
+    }
 }

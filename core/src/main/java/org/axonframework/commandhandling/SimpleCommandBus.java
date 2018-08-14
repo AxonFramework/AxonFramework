@@ -1,6 +1,5 @@
 /*
-/*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +18,8 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -148,9 +142,7 @@ public class SimpleCommandBus implements CommandBus {
 
         try {
             UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(command);
-            Transaction transaction = transactionManager.startTransaction();
-            unitOfWork.onCommit(u -> transaction.commit());
-            unitOfWork.onRollback(u -> transaction.rollback());
+            unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
             R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
@@ -178,6 +170,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param handlerInterceptor The interceptor to invoke when commands are handled
      * @return handle to unregister the interceptor
      */
+    @Override
     public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
@@ -190,6 +183,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
      * @return handle to unregister the interceptor
      */
+    @Override
     public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);

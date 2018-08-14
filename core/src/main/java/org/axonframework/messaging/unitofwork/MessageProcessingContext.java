@@ -65,7 +65,7 @@ public class MessageProcessingContext<T extends Message<?>> {
         }
         Deque<Consumer<UnitOfWork<T>>> l = handlers.getOrDefault(phase, EMPTY);
         while (!l.isEmpty()) {
-            l.poll().accept(unitOfWork);
+            l.remove().accept(unitOfWork);
         }
     }
 

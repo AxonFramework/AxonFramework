@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +26,7 @@ import java.lang.annotation.*;
  * and the actual property's value are used to define a AssociationValue for the created saga. Thus, a method with this
  * definition:
  * <p/>
- * <code>@StartSaga(forceNew=true)<br/>@SageEventHandler(associationProperty=&quot;orderId&quot;)<br/>public void
+ * <code>@StartSaga(forceNew=true)<br/>@SagaEventHandler(associationProperty=&quot;orderId&quot;)<br/>public void
  * handleOrderCreated(OrderCreatedEvent event) </code><br/> will always trigger the creation of a saga that can be found
  * with an AssociationValue with key "orderId" and as value the value returned by {@code event.getOrderId()}.
  * <p/>
@@ -35,7 +38,7 @@ import java.lang.annotation.*;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface StartSaga {
 
     /**

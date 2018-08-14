@@ -18,15 +18,13 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.EntityId;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.Priority;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.StubDomainEvent;
@@ -39,6 +37,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -74,12 +74,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
-                (member, params, index) -> {
-                    if (String.class.equals(params[index].getType())) {
-                        return new FixedValueParameterResolver<>("It works");
-                    }
-                    return null;
-                });
+                new CustomParameterResolverFactory());
         aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
                                                                              parameterResolverFactory);
         testSubject = new AggregateAnnotationCommandHandler<>(StubCommandAnnotatedAggregate.class,
@@ -421,7 +416,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -445,7 +440,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -479,8 +474,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined()
-            throws Exception {
+    public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() {
         new AggregateAnnotationCommandHandler(CollectionFieldWithoutGenerics.class, mockRepository);
     }
 
@@ -527,7 +521,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -550,7 +544,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    assertTrue(cause instanceof IllegalStateException);
+                                    assertTrue(cause instanceof AggregateEntityNotFoundException);
                                 }
                             }
         );
@@ -906,6 +900,17 @@ public class AggregateAnnotationCommandHandlerTest {
 
         public String getEntityId() {
             return entityKey;
+        }
+    }
+
+    @Priority(Priority.LAST)
+    private static class CustomParameterResolverFactory implements ParameterResolverFactory {
+        @Override
+        public ParameterResolver createInstance(Executable member, Parameter[] params, int index) {
+            if (String.class.equals(params[index].getType())) {
+                return new FixedValueParameterResolver<>("It works");
+            }
+            return null;
         }
     }
 

@@ -20,6 +20,11 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +35,33 @@ import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class GapAwareTrackingTokenTest {
+
+    @Test
+    public void testGapAwareTokenConcurrency() throws InterruptedException {
+        AtomicLong counter = new AtomicLong();
+        AtomicReference<GapAwareTrackingToken> currentToken = new AtomicReference<>(GapAwareTrackingToken.newInstance(-1, emptySortedSet()));
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        // we need more threads than available processors, for a high likelihood to trigger this concurrency issue
+        int threadCount = Runtime.getRuntime().availableProcessors() + 1;
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                long deadline = System.currentTimeMillis() + 1000;
+                while (System.currentTimeMillis() < deadline) {
+                    long next = counter.getAndIncrement();
+                    currentToken.getAndUpdate(t -> t.advanceTo(next, Integer.MAX_VALUE, true));
+                }
+            });
+        }
+        executorService.shutdown();
+        assertTrue("ExecutorService not stopped within expected reasonable time frame",
+                   executorService.awaitTermination(5, TimeUnit.SECONDS));
+
+        assertTrue("The test did not seem to have generated any tokens", counter.get() > 0);
+        assertEquals(counter.get() - 1, currentToken.get().getIndex());
+        assertEquals(emptySortedSet(), currentToken.get().getGaps());
+    }
 
     @Test
     public void testAdvanceToWithoutGaps() {
@@ -100,12 +132,20 @@ public class GapAwareTrackingTokenTest {
         assertFalse(token1.covers(token4));
         assertFalse(token2.covers(token4));
         assertFalse(token4.covers(token2));
+        assertTrue(token4.covers(token5));
+        assertFalse(token5.covers(token4));
         assertFalse(token1.covers(token5));
         assertFalse(token5.covers(token1));
         assertFalse(token1.covers(token6));
         assertFalse(token6.covers(token1));
 
         assertFalse(token3.covers(token7));
+    }
+
+    @Test
+    public void testOccurrenceOfInconsistentRangeException() {
+        // verifies issue 655 (https://github.com/AxonFramework/AxonFramework/issues/655)
+        GapAwareTrackingToken.newInstance(10L, asList(0L, 1L, 2L, 8L, 9L)).advanceTo(0L, 5, true).covers(GapAwareTrackingToken.newInstance(0L, emptySet()));
     }
 
     @Test

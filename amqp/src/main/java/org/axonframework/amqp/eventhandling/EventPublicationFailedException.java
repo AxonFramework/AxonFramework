@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ import org.axonframework.common.AxonException;
 /**
  * Exception indication that an error occurred while publishing an event to an AMQP Broker
  *
+ * Deprecated in favor of {@link org.axonframework.messaging.EventPublicationFailedException}
  * @author Allard Buijze
  * @since 2.0
  */
-public class EventPublicationFailedException extends AxonException {
+@Deprecated
+public class EventPublicationFailedException extends org.axonframework.messaging.EventPublicationFailedException {
 
     private static final long serialVersionUID = 3663633361627495227L;
 

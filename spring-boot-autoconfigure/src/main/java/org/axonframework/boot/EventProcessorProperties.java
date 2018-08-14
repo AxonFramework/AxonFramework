@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class EventProcessorProperties {
      * The configuration of each of the processors. The key is the name of the processor, the value represents the
      * settings to use for the processor with that name.
      */
-    private Map<String, ProcessorSettings> processors = new HashMap<>();
+    private final Map<String, ProcessorSettings> processors = new HashMap<>();
 
     /**
      * Returns the settings for each of the configured processors, by name.
@@ -71,18 +71,25 @@ public class EventProcessorProperties {
         /**
          * Indicates the number of segments that should be created when the processor starts for the first time.
          */
-        private int initialSegmentCount;
+        private int initialSegmentCount = 1;
 
         /**
-         * The maximum number of threads the processor should process events with.
+         * The maximum number of threads the processor should process events with. Defaults to the number of initial
+         * segments if this is not further specified.
          */
-        private int threadCount = 1;
+        private int threadCount = -1;
 
         /**
          * The maximum number of events a processor should process as part of a single batch.
          */
         private int batchSize = 1;
 
+        /**
+         * The name of the bean that represents the sequencing policy for processing events. If no name is specified,
+         * the processor defaults to a {@link org.axonframework.eventhandling.async.SequentialPerAggregatePolicy}, which
+         * guarantees to process events originating from the same Aggregate instance sequentially, while events from
+         * different Aggregate instances may be processed concurrently.
+         */
         private String sequencingPolicy;
 
         /**
@@ -123,7 +130,8 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Returns the number of initial segments that should be created, if no segments are already present.
+         * Returns the number of initial segments that should be created, if no segments are already present. Is also
+         * used as the thread count if it is not further specified.
          *
          * @return the number of initial segments that should be created.
          */
@@ -133,7 +141,7 @@ public class EventProcessorProperties {
 
         /**
          * Sets the number of initial segments that should be created, if no segments are already present. Defaults to
-         * 1.
+         * 1. Will also be used as the thread count if it is not further specified.
          *
          * @param initialSegmentCount the number of initial segments that should be created.
          */
@@ -142,16 +150,21 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Returns the number of threads to use to process Events, when in "tracking" mode.
+         * Returns the number of threads to use to process Events, when in "tracking" mode. Defaults to the number of
+         * initial segments.
          *
          * @return the number of threads to use to process Events.
          */
         public int getThreadCount() {
-            return threadCount;
+            return threadCount < 0 ? initialSegmentCount : threadCount;
         }
 
         /**
-         * Sets the number of threads to use to process Events, when in "tracking" mode. Defaults to 1.
+         * Sets the number of threads to use to process Events, when in "tracking" mode. Defaults to the number of
+         * initial segments.
+         * <p>
+         * A provided {@code threadCount} < 0 will result in a number of threads equal to the configured number of
+         * {@link #setInitialSegmentCount(int) initial segments}.
          *
          * @param threadCount the number of threads to use to process Events.
          */

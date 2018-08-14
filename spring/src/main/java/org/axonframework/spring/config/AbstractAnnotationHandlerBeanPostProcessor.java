@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ package org.axonframework.spring.config;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.aop.IntroductionInfo;
 import org.springframework.aop.IntroductionInterceptor;
@@ -34,6 +37,9 @@ import org.springframework.util.ClassUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.stream.StreamSupport;
+
+import static java.lang.reflect.Modifier.isAbstract;
 
 /**
  * Abstract bean post processor that finds candidates for proxying. Typically used to wrap annotated beans with their
@@ -48,6 +54,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         implements BeanPostProcessor, BeanFactoryAware {
 
     private ParameterResolverFactory parameterResolverFactory;
+    private HandlerDefinition handlerDefinition;
     private BeanFactory beanFactory;
 
     /**
@@ -63,7 +70,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
-        if (beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
+        if (beanName != null && beanFactory.containsBean(beanName) && !beanFactory.isSingleton(beanName)) {
             return bean;
         }
 
@@ -72,8 +79,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         if (parameterResolverFactory == null) {
             parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
         }
+        if (handlerDefinition == null) {
+            handlerDefinition = ClasspathHandlerDefinition.forClassLoader(classLoader);
+        }
         if (isPostProcessingCandidate(targetClass)) {
-            T adapter = initializeAdapterFor(bean, parameterResolverFactory);
+            T adapter = initializeAdapterFor(bean, parameterResolverFactory, handlerDefinition);
             return createAdapterProxy(bean, adapter, getAdapterInterfaces(), true, classLoader);
         } else if (!isInstance(bean, getAdapterInterfaces())
                 && isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
@@ -83,9 +93,9 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                 // we want to invoke the Java Proxy if possible, so we create a CGLib proxy that does that for us
                 Object proxyInvokingBean = createJavaProxyInvoker(bean, targetBean);
 
-                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory);
+                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory, handlerDefinition);
                 return createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterfaces(), false,
-                                                   classLoader);
+                                          classLoader);
             } catch (Exception e) {
                 throw new AxonConfigurationException("Unable to wrap annotated handler.", e);
             }
@@ -145,9 +155,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * @param bean                     The bean that the EventListenerAdapter has to adapt
      * @param parameterResolverFactory The parameter resolver factory that provides the parameter resolvers for the
      *                                 annotated handlers
+     * @param handlerDefinition        The handler definition used to create concrete handlers
      * @return an event handler adapter for the given {@code bean}
      */
-    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory);
+    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition);
 
     @SuppressWarnings("unchecked")
     private I createAdapterProxy(Object annotatedHandler, final T adapter, final Class<?>[] adapterInterface,
@@ -170,6 +182,15 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
         this.parameterResolverFactory = parameterResolverFactory;
+    }
+
+    /**
+     * Sets the HandlerDefinition to create concrete handlers.
+     *
+     * @param handlerDefinition The handler definition used to create concrete handlers
+     */
+    public void setHandlerDefinition(HandlerDefinition handlerDefinition) {
+        this.handlerDefinition = handlerDefinition;
     }
 
     @Override
@@ -248,7 +269,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         public Object invoke(MethodInvocation invocation) throws Exception {
             Class<?> declaringClass = invocation.getMethod().getDeclaringClass();
             try {
-                if (declaringClass.isAssignableFrom(adapterInterface)) {
+                if (declaringClass.isAssignableFrom(adapterInterface) && genericParametersMatch(invocation, adapter)) {
                     return invocation.getMethod().invoke(adapter, invocation.getArguments());
                 }
                 return invocation.proceed();
@@ -259,6 +280,34 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                     throw (Error) e;
                 }
                 throw new InvocationTargetException(e);
+            }
+        }
+
+        private boolean genericParametersMatch(MethodInvocation invocation, Object adapter) {
+            try {
+                Method proxyMethod = invocation.getMethod();
+                Method methodOnAdapter = adapter.getClass()
+                                                .getMethod(proxyMethod.getName(), proxyMethod.getParameterTypes());
+
+                if (!methodOnAdapter.isSynthetic()) {
+                    return true;
+                }
+
+                return StreamSupport.stream(ReflectionUtils.methodsOf(adapter.getClass()).spliterator(), false)
+                                    .filter(m -> !m.isSynthetic())
+                                    .filter(m -> !isAbstract(m.getModifiers()))
+                                    .filter(m -> invocation.getMethod().getName().equals(m.getName()))
+                                    .filter(m -> m.getParameterCount() == invocation.getArguments().length)
+                                    .anyMatch(m -> {
+                                        for (int i = 0; i < m.getParameterTypes().length; i++) {
+                                            if (!m.getParameterTypes()[i].isInstance(invocation.getArguments()[i])) {
+                                                return false;
+                                            }
+                                        }
+                                        return true;
+                                    });
+            } catch (NoSuchMethodException e) {
+                return false;
             }
         }
 

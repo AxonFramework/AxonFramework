@@ -65,7 +65,7 @@ public class ModelInspectorTest {
     }
 
     @Test
-    public void testDetectFactoryMethodHandler() throws Exception {
+    public void testDetectFactoryMethodHandler() {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector = ModelInspector.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
         CommandMessage<?> message = asCommandMessage("string");
         final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember = inspector.commandHandler(message.getCommandName());
@@ -78,7 +78,7 @@ public class ModelInspectorTest {
 
 
     @Test
-    public void testEventIsPublishedThroughoutRecursiveHierarchy() throws Exception {
+    public void testEventIsPublishedThroughoutRecursiveHierarchy() {
         // Note that if the inspector does not support recursive entities this will throw an StackOverflowError.
         AggregateModel<SomeRecursiveEntity> inspector = ModelInspector.inspectAggregate(SomeRecursiveEntity.class);
 
@@ -191,7 +191,7 @@ public class ModelInspectorTest {
     }
 
     @Test
-    public void testEventIsPublishedThroughoutHierarchy() throws Exception {
+    public void testEventIsPublishedThroughoutHierarchy() {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
         AtomicLong payload = new AtomicLong();
@@ -211,7 +211,7 @@ public class ModelInspectorTest {
     }
 
     @Test
-    public void testFindIdentifier() throws Exception {
+    public void testFindIdentifier() {
         AggregateModel<SomeAnnotatedHandlers> inspector = ModelInspector.inspectAggregate(SomeAnnotatedHandlers.class);
 
         assertEquals("SomeAnnotatedHandlers", inspector.type());
@@ -220,7 +220,7 @@ public class ModelInspectorTest {
     }
 
     @Test
-    public void testFindJavaxPersistenceIdentifier() throws Exception {
+    public void testFindJavaxPersistenceIdentifier() {
         AggregateModel<JavaxPersistenceAnnotatedHandlers> inspector = ModelInspector.inspectAggregate(JavaxPersistenceAnnotatedHandlers.class);
 
         assertEquals("id", inspector.getIdentifier(new JavaxPersistenceAnnotatedHandlers()));
@@ -228,7 +228,7 @@ public class ModelInspectorTest {
     }
 
     @Test
-    public void testFindIdentifierInSuperClass() throws Exception {
+    public void testFindIdentifierInSuperClass() {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
         assertEquals("SomeOtherName", inspector.type());
@@ -236,7 +236,7 @@ public class ModelInspectorTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testIllegalFactoryMethodThrowsExceptionClass() throws Exception {
+    public void testIllegalFactoryMethodThrowsExceptionClass() {
         ModelInspector.inspectAggregate(SomeIllegalAnnotatedFactoryMethodClass.class);
     }
 

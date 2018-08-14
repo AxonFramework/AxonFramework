@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 
@@ -180,7 +182,6 @@ public interface Configurer {
      *
      * @param module The module to register
      * @return the current instance of the Configurer, for chaining purposes
-     *
      * @see SagaConfiguration
      * @see EventHandlingConfiguration
      */
@@ -209,7 +210,25 @@ public interface Configurer {
      * @param annotatedCommandHandlerBuilder The builder function of the Command Handler bean
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder);
+    default Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder) {
+        return registerCommandHandler(0, annotatedCommandHandlerBuilder);
+    }
+
+    /**
+     * Registers a command handler bean with this configuration. The bean may be of any type. The actual command handler
+     * methods will be detected based on the annotations present on the bean's methods.
+     * <p>
+     * The builder function receives the Configuration as input, and is expected to return a fully initialized instance
+     * of the command handler bean.
+     *
+     * @param annotatedCommandHandlerBuilder The builder function of the Command Handler bean
+     * @param phase                          defines a phase in which the command handler builder will be invoked during
+     *                                       {@link Configuration#start()} and {@link Configuration#shutdown()}. When
+     *                                       starting the configuration handlers are ordered in ascending, when shutting
+     *                                       down the configuration, descending order is used.
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerCommandHandler(int phase, Function<Configuration, Object> annotatedCommandHandlerBuilder);
 
     /**
      * Registers a query handler bean with this configuration. The bean may be of any type. The actual query handler
@@ -221,7 +240,25 @@ public interface Configurer {
      * @param annotatedQueryHandlerBuilder The builder function of the Query Handler bean
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder);
+    default Configurer registerQueryHandler(Function<Configuration, Object> annotatedQueryHandlerBuilder) {
+        return registerQueryHandler(0, annotatedQueryHandlerBuilder);
+    }
+
+    /**
+     * Registers a query handler bean with this configuration. The bean may be of any type. The actual query handler
+     * methods will be detected based on the annotations present on the bean's methods.
+     * <p>
+     * The builder function receives the Configuration as input, and is expected to return a fully initialized instance
+     * of the query handler bean.
+     *
+     * @param annotatedQueryHandlerBuilder The builder function of the Query Handler bean
+     * @param phase                        defines a phase in which the query handler builder will be invoked during
+     *                                     {@link Configuration#start()} and {@link Configuration#shutdown()}. When
+     *                                     starting the configuration handlers are ordered in ascending, when shutting
+     *                                     down the configuration, descending order is used.
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerQueryHandler(int phase, Function<Configuration, Object> annotatedQueryHandlerBuilder);
 
     /**
      * Configures an Embedded Event Store which uses the given Event Storage Engine to store its events. The builder
@@ -282,6 +319,18 @@ public interface Configurer {
      */
     default Configurer configureQueryBus(Function<Configuration, QueryBus> queryBusBuilder) {
         return registerComponent(QueryBus.class, queryBusBuilder);
+    }
+
+    /**
+     * Configures the given Query Update Emitter to use in this configuration. The builder receives the Configuration as
+     * input and is expected to return a fully initialized {@link QueryUpdateEmitter} instance.
+     *
+     * @param queryUpdateEmitterBuilder The builder function for the {@link QueryUpdateEmitter}
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    default Configurer configureQueryUpdateEmitter(
+            Function<Configuration, QueryUpdateEmitter> queryUpdateEmitterBuilder) {
+        return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
     }
 
     /**
@@ -348,7 +397,6 @@ public interface Configurer {
      * @param aggregateConfiguration The instance describing the configuration of an Aggregate
      * @param <A>                    The type of aggregate the configuration is for
      * @return the current instance of the Configurer, for chaining purposes
-     *
      * @see AggregateConfigurer
      */
     <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration);
@@ -365,6 +413,15 @@ public interface Configurer {
     default <A> Configurer configureAggregate(Class<A> aggregate) {
         return configureAggregate(AggregateConfigurer.defaultConfiguration(aggregate));
     }
+
+    /**
+     * Registers the definition of a Handler class. Defaults to annotation based recognition of handler methods.
+     *
+     * @param handlerDefinitionClass A function providing the definition based on the current Configuration as well
+     *                               as the class being inspected.
+     * @return the current instance of the Configurer, for chaining purposes
+     */
+    Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
 
     /**
      * Returns the completely initialized Configuration built using this configurer. It is not recommended to change

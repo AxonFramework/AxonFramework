@@ -31,7 +31,7 @@ public class XomToStringConverterTest {
     private XomToStringConverter testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new XomToStringConverter();
     }
 
@@ -42,7 +42,7 @@ public class XomToStringConverterTest {
     }
 
     @Test
-    public void testConvert() throws Exception {
+    public void testConvert() {
         Document doc = new Document(new Element("rootElement"));
 
         String actual = testSubject.convert(doc);

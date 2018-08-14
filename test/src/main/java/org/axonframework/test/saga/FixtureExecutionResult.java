@@ -17,6 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
@@ -73,6 +74,16 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage<?>> matcher);
 
     /**
+     * Asserts that a deadline scheduled after given {@code duration} matches the given {@code matcher}.
+     *
+     * @param duration The delay expected before the deadline is met
+     * @param matcher  The matcher that must match with the deadline scheduled at the given time
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineMatching(Duration duration,
+                                                           Matcher<? super DeadlineMessage<?>> matcher);
+
+    /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication after the given
      * {@code duration}.
      * <p/>
@@ -86,6 +97,18 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEvent(Duration duration, Object event);
 
     /**
+     * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
+     * <p/>
+     * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
+     * an "equals" check on all fields in the deadlines.
+     *
+     * @param duration The time to wait before the deadline should be met
+     * @param deadline The expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadline(Duration duration, Object deadline);
+
+    /**
      * Asserts that an event of the given {@code eventType} has been scheduled for publication after the given
      * {@code duration}.
      *
@@ -94,6 +117,15 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType);
+
+    /**
+     * Asserts that a deadline of the given {@code deadlineType} has been scheduled after the given {@code duration}.
+     *
+     * @param duration     The time to wait before the deadline is met
+     * @param deadlineType The type of the expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
      * Asserts that an event matching the given {@code matcher} has been scheduled to be published at the given
@@ -108,6 +140,20 @@ public interface FixtureExecutionResult {
      */
     FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime,
                                                         Matcher<? super EventMessage<?>> matcher);
+
+    /**
+     * Asserts that a deadline matching the given {@code matcher} has been scheduled at the given {@code
+     * scheduledTime}.
+     * <p/>
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
+     * FixtureConfiguration#currentTime()} to get the time to use as "current time".
+     *
+     * @param scheduledTime The time at which the deadline should be met
+     * @param matcher       The matcher defining the deadline expected
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineMatching(Instant scheduledTime,
+                                                           Matcher<? super DeadlineMessage<?>> matcher);
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication at the given
@@ -126,6 +172,22 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object event);
 
     /**
+     * Asserts that a deadline equal to the given {@code deadline} has been scheduled at the given {@code
+     * scheduledTime}.
+     * <p/>
+     * If the {@code scheduledTime} is calculated based on the "current time", use the {@link
+     * FixtureConfiguration#currentTime()} to get the time to use as "current time".
+     * <p/>
+     * Note that the source attribute of the deadline is ignored when comparing deadlines. Deadlines are compared using
+     * an "equals" check on all fields in the deadlines.
+     *
+     * @param scheduledTime The time at which the deadline is scheduled
+     * @param deadline      The expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadline(Instant scheduledTime, Object deadline);
+
+    /**
      * Asserts that an event of the given {@code eventType} has been scheduled for publication at the given
      * {@code scheduledTime}.
      * <p/>
@@ -137,6 +199,15 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
+
+    /**
+     * Asserts that a deadline of the given {@code deadlineType} has been scheduled at the given {@code scheduledTime}.
+     *
+     * @param scheduledTime The time at which the deadline is scheduled
+     * @param deadlineType  The type of the expected deadline
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are
@@ -177,6 +248,14 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectNoScheduledEvents();
 
     /**
+     * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules
+     * have been cancelled or all scheduled deadlines have been met already.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectNoScheduledDeadlines();
+
+    /**
      * Assert that the saga published events on the EventBus as defined by the given {@code matcher}. Only events
      * published in the "when" stage of the tests are matched.
      *
@@ -184,6 +263,14 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
+
+    /**
+     * Asserts that deadlines match given {@code matcher} have been met (which have passed in time) on this saga.
+     *
+     * @param matcher The matcher that defines the expected list of deadlines
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given {@code expected}
@@ -194,4 +281,13 @@ public interface FixtureExecutionResult {
      * @return the FixtureExecutionResult for method chaining
      */
     FixtureExecutionResult expectPublishedEvents(Object... expected);
+
+    /**
+     * Asserts that given {@code expected} deadlines have been met (which have passed in time). Deadlines are compared
+     * comparing their type and fields using "equals".
+     *
+     * @param expected The sequence of deadlines expected to be met
+     * @return the FixtureExecutionResult for method chaining
+     */
+    FixtureExecutionResult expectDeadlinesMet(Object... expected);
 }

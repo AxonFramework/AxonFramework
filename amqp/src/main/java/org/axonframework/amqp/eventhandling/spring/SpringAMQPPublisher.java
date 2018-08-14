@@ -210,7 +210,7 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         if (connectionFactory == null) {
             connectionFactory = applicationContext.getBean(ConnectionFactory.class);
         }

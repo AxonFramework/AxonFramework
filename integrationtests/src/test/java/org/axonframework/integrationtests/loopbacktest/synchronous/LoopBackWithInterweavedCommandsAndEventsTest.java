@@ -39,7 +39,7 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
     private Configuration configuration;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         configuration = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .configureAggregate(AggregateConfigurer.defaultConfiguration(MyAggregate.class)
@@ -64,14 +64,14 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
     }
 
     @Test
-    public void orderInCommandHandlerAggregate() throws Exception {
+    public void orderInCommandHandlerAggregate() {
         MyAggregate commandHandlerAggregate = configuration.commandGateway().sendAndWait(command);
 
         assertEquals(expectedDescriptions(command), commandHandlerAggregate.getHandledCommands());
     }
 
     @Test
-    public void orderInEventSourcedAggregate() throws Exception {
+    public void orderInEventSourcedAggregate() {
         Repository<MyAggregate> repository = configuration.repository(MyAggregate.class);
         configuration.commandGateway().sendAndWait(command);
 
@@ -83,7 +83,7 @@ public class LoopBackWithInterweavedCommandsAndEventsTest {
     }
 
     @Test
-    public void orderInEventStore() throws Exception {
+    public void orderInEventStore() {
         configuration.commandGateway().sendAndWait(command);
         assertEquals(expectedDescriptions(command), configuration.eventStore()
                 .readEvents(aggregateIdentifier)

@@ -46,7 +46,7 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     private ApplicationContext applicationContext;
 
     @Override
-    public ParameterResolverFactory getObject() throws Exception {
+    public ParameterResolverFactory getObject() {
         return MultiParameterResolverFactory.ordered(factories);
     }
 
@@ -61,7 +61,7 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         factories.add(ClasspathParameterResolverFactory.forClassLoader(classLoader));
         final SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
         springBeanParameterResolverFactory.setApplicationContext(applicationContext);

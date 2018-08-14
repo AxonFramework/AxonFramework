@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -42,7 +43,7 @@ public class EventHandlingConfigurationTest {
     private Configurer configurer;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         configurer = DefaultConfigurer.defaultConfiguration();
     }
 
@@ -75,7 +76,10 @@ public class EventHandlingConfigurationTest {
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              EventProcessingConfiguration.class,
+                              EventHandlingConfiguration.class);
     }
 
     @Test
@@ -107,7 +111,10 @@ public class EventHandlingConfigurationTest {
                              .get(0) instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
         assertTrue(processors.get("java.lang").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              EventProcessingConfiguration.class,
+                              EventHandlingConfiguration.class);
     }
 
     @Test
@@ -134,7 +141,10 @@ public class EventHandlingConfigurationTest {
         assertTrue(processors.get("default").getEventHandlers().contains(object));
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
         assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              EventProcessingConfiguration.class,
+                              EventHandlingConfiguration.class);
     }
 
     @Test
@@ -156,7 +166,10 @@ public class EventHandlingConfigurationTest {
 
         // CorrelationDataInterceptor is automatically configured
         assertEquals(3, ((StubEventProcessor) module.getProcessor("default").get()).getInterceptors().size());
-        assertEquals(1, config.getModules().size());
+        assertEquals(2, config.getModules().size());
+        assertExpectedModules(config,
+                              EventHandlingConfiguration.class,
+                              EventProcessingConfiguration.class);
     }
 
     @Test
@@ -343,12 +356,12 @@ public class EventHandlingConfigurationTest {
 
         @Override
         public void start() {
-
+            // noop
         }
 
         @Override
         public void shutDown() {
-
+            // noop
         }
 
         public List<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {

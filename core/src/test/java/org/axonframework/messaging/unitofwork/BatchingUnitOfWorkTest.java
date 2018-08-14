@@ -52,7 +52,7 @@ public class BatchingUnitOfWorkTest {
     }
 
     @Test
-    public void testRollback() throws Exception {
+    public void testRollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         MockException e = new MockException();
@@ -73,7 +73,7 @@ public class BatchingUnitOfWorkTest {
     }
 
     @Test
-    public void testSuppressedExceptionOnRollback() throws Exception {
+    public void testSuppressedExceptionOnRollback() {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new BatchingUnitOfWork<>(messages);
         MockException taskException = new MockException("task exception");

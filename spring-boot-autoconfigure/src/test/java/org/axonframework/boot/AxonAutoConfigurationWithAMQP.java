@@ -50,12 +50,12 @@ public class AxonAutoConfigurationWithAMQP {
     private ApplicationContext applicationContext;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         System.setProperty("axon.amqp.exchange", "test");
     }
 
     @Test
-    public void testContextInitialization() throws Exception {
+    public void testContextInitialization() {
         assertNotNull(applicationContext);
 
         assertNotNull(applicationContext.getBean(CommandBus.class));

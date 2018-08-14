@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.messaging.ScopeAware;
+
 import java.util.concurrent.Callable;
 
 /**
@@ -23,7 +25,7 @@ import java.util.concurrent.Callable;
  *
  * @param <T> The type of aggregate this repository stores.
  */
-public interface Repository<T> {
+public interface Repository<T> extends ScopeAware {
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,
@@ -31,6 +33,7 @@ public interface Repository<T> {
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @return The aggregate root with the given identifier.
+     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     Aggregate<T> load(String aggregateIdentifier);
@@ -41,6 +44,7 @@ public interface Repository<T> {
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @param expectedVersion     The expected version of the loaded aggregate
      * @return The aggregate root with the given identifier.
+     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     Aggregate<T> load(String aggregateIdentifier, Long expectedVersion);
@@ -51,6 +55,7 @@ public interface Repository<T> {
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
+     *
      * @throws Exception when the factoryMethod throws an exception
      */
     Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception;

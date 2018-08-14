@@ -22,9 +22,9 @@ import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -70,8 +70,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      * @param sagaType                       The saga target type
      * @param sagaRepository                 The repository providing access to the Saga instances
      * @param parameterResolverFactory       The ParameterResolverFactory instance to resolve parameter values for
-     *                                       annotated
-     *                                       handlers with
+     *                                       annotated handlers with
      * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
@@ -81,6 +80,29 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
              sagaRepository,
              () -> newInstance(sagaType),
              new AnnotationSagaMetaModelFactory(parameterResolverFactory).modelOf(sagaType),
+             listenerInvocationErrorHandler);
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
+     * manager uses {@link #newInstance(Class)}. Uses a {@link AnnotationSagaMetaModelFactory} for the saga's meta
+     * model.
+     *
+     * @param sagaType                       The saga target type
+     * @param sagaRepository                 The repository providing access to the Saga instances
+     * @param parameterResolverFactory       The ParameterResolverFactory instance to resolve parameter values for
+     *                                       annotated handlers with
+     * @param handlerDefinition              The handler definition used to create concrete handlers
+     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
+     */
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,
+                                ParameterResolverFactory parameterResolverFactory,
+                                HandlerDefinition handlerDefinition,
+                                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+        this(sagaType,
+             sagaRepository,
+             () -> newInstance(sagaType),
+             new AnnotationSagaMetaModelFactory(parameterResolverFactory, handlerDefinition).modelOf(sagaType),
              listenerInvocationErrorHandler);
     }
 
@@ -126,21 +148,25 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     @SuppressWarnings("unchecked")
     @Override
     protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
-        List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
-        for (SagaMethodMessageHandlingMember handler : handlers) {
-            if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
-                return new SagaInitializationPolicy(handler.getCreationPolicy(), handler.getAssociationValue(event));
-            }
-        }
-        return SagaInitializationPolicy.NONE;
+        return sagaMetaModel.findHandlerMethods(event).stream()
+                            .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
+                            .filter(Objects::nonNull)
+                            .filter(sh -> sh.getCreationPolicy() != SagaCreationPolicy.NONE)
+                            .map(sh -> new SagaInitializationPolicy(
+                                    sh.getCreationPolicy(), sh.getAssociationValue(event)
+                            ))
+                            .findFirst()
+                            .orElse(SagaInitializationPolicy.NONE);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
-        List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
-        return handlers.stream().map(handler -> handler.getAssociationValue(event))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return sagaMetaModel.findHandlerMethods(event).stream()
+                            .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
+                            .filter(Objects::nonNull)
+                            .map(h -> h.getAssociationValue(event))
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
     }
 }

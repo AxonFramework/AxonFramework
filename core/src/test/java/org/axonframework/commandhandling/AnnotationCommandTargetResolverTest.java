@@ -30,7 +30,7 @@ public class AnnotationCommandTargetResolverTest {
     private AnnotationCommandTargetResolver testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new AnnotationCommandTargetResolver();
     }
 

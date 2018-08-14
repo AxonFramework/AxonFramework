@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -156,15 +157,15 @@ public class GlobalMetricRegistry {
      * @return MessageMonitor to monitor the behavior of an EventBus
      */
     public MessageMonitor<? super EventMessage<?>> registerEventBus(String name) {
+        MessageCountingMonitor messageCounterMonitor = new MessageCountingMonitor();
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
 
         MetricRegistry eventProcessingRegistry = new MetricRegistry();
+        eventProcessingRegistry.register("messageCounter", messageCounterMonitor);
         eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
         registry.register(name, eventProcessingRegistry);
 
-        List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
-        monitors.add(messageTimerMonitor);
-        return new MultiMessageMonitor<>(monitors);
+        return new MultiMessageMonitor<>(Arrays.asList(messageCounterMonitor, messageTimerMonitor));
     }
 
     /**

@@ -200,5 +200,5 @@ public interface SagaSqlSchema {
      * @return the token from the resultSet
      * @throws SQLException when an exception occurs reading from the resultSet
      */
-    String readToken(ResultSet resultSet) throws SQLException;
+    String readToken(ResultSet resultSet);
 }

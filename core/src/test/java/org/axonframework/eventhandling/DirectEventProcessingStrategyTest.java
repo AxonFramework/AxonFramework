@@ -29,7 +29,7 @@ public class DirectEventProcessingStrategyTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testEventsPassedToProcessor() throws Exception {
+    public void testEventsPassedToProcessor() {
         List<? extends EventMessage<?>> events = createEvents(10);
         Consumer<List<? extends EventMessage<?>>> mockProcessor = mock(Consumer.class);
         DirectEventProcessingStrategy.INSTANCE.handle(events, mockProcessor);

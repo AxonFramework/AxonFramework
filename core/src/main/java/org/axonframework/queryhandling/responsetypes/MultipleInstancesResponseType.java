@@ -1,5 +1,7 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +32,8 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      *
      * @param expectedCollectionGenericType the response type which is expected to be matched against and returned
      */
-    public MultipleInstancesResponseType(Class<R> expectedCollectionGenericType) {
+    @JsonCreator
+    public MultipleInstancesResponseType(@JsonProperty("expectedResponseType") Class<R> expectedCollectionGenericType) {
         super(expectedCollectionGenericType);
     }
 
@@ -56,10 +59,11 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
      */
     @Override
     public boolean matches(Type responseType) {
-        return isIterableOfExpectedType(responseType) ||
-                isStreamOfExpectedType(responseType) ||
-                isGenericArrayOfExpectedType(responseType) ||
-                isArrayOfExpectedType(responseType);
+        Type unwrapped = unwrapIfTypeFuture(responseType);
+        return isIterableOfExpectedType(unwrapped) ||
+                isStreamOfExpectedType(unwrapped) ||
+                isGenericArrayOfExpectedType(unwrapped) ||
+                isArrayOfExpectedType(unwrapped);
     }
 
     /**
@@ -87,6 +91,12 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
         throw new IllegalArgumentException("Retrieved response [" + responseType + "] is not convertible to a List of "
                                                    + "the expected response type [" + expectedResponseType + "]");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class responseMessagePayloadType() {
+        return List.class;
     }
 
     private boolean isIterableOfExpectedType(Object response) {

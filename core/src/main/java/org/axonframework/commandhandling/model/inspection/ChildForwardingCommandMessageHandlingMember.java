@@ -17,13 +17,19 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a {@link CommandMessageHandlingMember} that forwards commands to a child entity.
@@ -33,6 +39,7 @@ import java.util.function.BiFunction;
  */
 public class ChildForwardingCommandMessageHandlingMember<P, C> implements CommandMessageHandlingMember<P> {
 
+    private final List<MessageHandlingMember<? super C>> childHandlingInterceptors;
     private final MessageHandlingMember<? super C> childHandler;
     private final BiFunction<CommandMessage<?>, P, C> childEntityResolver;
     private final String commandName;
@@ -43,18 +50,21 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
      * entity. Child entities are resolved using the given {@code childEntityResolver}. If an entity is found the
      * command will be handled using the given {@code childHandler}.
      *
-     * @param childHandler        handler of the command once a suitable entity is found
-     * @param childEntityResolver resolver of child entities for a given command
+     * @param childHandlerInterceptors interceptors for {@code childHandler}
+     * @param childHandler             handler of the command once a suitable entity is found
+     * @param childEntityResolver      resolver of child entities for a given command
      */
-    public ChildForwardingCommandMessageHandlingMember(MessageHandlingMember<? super C> childHandler,
+    public ChildForwardingCommandMessageHandlingMember(List<MessageHandlingMember<? super C>> childHandlerInterceptors,
+                                                       MessageHandlingMember<? super C> childHandler,
                                                        BiFunction<CommandMessage<?>, P, C> childEntityResolver) {
+        this.childHandlingInterceptors = childHandlerInterceptors;
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
         this.commandName =
                 childHandler.unwrap(CommandMessageHandlingMember.class).map(CommandMessageHandlingMember::commandName)
-                        .orElse(null);
+                            .orElse(null);
         this.isFactoryHandler = childHandler.unwrap(CommandMessageHandlingMember.class)
-                .map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
+                                            .map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
     }
 
     @Override
@@ -92,10 +102,26 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     public Object handle(Message<?> message, P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
-            throw new IllegalStateException(
-                    "Aggregate cannot handle this command, as there is no entity instance to forward it to.");
+            throw new AggregateEntityNotFoundException(
+                    "Aggregate cannot handle this command, as there is no entity instance to forward it to."
+            );
         }
-        return childHandler.handle(message, childEntity);
+        List<AnnotatedCommandHandlerInterceptor<? super C>> interceptors =
+                childHandlingInterceptors.stream()
+                                         .filter(chi -> chi.canHandle(message))
+                                         .sorted((chi1, chi2) -> Integer.compare(chi2.priority(), chi1.priority()))
+                                         .map(chi -> new AnnotatedCommandHandlerInterceptor<>(chi, childEntity))
+                                         .collect(Collectors.toList());
+
+        Object result;
+        if (interceptors.isEmpty()) {
+            result = childHandler.handle(message, childEntity);
+        } else {
+            result = new DefaultInterceptorChain<>((UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                                                   interceptors,
+                                                   m -> childHandler.handle(message, childEntity)).proceed();
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")

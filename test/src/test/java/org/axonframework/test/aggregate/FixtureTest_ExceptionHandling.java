@@ -26,6 +26,7 @@ import org.axonframework.test.FixtureExecutionException;
 import org.junit.Test;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.hamcrest.core.StringContains.containsString;
 
 public class FixtureTest_ExceptionHandling {
 
@@ -70,6 +71,26 @@ public class FixtureTest_ExceptionHandling {
         ).when(
                 new ValidMyAggregateCommand("2")
         ).expectException(EventStoreException.class);
+    }
+
+    @Test
+    public void testExceptionMessageCheck() {
+        fixture.givenCommands(
+                new CreateMyAggregateCommand("1")
+        ).when(
+                new ValidMyAggregateCommand("2")
+        ).expectException(EventStoreException.class)
+                .expectExceptionMessage("You probably want to use aggregateIdentifier() on your fixture to get the aggregate identifier to use");
+    }
+
+    @Test
+    public void testExceptionMessageCheckWithMatcher() {
+        fixture.givenCommands(
+                new CreateMyAggregateCommand("1")
+        ).when(
+                new ValidMyAggregateCommand("2")
+        ).expectException(EventStoreException.class)
+                .expectExceptionMessage(containsString("You"));
     }
 
     @Test(expected = FixtureExecutionException.class)

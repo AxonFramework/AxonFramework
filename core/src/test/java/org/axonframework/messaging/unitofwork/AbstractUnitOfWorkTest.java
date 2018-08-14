@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.MockException;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.After;
 import org.junit.Before;
@@ -135,6 +137,50 @@ public class AbstractUnitOfWorkTest {
         assertNotNull(subject.getExecutionResult());
         assertSame(taskResult, subject.getExecutionResult().getResult());
     }
+
+    @Test
+    public void testAttachedTransactionCommittedOnUnitOfWorkCommit() {
+        TransactionManager transactionManager = mock(TransactionManager.class);
+        Transaction transaction = mock(Transaction.class);
+        when(transactionManager.startTransaction()).thenReturn(transaction);
+        subject.attachTransaction(transactionManager);
+        subject.start();
+        verify(transactionManager).startTransaction();
+        verify(transaction, never()).commit();
+        subject.commit();
+        verify(transaction).commit();
+    }
+
+    @Test
+    public void testAttachedTransactionRolledBackOnUnitOfWorkRollBack() {
+        TransactionManager transactionManager = mock(TransactionManager.class);
+        Transaction transaction = mock(Transaction.class);
+        when(transactionManager.startTransaction()).thenReturn(transaction);
+        subject.attachTransaction(transactionManager);
+        subject.start();
+        verify(transactionManager).startTransaction();
+        verify(transaction, never()).commit();
+        verify(transaction, never()).rollback();
+
+        subject.rollback();
+        verify(transaction).rollback();
+        verify(transaction, never()).commit();
+
+    }
+
+    @Test
+    public void unitOfWorkIsRolledBackWhenTransactionFailsToStart() {
+        TransactionManager transactionManager = mock(TransactionManager.class);
+        when(transactionManager.startTransaction()).thenThrow(new MockException());
+        try {
+            subject.attachTransaction(transactionManager);
+            fail("Expected MockException to be propagated");
+        } catch (Exception e) {
+            // expected
+        }
+        verify(subject).rollback(isA(MockException.class));
+    }
+
 
     private static class PhaseTransition {
 

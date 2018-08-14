@@ -1,5 +1,8 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.lang.reflect.Type;
 
 /**
@@ -21,7 +24,8 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
-    public InstanceResponseType(Class<R> expectedResponseType) {
+    @JsonCreator
+    public InstanceResponseType(@JsonProperty("expectedResponseType") Class<R> expectedResponseType) {
         super(expectedResponseType);
     }
 
@@ -35,6 +39,13 @@ public class InstanceResponseType<R> extends AbstractResponseType<R> {
      */
     @Override
     public boolean matches(Type responseType) {
-        return isGenericAssignableFrom(responseType) || isAssignableFrom(responseType);
+        Type unwrapped = unwrapIfTypeFuture(responseType);
+        return isGenericAssignableFrom(unwrapped) || isAssignableFrom(unwrapped);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class<R> responseMessagePayloadType() {
+        return (Class<R>) expectedResponseType;
     }
 }

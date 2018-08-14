@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 public class SimpleCorrelationDataProviderTest {
 
     @Test
-    public void testResolveCorrelationData() throws Exception {
+    public void testResolveCorrelationData() {
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");

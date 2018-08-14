@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,5 +36,5 @@ public interface HandlerDefinition {
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
      */
     <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
-                                                  ParameterResolverFactory parameterResolverFactory);
+                                                         ParameterResolverFactory parameterResolverFactory);
 }

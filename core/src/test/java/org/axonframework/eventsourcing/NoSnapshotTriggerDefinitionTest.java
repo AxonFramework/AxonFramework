@@ -23,7 +23,7 @@ import static org.junit.Assert.assertSame;
 public class NoSnapshotTriggerDefinitionTest {
 
     @Test
-    public void triggerDefinitionReturnsSameInstance() throws Exception {
+    public void triggerDefinitionReturnsSameInstance() {
         SnapshotTrigger instance1 = NoSnapshotTriggerDefinition.INSTANCE.prepareTrigger(Object.class);
         SnapshotTrigger instance2 = NoSnapshotTriggerDefinition.INSTANCE.prepareTrigger(Object.class);
         SnapshotTrigger instance3 = NoSnapshotTriggerDefinition.INSTANCE.prepareTrigger(Object.class);

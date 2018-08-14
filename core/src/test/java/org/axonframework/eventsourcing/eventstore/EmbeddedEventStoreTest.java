@@ -30,6 +30,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Iterator;
 import java.util.List;
@@ -217,13 +219,16 @@ public class EmbeddedEventStoreTest {
         when(mockStream.iterator()).thenReturn(mockIterator);
         when(storageEngine.readEvents(any(TrackingToken.class), eq(false)))
                 .thenReturn(mockStream);
-        when(mockIterator.hasNext()).thenReturn(false, true);
+        when(mockIterator.hasNext()).thenAnswer(new SynchronizedBooleanAnswer(false))
+                                    .thenAnswer(new SynchronizedBooleanAnswer(true));
         when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1), createEvent()));
         TrackingEventStream stream = testSubject.openStream(null);
-        assertFalse(stream.hasNextAvailable(10, MILLISECONDS));
+        assertFalse(stream.hasNextAvailable());
         testSubject.publish(createEvent());
+        // give some time consumer to consume the event
+        Thread.sleep(200);
         // if the stream correctly updates the token internally, it should not find events anymore
-        assertFalse(stream.hasNextAvailable(10, MILLISECONDS));
+        assertFalse(stream.hasNextAvailable());
     }
 
     @Test
@@ -280,5 +285,19 @@ public class EmbeddedEventStoreTest {
         unitOfWork.rollback();
 
         Assert.assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    private static class SynchronizedBooleanAnswer implements Answer<Boolean> {
+
+        private final boolean answer;
+
+        private SynchronizedBooleanAnswer(boolean answer) {
+            this.answer = answer;
+        }
+
+        @Override
+        public synchronized Boolean answer(InvocationOnMock invocation) {
+            return answer;
+        }
     }
 }

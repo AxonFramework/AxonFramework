@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,25 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -69,6 +73,38 @@ public interface Configuration {
     }
 
     /**
+     * Finds all configuration modules of given {@code moduleType} within this configuration.
+     *
+     * @param moduleType The type of the configuration module
+     * @param <T>        The type of the configuration module
+     * @return configuration modules of {@code moduleType} defined in this configuration
+     */
+    @SuppressWarnings("unchecked")
+    default <T extends ModuleConfiguration> List<T> findModules(Class<T> moduleType) {
+        return getModules().stream()
+                           .filter(m -> moduleType.isInstance(m.unwrap()))
+                           .map(m -> (T) m.unwrap())
+                           .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the Event Processing Configuration in this Configuration.
+     *
+     * @return the Event Processing Configuration defined in this Configuration
+     */
+    default EventProcessingConfiguration eventProcessingConfiguration() {
+        List<EventProcessingConfiguration> modules = findModules(EventProcessingConfiguration.class);
+        switch (modules.size()) {
+            case 0:
+                return null;
+            case 1:
+                return modules.get(0);
+            default:
+                throw new AxonConfigurationException("Found more than one EventProcessingConfiguration modules");
+        }
+    }
+
+    /**
      * Returns the Command Bus defined in this Configuration. Note that this Configuration should be started (see
      * {@link #start()}) before sending Commands over the Command Bus.
      *
@@ -80,6 +116,16 @@ public interface Configuration {
 
     default QueryBus queryBus() {
         return getComponent(QueryBus.class);
+    }
+
+    /**
+     * Returns the Query Update Emitter in this Configuration. Note that this Configuration should be started (see
+     * {@link #start()} before emitting updates over Query Update Emitter.
+     *
+     * @return the QueryUpdateEmitter defined in this configuration
+     */
+    default QueryUpdateEmitter queryUpdateEmitter() {
+        return getComponent(QueryUpdateEmitter.class);
     }
 
     /**
@@ -110,6 +156,7 @@ public interface Configuration {
     default QueryGateway queryGateway() {
         return getComponent(QueryGateway.class);
     }
+
     /**
      * Returns the Repository configured for the given {@code aggregateType}.
      *
@@ -207,6 +254,23 @@ public interface Configuration {
     }
 
     /**
+     * Returns the Handler Definition defined in this Configuration for the given {@code inspectedType}.
+     *
+     * @param inspectedType The class to being inspected for handlers
+     * @return the Handler Definition defined in this Configuration
+     */
+    HandlerDefinition handlerDefinition(Class<?> inspectedType);
+
+    /**
+     * Returns the Deadline Manager defined in this Configuration.
+     *
+     * @return the Deadline Manager defined in this Configuration
+     */
+    default DeadlineManager deadlineManager() {
+        return getComponent(DeadlineManager.class);
+    }
+
+    /**
      * Returns all modules that have been registered with this Configuration.
      *
      * @return all modules that have been registered with this Configuration
@@ -222,7 +286,24 @@ public interface Configuration {
      * @see #start()
      * @see #onShutdown(Runnable)
      */
-    void onStart(Runnable startHandler);
+    default void onStart(Runnable startHandler) {
+        onStart(0, startHandler);
+    }
+
+    /**
+     * Registers a handler to be executed when this Configuration is started.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already started is undefined.
+     *
+     * @param startHandler The handler to execute when the configuration is started
+     * @param phase        defines a phase in which the start handler will be invoked during {@link
+     *                     Configuration#start()} and {@link Configuration#shutdown()}. When starting the configuration
+     *                     handlers are ordered in ascending, when shutting down the configuration, descending order is
+     *                     used.
+     * @see #start()
+     * @see #onShutdown(Runnable)
+     */
+    void onStart(int phase, Runnable startHandler);
 
     /**
      * Registers a handler to be executed when the Configuration is shut down.
@@ -233,7 +314,24 @@ public interface Configuration {
      * @see #shutdown()
      * @see #onStart(Runnable)
      */
-    void onShutdown(Runnable shutdownHandler);
+    default void onShutdown(Runnable shutdownHandler) {
+        onShutdown(0, shutdownHandler);
+    }
+
+    /**
+     * Registers a handler to be executed when the Configuration is shut down.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
+     *
+     * @param shutdownHandler The handler to execute when the Configuration is shut down
+     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
+     *                        Configuration#start()} and {@link Configuration#shutdown()}. When starting the
+     *                        configuration handlers are ordered in ascending, when shutting down the configuration,
+     *                        descending order is used.
+     * @see #shutdown()
+     * @see #onStart(Runnable)
+     */
+    void onShutdown(int phase, Runnable shutdownHandler);
 
     /**
      * Returns the EventUpcasterChain with all registered upcasters.

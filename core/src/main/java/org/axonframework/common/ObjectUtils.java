@@ -71,4 +71,24 @@ public abstract class ObjectUtils {
         return instance;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> nullSafeTypeOf(T instance) {
+        if (instance == null) {
+            return (Class<T>) Void.class;
+        }
+        return (Class<T>) instance.getClass();
+    }
+
+    /**
+     * Gets number of millis which are remaining of current deadline to be reached by {@link
+     * System#currentTimeMillis()}. If deadline is passed, 0 will be returned.
+     *
+     * @param deadline deadline to be met
+     * @return number of millis to deadline
+     */
+    public static long getRemainingOfDeadline(long deadline) {
+        long leftTimeout = deadline - System.currentTimeMillis();
+        leftTimeout = leftTimeout < 0 ? 0 : leftTimeout;
+        return leftTimeout;
+    }
 }

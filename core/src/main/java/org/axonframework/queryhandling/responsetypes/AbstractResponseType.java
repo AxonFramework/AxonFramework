@@ -1,13 +1,26 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.queryhandling.responsetypes;
 
 import org.axonframework.common.TypeReflectionUtils;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 import java.util.Arrays;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 /**
@@ -35,6 +48,28 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
      */
     protected AbstractResponseType(Class<?> expectedResponseType) {
         this.expectedResponseType = expectedResponseType;
+    }
+
+    @Override
+    public Class<?> getExpectedResponseType() {
+        return expectedResponseType;
+    }
+
+    /**
+     * Tries to unwrap generic type if provided {@code type} is of type {@link Future}.
+     *
+     * @param type to be unwrapped
+     * @return unwrapped generic, or original if provided {@code type} is not of type {@link Future}
+     */
+    protected Type unwrapIfTypeFuture(Type type) {
+        Type futureType = TypeReflectionUtils.getExactSuperType(type, Future.class);
+        if (futureType instanceof ParameterizedType) {
+            Type[] actualTypeArguments = ((ParameterizedType) futureType).getActualTypeArguments();
+            if (actualTypeArguments.length == 1) {
+                return actualTypeArguments[0];
+            }
+        }
+        return type;
     }
 
     protected boolean isIterableOfExpectedType(Type responseType) {

@@ -96,7 +96,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     private EventStore eventStore;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         final CacheManager cacheManager = CacheManager.getInstance();
         realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 

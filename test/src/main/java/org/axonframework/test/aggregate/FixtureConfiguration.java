@@ -20,17 +20,19 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.*;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Interface describing the operations available on a test fixture in the configuration stage. This stage allows a test
@@ -38,11 +40,11 @@ import java.util.List;
  * <p/>
  * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you
  * have implemented your own command handler (either using annotations, or by implementing the {@link MessageHandler}
- * interace), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
+ * interface), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
  * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
  * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
- * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository
+ * #registerRepository(org.axonframework.commandhandling.model.Repository)} method. Registering the repository
  * will cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by
  * the test.
  * <p/>
@@ -85,7 +87,7 @@ import java.util.List;
 public interface FixtureConfiguration<T> {
 
     /**
-     * Registers an arbitrary event sourcing {@code repository} with the fixture. The repository must be wired
+     * Registers an arbitrary {@code repository} with the fixture. The repository must be wired
      * with the Event Store of this test fixture.
      * <p/>
      * Should not be used in combination with {@link
@@ -95,7 +97,16 @@ public interface FixtureConfiguration<T> {
      * @param repository The repository to use in the test case
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
+    FixtureConfiguration<T> registerRepository(Repository<T> repository);
+
+    /**
+     * Registers repository provider with the fixture. If an aggregate being tested spawns new aggregates, this
+     * provider should be registered. Otherwise, it is not going to be invoked.
+     *
+     * @param repositoryProvider provides repositories for specified aggregate types
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerRepositoryProvider(RepositoryProvider repositoryProvider);
 
     /**
      * Registers the given {@code aggregateFactory} with the fixture. The repository used by the fixture will use
@@ -103,8 +114,7 @@ public interface FixtureConfiguration<T> {
      * constructor to create new instances.
      * <p/>
      * Should not be used in combination with {@link
-     * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)}, as that will overwrite any
-     * aggregate factory previously registered.
+     * #registerRepository(Repository)}, as that will overwrite any aggregate factory previously registered.
      *
      * @param aggregateFactory The Aggregate Factory to create empty aggregates with
      * @return the current FixtureConfiguration, for fluent interfacing
@@ -156,6 +166,7 @@ public interface FixtureConfiguration<T> {
      * Register a command dispatch interceptor which will always be invoked before a command is dispatched on the
      * command bus to perform a task specified in the interceptor. For example by adding
      * {@link MetaData} or throwing an exception based on the command.
+     *
      * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
@@ -165,10 +176,11 @@ public interface FixtureConfiguration<T> {
      * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
      * the command bus to perform a task specified in the interceptor. It could for example block the command for
      * security reasons or add auditing to the command bus
-     * @param commandHanderInterceptor the command handler interceptor to be added to the commandbus
+     *
+     * @param commandHandlerInterceptor the command handler interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>>  commandHanderInterceptor);
+    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
@@ -190,11 +202,20 @@ public interface FixtureConfiguration<T> {
      * is ignored when performing deep equality checks.
      *
      * @param declaringClass The class declaring the field
-     * @param fieldName The name of the field
+     * @param fieldName      The name of the field
      * @return the current FixtureConfiguration, for fluent interfacing
      * @throws FixtureExecutionException when no such field is declared
      */
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
+
+    /**
+     * Registers handler definition within this fixture. This {@code handlerDefinition} will replace existing one within
+     * this fixture.
+     *
+     * @param handlerDefinition used to create concrete handlers
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerHandlerDefinition(HandlerDefinition handlerDefinition);
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
@@ -207,17 +228,27 @@ public interface FixtureConfiguration<T> {
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
-    TestExecutor given(Object... domainEvents);
+    TestExecutor<T> given(Object... domainEvents);
+
+    /**
+     * Sets the aggregate instance as supplied by given {@code aggregateState} as the initial state for a test case.
+     * <p>
+     * Note that usage of this method is highly discouraged for event sourced aggregates. In that case, use
+     * {@link #given(Object...)} to specify historic events.
+     *
+     * @param aggregateState a supplier providing the state to use as starting point for this fixture.
+     * @return a TestExecutor instance that can execute the test with this configuration
+     */
+    TestExecutor<T> givenState(Supplier<T> aggregateState);
 
     /**
      * Indicates that no relevant activity has occurred in the past. The behavior of this method is identical to giving
      * no events in the {@link #given(java.util.List)} method.
      *
      * @return a TestExecutor instance that can execute the test with this configuration
-     *
      * @since 2.1.1
      */
-    TestExecutor givenNoPriorActivity();
+    TestExecutor<T> givenNoPriorActivity();
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
@@ -230,7 +261,7 @@ public interface FixtureConfiguration<T> {
      * @param domainEvents the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
-    TestExecutor given(List<?> domainEvents);
+    TestExecutor<T> given(List<?> domainEvents);
 
     /**
      * Configures the given {@code commands} as the command that will provide the "given" events. The commands are
@@ -239,7 +270,7 @@ public interface FixtureConfiguration<T> {
      * @param commands the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
-    TestExecutor givenCommands(Object... commands);
+    TestExecutor<T> givenCommands(Object... commands);
 
     /**
      * Configures the given {@code commands} as the command that will provide the "given" events. The commands are
@@ -248,7 +279,7 @@ public interface FixtureConfiguration<T> {
      * @param commands the domain events the event store should return
      * @return a TestExecutor instance that can execute the test with this configuration
      */
-    TestExecutor givenCommands(List<?> commands);
+    TestExecutor<T> givenCommands(List<?> commands);
 
     /**
      * Returns the command bus used by this fixture. The command bus is provided for wiring purposes only, for example

@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -105,13 +106,32 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         return historicStorage.lastSequenceNumberFor(aggregateIdentifier);
     }
 
+    @Override
+    public TrackingToken createTailToken() {
+        return historicStorage.createTailToken();
+    }
+
+    @Override
+    public TrackingToken createHeadToken() {
+        return activeStorage.createHeadToken();
+    }
+
+    @Override
+    public TrackingToken createTokenAt(Instant dateTime) {
+        TrackingToken tokenFromActiveStorage = activeStorage.createTokenAt(dateTime);
+        if (tokenFromActiveStorage == null) {
+            return historicStorage.createTokenAt(dateTime);
+        }
+        return tokenFromActiveStorage;
+    }
+
     private class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
 
         private final Spliterator<? extends TrackedEventMessage<?>> historicSpliterator;
         private final boolean mayBlock;
         private Spliterator<? extends TrackedEventMessage<?>> active;
         private TrackingToken lastToken;
-        private Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
+        private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
 
         public ConcatenatingSpliterator(Spliterator<? extends TrackedEventMessage<?>> historicSpliterator, boolean mayBlock,
                                         Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider) {
@@ -140,7 +160,7 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
         private final DomainEventStream historic;
         private final String aggregateIdentifier;
         private DomainEventStream actual;
-        private BiFunction<String, Long, DomainEventStream> domainEventStream;
+        private final BiFunction<String, Long, DomainEventStream> domainEventStream;
 
         public ConcatenatingDomainEventStream(DomainEventStream historic, String aggregateIdentifier, BiFunction<String, Long, DomainEventStream> domainEventStream) {
             this.historic = historic;

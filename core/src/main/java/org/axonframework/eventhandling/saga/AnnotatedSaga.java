@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,8 +57,11 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
      * @param trackingToken     The token identifying the position in a stream the saga has last processed
      * @param metaModel         The model describing Saga structure
      */
-    public AnnotatedSaga(String sagaId, Set<AssociationValue> associationValues,
-                         T annotatedSaga, TrackingToken trackingToken, SagaModel<T> metaModel) {
+    public AnnotatedSaga(String sagaId,
+                         Set<AssociationValue> associationValues,
+                         T annotatedSaga,
+                         TrackingToken trackingToken,
+                         SagaModel<T> metaModel) {
         Assert.notNull(annotatedSaga, () -> "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
@@ -92,34 +96,52 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         super.execute(() -> invocation.accept(sagaInstance));
     }
 
+    @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
     public final boolean canHandle(EventMessage<?> event) {
         return isActive && metaModel.findHandlerMethods(event).stream()
-                                    .anyMatch(h -> getAssociationValues().contains(h.getAssociationValue(event)));
+                                    .anyMatch(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
+                                                    .map(sh -> getAssociationValues().contains(
+                                                            sh.getAssociationValue(event)
+                                                    ))
+                                                    .orElse(true));
     }
 
+    @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
     public final void handle(EventMessage<?> event) {
         if (isActive) {
             metaModel.findHandlerMethods(event).stream()
-                     .filter(h -> getAssociationValues().contains(h.getAssociationValue(event)))
-                     .findFirst().ifPresent(h -> {
-                        try {
-                            executeWithResult(() -> h.handle(event, sagaInstance));
-                            if (event instanceof TrackedEventMessage) {
-                                this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
-                            }
-                        } catch (RuntimeException | Error e) {
-                            throw e;
-                        } catch (Exception e) {
-                            throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
-                        } finally {
-                            if (h.isEndingHandler()) {
-                                doEnd();
-                            }
-                        }
-            });
+                     .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
+                                               .map(sh -> getAssociationValues()
+                                                       .contains(sh.getAssociationValue(event)))
+                                               .orElse(true))
+                     .findFirst()
+                     .ifPresent(handler -> handle(handler, event));
         }
+    }
+
+    private void handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
+        try {
+            executeWithResult(() -> handler.handle(event, sagaInstance));
+            if (event instanceof TrackedEventMessage) {
+                this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
+            }
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SagaExecutionException("Exception while handling an Event in a Saga", e);
+        } finally {
+            if (isEndingHandler(handler)) {
+                doEnd();
+            }
+        }
+    }
+
+    private Boolean isEndingHandler(MessageHandlingMember<? super T> handler) {
+        return handler.unwrap(SagaMethodMessageHandlingMember.class)
+                      .map(SagaMethodMessageHandlingMember::isEndingHandler)
+                      .orElse(false);
     }
 
     @Override
@@ -159,6 +181,11 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         associationValues.add(property);
     }
 
+    @Override
+    protected String type() {
+        return sagaInstance.getClass().getSimpleName();
+    }
+
     /**
      * Removes the given association from this Saga. When the saga is committed, it can no longer be found using the
      * given association. If the given property wasn't registered with the saga, nothing happens.
@@ -168,5 +195,4 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     protected void doRemoveAssociation(AssociationValue property) {
         associationValues.remove(property);
     }
-
 }

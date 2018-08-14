@@ -24,6 +24,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class FixtureTest_Annotated {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (CurrentUnitOfWork.isStarted()) {
             fail("A unit of work is still running");
         }
@@ -93,7 +94,8 @@ public class FixtureTest_Annotated {
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                 .when(new TestCommand("AggregateId"))
-                .expectEvents(new MyEvent("AggregateId", 3));
+                .expectEvents(new MyEvent("AggregateId", 3))
+                .expectState(Assert::assertNotNull);
 
         DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {

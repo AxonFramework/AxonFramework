@@ -27,14 +27,14 @@ public class CommandValidatorTest {
     }
 
     @Test
-    public void testAssertEmptyDispatchedEqualTo() throws Exception {
+    public void testAssertEmptyDispatchedEqualTo() {
         when(commandBus.getDispatchedCommands()).thenReturn(emptyCommandMessageList());
 
         testSubject.assertDispatchedEqualTo();
     }
 
     @Test
-    public void testAssertNonEmptyDispatchedEqualTo() throws Exception {
+    public void testAssertNonEmptyDispatchedEqualTo() {
         when(commandBus.getDispatchedCommands()).thenReturn(listOfOneCommandMessage("command"));
 
         testSubject.assertDispatchedEqualTo("command");

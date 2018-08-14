@@ -27,12 +27,21 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
@@ -45,23 +54,38 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
     private final Map<Class<?>, AnnotatedAggregateModel> registry;
     private final ParameterResolverFactory parameterResolverFactory;
+    private final HandlerDefinition handlerDefinition;
 
     /**
      * Initializes an instance which uses the default, classpath based, ParameterResolverFactory to detect parameters
      * for annotated handlers.
      */
     public AnnotatedAggregateMetaModelFactory() {
-        this(null);
+        this(ClasspathParameterResolverFactory.forClassLoader(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
-     * Initializes an instance which uses the give {@code parameterResolverFactory} to detect parameters for
+     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
      * annotated handlers.
      *
      * @param parameterResolverFactory to resolve parameter values of annotated handlers with
      */
     public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
+        this(parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(Thread.currentThread().getContextClassLoader()));
+    }
+
+    /**
+     * Initializes an instance which uses the given {@code parameterResolverFactory} to detect parameters for
+     * annotated handlers and {@code handlerDefinition} to create concrete handlers.
+     *
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     */
+    public AnnotatedAggregateMetaModelFactory(ParameterResolverFactory parameterResolverFactory,
+                                              HandlerDefinition handlerDefinition) {
         this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinition = handlerDefinition;
         registry = new ConcurrentHashMap<>();
     }
 
@@ -89,15 +113,30 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory).createModel(aggregateType);
     }
 
+    /**
+     * Shorthand to create a factory instance and inspect the model for the given {@code aggregateType}, using given
+     * {@code parameterResolverFactory} to resolve parameter values for annotated handlers and {@code handlerDefinition}
+     * to create concrete handlers.
+     *
+     * @param aggregateType            The class of the aggregate to create the model for
+     * @param parameterResolverFactory to resolve parameter values of annotated handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     * @param <T>                      The type of aggregate described in the model
+     * @return The model describing the structure of the aggregate
+     */
+    public static <T> AggregateModel<T> inspectAggregate(Class<T> aggregateType,
+                                                         ParameterResolverFactory parameterResolverFactory,
+                                                         HandlerDefinition handlerDefinition) {
+        return new AnnotatedAggregateMetaModelFactory(parameterResolverFactory, handlerDefinition)
+                .createModel(aggregateType);
+    }
+
     @Override
     public <T> AnnotatedAggregateModel<T> createModel(Class<? extends T> aggregateType) {
         if (!registry.containsKey(aggregateType)) {
-            AnnotatedHandlerInspector<T> inspector;
-            if (parameterResolverFactory == null) {
-                inspector = AnnotatedHandlerInspector.inspectType(aggregateType);
-            } else {
-                inspector = AnnotatedHandlerInspector.inspectType(aggregateType, parameterResolverFactory);
-            }
+            AnnotatedHandlerInspector<T> inspector = AnnotatedHandlerInspector.inspectType(aggregateType,
+                                                                                           parameterResolverFactory,
+                                                                                           handlerDefinition);
             AnnotatedAggregateModel<T> model = new AnnotatedAggregateModel<>(aggregateType, inspector);
             // Add the newly created inspector to the registry first to prevent a StackOverflowError:
             // another call to createInspector with the same inspectedType will return this instance of the inspector.
@@ -113,6 +152,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private final Class<? extends T> inspectedType;
         private final List<ChildEntity<T>> children;
         private final AnnotatedHandlerInspector<T> handlerInspector;
+        private final List<MessageHandlingMember<? super T>> commandHandlerInterceptors;
         private final Map<String, MessageHandlingMember<? super T>> commandHandlers;
         private final List<MessageHandlingMember<? super T>> eventHandlers;
 
@@ -123,6 +163,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
 
         public AnnotatedAggregateModel(Class<? extends T> aggregateType, AnnotatedHandlerInspector<T> handlerInspector) {
             this.inspectedType = aggregateType;
+            this.commandHandlerInterceptors = new ArrayList<>();
             this.commandHandlers = new HashMap<>();
             this.eventHandlers = new ArrayList<>();
             this.children = new ArrayList<>();
@@ -138,9 +179,14 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         @SuppressWarnings("unchecked")
         private void prepareHandlers() {
             for (MessageHandlingMember<? super T> handler : handlerInspector.getHandlers()) {
-                Optional<CommandMessageHandlingMember> commandHandler = handler.unwrap(CommandMessageHandlingMember.class);
+                Optional<CommandMessageHandlingMember> commandHandler = handler
+                        .unwrap(CommandMessageHandlingMember.class);
+                Optional<CommandHandlerInterceptorHandlingMember> unwrappedCommandHandlerInterceptor = handler.unwrap(
+                        CommandHandlerInterceptorHandlingMember.class);
                 if (commandHandler.isPresent()) {
                     commandHandlers.putIfAbsent(commandHandler.get().commandName(), handler);
+                } else if (unwrappedCommandHandlerInterceptor.isPresent()) {
+                    commandHandlerInterceptors.add(handler);
                 } else {
                     eventHandlers.add(handler);
                 }
@@ -245,6 +291,11 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                 return (Long) ReflectionUtils.getFieldValue(versionField, target);
             }
             return null;
+        }
+
+        @Override
+        public List<MessageHandlingMember<? super T>> commandHandlerInterceptors() {
+            return Collections.unmodifiableList(commandHandlerInterceptors);
         }
 
         /**

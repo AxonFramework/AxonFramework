@@ -42,21 +42,23 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Override
     public void initializeTokenSegments(String processorName, int segmentCount) throws UnableToClaimTokenException {
+        initializeTokenSegments(processorName, segmentCount, null);
+    }
+
+    @Override
+    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
         if (fetchSegments(processorName).length > 0) {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
         }
         for (int segment = 0; segment < segmentCount; segment++) {
-            tokens.put(new ProcessAndSegment(processorName, segment), NULL_TOKEN);
+            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(initialToken, NULL_TOKEN));
         }
     }
-
 
     @Override
     public void storeToken(TrackingToken token, String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().afterCommit(uow -> {
-                tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
-            });
+            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN)));
         } else {
             tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
         }

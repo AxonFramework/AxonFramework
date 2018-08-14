@@ -42,7 +42,7 @@ public class MessageIdentifierParameterResolverFactoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResolvesToMessageIdentifierWhenAnnotatedForEventMessage() throws Exception {
+    public void testResolvesToMessageIdentifierWhenAnnotatedForEventMessage() {
         ParameterResolver resolver = testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(eventMessage));
@@ -51,7 +51,7 @@ public class MessageIdentifierParameterResolverFactoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResolvesToMessageIdentifierWhenAnnotatedForCommandMessage() throws Exception {
+    public void testResolvesToMessageIdentifierWhenAnnotatedForCommandMessage() {
         ParameterResolver resolver = testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
         assertTrue(resolver.matches(commandMessage));
@@ -59,13 +59,13 @@ public class MessageIdentifierParameterResolverFactoryTest {
     }
 
     @Test
-    public void testIgnoredWhenNotAnnotated() throws Exception {
+    public void testIgnoredWhenNotAnnotated() {
         ParameterResolver resolver = testSubject.createInstance(nonAnnotatedMethod, nonAnnotatedMethod.getParameters(), 0);
         assertNull(resolver);
     }
 
     @Test
-    public void testIgnoredWhenWrongType() throws Exception {
+    public void testIgnoredWhenWrongType() {
         ParameterResolver resolver = testSubject.createInstance(integerMethod, integerMethod.getParameters(), 0);
         assertNull(resolver);
     }

@@ -20,6 +20,7 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
@@ -41,15 +42,25 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.stubbing.Answer;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -58,19 +69,27 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private static final int COMMAND_COUNT = 100;
     private static final int AGGREGATE_COUNT = 10;
-    private StubHandler stubHandler;
     private InMemoryEventStore inMemoryEventStore;
     private DisruptorCommandBus testSubject;
-    private String[] aggregateIdentifier;
+    private Repository<StubAggregate> spiedRepository;
 
     @Before
-    public void setUp() throws Exception {
-        aggregateIdentifier = new String[AGGREGATE_COUNT];
-        for (int i = 0; i < AGGREGATE_COUNT; i++) {
-            aggregateIdentifier[i] = IdentifierFactory.getInstance().generateIdentifier();
-        }
-        stubHandler = new StubHandler();
+    public void setUp() {
+        StubHandler stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
+        testSubject = new DisruptorCommandBus(
+            new DisruptorConfiguration().setBufferSize(4)
+                .setProducerType(ProducerType.MULTI)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                .setInvokerThreadCount(2)
+                .setPublisherThreadCount(3));
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
+        spiedRepository = spy(testSubject.createRepository(inMemoryEventStore,
+            new GenericAggregateFactory<>(StubAggregate.class)));
+        stubHandler.setRepository(spiedRepository);
     }
 
     @After
@@ -79,58 +98,58 @@ public class DisruptorCommandBusTest_MultiThreaded {
     }
 
     @SuppressWarnings("unchecked")
-    @Test//(timeout = 10000)
+    @Test
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
-        testSubject = new DisruptorCommandBus(
-                new DisruptorConfiguration().setBufferSize(4)
-                        .setProducerType(ProducerType.MULTI)
-                        .setWaitStrategy(new SleepingWaitStrategy())
-                        .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                        .setInvokerThreadCount(2)
-                        .setPublisherThreadCount(3));
-        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
-        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
-        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
-        Repository<StubAggregate> spiedRepository = spy(testSubject.createRepository(
-                inMemoryEventStore,
-                new GenericAggregateFactory<>(StubAggregate.class)));
-        stubHandler.setRepository(spiedRepository);
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
-        doAnswer(invocation -> {
-            Aggregate<StubAggregate> realAggregate = (Aggregate<StubAggregate>) invocation.callRealMethod();
-            garbageCollectionPrevention.put(realAggregate, new Object());
-            return realAggregate;
-        }).when(spiedRepository).newInstance(any());
-        doAnswer(invocation -> {
-            Object aggregate = invocation.callRealMethod();
-            garbageCollectionPrevention.put(aggregate, new Object());
-            return aggregate;
-        }).when(spiedRepository).load(isA(String.class));
+        doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).newInstance(any());
+        doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).load(isA(String.class));
 
-        for (int a = 0; a < AGGREGATE_COUNT; a++) {
-            testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier[a])));
-        }
+        List<String> aggregateIdentifiers = IntStream.range(0, AGGREGATE_COUNT)
+            .mapToObj(i -> IdentifierFactory.getInstance().generateIdentifier())
+            .collect(toList());
+
         CommandCallback mockCallback = mock(CommandCallback.class);
-        for (int t = 0; t < COMMAND_COUNT; t++) {
-            for (int a = 0; a < AGGREGATE_COUNT; a++) {
-                CommandMessage command;
-                if (t == 10) {
-                    command = asCommandMessage(new ErrorCommand(aggregateIdentifier[a]));
-                } else {
-                    command = asCommandMessage(new StubCommand(aggregateIdentifier[a]));
-                }
-                testSubject.dispatch(command, mockCallback);
-            }
-        }
+
+        Stream<CommandMessage<Object>> commands = generateCommands(aggregateIdentifiers);
+        commands.forEach(c -> testSubject.dispatch(c, mockCallback));
 
         testSubject.stop();
         // only the commands executed after the failed ones will cause a readEvents() to occur
         assertEquals(10, inMemoryEventStore.loadCounter.get());
         assertEquals(20, garbageCollectionPrevention.size());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
-                     inMemoryEventStore.storedEventCounter.get());
-        verify(mockCallback, times(990)).onSuccess(any(), any());
-        verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
+            inMemoryEventStore.storedEventCounter.get());
+        verify(mockCallback, times(1000)).onSuccess(any(), any());
+        verify(mockCallback, times(10)).onFailure(any(), isA(MockException.class));
+    }
+
+    private Answer trackCreateAndLoad(Map<Object, Object> garbageCollectionPrevention) {
+        return invocation -> {
+            Object realAggregate = invocation.callRealMethod();
+            garbageCollectionPrevention.put(realAggregate, new Object());
+            return realAggregate;
+        };
+    }
+
+    private Stream<CommandMessage<Object>> generateCommands(List<String> aggregateIdentifiers) {
+        Stream<CommandMessage<Object>> create = aggregateIdentifiers.stream()
+            .map(CreateCommand::new)
+            .map(GenericCommandMessage::asCommandMessage);
+        Stream<CommandMessage<Object>> head = IntStream.range(0, 10)
+            .mapToObj(k -> aggregateIdentifiers.stream()
+                .map(StubCommand::new)
+                .map(GenericCommandMessage::asCommandMessage))
+            .reduce(Stream.of(), Stream::concat);
+        Stream<CommandMessage<Object>> errors = aggregateIdentifiers.stream()
+            .map(ErrorCommand::new)
+            .map(GenericCommandMessage::asCommandMessage);
+        Stream<CommandMessage<Object>> tail = IntStream.range(11, 100)
+            .mapToObj(k -> aggregateIdentifiers.stream()
+                .map(StubCommand::new)
+                .map(GenericCommandMessage::asCommandMessage))
+            .reduce(Stream.of(), Stream::concat);
+
+        return Stream.of(create, head, errors, tail).flatMap(identity());
     }
 
     private static class StubAggregate {

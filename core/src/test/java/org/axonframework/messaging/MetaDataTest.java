@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public class MetaDataTest {
 
     @Test
-    public void testAddNullValueToMetaData() throws Exception {
+    public void testAddNullValueToMetaData() {
         MetaData metaData = MetaData.with("nullkey", null).and("otherkey", "value").and("lastkey", "lastvalue")
                 .subset("nullkey", "otherkey");
 

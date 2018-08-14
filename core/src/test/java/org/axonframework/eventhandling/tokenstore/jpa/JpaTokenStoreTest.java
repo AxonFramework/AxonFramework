@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class JpaTokenStoreTest {
     private TransactionTemplate txTemplate;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         this.txTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -102,7 +102,7 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testInitializeTokens() throws Exception {
+    public void testInitializeTokens() {
         jpaTokenStore.initializeTokenSegments("test1", 7);
 
         int[] actual = jpaTokenStore.fetchSegments("test1");
@@ -111,15 +111,29 @@ public class JpaTokenStoreTest {
     }
 
     @Transactional
+    @Test
+    public void testInitializeTokensAtGivenPosition() {
+        jpaTokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
+
+        int[] actual = jpaTokenStore.fetchSegments("test1");
+        Arrays.sort(actual);
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
+
+        for (int segment : actual) {
+            assertEquals(new GlobalSequenceTrackingToken(10), jpaTokenStore.fetchToken("test1", segment));
+        }
+    }
+
+    @Transactional
     @Test(expected = UnableToClaimTokenException.class)
-    public void testInitializeTokensWhileAlreadyPresent() throws Exception {
+    public void testInitializeTokensWhileAlreadyPresent() {
         jpaTokenStore.fetchToken("test1", 1);
         jpaTokenStore.initializeTokenSegments("test1", 7);
     }
 
     @Transactional
     @Test
-    public void testClaimAndUpdateToken() throws Exception {
+    public void testClaimAndUpdateToken() {
         assertNull(jpaTokenStore.fetchToken("test", 0));
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
 
@@ -141,7 +155,7 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testQuerySegments() throws Exception {
+    public void testQuerySegments() {
         assertNull(jpaTokenStore.fetchToken("test", 0));
 
         jpaTokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
@@ -169,7 +183,7 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testClaimTokenConcurrently() throws Exception {
+    public void testClaimTokenConcurrently() {
         jpaTokenStore.fetchToken("concurrent", 0);
         try {
             concurrentJpaTokenStore.fetchToken("concurrent", 0);
@@ -181,7 +195,7 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testStealToken() throws Exception {
+    public void testStealToken() {
         jpaTokenStore.fetchToken("stealing", 0);
         stealingJpaTokenStore.fetchToken("stealing", 0);
 
@@ -198,7 +212,7 @@ public class JpaTokenStoreTest {
 
     @Transactional
     @Test
-    public void testExtendingLostClaimFails() throws Exception {
+    public void testExtendingLostClaimFails() {
         jpaTokenStore.fetchToken("processor", 0);
 
         try {

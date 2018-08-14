@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateMetaModelFactory;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -67,7 +68,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
         metaModel = new Component<>(() -> parent, "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
                                     c -> c.getComponent(AggregateMetaModelFactory.class,
-                                                        () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory()))
+                                                        () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
+                                                                                                     c.handlerDefinition(aggregate)))
                                           .createModel(aggregate));
         commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
                                                 c -> c.getComponent(CommandTargetResolver.class,
@@ -82,13 +84,18 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                  "Store to use, or configure a specific repository implementation for " +
                                  aggregate.toString());
             if (c.commandBus() instanceof DisruptorCommandBus) {
-                return ((DisruptorCommandBus) c.commandBus())
-                        .createRepository(c.eventStore(), aggregateFactory.get(),
-                                          snapshotTriggerDefinition.get(),
-                                          c.parameterResolverFactory());
+                return ((DisruptorCommandBus) c.commandBus()).createRepository(c.eventStore(),
+                                                                               aggregateFactory.get(),
+                                                                               snapshotTriggerDefinition.get(),
+                                                                               c.parameterResolverFactory(),
+                                                                               c.handlerDefinition(aggregate),
+                                                                               c::repository);
             }
-            return new EventSourcingRepository<>(metaModel.get(), aggregateFactory.get(), c.eventStore(),
-                                                 snapshotTriggerDefinition.get());
+            return new EventSourcingRepository<>(metaModel.get(),
+                                                 aggregateFactory.get(),
+                                                 c.eventStore(),
+                                                 snapshotTriggerDefinition.get(),
+                                                 c::repository);
         });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
                                          c -> new AggregateAnnotationCommandHandler<>(repository.get(),
@@ -127,11 +134,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return configurer.configureRepository(
                 c -> new GenericJpaRepository<>(c.getComponent(EntityManagerProvider.class,
                                                                () -> {
-                                                                   throw new AxonConfigurationException(format("JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
-                                                                                                               aggregateType.getSimpleName()));
-
+                                                                   throw new AxonConfigurationException(format(
+                                                                           "JPA has not been correctly configured for aggregate [%s]. Either provide an EntityManagerProvider, or use DefaultConfigurer.jpaConfiguration(...) to define one for the entire configuration.",
+                                                                           aggregateType.getSimpleName()));
                                                                }),
-                                                configurer.metaModel.get(), c.eventBus()));
+                                                configurer.metaModel.get(),
+                                                c.eventBus(),
+                                                (RepositoryProvider) c::repository));
     }
 
     /**
@@ -148,7 +157,10 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                                                     EntityManagerProvider entityManagerProvider) {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType);
         return configurer.configureRepository(
-                c -> new GenericJpaRepository<>(entityManagerProvider, configurer.metaModel.get(), c.eventBus()));
+                c -> new GenericJpaRepository<>(entityManagerProvider,
+                                                configurer.metaModel.get(),
+                                                c.eventBus(),
+                                                (RepositoryProvider) c::repository));
     }
 
     private String name(String prefix) {

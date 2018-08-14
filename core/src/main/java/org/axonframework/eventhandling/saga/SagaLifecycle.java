@@ -13,14 +13,13 @@
 
 package org.axonframework.eventhandling.saga;
 
-import java.util.concurrent.Callable;
+import org.axonframework.messaging.Scope;
+import org.axonframework.messaging.ScopeDescriptor;
 
 /**
  * Abstract base class of a component that models a saga's life cycle.
  */
-public abstract class SagaLifecycle {
-
-    private static final ThreadLocal<SagaLifecycle> CURRENT_SAGA_LIFECYCLE = new ThreadLocal<>();
+public abstract class SagaLifecycle extends Scope {
 
     /**
      * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
@@ -113,36 +112,7 @@ public abstract class SagaLifecycle {
      * @return the thread's current {@link SagaLifecycle}
      */
     protected static SagaLifecycle getInstance() {
-        SagaLifecycle instance = CURRENT_SAGA_LIFECYCLE.get();
-        if (instance == null) {
-            throw new IllegalStateException("Cannot retrieve current SagaLifecycle; none is yet defined");
-        }
-        return instance;
-    }
-
-    /**
-     * {@link SagaLifecycle} instance method to execute given {@code task} in the context of this SagaLifeCycle. This
-     * updates the thread's current saga lifecycle before executing the task. If a lifecycle is already registered with
-     * the current thread that one will be temporarily replaced with this lifecycle until the task completes. This
-     * method returns the execution result of the task.
-     *
-     * @param task the task to execute
-     * @param <V> the type of execution result of the task
-     * @return the execution result
-     * @throws Exception if executing the task results in an exception
-     */
-    protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        SagaLifecycle existing = CURRENT_SAGA_LIFECYCLE.get();
-        CURRENT_SAGA_LIFECYCLE.set(this);
-        try {
-            return task.call();
-        } finally {
-            if (existing == null) {
-                CURRENT_SAGA_LIFECYCLE.remove();
-            } else {
-                CURRENT_SAGA_LIFECYCLE.set(existing);
-            }
-        }
+        return Scope.getCurrentScope();
     }
 
     /**
@@ -163,5 +133,24 @@ public abstract class SagaLifecycle {
         } catch (Exception e) {
             throw new SagaExecutionException("Exception while executing a task for a saga", e);
         }
+    }
+
+    /**
+     * Retrieve a {@link String} denoting the type of this Saga.
+     *
+     * @return a {@link String} denoting the type of this Saga
+     */
+    protected abstract String type();
+
+    /**
+     * Retrieve a {@link String} denoting the identifier of this Saga.
+     *
+     * @return a {@link String} denoting the identifier of this Saga
+     */
+    protected abstract String getSagaIdentifier();
+
+    @Override
+    public ScopeDescriptor describeScope() {
+        return new SagaScopeDescriptor(type(), getSagaIdentifier());
     }
 }

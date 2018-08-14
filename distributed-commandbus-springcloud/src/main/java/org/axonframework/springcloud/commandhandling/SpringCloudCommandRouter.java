@@ -16,7 +16,12 @@
 package org.axonframework.springcloud.commandhandling;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -25,13 +30,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
+import org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent;
 import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.context.event.EventListener;
 
 import java.net.URI;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A {@link org.axonframework.commandhandling.distributed.CommandRouter} implementation which uses Spring Cloud's
@@ -60,6 +73,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private final ConsistentHashChangeListener consistentHashChangeListener;
     private final AtomicReference<ConsistentHash> atomicConsistentHash = new AtomicReference<>(new ConsistentHash());
     private final Set<ServiceInstance> blackListedServiceInstances = new HashSet<>();
+    private volatile boolean registered = false;
 
     /**
      * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
@@ -185,22 +199,79 @@ public class SpringCloudCommandRouter implements CommandRouter {
                 .ifPresent(consistentHashChangeListener::onConsistentHashChanged);
     }
 
+    /**
+     * Update the local member and all the other remote members known by the
+     * {@link org.springframework.cloud.client.discovery.DiscoveryClient} to be able to have an as up-to-date awareness
+     * of which actions which members can handle. This function is automatically triggered by an (unused)
+     * {@link org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent}. Upon this event we may assume
+     * that the application has fully start up. Because of this we can update the local member with the correct name and
+     * {@link java.net.URI}, as initially these were not provided by the
+     * {@link org.springframework.cloud.client.serviceregistry.Registration} yet.
+     *
+     * @param event an unused {@link org.springframework.cloud.client.discovery.event.InstanceRegisteredEvent}, serves
+     *              as a trigger for this function
+     * @see SpringCloudCommandRouter#buildMember(ServiceInstance)
+     */
+    @EventListener
+    @SuppressWarnings("UnusedParameters")
+    public void resetLocalMembership(InstanceRegisteredEvent event) {
+        registered = true;
+        Member startUpPhaseLocalMember =
+                atomicConsistentHash.get().getMembers().stream()
+                                    .filter(Member::local)
+                                    .findFirst()
+                                    .orElseThrow(() -> new IllegalStateException(
+                                            "There should be no scenario where the local member does not exist."
+                                    ));
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Resetting local membership for [{}].", startUpPhaseLocalMember);
+        }
+
+        updateMemberships();
+        atomicConsistentHash.updateAndGet(consistentHash -> consistentHash.without(startUpPhaseLocalMember));
+    }
+
+    /**
+     * Update the memberships of all nodes known by the
+     * {@link org.springframework.cloud.client.discovery.DiscoveryClient} to be able to have an as up-to-date awareness
+     * of which actions which members can handle. This function is automatically triggered by
+     * an (unused) {@link org.springframework.cloud.client.discovery.event.HeartbeatEvent}.
+     *
+     * @param event an unused {@link org.springframework.cloud.client.discovery.event.HeartbeatEvent}, serves as a
+     *              trigger for this function
+     */
     @EventListener
     @SuppressWarnings("UnusedParameters")
     public void updateMemberships(HeartbeatEvent event) {
+        updateMemberships();
+    }
+
+    private void updateMemberships() {
         AtomicReference<ConsistentHash> updatedConsistentHash = new AtomicReference<>(new ConsistentHash());
 
-        discoveryClient.getServices().stream()
-                       .map(discoveryClient::getInstances)
-                       .flatMap(Collection::stream)
-                       .filter(serviceInstanceFilter)
-                       .filter(this::ifNotBlackListed)
-                       .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
-                                                                                      updatedConsistentHash));
+        List<ServiceInstance> instances = discoveryClient.getServices().stream()
+                                                         .map(discoveryClient::getInstances)
+                                                         .flatMap(Collection::stream)
+                                                         .filter(serviceInstanceFilter)
+                                                         .collect(Collectors.toList());
+
+        cleanBlackList(instances);
+
+        instances.stream()
+                 .filter(this::ifNotBlackListed)
+                 .forEach(serviceInstance -> updateMembershipForServiceInstance(serviceInstance,
+                                                                                updatedConsistentHash));
 
         ConsistentHash newConsistentHash = updatedConsistentHash.get();
         atomicConsistentHash.set(newConsistentHash);
         consistentHashChangeListener.onConsistentHashChanged(newConsistentHash);
+    }
+
+    private void cleanBlackList(List<ServiceInstance> instances) {
+        blackListedServiceInstances.removeIf(blackListedInstance -> instances.stream().noneMatch(instance -> equals(
+                instance,
+                blackListedInstance)));
     }
 
     private boolean ifNotBlackListed(ServiceInstance serviceInstance) {
@@ -236,6 +307,10 @@ public class SpringCloudCommandRouter implements CommandRouter {
 
     private Optional<ConsistentHash> updateMembershipForServiceInstance(ServiceInstance serviceInstance,
                                                                         AtomicReference<ConsistentHash> atomicConsistentHash) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Updating membership for service instance: [{}]", serviceInstance);
+        }
+
         Member member = buildMember(serviceInstance);
 
         Optional<MessageRoutingInformation> optionalMessageRoutingInfo = getMessageRoutingInformation(serviceInstance);
@@ -275,10 +350,9 @@ public class SpringCloudCommandRouter implements CommandRouter {
      * @return A {@link Member} based on the contents of the provided {@code serviceInstance}
      */
     protected Member buildMember(ServiceInstance serviceInstance) {
-        String serviceId = serviceInstance.getServiceId();
         return isLocalServiceInstance(serviceInstance)
-                ? buildLocalMember(serviceId)
-                : buildRemoteMember(serviceId, serviceInstance.getUri());
+                ? buildLocalMember(serviceInstance)
+                : buildRemoteMember(serviceInstance);
     }
 
     private boolean isLocalServiceInstance(ServiceInstance serviceInstance) {
@@ -286,20 +360,31 @@ public class SpringCloudCommandRouter implements CommandRouter {
                 || Objects.equals(serviceInstance.getUri(), localServiceInstance.getUri());
     }
 
-    private Member buildLocalMember(String serviceId) {
+    private Member buildLocalMember(ServiceInstance localServiceInstance) {
+        String localServiceId = localServiceInstance.getServiceId();
         URI emptyEndpoint = null;
         //noinspection ConstantConditions | added null variable for clarity
-        return new SimpleMember<>(serviceId.toUpperCase() + "[LOCAL]",
-                                  emptyEndpoint,
-                                  SimpleMember.LOCAL_MEMBER,
+        return registered
+                ? new SimpleMember<>(buildSimpleMemberName(localServiceId, localServiceInstance.getUri()),
+                                     localServiceInstance.getUri(),
+                                     SimpleMember.LOCAL_MEMBER,
+                                     this::suspect)
+                : new SimpleMember<>(localServiceId.toUpperCase() + "[LOCAL]",
+                                     emptyEndpoint,
+                                     SimpleMember.LOCAL_MEMBER,
+                                     this::suspect);
+    }
+
+    private Member buildRemoteMember(ServiceInstance remoteServiceInstance) {
+        URI remoteServiceUri = remoteServiceInstance.getUri();
+        return new SimpleMember<>(buildSimpleMemberName(remoteServiceInstance.getServiceId(), remoteServiceUri),
+                                  remoteServiceUri,
+                                  SimpleMember.REMOTE_MEMBER,
                                   this::suspect);
     }
 
-    private Member buildRemoteMember(String serviceId, URI serviceUri) {
-        return new SimpleMember<>(serviceId.toUpperCase() + "[" + serviceUri + "]",
-                                  serviceUri,
-                                  SimpleMember.REMOTE_MEMBER,
-                                  this::suspect);
+    private String buildSimpleMemberName(String serviceId, URI serviceUri) {
+        return serviceId.toUpperCase() + "[" + serviceUri + "]";
     }
 
     private ConsistentHash suspect(Member member) {

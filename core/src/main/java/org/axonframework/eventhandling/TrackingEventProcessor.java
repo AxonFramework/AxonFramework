@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -43,6 +42,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -69,11 +69,11 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
     public static final int DEFAULT_BACKOFF_TIME_MILLIS = 5000;
-
+    private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
+    private final Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder;
     private final TransactionManager transactionManager;
     private final int batchSize;
     private final int segmentsSize;
@@ -162,8 +162,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(name));
         this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + name + "]/Token";
+        this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
 
-        registerInterceptor(new TransactionManagingInterceptor<>(transactionManager));
         registerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
                 tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
@@ -277,6 +277,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
 
             UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
+            unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);
             processInUnitOfWork(batch, unitOfWork, segment);
@@ -327,13 +328,44 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Resets tokens to the initial state. This effectively causes a replay.
+     * Resets tokens to their initial state. This effectively causes a replay.
      * <p>
      * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
      * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
      * as a processor can only reset the tokens if it is able to claim them all.
      */
     public void resetTokens() {
+        resetTokens(initialTrackingTokenBuilder);
+    }
+
+    /**
+     * Reset tokens to the position as return by the given {@code initialTrackingTokenSupplier}. This effectively causes
+     * a replay since that position.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
+     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
+     * as a processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param initialTrackingTokenSupplier A function returning the token representing the position to reset to
+     */
+    public void resetTokens(Function<StreamableMessageSource, TrackingToken> initialTrackingTokenSupplier) {
+        resetTokens(initialTrackingTokenSupplier.apply(messageSource));
+    }
+
+    /**
+     * Resets tokens to the given {@code startPosition}. This effectively causes a replay of events since that position.
+     * <p>
+     * Note that the new token must represent a position that is <em>before</em> the current position of the processor.
+     * <p>
+     * Before attempting to reset the tokens, the caller must stop this processor, as well as any instances of the
+     * same logical processor that may be running in the cluster. Failure to do so will cause the reset to fail,
+     * as a processor can only reset the tokens if it is able to claim them all.
+     *
+     * @param startPosition The token representing the position to reset the processor to.
+     */
+    public void resetTokens(TrackingToken startPosition) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset");
         Assert.state(!isRunning() && activeProcessorThreads() == 0,
                      () -> "TrackingProcessor must be shut down before triggering a reset");
@@ -347,7 +379,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             eventHandlerInvoker().performReset();
 
             for (int i = 0; i < tokens.length; i++) {
-                tokenStore.storeToken(new ReplayToken(tokens[i]), getName(), segments[i]);
+                tokenStore.storeToken(ReplayToken.createReplayToken(tokens[i], startPosition), getName(), segments[i]);
             }
         });
     }
@@ -639,8 +671,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         @Override
         public void run() {
             int waitTime = 1;
+            String processorName = TrackingEventProcessor.this.getName();
             while (getState().isRunning()) {
-                String processorName = TrackingEventProcessor.this.getName();
                 int[] tokenStoreCurrentSegments;
 
                 try {
@@ -651,7 +683,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     if (tokenStoreCurrentSegments.length == 0 && segmentsSize > 0) {
                         tokenStoreCurrentSegments = transactionManager.fetchInTransaction(
                                 () -> {
-                                    tokenStore.initializeTokenSegments(processorName, segmentsSize);
+                                    TrackingToken initialToken = initialTrackingTokenBuilder.apply(messageSource);
+                                    tokenStore.initializeTokenSegments(processorName, segmentsSize, initialToken);
                                     return tokenStore.fetchSegments(processorName);
                                 });
                     }
@@ -670,7 +703,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                boolean attemptImmediateRetry = false;
                 for (int i = 0; i < segments.length
                         && activeSegments.size() < maxThreadCount; i++) {
                     Segment segment = segments[i];
@@ -685,7 +717,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                             // When not able to claim a token for a given segment, we skip the
                             logger.debug("Unable to claim the token for segment: {}. It is owned by another process", segment.getSegmentId());
                             activeSegments.remove(segment.getSegmentId());
-                            attemptImmediateRetry = true;
                             continue;
                         } catch (Exception e) {
                             activeSegments.remove(segment.getSegmentId());
@@ -715,10 +746,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     workingInCurrentThread.run();
                     break;
                 }
-
-                if (!attemptImmediateRetry) {
-                    doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
-                }
+                doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
             }
         }
     }

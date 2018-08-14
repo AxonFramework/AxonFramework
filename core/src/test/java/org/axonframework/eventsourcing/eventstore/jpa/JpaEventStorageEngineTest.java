@@ -29,7 +29,6 @@ import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -87,11 +86,6 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         entityManager.createQuery("DELETE FROM DomainEventEntry dee").executeUpdate();
         entityManager.flush();
         entityManager.clear();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        GenericEventMessage.clock = Clock.systemUTC();
     }
 
     @Test

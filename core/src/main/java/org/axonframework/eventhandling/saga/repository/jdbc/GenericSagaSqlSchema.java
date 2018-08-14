@@ -118,7 +118,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     }
 
     @Override
-    public String readToken(ResultSet resultSet) throws SQLException {
+    public String readToken(ResultSet resultSet) {
         // tokens not supported by this implementation
         return null;
     }

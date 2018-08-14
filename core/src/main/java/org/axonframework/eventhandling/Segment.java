@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling;
 
 
@@ -25,6 +41,7 @@ public class Segment implements Comparable<Segment> {
      * Represents the Segment that matches against all input, but can be split to start processing elements in parallel.
      */
     public static final Segment ROOT_SEGMENT = new Segment(0, ZERO_MASK);
+    public static final Segment[] EMPTY_SEGMENTS = new Segment[0];
 
     private final int segmentId;
     private final int mask;
@@ -59,12 +76,14 @@ public class Segment implements Comparable<Segment> {
      * @return an array of computed {@link Segment}
      */
     public static Segment[] computeSegments(int... segments) {
-
+        if (segments == null || segments.length == 0) {
+            return EMPTY_SEGMENTS;
+        }
         final Set<Segment> resolvedSegments = new HashSet<>();
         computeSegments(ROOT_SEGMENT, stream(segments).boxed().collect(toList()), resolvedSegments);
 
-        // As we split and compute segmentmasks branching by first entry, the resolved segmentmask is not guaranteed to
-        // be added to the collection in natural order.
+        // As we split and compute segment masks branching by first entry, the resolved segment mask is not guaranteed
+        // to be added to the collection in natural order.
         return resolvedSegments.stream().sorted().collect(toList()).toArray(new Segment[resolvedSegments.size()]);
     }
 

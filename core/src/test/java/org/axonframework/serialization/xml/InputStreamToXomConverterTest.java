@@ -33,12 +33,12 @@ public class InputStreamToXomConverterTest {
     private InputStreamToXomConverter testSubject;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         testSubject = new InputStreamToXomConverter();
     }
 
     @Test
-    public void testConvert() throws Exception {
+    public void testConvert() {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         Document actual = testSubject.convert(inputStream);

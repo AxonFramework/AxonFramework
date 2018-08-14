@@ -32,14 +32,14 @@ public class ConfigurationParameterResolverFactoryTest {
     }
 
     @Test
-    public void testReturnsNullOnUnavailableParameter() throws Exception {
+    public void testReturnsNullOnUnavailableParameter() {
         assertNull(testSubject.createInstance(method, parameters, 0));
 
         verify(configuration).getComponent(String.class);
     }
 
     @Test
-    public void testConfigurationContainsRequestedParameter() throws Exception {
+    public void testConfigurationContainsRequestedParameter() {
         ParameterResolver<?> actual = testSubject.createInstance(method, parameters, 1);
         assertNotNull(actual);
         assertSame(commandBus, actual.resolveParameterValue(new GenericMessage<>("test")));

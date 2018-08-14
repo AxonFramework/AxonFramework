@@ -52,7 +52,7 @@ public class SagaManagerTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockSagaRepository = mock(SagaRepository.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);

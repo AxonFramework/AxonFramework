@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
@@ -167,21 +168,26 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Autowired
     public void configureEventHandling(EventHandlingConfiguration eventHandlingConfiguration,
+                                       EventProcessingConfiguration eventProcessingConfiguration,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
+
+            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
+                    resolveSequencingPolicy(applicationContext, v);
+            eventHandlingConfiguration.configureSequencingPolicy(k, sequencingPolicy);
+
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
                 TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
                         .forParallelProcessing(v.getThreadCount())
                         .andBatchSize(v.getBatchSize())
                         .andInitialSegmentsCount(v.getInitialSegmentCount());
-                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy = resolveSequencingPolicy(applicationContext, v);
                 Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource = resolveMessageSource(applicationContext, v);
-                eventHandlingConfiguration.registerTrackingProcessor(k, messageSource, c -> config, sequencingPolicy);
+                eventProcessingConfiguration.registerTrackingEventProcessor(k, messageSource, c -> config);
             } else {
                 if (v.getSource() == null) {
-                    eventHandlingConfiguration.registerSubscribingEventProcessor(k);
+                    eventProcessingConfiguration.registerSubscribingEventProcessor(k);
                 } else {
-                    eventHandlingConfiguration.registerSubscribingEventProcessor(k, c -> applicationContext
+                    eventProcessingConfiguration.registerSubscribingEventProcessor(k, c -> applicationContext
                             .getBean(v.getSource(), SubscribableMessageSource.class));
                 }
             }

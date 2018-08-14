@@ -81,15 +81,12 @@ public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) throws Exception {
+    public void onMessage(Message message, Channel channel) {
         if (!eventProcessors.isEmpty()) {
             try {
-                EventMessage<?> event = messageConverter
-                        .readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders()).orElse(null);
-                if (event != null) {
-                    eventProcessors.forEach(ep -> ep.accept(Collections.singletonList(event)));
-                }
-            } catch (UnknownSerializedTypeException e) {
+                messageConverter.readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders())
+                                .ifPresent(event -> eventProcessors.forEach(ep -> ep.accept(Collections.singletonList(event))));
+            } catch(UnknownSerializedTypeException e) {
                 logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
             }
         }

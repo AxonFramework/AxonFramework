@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,15 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.Scope;
+import org.axonframework.messaging.ScopeDescriptor;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
  * Abstract base class of a component that models an aggregate's life cycle.
  */
-public abstract class AggregateLifecycle {
-
-    private static final ThreadLocal<AggregateLifecycle> CURRENT = new ThreadLocal<>();
+public abstract class AggregateLifecycle extends Scope {
 
     /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
@@ -68,6 +64,26 @@ public abstract class AggregateLifecycle {
     }
 
     /**
+     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be
+     * available to the current aggregate. {@link Repository} of an aggregate to be created is exposed to the current
+     * aggregate via {@link RepositoryProvider}.
+     *
+     * @param <T>           type of new aggregate to be created
+     * @param aggregateType type of new aggregate to be created
+     * @param factoryMethod factory method which creates new aggregate
+     * @return a new aggregate instance
+     * @throws Exception thrown if something goes wrong during instantiation of new aggregate
+     */
+    public static <T> Aggregate<T> createNew(Class<T> aggregateType, Callable<T> factoryMethod)
+            throws Exception {
+        if (!isLive()) {
+            throw new UnsupportedOperationException(
+                    "Aggregate is still initializing its state, creation of new aggregates is not possible");
+        }
+        return getInstance().doCreateNew(aggregateType, factoryMethod);
+    }
+
+    /**
      * Indicates whether this Aggregate instance is 'live'. Events applied to a 'live' Aggregate represent events that
      * are currently happening, as opposed to events representing historic decisions used to reconstruct the
      * Aggregate's state.
@@ -77,6 +93,15 @@ public abstract class AggregateLifecycle {
      */
     public static boolean isLive() {
         return AggregateLifecycle.getInstance().getIsLive();
+    }
+
+    /**
+     * Gets the version of the aggregate.
+     *
+     * @return the current version of the aggregate
+     */
+    public static Long getVersion() {
+        return getInstance().version();
     }
 
     /**
@@ -91,24 +116,13 @@ public abstract class AggregateLifecycle {
     }
 
     /**
-     * Returns the {@link AggregateLifecycle} for the current aggregate. If none was defined this method will throw
-     * an exception.
+     * Get the current {@link AggregateLifecycle} instance for the current thread. If none exists an {@link
+     * IllegalStateException} is thrown.
      *
-     * @return the {@link AggregateLifecycle} for the current aggregate
+     * @return the thread's current {@link AggregateLifecycle}
      */
     protected static AggregateLifecycle getInstance() {
-        AggregateLifecycle instance = CURRENT.get();
-        if (instance == null && CurrentUnitOfWork.isStarted()) {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            Set<AggregateLifecycle> managedAggregates = unitOfWork.getResource("ManagedAggregates");
-            if (managedAggregates != null && managedAggregates.size() == 1) {
-                instance = managedAggregates.iterator().next();
-            }
-        }
-        if (instance == null) {
-            throw new IllegalStateException("Cannot retrieve current AggregateLifecycle; none is yet defined");
-        }
-        return instance;
+        return Scope.getCurrentScope();
     }
 
     /**
@@ -121,18 +135,18 @@ public abstract class AggregateLifecycle {
     protected abstract boolean getIsLive();
 
     /**
+     * Gets the version of the aggregate.
+     *
+     * @return the current version of the aggregate
+     */
+    protected abstract Long version();
+
+    /**
      * Marks this aggregate as deleted. Implementations may react differently to aggregates marked for deletion.
      * Typically, Event Sourced Repositories will ignore the marking and expect deletion to be provided as part of Event
      * information.
      */
     protected abstract void doMarkDeleted();
-
-    /**
-     * Registers this aggregate with the current unit of work if one is started.
-     */
-    protected void registerWithUnitOfWork() {
-        CurrentUnitOfWork.ifStarted(u -> u.getOrComputeResource("ManagedAggregates", k -> new HashSet<>()).add(this));
-    }
 
     /**
      * Apply a {@link DomainEventMessage} with given payload and metadata (metadata from interceptors will be combined
@@ -152,40 +166,17 @@ public abstract class AggregateLifecycle {
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
 
     /**
-     * Executes the given task and returns the result of the task. While the task is being executed the current
-     * aggregate will be registered with the current thread as the 'current' aggregate.
+     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be
+     * available to the current aggregate. {@link Repository} of an aggregate to be created is exposed to the current
+     * aggregate via {@link RepositoryProvider}.
      *
-     * @param task the task to execute on the aggregate
-     * @param <V>  the result of the task
-     * @return the task's result
-     * @throws Exception if executing the task causes an exception
+     * @param <T>           type of new aggregate to be created
+     * @param aggregateType type of new aggregate to be created
+     * @param factoryMethod factory method which creates new aggregate
+     * @return a new aggregate instance
+     * @throws Exception thrown if something goes wrong during instantiation of new aggregate
      */
-    protected <V> V executeWithResult(Callable<V> task) throws Exception {
-        Runnable handle = registerAsCurrent();
-        try {
-            return task.call();
-        } finally {
-            handle.run();
-        }
-    }
-
-    /**
-     * Registers the current AggregateLifecycle as the current lifecycle. The returned Runnable should be executed to
-     * restore the lifecycle to the previous state.
-     *
-     * @return a runnable that must be executed to return the lifecycle to the original state
-     */
-    protected Runnable registerAsCurrent() {
-        AggregateLifecycle existing = CURRENT.get();
-        CURRENT.set(this);
-        return () -> {
-            if (existing == null) {
-                CURRENT.remove();
-            } else {
-                CURRENT.set(existing);
-            }
-        };
-    }
+    protected abstract <T> Aggregate<T> doCreateNew(Class<T> aggregateType, Callable<T> factoryMethod) throws Exception;
 
     /**
      * Executes the given task. While the task is being executed the current aggregate will be registered with the
@@ -205,4 +196,23 @@ public abstract class AggregateLifecycle {
             throw new AggregateInvocationException("Exception while invoking a task for an aggregate", e);
         }
     }
+
+    @Override
+    public ScopeDescriptor describeScope() {
+        return new AggregateScopeDescriptor(type(), this::identifier);
+    }
+
+    /**
+     * Retrieve a {@link String} denoting the type of this Aggregate.
+     *
+     * @return a {@link String} denoting the type of this Aggregate
+     */
+    protected abstract String type();
+
+    /**
+     * Retrieve a {@link Object} denoting the identifier of this Aggregate.
+     *
+     * @return a {@link Object} denoting the identifier of this Aggregate
+     */
+    protected abstract Object identifier();
 }

@@ -16,15 +16,18 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.ApplyMore;
+import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.Arrays;
@@ -46,7 +49,9 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
 
     private final Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
     private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
+    private final RepositoryProvider repositoryProvider;
     private final ParameterResolverFactory parameterResolverFactory;
+    private final HandlerDefinition handlerDefinition;
 
     /**
      * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
@@ -67,11 +72,47 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * which represent the snapshots.
      *
      * @param eventStore         The Event Store to store snapshots in
+     * @param repositoryProvider Provides repositories for specific aggregate types
+     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
+     * @see ClasspathParameterResolverFactory
+     */
+    public AggregateSnapshotter(EventStore eventStore, RepositoryProvider repositoryProvider,
+                                AggregateFactory<?>... aggregateFactories) {
+        this(eventStore, Arrays.asList(aggregateFactories), repositoryProvider);
+    }
+
+    /**
+     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
+     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
+     * which represent the snapshots.
+     *
+     * @param eventStore         The Event Store to store snapshots in
      * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
      * @see ClasspathParameterResolverFactory
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories) {
-        this(eventStore, aggregateFactories, ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
+        this(eventStore,
+             aggregateFactories,
+             ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
+    }
+
+    /**
+     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
+     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
+     * which represent the snapshots.
+     *
+     * @param eventStore         The Event Store to store snapshots in
+     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
+     * @param repositoryProvider Provides repositories for specific aggregate types
+     * @see ClasspathParameterResolverFactory
+     */
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
+                                RepositoryProvider repositoryProvider) {
+        this(eventStore,
+             aggregateFactories,
+             ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class),
+             ClasspathHandlerDefinition.forClass(AggregateSnapshotter.class),
+             repositoryProvider);
     }
 
     /**
@@ -86,9 +127,36 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      */
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory) {
+        this(eventStore,
+             aggregateFactories,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(
+                     aggregateFactories.isEmpty() ? Thread.currentThread().getContextClassLoader()
+                             : aggregateFactories.get(0).getClass().getClassLoader()),
+             null);
+    }
+
+    /**
+     * Initializes a snapshotter using the given {@code parameterResolverFactory}. The given {@code aggregateFactories}
+     * are used to instantiate the relevant Aggregate Root instances, which represent the snapshots. Snapshots are
+     * stores in the given {@code eventStore}.
+     *
+     * @param eventStore               The Event Store to store snapshots in
+     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
+     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
+     *                                 handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     * @param repositoryProvider       Provides repositories for specific aggregate types
+     */
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
+                                ParameterResolverFactory parameterResolverFactory,
+                                HandlerDefinition handlerDefinition,
+                                RepositoryProvider repositoryProvider) {
         super(eventStore);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
+        this.repositoryProvider = repositoryProvider;
+        this.handlerDefinition = handlerDefinition;
     }
 
     /**
@@ -105,9 +173,39 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory, Executor executor,
                                 TransactionManager transactionManager) {
+        this(eventStore,
+             aggregateFactories,
+             parameterResolverFactory,
+             ClasspathHandlerDefinition.forClassLoader(
+                     aggregateFactories.isEmpty() ? Thread.currentThread().getContextClassLoader()
+                             : aggregateFactories.get(0).getClass().getClassLoader()),
+             executor,
+             transactionManager,
+             null);
+    }
+
+    /**
+     * Initializes a snapshotter that stores snapshots using the given {@code executor}.
+     *
+     * @param eventStore               The Event Store to store snapshots in
+     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
+     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
+     *                                 handlers with
+     * @param handlerDefinition        The handler definition used to create concrete handlers
+     * @param executor                 The executor to process the actual snapshot creation with
+     * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
+     *                                 process with
+     * @param repositoryProvider       Provides repositories for specific aggregate types
+     */
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
+                                ParameterResolverFactory parameterResolverFactory,
+                                HandlerDefinition handlerDefinition, Executor executor,
+                                TransactionManager transactionManager, RepositoryProvider repositoryProvider) {
         super(eventStore, executor, transactionManager);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
+        this.repositoryProvider = repositoryProvider;
+        this.handlerDefinition = handlerDefinition;
     }
 
     @SuppressWarnings("unchecked")
@@ -120,9 +218,13 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (aggregateFactory == null) {
             throw new IllegalArgumentException("Aggregate Type is unknown in this snapshotter: " + aggregateType.getName());
         }
-        aggregateModels.computeIfAbsent(aggregateType, k -> AnnotatedAggregateMetaModelFactory.inspectAggregate(k, parameterResolverFactory));
+        aggregateModels.computeIfAbsent(aggregateType,
+                                        k -> AnnotatedAggregateMetaModelFactory
+                                                .inspectAggregate(k, parameterResolverFactory, handlerDefinition));
         Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
-        SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
+        SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot,
+                                                                    aggregateModels.get(aggregateType),
+                                                                    repositoryProvider);
         aggregate.initializeState(eventStream);
         if (aggregate.isDeleted()) {
             return null;
@@ -156,12 +258,14 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     }
 
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
-        private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
-            super(aggregateRoot, aggregateModel, null, NoSnapshotTriggerDefinition.TRIGGER);
+
+        private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel,
+                                  RepositoryProvider repositoryProvider) {
+            super(aggregateRoot, aggregateModel, null, repositoryProvider, NoSnapshotTriggerDefinition.TRIGGER);
         }
 
         @Override
-        public Object handle(CommandMessage<?> commandMessage) {
+        public Object handle(Message<?> message) {
             throw new UnsupportedOperationException("Aggregate instance is read-only");
         }
 

@@ -30,12 +30,12 @@ public class MongoOptionsFactoryTest {
     private MongoOptionsFactory factory;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory = new MongoOptionsFactory();
     }
 
     @Test
-    public void testCreateMongoOptions_defaults() throws Exception {
+    public void testCreateMongoOptions_defaults() {
         MongoClientOptions options = factory.createMongoOptions();
         MongoClientOptions defaults = MongoClientOptions.builder().build();
 
@@ -48,7 +48,7 @@ public class MongoOptionsFactoryTest {
     }
 
     @Test
-    public void testCreateMongoOptions_customSet() throws Exception {
+    public void testCreateMongoOptions_customSet() {
         factory.setConnectionsPerHost(9);
         factory.setConnectionTimeout(11);
         factory.setMaxWaitTime(3);

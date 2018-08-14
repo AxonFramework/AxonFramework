@@ -22,7 +22,11 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.LongStream;
 
 /**
@@ -42,11 +46,6 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     private final long index;
     private final SortedSet<Long> gaps;
 
-    private GapAwareTrackingToken(long index, SortedSet<Long> gaps) {
-        this.index = index;
-        this.gaps = gaps;
-    }
-
     /**
      * Returns a new {@link GapAwareTrackingToken} instance based on the given {@code index} and collection of {@code
      * gaps}.
@@ -63,10 +62,15 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         if (gaps.isEmpty()) {
             return new GapAwareTrackingToken(index, Collections.emptySortedSet());
         }
-        SortedSet<Long> gapSet = new TreeSet<>(gaps);
+        SortedSet<Long> gapSet = new ConcurrentSkipListSet<>(gaps);
         Assert.isTrue(gapSet.last() < index,
                       () -> String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
         return new GapAwareTrackingToken(index, gapSet);
+    }
+
+    private GapAwareTrackingToken(long index, SortedSet<Long> gaps) {
+        this.index = index;
+        this.gaps = gaps;
     }
 
     /**
@@ -105,7 +109,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      */
     public GapAwareTrackingToken advanceTo(long index, int maxGapOffset, boolean allowGaps) {
         long newIndex;
-        SortedSet<Long> gaps = new TreeSet<>(this.gaps);
+        SortedSet<Long> gaps = new ConcurrentSkipListSet<>(this.gaps);
         if (gaps.remove(index)) {
             newIndex = this.index;
         } else if (index > this.index) {
@@ -117,7 +121,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
                     index, this.index, gaps));
         }
         long smalledAllowedGap = allowGaps ? (newIndex - maxGapOffset) : Math.max(index, newIndex - maxGapOffset);
-        gaps = gaps.tailSet(smalledAllowedGap);
+        gaps.removeAll(gaps.headSet(smalledAllowedGap));
         return new GapAwareTrackingToken(newIndex, gaps);
     }
 
@@ -144,7 +148,7 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
         Assert.isTrue(other instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
         GapAwareTrackingToken otherToken = (GapAwareTrackingToken) other;
 
-        SortedSet<Long> mergedGaps = new TreeSet<>(this.gaps);
+        SortedSet<Long> mergedGaps = new ConcurrentSkipListSet<>(this.gaps);
         mergedGaps.addAll(otherToken.gaps);
         long mergedIndex = calculateIndex(otherToken, mergedGaps);
         mergedGaps.removeIf(i -> i >= mergedIndex);
@@ -155,9 +159,9 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
     public TrackingToken upperBound(TrackingToken otherToken) {
         Assert.isTrue(otherToken instanceof GapAwareTrackingToken, () -> "Incompatible token type provided.");
         GapAwareTrackingToken other = (GapAwareTrackingToken) otherToken;
-        SortedSet<Long> newGaps = CollectionUtils.intersect(this.gaps, other.gaps, TreeSet::new);
+        SortedSet<Long> newGaps = CollectionUtils.intersect(this.gaps, other.gaps, ConcurrentSkipListSet::new);
         long min = Math.min(this.index, other.index) + 1;
-        SortedSet<Long> mergedGaps = CollectionUtils.merge(this.gaps.tailSet(min), other.gaps.tailSet(min), TreeSet::new);
+        SortedSet<Long> mergedGaps = CollectionUtils.merge(this.gaps.tailSet(min), other.gaps.tailSet(min), ConcurrentSkipListSet::new);
         newGaps.addAll(mergedGaps);
 
         return new GapAwareTrackingToken(Math.max(this.index, other.index), newGaps);

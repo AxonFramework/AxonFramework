@@ -37,5 +37,5 @@ public interface CallbackBehavior {
      *
      * @throws Exception If the onFailure method of the callback must be invoked
      */
-    Object handle(Object commandPayload, MetaData commandMetaData) throws Exception;
+    Object handle(Object commandPayload, MetaData commandMetaData);
 }

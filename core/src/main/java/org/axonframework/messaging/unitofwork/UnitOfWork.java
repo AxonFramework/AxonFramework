@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -258,6 +260,24 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
+     * Attach a transaction to this Unit of Work, using the given {@code transactionManager}. The transaction will be
+     * managed in the lifecycle of this Unit of Work. Failure to start a transaction will cause this Unit of Work
+     * to be rolled back.
+     *
+     * @param transactionManager The Transaction Manager to create, commit and/or rollback the transaction
+     */
+    default void attachTransaction(TransactionManager transactionManager) {
+        try {
+            Transaction transaction = transactionManager.startTransaction();
+            onCommit(u -> transaction.commit());
+            onRollback(u -> transaction.rollback());
+        } catch (Throwable t) {
+            rollback(t);
+            throw t;
+        }
+    }
+
+    /**
      * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
@@ -386,7 +406,7 @@ public interface UnitOfWork<T extends Message<?>> {
         /**
          * Indicates that the Unit of Work has been committed and is passed the {@link #PREPARE_COMMIT} phase.
          */
-        COMMIT(true, false),
+        COMMIT(true, true),
 
         /**
          * Indicates that the Unit of Work is being rolled back. Generally this is because an exception was raised while

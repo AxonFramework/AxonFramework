@@ -105,7 +105,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test
-    public void testSendWithoutCallbackSucceeds() throws Exception {
+    public void testSendWithoutCallbackSucceeds() {
         HttpEntity<SpringHttpDispatchMessage> expectedHttpEntity = new HttpEntity<>(buildDispatchMessage(false));
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE);
@@ -117,13 +117,13 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSendWithoutCallbackThrowsExceptionForMissingDestinationURI() throws Exception {
+    public void testSendWithoutCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE);
     }
 
     @Test
-    public void testSendWithCallbackSucceedsAndReturnsSucceeded() throws Exception {
+    public void testSendWithCallbackSucceedsAndReturnsSucceeded() {
         SimpleSerializedObject<byte[]> expectedSerializedResult =
                 new SimpleSerializedObject<>(SERIALIZED_RESULT_DATA, byte[].class, String.class.getName(), null);
         when(serializer.deserialize(expectedSerializedResult)).thenReturn(COMMAND_RESULT);
@@ -147,7 +147,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test
-    public void testSendWithCallbackSucceedsAndReturnsFailed() throws Exception {
+    public void testSendWithCallbackSucceedsAndReturnsFailed() {
         SimpleSerializedObject<byte[]> expectedSerializedError =
                 new SimpleSerializedObject<>(SERIALIZED_ERROR_DATA, byte[].class, Exception.class.getName(), null);
         when(serializer.deserialize(expectedSerializedError)).thenReturn(COMMAND_ERROR);
@@ -171,13 +171,13 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSendWithCallbackThrowsExceptionForMissingDestinationURI() throws Exception {
+    public void testSendWithCallbackThrowsExceptionForMissingDestinationURI() {
         SimpleMember<String> faultyDestination = new SimpleMember<>(MEMBER_NAME, null, false, null);
         testSubject.send(faultyDestination, COMMAND_MESSAGE, new NoOpCallback());
     }
 
     @Test
-    public void testSubscribeSubscribesCommandHandlerForCommandNameToLocalCommandBus() throws Exception {
+    public void testSubscribeSubscribesCommandHandlerForCommandNameToLocalCommandBus() {
         String expectedCommandName = "commandName";
 
         testSubject.subscribe(expectedCommandName, messageHandler);
@@ -266,7 +266,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test
-    public void testSendWithCallbackToLocalMember() throws Exception {
+    public void testSendWithCallbackToLocalMember() {
         SimpleMember<String> localDestination = new SimpleMember<>(MEMBER_NAME, null, true, null);
         testSubject.send(localDestination, COMMAND_MESSAGE, new NoOpCallback());
 
@@ -275,7 +275,7 @@ public class SpringHttpCommandBusConnectorTest {
     }
 
     @Test
-    public void testSendWithoutCallbackToLocalMember() throws Exception {
+    public void testSendWithoutCallbackToLocalMember() {
         SimpleMember<String> localDestination = new SimpleMember<>(MEMBER_NAME, null, true, null);
         testSubject.send(localDestination, COMMAND_MESSAGE);
 

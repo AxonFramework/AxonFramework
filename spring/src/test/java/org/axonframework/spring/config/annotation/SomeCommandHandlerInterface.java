@@ -24,6 +24,6 @@ import org.axonframework.commandhandling.CommandHandler;
 public interface SomeCommandHandlerInterface {
 
     @CommandHandler
-    public void handleStringCommand(String command);
+    void handleStringCommand(String command);
 
 }

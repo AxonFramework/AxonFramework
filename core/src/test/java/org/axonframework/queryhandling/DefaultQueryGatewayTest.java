@@ -21,17 +21,14 @@ import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 public class DefaultQueryGatewayTest {
@@ -42,7 +39,7 @@ public class DefaultQueryGatewayTest {
 
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         answer = new GenericQueryResponseMessage<>("answer");
         MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
@@ -73,6 +70,19 @@ public class DefaultQueryGatewayTest {
         assertEquals("answer", actual.findFirst().get());
         verify(mockBus).scatterGather(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
                                       eq(1L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testDispatchSubscriptionQuery() {
+        when(mockBus.subscriptionQuery(any(), any(), anyInt()))
+                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+
+        testSubject.subscriptionQuery("query",
+                                      ResponseTypes.instanceOf(String.class),
+                                      ResponseTypes.instanceOf(String.class));
+        verify(mockBus)
+                .subscriptionQuery(argThat((ArgumentMatcher<SubscriptionQueryMessage<String, String, String>>)
+                                                   x -> "query".equals(x.getPayload())), any(), anyInt());
     }
 
     @SuppressWarnings("unused")

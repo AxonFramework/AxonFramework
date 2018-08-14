@@ -45,8 +45,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 
 /**
@@ -61,7 +59,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     private EventListener mockListener;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         when(mockListener.canHandle(any())).thenReturn(true);
@@ -86,7 +84,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSubject.shutDown();
         eventBus.shutDown();
     }
@@ -123,7 +121,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
                                                               .andInitialSegmentsCount(6));
         testSubject.start();
 
-        assertWithin(5, SECONDS, () -> {assertThat(testSubject.activeProcessorThreads(), is(6));});
+        assertWithin(5, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(6)));
         int[] actual = tokenStore.fetchSegments(testSubject.getName());
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5}, actual);
@@ -389,7 +387,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
         }
 
         void assertEventsAddUpTo(int eventCount) {
-            assertThat(ackedEventsByThreadMap.values().stream().mapToLong(Collection::size).sum(), is(new Integer(eventCount).longValue()));
+            assertThat(ackedEventsByThreadMap.values().stream().mapToLong(Collection::size).sum(), is(Integer.valueOf(eventCount).longValue()));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,8 @@ public class AnnotationDrivenConfigurationTest_DefaultValues {
     @Autowired
     private ApplicationContext applicationContext;
 
-
     @Test
-    public void testAnnotationConfigurationAnnotationWrapsBeans() throws Exception {
+    public void testAnnotationConfigurationAnnotationWrapsBeans() {
         Object eventHandler = applicationContext.getBean("eventHandler");
         Object commandHandler = applicationContext.getBean("commandHandler");
 

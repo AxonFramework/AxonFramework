@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,10 +177,12 @@ public class CommandGatewayFactory {
                     dispatcher =
                             wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2, arguments.length - 1);
                 } else {
-                    Timeout timeout = gatewayMethod.getAnnotation(Timeout.class);
-                    timeout = resolveTimeout(gatewayMethod, timeout);
+                    Map<String, Object> timeout = AnnotationUtils.findAnnotationAttributes(gatewayMethod, Timeout.class)
+                                                                 .orElse(AnnotationUtils.findAnnotationAttributes(gatewayMethod.getDeclaringClass(), Timeout.class)
+                                                                 .orElse(null));
                     if (timeout != null) {
-                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
+                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, (int)timeout.get("timeout"),
+                                                                  (TimeUnit) timeout.get("unit"));
                     } else if (!Void.TYPE.equals(gatewayMethod.getReturnType()) ||
                             gatewayMethod.getExceptionTypes().length > 0) {
                         dispatcher = wrapToWaitForResult(dispatcher);
@@ -207,10 +209,6 @@ public class CommandGatewayFactory {
                 .cast(Proxy.newProxyInstance(gatewayInterface.getClassLoader(), new Class[]{gatewayInterface},
                                              new GatewayInvocationHandler(dispatchers, commandBus, retryScheduler,
                                                                           dispatchInterceptors)));
-    }
-
-    private Timeout resolveTimeout(Method gatewayMethod, Timeout timeout) {
-        return timeout == null ? gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class) : timeout;
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
@@ -367,7 +365,7 @@ public class CommandGatewayFactory {
                 }
             }
         }
-        return extractors.toArray(new MetaDataExtractor[extractors.size()]);
+        return extractors.toArray(new MetaDataExtractor[0]);
     }
 
     /**

@@ -67,7 +67,7 @@ public class AxonAutoConfigurationWithDisruptorTest {
     private AxonConfiguration configuration;
 
     @Test
-    public void testContextInitialization() throws Exception {
+    public void testContextInitialization() {
         assertNotNull(applicationContext);
         assertNotNull(configurer);
 

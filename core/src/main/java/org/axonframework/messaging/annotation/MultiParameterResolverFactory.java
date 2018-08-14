@@ -22,7 +22,6 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -82,7 +81,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      * @param delegates The list of factories providing the parameter values to use
      */
     public MultiParameterResolverFactory(List<ParameterResolverFactory> delegates) {
-        this.factories = delegates.toArray(new ParameterResolverFactory[delegates.size()]);
+        this.factories = delegates.toArray(new ParameterResolverFactory[0]);
     }
 
     private static ParameterResolverFactory[] flatten(List<ParameterResolverFactory> factories) {
@@ -94,8 +93,8 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
                 flattened.add(parameterResolverFactory);
             }
         }
-        Collections.sort(flattened, PriorityAnnotationComparator.getInstance());
-        return flattened.toArray(new ParameterResolverFactory[flattened.size()]);
+        flattened.sort(PriorityAnnotationComparator.getInstance());
+        return flattened.toArray(new ParameterResolverFactory[0]);
     }
 
     /**

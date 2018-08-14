@@ -22,10 +22,12 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toCollection;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -36,9 +38,21 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
-    private final List<EventListener> eventListeners;
+    private final List<?> eventListeners;
+    private final List<EventListener> wrappedEventListeners;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+
+    /**
+     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     *
+     * @param eventListeners The event listeners to check for a list
+     * @return a list of events listeners
+     */
+    private static List<?> detectList(Object[] eventListeners) {
+        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] :
+                Arrays.asList(eventListeners);
+    }
 
     /**
      * Initializes a {@link SimpleEventHandlerInvoker} containing one or more {@code eventListeners}. If an event
@@ -89,11 +103,12 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     public SimpleEventHandlerInvoker(List<?> eventListeners,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this.eventListeners = new ArrayList<>(eventListeners.stream()
-                                                            .map(listener -> listener instanceof EventListener ?
-                                                                    (EventListener) listener :
-                                                                    new AnnotationEventListenerAdapter(listener))
-                                                            .collect(toList()));
+        this.eventListeners = eventListeners;
+        this.wrappedEventListeners = eventListeners.stream()
+                                                   .map(listener -> listener instanceof EventListener ?
+                                                    (EventListener) listener :
+                                                    new AnnotationEventListenerAdapter(listener))
+                                                   .collect(Collectors.toCollection(ArrayList::new));
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
@@ -125,7 +140,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
      *
      * @param eventListeners                 list of event listeners to register with this invoker
-     * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler methods with
+     * @param parameterResolverFactory       The parameter resolver factory to resolve parameters of the Event Handler
+     *                                       methods with
      * @param listenerInvocationErrorHandler error handler that handles exceptions during processing
      * @param sequencingPolicy               The policy describing the expectations of sequential processing
      */
@@ -133,33 +149,31 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                      ParameterResolverFactory parameterResolverFactory,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler,
                                      SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
-        this.eventListeners = new ArrayList<>(eventListeners.stream()
-                                                            .map(listener -> listener instanceof EventListener ?
-                                                                    (EventListener) listener :
-                                                                    new AnnotationEventListenerAdapter(listener, parameterResolverFactory))
-                                                            .collect(toList()));
+        this.eventListeners = eventListeners;
+        this.wrappedEventListeners = eventListeners.stream()
+                                                   .map(listener -> listener instanceof EventListener ?
+                                                    (EventListener) listener :
+                                                    new AnnotationEventListenerAdapter(listener, parameterResolverFactory))
+                                                   .collect(toCollection(ArrayList::new));
         this.sequencingPolicy = sequencingPolicy;
         this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
     }
 
     /**
-     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     * Gets the list of event listener delegates. This delegates are the end point of event handling.
      *
-     * @param eventListeners The event listeners to check for a list
-     * @return a list of events listeners
+     * @return the list of event listener delegates
      */
-    private static List<?> detectList(Object[] eventListeners) {
-        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] :
-                Arrays.asList(eventListeners);
+    public List<?> eventListeners() {
+        return Collections.unmodifiableList(eventListeners);
     }
-
 
     @Override
     public void handle(EventMessage<?> message, Segment segment) throws Exception {
-        for (EventListener listener : eventListeners) {
+        for (EventListener listener : wrappedEventListeners) {
             try {
                 listener.handle(message);
-            } catch (Exception e) {
+            } catch(Exception e) {
                 listenerInvocationErrorHandler.onError(e, message, listener);
             }
         }
@@ -173,7 +187,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     private boolean hasHandler(EventMessage<?> eventMessage) {
-        for (EventListener eventListener : eventListeners) {
+        for (EventListener eventListener : wrappedEventListeners) {
             if (eventListener.canHandle(eventMessage)) {
                 return true;
             }
@@ -183,7 +197,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public boolean supportsReset() {
-        for (EventListener eventListener : eventListeners) {
+        for (EventListener eventListener : wrappedEventListeners) {
             if (!eventListener.supportsReset()) {
                 return false;
             }
@@ -193,7 +207,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     @Override
     public void performReset() {
-        for (EventListener eventListener : eventListeners) {
+        for (EventListener eventListener : wrappedEventListeners) {
             eventListener.prepareReset();
         }
     }
