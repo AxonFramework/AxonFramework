@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
 import org.junit.runner.*;
@@ -41,7 +42,7 @@ public class EventProcessingConfigurationConfigTest {
     private EventProcessingConfiguration eventProcessingConfiguration;
 
     @Test
-    public void testProcessorConfiguration() {
+    public void testEventProcessingConfiguration() {
         assertEquals(2, eventProcessingConfiguration.eventProcessors().size());
         assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
         assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
@@ -54,6 +55,7 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3").get().getName());
         assertEquals("subscribingProcessor",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
+        assertEquals(1, eventProcessingConfiguration.interceptorsFor("processor3").size());
     }
 
     @EnableAxon
@@ -66,6 +68,7 @@ public class EventProcessingConfigurationConfigTest {
             config.assignProcessingGroup("processor1", "processor2");
             config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : "processor2");
             config.registerSubscribingEventProcessor("subscribingProcessor");
+            config.registerHandlerInterceptor((configuration, name) -> new LoggingInterceptor<>());
         }
 
         @Saga
