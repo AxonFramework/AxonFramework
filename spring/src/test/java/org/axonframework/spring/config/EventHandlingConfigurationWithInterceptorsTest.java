@@ -82,7 +82,7 @@ public class EventHandlingConfigurationWithInterceptorsTest {
 
             private String metaDataValue;
 
-            String getMetaDataValue() {
+            public String getMetaDataValue() {
                 return metaDataValue;
             }
 
