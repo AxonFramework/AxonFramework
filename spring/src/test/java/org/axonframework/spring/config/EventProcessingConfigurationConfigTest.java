@@ -19,7 +19,6 @@ package org.axonframework.spring.config;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
