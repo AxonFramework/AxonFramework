@@ -430,7 +430,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      *
      * @param interceptorBuilder The builder function that provides an interceptor for each available processor
      * @return this EventHandlingConfiguration instance for further configuration
-     * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(String, Function)} instead
+     *
+     * @deprecated use {@link EventProcessingConfiguration#registerHandlerInterceptor(BiFunction)} instead
      */
     @Deprecated
     public EventHandlingConfiguration registerHandlerInterceptor(

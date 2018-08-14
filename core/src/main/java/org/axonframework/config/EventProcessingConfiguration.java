@@ -44,7 +44,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -65,6 +67,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
     private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     private final Map<String, Function<Configuration, RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
@@ -320,6 +323,23 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     }
 
     /**
+     * Register the given {@code interceptorBuilder} to build an Message Handling Interceptor for Event Processors
+     * created in this configuration.
+     * <p>
+     * The {@code interceptorBuilder} is invoked once for each processor created, and may return {@code null}, in which
+     * case the return value is ignored.
+     * <p>
+     *
+     * @param interceptorBuilder The builder function that provides an interceptor for each available processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventProcessingConfiguration registerHandlerInterceptor(
+            BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+        defaultHandlerInterceptors.add(interceptorBuilder);
+        return this;
+    }
+
+    /**
      * Returns a list of interceptors for a processor with given {@code processorName}.
      *
      * @param processorName The name of the processor
@@ -327,10 +347,21 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      */
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
         Assert.state(configuration != null, () -> "Configuration is not initialized yet");
-        return handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
-                                          .stream()
-                                          .map(hi -> hi.apply(configuration))
-                                          .collect(Collectors.toList());
+
+        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+
+        defaultHandlerInterceptors.stream()
+                                  .map(f -> f.apply(configuration, processorName))
+                                  .filter(Objects::nonNull)
+                                  .forEach(interceptors::add);
+
+        handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
+                                   .stream()
+                                   .map(hi -> hi.apply(configuration))
+                                   .filter(Objects::nonNull)
+                                   .forEach(interceptors::add);
+
+        return interceptors;
     }
 
 
