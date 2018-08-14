@@ -19,6 +19,9 @@ package org.axonframework.spring.config;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
@@ -27,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -55,7 +60,11 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3").get().getName());
         assertEquals("subscribingProcessor",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
-        assertEquals(1, eventProcessingConfiguration.interceptorsFor("processor3").size());
+        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = eventProcessingConfiguration
+                .interceptorsFor("processor3");
+        assertEquals(2, interceptors.size());
+        assertTrue(interceptors.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
+        assertTrue(interceptors.stream().anyMatch(i -> i instanceof LoggingInterceptor));
     }
 
     @EnableAxon
