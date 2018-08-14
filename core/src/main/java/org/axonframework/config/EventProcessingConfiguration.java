@@ -313,10 +313,9 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
         if (configuration != null) {
             eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
                     .registerInterceptor(interceptorBuilder.apply(configuration)));
-        } else {
-            handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
-                                       .add(interceptorBuilder);
         }
+        handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
+                                   .add(interceptorBuilder);
         return this;
     }
 
@@ -459,8 +458,8 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      * Obtains Event Processor by name. This method is to be called after Event Processor Registry is initialized.
      *
      * @param name The name of the event processor
+     * @param <T>  The type of processor expected
      * @return optional whether event processor with given name exists
-     * @param <T> The type of processor expected
      */
     @SuppressWarnings("unchecked")
     public <T extends EventProcessor> Optional<T> eventProcessor(String name) {
