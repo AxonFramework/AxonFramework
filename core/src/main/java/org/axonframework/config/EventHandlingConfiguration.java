@@ -73,7 +73,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptors = new HashMap<>();
     private final List<ProcessorSelector> selectors = new ArrayList<>();
     private final Map<String, Function<Configuration, ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
-    private final Map<String, Function<Configuration, SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
 
     /**
      * @deprecated in favor of {@link EventProcessingConfiguration#configureMessageMonitor(String, Function)} or {@link
@@ -115,12 +114,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
             () -> config,
             "listenerInvocationErrorHandler",
             c -> c.getComponent(ListenerInvocationErrorHandler.class, LoggingErrorHandler::new)
-    );
-    @SuppressWarnings("unchecked")
-    private final Component<SequencingPolicy<? super EventMessage<?>>> defaultSequencingPolicy = new Component<>(
-            () -> config,
-            "sequencingPolicy",
-            c -> c.getComponent(SequencingPolicy.class, SequentialPerAggregatePolicy::new)
     );
 
     /**
