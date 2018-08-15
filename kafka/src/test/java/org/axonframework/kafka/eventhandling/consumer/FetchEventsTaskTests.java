@@ -19,10 +19,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
-import org.axonframework.messaging.MetaData;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,7 +33,7 @@ import static org.apache.kafka.clients.consumer.OffsetResetStrategy.EARLIEST;
 import static org.apache.kafka.common.record.TimestampType.NO_TIMESTAMP_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.kafka.eventhandling.consumer.KafkaTrackingToken.emptyToken;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link FetchEventsTask}
@@ -47,75 +45,6 @@ public class FetchEventsTaskTests {
     private static final String SOME_TOPIC = "foo";
     private static final int NO_OF_PARTITIONS = 2;
     private static final int TOTAL_MESSAGES = 100;
-
-    @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("unchecked")
-    public void testTaskConstruction_WithInvalidConsumer_ShouldThrowException() {
-        FetchEventsTask.builder(null,
-                                mock(KafkaTrackingToken.class),
-                                mock(Buffer.class),
-                                mock(KafkaMessageConverter.class),
-                                mock(BiFunction.class), 0).build();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("unchecked")
-    public void testTaskConstruction_WithInvalidBuffer_ShouldThrowException() {
-        FetchEventsTask.builder(mock(KafkaConsumer.class),
-                                mock(KafkaTrackingToken.class),
-                                null,
-                                mock(KafkaMessageConverter.class),
-                                mock(BiFunction.class), 0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("unchecked")
-    public void testTaskConstruction_WithInvalidConverter_ShouldThrowException() {
-        FetchEventsTask.builder(mock(KafkaConsumer.class),
-                                mock(KafkaTrackingToken.class),
-                                mock(Buffer.class),
-                                null,
-                                mock(BiFunction.class), 0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("unchecked")
-    public void testTaskConstruction_WithInvalidCallback_ShouldThrowException() {
-        FetchEventsTask.builder(mock(KafkaConsumer.class),
-                                mock(KafkaTrackingToken.class),
-                                mock(Buffer.class),
-                                mock(KafkaMessageConverter.class),
-                                null,
-                                0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    @SuppressWarnings("unchecked")
-    public void testTaskConstruction_WithNegativeTimeout_ShouldThrowException() {
-        FetchEventsTask.builder(mock(KafkaConsumer.class),
-                                mock(KafkaTrackingToken.class),
-                                mock(Buffer.class),
-                                mock(KafkaMessageConverter.class),
-                                mock(BiFunction.class),
-                                -1);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testTaskExecution_StartingThreadAndInterrupt_ShouldNotCauseAnyException() {
-        SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(TOTAL_MESSAGES);
-        KafkaMessageConverter<String, String> converter = new AsyncFetcherTests.ValueConverter();
-        FetchEventsTask testSubject = FetchEventsTask.builder(consumer(),
-                                                              emptyToken(),
-                                                              buffer,
-                                                              converter,
-                                                              (r, t) -> null, 10000).build();
-        Thread thread = new Thread(testSubject);
-        thread.start();
-        thread.interrupt();
-
-        assertThat(buffer.isEmpty()).isTrue();
-    }
 
     private static MockConsumer<String, String> consumer() {
         MockConsumer<String, String> consumer = new MockConsumer<>(EARLIEST);
@@ -148,7 +77,73 @@ public class FetchEventsTaskTests {
         }});
     }
 
-    private static GenericDomainEventMessage<String> domainMessage(String aggregateId) {
-        return new GenericDomainEventMessage<>("Stub", aggregateId, 1L, "Payload", MetaData.with("key", "value"));
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("unchecked")
+    public void testTaskConstruction_WithInvalidConsumer_ShouldThrowException() {
+        new FetchEventsTask<>(null,
+                              mock(KafkaTrackingToken.class),
+                              mock(Buffer.class),
+                              mock(KafkaMessageConverter.class),
+                              mock(BiFunction.class), 0,
+                              null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("unchecked")
+    public void testTaskConstruction_WithInvalidBuffer_ShouldThrowException() {
+        new FetchEventsTask<>(mock(KafkaConsumer.class),
+                              mock(KafkaTrackingToken.class),
+                              null,
+                              mock(KafkaMessageConverter.class),
+                              mock(BiFunction.class), 0, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("unchecked")
+    public void testTaskConstruction_WithInvalidConverter_ShouldThrowException() {
+        new FetchEventsTask<>(mock(KafkaConsumer.class),
+                              mock(KafkaTrackingToken.class),
+                              mock(Buffer.class),
+                              null,
+                              mock(BiFunction.class), 0, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("unchecked")
+    public void testTaskConstruction_WithInvalidCallback_ShouldThrowException() {
+        new FetchEventsTask<>(mock(KafkaConsumer.class),
+                              mock(KafkaTrackingToken.class),
+                              mock(Buffer.class),
+                              mock(KafkaMessageConverter.class),
+                              null,
+                              0, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @SuppressWarnings("unchecked")
+    public void testTaskConstruction_WithNegativeTimeout_ShouldThrowException() {
+        new FetchEventsTask<>(mock(KafkaConsumer.class),
+                              mock(KafkaTrackingToken.class),
+                              mock(Buffer.class),
+                              mock(KafkaMessageConverter.class),
+                              mock(BiFunction.class),
+                              -1, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testTaskExecution_StartingThreadAndInterrupt_ShouldNotCauseAnyException() {
+        SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(TOTAL_MESSAGES);
+        KafkaMessageConverter<String, String> converter = new AsyncFetcherTests.ValueConverter();
+        FetchEventsTask testSubject = new FetchEventsTask<>(consumer(),
+                                                            emptyToken(),
+                                                            buffer,
+                                                            converter,
+                                                            (r, t) -> null, 10000, null);
+        Thread thread = new Thread(testSubject);
+        thread.start();
+        thread.interrupt();
+
+        assertThat(buffer.isEmpty()).isTrue();
     }
 }

@@ -208,7 +208,7 @@ public class SpringAxonAutoConfigurerTest {
 
         Context.MyCommandHandler ch = applicationContext.getBean(Context.MyCommandHandler.class);
         assertTrue(ch.getCommands().contains("test"));
-        verify(primaryCommandTargetResolver).resolveTarget(any());
+        verify(primaryCommandTargetResolver, timeout(100)).resolveTarget(any());
     }
 
     @Test

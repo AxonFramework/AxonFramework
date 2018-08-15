@@ -23,25 +23,27 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
 
 /**
- * MessageSource implementation that deserializes incoming messages and forwards them to one or more event processors.
- * <p>
- * Note that the Processors must be subscribed before the MessageListenerContainer is started. Otherwise, messages will
- * be consumed from the Kafka Topic without any processor processing them.
+ * MessageSource implementation that reads messages from a Kafka topic.
  *
  * @author Nakul Mishra
  * @since 3.0
  */
-public class KafkaMessageSource<K, V> implements StreamableMessageSource<TrackedEventMessage<?>> {
+public class KafkaMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
 
-    private final Fetcher<K, V> fetcher;
+    private final Fetcher fetcher;
 
-    public KafkaMessageSource(Fetcher<K, V> fetcher) {
+    /**
+     * Initialize the source using the given {@code fetcher} to retrieve messages from the Kafka topic
+     *
+     * @param fetcher The fetcher to retrieve messages from Kafka
+     */
+    public KafkaMessageSource(Fetcher fetcher) {
         Assert.notNull(fetcher, () -> "Kafka message fetcher may not be null");
         this.fetcher = fetcher;
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>>  openStream(TrackingToken trackingToken) {
+    public MessageStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
         Assert.isTrue(trackingToken == null || trackingToken instanceof KafkaTrackingToken, () -> "Invalid token type");
         return fetcher.start((KafkaTrackingToken) trackingToken);
     }
