@@ -74,6 +74,21 @@ message ApplicationRole {
     string context = 3;
 }
 
+message LoadBalanceStrategy {
+    string name = 1;
+    string factoryBean = 2;
+    string label = 3;
+    Action action = 4;
+}
+
+message ProcessorLBStrategy {
+    string component = 1;
+    string processor = 2;
+    string context = 3;
+    string strategy = 4;
+    Action action = 5;
+}
+
 enum Action {
     MERGE = 0;
     DELETE = 1;
