@@ -16,7 +16,6 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -154,57 +153,55 @@ public class PessimisticLockFactoryTest {
                 0
         );
         final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
-        final CountDownLatch randevous = new CountDownLatch(1);
-        final CountDownLatch lockObtained = new CountDownLatch(1);
-        final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
-        final String id = "aggregateId";
-        new Thread(() -> {
-            try {
-                lockFactory.obtainLock(id);
-                lockObtained.countDown();
-                randevous.await();
-            } catch (Exception e) {
-                exceptionInThread.set(e);
-            }
-        }).start();
-        lockObtained.await();
+        final CountDownLatch rendezvous = new CountDownLatch(1);
         try {
+            final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
+            final String id = "aggregateId";
+            // Obtain the lock
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.WAITING, rendezvous, exceptionInThread, id);
+            // backoff triggers, too many spins
             lockFactory.obtainLock(id);
         } finally {
-            randevous.countDown();
+            rendezvous.countDown();
         }
     }
 
-    @Ignore("Sleep is required to get the 2nd thread in the wait of the 2nd tryLock, ignoring since this is unreliable")
     @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
     public void testQueueBackoff() throws InterruptedException {
         PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
                 -1,
-                1,
+                2,
                 10000
         );
         final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
-        final CountDownLatch randevous = new CountDownLatch(1);
-        final CountDownLatch threadStarted = new CountDownLatch(2);
-        final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
-        final String id = "aggregateId";
-        createThread(lockFactory, randevous, threadStarted, exceptionInThread, id);
-        createThread(lockFactory, randevous, threadStarted, exceptionInThread, id);
-        threadStarted.await();
-        Thread.sleep(100);
-        lockFactory.obtainLock(id);
-        randevous.countDown();
+        final CountDownLatch rendezvous = new CountDownLatch(1);
+        try {
+            final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
+            final String id = "aggregateId";
+            // Obtain the lock
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.WAITING, rendezvous, exceptionInThread, id);
+            // Fill Queue 1/2
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.TIMED_WAITING, rendezvous, exceptionInThread, id);
+            // Fill Queue 2/2
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.TIMED_WAITING, rendezvous, exceptionInThread, id);
+            // backoff triggers, queue
+            lockFactory.obtainLock(id);
+        } finally {
+            rendezvous.countDown();
+        }
     }
 
-    private void createThread(PessimisticLockFactory lockFactory, CountDownLatch randevous, CountDownLatch threadStarted, AtomicReference<Exception> exceptionInThread, String id) {
-        new Thread(() -> {
-            try {
-                threadStarted.countDown();
-                lockFactory.obtainLock(id);
-                randevous.await();
+    private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {
+        Thread thread = new Thread(() -> {
+            try(Lock ignored = lockFactory.obtainLock(id)) {
+                rendezvous.await();
             } catch (Exception e) {
                 exceptionInThread.set(e);
             }
-        }).start();
+        });
+        thread.start();
+        while(thread.isAlive() && rendezvous.getCount() > 0 && thread.getState() != state) {
+            Thread.yield();
+        }
     }
 }

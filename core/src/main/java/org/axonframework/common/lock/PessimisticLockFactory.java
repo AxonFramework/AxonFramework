@@ -40,7 +40,7 @@ import static java.util.Collections.synchronizedMap;
  * <p/>
  * This lock can be used to ensure thread safe access to a number of objects, such as Aggregates and Sagas.
  *
- * Back off properties with respect acquiring locks can be configured though the {@link BackoffParameters}.
+ * Back off properties with respect to acquiring locks can be configured though the {@link BackoffParameters}.
  *
  * @author Allard Buijze
  * @since 1.3
@@ -58,7 +58,12 @@ public class PessimisticLockFactory implements LockFactory {
      * Deadlocks are detected across instances of the IdentifierBasedLock.
      * This constructor specifies no back off from lock acquisition
      *
-     * @apiNote here for backwards compatibility
+     * @apiNote Since the previous versions didn't support any backoff properties, this no-arg constructor creates a
+     * {@link PessimisticLockFactory} with no backoff properties. This is however a poor default (the system will
+     * very likely converge to a state where it no longer handles any commands any lock is held indefinitely.) In the
+     * next major version of Axon sane defaults should be chosen and thus behavior will change. Should your setup rely
+     * on the no-backoff behavior then you are advised to call {@link #PessimisticLockFactory(BackoffParameters)} with
+     * explicitly specified {@link BackoffParameters}.
      */
     public PessimisticLockFactory() {
         this(new BackoffParameters(-1, -1, 100));
@@ -131,18 +136,20 @@ public class PessimisticLockFactory implements LockFactory {
      * There are 3 values:
      *
      * acquireAttempts
-     *  this used to specify the maxium number of attempts to obtain a lock before we back off
-     *  (throw {@link LockAcquisitionFailedException}). -1 means unlimited attempts.
+     *  This used to specify the maxium number of attempts to obtain a lock before we back off
+     *  (throwing a {@link LockAcquisitionFailedException}). A value of '-1' means unlimited attempts.
      *
      * maximumQueued
-     *  maximum number of queued threads we allow to obtain this lock, if another thread tries to obtain the lock after
-     *  the limit is reached we back off (throw {@link LockAcquisitionFailedException}) an -1 means unbound / no limit
-     *  NOTE: this relies on approximation given by {@link ReentrantLock#getQueueLength()} so the effective limit may
-     *  be higher then specified. Since this is a back off controll this should be ok.
+     *  Maximum number of queued threads we allow to try and obtain a lock, if another thread tries to obtain the lock
+     *  after the limit is reached we back off (throwing a {@link LockAcquisitionFailedException}). A value of '-1'
+     *  means the maximum queued threads is unbound / no limit.
+     *  NOTE: This relies on approximation given by {@link ReentrantLock#getQueueLength()} so the effective limit may
+     *  be higher then specified. Since this is a back off control this should be ok.
      *
      * spinTime
-     *  time permitted to try and obtain a lock per acquire attempt
-     *  NOTE: the spintime of the first is always zero, so max wait time is approx (acquireAttempts - 1) * spinTime
+     *  Time permitted to try and obtain a lock per acquire attempt in milliseconds.
+     *  NOTE: The spintime of the first attempt is always zero, so max wait time is approx
+     *  (acquireAttempts - 1) * spinTime
      */
     public static final class BackoffParameters {
         public final int acquireAttempts;
@@ -150,9 +157,11 @@ public class PessimisticLockFactory implements LockFactory {
         public final int spinTime;
 
         /**
+         * A constructor that takes all values for all properties, please see the class level documentation for more
+         * detail on these properties.
          * @param acquireAttempts   a positive number or -1 for trying indefinitely (no back off)
          * @param maximumQueued     a positive number or -1 for no limit (no back off)
-         * @param spinTime
+         * @param spinTime          a non negative amount of milliseconds
          */
         public BackoffParameters(int acquireAttempts, int maximumQueued, int spinTime) {
             Assert.isTrue(
@@ -178,6 +187,13 @@ public class PessimisticLockFactory implements LockFactory {
 
         public boolean hasAcquireQueueLimit() {
             return maximumQueued != -1;
+        }
+
+        public boolean maximumQueuedThreadsReached(int queueLength) {
+            if(!hasAcquireQueueLimit()) {
+                return false;
+            }
+            return queueLength >= maximumQueued;
         }
     }
 
@@ -207,7 +223,7 @@ public class PessimisticLockFactory implements LockFactory {
         }
 
         public boolean lock() {
-            if (backoffParameters.hasAcquireQueueLimit() && lock.getQueueLength() >= backoffParameters.maximumQueued) {
+            if (backoffParameters.maximumQueuedThreadsReached(lock.getQueueLength())) {
                 throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier + ": too many queued threads.");
             }
             try {
@@ -217,7 +233,9 @@ public class PessimisticLockFactory implements LockFactory {
                         attempts--;
                         checkForDeadlock();
                         if(backoffParameters.hasAcquireAttemptLimit() && attempts < 1) {
-                            throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier);
+                            throw new LockAcquisitionFailedException(
+                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + backoffParameters.maximumQueued + ")"
+                            );
                         }
                     } while (!lock.tryLock(backoffParameters.spinTime, TimeUnit.MILLISECONDS));
                 }
@@ -236,7 +254,8 @@ public class PessimisticLockFactory implements LockFactory {
                 for (Thread thread : threadsWaitingForMyLocks(Thread.currentThread())) {
                     if (lock.isHeldBy(thread)) {
                         throw new DeadlockException(
-                                "An imminent deadlock was detected while attempting to acquire a lock");
+                                "An imminent deadlock was detected while attempting to acquire a lock"
+                        );
                     }
                 }
             }
