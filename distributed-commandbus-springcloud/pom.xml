@@ -53,15 +53,19 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-commons</artifactId>
-            <version>1.3.2.RELEASE</version>
+            <version>${spring-cloud.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.8.9</version>
+            <version>${jackson.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>

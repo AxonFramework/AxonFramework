@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline;
+package org.axonframework.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
-import org.axonframework.deadline.quartz.QuartzDeadlineManager;
+import org.axonframework.deadline.AbstractDeadlineManagerTestSuite;
+import org.axonframework.deadline.DeadlineManager;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;

@@ -211,6 +211,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 } catch (UnableToClaimTokenException e) {
                     if (errorWaitTime == 1) {
                         logger.info("Token is owned by another node. Waiting for it to become available...");
+                        errorWaitTime = 2;
                     }
                     doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
                 } catch (Exception e) {

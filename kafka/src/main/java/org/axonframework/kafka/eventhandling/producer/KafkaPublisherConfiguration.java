@@ -18,9 +18,12 @@ package org.axonframework.kafka.eventhandling.producer;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.serialization.xml.XStreamSerializer;
 
 /**
  * Configures {@link KafkaPublisher}.
@@ -80,9 +83,10 @@ public class KafkaPublisherConfiguration<K, V> {
 
         private SubscribableMessageSource<EventMessage<?>> messageSource;
         private ProducerFactory<K, V> producerFactory;
-        private KafkaMessageConverter<K, V> messageConverter;
-        private MessageMonitor<? super EventMessage<?>> messageMonitor;
-        private String topic = "Axon.EventBus";
+        private KafkaMessageConverter<K, V> messageConverter =
+                (KafkaMessageConverter<K, V>) new DefaultKafkaMessageConverter(new XStreamSerializer());
+        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.instance();
+        private String topic = "Axon.Events";
         private long publisherAckTimeout = 1000;
 
         /**
@@ -157,6 +161,8 @@ public class KafkaPublisherConfiguration<K, V> {
         }
 
         public KafkaPublisherConfiguration<K, V> build() {
+            Assert.notNull(producerFactory, () -> "The publisher must be configured with a ProducerFactory");
+            Assert.notNull(messageSource, () -> "The publisher must be configured with a MessageSource");
             return new KafkaPublisherConfiguration<>(this);
         }
     }

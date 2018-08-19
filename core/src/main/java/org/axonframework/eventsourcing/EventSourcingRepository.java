@@ -241,6 +241,31 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     /**
+     * Initializes a repository with a locking strategy underpinned by the given {@code lockFactory}, uses the given
+     * {@code aggregateFactory} to create new aggregate instances and triggering snapshots using the given
+     * {@code snapshotTriggerDefinition}
+     *
+     * @param aggregateModel            The meta model describing the aggregate's structure
+     * @param lockFactory               The locking strategy to apply to this repository
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
+     * @param repositoryProvider        Provides repositories for specific aggregate types
+     * @see LockingRepository#LockingRepository(Class, LockFactory)
+     */
+    public EventSourcingRepository(AggregateModel<T> aggregateModel, LockFactory lockFactory,
+                                   AggregateFactory<T> aggregateFactory, EventStore eventStore,
+                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                   RepositoryProvider repositoryProvider) {
+        super(aggregateModel, lockFactory);
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
+        this.aggregateFactory = aggregateFactory;
+        this.eventStore = eventStore;
+        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+        this.repositoryProvider = repositoryProvider;
+    }
+
+    /**
      * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
      * create new aggregate instances.
      *

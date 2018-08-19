@@ -26,11 +26,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedMessage;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,19 +35,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-import static org.axonframework.kafka.eventhandling.HeaderUtils.byteMapper;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.extractAxonMetadata;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.keys;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.toHeaders;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsLong;
-import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
-import static org.axonframework.messaging.Headers.AGGREGATE_ID;
-import static org.axonframework.messaging.Headers.AGGREGATE_SEQ;
-import static org.axonframework.messaging.Headers.AGGREGATE_TYPE;
-import static org.axonframework.messaging.Headers.MESSAGE_ID;
-import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
-import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
-import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
+import static org.axonframework.kafka.eventhandling.HeaderUtils.*;
+import static org.axonframework.messaging.Headers.*;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
@@ -59,8 +44,8 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  * Kafka} back
  * to {@link EventMessage} (if possible).
  * <p>
- * During conversion it passes all meta-data entries with <code>'axon-metadata-'</code> prefix to {@link
- * Headers}. Other message-specific attributes are added as metadata. The payload is serialized using the
+ * During conversion it passes all meta-data entries with {@code 'axon-metadata-'} prefix to {@link Headers}. Other
+ * message-specific attributes are added as metadata. The payload is serialized using the
  * configured {@link Serializer} and passed as the message body.
  * <p>
  * This implementation will suffice in most cases.
@@ -82,7 +67,7 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
      * @param serializer The serializer to serialize the Event Message's payload with.
      */
     public DefaultKafkaMessageConverter(Serializer serializer) {
-        this(serializer, new SequentialPerAggregatePolicy(), byteMapper());
+        this(serializer, SequentialPerAggregatePolicy.instance(), byteMapper());
     }
 
     /**
