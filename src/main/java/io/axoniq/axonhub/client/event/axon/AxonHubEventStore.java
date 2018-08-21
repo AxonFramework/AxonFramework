@@ -20,6 +20,8 @@ import io.axoniq.axondb.Event;
 import io.axoniq.axondb.grpc.EventWithToken;
 import io.axoniq.axondb.grpc.GetAggregateEventsRequest;
 import io.axoniq.axondb.grpc.GetEventsRequest;
+import io.axoniq.axondb.grpc.QueryEventsRequest;
+import io.axoniq.axondb.grpc.QueryEventsResponse;
 import io.axoniq.axondb.grpc.ReadHighestSequenceNrResponse;
 import io.axoniq.axonhub.client.AxonHubConfiguration;
 import io.axoniq.axonhub.client.ErrorCode;
@@ -118,6 +120,9 @@ public class AxonHubEventStore extends AbstractEventStore {
     @Override
     public TrackingEventStream openStream(TrackingToken trackingToken) {
         return storageEngine().openStream(trackingToken);
+    }
+    public QueryResultStream query(String query, boolean liveUpdates) {
+        return storageEngine().query(query, liveUpdates);
     }
 
     @Override
@@ -284,6 +289,42 @@ public class AxonHubEventStore extends AbstractEventStore {
             consumer.registerConsumeListener(observer::markConsumed);
             return consumer;
         }
+
+        public QueryResultStream query(String query, boolean liveUpdates) {
+            QueryResultBuffer consumer = new QueryResultBuffer();
+
+            logger.debug("query: {}", query);
+            StreamObserver<QueryEventsRequest> requestStream = eventStoreClient.query(new StreamObserver<QueryEventsResponse>() {
+                @Override
+                public void onNext(QueryEventsResponse eventWithToken) {
+                    consumer.push(eventWithToken);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    logger.info("Failed to receive events - {}", throwable.getMessage());
+                    consumer.fail(new EventStoreException("Error while reading query results from the server", throwable));
+                }
+
+                @Override
+                public void onCompleted() {
+                    consumer.close();
+                }
+            });
+            FlowControllingStreamObserver<QueryEventsRequest> observer = new FlowControllingStreamObserver<>(
+                    requestStream, configuration, t-> QueryEventsRequest.newBuilder().setNumberOfPermits(t.getPermits()).build(), t-> false);
+
+            observer.onNext(QueryEventsRequest.newBuilder()
+                                              .setQuery(query)
+                                              .setNumberOfPermits(configuration.getInitialNrOfPermits())
+                                              .setLiveEvents(liveUpdates)
+                                              .build());
+
+            consumer.registerCloseListener((eventConsumer) -> observer.onCompleted());
+            consumer.registerConsumeListener(observer::markConsumed);
+            return consumer;
+        }
+
 
         @Override
         public DomainEventStream readEvents(String aggregateIdentifier) {

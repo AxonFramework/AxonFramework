@@ -24,6 +24,8 @@ import io.axoniq.axondb.grpc.GetEventsRequest;
 import io.axoniq.axondb.grpc.GetFirstTokenRequest;
 import io.axoniq.axondb.grpc.GetLastTokenRequest;
 import io.axoniq.axondb.grpc.GetTokenAtRequest;
+import io.axoniq.axondb.grpc.QueryEventsRequest;
+import io.axoniq.axondb.grpc.QueryEventsResponse;
 import io.axoniq.axondb.grpc.ReadHighestSequenceNrRequest;
 import io.axoniq.axondb.grpc.ReadHighestSequenceNrResponse;
 import io.axoniq.axondb.grpc.TrackingToken;
@@ -197,6 +199,28 @@ public class AxonDBClient {
                 // no-op: already
             }
         }), futureConfirmation, eventCipher);
+    }
+
+    public StreamObserver<QueryEventsRequest> query(StreamObserver<QueryEventsResponse> responseStreamObserver) {
+        StreamObserver<QueryEventsResponse> wrappedStreamObserver = new StreamObserver<QueryEventsResponse>() {
+            @Override
+            public void onNext(QueryEventsResponse eventWithToken) {
+                responseStreamObserver.onNext(eventWithToken);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                checkConnectionException(throwable);
+                responseStreamObserver.onError(GrpcExceptionParser.parse(throwable));
+            }
+
+            @Override
+            public void onCompleted() {
+                responseStreamObserver.onCompleted();
+
+            }
+        };
+        return eventStoreStub().queryEvents(wrappedStreamObserver);
     }
 
     private void checkConnectionException(Throwable ex) {
