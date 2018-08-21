@@ -93,6 +93,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     @Override
+    public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {
+        return interceptors;
+    }
+
+    @Override
     public String toString() {
         return getName();
     }
@@ -133,7 +138,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                        Segment segment) throws Exception {
         try {
             unitOfWork.executeWithResult(() -> {
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(unitOfWork.getMessage());
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(unitOfWork
+                                                                                                          .getMessage());
                 return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
                     try {
                         eventHandlerInvoker.handle(m, segment);
@@ -149,7 +155,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             if (unitOfWork.isRolledBack()) {
                 errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
             } else {
-                logger.info("Exception occurred while processing a message, but unit of work was committed. {}", e.getClass().getName());
+                logger.info("Exception occurred while processing a message, but unit of work was committed. {}",
+                            e.getClass().getName());
             }
         }
     }
