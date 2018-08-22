@@ -21,7 +21,9 @@ import io.axoniq.axonhub.client.query.AxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -150,5 +152,17 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private void onApplicationDisconnected() {
         subscriptions.clear();
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super QueryMessage<?, ?>> dispatchInterceptor) {
+        return axonHubQueryBus.registerDispatchInterceptor(dispatchInterceptor);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super QueryMessage<?, ?>> handlerInterceptor) {
+        return axonHubQueryBus.registerHandlerInterceptor(handlerInterceptor);
     }
 }
