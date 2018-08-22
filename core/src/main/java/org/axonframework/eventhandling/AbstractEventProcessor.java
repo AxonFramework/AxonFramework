@@ -93,7 +93,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     @Override
-    public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {
+    public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
         return interceptors;
     }
 
@@ -138,8 +138,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                        Segment segment) throws Exception {
         try {
             unitOfWork.executeWithResult(() -> {
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(unitOfWork
-                                                                                                          .getMessage());
+                MessageMonitor.MonitorCallback monitorCallback =
+                        messageMonitor.onMessageIngested(unitOfWork.getMessage());
                 return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
                     try {
                         eventHandlerInvoker.handle(m, segment);

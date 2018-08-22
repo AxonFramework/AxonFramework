@@ -116,13 +116,13 @@ public class EventHandlingConfigurationTest {
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("java.util.concurrent2").getInterceptors().iterator()
+        assertTrue(processors.get("java.util.concurrent2").getHandlerInterceptors().iterator()
                              .next() instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
-        assertTrue(processors.get("java.util.concurrent").getInterceptors().iterator()
+        assertTrue(processors.get("java.util.concurrent").getHandlerInterceptors().iterator()
                              .next() instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
-        assertTrue(processors.get("java.lang").getInterceptors().iterator()
+        assertTrue(processors.get("java.lang").getHandlerInterceptors().iterator()
                              .next() instanceof CorrelationDataInterceptor);
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -210,7 +210,7 @@ public class EventHandlingConfigurationTest {
         Configuration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
-        assertEquals(3, ((StubEventProcessor) module.getProcessor("default").get()).getInterceptors().size());
+        assertEquals(3, ((StubEventProcessor) module.getProcessor("default").get()).getHandlerInterceptors().size());
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
                               EventHandlingConfiguration.class,
@@ -400,6 +400,11 @@ public class EventHandlingConfigurationTest {
         }
 
         @Override
+        public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+            return interceptors;
+        }
+
+        @Override
         public void start() {
             // noop
         }
@@ -407,11 +412,6 @@ public class EventHandlingConfigurationTest {
         @Override
         public void shutDown() {
             // noop
-        }
-
-        @Override
-        public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {
-            return interceptors;
         }
     }
 

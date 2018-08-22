@@ -355,7 +355,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
             return emptyList();
         }
 
-        return new ArrayList<>(eventProcessorComponent.get().getInterceptors());
+        return new ArrayList<>(eventProcessorComponent.get().getHandlerInterceptors());
     }
 
     /**
