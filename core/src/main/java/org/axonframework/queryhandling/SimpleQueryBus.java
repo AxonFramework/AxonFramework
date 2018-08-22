@@ -451,6 +451,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
      * @param interceptor the interceptor to invoke before passing a Query to the handler
      * @return handle to unregister the interceptor
      */
+    @Override
     public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor) {
         handlerInterceptors.add(interceptor);
         return () -> handlerInterceptors.remove(interceptor);
@@ -463,6 +464,7 @@ public class SimpleQueryBus implements QueryBus, QueryUpdateEmitter {
      * @param interceptor the interceptor to invoke when sending a Query
      * @return handle to unregister the interceptor
      */
+    @Override
     public Registration registerDispatchInterceptor(
             MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
         dispatchInterceptors.add(interceptor);
