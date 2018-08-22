@@ -17,6 +17,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
@@ -37,7 +39,8 @@ import java.util.stream.Stream;
  * @author Allard Buijze
  * @since 3.1
  */
-public interface QueryBus {
+public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<?,?>>,
+                                  MessageDispatchInterceptorSupport<QueryMessage<?,?>> {
 
     /**
      * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.
