@@ -96,7 +96,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectEvents(EventMessage... expectedEvents) {
-        this.expectEvents((Object[]) (Stream.of(expectedEvents).map(Message::getPayload).toArray()));
+        this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
