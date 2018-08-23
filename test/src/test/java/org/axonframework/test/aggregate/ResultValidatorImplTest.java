@@ -35,4 +35,12 @@ public class ResultValidatorImplTest {
 
         validator.expectEvents(expected);
     }
+
+    @Test
+    public void shouldSuccesfullyCompareEqualMetadata() {
+        EventMessage<?> expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "value1"));
+
+        validator.expectEvents(expected);
+    }
+
 }
