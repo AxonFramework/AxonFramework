@@ -28,10 +28,11 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.jgroups.commandhandling.JGroupsConnector;
 import org.axonframework.serialization.Serializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.actuate.autoconfigure.metrics.amqp.RabbitMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -46,7 +47,7 @@ import static org.junit.Assert.*;
 
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
-HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
+HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class, RabbitMetricsAutoConfiguration.class})
 @TestPropertySource("classpath:test.jgroups.application.properties")
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithJGroupsTest {

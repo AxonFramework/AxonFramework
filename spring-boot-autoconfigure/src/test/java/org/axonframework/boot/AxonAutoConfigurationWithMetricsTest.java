@@ -16,12 +16,12 @@
 
 package org.axonframework.boot;
 
-import com.codahale.metrics.MetricRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.metrics.amqp.RabbitMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -36,7 +36,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class, WebClientAutoConfiguration.class, HibernateJpaAutoConfiguration.class,
-        DataSourceAutoConfiguration.class
+        DataSourceAutoConfiguration.class, RabbitMetricsAutoConfiguration.class
 })
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithMetricsTest {
@@ -45,19 +45,14 @@ public class AxonAutoConfigurationWithMetricsTest {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private MetricRegistry metricRegistry;
-    @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
+
     @Autowired
     private MetricsConfigurerModule metricsConfigurerModule;
 
     @Test
     public void testContextInitialization() {
         assertNotNull(applicationContext);
-
-        assertTrue(applicationContext.containsBean("metricRegistry"));
-        assertNotNull(applicationContext.getBean(MetricRegistry.class));
-        assertEquals(MetricRegistry.class, metricRegistry.getClass());
 
         assertTrue(applicationContext.containsBean("globalMetricRegistry"));
         assertNotNull(applicationContext.getBean(GlobalMetricRegistry.class));

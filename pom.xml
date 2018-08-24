@@ -108,6 +108,8 @@
         <kafka.version>1.0.0</kafka.version>
         <projectreactor.version>3.1.7.RELEASE</projectreactor.version>
         <jackson.version>2.9.4</jackson.version>
+        <micrometer.version>1.0.4</micrometer.version>
+        <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
     </properties>
 
     <dependencies>

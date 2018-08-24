@@ -16,10 +16,12 @@
 
 package org.axonframework.boot.autoconfig;
 
-import com.codahale.metrics.MetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.boot.MetricsProperties;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
+import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -33,12 +35,14 @@ import org.springframework.context.annotation.Configuration;
  * Auto configuration to set up Metrics for the infrastructure components.
  *
  * @author Steven van Beelen
- * @since 3.2
+ * @author Marijn van Zelst
+ * @since 3.3
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
+@AutoConfigureAfter({org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration.class, CompositeMeterRegistryAutoConfiguration.class})
 @ConditionalOnClass(name = {
-        "com.codahale.metrics.MetricRegistry",
+        "io.micrometer.core.instrument.MeterRegistry",
         "org.axonframework.metrics.GlobalMetricRegistry"
 })
 @EnableConfigurationProperties(MetricsProperties.class)
@@ -46,15 +50,9 @@ public class MetricsAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public static MetricRegistry metricRegistry() {
-        return new MetricRegistry();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(MetricRegistry.class)
-    public static GlobalMetricRegistry globalMetricRegistry(MetricRegistry metricRegistry) {
-        return new GlobalMetricRegistry(metricRegistry);
+    @ConditionalOnBean(MeterRegistry.class)
+    public static GlobalMetricRegistry globalMetricRegistry(MeterRegistry meterRegistry) {
+        return new GlobalMetricRegistry(meterRegistry);
     }
 
     @Bean
@@ -64,5 +62,6 @@ public class MetricsAutoConfiguration {
     public static MetricsConfigurerModule metricsConfigurerModule(GlobalMetricRegistry globalMetricRegistry) {
         return new MetricsConfigurerModule(globalMetricRegistry);
     }
+
 }
 

@@ -1,29 +1,54 @@
 package org.axonframework.metrics;
 
 import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.MetricRegistry;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
+import io.micrometer.core.instrument.dropwizard.DropwizardMeterRegistry;
+import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class GlobalMetricRegistryTest {
 
     private GlobalMetricRegistry subject;
 
+    private MetricRegistry dropWizardRegistry;
+
     @Before
     public void setUp() {
-        subject = new GlobalMetricRegistry();
+        DropwizardConfig config = new DropwizardConfig() {
+            @Override
+            public String prefix() {
+                return "dropwizard";
+            }
+
+            @Override
+            public String get(String key) {
+                return null;
+            }
+        };
+        dropWizardRegistry = new MetricRegistry();
+        subject = new GlobalMetricRegistry(new DropwizardMeterRegistry(config,
+                                                                       dropWizardRegistry,
+                                                                       HierarchicalNameMapper.DEFAULT,
+                                                                       Clock.SYSTEM) {
+            @Override
+            protected Double nullGaugeValue() {
+                return null;
+            }
+        });
     }
 
     @Test
@@ -35,7 +60,8 @@ public class GlobalMetricRegistryTest {
         monitor2.onMessageIngested(asEventMessage("test")).reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ConsoleReporter.forRegistry(subject.getRegistry()).outputTo(new PrintStream(out)).build().report();
+
+        ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
         String output = new String(out.toByteArray());
 
         assertTrue(output.contains("test1"));
@@ -49,7 +75,7 @@ public class GlobalMetricRegistryTest {
         monitor.onMessageIngested(asEventMessage("test")).reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ConsoleReporter.forRegistry(subject.getRegistry()).outputTo(new PrintStream(out)).build().report();
+        ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
         String output = new String(out.toByteArray());
 
         assertTrue(output.contains("eventBus"));
@@ -62,7 +88,7 @@ public class GlobalMetricRegistryTest {
         monitor.onMessageIngested(new GenericCommandMessage<>("test")).reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ConsoleReporter.forRegistry(subject.getRegistry()).outputTo(new PrintStream(out)).build().report();
+        ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
         String output = new String(out.toByteArray());
 
         assertTrue(output.contains("commandBus"));

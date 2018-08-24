@@ -16,15 +16,12 @@
 
 package org.axonframework.metrics;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitorCallback;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,14 +30,32 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>>, MetricSet {
+public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>> {
 
     private final AtomicLong lastReceivedTime = new AtomicLong(-1);
     private final AtomicLong lastProcessedTime = new AtomicLong(-1);
 
+    private EventProcessorLatencyMonitor() {
+    }
+
+    /**
+     * Creates an event processor latency monitor
+     *
+     * @param meterNamePrefix The prefix for the meter name that will be created in the given meterRegistry
+     * @param meterRegistry   The meter registry used to create and register the meters
+     * @return the created event processor latency monitor
+     */
+    public static EventProcessorLatencyMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry) {
+        EventProcessorLatencyMonitor eventProcessorLatencyMonitor = new EventProcessorLatencyMonitor();
+        Gauge.builder(meterNamePrefix + ".latency",
+                      eventProcessorLatencyMonitor,
+                      EventProcessorLatencyMonitor::calculateLatency).register(meterRegistry);
+        return eventProcessorLatencyMonitor;
+    }
+
     @Override
     public MonitorCallback onMessageIngested(EventMessage<?> message) {
-        if(message == null){
+        if (message == null) {
             return NoOpMessageMonitorCallback.INSTANCE;
         }
         updateIfMaxValue(lastReceivedTime, message.getTimestamp().toEpochMilli());
@@ -60,28 +75,26 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
                 update();
             }
 
-            private void update(){
+            private void update() {
                 updateIfMaxValue(lastProcessedTime, message.getTimestamp().toEpochMilli());
             }
         };
     }
 
-    @Override
-    public Map<String, Metric> getMetrics() {
+    private long calculateLatency() {
         long lastProcessedTime = this.lastProcessedTime.longValue();
         long lastReceivedTime = this.lastReceivedTime.longValue();
         long processTime;
-        if(lastReceivedTime == -1 || lastProcessedTime == -1){
+        if (lastReceivedTime == -1 || lastProcessedTime == -1) {
             processTime = 0;
         } else {
             processTime = lastReceivedTime - lastProcessedTime;
         }
-        Map<String, Metric> metrics = new HashMap<>();
-        metrics.put("latency", (Gauge<Long>) () -> processTime);
-        return metrics;
+        return processTime;
     }
 
-    private void updateIfMaxValue(AtomicLong atomicLong, long timestamp){
-        atomicLong.accumulateAndGet(timestamp, (currentValue, newValue) -> newValue > currentValue ? newValue : currentValue);
+    private void updateIfMaxValue(AtomicLong atomicLong, long timestamp) {
+        atomicLong.accumulateAndGet(timestamp, (currentValue, newValue) ->
+                newValue > currentValue ? newValue : currentValue);
     }
 }

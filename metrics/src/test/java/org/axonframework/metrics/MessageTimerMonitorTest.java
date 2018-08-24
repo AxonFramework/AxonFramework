@@ -16,78 +16,79 @@
 
 package org.axonframework.metrics;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.Timer;
+import io.micrometer.core.instrument.MockClock;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Test;
+import org.junit.*;
 
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertArrayEquals;
+import static java.util.Objects.requireNonNull;
+import static org.junit.Assert.*;
 
 public class MessageTimerMonitorTest {
 
+    private static final String PROCESSOR_NAME = "processorName";
+
     @Test
-    public void testSuccessMessage(){
-        TestClock testClock = new TestClock();
-        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+    public void testSuccessMessage() {
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
+        MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        testClock.increase(1000);
+        testClock.addSeconds(1);
         monitorCallback.reportSuccess();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Timer all = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".allTimer").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".successTimer").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".failureTimer").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".ignoredTimer").timer());
 
-        Timer all = (Timer) metricSet.get("allTimer");
-        Timer successTimer = (Timer) metricSet.get("successTimer");
-        Timer failureTimer = (Timer) metricSet.get("failureTimer");
-        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
-
-        assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
-        assertArrayEquals(new long[]{1000000}, successTimer.getSnapshot().getValues());
-        assertArrayEquals(new long[]{}, failureTimer.getSnapshot().getValues());
-        assertArrayEquals(new long[]{}, ignoredTimer.getSnapshot().getValues());
+        assertEquals(1, all.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(1, successTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(0, failureTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(0, ignoredTimer.totalTime(TimeUnit.SECONDS), 0);
     }
 
     @Test
-    public void testFailureMessage(){
-        TestClock testClock = new TestClock();
-        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+    public void testFailureMessage() {
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
+        MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        testClock.increase(1000);
+        testClock.addSeconds(1);
         monitorCallback.reportFailure(null);
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Timer all = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".allTimer").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".successTimer").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".failureTimer").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".ignoredTimer").timer());
 
-        Timer all = (Timer) metricSet.get("allTimer");
-        Timer successTimer = (Timer) metricSet.get("successTimer");
-        Timer failureTimer = (Timer) metricSet.get("failureTimer");
-        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
-
-        assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
-        assertArrayEquals(new long[]{}, successTimer.getSnapshot().getValues());
-        assertArrayEquals(new long[]{}, ignoredTimer.getSnapshot().getValues());
-        assertArrayEquals(new long[]{1000000}, failureTimer.getSnapshot().getValues());
+        assertEquals(1, all.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(0, successTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(1, failureTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(0, ignoredTimer.totalTime(TimeUnit.SECONDS), 0);
     }
 
     @Test
-    public void testIgnoredMessage(){
-        TestClock testClock = new TestClock();
-        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+    public void testIgnoredMessage() {
+        MockClock testClock = new MockClock();
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, testClock);
+        MessageTimerMonitor testSubject = MessageTimerMonitor.buildMonitor(PROCESSOR_NAME, meterRegistry, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        testClock.increase(1000);
+        testClock.addSeconds(1);
         monitorCallback.reportIgnored();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Timer all = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".allTimer").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".successTimer").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".failureTimer").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(PROCESSOR_NAME + ".ignoredTimer").timer());
 
-        Timer all = (Timer) metricSet.get("allTimer");
-        Timer successTimer = (Timer) metricSet.get("successTimer");
-        Timer failureTimer = (Timer) metricSet.get("failureTimer");
-        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
-
-        assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
-        assertArrayEquals(new long[]{}, successTimer.getSnapshot().getValues());
-        assertArrayEquals(new long[]{1000000}, ignoredTimer.getSnapshot().getValues());
-        assertArrayEquals(new long[]{}, failureTimer.getSnapshot().getValues());
+        assertEquals(1, all.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(0, successTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(0, failureTimer.totalTime(TimeUnit.SECONDS), 0);
+        assertEquals(1, ignoredTimer.totalTime(TimeUnit.SECONDS), 0);
     }
-
 }
