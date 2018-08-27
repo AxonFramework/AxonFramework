@@ -120,10 +120,10 @@ message EventProcessorInfo {
     string processor_name = 1;
     string mode = 2;
     int32 active_threads = 3;
-    int32 available_threads = 4;
-    bool running = 5;
-    bool error = 6;
-    repeated EventTrackerInfo event_trackers_info = 7;
+    bool running = 4;
+    bool error = 5;
+    repeated EventTrackerInfo event_trackers_info = 6;
+    int32 available_threads = 7;
 }
 
 message PauseEventProcessor {
