@@ -656,6 +656,24 @@ public class TrackingEventProcessorTest {
 
     }
 
+    @Test
+    public void testReleaseSegment() {
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+        testSubject.releaseSegment(0);
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.activeProcessorThreads()));
+        assertWithin(15, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.activeProcessorThreads()));
+    }
+
+    @Test
+    public void testHasAvailableSegments() {
+        assertEquals(1, testSubject.availableProcessorThreads());
+        testSubject.start();
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.availableProcessorThreads()));
+        testSubject.releaseSegment(0);
+        assertWithin(2, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.availableProcessorThreads()));
+    }
+
     private static class StubTrackingEventStream implements TrackingEventStream {
         private final Queue<TrackedEventMessage<?>> eventMessages;
 

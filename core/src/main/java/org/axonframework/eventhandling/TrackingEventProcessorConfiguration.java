@@ -7,6 +7,7 @@ import org.axonframework.messaging.StreamableMessageSource;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -21,18 +22,21 @@ public class TrackingEventProcessorConfiguration {
 
     private static final int DEFAULT_BATCH_SIZE = 1;
     private static final int DEFAULT_THREAD_COUNT = 1;
+    private static final int DEFAULT_TOKEN_CLAIM_INTERVAL = 5000;
 
     private final int maxThreadCount;
     private int batchSize;
     private int initialSegmentCount;
     private Function<StreamableMessageSource, TrackingToken> initialTrackingTokenBuilder = StreamableMessageSource::createTailToken;
     private Function<String, ThreadFactory> threadFactory;
+    private long tokenClaimInterval;
 
     private TrackingEventProcessorConfiguration(int numberOfSegments) {
         this.batchSize = DEFAULT_BATCH_SIZE;
         this.initialSegmentCount = numberOfSegments;
         this.maxThreadCount = numberOfSegments;
         this.threadFactory = pn -> new AxonThreadFactory("EventProcessor[" + pn + "]");
+        this.tokenClaimInterval = DEFAULT_TOKEN_CLAIM_INTERVAL;
     }
 
     /**
@@ -101,6 +105,18 @@ public class TrackingEventProcessorConfiguration {
     }
 
     /**
+     * Sets the time to wait after a failed attempt to claim any token, before making another attempt.
+     *
+     * @param tokenClaimInterval The time to wait in between attempts to claim a token
+     * @param timeUnit           The unit of time
+     * @return {@code this} for method chaining
+     */
+    public TrackingEventProcessorConfiguration andTokenClaimInterval(long tokenClaimInterval, TimeUnit timeUnit) {
+        this.tokenClaimInterval = timeUnit.toMillis(tokenClaimInterval);
+        return this;
+    }
+
+    /**
      * @return the maximum number of events to process in a single batch.
      */
     public int getBatchSize() {
@@ -136,5 +152,16 @@ public class TrackingEventProcessorConfiguration {
      */
     public ThreadFactory getThreadFactory(String processorName) {
         return threadFactory.apply(processorName);
+    }
+
+    /**
+     * Returns the time, in milliseconds, the processor should wait after a failed attempt to claim any segments for
+     * processing. Generally, this means all segments are claimed.
+     *
+     * @return the time, in milliseconds, to wait in between attempts to claim a token
+     * @see #andTokenClaimInterval(long, TimeUnit)
+     */
+    public long getTokenClaimInterval() {
+        return tokenClaimInterval;
     }
 }

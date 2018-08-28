@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -151,7 +152,6 @@ public class TrackingEventProcessorTest_MultiThreaded {
     @Test
     public void testProcessorWorkerCountWithMultipleSegmentsClaimFails() throws InterruptedException {
 
-
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
 
@@ -182,6 +182,25 @@ public class TrackingEventProcessorTest_MultiThreaded {
         assertWithin(200, MILLISECONDS, () -> verify(tokenStore, atLeast(1)).extendClaim("test", 0));
         assertWithin(200, MILLISECONDS, () -> verify(tokenStore, atLeast(1)).extendClaim("test", 1));
         assertWithin(1, SECONDS, () -> assertThat(testSubject.activeProcessorThreads(), is(2)));
+    }
+
+    @Test
+    public void testBlacklistingSegmentWillHaveProcessorClaimAnotherOne() {
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 2);
+
+        testSubject.start();
+
+        assertWithin(1, SECONDS, () -> assertEquals(0, testSubject.availableProcessorThreads()));
+        assertEquals(new HashSet<>(asList(0, 1)), testSubject.processingStatus().keySet());
+
+        testSubject.releaseSegment(0);
+
+        assertWithin(5, SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
+        assertEquals(new HashSet<>(asList(2, 1)), testSubject.processingStatus().keySet());
+
+        assertWithin(2, SECONDS, () -> assertEquals(0, testSubject.availableProcessorThreads()));
     }
 
     @Test
