@@ -76,7 +76,7 @@ public class RepositoryContentValidator<T> {
                 sagaStore.findSagas(sagaType, new AssociationValue(associationKey, associationValue));
         if (!associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(
-                    "Expected a saga to be associated with key:<%s> value:<%s>, but found <%s>",
+                    "Expected no sagas to be associated with key:<%s> value:<%s>, but found <%s>",
                     associationKey,
                     associationValue,
                     associatedSagas.size()));

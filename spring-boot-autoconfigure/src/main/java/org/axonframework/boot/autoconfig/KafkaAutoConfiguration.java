@@ -99,7 +99,7 @@ public class KafkaAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnBean({ConsumerFactory.class, KafkaMessageConverter.class})
-    public Fetcher<String, byte[]> kafkaFetcher(ConsumerFactory<String, byte[]> consumerFactory,
+    public Fetcher kafkaFetcher(ConsumerFactory<String, byte[]> consumerFactory,
                                                 KafkaMessageConverter<String, byte[]> messageConverter) {
         return AsyncFetcher.builder(consumerFactory)
                            .withTopic(properties.getDefaultTopic())
@@ -113,8 +113,8 @@ public class KafkaAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     @ConditionalOnBean(ConsumerFactory.class)
-    public KafkaMessageSource<String, byte[]> kafkaMessageSource(Fetcher<String, byte[]> fetcher) {
-        return new KafkaMessageSource<>(fetcher);
+    public KafkaMessageSource kafkaMessageSource(Fetcher fetcher) {
+        return new KafkaMessageSource(fetcher);
     }
 
     @ConditionalOnMissingBean

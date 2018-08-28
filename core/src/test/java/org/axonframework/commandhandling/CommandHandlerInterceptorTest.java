@@ -18,11 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateMember;
-import org.axonframework.commandhandling.model.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.model.EntityId;
-import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -31,16 +27,18 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.junit.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Objects;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -151,6 +149,11 @@ public class CommandHandlerInterceptorTest {
     @Test(expected = AxonConfigurationException.class)
     public void testInterceptorWithNonVoidReturnType() {
         new EventSourcingRepository<>(MyAggregateWithInterceptorReturningNonVoid.class, eventStore);
+    }
+
+    @Test
+    public void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
+        new EventSourcingRepository<>(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class, eventStore);
     }
 
     @SuppressWarnings("unchecked")
@@ -749,6 +752,15 @@ public class CommandHandlerInterceptorTest {
 
         @CommandHandlerInterceptor
         public Object intercept() {
+            return new Object();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid {
+
+        @CommandHandlerInterceptor
+        public Object intercept(InterceptorChain chain) {
             return new Object();
         }
     }

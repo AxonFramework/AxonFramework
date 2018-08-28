@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,67 +16,64 @@
 
 package org.axonframework.boot;
 
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-@ContextConfiguration
+@ContextConfiguration(classes = AxonHandlerConfigurationTest.Context.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @RunWith(SpringRunner.class)
-public class AxonAutoConfigurationWithOnlyEventSerializerTest {
+public class AxonHandlerConfigurationTest {
 
     @Autowired
-    private Serializer serializer;
+    private QueryGateway queryGateway;
 
     @Autowired
-    @Qualifier("eventSerializer")
-    private Serializer eventSerializer;
-
-    @Autowired
-    @Qualifier("messageSerializer")
-    private Serializer messageSerializer;
+    private CommandGateway commandGateway;
 
     @Test
-    public void testRevertsToDefaultSerializer() {
-        assertNotNull(serializer);
-        assertNotNull(eventSerializer);
-        assertNotNull(messageSerializer);
-        assertEquals(XStreamSerializer.class, serializer.getClass());
-        assertEquals(JacksonSerializer.class, eventSerializer.getClass());
-        assertEquals(XStreamSerializer.class, messageSerializer.getClass());
-        assertNotSame(eventSerializer, serializer);
-        assertNotSame(eventSerializer, messageSerializer);
-        assertNotSame(serializer, messageSerializer);
+    public void testMessageRoutedToCorrectMethod() throws Exception {
+        assertEquals("Command: info", commandGateway.send("info").get());
+        assertEquals("Query: info", queryGateway.query("info", String.class).get());
     }
 
-    @org.springframework.context.annotation.Configuration
-    public static class Configuration {
+    @SuppressWarnings("unused")
+    public static class CommandAndQueryHandler {
 
-        @Bean
-        @Qualifier("eventSerializer")
-        public Serializer myEventSerializer() {
-            return new JacksonSerializer();
+        @CommandHandler
+        public String handle(String command) {
+            return "Command: " + command;
         }
 
+        @QueryHandler
+        public String query(String query) {
+            return "Query: " + query;
+        }
+
+    }
+
+    @Configuration
+    public static class Context {
+
         @Bean
-        @Qualifier("messageSerializer")
-        public Serializer myMessageSerializer() {
-            return new XStreamSerializer();
+        public CommandAndQueryHandler handler() {
+            return new CommandAndQueryHandler();
         }
     }
 }

@@ -32,7 +32,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 2.0
  */
-@Priority(Priority.FIRST)
+@Priority(Priority.LOW)
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
     @Override

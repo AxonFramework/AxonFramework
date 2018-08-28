@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,14 +171,18 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        EventProcessingConfiguration eventProcessingConfiguration,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((k, v) -> {
+
+            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
+                    resolveSequencingPolicy(applicationContext, v);
+            eventHandlingConfiguration.configureSequencingPolicy(k, sequencingPolicy);
+
             if (v.getMode() == EventProcessorProperties.Mode.TRACKING) {
                 TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
                         .forParallelProcessing(v.getThreadCount())
                         .andBatchSize(v.getBatchSize())
                         .andInitialSegmentsCount(v.getInitialSegmentCount());
-                Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy = resolveSequencingPolicy(applicationContext, v);
                 Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource = resolveMessageSource(applicationContext, v);
-                eventHandlingConfiguration.registerTrackingProcessor(k, messageSource, c -> config, sequencingPolicy);
+                eventProcessingConfiguration.registerTrackingEventProcessor(k, messageSource, c -> config);
             } else {
                 if (v.getSource() == null) {
                     eventProcessingConfiguration.registerSubscribingEventProcessor(k);
@@ -205,7 +209,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         if (v.getSequencingPolicy() != null) {
             sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
         } else {
-            sequencingPolicy = c -> new SequentialPerAggregatePolicy();
+            sequencingPolicy = c -> SequentialPerAggregatePolicy.instance();
         }
         return sequencingPolicy;
     }

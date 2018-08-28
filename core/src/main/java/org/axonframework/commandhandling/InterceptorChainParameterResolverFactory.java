@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -35,6 +36,7 @@ import java.lang.reflect.Parameter;
  * @author Milan Savic
  * @since 3.3
  */
+@Priority(Priority.FIRST)
 public class InterceptorChainParameterResolverFactory
         implements ParameterResolverFactory, ParameterResolver<InterceptorChain> {
 

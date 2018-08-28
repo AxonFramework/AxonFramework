@@ -15,8 +15,11 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
+import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
@@ -145,6 +148,32 @@ public class EventHandlingConfigurationTest {
         assertExpectedModules(config,
                               EventProcessingConfiguration.class,
                               EventHandlingConfiguration.class);
+    }
+
+    @Test
+    public void testAssignSequencingPolicy() throws NoSuchFieldException {
+        Object mockHandler = new Object();
+        Object specialHandler = new Object();
+        SequentialPolicy sequentialPolicy = new SequentialPolicy();
+        FullConcurrencyPolicy fullConcurrencyPolicy = new FullConcurrencyPolicy();
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
+                .registerEventHandler(c -> mockHandler)
+                .registerEventHandler(c -> specialHandler)
+                .assignHandlersMatching("special", specialHandler::equals)
+                .byDefaultAssignTo("default")
+                .registerDefaultSequencingPolicy(c -> sequentialPolicy)
+                .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        AbstractEventProcessor defaultProcessor = config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class).get();
+        AbstractEventProcessor specialProcessor = config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class).get();
+
+        MultiEventHandlerInvoker defaultInvoker = ReflectionUtils.getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
+        MultiEventHandlerInvoker specialInvoker = ReflectionUtils.getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
+
+        assertEquals(sequentialPolicy, ((SimpleEventHandlerInvoker) defaultInvoker.delegates().get(0)).getSequencingPolicy());
+        assertEquals(fullConcurrencyPolicy, ((SimpleEventHandlerInvoker) specialInvoker.delegates().get(0)).getSequencingPolicy());
     }
 
     @Test

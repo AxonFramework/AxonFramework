@@ -26,7 +26,7 @@ import java.lang.annotation.*;
  * and the actual property's value are used to define a AssociationValue for the created saga. Thus, a method with this
  * definition:
  * <p/>
- * <code>@StartSaga(forceNew=true)<br/>@SageEventHandler(associationProperty=&quot;orderId&quot;)<br/>public void
+ * <code>@StartSaga(forceNew=true)<br/>@SagaEventHandler(associationProperty=&quot;orderId&quot;)<br/>public void
  * handleOrderCreated(OrderCreatedEvent event) </code><br/> will always trigger the creation of a saga that can be found
  * with an AssociationValue with key "orderId" and as value the value returned by {@code event.getOrderId()}.
  * <p/>

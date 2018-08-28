@@ -740,6 +740,7 @@ public class SubscriptionQueryTest {
 
         @QueryHandler(queryName = "emitFirstThenReturnInitial")
         public String emitFirstThenReturnInitial(String criteria) throws InterruptedException {
+            CountDownLatch latch = new CountDownLatch(1);
             Executors.newSingleThreadExecutor().submit(() -> {
                 emitter.emit(String.class,
                              "axonFrameworkCR"::equals,
@@ -748,9 +749,10 @@ public class SubscriptionQueryTest {
                              "axonFrameworkCR"::equals,
                              GenericSubscriptionQueryUpdateMessage.asUpdateMessage("Update2"));
                 emitter.complete(String.class, "axonFrameworkCR"::equals);
+                latch.countDown();
             });
 
-            Thread.sleep(200);
+            latch.await();
 
             return "Initial";
         }

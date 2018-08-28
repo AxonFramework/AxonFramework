@@ -241,7 +241,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                         "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
                                 + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
                                 "FROM " + domainEventEntryEntityName() + " e " +
-                                "WHERE e.globalIndex > :token OR e.globalIndex IN (:gaps) ORDER BY e.globalIndex ASC",
+                                "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
                         Object[].class
                 ).setParameter("gaps", previousToken.getGaps());
             }

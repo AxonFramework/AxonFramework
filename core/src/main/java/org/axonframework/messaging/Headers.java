@@ -31,16 +31,48 @@ import java.util.Map;
  * @author Nakul Mishra
  * @since 3.0
  */
-public class Headers {
+public abstract class Headers {
 
+    /**
+     * Key pointing to a message identifier.
+     */
     public static final String MESSAGE_ID = "axon-message-id";
+    /**
+     * Key pointing to the serialized payload of a message.
+     */
+    public static final String SERIALIZED_MESSAGE_PAYLOAD = "axon-serialized-message-payload";
+    /**
+     * Key pointing to the payload type of a message.
+     */
     public static final String MESSAGE_TYPE = "axon-message-type";
+    /**
+     * Key pointing to the revision of a message.
+     */
     public static final String MESSAGE_REVISION = "axon-message-revision";
+    /**
+     * Key pointing to the timestamp of a message.
+     */
     public static final String MESSAGE_TIMESTAMP = "axon-message-timestamp";
+    /**
+     * Key pointing to the aggregate identifier of a message.
+     */
     public static final String AGGREGATE_ID = "axon-message-aggregate-id";
+    /**
+     * Key pointing to the aggregate sequence of a message.
+     */
     public static final String AGGREGATE_SEQ = "axon-message-aggregate-seq";
+    /**
+     * Key pointing to the aggregate type of a message.
+     */
     public static final String AGGREGATE_TYPE = "axon-message-aggregate-type";
+    /**
+     * Key pointing to the {@link MetaData} of a message.
+     */
     public static final String MESSAGE_METADATA = "axon-metadata";
+    /**
+     * Key pointing to the deadline name of a {@link org.axonframework.deadline.DeadlineMessage}.
+     */
+    public static final String DEADLINE_NAME = "axon-deadline-name";
 
     private Headers() {
     }

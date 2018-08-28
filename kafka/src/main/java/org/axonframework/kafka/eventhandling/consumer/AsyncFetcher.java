@@ -26,88 +26,102 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
  * Async implementation of the {@link Fetcher} that uses an in-memory bufferFactory.
  *
- * @author Nakul Mishra
+ * @param <K> The key of the Kafka entries
+ * @param <V> The value type of Kafka entries
  */
-
-/**
- * [] [] []
- * @param <K>
- * @param <V>
- */
-public class AsyncFetcher<K, V> implements Fetcher<K, V> {
+public class AsyncFetcher<K, V> implements Fetcher {
 
     private final Supplier<Buffer<KafkaEventMessage>> bufferFactory;
     private final ExecutorService pool;
     private final KafkaMessageConverter<K, V> converter;
-    private final Consumer<K, V> consumer;
+    private final ConsumerFactory<K, V> consumerFactory;
     private final String topic;
     private final BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback;
     private final long pollTimeout;
+    private final boolean requirePoolShutdown;
+    private final Set<FetchEventsTask> activeFetchers = ConcurrentHashMap.newKeySet();
 
     private AsyncFetcher(Builder<K, V> builder) {
         this.bufferFactory = builder.bufferFactory;
-        this.consumer = builder.consumerFactory.createConsumer();
+        this.consumerFactory = builder.consumerFactory;
         this.converter = builder.converter;
         this.topic = builder.topic;
+        this.requirePoolShutdown = builder.requirePoolShutdown;
         this.pool = builder.pool;
         this.callback = builder.callback;
         this.pollTimeout = builder.pollTimeout;
     }
 
-    @Override
-    public MessageStream<TrackedEventMessage<?>> start(KafkaTrackingToken token) {
-        ConsumerUtil.seek(topic, consumer, token);
-        if (KafkaTrackingToken.isEmpty(token)) {
-            token = KafkaTrackingToken.emptyToken();
-        }
-        Buffer<KafkaEventMessage> buffer = bufferFactory.get();
-        Future<?> currentTask = pool.submit(FetchEventsTask.builder(this.consumer,
-                                                          token,
-                                                          buffer,
-                                                          this.converter,
-                                                          this.callback,
-                                                          this.pollTimeout).build());
-
-        return new KafkaMessageStream(buffer, () -> currentTask.cancel(true));
-    }
-
-    @Override
-    public void shutdown() {
-        pool.shutdown();
-
-    }
-
     /**
-     * @param <K> key type.
-     * @param <V> value type.
+     * Initialize a builder for configuring an AsyncFetcher, using given Kafka {@code consumerConfig}.
+     * <p>
+     * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
+     *
+     * @param <K>            key type.
+     * @param <V>            value type.
+     * @param consumerConfig The configuration of KafkaConsumers to use when creating consumers
      * @return the builder.
      */
     public static <K, V> Builder<K, V> builder(Map<String, Object> consumerConfig) {
         return builder(new DefaultConsumerFactory<>(consumerConfig));
     }
+
     /**
-     * @param <K> key type.
-     * @param <V> value type.
+     * Initialize a builder for configuring an AsyncFetcher, using given {@code consumerFactory} for creating Kafka
+     * Consumers.
+     * <p>
+     * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
+     *
+     * @param <K>             key type.
+     * @param <V>             value type.
+     * @param consumerFactory The factory providing Kafka Consumer instances
      * @return the builder.
      */
-    public static <K, V> Builder<K, V> builder(ConsumerFactory<K,V> consumerFactory) {
+    public static <K, V> Builder<K, V> builder(ConsumerFactory<K, V> consumerFactory) {
         return new Builder<>(consumerFactory);
     }
 
+    @Override
+    public MessageStream<TrackedEventMessage<?>> start(KafkaTrackingToken token) {
+        Consumer<K, V> consumer = consumerFactory.createConsumer();
+        ConsumerUtil.seek(topic, consumer, token);
+        if (KafkaTrackingToken.isEmpty(token)) {
+            token = KafkaTrackingToken.emptyToken();
+        }
+        Buffer<KafkaEventMessage> buffer = bufferFactory.get();
+        FetchEventsTask<K, V> fetcherTask = new FetchEventsTask<>(consumer, token, buffer, this.converter,
+                                                                  this.callback, this.pollTimeout,
+                                                                  activeFetchers::remove);
+        activeFetchers.add(fetcherTask);
+        pool.execute(fetcherTask);
+
+        return new KafkaMessageStream(buffer, fetcherTask::close);
+    }
+
+    @Override
+    public void shutdown() {
+        activeFetchers.forEach(FetchEventsTask::close);
+        if (requirePoolShutdown) {
+            pool.shutdown();
+        }
+    }
+
     /**
+     * Builder for the AsyncFetcher.
+     *
      * @param <K> key type.
      * @param <V> value type.
      */
@@ -117,11 +131,12 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
         private Supplier<Buffer<KafkaEventMessage>> bufferFactory = SortedKafkaMessageBuffer::new;
         private KafkaMessageConverter<K, V> converter =
                 (KafkaMessageConverter<K, V>) new DefaultKafkaMessageConverter(new XStreamSerializer());
-        private String topic = "events";
+        private String topic = "Axon.Events";
         private long pollTimeout = 5_000;
 
         private ExecutorService pool = newCachedThreadPool(new AxonThreadFactory("AsyncFetcher-pool-thread"));
         private BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> callback = (r, t) -> null;
+        private boolean requirePoolShutdown = true;
 
         private Builder(ConsumerFactory<K, V> consumerFactory) {
             Assert.notNull(consumerFactory, () -> "ConsumerFactory may not be null");
@@ -129,13 +144,17 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
         }
 
         /**
-         * Configure {@link ExecutorService} that uses {@link Consumer} for fetching Kafka records.
+         * Configure {@link ExecutorService} that uses {@link Consumer} for fetching Kafka records. Note that the pool
+         * should contain sufficient threads to run the necessary fetcher processes concurrently.
+         * <p>
+         * Note that the provided pool will <em>not</em> be shut down when the fetcher is terminated.
          *
          * @param sevice ExecutorService.
          * @return the builder.
          */
         public Builder<K, V> withPool(ExecutorService sevice) {
             Assert.notNull(sevice, () -> "Pool may not be null");
+            this.requirePoolShutdown = false;
             this.pool = sevice;
             return this;
         }
@@ -158,7 +177,7 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
          * Configure {@link ExecutorService} that uses {@link Consumer} for fetching Kafka records.
          *
          * @param timeout the timeout when reading message from the topic.
-         * @param unit the unit in which the timeout is expressed.
+         * @param unit    the unit in which the timeout is expressed.
          * @return this builder for method chaining.
          */
         public Builder<K, V> withPollTimeout(long timeout, TimeUnit unit) {
@@ -168,6 +187,7 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
 
         /**
          * Configure the converter which converts Kafka messages to Axon messages.
+         *
          * @param converter the converter.
          * @return this builder for method chaining.
          */
@@ -179,6 +199,7 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
 
         /**
          * Configure Kafka topic to read events from.
+         *
          * @param topic the topic.
          * @return this builder for method chaining.
          */
@@ -190,6 +211,7 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
 
         /**
          * Configure the factory for creating buffer that is used for each connection.
+         *
          * @param bufferFactory the bufferFactory.
          * @return this builder for method chaining.
          */
@@ -201,9 +223,10 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
 
         /**
          * Builds the fetcher
+         *
          * @return the Fetcher
          */
-        public Fetcher<K, V> build() {
+        public Fetcher build() {
             return new AsyncFetcher<>(this);
         }
     }

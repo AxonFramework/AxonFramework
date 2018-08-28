@@ -17,15 +17,15 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.queryhandling.QueryHandler;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;
 
 /**
  * Annotation for {@link org.springframework.context.annotation.Configuration @Configuration} that will automatically
- * subscribe {@link CommandHandler @CommandHandler} and {@link EventHandler @EventHandler} annotated beans with the
- * CommandBus and EventBus, respectively.
+ * subscribe {@link CommandHandler @CommandHandler} and {@link QueryHandler @QueryHandler} annotated beans with the
+ * CommandBus and QueryBus, respectively.
  *
  * @author Allard Buijze
  * @since 2.3
