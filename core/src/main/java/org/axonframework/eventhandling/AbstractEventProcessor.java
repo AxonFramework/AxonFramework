@@ -26,6 +26,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -51,7 +52,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Set<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
+    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
@@ -93,7 +94,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     @Override
-    public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
         return interceptors;
     }
 

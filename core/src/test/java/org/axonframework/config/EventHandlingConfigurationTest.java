@@ -37,11 +37,11 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -377,7 +377,7 @@ public class EventHandlingConfigurationTest {
 
         private final String name;
         private final List<?> eventHandlers;
-        private final Set<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new HashSet<>();
+        private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
 
         public StubEventProcessor(String name, List<?> eventHandlers) {
             this.name = name;
@@ -400,7 +400,7 @@ public class EventHandlingConfigurationTest {
         }
 
         @Override
-        public Set<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
             return interceptors;
         }
 

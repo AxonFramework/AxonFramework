@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -62,11 +63,12 @@ public interface EventProcessor {
     Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor);
 
     /**
-     * Return the list of registered {@link MessageHandlerInterceptor}s for this event processor.
+     * Return the list of already registered {@link MessageHandlerInterceptor}s for this event processor.
+     * To register a new interceptor use {@link EventProcessor#registerInterceptor(MessageHandlerInterceptor)}
      *
-     * @return the list of interceptors of this event processor
+     * @return the list of registered interceptors of this event processor
      */
-    default Set<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+    default List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
         throw new UnsupportedOperationException("No implementation found to get the HandlerInterceptors");
     }
 
