@@ -323,7 +323,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 () -> executeQuery(getConnection(),
                                    connection -> connection.prepareStatement(sql),
                                    resultSet -> nextAndExtract(resultSet, 1, Long.class),
-                                   e -> new EventStoreException("Failed to get head token")));
+                                   e -> new EventStoreException("Failed to get head token", e)));
         return Optional.ofNullable(index)
                        .map(seq -> GapAwareTrackingToken.newInstance(seq, Collections.emptySet()))
                        .orElse(null);
@@ -341,7 +341,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                        return stmt;
                                    },
                                    resultSet -> nextAndExtract(resultSet, 1, Long.class),
-                                   e -> new EventStoreException(format("Failed to get token at [%s]", dateTime))));
+                                   e -> new EventStoreException(format("Failed to get token at [%s]", dateTime), e)));
         if (index == null) {
             return null;
         }
