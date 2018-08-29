@@ -143,15 +143,16 @@ public class PlatformConnectionManager {
         }
         if (connectInformation.isSslEnabled()) {
             try {
-                if( connectInformation.getCertFile() == null) throw new RuntimeException("SSL enabled but no certificate file specified");
-                File certFile = new File(connectInformation.getCertFile());
-                if( ! certFile.exists()) {
-                    throw new RuntimeException("Certificate file " + connectInformation.getCertFile() + " does not exist");
+                if( connectInformation.getCertFile() != null) {
+                    File certFile = new File(connectInformation.getCertFile());
+                    if( ! certFile.exists()) {
+                        throw new RuntimeException("Certificate file " + connectInformation.getCertFile() + " does not exist");
+                    }
+                    SslContext sslContext = GrpcSslContexts.forClient()
+                                                           .trustManager(new File(connectInformation.getCertFile()))
+                                                           .build();
+                    builder.sslContext(sslContext);
                 }
-                SslContext sslContext = GrpcSslContexts.forClient()
-                        .trustManager(new File(connectInformation.getCertFile()))
-                        .build();
-                builder.sslContext(sslContext);
             } catch (SSLException e) {
                 throw new RuntimeException("Couldn't set up SSL context", e);
             }
