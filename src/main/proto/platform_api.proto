@@ -58,6 +58,7 @@ message Application {
     repeated ApplicationRole roles = 4;
     Action action = 5;
     bool fine_grained_access_control = 6;
+    string token_prefix = 7;
 }
 
 message User {
