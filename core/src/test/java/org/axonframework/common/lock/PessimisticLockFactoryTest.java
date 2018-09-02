@@ -191,6 +191,24 @@ public class PessimisticLockFactoryTest {
         }
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testBackoffParametersConstructor_aquireAttempts() {
+        int illegalValue = 0;
+        new PessimisticLockFactory.BackoffParameters(illegalValue, 100, 100);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBackoffParametersConstructor_maximumQueued() {
+        int illegalValue = 0;
+        new PessimisticLockFactory.BackoffParameters(10, illegalValue, 100);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBackoffParametersConstructor_spinTime() {
+        int illegalValue = -1;
+        new PessimisticLockFactory.BackoffParameters(10, 100, illegalValue);
+    }
+
     private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {
         Thread thread = new Thread(() -> {
             try(Lock ignored = lockFactory.obtainLock(id)) {
