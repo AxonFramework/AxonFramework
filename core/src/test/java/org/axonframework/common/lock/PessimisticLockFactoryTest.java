@@ -192,19 +192,19 @@ public class PessimisticLockFactoryTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBackoffParametersConstructor_aquireAttempts() {
+    public void testBackoffParametersConstructorAquireAttempts() {
         int illegalValue = 0;
         new PessimisticLockFactory.BackoffParameters(illegalValue, 100, 100);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBackoffParametersConstructor_maximumQueued() {
+    public void testBackoffParametersConstructorMaximumQueued() {
         int illegalValue = 0;
         new PessimisticLockFactory.BackoffParameters(10, illegalValue, 100);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBackoffParametersConstructor_spinTime() {
+    public void testBackoffParametersConstructorSpinTime() {
         int illegalValue = -1;
         new PessimisticLockFactory.BackoffParameters(10, 100, illegalValue);
     }
