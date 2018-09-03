@@ -31,18 +31,19 @@ import static java.util.Collections.synchronizedMap;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
- * {@link #obtainLock} will block until a lock could be obtained or back off based on the {@link BackoffParameters}
- * by throwing an exception. The later will cause the command to fail, but will allow the Thread to be released. If a
- * lock is obtained by a thread, that thread has guaranteed unique access.
+ * {@link #obtainLock} will block until a lock could be obtained or back off limit is reached, based on the 
+ * {@link BackoffParameters}, by throwing an exception. The latter will cause the command to fail, but will allow 
+ * the calling thread to be freed. If a lock is obtained by a thread, that thread has guaranteed unique access.
  * <p/>
  * Each thread can hold the same lock multiple times. The lock will only be released for other threads when the lock
  * has been released as many times as it was obtained.
  * <p/>
  * This lock can be used to ensure thread safe access to a number of objects, such as Aggregates and Sagas.
  *
- * Back off properties with respect to acquiring locks can be configured though the {@link BackoffParameters}.
+ * Back off properties with respect to acquiring locks can be configured through the {@link BackoffParameters}.
  *
  * @author Allard Buijze
+ * @author Michael Bischoff
  * @since 1.3
  */
 public class PessimisticLockFactory implements LockFactory {
@@ -60,11 +61,14 @@ public class PessimisticLockFactory implements LockFactory {
      *
      * @apiNote Since the previous versions didn't support any backoff properties, this no-arg constructor creates a
      * {@link PessimisticLockFactory} with no backoff properties. This is however a poor default (the system will
-     * very likely converge to a state where it no longer handles any commands any lock is held indefinitely.) In the
+     * very likely converge to a state where it no longer handles any commands if any lock is held indefinitely.) In the
      * next major version of Axon sane defaults should be chosen and thus behavior will change. Should your setup rely
      * on the no-backoff behavior then you are advised to call {@link #PessimisticLockFactory(BackoffParameters)} with
      * explicitly specified {@link BackoffParameters}.
+     *
+     * @Deprecated use {@link #PessimisticLockFactory(BackoffParameters)} instead
      */
+    @Deprecated
     public PessimisticLockFactory() {
         this(new BackoffParameters(-1, -1, 100));
     }
@@ -137,7 +141,7 @@ public class PessimisticLockFactory implements LockFactory {
      *
      * acquireAttempts
      *  This used to specify the maxium number of attempts to obtain a lock before we back off
-     *  (throwing a {@link LockAcquisitionFailedException}). A value of '-1' means unlimited attempts.
+     *  (throwing a {@link LockAcquisitionFailedException} if it does). A value of '-1' means unlimited attempts.
      *
      * maximumQueued
      *  Maximum number of queued threads we allow to try and obtain a lock, if another thread tries to obtain the lock
