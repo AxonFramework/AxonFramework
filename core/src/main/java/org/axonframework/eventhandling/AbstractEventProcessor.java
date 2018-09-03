@@ -28,8 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -51,7 +50,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Set<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
+    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
@@ -90,6 +89,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     public Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        return Collections.unmodifiableList(interceptors);
     }
 
     @Override
@@ -133,7 +137,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                                        Segment segment) throws Exception {
         try {
             unitOfWork.executeWithResult(() -> {
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(unitOfWork.getMessage());
+                MessageMonitor.MonitorCallback monitorCallback =
+                        messageMonitor.onMessageIngested(unitOfWork.getMessage());
                 return new DefaultInterceptorChain<>(unitOfWork, interceptors, m -> {
                     try {
                         eventHandlerInvoker.handle(m, segment);
@@ -149,7 +154,8 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             if (unitOfWork.isRolledBack()) {
                 errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
             } else {
-                logger.info("Exception occurred while processing a message, but unit of work was committed. {}", e.getClass().getName());
+                logger.info("Exception occurred while processing a message, but unit of work was committed. {}",
+                            e.getClass().getName());
             }
         }
     }
