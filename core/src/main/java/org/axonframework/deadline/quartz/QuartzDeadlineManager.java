@@ -93,7 +93,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     public QuartzDeadlineManager(Scheduler scheduler,
                                  ScopeAwareProvider scopeAwareProvider,
                                  TransactionManager transactionManager) {
-        this(scheduler, scopeAwareProvider, NoTransactionManager.INSTANCE, new XStreamSerializer());
+        this(scheduler, scopeAwareProvider, transactionManager, new XStreamSerializer());
     }
 
     /**
