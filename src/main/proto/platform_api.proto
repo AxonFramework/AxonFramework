@@ -28,6 +28,7 @@ message PlatformOutboundInstruction {
         PauseEventProcessor pause_event_processor = 4;
         StartEventProcessor start_event_processor = 5;
         ReleaseEventProcessorSegment release_segment = 6;
+        RequestEventProcessorInfo request_event_processor_info = 7;
     }
 }
 
@@ -137,4 +138,8 @@ message StartEventProcessor {
 message ReleaseEventProcessorSegment {
     string processor_name = 1;
     int32 segment_identifier = 2;
+}
+
+message RequestEventProcessorInfo {
+    string processor_name = 1;
 }
