@@ -20,7 +20,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * An Event Processor processes event messages from an event queue or event bus.
