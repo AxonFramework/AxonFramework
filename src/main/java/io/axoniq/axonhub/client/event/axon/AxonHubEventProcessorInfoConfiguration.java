@@ -36,19 +36,17 @@ public class AxonHubEventProcessorInfoConfiguration implements ModuleConfigurati
     private final ScheduledEventProcessorInfoSource processorInfoSource;
 
     public AxonHubEventProcessorInfoConfiguration(
-            EventHandlingConfiguration eventHandlingConfiguration,
+            EventHandlingConfiguration eventHandlinConf,
             PlatformConnectionManager connectionManager,
             AxonHubConfiguration configuration) {
-        EventProcessorController processorController = new EventProcessorController(eventHandlingConfiguration);
-        this.eventProcessorControlService = new EventProcessorControlService(connectionManager, processorController);
+        EventProcessorController controller = new EventProcessorController(eventHandlinConf);
+        GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(eventHandlinConf, connectionManager);
 
-        GrpcEventProcessorInfoSource delegate = new GrpcEventProcessorInfoSource(
-                eventHandlingConfiguration,
-                connectionManager);
+        this.eventProcessorControlService = new EventProcessorControlService(connectionManager, controller);
         this.processorInfoSource = new ScheduledEventProcessorInfoSource(
                 configuration.getProcessorsNotificationInitialDelay(),
                 configuration.getProcessorsNotificationRate(),
-                delegate);
+                infoSource);
     }
 
     @Override

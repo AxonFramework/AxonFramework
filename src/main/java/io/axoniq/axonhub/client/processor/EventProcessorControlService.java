@@ -16,15 +16,20 @@
 package io.axoniq.axonhub.client.processor;
 
 import io.axoniq.axonhub.client.PlatformConnectionManager;
+import io.axoniq.axonhub.client.processor.grpc.GrpcEventProcessorMapping;
+import io.axoniq.axonhub.client.processor.grpc.PlatformInboundMessage;
 import io.axoniq.platform.grpc.PauseEventProcessor;
 import io.axoniq.platform.grpc.PlatformOutboundInstruction;
 import io.axoniq.platform.grpc.ReleaseEventProcessorSegment;
+import io.axoniq.platform.grpc.RequestEventProcessorInfo;
 import io.axoniq.platform.grpc.StartEventProcessor;
+import org.axonframework.eventhandling.EventProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.PAUSE_EVENT_PROCESSOR;
-import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.RELEASE_SEGMENT;
-import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.START_EVENT_PROCESSOR;
+import java.util.function.Function;
 
+import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.*;
 
 
 /**
@@ -33,20 +38,26 @@ import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.ST
  */
 public class EventProcessorControlService {
 
+    private final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
+
     private final PlatformConnectionManager platformConnectionManager;
 
     private final EventProcessorController eventProcessorController;
+
+    private final Function<EventProcessor, PlatformInboundMessage> mapping;
 
     public EventProcessorControlService(PlatformConnectionManager platformConnectionManager,
                                         EventProcessorController eventProcessorController) {
         this.platformConnectionManager = platformConnectionManager;
         this.eventProcessorController = eventProcessorController;
+        this.mapping = new GrpcEventProcessorMapping();
     }
 
     public void start(){
         this.platformConnectionManager.onOutboundInstruction(PAUSE_EVENT_PROCESSOR, this::pauseProcessor);
         this.platformConnectionManager.onOutboundInstruction(START_EVENT_PROCESSOR, this::startProcessor);
         this.platformConnectionManager.onOutboundInstruction(RELEASE_SEGMENT, this::releaseSegment);
+        this.platformConnectionManager.onOutboundInstruction(REQUEST_EVENT_PROCESSOR_INFO, this::getEventProcessorInfo);
     }
 
     public void pauseProcessor(PlatformOutboundInstruction platformOutboundInstruction) {
@@ -66,6 +77,16 @@ public class EventProcessorControlService {
         String processorName = releaseSegment.getProcessorName();
         int segmentIdentifier = releaseSegment.getSegmentIdentifier();
         eventProcessorController.releaseSegment(processorName, segmentIdentifier);
+    }
+
+    public void getEventProcessorInfo(PlatformOutboundInstruction platformOutboundInstruction){
+        try {
+            RequestEventProcessorInfo request = platformOutboundInstruction.getRequestEventProcessorInfo();
+            EventProcessor processor = eventProcessorController.getEventProcessor(request.getProcessorName());
+            platformConnectionManager.send(mapping.apply(processor).instruction());
+        } catch (Exception e) {
+            logger.debug("Problem getting the information about Event Processor",e);
+        }
     }
 
 }

@@ -39,7 +39,7 @@ public class EventProcessorController {
         this.eventHandlingConfiguration = eventHandlingConfiguration;
     }
 
-    private EventProcessor getEventProcessor(String processorName){
+    public EventProcessor getEventProcessor(String processorName){
         return this.eventHandlingConfiguration
                 .getProcessor(processorName)
                 .orElseThrow(() -> new RuntimeException("Processor not found"));
