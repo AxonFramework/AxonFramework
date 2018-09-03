@@ -23,7 +23,13 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.quartz.*;
+import org.axonframework.serialization.Serializer;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.SchedulerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +39,8 @@ import org.slf4j.LoggerFactory;
  * scheduler context.
  *
  * @author Allard Buijze
- * @since 0.7
  * @see EventJobDataBinder
+ * @since 0.7
  */
 public class FireEventJob implements Job {
 
@@ -55,6 +61,11 @@ public class FireEventJob implements Job {
      */
     public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
 
+    /**
+     * The key used to locate the {@link Serializer} in the scheduler context.
+     */
+    public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.debug("Starting job to publish a scheduled event");
@@ -70,7 +81,8 @@ public class FireEventJob implements Job {
             EventMessage<?> eventMessage = createMessage(event);
 
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            TransactionManager txManager = (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
+            TransactionManager txManager =
+                    (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
 
             UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
@@ -80,7 +92,7 @@ public class FireEventJob implements Job {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                             eventMessage.getPayloadType().getSimpleName());
+                            eventMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
             logger.error("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription(), e);
