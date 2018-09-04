@@ -23,12 +23,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.quartz.Job;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.SchedulerContext;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,8 +33,8 @@ import org.slf4j.LoggerFactory;
  * scheduler context.
  *
  * @author Allard Buijze
- * @see EventJobDataBinder
  * @since 0.7
+ * @see EventJobDataBinder
  */
 public class FireEventJob implements Job {
 
@@ -75,8 +70,7 @@ public class FireEventJob implements Job {
             EventMessage<?> eventMessage = createMessage(event);
 
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            TransactionManager txManager =
-                    (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
+            TransactionManager txManager = (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
 
             UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
