@@ -35,18 +35,6 @@ public interface EventHandlerInvoker {
     boolean canHandle(EventMessage<?> eventMessage, Segment segment);
 
     /**
-     * Handle the given {@code message}, regardless of any Segmentation of processing.
-     *
-     * @param message The message to handle
-     * @throws Exception when an exception occurs while handling the message
-     * @deprecated Callers should use {@link #handle(EventMessage, Segment)} instead
-     */
-    @Deprecated
-    default void handle(EventMessage<?> message) throws Exception {
-        handle(message, Segment.ROOT_SEGMENT);
-    }
-
-    /**
      * Handle the given {@code message} for the given {@code segment}.
      * <p>
      * Callers are recommended to invoke {@link #canHandle(EventMessage, Segment)} prior to invocation, but aren't
