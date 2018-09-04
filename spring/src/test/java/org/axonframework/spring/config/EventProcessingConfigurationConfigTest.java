@@ -20,6 +20,7 @@ import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
@@ -52,8 +53,14 @@ public class EventProcessingConfigurationConfigTest {
         assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
         assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
 
-        assertEquals("processor2",
-                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1").get().getName());
+        EventProcessor processor2 = eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1").get();
+        assertEquals("processor2", processor2.getName());
+        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor = eventProcessingConfiguration
+                .interceptorsFor("processor2");
+        assertEquals(2, interceptorsFor.size());
+        assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
+        assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof LoggingInterceptor));
+
         assertEquals("processor2",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor2").get().getName());
         assertEquals("subscribingProcessor",
@@ -62,11 +69,6 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
         assertEquals("processor4",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor4").get().getName());
-        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = eventProcessingConfiguration
-                .interceptorsFor("processor3");
-        assertEquals(2, interceptors.size());
-        assertTrue(interceptors.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
-        assertTrue(interceptors.stream().anyMatch(i -> i instanceof LoggingInterceptor));
     }
 
     @EnableAxon

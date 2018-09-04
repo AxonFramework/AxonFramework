@@ -51,6 +51,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 
 /**
  * Non-thread safe event processing configuration. Holds a registry of {@link EventProcessor}s and {@link
@@ -348,22 +349,14 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
         Assert.state(configuration != null, () -> "Configuration is not initialized yet");
 
-        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+        Component<EventProcessor> eventProcessorComponent = eventProcessors.get(processorName);
 
-        defaultHandlerInterceptors.stream()
-                                  .map(f -> f.apply(configuration, processorName))
-                                  .filter(Objects::nonNull)
-                                  .forEach(interceptors::add);
+        if (eventProcessorComponent == null) {
+            return emptyList();
+        }
 
-        handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
-                                   .stream()
-                                   .map(hi -> hi.apply(configuration))
-                                   .filter(Objects::nonNull)
-                                   .forEach(interceptors::add);
-
-        return interceptors;
+        return eventProcessorComponent.get().getHandlerInterceptors();
     }
-
 
     /**
      * Allows for more fine-grained definition of the Event Processor to use for each group of Event Listeners. The
@@ -663,6 +656,12 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                    .stream()
                                    .map(hi -> hi.apply(config))
                                    .forEach(eventProcessor::registerInterceptor);
+
+        defaultHandlerInterceptors.stream()
+                                  .map(f -> f.apply(configuration, processorName))
+                                  .filter(Objects::nonNull)
+                                  .forEach(eventProcessor::registerInterceptor);
+
         return eventProcessor;
     }
 
