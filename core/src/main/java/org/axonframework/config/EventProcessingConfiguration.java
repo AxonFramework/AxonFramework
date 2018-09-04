@@ -36,6 +36,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
@@ -280,8 +281,13 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     public EventProcessingConfiguration usingTrackingProcessors(
             Function<Configuration, TrackingEventProcessorConfiguration> processorConfig) {
         registerEventProcessorFactory(
-                (name, config, ehi) ->
-                        trackingEventProcessor(config, name, ehi, processorConfig, Configuration::eventBus));
+                (name, config, ehi) -> {
+                    TrackingEventProcessor trackingEventProcessor =
+                            trackingEventProcessor(config, name, ehi, processorConfig, Configuration::eventBus);
+                    trackingEventProcessor
+                            .registerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                    return trackingEventProcessor;
+                });
         return this;
     }
 
@@ -571,7 +577,12 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
 
     private SubscribingEventProcessor defaultEventProcessor(String name, Configuration conf,
                                                             EventHandlerInvoker eventHandlerInvoker) {
-        return subscribingEventProcessor(name, conf, eventHandlerInvoker, Configuration::eventBus);
+        SubscribingEventProcessor eventProcessor = subscribingEventProcessor(name,
+                                                                             conf,
+                                                                             eventHandlerInvoker,
+                                                                             Configuration::eventBus);
+        eventProcessor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
+        return eventProcessor;
     }
 
     private SubscribingEventProcessor subscribingEventProcessor(String name, Configuration conf,
