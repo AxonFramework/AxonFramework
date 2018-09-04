@@ -129,6 +129,20 @@ public class DeadlineJob implements Job {
     public static class DeadlineJobDataBinder {
 
         /**
+         * Key pointing to the serialized {@link DeadlineMessage}.
+         *
+         * @deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
+         */
+        @Deprecated
+        public static final String SERIALIZED_DEADLINE_MESSAGE = "serializedDeadlineMessage";
+        /**
+         * Key pointing to the class name of the serialized {@link DeadlineMessage}.
+         *
+         * @deprecated in favor of the separate DeadlineMessage keys | only maintained for backwards compatibility
+         */
+        @Deprecated
+        public static final String SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME = "serializedDeadlineMessageClassName";
+        /**
          * Key pointing to the serialized deadline {@link ScopeDescriptor} in the {@link JobDataMap}
          */
         public static final String SERIALIZED_DEADLINE_SCOPE = "serializedDeadlineScope";
@@ -196,6 +210,14 @@ public class DeadlineJob implements Job {
          * @return the {@link DeadlineMessage} pulled from the {@code jobDataMap}
          */
         public static DeadlineMessage deadlineMessage(Serializer serializer, JobDataMap jobDataMap) {
+            if (jobDataMap.containsKey(SERIALIZED_DEADLINE_MESSAGE)) {
+                SimpleSerializedObject<byte[]> serializedDeadlineMessage = new SimpleSerializedObject<>(
+                        (byte[]) jobDataMap.get(SERIALIZED_DEADLINE_MESSAGE), byte[].class,
+                        (String) jobDataMap.get(SERIALIZED_DEADLINE_MESSAGE_CLASS_NAME), null
+                );
+                return serializer.deserialize(serializedDeadlineMessage);
+            }
+
             return new GenericDeadlineMessage<>((String) jobDataMap.get(DEADLINE_NAME),
                                                 (String) jobDataMap.get(MESSAGE_ID),
                                                 deserializeDeadlinePayload(serializer, jobDataMap),
