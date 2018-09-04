@@ -72,7 +72,7 @@ public class KafkaIntegrationTest {
         eventBus.publish(asEventMessage("test"));
 
         // the consumer may need some time to start
-        assertTrue(stream2.hasNextAvailable(5, TimeUnit.SECONDS));
+        assertTrue(stream2.hasNextAvailable(10, TimeUnit.SECONDS));
         TrackedEventMessage<?> actual = stream2.nextAvailable();
         assertNotNull(actual);
 
