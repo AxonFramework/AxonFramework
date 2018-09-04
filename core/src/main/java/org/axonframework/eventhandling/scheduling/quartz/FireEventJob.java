@@ -23,7 +23,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.serialization.Serializer;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -60,11 +59,6 @@ public class FireEventJob implements Job {
      * The key used to locate the optional TransactionManager in the scheduler context.
      */
     public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
-
-    /**
-     * The key used to locate the {@link Serializer} in the scheduler context.
-     */
-    public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {

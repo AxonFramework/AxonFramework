@@ -24,7 +24,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -40,10 +43,12 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 
 import static org.axonframework.common.Assert.notNull;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
+import static org.axonframework.messaging.Headers.*;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -60,13 +65,13 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private static final String JOB_NAME_PREFIX = "event-";
     private static final String DEFAULT_GROUP_NAME = "AxonFramework-Events";
 
-    private String groupIdentifier = DEFAULT_GROUP_NAME;
     private Scheduler scheduler;
-    private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
     private EventBus eventBus;
-    private volatile boolean initialized;
+    private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
     private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-    private Serializer serializer = new XStreamSerializer();
+
+    private String groupIdentifier = DEFAULT_GROUP_NAME;
+    private volatile boolean initialized;
 
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
@@ -156,7 +161,6 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         scheduler.getContext().put(EVENT_BUS_KEY, eventBus);
         scheduler.getContext().put(TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);
-        scheduler.getContext().put(JOB_DATA_SERIALIZER, serializer);
 
         initialized = true;
     }
@@ -208,37 +212,111 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Sets the {@link Serializer} instance which is used to de-/serialize event messages to be stored in the {@link
-     * JobDataMap}. Defaults to the {@link XStreamSerializer} if not specified.
-     *
-     * @param serializer the {@link Serializer} used to de-/serialize scheduled Event Messages
-     */
-    public void setSerializer(Serializer serializer) {
-        this.serializer = serializer;
-    }
-
-    /**
-     * Binds the {@link EventMessage} as is to {@link JobDataMap} under {@link #EVENT_KEY}. In order for
-     * {@link JobDataMap} to successfully serialize, the payload of the {@link EventMessage} must be
-     * {@link java.io.Serializable}.
+     * Binds an {@link EventMessage} to the {@link JobDataMap} by serializing the payload and metadata with a
+     * {@link Serializer}. All the important EventMessage fields, thus the message identifier, timestamp, and the
+     * serialized payload and metadata, are stored as separate values in the JobDataMap.
+     * <p>
+     * The old approach, which let Quartz do the serialization of the entire EventMessage at once, is maintained for
+     * backwards compatibility only.
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
         /**
          * The key used to locate the event in the {@link JobDataMap}.
+         *
+         * @deprecated in favor of the default message keys | only maintained for backwards compatibility
          */
+        @Deprecated
         public static final String EVENT_KEY = EventMessage.class.getName();
 
-        @Override
-        public JobDataMap toJobData(Object eventMessage) {
-            JobDataMap jobData = new JobDataMap();
-            jobData.put(EVENT_KEY, eventMessage);
-            return jobData;
+        private final Serializer serializer;
+
+        /**
+         * Instantiate a {@link DirectEventJobDataBinder} which defaults to a {@link XStreamSerializer} for
+         * de-/serializing event messages.
+         */
+        public DirectEventJobDataBinder() {
+            this(new XStreamSerializer());
+        }
+
+        /**
+         * Instantiate a {@link DirectEventJobDataBinder} with the provided {@link Serializer} for
+         * de-/serializing event messages.
+         *
+         * @param serializer the {@link Serializer} used for de-/serializing event messages
+         */
+        public DirectEventJobDataBinder(Serializer serializer) {
+            this.serializer = serializer;
         }
 
         @Override
-        public Object fromJobData(JobDataMap jobData) {
-            return jobData.get(EVENT_KEY);
+        public JobDataMap toJobData(Object event) {
+            JobDataMap jobData = new JobDataMap();
+
+            EventMessage eventMessage = (EventMessage) event;
+
+            jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
+            jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toEpochMilli());
+
+            SerializedObject<byte[]> serializedPayload =
+                    serializer.serialize(eventMessage.getPayload(), byte[].class);
+            jobData.put(SERIALIZED_MESSAGE_PAYLOAD, serializedPayload.getData());
+            jobData.put(MESSAGE_TYPE, serializedPayload.getType().getName());
+            jobData.put(MESSAGE_REVISION, serializedPayload.getType().getRevision());
+
+            SerializedObject<byte[]> serializedMetaData =
+                    serializer.serialize(eventMessage.getMetaData(), byte[].class);
+            jobData.put(MESSAGE_METADATA, serializedMetaData.getData());
+
+            return jobData;
+        }
+
+        /**
+         * <b>Note</b> that this function is able to retrieve an Event Message in two formats. The first is the
+         * original, deprecated approach, which uses the Quartz serializer (read Java serialization) to serialize an
+         * entire event message at once. The second approach uses the configurable {@link Serializer} in this class to
+         * serialized the payload and metadata of an event message. All fields which required to instantiate a
+         * {@link GenericEventMessage} are currently stored in the {@code jobDataMap} when calling the
+         * {@link DirectEventJobDataBinder#toJobData(Object)} function.
+         * Approach one only exists for backwards compatibility and should be removed in subsequent major releases.
+         * <p>
+         * {@inheritDoc}
+         *
+         * @deprecated the if-block should be removed on the next major release | it is only maintained for backwards
+         * compatibility
+         */
+        @Deprecated
+        @Override
+        public Object fromJobData(JobDataMap jobDataMap) {
+            if (jobDataMap.containsKey(EVENT_KEY)) {
+                return jobDataMap.get(EVENT_KEY);
+            }
+
+            return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
+                                             deserializePayload(jobDataMap),
+                                             deserializeMetaData(jobDataMap),
+                                             retrieveDeadlineTimestamp(jobDataMap));
+        }
+
+        private Object deserializePayload(JobDataMap jobDataMap) {
+            SimpleSerializedObject<byte[]> serializedPayload = new SimpleSerializedObject<>(
+                    (byte[]) jobDataMap.get(SERIALIZED_MESSAGE_PAYLOAD),
+                    byte[].class,
+                    (String) jobDataMap.get(MESSAGE_TYPE),
+                    (String) jobDataMap.get(MESSAGE_REVISION)
+            );
+            return serializer.deserialize(serializedPayload);
+        }
+
+        private Map<String, ?> deserializeMetaData(JobDataMap jobDataMap) {
+            SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+                    (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, MetaData.class.getName(), null
+            );
+            return serializer.deserialize(serializedDeadlineMetaData);
+        }
+
+        private Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
+            return Instant.ofEpochMilli((long) jobDataMap.get(MESSAGE_TIMESTAMP));
         }
     }
 }
