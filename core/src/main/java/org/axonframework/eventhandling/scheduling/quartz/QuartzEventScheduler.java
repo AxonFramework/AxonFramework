@@ -281,11 +281,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          * Approach one only exists for backwards compatibility and should be removed in subsequent major releases.
          * <p>
          * {@inheritDoc}
-         *
-         * @deprecated the if-block should be removed on the next major release | it is only maintained for backwards
-         * compatibility
          */
-        @Deprecated
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
             if (jobDataMap.containsKey(SERIALIZED_MESSAGE_PAYLOAD)) {
@@ -295,6 +291,15 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
                                                  retrieveDeadlineTimestamp(jobDataMap));
             }
 
+            return fromJobDataMap(jobDataMap);
+        }
+
+        /**
+         * @deprecated this private function is in place for backwards compatibility only. Ideally, the event message is
+         * retrieved based on the serialized keys.
+         */
+        @Deprecated
+        private Object fromJobDataMap(JobDataMap jobDataMap) {
             return jobDataMap.get(EVENT_KEY);
         }
 
