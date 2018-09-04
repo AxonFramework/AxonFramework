@@ -546,13 +546,24 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     @Override
     public void initialize(Configuration config) {
         this.configuration = config;
+        eventProcessors.clear();
+        Map<String, List<Function<Configuration, EventHandlerInvoker>>> builderFunctionsPerProcessor = new HashMap<>();
         invokerBuilders.forEach((processingGroup, builderFunctions) -> {
             String processorName = processorNameForProcessingGroup(processingGroup);
+            builderFunctionsPerProcessor.compute(processorName, (k, currentBuilderFunctions) -> {
+                if (currentBuilderFunctions == null) {
+                    return builderFunctions;
+                }
+                currentBuilderFunctions.addAll(builderFunctions);
+                return currentBuilderFunctions;
+            });
+        });
+        builderFunctionsPerProcessor.forEach((processorName, builderFunctions) ->
             eventProcessors.put(processorName,
                                 new Component<>(config,
                                                 processorName,
-                                                c -> buildEventProcessor(config, builderFunctions, processorName)));
-        });
+                                                c -> buildEventProcessor(config, builderFunctions, processorName)))
+        );
     }
 
     @Override

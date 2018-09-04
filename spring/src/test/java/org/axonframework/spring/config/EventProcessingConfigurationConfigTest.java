@@ -48,7 +48,7 @@ public class EventProcessingConfigurationConfigTest {
 
     @Test
     public void testEventProcessingConfiguration() {
-        assertEquals(2, eventProcessingConfiguration.eventProcessors().size());
+        assertEquals(3, eventProcessingConfiguration.eventProcessors().size());
         assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
         assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
 
@@ -60,6 +60,8 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3").get().getName());
         assertEquals("subscribingProcessor",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor").get().getName());
+        assertEquals("processor4",
+                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor4").get().getName());
         List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = eventProcessingConfiguration
                 .interceptorsFor("processor3");
         assertEquals(2, interceptors.size());
@@ -75,7 +77,7 @@ public class EventProcessingConfigurationConfigTest {
         public void configure(EventProcessingConfiguration config) {
             config.usingTrackingProcessors();
             config.assignProcessingGroup("processor1", "processor2");
-            config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : "processor2");
+            config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : group);
             config.registerSubscribingEventProcessor("subscribingProcessor");
             config.registerHandlerInterceptor((configuration, name) -> new LoggingInterceptor<>());
         }
@@ -105,6 +107,18 @@ public class EventProcessingConfigurationConfigTest {
             public void on(String evt) {
                 // nothing to do
             }
+        }
+
+        @Saga
+        @ProcessingGroup("processor4")
+        public static class Saga4 {
+
+        }
+
+        @Saga
+        @ProcessingGroup("processor4")
+        public static class Saga5 {
+
         }
     }
 }
