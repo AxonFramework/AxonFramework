@@ -33,47 +33,6 @@ import java.util.*;
 public abstract class AnnotationUtils {
 
     /**
-     * Find an annotation of given {@code annotationType} on the given {@code element}, considering that the
-     * given {@code annotationType} may be present as a meta annotation on any other annotation on that element.
-     *
-     * @param element        The element to inspect
-     * @param annotationType The type of annotation to find
-     * @param <T>            The generic type of the annotation
-     * @return the annotation, or {@code null} if no such annotation is present.
-     * @deprecated This method does not consider overrides of attributes using meta-annotations. Use {@link #findAnnotationAttributes(AnnotatedElement, Class)} instead.
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    public static <T extends Annotation> T findAnnotation(AnnotatedElement element, Class<T> annotationType) {
-        return (T) findAnnotation(element, annotationType.getName());
-    }
-
-    /**
-     * Find an annotation of given {@code annotationType} as String on the given {@code element},
-     * considering that the given {@code annotationType} may be present as a meta annotation on any other
-     * annotation on that element.
-     *
-     * @param element        The element to inspect
-     * @param annotationType The type of annotation as String to find
-     * @return the annotation, or {@code null} if no such annotation is present.
-     * @deprecated This method does not consider overrides of attributes using meta-annotations. Use {@link #findAnnotationAttributes(AnnotatedElement, String)} instead.
-     */
-    @Deprecated
-    public static Annotation findAnnotation(AnnotatedElement element, String annotationType) {
-        Annotation ann = getAnnotation(element, annotationType);
-        if (ann == null) {
-            Set<String> visited = new HashSet<>();
-            for (Annotation metaAnn : element.getAnnotations()) {
-                ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
-                if (ann != null) {
-                    break;
-                }
-            }
-        }
-        return ann;
-    }
-
-    /**
      * Indicates whether an annotation of given {@code annotationType} is present on the given {@code element},
      * considering that the given {@code annotationType} may be present as a meta annotation on any other annotation
      * on that element.
@@ -96,9 +55,8 @@ public abstract class AnnotationUtils {
      * @param annotationType The name of the annotation to find
      * @return {@code true} if such annotation is present.
      */
-    @SuppressWarnings({"unchecked", "deprecation"})
     public static boolean isAnnotationPresent(AnnotatedElement element, String annotationType) {
-        return findAnnotation(element, annotationType) != null;
+        return findAnnotationAttributes(element, annotationType) != null;
     }
 
     /**
