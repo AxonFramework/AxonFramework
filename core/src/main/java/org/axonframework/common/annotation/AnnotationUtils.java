@@ -56,7 +56,7 @@ public abstract class AnnotationUtils {
      * @return {@code true} if such annotation is present.
      */
     public static boolean isAnnotationPresent(AnnotatedElement element, String annotationType) {
-        return findAnnotationAttributes(element, annotationType) != null;
+        return findAnnotationAttributes(element, annotationType).isPresent();
     }
 
     /**
