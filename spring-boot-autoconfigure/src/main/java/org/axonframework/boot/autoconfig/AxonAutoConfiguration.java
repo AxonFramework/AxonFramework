@@ -86,32 +86,27 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    public RevisionResolver revisionResolver() {
+        return new AnnotationRevisionResolver();
+    }
+
+    @Bean
     @Primary
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
     public Serializer serializer(RevisionResolver revisionResolver) {
         return buildSerializer(revisionResolver, serializerProperties.getGeneral());
     }
 
-    private Serializer buildSerializer(RevisionResolver revisionResolver, SerializerProperties.SerializerType serializerType) {
-        switch (serializerType) {
-            case JACKSON:
-                return new JacksonSerializer(revisionResolver, new ChainingConverter(beanClassLoader));
-            case JAVA:
-                return new JavaSerializer(revisionResolver);
-            case XSTREAM:
-            case DEFAULT:
-            default:
-                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
-                xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
-                return xStreamSerializer;
-
-        }
-    }
-
     @Bean
-    @ConditionalOnMissingBean
-    public RevisionResolver revisionResolver() {
-        return new AnnotationRevisionResolver();
+    @Qualifier("messageSerializer")
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
+    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
+        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
+                || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
+            return genericSerializer;
+        }
+        return buildSerializer(revisionResolver, serializerProperties.getMessages());
     }
 
     @Bean
@@ -129,15 +124,20 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return buildSerializer(revisionResolver, serializerProperties.getEvents());
     }
 
-    @Bean
-    @Qualifier("messageSerializer")
-    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
-    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
-        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
-                || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
-            return genericSerializer;
+    private Serializer buildSerializer(RevisionResolver revisionResolver, SerializerProperties.SerializerType serializerType) {
+        switch (serializerType) {
+            case JACKSON:
+                return new JacksonSerializer(revisionResolver, new ChainingConverter(beanClassLoader));
+            case JAVA:
+                return new JavaSerializer(revisionResolver);
+            case XSTREAM:
+            case DEFAULT:
+            default:
+                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
+                xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
+                return xStreamSerializer;
+
         }
-        return buildSerializer(revisionResolver, serializerProperties.getMessages());
     }
 
     @Bean
