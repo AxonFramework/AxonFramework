@@ -288,14 +288,14 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         @Deprecated
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
-            if (jobDataMap.containsKey(EVENT_KEY)) {
-                return jobDataMap.get(EVENT_KEY);
+            if (jobDataMap.containsKey(SERIALIZED_MESSAGE_PAYLOAD)) {
+                return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
+                                                 deserializePayload(jobDataMap),
+                                                 deserializeMetaData(jobDataMap),
+                                                 retrieveDeadlineTimestamp(jobDataMap));
             }
 
-            return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
-                                             deserializePayload(jobDataMap),
-                                             deserializeMetaData(jobDataMap),
-                                             retrieveDeadlineTimestamp(jobDataMap));
+            return jobDataMap.get(EVENT_KEY);
         }
 
         private Object deserializePayload(JobDataMap jobDataMap) {
