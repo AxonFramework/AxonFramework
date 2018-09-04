@@ -21,8 +21,6 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
@@ -168,19 +166,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
             return true;
         }
         return false;
-    }
-
-    /**
-     * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
-     * logged. Defaults to {@code true}.
-     *
-     * @param suppressExceptions whether or not to suppress exceptions from Sagas.
-     * @deprecated Instead of using this method, provide an implementation of {@link LoggingErrorHandler}.
-     */
-    @Deprecated
-    public void setSuppressExceptions(boolean suppressExceptions) {
-        this.listenerInvocationErrorHandler = suppressExceptions ? new LoggingErrorHandler()
-                : PropagatingErrorHandler.INSTANCE;
     }
 
     /**
