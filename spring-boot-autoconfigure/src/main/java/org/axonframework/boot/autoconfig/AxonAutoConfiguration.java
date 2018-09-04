@@ -16,6 +16,7 @@
 
 package org.axonframework.boot.autoconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.boot.EventProcessorProperties;
 import org.axonframework.boot.SerializerProperties;
@@ -89,6 +90,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     public RevisionResolver revisionResolver() {
         return new AnnotationRevisionResolver();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
     @Bean
