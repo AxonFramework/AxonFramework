@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,19 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.common.stream;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
- * Interface for a tracked stream of {@link Message Messages}.
+ * Interface for a stream that can be polled for information using (optionally blocking) pull operations.
  *
  * @param <M> the type of Message contained in this stream
  * @author Rene de Waele
+ * @author Allard Buijze
  */
-public interface MessageStream<M extends Message<?>> extends AutoCloseable {
+public interface BlockingStream<M> extends AutoCloseable {
 
     /**
      * Checks whether or not the next message in the stream is available. If so this method returns

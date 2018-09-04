@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.common.stream;
 
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 
@@ -35,13 +35,16 @@ public abstract class StreamUtils {
     }
 
     /**
-     * Convert the given {@code messageStream} to a regular java {@link Stream} of messages. Note that the returned
+     * Convert the given {@code messageStream} to a regular java {@link Stream}. Note that the returned
      * stream will block during iteration if the end of the stream is reached so take heed of this in production code.
+     *
+     * Closing this {@code Stream} will close the underling {@code messageStream} as well.
      *
      * @param messageStream the input {@link TrackingEventStream}
      * @return the output {@link Stream} after conversion
+     * @param <M> The type of entry contained in the stream
      */
-    public static <M extends Message<?>> Stream<M> asStream(MessageStream<M> messageStream) {
+    public static <M> Stream<M> asStream(BlockingStream<M> messageStream) {
         Spliterator<M> spliterator =
                 new Spliterators.AbstractSpliterator<M>(Long.MAX_VALUE, DISTINCT | NONNULL | ORDERED) {
                     @Override
@@ -55,6 +58,6 @@ public abstract class StreamUtils {
                         return true;
                     }
                 };
-        return stream(spliterator, false);
+        return stream(spliterator, false).onClose(messageStream::close);
     }
 }

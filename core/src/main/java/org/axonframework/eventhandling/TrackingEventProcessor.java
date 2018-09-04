@@ -18,13 +18,13 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -200,7 +200,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * @param segment The {@link Segment} of the Stream that should be processed.
      */
     protected void processingLoop(Segment segment) {
-        MessageStream<TrackedEventMessage<?>> eventStream = null;
+        BlockingStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
             while (state.get().isRunning()) {
@@ -240,7 +240,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private void processBatch(Segment segment, MessageStream<TrackedEventMessage<?>> eventStream) throws Exception {
+    private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
             checkSegmentCaughtUp(segment, eventStream);
@@ -291,15 +291,15 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private void checkSegmentCaughtUp(Segment segment, MessageStream<TrackedEventMessage<?>> eventStream) {
+    private void checkSegmentCaughtUp(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) {
         if (!eventStream.hasNextAvailable()) {
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.caughtUp());
         }
     }
 
-    private MessageStream<TrackedEventMessage<?>> ensureEventStreamOpened(
-            MessageStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
-        MessageStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
+    private BlockingStream<TrackedEventMessage<?>> ensureEventStreamOpened(
+            BlockingStream<TrackedEventMessage<?>> eventStreamIn, Segment segment) {
+        BlockingStream<TrackedEventMessage<?>> eventStream = eventStreamIn;
         if (eventStream == null && state.get().isRunning()) {
             final TrackingToken trackingToken = transactionManager.fetchInTransaction(() -> tokenStore.fetchToken(getName(), segment.getSegmentId()));
             logger.info("Fetched token: {} for segment: {}", trackingToken, segment);
@@ -309,7 +309,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         return eventStream;
     }
 
-    private MessageStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
+    private BlockingStream<TrackedEventMessage<?>> doOpenStream(TrackingToken trackingToken) {
         if (trackingToken instanceof ReplayToken) {
             return new ReplayingMessageStream((ReplayToken) trackingToken,
                                               messageSource.openStream(((ReplayToken) trackingToken).unwrap()));
@@ -751,12 +751,12 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private class ReplayingMessageStream implements MessageStream<TrackedEventMessage<?>> {
+    private class ReplayingMessageStream implements BlockingStream<TrackedEventMessage<?>> {
 
-        private final MessageStream<TrackedEventMessage<?>> delegate;
+        private final BlockingStream<TrackedEventMessage<?>> delegate;
         private ReplayToken lastToken;
 
-        public ReplayingMessageStream(ReplayToken token, MessageStream<TrackedEventMessage<?>> delegate) {
+        public ReplayingMessageStream(ReplayToken token, BlockingStream<TrackedEventMessage<?>> delegate) {
             this.delegate = delegate;
             this.lastToken = token;
         }

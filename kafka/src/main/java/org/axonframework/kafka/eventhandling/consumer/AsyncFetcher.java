@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,10 +20,10 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.Map;
@@ -34,7 +35,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
  * Async implementation of the {@link Fetcher} that uses an in-memory bufferFactory.
@@ -68,7 +68,7 @@ public class AsyncFetcher<K, V> implements Fetcher<K, V> {
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> start(KafkaTrackingToken token) {
+    public BlockingStream<TrackedEventMessage<?>> start(KafkaTrackingToken token) {
         ConsumerUtil.seek(topic, consumer, token);
         if (KafkaTrackingToken.isEmpty(token)) {
             token = KafkaTrackingToken.emptyToken();
