@@ -76,7 +76,8 @@ import java.util.function.Function;
 @org.springframework.context.annotation.Configuration
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
-        "org.axonframework.boot.autoconfig.JpaAutoConfiguration"
+        "org.axonframework.boot.autoconfig.JpaAutoConfiguration",
+        "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"
 })
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
