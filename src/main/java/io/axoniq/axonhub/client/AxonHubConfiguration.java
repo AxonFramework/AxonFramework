@@ -92,7 +92,7 @@ public class AxonHubConfiguration {
     /**
      * Interval (in ms.) application sends status updates on event processors to AxonHub
      */
-    private int processorsNotificationRate = 5000;
+    private int processorsNotificationRate = 500;
 
     /**
      * Initial delay (in ms.) before application sends first status update on event processors to AxonHub

@@ -59,6 +59,7 @@ public class TrackingEventProcessorInfoMessage implements PlatformInboundMessage
                                                    .setProcessorName(processor.getName())
                                                    .setMode("Tracking")
                                                    .setActiveThreads(processor.activeProcessorThreads())
+                                                   .setAvailableThreads(processor.availableProcessorThreads())
                                                    .setRunning(processor.isRunning())
                                                    .setError(processor.isError())
                                                    .addAllEventTrackersInfo(trackers)

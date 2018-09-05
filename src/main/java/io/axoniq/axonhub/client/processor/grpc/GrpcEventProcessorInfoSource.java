@@ -17,12 +17,14 @@ package io.axoniq.axonhub.client.processor.grpc;
 
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.processor.AxonHubEventProcessorInfoSource;
+import io.axoniq.platform.grpc.PlatformInboundInstruction;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackingEventProcessor;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Created by Sara Pellegrini on 15/03/2018.
@@ -30,31 +32,39 @@ import java.util.List;
  */
 public class GrpcEventProcessorInfoSource implements AxonHubEventProcessorInfoSource {
 
-    private final EventHandlingConfiguration eventHandlingConfiguration;
+    private final Map<String, PlatformInboundInstruction> lastProcessorsInfo = new HashMap<>();
 
-    private final PlatformConnectionManager platformConnectionManager;
+    private final EventProcessors eventProcessors;
+
+    private final Consumer<PlatformInboundInstruction> send;
+
+    private final Function<EventProcessor, PlatformInboundMessage> mapping;
 
     public GrpcEventProcessorInfoSource(EventHandlingConfiguration eventHandlingConfiguration,
                                         PlatformConnectionManager platformConnectionManager) {
-        this.eventHandlingConfiguration = eventHandlingConfiguration;
-        this.platformConnectionManager = platformConnectionManager;
+        this(new EventProcessors(eventHandlingConfiguration),
+             platformConnectionManager::send,
+             new GrpcEventProcessorMapping());
+        platformConnectionManager.addReconnectListener(lastProcessorsInfo::clear);
+    }
+
+    GrpcEventProcessorInfoSource(EventProcessors eventProcessors,
+                                        Consumer<PlatformInboundInstruction> send,
+                                        Function<EventProcessor, PlatformInboundMessage> mapping) {
+        this.eventProcessors = eventProcessors;
+        this.send = send;
+        this.mapping = mapping;
     }
 
     @Override
     public void notifyInformation() {
-        List<EventProcessor> processors = eventHandlingConfiguration.getProcessors();
-        processors.forEach(processor -> {
-            PlatformInboundMessage message = messageFor(processor);
-            platformConnectionManager.send(message.instruction());
+        eventProcessors.forEach(processor -> {
+            PlatformInboundInstruction instruction = mapping.apply(processor).instruction();
+            if (!instruction.equals(lastProcessorsInfo.get(processor.getName()))){
+                send.accept(instruction);
+            }
+            lastProcessorsInfo.put(processor.getName(), instruction);
         });
-    }
-
-    private PlatformInboundMessage messageFor(EventProcessor processor){
-        if (processor instanceof TrackingEventProcessor)
-            return new TrackingEventProcessorInfoMessage((TrackingEventProcessor) processor);
-        if (processor instanceof SubscribingEventProcessor)
-            return new SubscribingEventProcessorInfoMessage((SubscribingEventProcessor) processor);
-        throw new RuntimeException("Unknown instance of Event Processor detected.");
     }
 
 }

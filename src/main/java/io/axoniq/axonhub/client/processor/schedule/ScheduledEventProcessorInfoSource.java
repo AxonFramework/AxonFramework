@@ -49,7 +49,11 @@ public class ScheduledEventProcessorInfoSource implements AxonHubEventProcessorI
     }
 
     public void notifyInformation(){
-        delegate.notifyInformation();
+        try {
+            delegate.notifyInformation();
+        } catch (Throwable t){
+            //do nothing
+        }
     }
 
     public void shutdown(){

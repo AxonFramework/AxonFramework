@@ -17,6 +17,7 @@ package io.axoniq.axonhub.client.processor;
 
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.TrackingEventProcessor;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -38,7 +39,7 @@ public class EventProcessorController {
         this.eventHandlingConfiguration = eventHandlingConfiguration;
     }
 
-    private EventProcessor getEventProcessor(String processorName){
+    public EventProcessor getEventProcessor(String processorName){
         return this.eventHandlingConfiguration
                 .getProcessor(processorName)
                 .orElseThrow(() -> new RuntimeException("Processor not found"));
@@ -52,6 +53,13 @@ public class EventProcessorController {
     public void startProcessor(String processor){
         getEventProcessor(processor).start();
         this.startHandlers.forEach(consumer -> consumer.accept(processor));
+    }
+
+    public void releaseSegment(String processor, int segmentId){
+        EventProcessor eventProcessor = getEventProcessor(processor);
+        if (eventProcessor instanceof TrackingEventProcessor){
+            ((TrackingEventProcessor) eventProcessor).releaseSegment(segmentId);
+        }
     }
 
     public void onPause(Consumer<String> consumer){
