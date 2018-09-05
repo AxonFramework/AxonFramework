@@ -61,6 +61,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -88,13 +89,16 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     private final EventProcessorProperties eventProcessorProperties;
     private final SerializerProperties serializerProperties;
+    private final ApplicationContext applicationContext;
 
     private ClassLoader beanClassLoader;
 
     public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
-                                 SerializerProperties serializerProperties) {
+                                 SerializerProperties serializerProperties,
+                                 ApplicationContext applicationContext) {
         this.eventProcessorProperties = eventProcessorProperties;
         this.serializerProperties = serializerProperties;
+        this.applicationContext = applicationContext;
     }
 
     @Bean
@@ -105,6 +109,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${axon.serializer.general}' == 'jackson' || '${axon.serializer.events}' == 'jackson' || '${axon.serializer.messages}' == 'jackson'")
     public ObjectMapper objectMapper() {
         return new ObjectMapper().findAndRegisterModules();
     }
@@ -112,21 +117,19 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     @Primary
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
-    public Serializer serializer(RevisionResolver revisionResolver, ObjectMapper objectMapper) {
-        return buildSerializer(revisionResolver, serializerProperties.getGeneral(), objectMapper);
+    public Serializer serializer(RevisionResolver revisionResolver) {
+        return buildSerializer(revisionResolver, serializerProperties.getGeneral());
     }
 
     @Bean
     @Qualifier("messageSerializer")
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
-    public Serializer messageSerializer(Serializer genericSerializer,
-                                        RevisionResolver revisionResolver,
-                                        ObjectMapper objectMapper) {
+    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
         if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
                 || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
             return genericSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getMessages(), objectMapper);
+        return buildSerializer(revisionResolver, serializerProperties.getMessages());
     }
 
     @Bean
@@ -134,23 +137,23 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
     public Serializer eventSerializer(@Qualifier("messageSerializer") Serializer messageSerializer,
                                       Serializer generalSerializer,
-                                      RevisionResolver revisionResolver,
-                                      ObjectMapper objectMapper) {
+                                      RevisionResolver revisionResolver) {
         if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getEvents())
                 || serializerProperties.getEvents().equals(serializerProperties.getMessages())) {
             return messageSerializer;
         } else if (serializerProperties.getGeneral().equals(serializerProperties.getEvents())) {
             return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getEvents(), objectMapper);
+        return buildSerializer(revisionResolver, serializerProperties.getEvents());
     }
 
     private Serializer buildSerializer(RevisionResolver revisionResolver,
-                                       SerializerProperties.SerializerType serializerType,
-                                       ObjectMapper objectMapper) {
+                                       SerializerProperties.SerializerType serializerType) {
         switch (serializerType) {
             case JACKSON:
-                return new JacksonSerializer(objectMapper, revisionResolver, new ChainingConverter(beanClassLoader));
+                ObjectMapper objectMapper = applicationContext.getBean(ObjectMapper.class);
+                ChainingConverter converter = new ChainingConverter(beanClassLoader);
+                return new JacksonSerializer(objectMapper, revisionResolver, converter);
             case JAVA:
                 return new JavaSerializer(revisionResolver);
             case XSTREAM:
