@@ -20,7 +20,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
@@ -54,30 +53,19 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     private final RoutingKeyResolver routingKeyResolver;
     private final boolean durable;
 
-    /**
-     * Initializes the AMQPMessageConverter with the given {@code serializer}, using a {@link
-     * PackageRoutingKeyResolver} and requesting durable dispatching.
-     *
-     * @param serializer The serializer to serialize the Event Message's payload with
-     */
-    public DefaultAMQPMessageConverter(Serializer serializer) {
-        this(serializer, new PackageRoutingKeyResolver(), true);
+    protected DefaultAMQPMessageConverter(Builder builder) {
+        this.serializer = builder.serializer;
+        this.routingKeyResolver = builder.routingKeyResolver;
+        this.durable = builder.durable;
     }
 
     /**
-     * Initializes the AMQPMessageConverter with the given {@code serializer}, {@code routingKeyResolver} and
-     * requesting durable dispatching when {@code durable} is {@code true}.
+     * Instantiate a Builder to be able to create a {@link DefaultAMQPMessageConverter}.
      *
-     * @param serializer         The serializer to serialize the Event Message's payload and Meta Data with
-     * @param routingKeyResolver The strategy to use to resolve routing keys for Event Messages
-     * @param durable            Whether to request durable message dispatching
+     * @return a Builder to be able to create a {@link DefaultAMQPMessageConverter}.
      */
-    public DefaultAMQPMessageConverter(Serializer serializer, RoutingKeyResolver routingKeyResolver, boolean durable) {
-        Assert.notNull(serializer, () -> "Serializer may not be null");
-        Assert.notNull(routingKeyResolver, () -> "RoutingKeyResolver may not be null");
-        this.serializer = serializer;
-        this.routingKeyResolver = routingKeyResolver;
-        this.durable = durable;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -112,21 +100,79 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
                 metaData.put(k.substring((Headers.MESSAGE_METADATA + "-").length()), v);
             }
         });
-        SimpleSerializedObject<byte[]> serializedMessage = new SimpleSerializedObject<>(messageBody, byte[].class,
-                                                                                        Objects.toString(headers.get(Headers.MESSAGE_TYPE)),
-                                                                                        Objects.toString(headers.get(Headers.MESSAGE_REVISION), null));
-        SerializedMessage<?> message = new SerializedMessage<>(Objects.toString(headers.get(Headers.MESSAGE_ID)),
-                                                               new LazyDeserializingObject<>(serializedMessage, serializer),
-                                                               new LazyDeserializingObject<>(MetaData.from(metaData)));
+        SimpleSerializedObject<byte[]> serializedMessage = new SimpleSerializedObject<>(
+                messageBody, byte[].class,
+                Objects.toString(headers.get(Headers.MESSAGE_TYPE)),
+                Objects.toString(headers.get(Headers.MESSAGE_REVISION), null)
+        );
+        SerializedMessage<?> message = new SerializedMessage<>(
+                Objects.toString(headers.get(Headers.MESSAGE_ID)),
+                new LazyDeserializingObject<>(serializedMessage, serializer),
+                new LazyDeserializingObject<>(MetaData.from(metaData))
+        );
         String timestamp = Objects.toString(headers.get(MESSAGE_TIMESTAMP));
         if (headers.containsKey(Headers.AGGREGATE_ID)) {
             return Optional.of(new GenericDomainEventMessage<>(Objects.toString(headers.get(Headers.AGGREGATE_TYPE)),
-                                                   Objects.toString(headers.get(Headers.AGGREGATE_ID)),
-                                                   (Long) headers.get(Headers.AGGREGATE_SEQ),
-                                                   message, () -> DateTimeUtils.parseInstant(timestamp)));
+                                                               Objects.toString(headers.get(Headers.AGGREGATE_ID)),
+                                                               (Long) headers.get(Headers.AGGREGATE_SEQ),
+                                                               message, () -> DateTimeUtils.parseInstant(timestamp)));
         } else {
             return Optional.of(new GenericEventMessage<>(message, () -> DateTimeUtils.parseInstant(timestamp)));
         }
     }
 
+    /**
+     * Builder class to instantiate a {@link DefaultAMQPMessageConverter}.
+     * The {@link RoutingKeyResolver} is defaulted to a {@link PackageRoutingKeyResolver} and the {@code durable} field
+     * defaults to {@code true}.
+     */
+    public static class Builder {
+
+        private Serializer serializer;
+        private RoutingKeyResolver routingKeyResolver = new PackageRoutingKeyResolver();
+        private boolean durable = true;
+
+        /**
+         * Set the serializer to serialize the Event Message's payload and Meta Data with.
+         *
+         * @param serializer The serializer to serialize the Event Message's payload and Meta Data with
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            Assert.notNull(serializer, () -> "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Set the strategy to use to resolve routing keys for Event Messages.
+         *
+         * @param routingKeyResolver The strategy to use to resolve routing keys for Event Messages
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder routingKeyResolver(RoutingKeyResolver routingKeyResolver) {
+            Assert.notNull(routingKeyResolver, () -> "RoutingKeyResolver may not be null");
+            this.routingKeyResolver = routingKeyResolver;
+            return this;
+        }
+
+        /**
+         * @param durable a {@code boolean} specifying whether to request durable message dispatching
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder durable(boolean durable) {
+            this.durable = durable;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link DefaultAMQPMessageConverter} with the set {@code serializer},
+         * {@code routingKeyResolver} and requesting durable dispatching when {@code durable} is {@code true}.
+         *
+         * @return a {@link DefaultAMQPMessageConverter} as specified through this Builder
+         */
+        public DefaultAMQPMessageConverter build() {
+            return new DefaultAMQPMessageConverter(this);
+        }
+    }
 }

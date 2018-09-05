@@ -18,6 +18,7 @@ package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
 import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.amqp.eventhandling.EventPublicationFailedException;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -28,9 +29,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.amqp.rabbit.connection.Connection;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
@@ -38,8 +37,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -62,7 +60,10 @@ public class SpringAMQPPublisherTest {
         testSubject.setConnectionFactory(connectionFactory);
         testSubject.setExchangeName("mockExchange");
         testSubject.setTransactional(true);
-        testSubject.setMessageConverter(new DefaultAMQPMessageConverter(serializer));
+        AMQPMessageConverter messageConverter = DefaultAMQPMessageConverter.builder()
+                                                                           .serializer(serializer)
+                                                                           .build();
+        testSubject.setMessageConverter(messageConverter);
         testSubject.start();
     }
 

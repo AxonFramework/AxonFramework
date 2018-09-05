@@ -18,7 +18,12 @@ package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
-import org.axonframework.amqp.eventhandling.*;
+import org.axonframework.amqp.eventhandling.AMQPMessage;
+import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
+import org.axonframework.amqp.eventhandling.EventPublicationFailedException;
+import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
+import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
@@ -45,7 +50,8 @@ import java.util.concurrent.TimeoutException;
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
  * outgoing messages are sent to a configured Exchange, which defaults to "{@code Axon.EventBus}".
  * <p>
- * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP Queue.
+ * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP
+ * Queue.
  *
  * @author Allard Buijze
  * @since 3.0
@@ -219,8 +225,8 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
                 serializer = applicationContext.getBean(Serializer.class);
             }
             if (routingKeyResolver == null) {
-                Map<String, RoutingKeyResolver> routingKeyResolverCandidates = applicationContext.getBeansOfType(
-                        RoutingKeyResolver.class);
+                Map<String, RoutingKeyResolver> routingKeyResolverCandidates =
+                        applicationContext.getBeansOfType(RoutingKeyResolver.class);
                 if (routingKeyResolverCandidates.size() > 1) {
                     throw new AxonConfigurationException("No MessageConverter was configured, but none can be created "
                                                                  + "using autowired properties, as more than 1 "
@@ -228,11 +234,14 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
                                                                  + "ApplicationContent");
                 } else if (routingKeyResolverCandidates.size() == 1) {
                     routingKeyResolver = routingKeyResolverCandidates.values().iterator().next();
-                } else {
-                    routingKeyResolver = new PackageRoutingKeyResolver();
                 }
             }
-            messageConverter = new DefaultAMQPMessageConverter(serializer, routingKeyResolver, isDurable);
+
+            messageConverter = DefaultAMQPMessageConverter.builder()
+                                                          .serializer(serializer)
+                                                          .routingKeyResolver(routingKeyResolver)
+                                                          .durable(isDurable)
+                                                          .build();
         }
     }
 
