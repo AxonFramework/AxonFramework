@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -44,7 +41,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
     private final String sagaId;
     private final T sagaInstance;
-    private final AtomicReference<TrackingToken> trackingToken;
 
     /**
      * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
@@ -60,14 +56,12 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     public AnnotatedSaga(String sagaId,
                          Set<AssociationValue> associationValues,
                          T annotatedSaga,
-                         TrackingToken trackingToken,
                          SagaModel<T> metaModel) {
         Assert.notNull(annotatedSaga, () -> "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
         this.sagaInstance = annotatedSaga;
         this.metaModel = metaModel;
-        this.trackingToken = new AtomicReference<>(trackingToken);
     }
 
     @Override
@@ -124,9 +118,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private void handle(MessageHandlingMember<? super T> handler, EventMessage<?> event) {
         try {
             executeWithResult(() -> handler.handle(event, sagaInstance));
-            if (event instanceof TrackedEventMessage) {
-                this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
-            }
         } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {
@@ -147,11 +138,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     @Override
     public boolean isActive() {
         return isActive;
-    }
-
-    @Override
-    public TrackingToken trackingToken() {
-        return trackingToken.get();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -86,10 +85,10 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     }
 
     @Override
-    public void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
+    public void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
                            Set<AssociationValue> associationValues) {
-        delegate.insertSaga(sagaType, sagaIdentifier, saga, token, associationValues);
-        sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, token, associationValues));
+        delegate.insertSaga(sagaType, sagaIdentifier, saga, associationValues);
+        sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues));
         addCachedAssociations(associationValues, sagaIdentifier, sagaType);
     }
 
@@ -130,10 +129,10 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     }
 
     @Override
-    public void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
+    public void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
                            AssociationValues associationValues) {
-        sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, token, associationValues.asSet()));
-        delegate.updateSaga(sagaType, sagaIdentifier, saga, token, associationValues);
+        sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
+        delegate.updateSaga(sagaType, sagaIdentifier, saga, associationValues);
         associationValues.removedAssociations()
                 .forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
         addCachedAssociations(associationValues.addedAssociations(), sagaIdentifier, sagaType);
@@ -146,24 +145,16 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     private static class CacheEntry<T> implements Entry<T>, Serializable {
 
         private final T saga;
-        private final TrackingToken trackingToken;
         private final Set<AssociationValue> associationValues;
 
-        public CacheEntry(T saga, TrackingToken TrackingToken, Set<AssociationValue> associationValues) {
+        public CacheEntry(T saga, Set<AssociationValue> associationValues) {
             this.saga = saga;
-            this.trackingToken = TrackingToken;
             this.associationValues = associationValues;
         }
 
         public <S extends T> CacheEntry(Entry<S> other) {
             this.saga = other.saga();
-            this.trackingToken = other.trackingToken();
             this.associationValues = other.associationValues();
-        }
-
-        @Override
-        public TrackingToken trackingToken() {
-            return trackingToken;
         }
 
         @Override

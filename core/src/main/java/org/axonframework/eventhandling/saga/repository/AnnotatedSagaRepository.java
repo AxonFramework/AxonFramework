@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
             T sagaRoot = sagaFactory.get();
             injector.injectResources(sagaRoot);
             AnnotatedSaga<T> saga =
-                    new AnnotatedSaga<>(sagaIdentifier, Collections.emptySet(), sagaRoot, null, sagaModel);
+                    new AnnotatedSaga<>(sagaIdentifier, Collections.emptySet(), sagaRoot, sagaModel);
 
             unsavedSagaResource(processRoot).add(sagaIdentifier);
             unitOfWork.onPrepareCommit(u -> {
@@ -251,8 +251,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param saga The saga that has been modified and needs to be updated in the storage
      */
     protected void updateSaga(AnnotatedSaga<T> saga) {
-        sagaStore.updateSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(),
-                             saga.getAssociationValues());
+        sagaStore.updateSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.getAssociationValues());
     }
 
     /**
@@ -261,8 +260,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param saga The newly created Saga instance to store.
      */
     protected void storeSaga(AnnotatedSaga<T> saga) {
-        sagaStore.insertSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(),
-                             saga.getAssociationValues().asSet());
+        sagaStore.insertSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.getAssociationValues().asSet());
     }
 
     /**
@@ -278,8 +276,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         if (entry != null) {
             T saga = entry.saga();
             injector.injectResources(saga);
-            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(),
-                                       sagaModel);
+            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, sagaModel);
         }
         return null;
     }

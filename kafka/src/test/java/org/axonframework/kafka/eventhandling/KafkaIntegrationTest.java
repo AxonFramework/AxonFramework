@@ -18,6 +18,7 @@ package org.axonframework.kafka.eventhandling;
 
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -25,7 +26,6 @@ import org.axonframework.kafka.eventhandling.consumer.*;
 import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
 import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration;
 import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
-import org.axonframework.messaging.MessageStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,9 +66,9 @@ public class KafkaIntegrationTest {
                                       .withPollTimeout(300, TimeUnit.MILLISECONDS)
                                       .build();
         KafkaMessageSource messageSource = new KafkaMessageSource(fetcher);
-        MessageStream<TrackedEventMessage<?>> stream1 = messageSource.openStream(null);
+        BlockingStream<TrackedEventMessage<?>> stream1 = messageSource.openStream(null);
         stream1.close();
-        MessageStream<TrackedEventMessage<?>> stream2 = messageSource.openStream(null);
+        BlockingStream<TrackedEventMessage<?>> stream2 = messageSource.openStream(null);
         eventBus.publish(asEventMessage("test"));
 
         // the consumer may need some time to start

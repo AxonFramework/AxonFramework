@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.SagaStorageException;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jpa.SagaEntry;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -188,7 +187,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, AssociationValues associationValues) {
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
             logger.debug("Updating saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
@@ -237,12 +236,12 @@ public class JdbcSagaStore implements SagaStore<Object> {
 
         if (updateCount == 0) {
             logger.warn("Expected to be able to update a Saga instance, but no rows were found. Inserting instead.");
-            insertSaga(sagaType, sagaIdentifier, saga, token, associationValues.asSet());
+            insertSaga(sagaType, sagaIdentifier, saga, associationValues.asSet());
         }
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, Set<AssociationValue> associationValues) {
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
             logger.debug("Storing saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
@@ -309,11 +308,6 @@ public class JdbcSagaStore implements SagaStore<Object> {
         public EntryImpl(Set<AssociationValue> associations, S loadedSaga) {
             this.associations = associations;
             this.loadedSaga = loadedSaga;
-        }
-
-        @Override
-        public TrackingToken trackingToken() {
-            return null;
         }
 
         @Override

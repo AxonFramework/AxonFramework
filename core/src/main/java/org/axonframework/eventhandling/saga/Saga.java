@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.ResetNotSupportedException;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -75,15 +74,6 @@ public interface Saga<T> extends EventListener {
      * @return {@code true} if this saga is active, {@code false} otherwise.
      */
     boolean isActive();
-
-    /**
-     * Returns the TrackingToken belonging to the EventMessage last processed by this instance, or {@code null} if
-     * this instance never handled an EventMessage, or if it received an EventMessage that doesn't carry a
-     * TrackingToken.
-     *
-     * @return the TrackingToken of the last processed EventMessage, if present.
-     */
-    TrackingToken trackingToken();
 
     @Override
     default boolean supportsReset() {

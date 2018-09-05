@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.time.Duration;
@@ -37,7 +38,7 @@ public interface StreamableMessageSource<M extends Message<?>> {
      *                      messages
      * @return a stream of messages since the given trackingToken
      */
-    MessageStream<M> openStream(TrackingToken trackingToken);
+    BlockingStream<M> openStream(TrackingToken trackingToken);
 
     /**
      * Creates the token at the beginning of an event stream. The beginning of an event stream in this context means the
