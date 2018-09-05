@@ -314,7 +314,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                                                    Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
             eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
-                    .registerInterceptor(interceptorBuilder.apply(configuration)));
+                    .registerHandlerInterceptor(interceptorBuilder.apply(configuration)));
         } else {
             handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                        .add(interceptorBuilder);
@@ -622,7 +622,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(config))
-                                   .forEach(eventProcessor::registerInterceptor);
+                                   .forEach(eventProcessor::registerHandlerInterceptor);
         return eventProcessor;
     }
 
