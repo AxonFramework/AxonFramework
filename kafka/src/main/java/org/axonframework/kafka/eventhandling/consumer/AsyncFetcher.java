@@ -96,7 +96,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
     }
 
     @Override
-    public MessageStream<TrackedEventMessage<?>> start(KafkaTrackingToken token) {
+    public BlockingStream<TrackedEventMessage<?>> start(KafkaTrackingToken token) {
         Consumer<K, V> consumer = consumerFactory.createConsumer();
         ConsumerUtil.seek(topic, consumer, token);
         if (KafkaTrackingToken.isEmpty(token)) {
