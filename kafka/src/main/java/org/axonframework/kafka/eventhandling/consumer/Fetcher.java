@@ -22,21 +22,20 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 /**
  * Interface describing the component responsible for reading messages from Kafka.
  *
- * @param <K> the key type.
- * @param <V> the value type.
  * @author Nakul Mishra
  */
-public interface Fetcher<K, V> {
+public interface Fetcher {
 
     /**
+     * Open a stream of messages, starting at the position indicated by the given {@code token}.
      *
-     * @param token
-     * @return
+     * @param token the token representing positions of the partition to start from
+     * @return a stream providing messages from Kafka
      */
     BlockingStream<TrackedEventMessage<?>> start(KafkaTrackingToken token);
 
     /**
-     * Close fetcher.
+     * Shuts the fetcher down, closing any resources used by this fetcher.
      */
     void shutdown();
 }

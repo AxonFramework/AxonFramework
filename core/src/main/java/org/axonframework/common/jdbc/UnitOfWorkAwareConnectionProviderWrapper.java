@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -63,7 +63,9 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
             uow.onCommit(u -> {
                 Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 try {
-                    if (!cx.isClosed() && !cx.getAutoCommit()) {
+                    if (cx instanceof UoWAttachedConnection) {
+                        ((UoWAttachedConnection) cx).forceCommit();
+                    } else if (!cx.isClosed() && !cx.getAutoCommit()) {
                         cx.commit();
                     }
                 } catch (SQLException e) {
@@ -94,6 +96,8 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
     private interface UoWAttachedConnection {
 
         void forceClose();
+
+        void forceCommit() throws SQLException;
     }
 
     private static class UoWAttachedConnectionImpl implements UoWAttachedConnection {
@@ -107,6 +111,13 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
         @Override
         public void forceClose() {
             JdbcUtils.closeQuietly(delegateConnection);
+        }
+
+        @Override
+        public void forceCommit() throws SQLException {
+            if (!delegateConnection.isClosed() && !delegateConnection.getAutoCommit()) {
+                delegateConnection.commit();
+            };
         }
     }
 }

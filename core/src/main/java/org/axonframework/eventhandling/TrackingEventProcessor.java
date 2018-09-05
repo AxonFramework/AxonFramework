@@ -46,6 +46,7 @@ import java.util.function.Function;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -69,7 +70,7 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
  * @author Christophe Bouhier
  */
 public class TrackingEventProcessor extends AbstractEventProcessor {
-    public static final int DEFAULT_BACKOFF_TIME_MILLIS = 5000;
+
     private static final Logger logger = LoggerFactory.getLogger(TrackingEventProcessor.class);
     private final StreamableMessageSource<TrackedEventMessage<?>> messageSource;
     private final TokenStore tokenStore;
@@ -81,9 +82,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private final ActivityCountingThreadFactory threadFactory;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_STARTED);
     private final ConcurrentMap<Integer, TrackerStatus> activeSegments = new ConcurrentSkipListMap<>();
-    private final int maxThreadCount;
+    private final ConcurrentMap<Integer, Long> segmentReleaseDeadlines = new ConcurrentSkipListMap<>();
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
+    private final AtomicInteger availableThreads;
+    private final long tokenClaimInterval;
 
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
@@ -150,6 +153,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                   TrackingEventProcessorConfiguration config) {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
 
+        this.tokenClaimInterval = config.getTokenClaimInterval();
         this.batchSize = config.getBatchSize();
 
         this.messageSource = requireNonNull(messageSource);
@@ -158,7 +162,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.segmentsSize = config.getInitialSegmentsCount();
         this.transactionManager = transactionManager;
 
-        this.maxThreadCount = config.getMaxThreadCount();
+        this.availableThreads = new AtomicInteger(config.getMaxThreadCount());
         this.threadFactory = new ActivityCountingThreadFactory(config.getThreadFactory(name));
         this.segmentIdResourceKey = "Processor[" + name + "]/SegmentId";
         this.lastTokenResourceKey = "Processor[" + name + "]/Token";
@@ -203,16 +207,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         BlockingStream<TrackedEventMessage<?>> eventStream = null;
         long errorWaitTime = 1;
         try {
-            while (state.get().isRunning()) {
+            while (state.get().isRunning() && canClaimSegment(segment.getSegmentId())) {
                 try {
                     eventStream = ensureEventStreamOpened(eventStream, segment);
                     processBatch(segment, eventStream);
                     errorWaitTime = 1;
                 } catch (UnableToClaimTokenException e) {
-                    if (errorWaitTime == 1) {
-                        logger.info("Token is owned by another node. Waiting for it to become available...");
-                    }
-                    doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
+                    logger.info("Segment is owned by another node. Releasing thread to process another segment...");
+                    releaseSegment(segment.getSegmentId());
                 } catch (Exception e) {
                     // make sure to start with a clean event stream. The exception may have caused an illegal state
                     if (errorWaitTime == 1) {
@@ -283,7 +285,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             processInUnitOfWork(batch, unitOfWork, segment);
 
             activeSegments.computeIfPresent(segment.getSegmentId(), (k, v) -> v.advancedTo(finalLastToken));
-
         } catch (InterruptedException e) {
             logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
             this.shutDown();
@@ -325,6 +326,39 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     @Deprecated
     public void pause() {
         this.state.updateAndGet(s -> s.isRunning() ? State.PAUSED : s);
+    }
+
+    /**
+     * Instructs the processor to release the segment with given {@code segmentId}. This will also blacklist this
+     * segment for twice the {@link TrackingEventProcessorConfiguration#getTokenClaimInterval() token claim interval},
+     * to ensure it is not immediately reclaimed.
+     *
+     * @param segmentId the id of the segment to be blacklisted
+     */
+    public void releaseSegment(int segmentId) {
+        releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
+    }
+
+    /**
+     * Instructs the processor to release the segment with given {@code segmentId}. This will also blacklist this
+     * segment for the given {@code blacklistDuration}, to ensure it is not immediately reclaimed. Note that this will
+     * override any previous blacklist duration that existed for this segment. Providing a negative value will allow
+     * the segment to be immediately claimed.
+     * <p>
+     * If the processor is not actively processing the segment with given {@code segmentId}, it will be blacklisted
+     * nonetheless.
+     *
+     * @param segmentId         the id of the segment to be blacklisted
+     * @param blacklistDuration the amount of time to blacklist this segment for processing by this processor instance
+     * @param unit              the unit of time used to express the {@code blacklistDuration}
+     */
+    public void releaseSegment(int segmentId, long blacklistDuration, TimeUnit unit) {
+        segmentReleaseDeadlines.put(segmentId, System.currentTimeMillis() + unit.toMillis(blacklistDuration));
+    }
+
+    private boolean canClaimSegment(int segmentId) {
+        return !segmentReleaseDeadlines.containsKey(segmentId) ||
+                segmentReleaseDeadlines.get(segmentId) < System.currentTimeMillis();
     }
 
     /**
@@ -420,7 +454,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      */
     @Override
     public void shutDown() {
-        if (state.getAndUpdate(s -> State.SHUT_DOWN) != State.SHUT_DOWN) {
+        if (state.getAndSet(State.SHUT_DOWN).isRunning()) {
             logger.info("Shutdown state set for Processor '{}'. Awaiting termination...", getName());
             try {
                 while (threadFactory.activeThreads() > 0) {
@@ -431,6 +465,16 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Returns the number of threads this processor has available to assign segments. These threads may or may not
+     * already be active.
+     *
+     * @return the number of threads this processor has available to assign segments.
+     */
+    public int availableProcessorThreads() {
+        return availableThreads.get();
     }
 
     /**
@@ -560,10 +604,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         public int activeThreads() {
             return threadCount.get();
         }
-
     }
 
     private static class CountingRunnable implements Runnable {
+
         private final Runnable delegate;
         private final AtomicInteger counter;
 
@@ -651,10 +695,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             try {
                 processingLoop(segment);
             } catch (Throwable e) {
-                logger.error("Processing loop ended due to uncaught exception. Processor pausing.", e);
+                logger.error("Processing loop ended due to uncaught exception. Pausing processor in Error State.", e);
                 state.set(State.PAUSED_ERROR);
             } finally {
                 activeSegments.remove(segment.getSegmentId());
+                if (availableThreads.getAndIncrement() == 0 && getState().isRunning()) {
+                    logger.info("No Worker Launcher active. Using current thread to assign segments.");
+                    new WorkerLauncher().run();
+                }
             }
         }
 
@@ -688,12 +736,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                                     return tokenStore.fetchSegments(processorName);
                                 });
                     }
-
                 } catch (Exception e) {
                     logger.warn("Fetch Segments for Processor '{}' failed: {}. Preparing for retry in {}s",
                                 processorName, e.getMessage(), waitTime);
-                    doSleepFor(SECONDS.toMillis(Math.min(waitTime, 60)));
-                    waitTime = waitTime * 2;
+                    doSleepFor(SECONDS.toMillis(waitTime));
+                    waitTime = Math.min(waitTime * 2, 60);
 
                     continue;
                 }
@@ -703,11 +750,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                 // Submit segmentation workers matching the size of our thread pool (-1 for the current dispatcher).
                 // Keep track of the last processed segments...
                 TrackingSegmentWorker workingInCurrentThread = null;
-                for (int i = 0; i < segments.length
-                        && activeSegments.size() < maxThreadCount; i++) {
+                for (int i = 0; i < segments.length && availableThreads.get() > 0; i++) {
                     Segment segment = segments[i];
 
-                    if (!activeSegments.containsKey(segment.getSegmentId())) {
+                    if (!activeSegments.containsKey(segment.getSegmentId())
+                            && canClaimSegment(segment.getSegmentId())) {
                         try {
                             transactionManager.executeInTransaction(() -> {
                                 TrackingToken token = tokenStore.fetchToken(processorName, segment.getSegmentId());
@@ -730,7 +777,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                         }
 
                         TrackingSegmentWorker trackingSegmentWorker = new TrackingSegmentWorker(segment);
-                        if (threadFactory.activeThreads() < maxThreadCount) {
+                        if (availableThreads.decrementAndGet() > 0) {
                             logger.info("Dispatching new tracking segment worker: {}", trackingSegmentWorker);
                             threadFactory.newThread(trackingSegmentWorker).start();
                         } else {
@@ -742,11 +789,11 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
                 // We're not able to spawn new threads, so this thread should also start processing.
                 if (nonNull(workingInCurrentThread)) {
-                    logger.info("Using current Thread for last segment segment worker: {}", workingInCurrentThread);
+                    logger.info("Using current Thread for last segment worker: {}", workingInCurrentThread);
                     workingInCurrentThread.run();
-                    break;
+                    return;
                 }
-                doSleepFor(DEFAULT_BACKOFF_TIME_MILLIS);
+                doSleepFor(tokenClaimInterval);
             }
         }
     }

@@ -16,15 +16,26 @@
 package org.axonframework.config;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.AbstractEventProcessor;
+import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
+import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,9 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class EventHandlingConfigurationTest {
 
@@ -104,13 +115,14 @@ public class EventHandlingConfigurationTest {
 
         assertEquals(3, processors.size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("java.util.concurrent2").getInterceptors()
-                             .get(0) instanceof CorrelationDataInterceptor);
+        assertTrue(processors.get("java.util.concurrent2").getHandlerInterceptors().iterator()
+                             .next() instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
-        assertTrue(processors.get("java.util.concurrent").getInterceptors()
-                             .get(0) instanceof CorrelationDataInterceptor);
+        assertTrue(processors.get("java.util.concurrent").getHandlerInterceptors().iterator()
+                             .next() instanceof CorrelationDataInterceptor);
         assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
-        assertTrue(processors.get("java.lang").getInterceptors().get(0) instanceof CorrelationDataInterceptor);
+        assertTrue(processors.get("java.lang").getHandlerInterceptors().iterator()
+                             .next() instanceof CorrelationDataInterceptor);
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
                               EventProcessingConfiguration.class,
@@ -148,6 +160,38 @@ public class EventHandlingConfigurationTest {
     }
 
     @Test
+    public void testAssignSequencingPolicy() throws NoSuchFieldException {
+        Object mockHandler = new Object();
+        Object specialHandler = new Object();
+        SequentialPolicy sequentialPolicy = new SequentialPolicy();
+        FullConcurrencyPolicy fullConcurrencyPolicy = new FullConcurrencyPolicy();
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
+                .registerEventHandler(c -> mockHandler)
+                .registerEventHandler(c -> specialHandler)
+                .assignHandlersMatching("special", specialHandler::equals)
+                .byDefaultAssignTo("default")
+                .registerDefaultSequencingPolicy(c -> sequentialPolicy)
+                .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
+        configurer.registerModule(module);
+        Configuration config = configurer.start();
+
+        AbstractEventProcessor defaultProcessor =
+                config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class).get();
+        AbstractEventProcessor specialProcessor =
+                config.eventProcessingConfiguration().eventProcessor("special", AbstractEventProcessor.class).get();
+
+        MultiEventHandlerInvoker defaultInvoker =
+                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), defaultProcessor);
+        MultiEventHandlerInvoker specialInvoker =
+                getFieldValue(AbstractEventProcessor.class.getDeclaredField("eventHandlerInvoker"), specialProcessor);
+
+        assertEquals(sequentialPolicy,
+                     ((SimpleEventHandlerInvoker) defaultInvoker.delegates().get(0)).getSequencingPolicy());
+        assertEquals(fullConcurrencyPolicy,
+                     ((SimpleEventHandlerInvoker) specialInvoker.delegates().get(0)).getSequencingPolicy());
+    }
+
+    @Test
     public void testAssignInterceptors() {
         EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .usingTrackingProcessors()
@@ -165,7 +209,7 @@ public class EventHandlingConfigurationTest {
         Configuration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
-        assertEquals(3, ((StubEventProcessor) module.getProcessor("default").get()).getInterceptors().size());
+        assertEquals(3, ((StubEventProcessor) module.getProcessor("default").get()).getHandlerInterceptors().size());
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
                               EventHandlingConfiguration.class,
@@ -355,6 +399,11 @@ public class EventHandlingConfigurationTest {
         }
 
         @Override
+        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+            return interceptors;
+        }
+
+        @Override
         public void start() {
             // noop
         }
@@ -362,10 +411,6 @@ public class EventHandlingConfigurationTest {
         @Override
         public void shutDown() {
             // noop
-        }
-
-        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getInterceptors() {
-            return interceptors;
         }
     }
 

@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 
+import java.util.List;
+
 /**
  * An Event Processor processes event messages from an event queue or event bus.
  * <p/>
@@ -40,6 +42,16 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
      * @return the name of this event processor
      */
     String getName();
+
+    /**
+     * Return the list of already registered {@link MessageHandlerInterceptor}s for this event processor.
+     * To register a new interceptor use {@link EventProcessor#registerInterceptor(MessageHandlerInterceptor)}
+     *
+     * @return the list of registered interceptors of this event processor
+     */
+    default List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        throw new UnsupportedOperationException("No implementation found to get the HandlerInterceptors");
+    }
 
     /**
      * Start processing events.

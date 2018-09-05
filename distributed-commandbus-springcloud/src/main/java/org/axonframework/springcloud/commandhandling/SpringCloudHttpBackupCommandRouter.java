@@ -249,7 +249,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
             return responseEntity.hasBody() ? Optional.of(responseEntity.getBody()) : Optional.empty();
         } catch (HttpClientErrorException e) {
-            logger.warn("Blacklisting Service [" + serviceInstance.getServiceId() + "], "
+            logger.info("Blacklisting Service [" + serviceInstance.getServiceId() + "], "
                                 + "as requesting message routing information from it resulted in an exception.", e);
             return Optional.empty();
         } catch (Exception e) {

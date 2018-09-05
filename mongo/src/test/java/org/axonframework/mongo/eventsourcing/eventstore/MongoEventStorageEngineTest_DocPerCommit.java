@@ -24,7 +24,9 @@ import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
@@ -121,6 +123,40 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
 
         assertEquals(3, (long) testSubject.lastSequenceNumberFor(AGGREGATE).get());
         assertFalse(testSubject.lastSequenceNumberFor("notexist").isPresent());
+    }
+
+    @Test
+    public void testFetchingEventsReturnsResultsWhenMoreThanBatchSizeCommitsAreAvailable() {
+        testSubject.appendEvents(createEvent(0), createEvent(1), createEvent(2));
+        testSubject.appendEvents(createEvent(3), createEvent(4), createEvent(5));
+        testSubject.appendEvents(createEvent(6), createEvent(7), createEvent(8));
+        testSubject.appendEvents(createEvent(9), createEvent(10), createEvent(11));
+        testSubject.appendEvents(createEvent(12), createEvent(13), createEvent(14));
+
+        List<? extends TrackedEventData<?>> result = testSubject.fetchTrackedEvents(null, 2);
+        TrackedEventData<?> last = result.get(result.size() - 1);// we decide to omit the last event
+        last.trackingToken();
+        List<? extends TrackedEventData<?>> actual = testSubject.fetchTrackedEvents(last.trackingToken(), 2);
+        assertFalse("Expected to retrieve some events", actual.isEmpty());
+        // we want to make sure we get the first event from the next commit
+        assertEquals(result.size(), ((DomainEventData<?>)actual.get(0)).getSequenceNumber());
+    }
+
+    @Test
+    public void testFetchingEventsReturnsResultsWhenMoreThanBatchSizeCommitsAreAvailable_PartiallyReadingCommit() {
+        testSubject.appendEvents(createEvent(0), createEvent(1), createEvent(2));
+        testSubject.appendEvents(createEvent(3), createEvent(4), createEvent(5));
+        testSubject.appendEvents(createEvent(6), createEvent(7), createEvent(8));
+        testSubject.appendEvents(createEvent(9), createEvent(10), createEvent(11));
+        testSubject.appendEvents(createEvent(12), createEvent(13), createEvent(14));
+
+        List<? extends TrackedEventData<?>> result = testSubject.fetchTrackedEvents(null, 2);
+        TrackedEventData<?> last = result.get(result.size() - 2);// we decide to omit the last event
+        last.trackingToken();
+        List<? extends TrackedEventData<?>> actual = testSubject.fetchTrackedEvents(last.trackingToken(), 2);
+        assertFalse("Expected to retrieve some events", actual.isEmpty());
+        // we want to make sure we get the last event from the commit
+        assertEquals(result.size() - 1, ((DomainEventData<?>)actual.get(0)).getSequenceNumber());
     }
 
     @Test(expected = ConcurrencyException.class)

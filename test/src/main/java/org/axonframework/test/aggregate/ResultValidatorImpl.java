@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
 import static org.hamcrest.CoreMatchers.*;
@@ -95,7 +96,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectEvents(EventMessage... expectedEvents) {
-        this.expectEvents((Object[]) expectedEvents);
+        this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
