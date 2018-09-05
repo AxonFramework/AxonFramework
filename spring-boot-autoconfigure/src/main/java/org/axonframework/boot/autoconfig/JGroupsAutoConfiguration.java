@@ -42,8 +42,7 @@ import java.util.regex.Pattern;
 
 @Configuration
 @AutoConfigureAfter(SpringCloudAutoConfiguration.class)
-@ConditionalOnExpression("${axon.distributed.enabled:false} || ${axon.distributed.jgroups.enabled:false}")
-//@ConditionalOnExpression can be replaced for @ConditionalOnProperty once the deprecated jgroups.enabled is removed
+@ConditionalOnProperty("axon.distributed.enabled")
 @ConditionalOnClass(name = { "org.axonframework.jgroups.commandhandling.JGroupsConnector", "org.jgroups.JChannel" })
 public class JGroupsAutoConfiguration {
 
