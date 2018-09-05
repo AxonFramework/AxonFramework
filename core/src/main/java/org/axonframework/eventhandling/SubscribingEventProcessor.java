@@ -43,7 +43,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     private final EventProcessingStrategy processingStrategy;
     private volatile Registration eventBusRegistration;
 
-
     /**
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code messageSource} for
      * events. Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.

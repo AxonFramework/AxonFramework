@@ -19,6 +19,8 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 
+import java.util.List;
+
 /**
  * An Event Processor processes event messages from an event queue or event bus.
  * <p/>
@@ -45,8 +47,8 @@ public interface EventProcessor {
     /**
      * Registers the given {@code interceptor} to this event processor. The {@code interceptor} will
      * receive each event message that is about to be published but before it has reached its event handlers.
-     * Interceptors are free to modify the event message or stop publication altogether. In
-     * addition, interceptors are able to interact with the {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * Interceptors are free to modify the event message or stop publication altogether.
+     * In addition, interceptors are able to interact with the {@link org.axonframework.messaging.unitofwork.UnitOfWork}
      * that is created to process the message.
      * <p/>
      * For example, if a {@link org.axonframework.messaging.interceptors.CorrelationDataInterceptor} is registered,
@@ -58,6 +60,16 @@ public interface EventProcessor {
      * no longer receive events from this event processor.
      */
     Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor);
+
+    /**
+     * Return the list of already registered {@link MessageHandlerInterceptor}s for this event processor.
+     * To register a new interceptor use {@link EventProcessor#registerInterceptor(MessageHandlerInterceptor)}
+     *
+     * @return the list of registered interceptors of this event processor
+     */
+    default List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        throw new UnsupportedOperationException("No implementation found to get the HandlerInterceptors");
+    }
 
     /**
      * Start processing events.

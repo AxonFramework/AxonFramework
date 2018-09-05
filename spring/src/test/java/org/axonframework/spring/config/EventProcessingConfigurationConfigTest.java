@@ -19,6 +19,11 @@ package org.axonframework.spring.config;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
 import org.junit.*;
 import org.junit.runner.*;
@@ -26,6 +31,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -41,13 +48,19 @@ public class EventProcessingConfigurationConfigTest {
     private EventProcessingConfiguration eventProcessingConfiguration;
 
     @Test
-    public void testProcessorConfiguration() {
+    public void testEventProcessingConfiguration() {
         assertEquals(2, eventProcessingConfiguration.eventProcessors().size());
         assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
         assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
 
-        assertEquals("processor2",
-                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1").get().getName());
+        EventProcessor processor2 = eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1").get();
+        assertEquals("processor2", processor2.getName());
+        List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor = eventProcessingConfiguration
+                .interceptorsFor("processor2");
+        assertEquals(2, interceptorsFor.size());
+        assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
+        assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof LoggingInterceptor));
+
         assertEquals("processor2",
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor2").get().getName());
         assertEquals("subscribingProcessor",
@@ -66,6 +79,7 @@ public class EventProcessingConfigurationConfigTest {
             config.assignProcessingGroup("processor1", "processor2");
             config.assignProcessingGroup(group -> group.contains("3") ? "subscribingProcessor" : "processor2");
             config.registerSubscribingEventProcessor("subscribingProcessor");
+            config.registerHandlerInterceptor((configuration, name) -> new LoggingInterceptor<>());
         }
 
         @Saga

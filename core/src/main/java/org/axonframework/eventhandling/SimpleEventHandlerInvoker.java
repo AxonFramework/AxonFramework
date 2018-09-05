@@ -88,7 +88,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      */
     public SimpleEventHandlerInvoker(List<?> eventListeners,
                                      ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
-        this(eventListeners, listenerInvocationErrorHandler, new SequentialPerAggregatePolicy());
+        this(eventListeners, listenerInvocationErrorHandler, SequentialPerAggregatePolicy.instance());
     }
 
     /**
@@ -210,5 +210,13 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         for (EventListener eventListener : wrappedEventListeners) {
             eventListener.prepareReset();
         }
+    }
+
+    public ListenerInvocationErrorHandler getListenerInvocationErrorHandler() {
+        return listenerInvocationErrorHandler;
+    }
+
+    public SequencingPolicy<? super EventMessage<?>> getSequencingPolicy() {
+        return sequencingPolicy;
     }
 }

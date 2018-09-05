@@ -44,11 +44,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 
 /**
  * Non-thread safe event processing configuration. Holds a registry of {@link EventProcessor}s and {@link
@@ -65,6 +68,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
     private final Map<String, EventProcessorBuilder> eventProcessorBuilders = new HashMap<>();
     private final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
+    private final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
     private final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     private final Map<String, Function<Configuration, ErrorHandler>> errorHandlers = new HashMap<>();
     private final Map<String, Function<Configuration, RollbackConfiguration>> rollbackConfigurations = new HashMap<>();
@@ -191,8 +195,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
 
     /**
      * Registers a TrackingEventProcessor with the given {@code name}, reading from the Event Bus (or Store) from the
-     * main configuration and using the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines
-     * the policy for events that need to be executed sequentially.
+     * main configuration and using the given {@code processorConfiguration}.
      *
      * @param name                   The name of the Tracking Processor
      * @param processorConfiguration The configuration for the processor
@@ -205,8 +208,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
 
     /**
      * Registers a TrackingEventProcessor with the given {@code name}, reading from the given {@code source} and using
-     * the given {@code processorConfiguration}. The given {@code sequencingPolicy} defines the policy for events that
-     * need to be executed sequentially.
+     * the given {@code processorConfiguration}.
      *
      * @param name                   The name of the Tracking Processor
      * @param source                 The source to read Events from
@@ -315,10 +317,26 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
         if (configuration != null) {
             eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
                     .registerInterceptor(interceptorBuilder.apply(configuration)));
-        } else {
-            handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
-                                       .add(interceptorBuilder);
         }
+        handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
+                                   .add(interceptorBuilder);
+        return this;
+    }
+
+    /**
+     * Register the given {@code interceptorBuilder} to build an Message Handling Interceptor for Event Processors
+     * created in this configuration.
+     * <p>
+     * The {@code interceptorBuilder} is invoked once for each processor created, and may return {@code null}, in which
+     * case the return value is ignored.
+     * <p>
+     *
+     * @param interceptorBuilder The builder function that provides an interceptor for each available processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventProcessingConfiguration registerHandlerInterceptor(
+            BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+        defaultHandlerInterceptors.add(interceptorBuilder);
         return this;
     }
 
@@ -330,12 +348,15 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      */
     public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
         Assert.state(configuration != null, () -> "Configuration is not initialized yet");
-        return handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
-                                          .stream()
-                                          .map(hi -> hi.apply(configuration))
-                                          .collect(Collectors.toList());
-    }
 
+        Component<EventProcessor> eventProcessorComponent = eventProcessors.get(processorName);
+
+        if (eventProcessorComponent == null) {
+            return emptyList();
+        }
+
+        return eventProcessorComponent.get().getHandlerInterceptors();
+    }
 
     /**
      * Allows for more fine-grained definition of the Event Processor to use for each group of Event Listeners. The
@@ -461,6 +482,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
      * Obtains Event Processor by name. This method is to be called after Event Processor Registry is initialized.
      *
      * @param name The name of the event processor
+     * @param <T>  The type of processor expected
      * @return optional whether event processor with given name exists
      */
     @SuppressWarnings("unchecked")
@@ -623,6 +645,12 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                    .stream()
                                    .map(hi -> hi.apply(config))
                                    .forEach(eventProcessor::registerInterceptor);
+
+        defaultHandlerInterceptors.stream()
+                                  .map(f -> f.apply(configuration, processorName))
+                                  .filter(Objects::nonNull)
+                                  .forEach(eventProcessor::registerInterceptor);
+
         return eventProcessor;
     }
 
