@@ -57,6 +57,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * nodes. For a clean shutdown, connectors should {@link #disconnect()} to notify other nodes of the node leaving.
  */
 public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConnector {
+
     private static final Logger logger = LoggerFactory.getLogger(JGroupsConnector.class);
 
     private static final boolean LOCAL_MEMBER = true;
@@ -65,16 +66,18 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private final Object monitor = new Object();
 
     private final CommandBus localSegment;
-    private final CommandCallbackRepository<Address> callbackRepository = new CommandCallbackRepository<>();
-    private final Serializer serializer;
-    private final JoinCondition joinedCondition = new JoinCondition();
-    private final Map<Address, VersionedMember> members = new ConcurrentHashMap<>();
+    private final JChannel channel;
     private final String clusterName;
+    private final Serializer serializer;
     private final RoutingStrategy routingStrategy;
     private final ConsistentHashChangeListener consistentHashChangeListener;
-    private final JChannel channel;
+
+    private final CommandCallbackRepository<Address> callbackRepository = new CommandCallbackRepository<>();
+    private final JoinCondition joinedCondition = new JoinCondition();
+    private final Map<Address, VersionedMember> members = new ConcurrentHashMap<>();
     private final AtomicReference<ConsistentHash> consistentHash = new AtomicReference<>(new ConsistentHash());
     private final AtomicInteger membershipVersion = new AtomicInteger(0);
+
     private volatile View currentView;
     private volatile int loadFactor = 0;
     private volatile Predicate<? super CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
@@ -122,7 +125,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * cluster.
      *
      * @param updateVersion The version for the update to be send with the membership information
-     * @param expectReply
+     * @param expectReply   a {@code boolean} specifying whether a reply is expected
      * @throws ServiceRegistryException when an exception occurs sending membership details to other nodes
      */
     protected void broadCastMembership(int updateVersion, boolean expectReply) throws ServiceRegistryException {
@@ -169,12 +172,14 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void getState(OutputStream ostream) {
+    public void getState(OutputStream output) {
+        // Not supported
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void setState(InputStream istream) {
+    public void setState(InputStream input) {
+        // Not supported
     }
 
     @Override
@@ -211,7 +216,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     @Override
     public void suspect(Address suspected_mbr) {
-        logger.warn("Member is suspect: {}", suspected_mbr.toString());
+        logger.warn("Member is suspect: {}", suspected_mbr);
     }
 
     @Override
@@ -234,7 +239,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         } else if (message instanceof JGroupsReplyMessage) {
             processReplyMessage((JGroupsReplyMessage) message);
         } else {
-            logger.warn("Received unknown message: " + message.getClass().getName());
+            logger.warn("Received unknown message: {}", message.getClass().getName());
         }
     }
 
@@ -365,6 +370,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * interrupted, or when joining has failed.
      *
      * @return {@code true} if the member successfully joined, otherwise {@code false}.
+     *
      * @throws InterruptedException when the thread is interrupted while joining
      */
     public boolean awaitJoined() throws InterruptedException {
@@ -380,6 +386,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * @param timeout  The amount of time to wait for the connection to complete
      * @param timeUnit The time unit of the timeout
      * @return {@code true} if the member successfully joined, otherwise {@code false}.
+     *
      * @throws InterruptedException when the thread is interrupted while joining
      */
     public boolean awaitJoined(long timeout, TimeUnit timeUnit) throws InterruptedException {
@@ -428,6 +435,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      *
      * @param destination The node of which to solve the Address
      * @return The JGroups Address of the given node
+     *
      * @throws CommandBusConnectorCommunicationException when an error occurs resolving the adress
      */
     protected Address resolveAddress(Member destination) {
@@ -443,7 +451,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return localSegment.registerHandlerInterceptor(handlerInterceptor);
     }
 
@@ -609,6 +618,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private static class VersionedMember implements Member {
+
         private final SimpleMember<Address> member;
         private final int version;
 
