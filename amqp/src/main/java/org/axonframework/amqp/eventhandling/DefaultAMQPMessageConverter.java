@@ -145,7 +145,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         private boolean durable = true;
 
         /**
-         * Set the serializer to serialize the Event Message's payload and Meta Data with.
+         * Sets the serializer to serialize the Event Message's payload and Meta Data with.
          *
          * @param serializer The serializer to serialize the Event Message's payload and Meta Data with
          * @return the current Builder instance, for a fluent interfacing
@@ -159,7 +159,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         }
 
         /**
-         * Set the strategy to use to resolve routing keys for Event Messages.
+         * Sets the strategy to use to resolve routing keys for Event Messages.
          *
          * @param routingKeyResolver The strategy to use to resolve routing keys for Event Messages
          * @return the current Builder instance, for a fluent interfacing
@@ -173,6 +173,8 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         }
 
         /**
+         * Sets a {@code boolean} specifying whether to request durable message dispatching
+         *
          * @param durable a {@code boolean} specifying whether to request durable message dispatching
          * @return the current Builder instance, for a fluent interfacing
          */
