@@ -16,25 +16,18 @@
 package org.axonframework.amqp.eventhandling;
 
 import com.rabbitmq.client.AMQP;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedMessage;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
+import static org.axonframework.common.Assert.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
@@ -53,7 +46,24 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     private final RoutingKeyResolver routingKeyResolver;
     private final boolean durable;
 
+    /**
+     * Instantiate a {@link DefaultAMQPMessageConverter} based on the fields contained in the {@link Builder}.
+     * The {@link RoutingKeyResolver} is defaulted to a {@link PackageRoutingKeyResolver} and the {@code durable} field
+     * defaults to {@code true}. The {@link Serializer} is a <b>hard requirement</b> and thus should be provided.
+     * <p>
+     * Will assert that the {@link Serializer} and {@link RoutingKeyResolver} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if either of them is {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link DefaultAMQPMessageConverter} instance
+     */
     protected DefaultAMQPMessageConverter(Builder builder) {
+        assertThat(builder.serializer,
+                   Objects::nonNull,
+                   () -> new AxonConfigurationException("Serializer may not be null"));
+        assertThat(builder.routingKeyResolver,
+                   Objects::nonNull,
+                   () -> new AxonConfigurationException("RoutingKeyResolver may not be null"));
+
         this.serializer = builder.serializer;
         this.routingKeyResolver = builder.routingKeyResolver;
         this.durable = builder.durable;
@@ -61,6 +71,8 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
 
     /**
      * Instantiate a Builder to be able to create a {@link DefaultAMQPMessageConverter}.
+     * The {@link RoutingKeyResolver} is defaulted to a {@link PackageRoutingKeyResolver} and the {@code durable} field
+     * defaults to {@code true}. The {@link Serializer} is a <b>hard requirement</b> and thus should be provided.
      *
      * @return a Builder to be able to create a {@link DefaultAMQPMessageConverter}.
      */
@@ -124,7 +136,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     /**
      * Builder class to instantiate a {@link DefaultAMQPMessageConverter}.
      * The {@link RoutingKeyResolver} is defaulted to a {@link PackageRoutingKeyResolver} and the {@code durable} field
-     * defaults to {@code true}.
+     * defaults to {@code true}. The {@link Serializer} is a <b>hard requirement</b> and thus should be provided.
      */
     public static class Builder {
 
@@ -139,7 +151,9 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
-            Assert.notNull(serializer, () -> "Serializer may not be null");
+            assertThat(serializer,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("Serializer may not be null"));
             this.serializer = serializer;
             return this;
         }
@@ -151,7 +165,9 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder routingKeyResolver(RoutingKeyResolver routingKeyResolver) {
-            Assert.notNull(routingKeyResolver, () -> "RoutingKeyResolver may not be null");
+            assertThat(routingKeyResolver,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("RoutingKeyResolver may not be null"));
             this.routingKeyResolver = routingKeyResolver;
             return this;
         }
