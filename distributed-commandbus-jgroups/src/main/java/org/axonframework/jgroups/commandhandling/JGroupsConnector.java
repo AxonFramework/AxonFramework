@@ -19,14 +19,30 @@ package org.axonframework.jgroups.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
+import org.axonframework.commandhandling.distributed.CommandCallbackRepository;
+import org.axonframework.commandhandling.distributed.CommandCallbackWrapper;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.ServiceRegistryException;
+import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
-import org.jgroups.*;
+import org.jgroups.Address;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.Receiver;
+import org.jgroups.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,10 +120,10 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     /**
      * Builder class to instantiate a {@link JGroupsConnector}. The {@link RoutingStrategy} is defaulted to an
      * {@link AnnotationRoutingStrategy}, and the {@link ConsistentHashChangeListener} to a no-op solution.
-     * The {@link CommandBus}, {@link JChannel}, {@code clusterName} and {@link Serializer} are a <b>hard
+     * The {@link CommandBus}, {@link JChannel}, {@code clusterName} and {@link Serializer} are <b>hard
      * requirements</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link JGroupsConnector}.
+     * @return a Builder to be able to create a {@link JGroupsConnector}
      */
     public static Builder builder() {
         return new Builder();
@@ -247,9 +263,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         CommandCallbackWrapper<Object, Object, Object> callbackWrapper =
                 callbackRepository.fetchAndRemove(message.getCommandIdentifier());
         if (callbackWrapper == null) {
-            logger.warn(
-                    "Received a callback for a message that has either already received a callback, or which was not " +
-                            "sent through this node. Ignoring.");
+            logger.warn("Received a callback for a message that has either already received a callback, "
+                                + "or which was not sent through this node. Ignoring.");
         } else {
             if (message.isSuccess()) {
                 callbackWrapper.success(message.getReturnValue(serializer));
@@ -314,9 +329,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), NON_LOCAL_MEMBER, s -> {
             });
 
-            // this lock could be removed if versioning support is added to the consistent hash
+            // This lock could be removed if versioning support is added to the consistent hash
             synchronized (monitor) {
-                // this part shouldn't be executed by two threads simultaneously, as it may cause race conditions
+                // This part shouldn't be executed by two threads simultaneously, as it may cause race conditions
                 int order = members.compute(member.endpoint(), (k, v) -> {
                     if (v == null || v.order() <= joinMessage.getOrder()) {
                         return new VersionedMember(member, joinMessage.getOrder());
@@ -355,8 +370,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private void sendMyConfigurationTo(Address endpoint, boolean expectReply, int order) {
         try {
             logger.info("Sending my configuration to {}.", getOrDefault(endpoint, "all nodes"));
-            Message returnJoinMessage = new Message(endpoint, new JoinMessage(this.loadFactor, this.commandFilter,
-                                                                              order, expectReply));
+            Message returnJoinMessage =
+                    new Message(endpoint, new JoinMessage(this.loadFactor, this.commandFilter, order, expectReply));
             returnJoinMessage.setFlag(Message.Flag.OOB);
             channel.send(returnJoinMessage);
         } catch (Exception e) {
@@ -366,7 +381,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     /**
-     * this method blocks until this member has successfully joined the other members, until the thread is
+     * This method blocks until this member has successfully joined the other members, until the thread is
      * interrupted, or when joining has failed.
      *
      * @return {@code true} if the member successfully joined, otherwise {@code false}.
@@ -380,7 +395,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
 
     /**
-     * this method blocks until this member has successfully joined the other members, until the thread is
+     * This method blocks until this member has successfully joined the other members, until the thread is
      * interrupted, when the given number of milliseconds have passed, or when joining has failed.
      *
      * @param timeout  The amount of time to wait for the connection to complete
@@ -419,7 +434,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public <C, R> void send(Member destination, CommandMessage<C> command,
+    public <C, R> void send(Member destination,
+                            CommandMessage<C> command,
                             CommandCallback<? super C, R> callback) throws Exception {
         callbackRepository.store(command.getIdentifier(), new CommandCallbackWrapper<>(destination, command, callback));
         channel.send(resolveAddress(destination), new JGroupsDispatchMessage(command, serializer, true));
@@ -439,9 +455,10 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * @throws CommandBusConnectorCommunicationException when an error occurs resolving the adress
      */
     protected Address resolveAddress(Member destination) {
-        return destination.getConnectionEndpoint(Address.class).orElseThrow(
-                () -> new CommandBusConnectorCommunicationException(
-                        "The target member doesn't expose a JGroups endpoint"));
+        return destination.getConnectionEndpoint(Address.class)
+                          .orElseThrow(() -> new CommandBusConnectorCommunicationException(
+                                  "The target member doesn't expose a JGroups endpoint"
+                          ));
     }
 
     @Override
@@ -514,10 +531,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
 
         /**
-         * Sets the {@link Serializer} is used to serialize command messages when they are sent between nodes.
+         * Sets the {@link Serializer} used to serialize command messages when they are sent between nodes.
          *
-         * @param serializer the {@link Serializer} is used to serialize command messages when they are sent between
-         *                   nodes
+         * @param serializer the {@link Serializer} used to serialize command messages when they are sent between nodes
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
