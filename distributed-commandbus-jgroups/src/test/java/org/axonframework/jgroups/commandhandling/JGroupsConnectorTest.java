@@ -72,8 +72,20 @@ public class JGroupsConnectorTest {
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = new XStreamSerializer();
-        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
-        connector2 = new JGroupsConnector(mockCommandBus2, channel2, clusterName, serializer, routingStrategy);
+        connector1 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus1)
+                                     .channel(channel1)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
+        connector2 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus2)
+                                     .channel(channel2)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
 
         dcb1 = new DistributedCommandBus(connector1, connector1);
         dcb2 = new DistributedCommandBus(connector2, connector2);
@@ -317,7 +329,13 @@ public class JGroupsConnectorTest {
         when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize success"));
         when(serializer.serialize(failureResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize failure"));
 
-        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
+        connector1 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus1)
+                                     .channel(channel1)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
         dcb1 = new DistributedCommandBus(connector1, connector1);
 
         dcb1.subscribe(String.class.getName(), c -> successResponse);
