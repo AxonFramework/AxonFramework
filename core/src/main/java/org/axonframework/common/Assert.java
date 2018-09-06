@@ -105,9 +105,10 @@ public abstract class Assert {
      * @param <X>               a generic extending {@link Throwable} which will be provided by the
      *                          {@code exceptionSupplier}
      */
+    @SuppressWarnings("RedundantThrows") // Throws signature required for correct compilation
     public static <T, X extends Throwable> void assertThat(T value,
                                                            Predicate<T> assertion,
-                                                           Supplier<? extends X> exceptionSupplier) {
+                                                           Supplier<? extends X> exceptionSupplier) throws X {
         if (!assertion.test(value)) {
             throw exceptionSupplier.get();
         }
