@@ -19,7 +19,9 @@ package org.axonframework.deadline;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -39,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.String.format;
 import static org.axonframework.common.Assert.notNull;
 
 /**
@@ -126,8 +129,15 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                          ScopeDescriptor deadlineScope,
                          String scheduleId) {
         runOnPrepareCommitOrNow(() -> {
+            DeadlineMessage<Object> deadlineMessage =
+                    GenericDeadlineMessage.asDeadlineMessage(deadlineName, messageOrPayload);
+            deadlineMessage = processDispatchInterceptors(deadlineMessage);
+            DeadlineTask deadlineTask = new DeadlineTask(deadlineName,
+                                                         deadlineScope,
+                                                         deadlineMessage,
+                                                         scheduleId);
             ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
-                    new DeadlineTask(deadlineName, deadlineScope, messageOrPayload, scheduleId),
+                    deadlineTask,
                     triggerDuration.toMillis(),
                     TimeUnit.MILLISECONDS
             );
@@ -161,23 +171,21 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
 
         private final String deadlineName;
         private final ScopeDescriptor deadlineScope;
-        private final Object messageOrPayload;
+        private final DeadlineMessage<?> deadlineMessage;
         private final String deadlineId;
 
         private DeadlineTask(String deadlineName,
                              ScopeDescriptor deadlineScope,
-                             Object messageOrPayload,
+                             DeadlineMessage<?> deadlineMessage,
                              String deadlineId) {
             this.deadlineName = deadlineName;
             this.deadlineScope = deadlineScope;
-            this.messageOrPayload = messageOrPayload;
+            this.deadlineMessage = deadlineMessage;
             this.deadlineId = deadlineId;
         }
 
         @Override
         public void run() {
-            DeadlineMessage<?> deadlineMessage =
-                    GenericDeadlineMessage.asDeadlineMessage(deadlineName, messageOrPayload);
             if (logger.isDebugEnabled()) {
                 logger.debug("Triggered deadline");
             }
@@ -185,7 +193,18 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
             try {
                 UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
                 unitOfWork.attachTransaction(transactionManager);
-                unitOfWork.execute(() -> executeScheduledDeadline(deadlineMessage, deadlineScope));
+                InterceptorChain chain =
+                        new DefaultInterceptorChain<>(unitOfWork,
+                                                      handlerInterceptors(),
+                                                      dm -> {
+                                                          executeScheduledDeadline(dm, deadlineScope);
+                                                          return null;
+                                                      });
+                unitOfWork.executeWithResult(chain::proceed);
+            } catch (Exception e) {
+                throw new DeadlineException(format("An error occurred while processing the deadline %s %s",
+                                                   deadlineName,
+                                                   deadlineId), e);
             } finally {
                 scheduledTasks.remove(new DeadlineId(deadlineName, deadlineId));
             }
@@ -198,7 +217,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                                   try {
                                       scopeAwareComponent.send(deadlineMessage, deadlineScope);
                                   } catch (Exception e) {
-                                      String exceptionMessage = String.format(
+                                      String exceptionMessage = format(
                                               "Failed to send a DeadlineMessage for scope [%s]",
                                               deadlineScope.scopeDescription()
                                       );

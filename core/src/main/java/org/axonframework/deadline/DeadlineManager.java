@@ -17,6 +17,8 @@
 package org.axonframework.deadline;
 
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
@@ -32,7 +34,8 @@ import java.time.Instant;
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface DeadlineManager {
+public interface DeadlineManager extends MessageDispatchInterceptorSupport<DeadlineMessage<?>>,
+        MessageHandlerInterceptorSupport<DeadlineMessage<?>> {
 
     /**
      * Schedules a deadline at given {@code triggerDateTime} with given {@code deadlineName}. The payload of this

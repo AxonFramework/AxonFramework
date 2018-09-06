@@ -128,6 +128,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         scheduler.getContext().put(DeadlineJob.TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(DeadlineJob.SCOPE_AWARE_RESOLVER, scopeAwareProvider);
         scheduler.getContext().put(DeadlineJob.JOB_DATA_SERIALIZER, serializer);
+        scheduler.getContext().put(DeadlineJob.HANDLER_INTERCEPTORS, handlerInterceptors());
     }
 
     @Override
@@ -137,7 +138,8 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                          ScopeDescriptor deadlineScope,
                          String scheduleId) {
         runOnPrepareCommitOrNow(() -> {
-            DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+            DeadlineMessage deadlineMessage = processDispatchInterceptors(asDeadlineMessage(deadlineName,
+                                                                                            messageOrPayload));
             try {
                 JobDetail jobDetail = buildJobDetail(deadlineMessage,
                                                      deadlineScope,

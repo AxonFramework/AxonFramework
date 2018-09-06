@@ -16,8 +16,15 @@
 
 package org.axonframework.deadline;
 
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the
@@ -30,6 +37,9 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
  * @since 3.3
  */
 public abstract class AbstractDeadlineManager implements DeadlineManager {
+
+    private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Run a given {@code deadlineCall} immediately, or schedule it for the {@link UnitOfWork.Phase#PREPARE_COMMIT}
@@ -44,5 +54,55 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
         } else {
             deadlineCall.run();
         }
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super DeadlineMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
+    }
+
+    @Override
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super DeadlineMessage<?>> handlerInterceptor) {
+        handlerInterceptors.add(handlerInterceptor);
+        return () -> handlerInterceptors.remove(handlerInterceptor);
+    }
+
+    /**
+     * Provides a list of registered dispatch interceptors. Do note that this list is not modifiable, and that changes
+     * in the internal structure for dispatch interceptors will be reflected in this list.
+     *
+     * @return a list of dispatch interceptors
+     */
+    protected List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors() {
+        return Collections.unmodifiableList(dispatchInterceptors);
+    }
+
+    /**
+     * Provides a list of registered handler interceptors. Do note that this list is not modifiable, and that changes
+     * in the internal structure for handler interceptors will be reflected in this list.
+     *
+     * @return a list of handler interceptors
+     */
+    protected List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors() {
+        return Collections.unmodifiableList(handlerInterceptors);
+    }
+
+    /**
+     * Applies registered {@link MessageDispatchInterceptor}s to the given {@code message}.
+     *
+     * @param message the deadline message to be intercepted
+     * @param <T>     the type of deadline message payload
+     * @return intercepted message
+     */
+    @SuppressWarnings("unchecked")
+    protected <T> DeadlineMessage<T> processDispatchInterceptors(DeadlineMessage<T> message) {
+        DeadlineMessage<T> intercepted = message;
+        for (MessageDispatchInterceptor<? super DeadlineMessage<?>> interceptor : dispatchInterceptors()) {
+            intercepted = (DeadlineMessage<T>) interceptor.handle(intercepted);
+        }
+        return intercepted;
     }
 }

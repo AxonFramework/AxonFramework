@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 
 import java.util.List;
@@ -45,7 +46,7 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
 
     /**
      * Return the list of already registered {@link MessageHandlerInterceptor}s for this event processor.
-     * To register a new interceptor use {@link EventProcessor#registerInterceptor(MessageHandlerInterceptor)}
+     * To register a new interceptor use {@link EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)}
      *
      * @return the list of registered interceptors of this event processor
      */

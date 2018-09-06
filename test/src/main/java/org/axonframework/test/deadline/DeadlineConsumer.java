@@ -36,6 +36,7 @@ public interface DeadlineConsumer {
      * @param deadlineScope   A description of the {@link org.axonframework.messaging.Scope} in which a deadline was
      *                        scheduled
      * @param deadlineMessage the {@link DeadlineMessage} to be handled
+     * @throws Exception in case something goes wrong while consuming the {@code deadlineMessage}
      */
-    void consume(ScopeDescriptor deadlineScope, DeadlineMessage<?> deadlineMessage);
+    void consume(ScopeDescriptor deadlineScope, DeadlineMessage<?> deadlineMessage) throws Exception;
 }
