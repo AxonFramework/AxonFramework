@@ -51,19 +51,13 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
      * The {@link RoutingKeyResolver} is defaulted to a {@link PackageRoutingKeyResolver} and the {@code durable} field
      * defaults to {@code true}. The {@link Serializer} is a <b>hard requirement</b> and thus should be provided.
      * <p>
-     * Will assert that the {@link Serializer} and {@link RoutingKeyResolver} are not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if either of them is {@code null}.
+     * Will validate that the {@link Serializer} and {@link RoutingKeyResolver} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if for either of them this holds.
      *
      * @param builder the {@link Builder} used to instantiate a {@link DefaultAMQPMessageConverter} instance
      */
     protected DefaultAMQPMessageConverter(Builder builder) {
-        assertThat(builder.serializer,
-                   Objects::nonNull,
-                   () -> new AxonConfigurationException("Serializer may not be null"));
-        assertThat(builder.routingKeyResolver,
-                   Objects::nonNull,
-                   () -> new AxonConfigurationException("RoutingKeyResolver may not be null"));
-
+        builder.validate();
         this.serializer = builder.serializer;
         this.routingKeyResolver = builder.routingKeyResolver;
         this.durable = builder.durable;
@@ -72,7 +66,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     /**
      * Instantiate a Builder to be able to create a {@link DefaultAMQPMessageConverter}.
      * The {@link RoutingKeyResolver} is defaulted to a {@link PackageRoutingKeyResolver} and the {@code durable} field
-     * defaults to {@code true}. The {@link Serializer} is a <b>hard requirement</b> and thus should be provided.
+     * defaults to {@code true}. The {@link Serializer} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link DefaultAMQPMessageConverter}.
      */
@@ -191,6 +185,15 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          */
         public DefaultAMQPMessageConverter build() {
             return new DefaultAMQPMessageConverter(this);
+        }
+
+        private void validate() {
+            assertThat(serializer,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("Serializer may not be null"));
+            assertThat(routingKeyResolver,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("RoutingKeyResolver may not be null"));
         }
     }
 }
