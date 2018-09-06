@@ -16,6 +16,7 @@
 
 package org.axonframework.common;
 
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -91,4 +92,24 @@ public abstract class Assert {
         return value;
     }
 
+    /**
+     * Assert that the given {@code value} will result to {@code true} through the {@code assertion}  {@link Predicate}.
+     * If not, the {@code exceptionSupplier} provides an exception
+     * to be thrown.
+     *
+     * @param value             a {@code T} specifying the value to assert
+     * @param assertion         a {@link Predicate} to test {@code value} against
+     * @param exceptionSupplier a {@link Supplier} of the exception {@code X} if {@code assertion} evaluates to false
+     * @param <T>               a generic specifying the type of the {@code value}, which is the input for the
+     *                          {@code assertion}
+     * @param <X>               a generic extending {@link Throwable} which will be provided by the
+     *                          {@code exceptionSupplier}
+     */
+    public static <T, X extends Throwable> void assertThat(T value,
+                                                           Predicate<T> assertion,
+                                                           Supplier<? extends X> exceptionSupplier) {
+        if (!assertion.test(value)) {
+            throw exceptionSupplier.get();
+        }
+    }
 }
