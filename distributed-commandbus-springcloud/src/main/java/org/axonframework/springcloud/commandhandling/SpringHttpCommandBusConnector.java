@@ -277,7 +277,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         }
 
         /**
-         * Initializes a {@link SpringHttpCommandBusConnector} with the set {@code --}...
+         * Initializes a {@link SpringHttpCommandBusConnector} with the set {@code localCommandBus} of type
+         * {@link CommandBus}, {@link RestOperations}  and {@link Serializer}.
          *
          * @return a {@link SpringHttpCommandBusConnector} as specified through this Builder
          */
