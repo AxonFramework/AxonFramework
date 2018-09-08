@@ -20,10 +20,9 @@ import org.axonframework.commandhandling.distributed.ConsistentHashChangeListene
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.common.AxonConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.serviceregistry.Registration;
@@ -38,8 +37,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+
+import static org.axonframework.common.Assert.assertThat;
 
 /**
  * Implementation of the {@link org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter} which has a
@@ -75,130 +77,37 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     private volatile MessageRoutingInformation messageRoutingInfo;
 
     /**
-     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
-     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
-     * org.axonframework.commandhandling.distributed.ConsistentHash}.
-     * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
-     * respective handler nodes.
-     * The {@link org.springframework.web.client.RestTemplate} is used as a backup mechanism to request another member's
-     * {@link org.axonframework.springcloud.commandhandling.MessageRoutingInformation} with.
-     * Uses a default {@code Predicate<ServiceInstance>} filter function which allows any
-     * {@link org.springframework.cloud.client.ServiceInstance} through the update membership process.
-     * Uses a default NoOp {@link org.axonframework.commandhandling.distributed.ConsistentHashChangeListener} which is
-     * called if the ConsistentHash changed.
+     * Instantiate a {@link SpringCloudHttpBackupCommandRouter} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link RestTemplate} and {@code messageRoutingInformationEndpoint} are not {@code null},
+     * and will throw an {@link AxonConfigurationException} if either of them is {@code null}. All asserts performed by
+     * the {@link SpringCloudCommandRouter.Builder} are also taken into account with identical consequences.
      *
-     * @param discoveryClient                   The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param localServiceInstance              A {@link org.springframework.cloud.client.serviceregistry.Registration}
-     *                                          representing the local Service Instance of this application. Necessary
-     *                                          to differentiate between other instances for correct message routing
-     * @param routingStrategy                   The strategy for routing Commands to a Node
-     * @param restTemplate                      The {@code RestTemplate} used to request another member's {@link
-     *                                          org.axonframework.springcloud.commandhandling.MessageRoutingInformation}
-     *                                          with.
-     * @param messageRoutingInformationEndpoint The endpoint where to retrieve the another nodes message routing
-     *                                          information from
+     * @param builder the {@link Builder} used to instantiate a {@link SpringCloudHttpBackupCommandRouter} instance
      */
-    @Autowired
-    public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
-                                              Registration localServiceInstance,
-                                              RoutingStrategy routingStrategy,
-                                              RestTemplate restTemplate,
-                                              @Value("${axon.distributed.spring-cloud.fallback-url:/message-routing-information}") String messageRoutingInformationEndpoint) {
-        this(discoveryClient,
-             localServiceInstance,
-             routingStrategy,
-             ACCEPT_ALL_INSTANCES_FILTER,
-             restTemplate,
-             messageRoutingInformationEndpoint);
-    }
-
-    /**
-     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
-     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
-     * org.axonframework.commandhandling.distributed.ConsistentHash}.
-     * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
-     * respective handler nodes.
-     * A {@code Predicate<ServiceInstance>} to filter a {@link org.springframework.cloud.client.ServiceInstance} from
-     * the membership update loop.
-     * The {@link org.springframework.web.client.RestTemplate} is used as a backup mechanism to request another member's
-     * {@link org.axonframework.springcloud.commandhandling.MessageRoutingInformation} with.
-     * * Uses a default NoOp {@link org.axonframework.commandhandling.distributed.ConsistentHashChangeListener} which is
-     * called if the ConsistentHash changed.
-     *
-     * @param discoveryClient                   The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param localServiceInstance              A {@link org.springframework.cloud.client.serviceregistry.Registration}
-     *                                          representing the local Service Instance of this application. Necessary
-     *                                          to differentiate between other instances for correct message routing
-     * @param routingStrategy                   The strategy for routing Commands to a Node
-     * @param serviceInstanceFilter             The {@code Predicate<ServiceInstance>} used to filter
-     * @param restTemplate                      The {@code RestTemplate} used to request another member's {@link
-     *                                          org.axonframework.springcloud.commandhandling.MessageRoutingInformation}
-     *                                          with.
-     * @param messageRoutingInformationEndpoint The endpoint where to retrieve the
-     *                                          another nodes message routing
-     *                                          information from
-     */
-    public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
-                                              Registration localServiceInstance,
-                                              RoutingStrategy routingStrategy,
-                                              Predicate<ServiceInstance> serviceInstanceFilter,
-                                              RestTemplate restTemplate,
-                                              String messageRoutingInformationEndpoint) {
-        this(discoveryClient,
-             localServiceInstance,
-             routingStrategy,
-             serviceInstanceFilter,
-             ConsistentHashChangeListener.noOp(),
-             restTemplate,
-             messageRoutingInformationEndpoint);
-    }
-
-    /**
-     * Initialize a {@link org.axonframework.commandhandling.distributed.CommandRouter} with the given {@link
-     * org.springframework.cloud.client.discovery.DiscoveryClient} to update its own membership as a {@code
-     * CommandRouter} and to create its own awareness of available nodes to send commands to in a {@link
-     * org.axonframework.commandhandling.distributed.ConsistentHash}.
-     * The {@code routingStrategy} is used to define the key based on which Command Messages are routed to their
-     * respective handler nodes.
-     * A {@code Predicate<ServiceInstance>} to filter a {@link org.springframework.cloud.client.ServiceInstance} from
-     * the membership update loop.
-     * The given {@code consistentHashChangeListener} is notified about changes in membership that affect routing of
-     * messages.
-     * The {@link org.springframework.web.client.RestTemplate} is used as a backup mechanism to request another member's
-     * {@link org.axonframework.springcloud.commandhandling.MessageRoutingInformation} with.
-     *
-     * @param discoveryClient                   The {@code DiscoveryClient} used to discovery and notify other nodes
-     * @param localServiceInstance              A {@link org.springframework.cloud.client.serviceregistry.Registration}
-     *                                          representing the local Service Instance of this application. Necessary
-     *                                          to differentiate between other instances for correct message routing
-     * @param routingStrategy                   The strategy for routing Commands to a Node
-     * @param serviceInstanceFilter             The {@code Predicate<ServiceInstance>} used to filter
-     * @param consistentHashChangeListener      The callback to invoke when there is a change in the ConsistentHash
-     * @param restTemplate                      The {@code RestTemplate} used to request another member's {@link
-     *                                          org.axonframework.springcloud.commandhandling.MessageRoutingInformation}
-     *                                          with.
-     * @param messageRoutingInformationEndpoint The endpoint where to retrieve the
-     *                                          another nodes message routing
-     *                                          information from
-     */
-    public SpringCloudHttpBackupCommandRouter(DiscoveryClient discoveryClient,
-                                              Registration localServiceInstance,
-                                              RoutingStrategy routingStrategy,
-                                              Predicate<ServiceInstance> serviceInstanceFilter,
-                                              ConsistentHashChangeListener consistentHashChangeListener,
-                                              RestTemplate restTemplate,
-                                              String messageRoutingInformationEndpoint) {
-        super(discoveryClient,
-              localServiceInstance,
-              routingStrategy,
-              serviceInstanceFilter,
-              consistentHashChangeListener);
-        this.restTemplate = restTemplate;
-        this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
-        this.messageRoutingInfo = null;
+    protected SpringCloudHttpBackupCommandRouter(Builder builder) {
+        super(builder);
+        builder.validate();
+        this.restTemplate = builder.restTemplate;
+        this.messageRoutingInformationEndpoint = builder.messageRoutingInformationEndpoint;
+        messageRoutingInfo = null;
         unreachableService = new MessageRoutingInformation(0, DenyAll.INSTANCE, serializer);
+    }
+
+    /**
+     * Builder class to instantiate a {@link SpringCloudHttpBackupCommandRouter}.
+     * <p>
+     * The {@code serviceInstanceFilter} is defaulted to a {@link Predicate} which always returns {@code true}, the
+     * {@link ConsistentHashChangeListener} to a no-op solution and the {@code messageRoutingInformationEndpoint} to
+     * {@code "/message-routing-information"}.
+     * The {@link DiscoveryClient}, {@code localServiceInstance} of type {@link Registration}, the
+     * {@link RoutingStrategy}, {@link RestTemplate} and {@code messageRoutingInformationEndpoint} are <b>hard
+     * requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link SpringCloudHttpBackupCommandRouter}
+     */
+    public static Builder builder() {
+        return new Builder().serviceInstanceFilter(ACCEPT_ALL_INSTANCES_FILTER);
     }
 
     @Override
@@ -247,7 +156,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                                                                              HttpEntity.EMPTY,
                                                                                              MessageRoutingInformation.class);
 
-            return responseEntity.hasBody() ? Optional.of(responseEntity.getBody()) : Optional.empty();
+            return Optional.ofNullable(responseEntity.getBody());
         } catch (HttpClientErrorException e) {
             logger.info("Blacklisting Service [" + serviceInstance.getServiceId() + "], "
                                 + "as requesting message routing information from it resulted in an exception.", e);
@@ -265,5 +174,105 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
                                    .path(uri.getPath() + appendToPath)
                                    .build()
                                    .toUri();
+    }
+
+    /**
+     * Builder class to instantiate a {@link SpringCloudHttpBackupCommandRouter}.
+     * <p>
+     * The {@code serviceInstanceFilter} is defaulted to a {@link Predicate} which always returns {@code true}, the
+     * {@link ConsistentHashChangeListener} to a no-op solution and the {@code messageRoutingInformationEndpoint} to
+     * {@code "/message-routing-information"}.
+     * The {@link DiscoveryClient}, {@code localServiceInstance} of type {@link Registration}, the
+     * {@link RoutingStrategy}, {@link RestTemplate} and {@code messageRoutingInformationEndpoint} are <b>hard
+     * requirements</b> and as such should be provided.
+     */
+    public static class Builder extends SpringCloudCommandRouter.Builder {
+
+        private RestTemplate restTemplate;
+        private String messageRoutingInformationEndpoint = "/message-routing-information";
+
+        @Override
+        public Builder discoveryClient(DiscoveryClient discoveryClient) {
+            super.discoveryClient(discoveryClient);
+            return this;
+        }
+
+        @Override
+        public Builder localServiceInstance(Registration localServiceInstance) {
+            super.localServiceInstance(localServiceInstance);
+            return this;
+        }
+
+        @Override
+        public Builder routingStrategy(RoutingStrategy routingStrategy) {
+            super.routingStrategy(routingStrategy);
+            return this;
+        }
+
+        @Override
+        public Builder serviceInstanceFilter(
+                Predicate<ServiceInstance> serviceInstanceFilter) {
+            super.serviceInstanceFilter(serviceInstanceFilter);
+            return this;
+        }
+
+        @Override
+        public Builder consistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
+            super.consistentHashChangeListener(consistentHashChangeListener);
+            return this;
+        }
+
+        /**
+         * Sets the {@link RestTemplate} used as the backup mechanism to request another member's
+         * {@link MessageRoutingInformation} with.
+         *
+         * @param restTemplate the {@link RestTemplate} used as the backup mechanism to request another member's
+         *                     {@link MessageRoutingInformation} with.
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder restTemplate(RestTemplate restTemplate) {
+            assertThat(restTemplate,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("RestTemplate may not be null"));
+            this.restTemplate = restTemplate;
+            return this;
+        }
+
+        /**
+         * Sets the {@code messageRoutingInformationEndpoint} of type {@link String}, which is the endpoint where to
+         * retrieve the another nodes message routing information from
+         *
+         * @param messageRoutingInformationEndpoint the endpoint where to retrieve the another nodes message routing
+         *                                          information from
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder messageRoutingInformationEndpoint(String messageRoutingInformationEndpoint) {
+            assertThat(messageRoutingInformationEndpoint,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("The messageRoutingInformationEndpoint may not be null"));
+            this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SpringCloudHttpBackupCommandRouter} with the set {@link DiscoveryClient},
+         * {@code localServiceInstance} of type {@link Registration}, {@link RoutingStrategy},
+         * {@code serviceInstanceFilter}, {@link ConsistentHashChangeListener}, {@link RestTemplate} and
+         * {@code messageRoutingInformationEndpoint}.
+         *
+         * @return a {@link SpringCloudHttpBackupCommandRouter} as specified through this Builder
+         */
+        public SpringCloudHttpBackupCommandRouter build() {
+            return new SpringCloudHttpBackupCommandRouter(this);
+        }
+
+        private void validate() {
+            assertThat(restTemplate,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("RestTemplate may not be null"));
+            assertThat(messageRoutingInformationEndpoint,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("The messageRoutingInformationEndpoint may not be null"));
+        }
     }
 }

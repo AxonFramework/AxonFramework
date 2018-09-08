@@ -21,12 +21,9 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
 import org.mockito.junit.*;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -88,18 +85,20 @@ public class SpringCloudHttpBackupCommandRouterTest {
                 new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(true);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
         URI expectedRemoteUri = URI.create("http://remote/message-routing-information");
         when(restTemplate.exchange(
                 eq(expectedRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
         )).thenReturn(responseEntity);
 
-        testSubject = new SpringCloudHttpBackupCommandRouter(discoveryClient,
-                                                             localServiceInstance,
-                                                             routingStrategy,
-                                                             restTemplate,
-                                                             messageRoutingInformationEndpoint);
+        testSubject = SpringCloudHttpBackupCommandRouter.builder()
+                                                        .discoveryClient(discoveryClient)
+                                                        .localServiceInstance(localServiceInstance)
+                                                        .routingStrategy(routingStrategy)
+                                                        .restTemplate(restTemplate)
+                                                        .messageRoutingInformationEndpoint(
+                                                                messageRoutingInformationEndpoint
+                                                        ).build();
     }
 
     @Test
@@ -163,7 +162,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(nonAxonInstance.getUri()).thenReturn(URI.create("http://non-axon"));
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(false);
         URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
         when(restTemplate.exchange(
                 eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
@@ -218,7 +216,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(nonAxonInstance.getUri()).thenReturn(URI.create("http://faulty-axon"));
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(true);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);
         URI testRemoteUri = URI.create("http://faulty-axon/message-routing-information");
         when(restTemplate.exchange(
@@ -275,7 +272,6 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(discoveryClient.getInstances(nonAxonServiceInstanceId)).thenReturn(ImmutableList.of(nonAxonInstance));
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.hasBody()).thenReturn(false);
         URI testRemoteUri = URI.create("http://non-axon/message-routing-information");
         when(restTemplate.exchange(
                 eq(testRemoteUri), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(MessageRoutingInformation.class)
