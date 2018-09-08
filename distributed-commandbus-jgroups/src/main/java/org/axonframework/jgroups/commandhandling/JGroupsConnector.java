@@ -563,7 +563,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
         /**
          * Sets the {@link ConsistentHashChangeListener} which is notified when a change in membership has
-         * <em>potentially</em> caused a change in the consistent hash.
+         * <em>potentially</em> caused a change in the consistent hash. Defaults to a no-op solution.
          *
          * @param consistentHashChangeListener the {@link ConsistentHashChangeListener} which is notified when a change
          *                                     in membership has <em>potentially</em> caused a change in the consistent
