@@ -73,7 +73,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
      * <p>
      * Will assert that the {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and
      * {@link Serializer} are not {@code null}, and will throw an {@link AxonConfigurationException} if
-     * either of them is {@code null}.
+     * any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link SpringHttpCommandBusConnector} instance
      */

@@ -103,7 +103,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * <p>
      * Will validate that the {@code localSegment}, {@link JChannel}, {@code clusterName}, {@link Serializer},
      * {@link RoutingStrategy} and {@link ConsistentHashChangeListener} are not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if either of them is {@code null}.
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link JGroupsConnector} instance
      */
