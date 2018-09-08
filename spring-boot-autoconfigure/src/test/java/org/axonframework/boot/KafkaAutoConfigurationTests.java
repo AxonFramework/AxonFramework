@@ -286,7 +286,7 @@ public class KafkaAutoConfigurationTests {
         }
 
         @Bean
-        AxonConfiguration axonConfiguration() {
+        public AxonConfiguration axonConfiguration() {
             AxonConfiguration mock = mock(AxonConfiguration.class);
             when(mock.messageMonitor(any(), any())).thenReturn((MessageMonitor) NoOpMessageMonitor.instance());
             return mock;
