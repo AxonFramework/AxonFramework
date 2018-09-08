@@ -60,7 +60,7 @@ public class KafkaAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnProperty("axon.kafka.producer.transaction-id-prefix")
     @Bean
-    public ProducerFactory<String, byte[]> producerFactory() {
+    public ProducerFactory<String, byte[]> kafkaProducerFactory() {
         Map<String, Object> producer = properties.buildProducerProperties();
         String transactionIdPrefix = properties.getProducer().getTransactionIdPrefix();
         if (transactionIdPrefix == null) {
@@ -82,14 +82,14 @@ public class KafkaAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean(initMethod = "start", destroyMethod = "shutDown")
     @ConditionalOnBean(ProducerFactory.class)
-    public KafkaPublisher<String, byte[]> kafkaPublisher(ProducerFactory<String, byte[]> producerFactory,
+    public KafkaPublisher<String, byte[]> kafkaPublisher(ProducerFactory<String, byte[]> kafkaProducerFactory,
                                                          EventBus eventBus,
-                                                         KafkaMessageConverter<String, byte[]> messageConverter,
+                                                         KafkaMessageConverter<String, byte[]> kafkaMessageConverter,
                                                          AxonConfiguration configuration) {
         return new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
                                             .withTopic(properties.getDefaultTopic())
-                                            .withMessageConverter(messageConverter)
-                                            .withProducerFactory(producerFactory)
+                                            .withMessageConverter(kafkaMessageConverter)
+                                            .withProducerFactory(kafkaProducerFactory)
                                             .withMessageSource(eventBus)
                                             .withMessageMonitor(configuration
                                                                         .messageMonitor(KafkaPublisher.class, "kafkaPublisher"))
@@ -97,14 +97,14 @@ public class KafkaAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
+    @ConditionalOnBean(ConsumerFactory.class)
     @Bean(destroyMethod = "shutdown")
-    @ConditionalOnBean({ConsumerFactory.class, KafkaMessageConverter.class})
-    public Fetcher kafkaFetcher(ConsumerFactory<String, byte[]> consumerFactory,
-                                                KafkaMessageConverter<String, byte[]> messageConverter) {
-        return AsyncFetcher.builder(consumerFactory)
+    public Fetcher kafkaFetcher(ConsumerFactory<String, byte[]> kafkaConsumerFactory,
+                                KafkaMessageConverter<String, byte[]> kafkaMessageConverter) {
+        return AsyncFetcher.builder(kafkaConsumerFactory)
                            .withTopic(properties.getDefaultTopic())
                            .withPollTimeout(properties.getFetcher().getPollTimeout(), MILLISECONDS)
-                           .withMessageConverter(messageConverter)
+                           .withMessageConverter(kafkaMessageConverter)
                            .withBufferFactory(() -> new SortedKafkaMessageBuffer<>(properties.getFetcher().getBufferSize()))
                            .build();
 
@@ -113,8 +113,8 @@ public class KafkaAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     @ConditionalOnBean(ConsumerFactory.class)
-    public KafkaMessageSource kafkaMessageSource(Fetcher fetcher) {
-        return new KafkaMessageSource(fetcher);
+    public KafkaMessageSource kafkaMessageSource(Fetcher kafkaFetcher) {
+        return new KafkaMessageSource(kafkaFetcher);
     }
 
     @ConditionalOnMissingBean
