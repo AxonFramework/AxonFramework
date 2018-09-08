@@ -92,7 +92,11 @@ public class SpringCloudAutoConfiguration {
             @Qualifier("localSegment") CommandBus localSegment,
             RestTemplate restTemplate,
             @Qualifier("messageSerializer") Serializer serializer) {
-        return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
+        return SpringHttpCommandBusConnector.builder()
+                                            .localCommandBus(localSegment)
+                                            .restOperations(restTemplate)
+                                            .serializer(serializer)
+                                            .build();
     }
 
     @Bean

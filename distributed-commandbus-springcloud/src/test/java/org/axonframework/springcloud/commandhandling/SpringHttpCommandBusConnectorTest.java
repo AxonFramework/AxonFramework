@@ -8,14 +8,16 @@ import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.serialization.*;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.ArgumentMatcher;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.SerializedMetaData;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -43,7 +45,6 @@ public class SpringHttpCommandBusConnectorTest {
     private static final Exception COMMAND_ERROR = new Exception();
     private static final byte[] SERIALIZED_ERROR_DATA = {};
 
-    @InjectMocks
     private SpringHttpCommandBusConnector testSubject;
     @Mock
     private CommandBus localCommandBus;
@@ -68,8 +69,13 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        expectedUri = new URI(ENDPOINT.getScheme(), ENDPOINT.getUserInfo(), ENDPOINT.getHost(),
-                              ENDPOINT.getPort(), ENDPOINT.getPath() + "/spring-command-bus-connector/command", null, null);
+        expectedUri = new URI(ENDPOINT.getScheme(),
+                              ENDPOINT.getUserInfo(),
+                              ENDPOINT.getHost(),
+                              ENDPOINT.getPort(),
+                              ENDPOINT.getPath() + "/spring-command-bus-connector/command",
+                              null,
+                              null);
 
         when(serializedMetaData.getContentType()).thenReturn(byte[].class);
         when(serializedMetaData.getData()).thenReturn(SERIALIZED_COMMAND_METADATA);
@@ -97,11 +103,20 @@ public class SpringHttpCommandBusConnectorTest {
         when(serializer.serialize(COMMAND_MESSAGE.getPayload(), byte[].class)).thenReturn(serializedPayload);
         when(serializer.serialize(COMMAND_RESULT, byte[].class)).thenReturn(serializedResult);
         when(serializer.serialize(COMMAND_ERROR, byte[].class)).thenReturn(serializedError);
-        when(serializer.deserialize(new SimpleSerializedObject<>(SERIALIZED_COMMAND_PAYLOAD, byte[].class,
-                                                                 String.class.getName(), null))).thenReturn(COMMAND_MESSAGE.getPayload());
+        when(serializer.deserialize(new SimpleSerializedObject<>(SERIALIZED_COMMAND_PAYLOAD,
+                                                                 byte[].class,
+                                                                 String.class.getName(),
+                                                                 null))
+        ).thenReturn(COMMAND_MESSAGE.getPayload());
         when(serializer.deserialize(new SerializedMetaData<>(SERIALIZED_COMMAND_METADATA, byte[].class)))
                 .thenReturn(COMMAND_MESSAGE.getMetaData());
         when(serializer.getConverter()).thenReturn(new ChainingConverter());
+
+        testSubject = SpringHttpCommandBusConnector.builder()
+                                                   .localCommandBus(localCommandBus)
+                                                   .restOperations(restTemplate)
+                                                   .serializer(serializer)
+                                                   .build();
     }
 
     @Test
@@ -133,8 +148,11 @@ public class SpringHttpCommandBusConnectorTest {
                 new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(), true, COMMAND_RESULT, serializer);
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
-        when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
-                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))).thenReturn(testResponseEntity);
+        when(restTemplate.exchange(eq(expectedUri),
+                                   eq(HttpMethod.POST),
+                                   eq(expectedHttpEntity),
+                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))
+        ).thenReturn(testResponseEntity);
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
@@ -157,8 +175,11 @@ public class SpringHttpCommandBusConnectorTest {
                 new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(), false, COMMAND_ERROR, serializer);
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
-        when(restTemplate.exchange(eq(expectedUri), eq(HttpMethod.POST), eq(expectedHttpEntity),
-                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))).thenReturn(testResponseEntity);
+        when(restTemplate.exchange(eq(expectedUri),
+                                   eq(HttpMethod.POST),
+                                   eq(expectedHttpEntity),
+                                   argThat(new ParameterizedTypeReferenceMatcher<String>()))
+        ).thenReturn(testResponseEntity);
 
         testSubject.send(DESTINATION, COMMAND_MESSAGE, commandCallback);
 
@@ -192,7 +213,7 @@ public class SpringHttpCommandBusConnectorTest {
                 new SimpleSerializedObject<>(SERIALIZED_RESULT_DATA, byte[].class, String.class.getName(), null);
         when(serializer.deserialize(expectedSerializedResult)).thenReturn(COMMAND_RESULT);
         doAnswer(a -> {
-            SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback<String,String> callback =
+            SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback<String, String> callback =
                     (SpringHttpCommandBusConnector.SpringHttpReplyFutureCallback) a.getArguments()[1];
             callback.onSuccess(COMMAND_MESSAGE, COMMAND_RESULT);
             return a;
@@ -292,7 +313,8 @@ public class SpringHttpCommandBusConnectorTest {
             ArgumentMatcher<ParameterizedTypeReference<SpringHttpReplyMessage<R>>> {
 
         private ParameterizedTypeReference<SpringHttpReplyMessage<R>> expected =
-                new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() { };
+                new ParameterizedTypeReference<SpringHttpReplyMessage<R>>() {
+                };
 
         @Override
         public boolean matches(ParameterizedTypeReference<SpringHttpReplyMessage<R>> actual) {
@@ -301,5 +323,4 @@ public class SpringHttpCommandBusConnectorTest {
                           .equals(expected.getType().getTypeName());
         }
     }
-
 }
