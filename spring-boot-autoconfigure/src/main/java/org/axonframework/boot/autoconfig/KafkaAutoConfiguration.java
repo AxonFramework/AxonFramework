@@ -80,8 +80,15 @@ public class KafkaAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
+    @Bean
+    public KafkaMessageConverter<String, byte[]> kafkaMessageConverter(
+            @Qualifier("eventSerializer") Serializer eventSerializer) {
+        return new DefaultKafkaMessageConverter(eventSerializer);
+    }
+
+    @ConditionalOnMissingBean
     @Bean(initMethod = "start", destroyMethod = "shutDown")
-    @ConditionalOnBean(ProducerFactory.class)
+    @ConditionalOnBean({ProducerFactory.class, KafkaMessageConverter.class})
     public KafkaPublisher<String, byte[]> kafkaPublisher(ProducerFactory<String, byte[]> kafkaProducerFactory,
                                                          EventBus eventBus,
                                                          KafkaMessageConverter<String, byte[]> kafkaMessageConverter,
@@ -97,7 +104,7 @@ public class KafkaAutoConfiguration {
     }
 
     @ConditionalOnMissingBean
-    @ConditionalOnBean(ConsumerFactory.class)
+    @ConditionalOnBean({ConsumerFactory.class, KafkaMessageConverter.class})
     @Bean(destroyMethod = "shutdown")
     public Fetcher kafkaFetcher(ConsumerFactory<String, byte[]> kafkaConsumerFactory,
                                 KafkaMessageConverter<String, byte[]> kafkaMessageConverter) {
@@ -115,12 +122,5 @@ public class KafkaAutoConfiguration {
     @ConditionalOnBean(ConsumerFactory.class)
     public KafkaMessageSource kafkaMessageSource(Fetcher kafkaFetcher) {
         return new KafkaMessageSource(kafkaFetcher);
-    }
-
-    @ConditionalOnMissingBean
-    @Bean
-    public KafkaMessageConverter<String, byte[]> kafkaMessageConverter(
-            @Qualifier("eventSerializer") Serializer eventSerializer) {
-        return new DefaultKafkaMessageConverter(eventSerializer);
     }
 }
