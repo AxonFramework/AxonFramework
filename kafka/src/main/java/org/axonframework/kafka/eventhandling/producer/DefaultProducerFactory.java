@@ -126,7 +126,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     /**
      * TransactionalId prefix for all producer instances.
      *
-     * @return the confirmation mode.
+     * @return the transactionalIdPrefix.
      */
     public String transactionIdPrefix() {
         return transactionIdPrefix;
