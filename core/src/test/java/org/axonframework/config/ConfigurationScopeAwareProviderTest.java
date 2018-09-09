@@ -20,6 +20,8 @@ import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -31,7 +33,7 @@ import static org.mockito.Mockito.when;
 public class ConfigurationScopeAwareProviderTest {
 
     @Mock
-    private Configuration config;
+    private Configuration configuration;
 
     @Mock
     private AggregateConfiguration aggregateConfiguration;
@@ -49,33 +51,56 @@ public class ConfigurationScopeAwareProviderTest {
 
     @Before
     public void setUp() {
-        scopeAwareProvider = new ConfigurationScopeAwareProvider(config);
+        scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
     }
 
     @Test
     public void providesScopeAwareAggregatesFromModuleConfiguration() {
-        when(config.findModules(AggregateConfiguration.class)).thenCallRealMethod();
-        when(config.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
+        when(configuration.findModules(AggregateConfiguration.class)).thenCallRealMethod();
+        when(configuration.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
         when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
 
-        List<ScopeAware> scopeAwares = scopeAwareProvider
-                .provideScopeAwareStream(anyScopeDescriptor())
+        List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                 .collect(toList());
 
-        assertThat(scopeAwares, equalTo(asList(aggregateRepository)));
+        assertThat(components, equalTo(asList(aggregateRepository)));
     }
 
     @Test
     public void providesScopeAwareSagasFromModuleConfiguration() {
-        when(config.findModules(SagaConfiguration.class)).thenCallRealMethod();
-        when(config.getModules()).thenReturn(asList(new WrappingModuleConfiguration(sagaConfiguration)));
+        when(configuration.findModules(SagaConfiguration.class)).thenCallRealMethod();
+        when(configuration.getModules()).thenReturn(asList(new WrappingModuleConfiguration(sagaConfiguration)));
         when(sagaConfiguration.getSagaManager()).thenReturn(sagaManager);
 
-        List<ScopeAware> scopeAwares = scopeAwareProvider
-                .provideScopeAwareStream(anyScopeDescriptor())
+        List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
                 .collect(toList());
 
-        assertThat(scopeAwares, equalTo(asList(sagaManager)));
+        assertThat(components, equalTo(asList(sagaManager)));
+    }
+
+    @Test
+    public void lazilyInitializes() {
+        new ConfigurationScopeAwareProvider(configuration);
+
+        verifyZeroInteractions(configuration);
+    }
+
+    @Test
+    public void cachesScopeAwareComponentsOnceProvisioned() {
+        when(configuration.findModules(AggregateConfiguration.class)).thenCallRealMethod();
+        when(configuration.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
+        when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
+
+        // provision once
+        List<ScopeAware> first = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
+                .collect(toList());
+        reset(configuration, aggregateConfiguration);
+
+        // provision twice
+        List<ScopeAware> second = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor()).collect(toList());
+        verifyZeroInteractions(configuration);
+        verifyZeroInteractions(aggregateConfiguration);
+        assertThat(second, equalTo(first));
     }
 
     private static ScopeDescriptor anyScopeDescriptor() {
