@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;

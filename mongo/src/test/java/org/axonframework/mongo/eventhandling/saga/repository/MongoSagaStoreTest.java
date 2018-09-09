@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.AssociationValuesImpl;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
 import org.axonframework.mongo.utils.MongoLauncher;
@@ -78,7 +79,7 @@ public class MongoSagaStoreTest {
         mongod = mongoExe.start();
         if (mongod == null) {
             // we're using an existing mongo instance. Make sure it's clean
-            org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate template = new org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate(new MongoClient());
+            DefaultMongoTemplate template = new DefaultMongoTemplate(new MongoClient());
             template.eventCollection().drop();
             template.snapshotCollection().drop();
         }

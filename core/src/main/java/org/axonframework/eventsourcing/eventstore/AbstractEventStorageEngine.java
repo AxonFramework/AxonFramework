@@ -51,25 +51,6 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
      * persistenceExceptionResolver}.
      *
-     * @param serializer                   Used to serialize and deserialize event payload and metadata. If {@code null}
-     *                                     a new {@link XStreamSerializer} is used.
-     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
-     *                                     null} a {@link NoOpEventUpcaster} is used.
-     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
-     *                                     persistence exceptions are not explicitly resolved.
-     * @deprecated The constructor which supplies an additional {@link org.axonframework.serialization.Serializer} for
-     * events should be used.
-     */
-    @Deprecated
-    protected AbstractEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
-                                         PersistenceExceptionResolver persistenceExceptionResolver) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, serializer);
-    }
-
-    /**
-     * Initializes an EventStorageEngine with given {@code serializer}, {@code upcasterChain} and {@code
-     * persistenceExceptionResolver}.
-     *
      * @param snapshotSerializer           Used to serialize and deserialize snapshots. If {@code null}
      *                                     a new {@link XStreamSerializer} is used.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code

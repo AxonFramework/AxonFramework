@@ -43,14 +43,6 @@ public @interface AggregateMember {
     boolean forwardCommands() default true;
 
     /**
-     * Indicates whether events should be forwarded to this AggregateMember. Defaults to {@code true}.
-     *
-     * @deprecated in favor of the {@code eventForwardingMode}.
-     */
-    @Deprecated
-    boolean forwardEvents() default true;
-
-    /**
      * Indicates the forwarding mode used for events within this entity. Defaults to {@link ForwardToAll} to forward all
      * events to all entities referred to by the annotated field.
      */
