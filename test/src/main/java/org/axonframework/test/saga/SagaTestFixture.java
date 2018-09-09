@@ -107,7 +107,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
-        registeredResources.add(new DefaultCommandGateway(commandBus));
+        registeredResources.add(DefaultCommandGateway.builder().commandBus(commandBus).build());
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore,
                                                                   eventScheduler,
                                                                   deadlineManager,

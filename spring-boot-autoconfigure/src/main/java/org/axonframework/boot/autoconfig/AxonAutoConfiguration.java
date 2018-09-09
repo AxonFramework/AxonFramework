@@ -157,7 +157,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
-        return new DefaultCommandGateway(commandBus);
+        return DefaultCommandGateway.builder().commandBus(commandBus).build();
     }
 
     @Bean

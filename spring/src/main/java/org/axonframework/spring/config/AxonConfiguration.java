@@ -125,7 +125,7 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @NoBeanOfType(CommandGateway.class)
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
-        return new DefaultCommandGateway(commandBus);
+        return DefaultCommandGateway.builder().commandBus(commandBus).build();
     }
 
     @NoBeanOfType(QueryGateway.class)

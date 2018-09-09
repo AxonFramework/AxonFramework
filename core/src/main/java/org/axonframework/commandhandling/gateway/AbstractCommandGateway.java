@@ -20,14 +20,17 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.common.Assert.assertThat;
 
 /**
  * Abstract implementation of a CommandGateway, which handles the dispatch interceptors and retrying on failure. The
@@ -43,24 +46,18 @@ public abstract class AbstractCommandGateway {
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
 
     /**
-     * Initialize the AbstractCommandGateway with given {@code commandBus}, {@code retryScheduler} and
-     * {@code commandDispatchInterceptors}.
+     * Instantiate a {@link AbstractCommandGateway} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link CommandBus} is not {@code null} and will throw an {@link AxonConfigurationException}
+     * if this is the case.
      *
-     * @param commandBus                  The command bus on which to dispatch events
-     * @param retryScheduler              The scheduler capable of performing retries of failed commands. May be
-     *                                    {@code null} when to prevent retries.
-     * @param messageDispatchInterceptors The interceptors to invoke when dispatching a command
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractCommandGateway} instance
      */
-    protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                     List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.notNull(commandBus, () -> "commandBus may not be null");
-        this.commandBus = commandBus;
-        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
-        } else {
-            this.dispatchInterceptors = Collections.emptyList();
-        }
-        this.retryScheduler = retryScheduler;
+    protected AbstractCommandGateway(Builder builder) {
+        builder.validate();
+        this.commandBus = builder.commandBus;
+        this.retryScheduler = builder.retryScheduler;
+        this.dispatchInterceptors = builder.dispatchInterceptors;
     }
 
     /**
@@ -116,5 +113,79 @@ public abstract class AbstractCommandGateway {
      */
     public CommandBus getCommandBus() {
         return commandBus;
+    }
+
+    /**
+     * Abstract Builder class to instantiate {@link AbstractCommandGateway} implementations.
+     * <p>
+     * The {@code dispatchInterceptors} are defaulted to an empty list.
+     * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+     */
+    public abstract static class Builder {
+
+        private CommandBus commandBus;
+        private RetryScheduler retryScheduler;
+        private List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
+                Collections.emptyList();
+
+        /**
+         * Sets the {@link CommandBus} used to dispatch commands.
+         *
+         * @param commandBus a {@link CommandBus} used to dispatch commands
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder commandBus(CommandBus commandBus) {
+            assertThat(commandBus,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("CommandBus may not be null"));
+            this.commandBus = commandBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RetryScheduler} capable of performing retries of failed commands. May be {@code null} when
+         * to prevent retries.
+         *
+         * @param retryScheduler a {@link RetryScheduler} capable of performing retries of failed commands
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder retryScheduler(RetryScheduler retryScheduler) {
+            this.retryScheduler = retryScheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link CommandMessage}s.
+         * Are invoked when a command is being dispatched.
+         *
+         * @param dispatchInterceptors which are invoked when a command is being dispatched
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+            return dispatchInterceptors(asList(dispatchInterceptors));
+        }
+
+        /**
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link CommandMessage}s.
+         * Are invoked when a command is being dispatched.
+         *
+         * @param dispatchInterceptors which are invoked when a command is being dispatched
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder dispatchInterceptors(
+                List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+            this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
+                    ? new ArrayList<>(dispatchInterceptors)
+                    : Collections.emptyList();
+            return this;
+        }
+
+        protected void validate() {
+            assertThat(commandBus,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException(
+                               "The CommandBus is a hard requirement and should be provided"));
+        }
     }
 }

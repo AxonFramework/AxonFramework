@@ -150,7 +150,7 @@ public class JgroupsConnectorTest_Gossip {
         // now, they should detect eachother and start syncing their state
         waitForConnectorSync();
 
-        CommandGateway gateway1 = new DefaultCommandGateway(bus1);
+        CommandGateway gateway1 = DefaultCommandGateway.builder().commandBus(bus1).build();
 
         doThrow(new RuntimeException("Mock")).when(serializer)
                                              .deserialize(argThat((ArgumentMatcher<SerializedObject<byte[]>>) x -> Arrays

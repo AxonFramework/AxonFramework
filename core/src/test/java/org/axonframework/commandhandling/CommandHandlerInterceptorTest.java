@@ -18,7 +18,11 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.model.*;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -27,18 +31,16 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.InterceptorChain;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.junit.*;
 
 import java.util.Objects;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -58,7 +60,7 @@ public class CommandHandlerInterceptorTest {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         Repository<MyAggregate> myAggregateRepository = new EventSourcingRepository<>(MyAggregate.class, eventStore);
         CommandBus commandBus = new SimpleCommandBus();
-        commandGateway = new DefaultCommandGateway(commandBus);
+        commandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
         AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler = new AggregateAnnotationCommandHandler<>(
                 MyAggregate.class,
                 myAggregateRepository);
@@ -153,7 +155,8 @@ public class CommandHandlerInterceptorTest {
 
     @Test
     public void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
-        new EventSourcingRepository<>(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class, eventStore);
+        new EventSourcingRepository<>(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class,
+                                      eventStore);
     }
 
     @SuppressWarnings("unchecked")

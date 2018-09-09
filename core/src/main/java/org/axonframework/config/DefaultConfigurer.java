@@ -204,7 +204,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default command gateway.
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
-        return new DefaultCommandGateway(config.commandBus());
+        return DefaultCommandGateway.builder().commandBus(config.commandBus()).build();
     }
 
     /**
