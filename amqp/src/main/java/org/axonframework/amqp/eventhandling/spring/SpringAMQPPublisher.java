@@ -50,7 +50,7 @@ import java.util.concurrent.TimeoutException;
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
  * outgoing messages are sent to a configured Exchange, which defaults to "{@code Axon.EventBus}".
  * <p>
- * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP
+ * This publisher does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP
  * Queue.
  *
  * @author Allard Buijze
@@ -263,8 +263,8 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     /**
-     * Enables or diables the RabbitMQ specific publisher acknowledgements (confirms). When confirms are enabled, the
-     * terminal will wait until the server has acknowledged the reception (or fsync to disk on persistent messages) of
+     * Enables or disables the RabbitMQ specific publisher acknowledgements (confirms). When confirms are enabled, the
+     * publisher will wait until the server has acknowledged the reception (or fsync to disk on persistent messages) of
      * all published messages.
      * <p>
      * Server ACKS cannot be enabled when transactions are enabled.
