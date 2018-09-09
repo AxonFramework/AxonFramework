@@ -23,9 +23,9 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.ThrowingListenerErrorHandler;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -148,8 +148,10 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(Collections.singletonList(el),
-                                                                    ThrowingListenerErrorHandler.INSTANCE), eventStore)
+        new SubscribingEventProcessor("processor",
+                                      new SimpleEventHandlerInvoker(Collections.singletonList(el),
+                                                                    PropagatingErrorHandler.INSTANCE),
+                                      eventStore)
                 .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);

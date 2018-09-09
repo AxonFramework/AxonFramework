@@ -80,24 +80,6 @@ public class GapAwareTrackingToken implements TrackingToken, Serializable {
      * <p>
      * Note that the given {@code index} should be one of the current token's gaps or be higher than the current token's
      * index.
-     *
-     * @param index        the global sequence number of the next event
-     * @param maxGapOffset the maximum distance between a gap and the token's index
-     * @return the new token that has advanced from the current token
-     * @deprecated Use {@link #advanceTo(long, int, boolean)} instead
-     */
-    @Deprecated
-    public GapAwareTrackingToken advanceTo(long index, int maxGapOffset) {
-        return advanceTo(index, maxGapOffset, true);
-    }
-
-    /**
-     * Returns a new {@link GapAwareTrackingToken} instance based on this token but which has advanced to given {@code
-     * index}. Gaps that have fallen behind the index by more than the {@code maxGapOffset} will not be included in the
-     * new token.
-     * <p>
-     * Note that the given {@code index} should be one of the current token's gaps or be higher than the current token's
-     * index.
      * <p>
      * If {@code allowGaps} is set to {@code false}, any gaps that occur before the given {@code index} are removed
      * from the returned token.

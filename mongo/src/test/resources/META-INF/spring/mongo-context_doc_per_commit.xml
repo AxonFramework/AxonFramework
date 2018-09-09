@@ -33,7 +33,7 @@
     <bean id="serializer" class="org.axonframework.mongo.serialization.DBObjectXStreamSerializer"/>
 
     <!-- Infrastructure Mongo -->
-    <bean id="template" class="org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate">
+    <bean id="template" class="org.axonframework.mongo.DefaultMongoTemplate">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
@@ -56,7 +56,7 @@
         <constructor-arg ref="sagaMongoTemplate"/>
     </bean>
 
-    <bean id="sagaMongoTemplate" class="org.axonframework.mongo.eventhandling.saga.repository.DefaultMongoTemplate">
+    <bean id="sagaMongoTemplate" class="org.axonframework.mongo.DefaultMongoTemplate">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
