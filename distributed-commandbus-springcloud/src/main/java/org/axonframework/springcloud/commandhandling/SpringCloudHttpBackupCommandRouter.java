@@ -108,7 +108,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
      * @return a Builder to be able to create a {@link SpringCloudHttpBackupCommandRouter}
      */
     public static Builder builder() {
-        return new Builder().serviceInstanceFilter(ACCEPT_ALL_INSTANCES_FILTER);
+        return new Builder();
     }
 
     @Override
@@ -191,6 +191,10 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
         private RestTemplate restTemplate;
         private String messageRoutingInformationEndpoint = "/message-routing-information";
+
+        public Builder() {
+            serviceInstanceFilter(ACCEPT_ALL_INSTANCES_FILTER);
+        }
 
         @Override
         public Builder discoveryClient(DiscoveryClient discoveryClient) {
