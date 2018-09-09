@@ -4,8 +4,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -14,6 +13,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class ConfigurationParameterResolverFactoryTest {
+
     private Configuration configuration;
     private ConfigurationParameterResolverFactory testSubject;
     private Parameter[] parameters;
@@ -23,7 +23,7 @@ public class ConfigurationParameterResolverFactoryTest {
     @Before
     public void setUp() throws Exception {
         configuration = mock(Configuration.class);
-        commandBus = new SimpleCommandBus();
+        commandBus = SimpleCommandBus.builder().build();
         when(configuration.getComponent(CommandBus.class)).thenReturn(commandBus);
         testSubject = new ConfigurationParameterResolverFactory(configuration);
 

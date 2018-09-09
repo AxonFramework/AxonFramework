@@ -16,7 +16,11 @@
 
 package org.axonframework.jgroups.commandhandling;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
@@ -32,9 +36,7 @@ import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.stack.IpAddress;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,8 +70,8 @@ public class JGroupsConnectorTest {
         routingStrategy = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
         channel1 = createChannel();
         channel2 = createChannel();
-        mockCommandBus1 = spy(new SimpleCommandBus());
-        mockCommandBus2 = spy(new SimpleCommandBus());
+        mockCommandBus1 = spy(SimpleCommandBus.builder().build());
+        mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = new XStreamSerializer();
         connector1 = JGroupsConnector.builder()
@@ -119,7 +121,8 @@ public class JGroupsConnectorTest {
         futureCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
         //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
-        verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)), any(CommandCallback.class));
+        verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)),
+                                         any(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -241,7 +244,8 @@ public class JGroupsConnectorTest {
 
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()
-                              .map(i -> i.getConnectionEndpoint(Address.class).orElse(null)).anyMatch(a -> a.equals(new IpAddress(12345))));
+                              .map(i -> i.getConnectionEndpoint(Address.class).orElse(null))
+                              .anyMatch(a -> a.equals(new IpAddress(12345))));
     }
 
     @SuppressWarnings("unchecked")
@@ -264,7 +268,6 @@ public class JGroupsConnectorTest {
 
         for (int i = 0; i <= 100; i = i + 10) {
             dcb1.updateLoadFactor(i);
-
         }
         // send some fake news
         channel1.send(null, new JoinMessage(1, DenyAll.INSTANCE, 0, false));
@@ -332,8 +335,10 @@ public class JGroupsConnectorTest {
         serializer = spy(new XStreamSerializer());
         Object successResponse = new Object();
         Exception failureResponse = new MockException("This cannot be serialized");
-        when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize success"));
-        when(serializer.serialize(failureResponse, byte[].class)).thenThrow(new SerializationException("cannot serialize failure"));
+        when(serializer.serialize(successResponse, byte[].class)).thenThrow(new SerializationException(
+                "cannot serialize success"));
+        when(serializer.serialize(failureResponse, byte[].class)).thenThrow(new SerializationException(
+                "cannot serialize failure"));
 
         connector1 = JGroupsConnector.builder()
                                      .localSegment(mockCommandBus1)
@@ -466,5 +471,4 @@ public class JGroupsConnectorTest {
             now = System.currentTimeMillis();
         } while (true);
     }
-
 }

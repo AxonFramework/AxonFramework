@@ -65,7 +65,7 @@ public class SpawningNewAggregateTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        commandBus = new SimpleCommandBus();
+        commandBus = SimpleCommandBus.builder().build();
 
         aggregate1Model = AnnotatedAggregateMetaModelFactory.inspectAggregate(Aggregate1.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory

@@ -50,7 +50,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
 
     @Before
     public void setUp() {
-        this.commandBus = new SimpleCommandBus();
+        this.commandBus = SimpleCommandBus.builder().build();
         scheduledThreadPool = Executors.newScheduledThreadPool(1);
         retryScheduler = new IntervalRetryScheduler(scheduledThreadPool, 0, 1);
     }

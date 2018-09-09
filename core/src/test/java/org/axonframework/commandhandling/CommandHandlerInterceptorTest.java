@@ -59,7 +59,7 @@ public class CommandHandlerInterceptorTest {
     public void setUp() {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         Repository<MyAggregate> myAggregateRepository = new EventSourcingRepository<>(MyAggregate.class, eventStore);
-        CommandBus commandBus = new SimpleCommandBus();
+        CommandBus commandBus = SimpleCommandBus.builder().build();
         commandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
         AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler = new AggregateAnnotationCommandHandler<>(
                 MyAggregate.class,

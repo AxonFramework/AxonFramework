@@ -21,9 +21,8 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -53,10 +52,11 @@ public class AsynchronousCommandBusTest {
             ((Runnable) invocation.getArguments()[0]).run();
             return null;
         }).when(executorService).execute(isA(Runnable.class));
-        testSubject = new AsynchronousCommandBus(executorService);
+        testSubject = AsynchronousCommandBus.builder().executor(executorService).build();
         testSubject.registerDispatchInterceptor(dispatchInterceptor);
         testSubject.registerHandlerInterceptor(handlerInterceptor);
-        when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
+        when(dispatchInterceptor.handle(isA(CommandMessage.class)))
+                .thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
     }
@@ -69,7 +69,11 @@ public class AsynchronousCommandBusTest {
         CommandMessage<Object> command = asCommandMessage(new Object());
         testSubject.dispatch(command, mockCallback);
 
-        InOrder inOrder = inOrder(mockCallback, executorService, commandHandler, dispatchInterceptor, handlerInterceptor);
+        InOrder inOrder = inOrder(mockCallback,
+                                  executorService,
+                                  commandHandler,
+                                  dispatchInterceptor,
+                                  handlerInterceptor);
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
@@ -102,13 +106,12 @@ public class AsynchronousCommandBusTest {
     @Test(expected = NoHandlerForCommandException.class)
     public void testExceptionIsThrownWhenNoHandlerIsRegistered() {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"));
-
     }
 
     @Test
     public void testShutdown_ExecutorUsed() {
         Executor executor = mock(Executor.class);
-        new AsynchronousCommandBus(executor).shutdown();
+        AsynchronousCommandBus.builder().executor(executor).build().shutdown();
 
         verify(executor, never()).execute(any(Runnable.class));
     }

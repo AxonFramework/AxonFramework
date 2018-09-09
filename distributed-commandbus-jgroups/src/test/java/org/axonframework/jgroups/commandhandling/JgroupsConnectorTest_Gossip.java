@@ -69,8 +69,8 @@ public class JgroupsConnectorTest_Gossip {
         channel1 = createChannel();
         channel2 = createChannel();
         routingStrategy = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
-        mockCommandBus1 = spy(new SimpleCommandBus());
-        mockCommandBus2 = spy(new SimpleCommandBus());
+        mockCommandBus1 = spy(SimpleCommandBus.builder().build());
+        mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = spy(new XStreamSerializer());
         connector1 = JGroupsConnector.builder()

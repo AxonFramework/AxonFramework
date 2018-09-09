@@ -18,7 +18,11 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.commandhandling.model.*;
+import org.axonframework.commandhandling.model.AggregateEntityNotFoundException;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateMember;
+import org.axonframework.commandhandling.model.EntityId;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
@@ -31,15 +35,24 @@ import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -61,16 +74,15 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        commandBus = new SimpleCommandBus();
+        commandBus = SimpleCommandBus.builder().build();
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
         when(mockRepository.newInstance(any()))
-                .thenAnswer(
-                        invocation ->
-                                EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
-                                                                 aggregateModel,
-                                                                 mock(EventStore.class),
-                                                                 NoSnapshotTriggerDefinition.TRIGGER));
+                .thenAnswer(invocation -> EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>)
+                                                                                   invocation.getArguments()[0],
+                                                                           aggregateModel,
+                                                                           mock(EventStore.class),
+                                                                           NoSnapshotTriggerDefinition.TRIGGER));
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
@@ -593,7 +605,8 @@ public class AggregateAnnotationCommandHandlerTest {
         }
 
         @CommandHandler
-        public static StubCommandAnnotatedAggregate createStubCommandAnnotatedAggregate(CreateFactoryMethodCommand createFactoryMethodCommand){
+        public static StubCommandAnnotatedAggregate createStubCommandAnnotatedAggregate(
+                CreateFactoryMethodCommand createFactoryMethodCommand) {
             return new StubCommandAnnotatedAggregate(createFactoryMethodCommand.getId());
         }
 
@@ -905,6 +918,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Priority(Priority.LAST)
     private static class CustomParameterResolverFactory implements ParameterResolverFactory {
+
         @Override
         public ParameterResolver createInstance(Executable member, Parameter[] params, int index) {
             if (String.class.equals(params[index].getType())) {

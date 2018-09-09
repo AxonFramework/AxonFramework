@@ -223,7 +223,7 @@ public class SpringBeanParameterResolverFactoryTest {
 
         @Bean
         public CommandBus commandBus() {
-            return new SimpleCommandBus();
+            return SimpleCommandBus.builder().build();
         }
 
         @Bean

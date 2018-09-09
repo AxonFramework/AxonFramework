@@ -27,10 +27,8 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.ArgumentMatcher;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.UUID;
 
@@ -48,7 +46,7 @@ public class EventPublicationOrderTest {
 
     @Before
     public void setUp() {
-        this.commandBus = new SimpleCommandBus();
+        this.commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         EventSourcingRepository<StubAggregate> repository =
                 new EventSourcingRepository<>(StubAggregate.class, eventStore);
@@ -61,11 +59,9 @@ public class EventPublicationOrderTest {
     @Test
     public void testPublicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
-        when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(new GenericDomainEventMessage<>("test",
-                                                                                                                 aggregateId,
-                                                                                                                 0,
-                                                                                                                 new StubAggregateCreatedEvent(
-                                                                                                                         aggregateId))));
+        GenericDomainEventMessage<StubAggregateCreatedEvent> event =
+                new GenericDomainEventMessage<>("test", aggregateId, 0, new StubAggregateCreatedEvent(aggregateId));
+        when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> {
             System.out.println("Published event: " + invocation.getArguments()[0].toString());
             return Void.class;

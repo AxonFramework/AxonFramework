@@ -16,10 +16,14 @@
 
 package org.axonframework.commandhandling.callbacks;
 
-import org.axonframework.commandhandling.*;
-import org.junit.Test;
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.junit.*;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -31,7 +35,7 @@ public class VoidCallbackTest {
      */
     @Test
     public void testCallbackCalled() {
-        SimpleCommandBus scb = new SimpleCommandBus();
+        SimpleCommandBus scb = SimpleCommandBus.builder().build();
         new AnnotationCommandHandlerAdapter(this).subscribe(scb);
 
         scb.dispatch(GenericCommandMessage.asCommandMessage("Hello"), new VoidCallback<Object>() {
