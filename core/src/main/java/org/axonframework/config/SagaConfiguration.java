@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
+import org.axonframework.eventhandling.saga.AbstractSagaManager;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
@@ -603,7 +604,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      *
      * @throws IllegalStateException when this configuration hasn't been initialized yet
      */
-    public AnnotatedSagaManager<S> getSagaManager() {
+    public AbstractSagaManager<S> getSagaManager() {
         Assert.state(config != null, () -> "Configuration is not initialized yet");
         return sagaManager.get();
     }

@@ -18,7 +18,6 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.saga.AbstractSagaManager;
-import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -80,7 +79,7 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
     private List<AbstractSagaManager> retrieveSagaManagers() {
         return configuration.findModules(SagaConfiguration.class)
                 .stream()
-                .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
+                .map((Function<SagaConfiguration, AbstractSagaManager>) SagaConfiguration::getSagaManager)
                 .collect(toList());
     }
 }
