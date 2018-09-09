@@ -54,11 +54,12 @@ public class ConfigurationScopeAwareProviderTest {
 
     @Test
     public void providesScopeAwareAggregatesFromModuleConfiguration() {
-        when(config.getModules()).thenReturn(asList(aggregateConfiguration));
+        when(config.findModules(AggregateConfiguration.class)).thenCallRealMethod();
+        when(config.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
         when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
 
         List<ScopeAware> scopeAwares = scopeAwareProvider
-                .provideScopeAwareStream(randomScopeDescriptor())
+                .provideScopeAwareStream(anyScopeDescriptor())
                 .collect(toList());
 
         assertThat(scopeAwares, equalTo(asList(aggregateRepository)));
@@ -66,21 +67,51 @@ public class ConfigurationScopeAwareProviderTest {
 
     @Test
     public void providesScopeAwareSagasFromModuleConfiguration() {
-        when(config.getModules()).thenReturn(asList(sagaConfiguration));
+        when(config.findModules(SagaConfiguration.class)).thenCallRealMethod();
+        when(config.getModules()).thenReturn(asList(new WrappingModuleConfiguration(sagaConfiguration)));
         when(sagaConfiguration.getSagaManager()).thenReturn(sagaManager);
 
         List<ScopeAware> scopeAwares = scopeAwareProvider
-                .provideScopeAwareStream(randomScopeDescriptor())
+                .provideScopeAwareStream(anyScopeDescriptor())
                 .collect(toList());
 
         assertThat(scopeAwares, equalTo(asList(sagaManager)));
     }
 
-    private static ScopeDescriptor randomScopeDescriptor() {
+    private static ScopeDescriptor anyScopeDescriptor() {
         String id = randomUUID().toString();
         if (new Random().nextBoolean()) {
             return new AggregateScopeDescriptor("Aggregate", id);
         }
         return new SagaScopeDescriptor("Saga", id);
+    }
+
+    /**
+     * Test variant of a {@link #unwrap() wrapping} configuration.
+     */
+    static class WrappingModuleConfiguration implements ModuleConfiguration {
+
+        private final ModuleConfiguration delegate;
+
+        public WrappingModuleConfiguration(ModuleConfiguration delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void initialize(Configuration config) {
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void shutdown() {
+        }
+
+        @Override
+        public ModuleConfiguration unwrap() {
+            return delegate == null ? this : delegate;
+        }
     }
 }
