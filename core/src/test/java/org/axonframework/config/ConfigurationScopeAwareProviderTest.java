@@ -49,7 +49,8 @@ public class ConfigurationScopeAwareProviderTest {
 
     @Test
     public void providesScopeAwareAggregatesFromModuleConfiguration() {
-        when(config.getModules()).thenReturn(asList(aggregateConfiguration));
+        when(config.findModules(AggregateConfiguration.class)).thenCallRealMethod();
+        when(config.getModules()).thenReturn(asList(new WrappingModuleConfiguration(aggregateConfiguration)));
         when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
 
         List<ScopeAware> scopeAwares = scopeAwareProvider
@@ -61,7 +62,8 @@ public class ConfigurationScopeAwareProviderTest {
 
     @Test
     public void providesScopeAwareSagasFromModuleConfiguration() {
-        when(config.getModules()).thenReturn(asList(sagaConfiguration));
+        when(config.findModules(SagaConfiguration.class)).thenCallRealMethod();
+        when(config.getModules()).thenReturn(asList(new WrappingModuleConfiguration(sagaConfiguration)));
         when(sagaConfiguration.getSagaManager()).thenReturn(sagaManager);
 
         List<ScopeAware> scopeAwares = scopeAwareProvider
@@ -73,5 +75,34 @@ public class ConfigurationScopeAwareProviderTest {
 
     private static ScopeDescriptor anyScopeDescriptor() {
         return (ScopeDescriptor) () -> "test-scope";
+    }
+
+    /**
+     * Test variant of a {@link #unwrap() wrapping} configuration.
+     */
+    private static class WrappingModuleConfiguration implements ModuleConfiguration {
+
+        private final ModuleConfiguration delegate;
+
+        WrappingModuleConfiguration(ModuleConfiguration delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void initialize(Configuration config) {
+        }
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public void shutdown() {
+        }
+
+        @Override
+        public ModuleConfiguration unwrap() {
+            return delegate == null ? this : delegate;
+        }
     }
 }
