@@ -33,9 +33,10 @@ import static java.util.stream.Collectors.toList;
 /**
  * Implementation of the {@link ScopeAwareProvider} which will retrieve a {@link List} of {@link ScopeAware} components
  * in a lazy manner. It does this by pulling these components from the provided {@link Configuration} as soon as
- * #provideScopeAwareStream(ScopeDescriptor) has been called.
+ * {@link #provideScopeAwareStream(ScopeDescriptor)} is called.
  *
  * @author Steven van Beelen
+ * @author Rob van der Linden Vooren
  * @since 3.3
  */
 public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
