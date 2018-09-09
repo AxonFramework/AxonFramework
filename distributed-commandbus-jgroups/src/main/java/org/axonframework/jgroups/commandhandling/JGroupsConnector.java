@@ -591,22 +591,27 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         private void validate() {
             assertThat(localSegment,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("The localSegment may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The localSegment is a hard requirement and should be provided"));
             assertThat(channel,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("JChannel may not be null"));
+                       () -> new AxonConfigurationException("The JChannel is a hard requirement and should be provided"));
             assertThat(clusterName,
                        name -> Objects.nonNull(name) && !name.equals(""),
-                       () -> new AxonConfigurationException("The clusterName may not be null or empty"));
+                       () -> new AxonConfigurationException(
+                               "The clusterName is a hard requirement and should be provided"));
             assertThat(serializer,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("Serializer may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The Serializer is a hard requirement and should be provided"));
             assertThat(routingStrategy,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("RoutingStrategy may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The RoutingStrategy is a hard requirement and should be provided"));
             assertThat(consistentHashChangeListener,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("ConsistentHashChangeListener may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The ConsistentHashChangeListener is a hard requirement and should be provided"));
         }
     }
 

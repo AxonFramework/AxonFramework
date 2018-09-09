@@ -288,13 +288,16 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         private void validate() {
             assertThat(localCommandBus,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("LocalCommandBus may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The localCommandBus is a hard requirement and should be provided"));
             assertThat(restOperations,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("RestOperations may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The RestOperations is a hard requirement and should be provided"));
             assertThat(serializer,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("Serializer may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The Serializer is a hard requirement and should be provided"));
         }
     }
 }

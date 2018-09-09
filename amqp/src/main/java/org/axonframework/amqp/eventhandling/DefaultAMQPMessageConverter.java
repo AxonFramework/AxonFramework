@@ -199,10 +199,12 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         private void validate() {
             assertThat(serializer,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("Serializer may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The Serializer is a hard requirement and should be provided"));
             assertThat(routingKeyResolver,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("RoutingKeyResolver may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The RoutingKeyResolver is a hard requirement and should be provided"));
         }
     }
 }

@@ -487,19 +487,24 @@ public class SpringCloudCommandRouter implements CommandRouter {
         private void validate() {
             assertThat(discoveryClient,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("DiscoveryClient may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The DiscoveryClient is a hard requirement and should be provided"));
             assertThat(localServiceInstance,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("Registration may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The Registration is a hard requirement and should be provided"));
             assertThat(routingStrategy,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("RoutingStrategy may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The RoutingStrategy is a hard requirement and should be provided"));
             assertThat(serviceInstanceFilter,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("ServiceInstanceFilter may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The ServiceInstanceFilter is a hard requirement and should be provided"));
             assertThat(consistentHashChangeListener,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("ConsistentHashChangeListener may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The ConsistentHashChangeListener is a hard requirement and should be provided"));
         }
     }
 }

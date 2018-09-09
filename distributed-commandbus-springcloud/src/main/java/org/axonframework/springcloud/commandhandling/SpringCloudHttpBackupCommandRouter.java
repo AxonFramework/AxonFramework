@@ -79,8 +79,9 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     /**
      * Instantiate a {@link SpringCloudHttpBackupCommandRouter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link RestTemplate} and {@code messageRoutingInformationEndpoint} are not {@code null},
-     * and will throw an {@link AxonConfigurationException} if either of them is {@code null}. All asserts performed by
+     * Will assert that the {@link RestTemplate} is not {@code null} and that the
+     * {@code messageRoutingInformationEndpoint} is not {@code null} and empty. This assertion will throw an
+     * {@link AxonConfigurationException} if either of them asserts to {@code true}. All asserts performed by
      * the {@link SpringCloudCommandRouter.Builder} are also taken into account with identical consequences.
      *
      * @param builder the {@link Builder} used to instantiate a {@link SpringCloudHttpBackupCommandRouter} instance
@@ -249,7 +250,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
          */
         public Builder messageRoutingInformationEndpoint(String messageRoutingInformationEndpoint) {
             assertThat(messageRoutingInformationEndpoint,
-                       Objects::nonNull,
+                       name -> Objects.nonNull(name) && !name.equals(""),
                        () -> new AxonConfigurationException("The messageRoutingInformationEndpoint may not be null"));
             this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
             return this;
@@ -267,10 +268,12 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         private void validate() {
             assertThat(restTemplate,
                        Objects::nonNull,
-                       () -> new AxonConfigurationException("RestTemplate may not be null"));
+                       () -> new AxonConfigurationException(
+                               "The RestTemplate is a hard requirement and should be provided"));
             assertThat(messageRoutingInformationEndpoint,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The messageRoutingInformationEndpoint may not be null"));
+                       name -> Objects.nonNull(name) && !name.equals(""),
+                       () -> new AxonConfigurationException(
+                               "The messageRoutingInformationEndpoint is a hard requirement and should be provided"));
         }
     }
 }
