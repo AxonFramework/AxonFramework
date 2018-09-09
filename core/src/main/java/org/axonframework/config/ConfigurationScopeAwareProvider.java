@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -41,8 +42,9 @@ import static java.util.stream.Collectors.toList;
  */
 public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
 
+    private final Configuration configuration;
+
     private List<ScopeAware> scopeAwareComponents;
-    private Configuration configuration;
 
     /**
      * Instantiate a lazy {@link ScopeAwareProvider} with the given {@code configuration} parameter.
@@ -50,22 +52,22 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
      * @param configuration a {@link Configuration} used to retrieve {@link ScopeAware} components from
      */
     public ConfigurationScopeAwareProvider(Configuration configuration) {
-        scopeAwareComponents = new ArrayList<>();
-        this.configuration = configuration;
+        this.configuration = requireNonNull(configuration);
     }
 
     @Override
     public Stream<ScopeAware> provideScopeAwareStream(ScopeDescriptor scopeDescriptor) {
-        if (scopeAwareComponents.isEmpty()) {
-            lookupScopeAwareComponents();
+        if (scopeAwareComponents == null) {
+            scopeAwareComponents = retrieveScopeAwareComponents();
         }
-
         return scopeAwareComponents.stream();
     }
 
-    private void lookupScopeAwareComponents() {
-        scopeAwareComponents.addAll(retrieveAggregateRepositories());
-        scopeAwareComponents.addAll(retrieveSagaManagers());
+    private List<ScopeAware> retrieveScopeAwareComponents() {
+        List<ScopeAware> components = new ArrayList<>();
+        components.addAll(retrieveAggregateRepositories());
+        components.addAll(retrieveSagaManagers());
+        return components;
     }
 
     private List<Repository> retrieveAggregateRepositories() {
