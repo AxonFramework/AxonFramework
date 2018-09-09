@@ -15,6 +15,7 @@
 
 package org.axonframework.boot;
 
+import org.axonframework.boot.autoconfig.SpringCloudAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
@@ -28,8 +29,8 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.jgroups.commandhandling.JGroupsConnector;
 import org.axonframework.serialization.Serializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -45,8 +46,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.junit.Assert.*;
 
 @ContextConfiguration
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
-HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        DataSourceAutoConfiguration.class,
+        SpringCloudAutoConfiguration.class
+})
 @TestPropertySource("classpath:test.jgroups.application.properties")
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithJGroupsTest {
@@ -100,5 +106,4 @@ public class AxonAutoConfigurationWithJGroupsTest {
         assertNotNull(gateway);
         assertNotNull(applicationContext.getBean(Serializer.class));
     }
-
 }

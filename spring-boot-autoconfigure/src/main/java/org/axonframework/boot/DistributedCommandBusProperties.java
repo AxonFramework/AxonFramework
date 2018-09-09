@@ -44,7 +44,7 @@ public class DistributedCommandBusProperties {
      * @return whether the (auto-configuration) of the Distributed Command Bus is enabled.
      */
     public boolean isEnabled() {
-        return enabled || jgroups.isEnabled();
+        return enabled;
     }
 
     /**
@@ -63,7 +63,7 @@ public class DistributedCommandBusProperties {
      * @return the load factor for this instance of the Distributed Command Bus.
      */
     public int getLoadFactor() {
-        return loadFactor == 100 ? jgroups.getLoadFactor() : loadFactor;
+        return loadFactor;
     }
 
     /**
@@ -119,15 +119,6 @@ public class DistributedCommandBusProperties {
         private Gossip gossip = new Gossip();
 
         /**
-         * Enables JGroups configuration for this application.
-         *
-         * @deprecated JGroups specific 'enabled' property is deprecated in favor of the
-         * DistributedCommandBusProperties' 'enabled' property.
-         */
-        @Deprecated
-        private boolean enabled = false;
-
-        /**
          * The name of the JGroups cluster to connect to. Defaults to "Axon".
          */
         private String clusterName = "Axon";
@@ -149,16 +140,6 @@ public class DistributedCommandBusProperties {
         private String bindPort = "7800";
 
         /**
-         * Sets the loadFactor for this node to join with. The loadFactor sets the relative load this node will
-         * receive compared to other nodes in the cluster. Defaults to 100.
-         *
-         * @deprecated JGroups specific 'loadFactor' property is deprecated in favor of the
-         * DistributedCommandBusProperties' 'loadFactor' property.
-         */
-        @Deprecated
-        private int loadFactor = 100;
-
-        /**
          * Returns the {@link Gossip} configuration in case the Gossip protocol is configured for JGroups (default).
          *
          * @return the {@link Gossip} configuration.
@@ -174,29 +155,6 @@ public class DistributedCommandBusProperties {
          */
         public void setGossip(Gossip gossip) {
             this.gossip = gossip;
-        }
-
-        /**
-         * Indicates whether the Distributed Command Bus auto-configuration is enabled.
-         *
-         * @return whether the Distributed Command Bus auto-configuration is enabled.
-         *
-         * @deprecated Use "enabled" on the distributed command bus level instead.
-         */
-        @Deprecated
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        /**
-         * Sets whether the Distributed Command Bus auto-configuration is enabled.
-         *
-         * @param enabled whether the Distributed Command Bus auto-configuration is enabled.
-         * @deprecated Use "enabled" on the Distributed Command Bus level instead.
-         */
-        @Deprecated
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
         }
 
         /**
@@ -272,29 +230,6 @@ public class DistributedCommandBusProperties {
          */
         public void setBindPort(String bindPort) {
             this.bindPort = bindPort;
-        }
-
-        /**
-         * Returns the load factor for this instance.
-         *
-         * @return the load factor for this instance.
-         *
-         * @deprecated use load factor on the "distributed" level instead.
-         */
-        @Deprecated
-        public int getLoadFactor() {
-            return loadFactor;
-        }
-
-        /**
-         * Sets the load factor for this instance.
-         *
-         * @param loadFactor the load factor for this instance.
-         * @deprecated use load factor on the "distributed" level instead.
-         */
-        @Deprecated
-        public void setLoadFactor(int loadFactor) {
-            this.loadFactor = loadFactor;
         }
 
         public static class Gossip {

@@ -21,6 +21,7 @@ import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
