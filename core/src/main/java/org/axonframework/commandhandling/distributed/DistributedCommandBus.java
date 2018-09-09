@@ -16,11 +16,15 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -29,11 +33,13 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static java.lang.String.format;
+import static org.axonframework.common.Assert.assertThat;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -57,41 +63,39 @@ public class DistributedCommandBus implements CommandBus {
 
     private final CommandRouter commandRouter;
     private final CommandBusConnector connector;
+    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
-    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
 
     /**
-     * Initializes the command bus with the given {@code commandRouter} and {@code connector}. The
-     * {@code commandRouter} is used to determine the target node for each dispatched command. The {@code connector}
-     * performs the actual transport of the message to the destination node.
+     * Instantiate a {@link DistributedCommandBus} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link CommandRouter}, {@link CommandBusConnector} and {@link MessageMonitor} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param commandRouter the service registry that discovers the network of worker nodes
-     * @param connector     the connector that connects the different command bus segments
+     * @param builder the {@link Builder} used to instantiate a {@link DistributedCommandBus} instance
      */
-    public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector) {
-        this(commandRouter, connector, NoOpMessageMonitor.INSTANCE);
+    protected DistributedCommandBus(Builder builder) {
+        builder.validate();
+        this.commandRouter = builder.commandRouter;
+        this.connector = builder.connector;
+        this.messageMonitor = builder.messageMonitor;
     }
 
     /**
-     * Initializes the command bus with the given {@code commandRouter}, {@code connector} and {@code messageMonitor}.
-     * The {@code commandRouter} is used to determine the target node for each dispatched command.
-     * The {@code connector} performs the actual transport of the message to the destination node.
-     * The {@code messageMonitor} is used to monitor incoming messages and their execution result.
+     * Builder class to instantiate a {@link DistributedCommandBus}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
+     * provided.
      *
-     * @param commandRouter  the service registry that discovers the network of worker nodes
-     * @param connector      the connector that connects the different command bus segments
-     * @param messageMonitor the message monitor to notify of incoming messages and their execution result
+     * @return a Builder to be able to create a {@link DistributedCommandBus}
      */
-    public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector, MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-        Assert.notNull(commandRouter, () -> "serviceRegistry may not be null");
-        Assert.notNull(connector, () -> "connector may not be null");
-        Assert.notNull(messageMonitor, () -> "messageMonitor may not be null");
-
-        this.commandRouter = commandRouter;
-        this.connector = connector;
-        this.messageMonitor = messageMonitor;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -99,12 +103,12 @@ public class DistributedCommandBus implements CommandBus {
         if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
             CommandMessage<? extends C> interceptedCommand = intercept(command);
             Member destination = commandRouter.findDestination(interceptedCommand)
-                    .orElseThrow(() -> new NoHandlerForCommandException(
-                            format("No node known to accept [%s]",
-                                   interceptedCommand.getCommandName())));
+                                              .orElseThrow(() -> new NoHandlerForCommandException(
+                                                      format("No node known to accept [%s]",
+                                                             interceptedCommand.getCommandName())));
             try {
                 connector.send(destination, interceptedCommand);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 destination.suspect();
                 throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
             }
@@ -123,17 +127,17 @@ public class DistributedCommandBus implements CommandBus {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Member destination = commandRouter.findDestination(interceptedCommand)
-                .orElseThrow(() -> {
-                    NoHandlerForCommandException exception = new NoHandlerForCommandException(
-                            format("No node known to accept [%s]",
-                                   interceptedCommand.getCommandName()));
-                    messageMonitorCallback.reportFailure(exception);
-                    return exception;
-                });
+                                          .orElseThrow(() -> {
+                                              NoHandlerForCommandException exception = new NoHandlerForCommandException(
+                                                      format("No node known to accept [%s]",
+                                                             interceptedCommand.getCommandName()));
+                                              messageMonitorCallback.reportFailure(exception);
+                                              return exception;
+                                          });
         try {
             connector.send(destination, interceptedCommand, new MonitorAwareCallback<>(callback,
                                                                                        messageMonitorCallback));
-        } catch(Exception e) {
+        } catch (Exception e) {
             messageMonitorCallback.reportFailure(e);
             destination.suspect();
             throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
@@ -163,7 +167,6 @@ public class DistributedCommandBus implements CommandBus {
             updateFilter(commandFilter.get().and(new DenyCommandNameFilter(commandName)));
             return reg.cancel();
         };
-
     }
 
     private void updateFilter(Predicate<CommandMessage<?>> newFilter) {
@@ -198,13 +201,98 @@ public class DistributedCommandBus implements CommandBus {
      * @param dispatchInterceptor The interceptors to invoke when commands are dispatched
      * @return handle to unregister the interceptor
      */
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         return connector.registerHandlerInterceptor(handlerInterceptor);
+    }
+
+    /**
+     * Builder class to instantiate a {@link DistributedCommandBus}.
+     * <p>
+     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
+     * The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
+     * provided.
+     */
+    public static class Builder {
+
+        private CommandRouter commandRouter;
+        private CommandBusConnector connector;
+        private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+
+        /**
+         * Sets the {@link CommandRouter} used to determine the target node for each dispatched command.
+         *
+         * @param commandRouter a {@link CommandRouter} used to determine the target node for each dispatched command
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder commandRouter(CommandRouter commandRouter) {
+            assertThat(commandRouter,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("CommandRouter may not be null"));
+            this.commandRouter = commandRouter;
+            return this;
+        }
+
+        /**
+         * Sets the {@link CommandBusConnector} which performs the actual transport of the message to the destination
+         * node.
+         *
+         * @param connector a {@link CommandBusConnector} which performs the actual transport of the message to the
+         *                  destination node
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder connector(CommandBusConnector connector) {
+            assertThat(connector,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("CommandBusConnector may not be null"));
+            this.connector = connector;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageMonitor} for generic types implementing {@link CommandMessage}, which is used to
+         * monitor incoming messages and their execution result.
+         *
+         * @param messageMonitor a {@link MessageMonitor} used to monitor incoming messages and their execution result
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+            assertThat(messageMonitor,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException("MessageMonitor may not be null"));
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link DistributedCommandBus} as specified through this Builder.
+         *
+         * @return a {@link DistributedCommandBus} as specified through this Builder
+         */
+        public DistributedCommandBus build() {
+            return new DistributedCommandBus(this);
+        }
+
+        private void validate() {
+            assertThat(commandRouter,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException(
+                               "The CommandRouter is a hard requirement and should be provided"));
+            assertThat(connector,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException(
+                               "The CommandBusConnector is a hard requirement and should be provided"));
+            assertThat(messageMonitor,
+                       Objects::nonNull,
+                       () -> new AxonConfigurationException(
+                               "The MessageMonitor is a hard requirement and should be provided"));
+        }
     }
 }

@@ -24,16 +24,14 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import java.util.Optional;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -55,7 +53,11 @@ public class DistributedCommandBusTest {
 
     @Before
     public void setUp() {
-        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector, mockMessageMonitor);
+        testSubject = DistributedCommandBus.builder()
+                                           .commandRouter(mockCommandRouter)
+                                           .connector(mockConnector)
+                                           .messageMonitor(mockMessageMonitor)
+                                           .build();
         when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
         when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
     }
@@ -86,7 +88,7 @@ public class DistributedCommandBusTest {
 
     @Test
     public void testDispatchWithoutCallbackAndWithoutMessageMonitor() throws Exception {
-        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector);
+        testSubject = DistributedCommandBus.builder().commandRouter(mockCommandRouter).connector(mockConnector).build();
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
         testSubject.dispatch(testCommandMessage);
@@ -100,7 +102,7 @@ public class DistributedCommandBusTest {
 
     @Test
     public void testUnknownCommandWithoutCallbackAndWithoutMessageMonitor() throws Exception {
-        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector);
+        testSubject = DistributedCommandBus.builder().commandRouter(mockCommandRouter).connector(mockConnector).build();
         CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("unknown");
         when(mockCommandRouter.findDestination(testCommandMessage)).thenReturn(Optional.empty());
 
@@ -169,6 +171,7 @@ public class DistributedCommandBusTest {
     }
 
     private static class StubCommandBusConnector implements CommandBusConnector {
+
         @Override
         public <C> void send(Member destination, CommandMessage<? extends C> command) {
             //Do nothing
@@ -189,7 +192,8 @@ public class DistributedCommandBusTest {
         }
 
         @Override
-        public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+        public Registration registerHandlerInterceptor(
+                MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
             return null;
         }
     }

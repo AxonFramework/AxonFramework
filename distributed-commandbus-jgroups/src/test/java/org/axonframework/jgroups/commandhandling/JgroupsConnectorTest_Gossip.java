@@ -31,10 +31,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
+import org.junit.*;
+import org.mockito.*;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -132,12 +130,18 @@ public class JgroupsConnectorTest_Gossip {
 
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        DistributedCommandBus bus1 = new DistributedCommandBus(connector1, connector1);
+        DistributedCommandBus bus1 = DistributedCommandBus.builder()
+                                                          .commandRouter(connector1)
+                                                          .connector(connector1)
+                                                          .build();
         bus1.updateLoadFactor(20);
         connector1.connect();
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
 
-        DistributedCommandBus bus2 = new DistributedCommandBus(connector2, connector2);
+        DistributedCommandBus bus2 = DistributedCommandBus.builder()
+                                                          .commandRouter(connector2)
+                                                          .connector(connector2)
+                                                          .build();
         bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
         bus2.updateLoadFactor(20);
         connector2.connect();

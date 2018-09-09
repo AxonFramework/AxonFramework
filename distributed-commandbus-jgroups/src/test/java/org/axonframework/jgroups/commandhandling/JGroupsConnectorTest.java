@@ -87,8 +87,14 @@ public class JGroupsConnectorTest {
                                      .routingStrategy(routingStrategy)
                                      .build();
 
-        dcb1 = new DistributedCommandBus(connector1, connector1);
-        dcb2 = new DistributedCommandBus(connector2, connector2);
+        dcb1 = DistributedCommandBus.builder()
+                                    .commandRouter(connector1)
+                                    .connector(connector1)
+                                    .build();
+        dcb2 = DistributedCommandBus.builder()
+                                    .commandRouter(connector2)
+                                    .connector(connector2)
+                                    .build();
     }
 
     @After
@@ -336,7 +342,10 @@ public class JGroupsConnectorTest {
                                      .serializer(serializer)
                                      .routingStrategy(routingStrategy)
                                      .build();
-        dcb1 = new DistributedCommandBus(connector1, connector1);
+        dcb1 = DistributedCommandBus.builder()
+                                    .commandRouter(connector1)
+                                    .connector(connector1)
+                                    .build();
 
         dcb1.subscribe(String.class.getName(), c -> successResponse);
         dcb1.subscribe(Integer.class.getName(), c -> {
