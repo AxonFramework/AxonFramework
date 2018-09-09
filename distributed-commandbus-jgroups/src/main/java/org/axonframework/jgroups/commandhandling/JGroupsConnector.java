@@ -101,9 +101,10 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     /**
      * Instantiate a {@link JGroupsConnector} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will validate that the {@code localSegment}, {@link JChannel}, {@code clusterName}, {@link Serializer},
+     * Will validate that the {@code localSegment}, {@link JChannel}, {@link Serializer},
      * {@link RoutingStrategy} and {@link ConsistentHashChangeListener} are not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if any of them is {@code null}.
+     * {@link AxonConfigurationException} if any of them is {@code null}. The {@code clusterName} is verified to be non
+     * null and non empty, throwing the AxonConfigurationException if this is false.
      *
      * @param builder the {@link Builder} used to instantiate a {@link JGroupsConnector} instance
      */
@@ -524,8 +525,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          */
         public Builder clusterName(String clusterName) {
             assertThat(clusterName,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The clusterName may not be null"));
+                       name -> Objects.nonNull(name) && !name.equals(""),
+                       () -> new AxonConfigurationException("The clusterName may not be null or empty"));
             this.clusterName = clusterName;
             return this;
         }
@@ -595,8 +596,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
                        Objects::nonNull,
                        () -> new AxonConfigurationException("JChannel may not be null"));
             assertThat(clusterName,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The clusterName may not be null"));
+                       name -> Objects.nonNull(name) && !name.equals(""),
+                       () -> new AxonConfigurationException("The clusterName may not be null or empty"));
             assertThat(serializer,
                        Objects::nonNull,
                        () -> new AxonConfigurationException("Serializer may not be null"));
