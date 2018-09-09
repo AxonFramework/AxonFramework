@@ -256,10 +256,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         }
 
         /**
-         * Initializes a {@link SpringCloudHttpBackupCommandRouter} with the set {@link DiscoveryClient},
-         * {@code localServiceInstance} of type {@link Registration}, {@link RoutingStrategy},
-         * {@code serviceInstanceFilter}, {@link ConsistentHashChangeListener}, {@link RestTemplate} and
-         * {@code messageRoutingInformationEndpoint}.
+         * Initializes a {@link SpringCloudHttpBackupCommandRouter} as specified through this Builder.
          *
          * @return a {@link SpringCloudHttpBackupCommandRouter} as specified through this Builder
          */

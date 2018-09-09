@@ -579,8 +579,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
 
         /**
-         * Initializes a {@link JGroupsConnector} with the set {@code localSegment}, {@code channel},
-         * {@code clusterName}, {@code routingStrategy} and {@code consistentHashChangeListener}.
+         * Initializes a {@link JGroupsConnector} as specified through this Builder.
          *
          * @return a {@link JGroupsConnector} as specified through this Builder
          */

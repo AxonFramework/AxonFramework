@@ -476,9 +476,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
         }
 
         /**
-         * Initializes a {@link SpringCloudCommandRouter} with the set {@link DiscoveryClient},
-         * {@code localServiceInstance} of type {@link Registration}, {@link RoutingStrategy},
-         * {@code serviceInstanceFilter} and {@link ConsistentHashChangeListener}.
+         * Initializes a {@link SpringCloudCommandRouter} as specified through this Builder.
          *
          * @return a {@link SpringCloudCommandRouter} as specified through this Builder
          */

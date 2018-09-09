@@ -188,8 +188,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         }
 
         /**
-         * Initializes a {@link DefaultAMQPMessageConverter} with the set {@code serializer},
-         * {@code routingKeyResolver} and requesting durable dispatching when {@code durable} is {@code true}.
+         * Initializes a {@link DefaultAMQPMessageConverter} as specified through this Builder.
          *
          * @return a {@link DefaultAMQPMessageConverter} as specified through this Builder
          */
