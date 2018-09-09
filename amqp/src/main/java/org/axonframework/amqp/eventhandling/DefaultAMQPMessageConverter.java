@@ -23,9 +23,17 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.axonframework.common.Assert.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
@@ -153,7 +161,8 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         }
 
         /**
-         * Sets the strategy to use to resolve routing keys for Event Messages.
+         * Sets the strategy to use to resolve routing keys for Event Messages. Defaults to a
+         * {@link PackageRoutingKeyResolver}.
          *
          * @param routingKeyResolver The strategy to use to resolve routing keys for Event Messages
          * @return the current Builder instance, for a fluent interfacing
@@ -167,7 +176,8 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         }
 
         /**
-         * Sets a {@code boolean} specifying whether to request durable message dispatching
+         * Sets a {@code boolean} specifying whether to request durable message dispatching. Defaults to {@code true},
+         * thus toggling durable message dispatching on.
          *
          * @param durable a {@code boolean} specifying whether to request durable message dispatching
          * @return the current Builder instance, for a fluent interfacing

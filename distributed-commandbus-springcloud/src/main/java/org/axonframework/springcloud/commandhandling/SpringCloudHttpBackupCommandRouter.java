@@ -240,7 +240,8 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
 
         /**
          * Sets the {@code messageRoutingInformationEndpoint} of type {@link String}, which is the endpoint where to
-         * retrieve the another nodes message routing information from
+         * retrieve the another nodes message routing information from. Defaults to endpoint
+         * {@code "/message-routing-information"}.
          *
          * @param messageRoutingInformationEndpoint the endpoint where to retrieve the another nodes message routing
          *                                          information from
