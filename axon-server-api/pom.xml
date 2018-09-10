@@ -2,11 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.axoniq</groupId>
-        <artifactId>axonhub-client-parent</artifactId>
-        <version>1.2-ONEJAR-SNAPSHOT</version>
+        <groupId>org.axonframework</groupId>
+        <artifactId>axon</artifactId>
+        <version>3.4-SNAPSHOT</version>
     </parent>
-    <artifactId>axonhub-grpc-proto</artifactId>
+    <groupId>io.axoniq</groupId>
+    <artifactId>axon-server-api</artifactId>
 
     <build>
         <resources>

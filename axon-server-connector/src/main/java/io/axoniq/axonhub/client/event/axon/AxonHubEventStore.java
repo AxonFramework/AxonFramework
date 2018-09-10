@@ -144,7 +144,7 @@ public class AxonHubEventStore extends AbstractEventStore {
                                          EventUpcaster upcasterChain,
                                          AxonHubConfiguration configuration,
                                          AxonDBClient eventStoreClient) {
-            super(serializer, upcasterChain, null);
+            super(serializer, upcasterChain, null, serializer);
             this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);
             this.configuration = configuration;
             this.eventStoreClient = eventStoreClient;

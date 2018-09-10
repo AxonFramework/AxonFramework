@@ -18,17 +18,18 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.axoniq</groupId>
-        <artifactId>axonhub-client-parent</artifactId>
-        <version>1.2-ONEJAR-SNAPSHOT</version>
+        <groupId>org.axonframework</groupId>
+        <artifactId>axon</artifactId>
+        <version>3.4-SNAPSHOT</version>
     </parent>
 
-    <artifactId>axonhub-client</artifactId>
+    <groupId>io.axoniq</groupId>
+    <artifactId>axon-server-connector</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>io.axoniq</groupId>
-            <artifactId>axonhub-grpc-proto</artifactId>
+            <artifactId>axon-server-api</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
@@ -62,6 +63,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-core</artifactId>
+            <version>${project.parent.version}</version>
             <optional>true</optional>
         </dependency>
 
@@ -84,11 +86,11 @@
         </dependency>
 
         <!-- Test dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>junit</groupId>-->
+            <!--<artifactId>junit</artifactId>-->
+            <!--<scope>test</scope>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -148,7 +150,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>io.axoniq</groupId>
-                                    <artifactId>axonhub-grpc-proto</artifactId>
+                                    <artifactId>axon-server-api</artifactId>
                                     <outputDirectory>${project.build.directory}/proto</outputDirectory>
                                     <includes>*.proto</includes>
                                 </artifactItem>
