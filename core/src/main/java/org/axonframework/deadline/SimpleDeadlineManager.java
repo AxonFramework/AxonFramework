@@ -196,13 +196,13 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                 InterceptorChain chain =
                         new DefaultInterceptorChain<>(unitOfWork,
                                                       handlerInterceptors(),
-                                                      dm -> {
-                                                          executeScheduledDeadline(dm, deadlineScope);
+                                                      deadlineMessage -> {
+                                                          executeScheduledDeadline(deadlineMessage, deadlineScope);
                                                           return null;
                                                       });
                 unitOfWork.executeWithResult(chain::proceed);
             } catch (Exception e) {
-                throw new DeadlineException(format("An error occurred while processing the deadline %s %s",
+                throw new DeadlineException(format("An error occurred while triggering the deadline %s %s",
                                                    deadlineName,
                                                    deadlineId), e);
             } finally {

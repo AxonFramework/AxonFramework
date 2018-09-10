@@ -104,8 +104,10 @@ public class DeadlineJob implements Job {
             InterceptorChain chain =
                     new DefaultInterceptorChain<>(unitOfWork,
                                                   handlerInterceptors,
-                                                  dm -> {
-                                                      executeScheduledDeadline(scopeAwareComponents, dm, deadlineScope);
+                                                  interceptedDeadlineMessage -> {
+                                                      executeScheduledDeadline(scopeAwareComponents,
+                                                                               interceptedDeadlineMessage,
+                                                                               deadlineScope);
                                                       return null;
                                                   });
             unitOfWork.executeWithResult(chain::proceed);

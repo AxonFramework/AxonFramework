@@ -67,7 +67,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
     }
 
     /**
-     * Creates a new instance of scheduled deadline info with all given {@code deadlineMessage}. Other fields are the
+     * Creates a new instance of scheduled deadline info with new {@code deadlineMessage}. Other fields are the
      * same.
      *
      * @param deadlineMessage New deadline message

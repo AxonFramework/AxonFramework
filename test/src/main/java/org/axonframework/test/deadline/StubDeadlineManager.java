@@ -222,9 +222,9 @@ public class StubDeadlineManager implements DeadlineManager {
         try {
             DefaultUnitOfWork<? extends DeadlineMessage<?>> uow = DefaultUnitOfWork.startAndGet(
                     scheduledDeadlineInfo.deadlineMessage());
-            InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, dm -> {
-                deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), dm);
-                return dm;
+            InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, deadlineMessage -> {
+                deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
+                return deadlineMessage;
             });
             return (DeadlineMessage<?>) uow.executeWithResult(chain::proceed);
         } catch (Exception e) {

@@ -145,8 +145,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     public void testHandlerInterceptorOnAggregate() {
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(dm -> GenericDeadlineMessage
-                    .asDeadlineMessage(dm.getDeadlineName(), new DeadlinePayload("fakeId")));
+            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
+                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId")));
             return chain.proceed();
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
@@ -211,8 +211,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(dm -> GenericDeadlineMessage
-                    .asDeadlineMessage(dm.getDeadlineName(), new DeadlinePayload("fakeId")));
+            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
+                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId")));
             return chain.proceed();
         });
         configuration.eventStore().publish(testEventMessage);

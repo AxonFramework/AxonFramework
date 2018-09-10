@@ -92,8 +92,8 @@ public class AggregateDeadlineSchedulingTest {
     @Test
     public void testDeadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
-                    uow.transformMessage(dm -> GenericDeadlineMessage
-                            .asDeadlineMessage(dm.getDeadlineName(), "fakeDeadlineDetails"));
+                    uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
+                            .asDeadlineMessage(deadlineMessage.getDeadlineName(), "fakeDeadlineDetails"));
                     return chain.proceed();
                 })
                .givenNoPriorActivity()
