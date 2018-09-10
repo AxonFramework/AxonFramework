@@ -16,7 +16,7 @@
 package io.axoniq.axonhub.client.processor.grpc;
 
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.processor.AxonHubEventProcessorInfoSource;
+import io.axoniq.axonhub.client.processor.EventProcessorInfoSource;
 import io.axoniq.platform.grpc.PlatformInboundInstruction;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventProcessor;
@@ -30,7 +30,7 @@ import java.util.function.Function;
  * Created by Sara Pellegrini on 15/03/2018.
  * sara.pellegrini@gmail.com
  */
-public class GrpcEventProcessorInfoSource implements AxonHubEventProcessorInfoSource {
+public class GrpcEventProcessorInfoSource implements EventProcessorInfoSource {
 
     private final Map<String, PlatformInboundInstruction> lastProcessorsInfo = new HashMap<>();
 

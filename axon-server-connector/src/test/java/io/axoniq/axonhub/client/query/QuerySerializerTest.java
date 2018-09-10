@@ -17,7 +17,7 @@ package io.axoniq.axonhub.client.query;
 
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryMessage;
@@ -44,7 +44,7 @@ public class QuerySerializerTest {
 
     private final Serializer jacksonSerializer = new JacksonSerializer();
 
-    private final AxonHubConfiguration configuration = new AxonHubConfiguration() {{
+    private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
         this.setClientName("client");
         this.setComponentName("component");
     }};

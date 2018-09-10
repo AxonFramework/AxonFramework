@@ -19,7 +19,7 @@ import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.util.GrpcMetadataSerializer;
 import io.axoniq.axonhub.client.util.GrpcObjectSerializer;
@@ -28,8 +28,6 @@ import io.axoniq.platform.MetaDataValue;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
-
-import java.util.UUID;
 
 /**
  * Converter between Axon QueryRequest/QueryResponse and AxonHub GRPC messages.
@@ -41,7 +39,7 @@ public class QuerySerializer {
 
     private final Serializer messageSerializer;
 
-    private final AxonHubConfiguration configuration;
+    private final AxonServerConfiguration configuration;
 
     private final GrpcPayloadSerializer payloadSerializer;
 
@@ -50,7 +48,7 @@ public class QuerySerializer {
     private final GrpcMetadataSerializer metadataSerializer;
 
     public QuerySerializer(Serializer messageSerializer, Serializer genericSerializer,
-                           AxonHubConfiguration configuration) {
+                           AxonServerConfiguration configuration) {
         this.genericSerializer = genericSerializer;
         this.messageSerializer = messageSerializer;
         this.configuration = configuration;

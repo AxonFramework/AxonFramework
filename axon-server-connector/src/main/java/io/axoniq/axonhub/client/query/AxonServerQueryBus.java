@@ -19,11 +19,11 @@ import io.axoniq.axonhub.ErrorMessage;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.axonhub.QuerySubscription;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.DispatchInterceptors;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.command.AxonHubRegistration;
+import io.axoniq.axonhub.client.command.AxonServerRegistration;
 import io.axoniq.axonhub.client.util.ContextAddingInterceptor;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
@@ -78,9 +78,9 @@ import static io.axoniq.axonhub.client.util.ProcessingInstructionHelper.priority
  *
  * @author Marc Gathier
  */
-public class AxonHubQueryBus implements QueryBus {
-    private final Logger logger = LoggerFactory.getLogger(AxonHubQueryBus.class);
-    private final AxonHubConfiguration configuration;
+public class AxonServerQueryBus implements QueryBus {
+    private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
+    private final AxonServerConfiguration configuration;
     private final QueryBus localSegment;
     private final QuerySerializer serializer;
     private final QueryPriorityCalculator priorityCalculator;
@@ -101,9 +101,8 @@ public class AxonHubQueryBus implements QueryBus {
      * @param genericSerializer         serializer for communication of other objects than payload and metadata
      * @param priorityCalculator        calculates the request priority based on the content and adds it to the request
      */
-    public
-    AxonHubQueryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration, QueryBus localSegment,
-                           Serializer messageSerializer, Serializer genericSerializer, QueryPriorityCalculator priorityCalculator) {
+    public AxonServerQueryBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration configuration, QueryBus localSegment,
+                              Serializer messageSerializer, Serializer genericSerializer, QueryPriorityCalculator priorityCalculator) {
         this.configuration = configuration;
         this.localSegment = localSegment;
         this.serializer = new QuerySerializer(messageSerializer, genericSerializer, configuration);
@@ -122,8 +121,8 @@ public class AxonHubQueryBus implements QueryBus {
     @Override
     public <R> Registration subscribe(String queryName, Type responseType,
                                       MessageHandler<? super QueryMessage<?, R>> handler) {
-        return new AxonHubRegistration(queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
-                                       () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName()));
+        return new AxonServerRegistration(queryProvider.subscribe(queryName, responseType, configuration.getComponentName(), handler),
+                                          () -> queryProvider.unsubscribe(queryName, responseType, configuration.getComponentName()));
     }
 
     @Override

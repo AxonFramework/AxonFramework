@@ -16,14 +16,11 @@
 package io.axoniq.axonhub.client.query;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
-import io.axoniq.platform.MetaDataValue;
 import io.axoniq.platform.SerializedObject;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
@@ -50,12 +47,12 @@ import static org.mockito.Mockito.*;
 /**
  * Author: marc
  */
-public class AxonHubQueryBusTest {
+public class AxonServerQueryBusTest {
 
-    private AxonHubQueryBus queryBus;
+    private AxonServerQueryBus queryBus;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
     private XStreamSerializer ser;
-    private AxonHubConfiguration conf;
+    private AxonServerConfiguration conf;
     private SimpleQueryBus localSegment;
     private PlatformConnectionManager platformConnectionManager;
     private AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserverRef;
@@ -63,7 +60,7 @@ public class AxonHubQueryBusTest {
 
     @Before
     public void setup() throws Exception {
-        conf = new AxonHubConfiguration();
+        conf = new AxonServerConfiguration();
         conf.setServers("localhost:4343");
         conf.setClientName("JUnit");
         conf.setComponentName("JUnit");
@@ -72,12 +69,12 @@ public class AxonHubQueryBusTest {
         conf.setNrOfNewPermits(1000);
         localSegment = new SimpleQueryBus();
         ser = new XStreamSerializer();
-        queryBus = new AxonHubQueryBus(new PlatformConnectionManager(conf),
-                                       conf,
-                                       localSegment,
-                                       ser,
-                                       ser,
-                                       new QueryPriorityCalculator() {
+        queryBus = new AxonServerQueryBus(new PlatformConnectionManager(conf),
+                                          conf,
+                                          localSegment,
+                                          ser,
+                                          ser,
+                                          new QueryPriorityCalculator() {
                                        });
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
@@ -132,12 +129,12 @@ public class AxonHubQueryBusTest {
     @Test
     public void processQuery() throws Exception {
 
-        AxonHubQueryBus queryBus2 = new AxonHubQueryBus(platformConnectionManager,
-                                                        conf,
-                                                        localSegment,
-                                                        ser,
-                                                        ser,
-                                                        new QueryPriorityCalculator() {
+        AxonServerQueryBus queryBus2 = new AxonServerQueryBus(platformConnectionManager,
+                                                              conf,
+                                                              localSegment,
+                                                              ser,
+                                                              ser,
+                                                              new QueryPriorityCalculator() {
                                                         });
         Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
 
@@ -179,8 +176,8 @@ public class AxonHubQueryBusTest {
 
     @Test
     public void handlerInterceptor() {
-        AxonHubQueryBus bus = new AxonHubQueryBus(platformConnectionManager, conf, new SimpleQueryBus(), ser, ser,
-                                                  new QueryPriorityCalculator() {});
+        AxonServerQueryBus bus = new AxonServerQueryBus(platformConnectionManager, conf, new SimpleQueryBus(), ser, ser,
+                                                        new QueryPriorityCalculator() {});
         bus.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
         List<Object> results = new LinkedList<>();
         bus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {

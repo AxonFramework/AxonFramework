@@ -15,7 +15,7 @@
 
 package io.axoniq.axonhub.client.event.axon;
 
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.StubServer;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -36,20 +36,20 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
-public class AxonHubEventStoreTest {
+public class AxonServerEventStoreTest {
 
     private StubServer server;
-    private AxonHubEventStore testSubject;
+    private AxonServerEventStore testSubject;
 
     @Before
     public void setUp() throws Exception {
         server = new StubServer(6123);
         server.start();
-        AxonHubConfiguration config = AxonHubConfiguration.newBuilder("localhost:6123", "JUNIT")
+        AxonServerConfiguration config = AxonServerConfiguration.newBuilder("localhost:6123", "JUNIT")
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
         PlatformConnectionManager platformConnectionManager = new PlatformConnectionManager(config);
-        testSubject = new AxonHubEventStore(config, platformConnectionManager, new XStreamSerializer());
+        testSubject = new AxonServerEventStore(config, platformConnectionManager, new XStreamSerializer());
     }
 
     @After

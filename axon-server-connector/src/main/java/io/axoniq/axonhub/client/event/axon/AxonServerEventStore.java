@@ -23,7 +23,7 @@ import io.axoniq.axondb.grpc.GetEventsRequest;
 import io.axoniq.axondb.grpc.QueryEventsRequest;
 import io.axoniq.axondb.grpc.QueryEventsResponse;
 import io.axoniq.axondb.grpc.ReadHighestSequenceNrResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.AppendEventTransaction;
@@ -71,9 +71,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @author Allard Buijze
  */
-public class AxonHubEventStore extends AbstractEventStore {
+public class AxonServerEventStore extends AbstractEventStore {
 
-    private static final Logger logger = LoggerFactory.getLogger(AxonHubEventStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(AxonServerEventStore.class);
 
     /**
      * Initialize the Event Store using given {@code configuration} and given {@code serializer}.
@@ -84,7 +84,7 @@ public class AxonHubEventStore extends AbstractEventStore {
      * @param platformConnectionManager manager for connections to AxonHub platform
      * @param serializer    The serializer to serialize Event payloads with
      */
-    public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
+    public AxonServerEventStore(AxonServerConfiguration configuration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
         this(configuration, platformConnectionManager, serializer, NoOpEventUpcaster.INSTANCE);
     }
 
@@ -98,8 +98,8 @@ public class AxonHubEventStore extends AbstractEventStore {
      * @param serializer    The serializer to serialize Event payloads with
      * @param upcasterChain The upcaster to modify received Event representations with
      */
-    public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager,
-                             Serializer serializer, EventUpcaster upcasterChain) {
+    public AxonServerEventStore(AxonServerConfiguration configuration, PlatformConnectionManager platformConnectionManager,
+                                Serializer serializer, EventUpcaster upcasterChain) {
         super(new AxonIQEventStorageEngine(serializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
     }
 
@@ -113,8 +113,8 @@ public class AxonHubEventStore extends AbstractEventStore {
      * @param eventSerializer   The serializer to serialize Event payloads with
      * @param upcasterChain The upcaster to modify received Event representations with
      */
-    public AxonHubEventStore(AxonHubConfiguration configuration, PlatformConnectionManager platformConnectionManager,
-                             Serializer snapshotSerializer, Serializer eventSerializer, EventUpcaster upcasterChain) {
+    public AxonServerEventStore(AxonServerConfiguration configuration, PlatformConnectionManager platformConnectionManager,
+                                Serializer snapshotSerializer, Serializer eventSerializer, EventUpcaster upcasterChain) {
         super(new AxonIQEventStorageEngine(snapshotSerializer, eventSerializer, upcasterChain, configuration, new AxonDBClient(configuration, platformConnectionManager)));
     }
     @Override
@@ -136,13 +136,13 @@ public class AxonHubEventStore extends AbstractEventStore {
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
 
         private final EventUpcaster upcasterChain;
-        private final AxonHubConfiguration configuration;
+        private final AxonServerConfiguration configuration;
         private final AxonDBClient eventStoreClient;
         private final GrpcMetaDataConverter converter;
 
         private AxonIQEventStorageEngine(Serializer serializer,
                                          EventUpcaster upcasterChain,
-                                         AxonHubConfiguration configuration,
+                                         AxonServerConfiguration configuration,
                                          AxonDBClient eventStoreClient) {
             super(serializer, upcasterChain, null, serializer);
             this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);
@@ -154,7 +154,7 @@ public class AxonHubEventStore extends AbstractEventStore {
         private AxonIQEventStorageEngine(Serializer snapshotSerializer,
                                          Serializer serializer,
                                          EventUpcaster upcasterChain,
-                                         AxonHubConfiguration configuration,
+                                         AxonServerConfiguration configuration,
                                          AxonDBClient eventStoreClient) {
             super(snapshotSerializer, upcasterChain, null, serializer, null);
             this.upcasterChain = getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE);

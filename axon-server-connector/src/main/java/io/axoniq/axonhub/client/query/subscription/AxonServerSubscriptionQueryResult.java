@@ -21,7 +21,7 @@ import io.axoniq.axonhub.QueryUpdateCompleteExceptionally;
 import io.axoniq.axonhub.SubscriptionQuery;
 import io.axoniq.axonhub.SubscriptionQueryRequest;
 import io.axoniq.axonhub.SubscriptionQueryResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.Publisher;
 import io.axoniq.axonhub.client.query.RemoteQueryException;
 import io.axoniq.axonhub.client.util.FlowControllingStreamObserver;
@@ -49,11 +49,11 @@ import static java.util.Optional.ofNullable;
  *
  * @author Sara Pellegrini
  */
-class AxonHubSubscriptionQueryResult implements
+class AxonServerSubscriptionQueryResult implements
         Supplier<SubscriptionQueryResult<QueryResponse, QueryUpdate>>,
         StreamObserver<SubscriptionQueryResponse> {
 
-    private final Logger logger = LoggerFactory.getLogger(AxonHubSubscriptionQueryResult.class);
+    private final Logger logger = LoggerFactory.getLogger(AxonServerSubscriptionQueryResult.class);
 
     private final FlowControllingStreamObserver<SubscriptionQueryRequest> requestObserver;
 
@@ -67,10 +67,10 @@ class AxonHubSubscriptionQueryResult implements
 
     private MonoSink<QueryResponse> initialResultSink;
 
-    AxonHubSubscriptionQueryResult(
+    AxonServerSubscriptionQueryResult(
             SubscriptionQuery query,
             Function<StreamObserver<SubscriptionQueryResponse>, StreamObserver<SubscriptionQueryRequest>> openStreamFn,
-            AxonHubConfiguration configuration,
+            AxonServerConfiguration configuration,
             SubscriptionQueryBackpressure backPressure,
             int bufferSize, Runnable onDispose) {
         this.onDispose = onDispose;

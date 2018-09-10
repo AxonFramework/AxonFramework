@@ -13,22 +13,20 @@
  * limitations under the License.
  */
 
-package io.axoniq.axonhub.client.processor;
+package io.axoniq.axonhub.client;
 
 /**
- * Created by Sara Pellegrini on 30/03/2018.
+ * Created by Sara Pellegrini on 15/05/2018.
  * sara.pellegrini@gmail.com
  */
-public class FakeAxonHubEventProcessorInfoSource implements AxonHubEventProcessorInfoSource {
+public class AxonServerException extends RuntimeException {
 
-    private int notifyCalls;
-
-    @Override
-    public void notifyInformation() {
-        notifyCalls++;
+    public AxonServerException(String message) {
+        super(message);
     }
 
-    public int notifyCalls() {
-        return notifyCalls;
+    public AxonServerException(String errorCode, String message) {
+        super(errorCode+ " - " +message);
     }
+
 }

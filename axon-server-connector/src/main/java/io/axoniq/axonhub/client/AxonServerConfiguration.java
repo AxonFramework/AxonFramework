@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 /**
  * Author: marc
  */
-@ConfigurationProperties(prefix = "axoniq.axonhub")
-public class AxonHubConfiguration {
+@ConfigurationProperties(prefix = "axoniq.axonserver")
+public class AxonServerConfiguration {
     private static final int DEFAULT_GRPC_PORT = 8124;
 
     /**
@@ -110,10 +110,10 @@ public class AxonHubConfiguration {
      */
     private long keepAliveTime = 0;
 
-    public AxonHubConfiguration() {
+    public AxonServerConfiguration() {
     }
 
-    private AxonHubConfiguration(String routingServers,  String componentName) {
+    private AxonServerConfiguration(String routingServers, String componentName) {
         this.servers = routingServers;
         this.componentName = componentName;
     }
@@ -274,9 +274,9 @@ public class AxonHubConfiguration {
 
     @SuppressWarnings("unused")
     public static class Builder {
-        private AxonHubConfiguration instance;
+        private AxonServerConfiguration instance;
         public Builder(String servers, String componentName) {
-            instance = new AxonHubConfiguration(servers, componentName);
+            instance = new AxonServerConfiguration(servers, componentName);
             instance.initialNrOfPermits = 100000;
             instance.nrOfNewPermits = 90000;
             instance.newPermitsThreshold = 10000;
@@ -315,7 +315,7 @@ public class AxonHubConfiguration {
             return this;
         }
 
-        public AxonHubConfiguration build() {
+        public AxonServerConfiguration build() {
             return instance;
         }
     }

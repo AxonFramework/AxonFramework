@@ -20,7 +20,7 @@ import io.axoniq.axonhub.QueryUpdate;
 import io.axoniq.axonhub.QueryUpdateCompleteExceptionally;
 import io.axoniq.axonhub.SubscriptionQuery;
 import io.axoniq.axonhub.SubscriptionQueryResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
@@ -51,7 +51,7 @@ public class SubscriptionMessageSerializerTest {
 
     private final Serializer jacksonSerializer = new JacksonSerializer();
 
-    private final AxonHubConfiguration configuration = new AxonHubConfiguration() {{
+    private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
         this.setClientName("client");
         this.setComponentName("component");
     }};

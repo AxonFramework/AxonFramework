@@ -13,20 +13,13 @@
  * limitations under the License.
  */
 
-package io.axoniq.axonhub.client;
+package io.axoniq.axonhub.client.processor;
 
 /**
- * Created by Sara Pellegrini on 15/05/2018.
+ * Created by Sara Pellegrini on 09/03/2018.
  * sara.pellegrini@gmail.com
  */
-public class AxonHubException extends RuntimeException {
+public interface EventProcessorInfoSource {
 
-    public AxonHubException(String message) {
-        super(message);
-    }
-
-    public AxonHubException(String errorCode, String message) {
-        super(errorCode+ " - " +message);
-    }
-
+    void notifyInformation();
 }

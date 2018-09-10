@@ -15,7 +15,7 @@
 
 package io.axoniq.axonhub.client.event.axon;
 
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.processor.EventProcessorControlService;
 import io.axoniq.axonhub.client.processor.EventProcessorController;
@@ -29,16 +29,16 @@ import org.axonframework.config.ModuleConfiguration;
  * Created by Sara Pellegrini on 03/04/2018.
  * sara.pellegrini@gmail.com
  */
-public class AxonHubEventProcessorInfoConfiguration implements ModuleConfiguration {
+public class EventProcessorInfoConfiguration implements ModuleConfiguration {
 
     private final EventProcessorControlService eventProcessorControlService;
 
     private final ScheduledEventProcessorInfoSource processorInfoSource;
 
-    public AxonHubEventProcessorInfoConfiguration(
+    public EventProcessorInfoConfiguration(
             EventHandlingConfiguration eventHandlinConf,
             PlatformConnectionManager connectionManager,
-            AxonHubConfiguration configuration) {
+            AxonServerConfiguration configuration) {
         EventProcessorController controller = new EventProcessorController(eventHandlinConf);
         GrpcEventProcessorInfoSource infoSource = new GrpcEventProcessorInfoSource(eventHandlinConf, connectionManager);
 

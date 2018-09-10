@@ -20,18 +20,8 @@ import io.axoniq.axonhub.QueryUpdate;
 import io.axoniq.axonhub.SubscriptionQuery;
 import io.axoniq.axonhub.SubscriptionQueryRequest;
 import io.axoniq.axonhub.SubscriptionQueryResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
-import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import reactor.core.publisher.FluxSink;
 
@@ -44,14 +34,14 @@ import static org.junit.Assert.assertEquals;
  * Created by Sara Pellegrini on 18/06/2018.
  * sara.pellegrini@gmail.com
  */
-public class AxonHubSubscriptionQueryResultTest {
+public class AxonServerSubscriptionQueryResultTest {
 
 
     private SubscriptionQuery queryMessage;
 
     private FakeStreamObserver<SubscriptionQueryRequest> requestObserver;
 
-    private AxonHubConfiguration configuration;
+    private AxonServerConfiguration configuration;
 
     private SubscriptionQueryResponse update;
 
@@ -64,7 +54,7 @@ public class AxonHubSubscriptionQueryResultTest {
         queryMessage = SubscriptionQuery.newBuilder().build();
         update = SubscriptionQueryResponse.newBuilder().setUpdate(QueryUpdate.newBuilder()).build();
         initialResult = SubscriptionQueryResponse.newBuilder().setInitialResponse(QueryResponse.newBuilder()).build();
-        configuration = new AxonHubConfiguration();
+        configuration = new AxonServerConfiguration();
         configuration.setContext("context");
         configuration.setComponentName("component");
         configuration.setClientName("client");
@@ -73,7 +63,7 @@ public class AxonHubSubscriptionQueryResultTest {
     @Test
     public void testSubscribeUpdates() {
         SubscriptionQueryBackpressure backPressure = new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR);
-        AxonHubSubscriptionQueryResult target = new AxonHubSubscriptionQueryResult(
+        AxonServerSubscriptionQueryResult target = new AxonServerSubscriptionQueryResult(
                 queryMessage, responseStream -> requestObserver, configuration, backPressure, 10, () -> {});
         target.onNext(update);
         target.onNext(update);
@@ -85,7 +75,7 @@ public class AxonHubSubscriptionQueryResultTest {
     @Test
     public void testSubscribeInitialResponse() {
         SubscriptionQueryBackpressure backPressure = new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR);
-        AxonHubSubscriptionQueryResult target = new AxonHubSubscriptionQueryResult(
+        AxonServerSubscriptionQueryResult target = new AxonServerSubscriptionQueryResult(
                 queryMessage, responseStream -> requestObserver, configuration, backPressure, 10, () -> {});
         List<QueryResponse> result = new ArrayList<>();
         target.get().initialResult().subscribe(result::add);
@@ -97,7 +87,7 @@ public class AxonHubSubscriptionQueryResultTest {
     @Test
     public void testErrorOverflowStrategy() {
         SubscriptionQueryBackpressure backPressure = new SubscriptionQueryBackpressure(FluxSink.OverflowStrategy.ERROR);
-        AxonHubSubscriptionQueryResult target = new AxonHubSubscriptionQueryResult(
+        AxonServerSubscriptionQueryResult target = new AxonServerSubscriptionQueryResult(
                 queryMessage, responseStream -> requestObserver, configuration, backPressure, 2, () -> {});
         target.onNext(update);
         target.onNext(update);

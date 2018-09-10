@@ -19,7 +19,7 @@ import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.CommandResponse;
 import io.axoniq.axonhub.ProcessingInstruction;
 import io.axoniq.axonhub.ProcessingKey;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.util.GrpcMetadataSerializer;
 import io.axoniq.axonhub.client.util.GrpcObjectSerializer;
@@ -39,7 +39,7 @@ import java.util.UUID;
  */
 public class CommandSerializer {
 
-    private final AxonHubConfiguration configuration;
+    private final AxonServerConfiguration configuration;
 
     private final Serializer messageSerializer;
 
@@ -49,7 +49,7 @@ public class CommandSerializer {
 
     private final GrpcObjectSerializer<Object> objectSerializer;
 
-    public CommandSerializer(Serializer serializer, AxonHubConfiguration configuration) {
+    public CommandSerializer(Serializer serializer, AxonServerConfiguration configuration) {
         this.configuration = configuration;
         this.messageSerializer = serializer;
         this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(this.messageSerializer));

@@ -22,11 +22,9 @@ import io.axoniq.axonhub.QueryUpdateComplete;
 import io.axoniq.axonhub.QueryUpdateCompleteExceptionally;
 import io.axoniq.axonhub.SubscriptionQuery;
 import io.axoniq.axonhub.SubscriptionQueryResponse;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
-import io.axoniq.axonhub.client.AxonHubException;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.query.GrpcBackedResponseMessage;
-import io.axoniq.axonhub.client.query.RemoteQueryException;
 import io.axoniq.axonhub.client.util.ExceptionSerializer;
 import io.axoniq.axonhub.client.util.GrpcMetaDataConverter;
 import io.axoniq.axonhub.client.util.GrpcMetadataSerializer;
@@ -36,10 +34,7 @@ import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.Serializer;
-
-import java.util.UUID;
 
 import static io.axoniq.axonhub.grpc.QueryProviderOutbound.newBuilder;
 
@@ -51,7 +46,7 @@ import static io.axoniq.axonhub.grpc.QueryProviderOutbound.newBuilder;
 
 public class SubscriptionMessageSerializer {
 
-    private final AxonHubConfiguration conf;
+    private final AxonServerConfiguration conf;
 
     private final Serializer messageSerializer;
 
@@ -63,7 +58,7 @@ public class SubscriptionMessageSerializer {
 
     private final GrpcObjectSerializer<Object> responseTypeSerializer;
 
-    public SubscriptionMessageSerializer(AxonHubConfiguration conf,
+    public SubscriptionMessageSerializer(AxonServerConfiguration conf,
                                          Serializer messageSerializer,
                                          Serializer genericSerializer) {
         this.conf = conf;

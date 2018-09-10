@@ -29,8 +29,8 @@ import io.axoniq.axondb.grpc.QueryEventsResponse;
 import io.axoniq.axondb.grpc.ReadHighestSequenceNrRequest;
 import io.axoniq.axondb.grpc.ReadHighestSequenceNrResponse;
 import io.axoniq.axondb.grpc.TrackingToken;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
-import io.axoniq.axonhub.client.AxonHubException;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
+import io.axoniq.axonhub.client.AxonServerException;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
 import io.axoniq.axonhub.client.event.util.EventCipher;
 import io.axoniq.axonhub.client.event.util.GrpcExceptionParser;
@@ -61,7 +61,7 @@ public class AxonDBClient {
 
     private boolean shutdown;
 
-    public AxonDBClient(AxonHubConfiguration eventStoreConfiguration, PlatformConnectionManager platformConnectionManager) {
+    public AxonDBClient(AxonServerConfiguration eventStoreConfiguration, PlatformConnectionManager platformConnectionManager) {
         this.tokenAddingInterceptor = new TokenAddingInterceptor(eventStoreConfiguration.getToken());
         this.eventCipher = eventStoreConfiguration.getEventCipher();
         this.platformConnectionManager = platformConnectionManager;
@@ -261,7 +261,7 @@ public class AxonDBClient {
 
         @Override
         public void onCompleted() {
-            if( ! future.isDone()) future.completeExceptionally(new AxonHubException("AXONIQ-0001", "Async call completed before answer"));
+            if( ! future.isDone()) future.completeExceptionally(new AxonServerException("AXONIQ-0001", "Async call completed before answer"));
         }
     }
 }

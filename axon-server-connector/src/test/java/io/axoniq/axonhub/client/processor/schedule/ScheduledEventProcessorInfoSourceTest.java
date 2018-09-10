@@ -15,7 +15,7 @@
 
 package io.axoniq.axonhub.client.processor.schedule;
 
-import io.axoniq.axonhub.client.processor.FakeAxonHubEventProcessorInfoSource;
+import io.axoniq.axonhub.client.processor.FakeEventProcessorInfoSource;
 import org.junit.*;
 
 import java.util.concurrent.TimeUnit;
@@ -30,7 +30,7 @@ public class ScheduledEventProcessorInfoSourceTest {
 
     @Test
     public void notifyInformation() throws InterruptedException {
-        FakeAxonHubEventProcessorInfoSource delegate = new FakeAxonHubEventProcessorInfoSource();
+        FakeEventProcessorInfoSource delegate = new FakeEventProcessorInfoSource();
         ScheduledEventProcessorInfoSource scheduled = new ScheduledEventProcessorInfoSource(50,30,delegate);
         scheduled.start();
         TimeUnit.MILLISECONDS.sleep(105);

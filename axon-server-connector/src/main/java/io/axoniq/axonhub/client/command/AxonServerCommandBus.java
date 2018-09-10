@@ -18,7 +18,7 @@ package io.axoniq.axonhub.client.command;
 import io.axoniq.axonhub.Command;
 import io.axoniq.axonhub.CommandResponse;
 import io.axoniq.axonhub.CommandSubscription;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.DispatchInterceptors;
 import io.axoniq.axonhub.client.ErrorCode;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
@@ -57,23 +57,23 @@ import static io.axoniq.axonhub.client.util.ProcessingInstructionHelper.priority
 
 
 /**
- * Axon CommandBus implementation that connects to AxonHub to submit and receive commands.
+ * Axon CommandBus implementation that connects to AxonServer to submit and receive commands.
  * @author Marc Gathier
  */
-public class AxonHubCommandBus implements CommandBus {
+public class AxonServerCommandBus implements CommandBus {
     private final CommandBus localSegment;
     private final CommandRouterSubscriber commandRouterSubscriber;
     private final PlatformConnectionManager platformConnectionManager;
     private final RoutingStrategy routingStrategy;
     private final CommandPriorityCalculator priorityCalculator;
     private final CommandSerializer serializer;
-    private final AxonHubConfiguration configuration;
+    private final AxonServerConfiguration configuration;
     private final ClientInterceptor[] interceptors;
     private final DispatchInterceptors<CommandMessage<?>> dispatchInterceptors = new DispatchInterceptors<>();
-    private Logger logger = LoggerFactory.getLogger(AxonHubCommandBus.class);
+    private Logger logger = LoggerFactory.getLogger(AxonServerCommandBus.class);
 
-    public AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
-                             CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
+    public AxonServerCommandBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration configuration,
+                                CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy) {
         this( platformConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator(){});
     }
     /**
@@ -84,8 +84,8 @@ public class AxonHubCommandBus implements CommandBus {
      * @param routingStrategy determines routing key based on command message
      * @param priorityCalculator calculates the request priority based on the content and adds it to the request
      */
-    public AxonHubCommandBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration configuration,
-                             CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
+    public AxonServerCommandBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration configuration,
+                                CommandBus localSegment, Serializer serializer, RoutingStrategy routingStrategy, CommandPriorityCalculator priorityCalculator) {
         this.localSegment = localSegment;
         this.serializer = new CommandSerializer(serializer, configuration);
         this.platformConnectionManager = platformConnectionManager;
@@ -165,7 +165,7 @@ public class AxonHubCommandBus implements CommandBus {
     public Registration subscribe(String s, MessageHandler<? super CommandMessage<?>> messageHandler) {
         logger.debug("Subscribe: {}", s);
         commandRouterSubscriber.subscribe(s);
-        return new AxonHubRegistration(localSegment.subscribe(s, messageHandler), () -> commandRouterSubscriber.unsubscribe(s));
+        return new AxonServerRegistration(localSegment.subscribe(s, messageHandler), () -> commandRouterSubscriber.unsubscribe(s));
     }
 
     @Override

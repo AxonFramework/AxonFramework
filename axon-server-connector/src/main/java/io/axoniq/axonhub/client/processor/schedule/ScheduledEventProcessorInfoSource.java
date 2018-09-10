@@ -15,7 +15,7 @@
 
 package io.axoniq.axonhub.client.processor.schedule;
 
-import io.axoniq.axonhub.client.processor.AxonHubEventProcessorInfoSource;
+import io.axoniq.axonhub.client.processor.EventProcessorInfoSource;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * Created by Sara Pellegrini on 15/03/2018.
  * sara.pellegrini@gmail.com
  */
-public class ScheduledEventProcessorInfoSource implements AxonHubEventProcessorInfoSource {
+public class ScheduledEventProcessorInfoSource implements EventProcessorInfoSource {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -33,12 +33,12 @@ public class ScheduledEventProcessorInfoSource implements AxonHubEventProcessorI
 
     private final int schedulingPeriod;
 
-    private final AxonHubEventProcessorInfoSource delegate;
+    private final EventProcessorInfoSource delegate;
 
     public ScheduledEventProcessorInfoSource(
             int initialDelay,
             int schedulingPeriod,
-            AxonHubEventProcessorInfoSource delegate) {
+            EventProcessorInfoSource delegate) {
         this.initialDelay = initialDelay;
         this.schedulingPeriod = schedulingPeriod;
         this.delegate = delegate;

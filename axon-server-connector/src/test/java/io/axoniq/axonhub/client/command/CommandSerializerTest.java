@@ -16,13 +16,12 @@
 package io.axoniq.axonhub.client.command;
 
 import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.grpc.CommandProviderOutbound;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.util.HashMap;
@@ -37,7 +36,7 @@ public class CommandSerializerTest {
 
     private final Serializer jacksonSerializer = new JacksonSerializer();
 
-    private final AxonHubConfiguration configuration = new AxonHubConfiguration() {{
+    private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
         this.setClientName("client");
         this.setComponentName("component");
     }};

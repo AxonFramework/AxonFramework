@@ -70,10 +70,10 @@ public class PlatformConnectionManager {
     private final List<Runnable> disconnectListeners = new CopyOnWriteArrayList<>();
     private final List<Function<Runnable, Runnable>> reconnectInterceptors = new CopyOnWriteArrayList<>();
     private final List<Runnable> reconnectListeners = new CopyOnWriteArrayList<>();
-    private final AxonHubConfiguration connectInformation;
+    private final AxonServerConfiguration connectInformation;
     private final Map<PlatformOutboundInstruction.RequestCase, Collection<Consumer<PlatformOutboundInstruction>>> handlers = new EnumMap<>(PlatformOutboundInstruction.RequestCase.class);
 
-    public PlatformConnectionManager(AxonHubConfiguration connectInformation) {
+    public PlatformConnectionManager(AxonServerConfiguration connectInformation) {
         this.connectInformation = connectInformation;
     }
 

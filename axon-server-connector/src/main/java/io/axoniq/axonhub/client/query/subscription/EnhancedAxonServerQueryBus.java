@@ -15,9 +15,9 @@
 
 package io.axoniq.axonhub.client.query.subscription;
 
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.query.AxonHubQueryBus;
+import io.axoniq.axonhub.client.query.AxonServerQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;
 import org.axonframework.common.Registration;
@@ -51,13 +51,13 @@ import static io.axoniq.axonhub.grpc.QueryProviderInbound.RequestCase.SUBSCRIPTI
  *
  * @author Sara Pellegrini
  */
-public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
+public class EnhancedAxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
-    private final Logger logger = LoggerFactory.getLogger(EnhancedAxonHubQueryBus.class);
+    private final Logger logger = LoggerFactory.getLogger(EnhancedAxonServerQueryBus.class);
 
-    private final AxonHubConfiguration configuration;
+    private final AxonServerConfiguration configuration;
 
-    private final AxonHubQueryBus axonHubQueryBus;
+    private final AxonServerQueryBus axonHubQueryBus;
 
     private final SubscriptionMessageSerializer serializer;
 
@@ -65,15 +65,15 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
 
     private final QueryUpdateEmitter updateEmitter;
 
-    public EnhancedAxonHubQueryBus(PlatformConnectionManager platformConnectionManager,
-                                   AxonHubConfiguration configuration, QueryBus localSegment,
-                                   QueryUpdateEmitter updateEmitter,
-                                   Serializer messageSerializer, Serializer genericSerializer,
-                                   QueryPriorityCalculator priorityCalculator) {
+    public EnhancedAxonServerQueryBus(PlatformConnectionManager platformConnectionManager,
+                                      AxonServerConfiguration configuration, QueryBus localSegment,
+                                      QueryUpdateEmitter updateEmitter,
+                                      Serializer messageSerializer, Serializer genericSerializer,
+                                      QueryPriorityCalculator priorityCalculator) {
 
         this.configuration = configuration;
-        this.axonHubQueryBus = new AxonHubQueryBus(platformConnectionManager, configuration, localSegment,
-                                                   messageSerializer, genericSerializer, priorityCalculator);
+        this.axonHubQueryBus = new AxonServerQueryBus(platformConnectionManager, configuration, localSegment,
+                                                      messageSerializer, genericSerializer, priorityCalculator);
         this.serializer = new SubscriptionMessageSerializer(configuration, messageSerializer, genericSerializer);
         platformConnectionManager.addDisconnectListener(this::onApplicationDisconnected);
         platformConnectionManager.addReconnectInterceptor(this::interceptReconnectRequest);
@@ -132,7 +132,7 @@ public class EnhancedAxonHubQueryBus implements QueryBus, QueryUpdateEmitter {
         subscriptions.add(subscriptionId);
         QueryServiceGrpc.QueryServiceStub queryService = this.axonHubQueryBus.queryServiceStub();
 
-        AxonHubSubscriptionQueryResult result = new AxonHubSubscriptionQueryResult(
+        AxonServerSubscriptionQueryResult result = new AxonServerSubscriptionQueryResult(
                 serializer.serialize(query),
                 queryService::subscription,
                 configuration,
