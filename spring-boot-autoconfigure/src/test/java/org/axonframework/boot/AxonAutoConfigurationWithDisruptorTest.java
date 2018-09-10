@@ -32,8 +32,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -47,12 +47,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @ContextConfiguration(classes = AxonAutoConfigurationWithDisruptorTest.Context.class)
 @EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
-                                    HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
+        HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithDisruptorTest {
 
@@ -103,9 +102,10 @@ public class AxonAutoConfigurationWithDisruptorTest {
 
 
         @Bean
-        public DisruptorCommandBus commandBus(){
-            return new DisruptorCommandBus();
+        public DisruptorCommandBus commandBus() {
+            return DisruptorCommandBus.builder().build();
         }
+
         @Aggregate
         public static class MyAggregate {
 
@@ -122,11 +122,11 @@ public class AxonAutoConfigurationWithDisruptorTest {
 
         @Saga
         public static class MySaga {
+
             @SagaEventHandler(associationProperty = "toString")
             public void handle(String type, SomeComponent test) {
 
             }
-
         }
 
         @Component
@@ -136,14 +136,11 @@ public class AxonAutoConfigurationWithDisruptorTest {
             public void handle(String event, SomeOtherComponent test) {
 
             }
-
         }
 
         @Component
         public static class SomeOtherComponent {
+
         }
-
-
-
     }
 }

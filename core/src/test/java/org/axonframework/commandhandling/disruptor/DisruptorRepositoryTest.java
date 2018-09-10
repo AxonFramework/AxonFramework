@@ -40,7 +40,7 @@ public class DisruptorRepositoryTest {
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus();
+        DisruptorCommandBus commandBus = DisruptorCommandBus.builder().build();
         Repository<TestAggregate> repository = commandBus
                 .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));
 

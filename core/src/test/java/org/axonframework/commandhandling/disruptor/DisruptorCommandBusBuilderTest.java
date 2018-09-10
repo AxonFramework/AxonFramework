@@ -16,21 +16,18 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.junit.Test;
+import org.axonframework.common.AxonConfigurationException;
+import org.junit.*;
 
-/**
- * @author Allard Buijze
- */
-public class DisruptorConfigurationTest {
+public class DisruptorCommandBusBuilderTest {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testSetIllegalPublisherThreadCount() {
-        new DisruptorConfiguration().setPublisherThreadCount(0);
+        DisruptorCommandBus.builder().publisherThreadCount(0).build();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testSetIllegalInvokerThreadCount() {
-        new DisruptorConfiguration().setInvokerThreadCount(0);
+        DisruptorCommandBus.builder().invokerThreadCount(0).build();
     }
-
 }
