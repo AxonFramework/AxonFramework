@@ -194,7 +194,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         setTestSubject(testSubject = createEngine(acceptAll));
 
         testSubject.storeSnapshot(createEvent(1));
-        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        assertTrue(testSubject.readSnapshots(AGGREGATE).findFirst().isPresent());
     }
 
     @Test
@@ -204,7 +204,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         setTestSubject(testSubject = createEngine(rejectAll));
 
         testSubject.storeSnapshot(createEvent(1));
-        assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
+        assertFalse(testSubject.readSnapshots(AGGREGATE).findFirst().isPresent());
     }
 
     @Override

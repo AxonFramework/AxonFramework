@@ -92,9 +92,9 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return Optional.ofNullable(activeStorage.readSnapshot(aggregateIdentifier).orElseGet(
-                () -> historicStorage.readSnapshot(aggregateIdentifier).orElse(null)));
+    public Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier) {
+        return Stream.concat(historicStorage.readSnapshots(aggregateIdentifier),
+                             activeStorage.readSnapshots(aggregateIdentifier));
     }
 
     @Override

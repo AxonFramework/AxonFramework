@@ -193,6 +193,15 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     }
 
     @Override
+    public Stream<? extends DomainEventData<?>> findSnapshots(MongoCollection<Document> snapshotCollection,
+                                                              String aggregateIdentifier) {
+        FindIterable<Document> cursor =
+                snapshotCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
+                                  .sort(new BasicDBObject(eventConfiguration.sequenceNumberProperty(), ORDER_ASC)).limit(1);
+        return stream(cursor.spliterator(), false).map(this::extractSnapshot);
+    }
+
+    @Override
     public Optional<Long> lastSequenceNumberFor(MongoCollection<Document> eventsCollection, String aggregateIdentifier) {
         Document lastDocument = eventsCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
                                                 .sort(Sorts.descending(eventConfiguration.sequenceNumberProperty()))

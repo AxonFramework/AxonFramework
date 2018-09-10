@@ -27,6 +27,7 @@ import org.bson.Document;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Interface towards the mechanism that prescribes the structure in which events are stored in the Event Store. Events
@@ -112,6 +113,17 @@ public interface StorageStrategy {
      */
     Optional<? extends DomainEventData<?>> findLastSnapshot(MongoCollection<Document> snapshotCollection,
                                                             String aggregateIdentifier);
+
+    /**
+     * Finds entries containing snapshot events for an aggregate with given {@code aggregateIdentifier} in the given
+     * {@code collection}.
+     *
+     * @param snapshotCollection  The collection to find the snapshot events in
+     * @param aggregateIdentifier The identifier of the aggregate to find a snapshots for
+     * @return a stream with DomainEventData representing snapshots for aggregate
+     */
+    Stream<? extends DomainEventData<?>> findSnapshots(MongoCollection<Document> snapshotCollection,
+                                                       String aggregateIdentifier);
 
     /**
      * Ensure that the correct indexes are in place.

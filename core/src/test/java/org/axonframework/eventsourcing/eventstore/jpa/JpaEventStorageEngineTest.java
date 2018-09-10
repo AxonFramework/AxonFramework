@@ -231,7 +231,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         entityManager.clear();
 
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
-        assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().getPayload());
+        assertEquals("Snapshot1", testSubject.readSnapshots(AGGREGATE).findFirst().get().getPayload());
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().getPayload());
     }
 

@@ -27,7 +27,6 @@ import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -108,12 +107,14 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier).filter(snapshotFilter).map(entry -> {
-            DomainEventStream stream =
-                    EventUtils.upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false);
-            return stream.hasNext() ? stream.next() : null;
-        });
+    public Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier) {
+        return readSnapshotData(aggregateIdentifier).filter(snapshotFilter)
+                                                    .map(snapshot -> EventUtils
+                                                            .upcastAndDeserializeDomainEvents(Stream.of(snapshot),
+                                                                                              serializer,
+                                                                                              upcasterChain,
+                                                                                              false))
+                                                    .flatMap(DomainEventStream::asStream);
     }
 
     @Override
@@ -203,7 +204,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * @param aggregateIdentifier The aggregate identifier to fetch a snapshot for
      * @return An optional with a serialized snapshot of the aggregate
      */
-    protected abstract Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
+    protected abstract Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
 
     /**
      * Get the serializer used by this storage engine when storing and retrieving snapshots.

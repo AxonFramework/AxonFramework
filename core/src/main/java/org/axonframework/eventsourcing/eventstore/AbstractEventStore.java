@@ -40,6 +40,8 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
 
     private final EventStorageEngine storageEngine;
 
+    private final SnapshotChooser snapshotChooser;
+
     /**
      * Initializes an event store with given {@code storageEngine} and {@link NoOpMessageMonitor}.
      *
@@ -57,8 +59,24 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
      */
     protected AbstractEventStore(EventStorageEngine storageEngine,
                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        this(storageEngine,
+             messageMonitor,
+             SnapshotChooser.lastSnapshotChooser());
+    }
+
+    /**
+     * Initialize an event store with given {@code storageEngine}, {@code messageMonitor} and {@code snapshotChooser}.
+     *
+     * @param storageEngine   The storage engine used to store and load events
+     * @param messageMonitor  The monitor used to record event publications
+     * @param snapshotChooser The function which will choose a stream of snapshots to one snapshot
+     */
+    protected AbstractEventStore(EventStorageEngine storageEngine,
+                                 MessageMonitor<? super EventMessage<?>> messageMonitor,
+                                 SnapshotChooser snapshotChooser) {
         super(messageMonitor);
         this.storageEngine = storageEngine;
+        this.snapshotChooser = snapshotChooser;
     }
 
     @Override
@@ -77,7 +95,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     public DomainEventStream readEvents(String aggregateIdentifier) {
         Optional<DomainEventMessage<?>> optionalSnapshot;
         try {
-            optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
+            optionalSnapshot = snapshotChooser.choose(storageEngine.readSnapshots(aggregateIdentifier));
         } catch (Exception | LinkageError e) {
             optionalSnapshot = handleSnapshotReadingError(aggregateIdentifier, e);
         }

@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
@@ -482,13 +483,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+    protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return transactionManager.fetchInTransaction(() -> {
             List<DomainEventData<?>> result =
                     executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
                                  JdbcUtils.listResults(this::getSnapshotData), e -> new EventStoreException(
                                     format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
-            return result.stream().findFirst();
+            return result.stream();
         });
     }
 

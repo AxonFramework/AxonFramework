@@ -109,7 +109,7 @@ public abstract class EventStorageEngineTest {
     @Test
     public void testStoreAndLoadSnapshot() {
         testSubject.storeSnapshot(createEvent());
-        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        assertTrue(testSubject.readSnapshots(AGGREGATE).findFirst().isPresent());
     }
 
     @Test
