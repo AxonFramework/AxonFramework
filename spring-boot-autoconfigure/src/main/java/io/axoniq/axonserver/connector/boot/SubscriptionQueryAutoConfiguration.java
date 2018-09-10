@@ -15,10 +15,10 @@
 
 package io.axoniq.axonserver.connector.boot;
 
-import io.axoniq.axonhub.client.AxonServerConfiguration;
-import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
-import io.axoniq.axonhub.client.query.subscription.EnhancedAxonServerQueryBus;
+import io.axoniq.axonserver.connector.AxonServerConfiguration;
+import io.axoniq.axonserver.connector.PlatformConnectionManager;
+import io.axoniq.axonserver.connector.query.QueryPriorityCalculator;
+import io.axoniq.axonserver.connector.query.subscription.EnhancedAxonServerQueryBus;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;

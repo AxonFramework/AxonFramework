@@ -16,9 +16,9 @@
 package io.axoniq.axonserver.connector.boot;
 
 
-import io.axoniq.axonhub.client.AxonServerConfiguration;
-import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.event.axon.AxonServerEventStore;
+import io.axoniq.axonserver.connector.AxonServerConfiguration;
+import io.axoniq.axonserver.connector.PlatformConnectionManager;
+import io.axoniq.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;

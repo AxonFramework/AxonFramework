@@ -16,13 +16,13 @@
 package io.axoniq.axonserver.connector.boot;
 
 
-import io.axoniq.axonhub.client.AxonServerConfiguration;
-import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.command.AxonServerCommandBus;
-import io.axoniq.axonhub.client.command.CommandPriorityCalculator;
-import io.axoniq.axonhub.client.event.axon.EventProcessorInfoConfiguration;
-import io.axoniq.axonhub.client.query.AxonServerQueryBus;
-import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
+import io.axoniq.axonserver.connector.AxonServerConfiguration;
+import io.axoniq.axonserver.connector.PlatformConnectionManager;
+import io.axoniq.axonserver.connector.command.AxonServerCommandBus;
+import io.axoniq.axonserver.connector.command.CommandPriorityCalculator;
+import io.axoniq.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
+import io.axoniq.axonserver.connector.query.AxonServerQueryBus;
+import io.axoniq.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
