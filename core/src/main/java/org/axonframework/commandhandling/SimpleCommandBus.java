@@ -260,8 +260,8 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         /**
-         * Sets the {@link MessageMonitor} of generic type {@link CommandMessage} used the message monitor to monitor
-         * the command bus. Defaults to a {@link NoOpMessageMonitor}.
+         * Sets the {@link MessageMonitor} of generic type {@link CommandMessage} used the to monitor the command bus.
+         * Defaults to a {@link NoOpMessageMonitor}.
          *
          * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
          * @return the current Builder instance, for a fluent interfacing
