@@ -21,11 +21,11 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Assert;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 
@@ -40,7 +40,7 @@ public abstract class AbstractCommandGateway {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Initialize the AbstractCommandGateway with given {@code commandBus}, {@code retryScheduler} and
@@ -55,11 +55,7 @@ public abstract class AbstractCommandGateway {
                                      List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, () -> "commandBus may not be null");
         this.commandBus = commandBus;
-        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
-        } else {
-            this.dispatchInterceptors = Collections.emptyList();
-        }
+        messageDispatchInterceptors.forEach(this::registerDispatchInterceptor);
         this.retryScheduler = retryScheduler;
     }
 
@@ -92,6 +88,18 @@ public abstract class AbstractCommandGateway {
             CommandMessage<?> commandMessage = asCommandMessage(command);
             send(commandMessage, LoggingCallback.INSTANCE);
         }
+    }
+
+    /**
+     * Registers a command dispatch interceptor within a {@link CommandGateway}.
+     *
+     * @param interceptor To intercept command messages
+     * @return a registration which can be used to cancel the registration of given interceptor
+     */
+    protected Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
     }
 
     /**

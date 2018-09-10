@@ -18,7 +18,9 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * @see DefaultCommandGateway
  * @since 2.0
  */
-public interface CommandGateway {
+public interface CommandGateway extends MessageDispatchInterceptorSupport<CommandMessage<?>> {
 
     /**
      * Sends the given {@code command}, and have the result of the command's execution reported to the given
