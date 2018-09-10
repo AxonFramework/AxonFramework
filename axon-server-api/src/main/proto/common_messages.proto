@@ -1,0 +1,22 @@
+syntax = "proto3";
+package io.axoniq.platform;
+option java_multiple_files = true;
+
+message SerializedObject {
+
+    string type = 1;
+    string revision = 2;
+    bytes data = 3;
+}
+
+message MetaDataValue {
+    oneof data {
+        string text_value = 1;
+        sint64 number_value = 2;
+        bool boolean_value = 3;
+        double double_value = 4;
+        SerializedObject bytes_value = 5;
+    }
+
+}
+

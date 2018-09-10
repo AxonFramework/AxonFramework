@@ -1,0 +1,142 @@
+syntax = "proto3";
+package io.axoniq.axonhub;
+import "common_messages.proto";
+option java_multiple_files = true;
+
+message Command {
+    /* A message id */
+    string message_identifier = 1;
+    string name = 2;
+    int64 timestamp = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+    string clientId = 7;
+    string componentName = 8;
+}
+
+message CommandResponse {
+    /* A message id */
+    string message_identifier = 1;
+    string error_code = 2;
+    ErrorMessage message = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+    string request_identifier = 7;
+}
+
+message QueryRequest {
+    /* A message id */
+    string message_identifier = 1;
+    string query = 2;
+    int64 timestamp = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    io.axoniq.platform.SerializedObject response_type = 6;
+    repeated ProcessingInstruction processing_instructions = 7;
+    string clientId = 8;
+    string componentName = 9;
+}
+
+message QueryResponse {
+    /* A message id */
+    string message_identifier = 1;
+    string error_code = 2;
+    ErrorMessage message = 3;
+    io.axoniq.platform.SerializedObject payload = 4;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+    string request_identifier = 7;
+}
+message SubscriptionQuery {
+    string subscription_identifier = 1;
+    int64 number_of_permits = 2;
+    QueryRequest query_request = 3;
+    io.axoniq.platform.SerializedObject update_response_type = 4;
+}
+
+
+message QueryUpdate {
+    string message_identifier = 2;
+    io.axoniq.platform.SerializedObject payload = 3;
+    map<string, io.axoniq.platform.MetaDataValue> meta_data = 4;
+    string client_name = 5;
+    string component_name = 6;
+}
+
+message QueryUpdateComplete {
+    string client_name = 2;
+    string component_name = 3;
+}
+
+message QueryUpdateCompleteExceptionally {
+    string client_name = 2;
+    string component_name = 3;
+    string error_code = 5;
+    ErrorMessage message = 6;
+}
+
+message SubscriptionQueryRequest {
+    oneof request {
+        SubscriptionQuery subscribe = 1;
+        SubscriptionQuery unsubscribe = 2;
+        SubscriptionQuery get_initial_result = 3;
+        SubscriptionQuery flow_control = 4;
+    }
+    string context = 5;
+}
+
+message SubscriptionQueryResponse {
+    string message_identifier = 1;
+    string subscription_identifier = 2;
+    oneof response {
+        QueryResponse initial_response = 3;
+        QueryUpdate update = 4;
+        QueryUpdateComplete complete = 5;
+        QueryUpdateCompleteExceptionally complete_exceptionally = 6;
+    }
+}
+
+message CommandSubscription {
+    string message_id = 1;
+    string command = 2;
+    string component_name = 3;
+    string client_name = 4;
+}
+
+message QuerySubscription {
+    string message_id = 1;
+    string query = 2;
+    string result_name = 3;
+    string component_name = 4;
+    string client_name = 5;
+    int32 nrOfHandlers = 6;
+}
+
+message Confirmation {
+    string message_id = 1;
+    bool success = 2;
+}
+
+message ProcessingInstruction {
+    ProcessingKey key = 1;
+    io.axoniq.platform.MetaDataValue value = 2;
+}
+
+message ErrorMessage {
+    string message = 1;
+    string location = 2;
+    repeated string details = 3;
+}
+
+enum ProcessingKey {
+    ROUTING_KEY = 0;
+    PRIORITY = 1;
+    TIMEOUT = 2;
+    NR_OF_RESULTS = 3;
+    ORIGINAL_MESSAGE_ID = 4;
+    TARGET_CLIENT = 5;
+    CONTEXT = 6;
+}
+
