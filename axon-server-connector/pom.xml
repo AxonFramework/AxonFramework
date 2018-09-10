@@ -31,6 +31,7 @@
             <groupId>io.axoniq</groupId>
             <artifactId>axon-server-api</artifactId>
             <version>${project.parent.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- OPTIONAL dependency on reactor -->
@@ -86,11 +87,6 @@
         </dependency>
 
         <!-- Test dependencies -->
-        <!--<dependency>-->
-            <!--<groupId>junit</groupId>-->
-            <!--<artifactId>junit</artifactId>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-package io.axoniq.axonhub.client.boot;
+package io.axoniq.axonserver.connector.boot;
 
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.query.subscription.EnhancedAxonHubQueryBus;
 import io.axoniq.axonhub.client.query.QueryPriorityCalculator;
+import io.axoniq.axonhub.client.query.subscription.EnhancedAxonServerQueryBus;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
@@ -38,21 +38,21 @@ import org.springframework.context.annotation.Configuration;
  * sara.pellegrini@gmail.com
  */
 @Configuration
-@ConditionalOnClass(QueryUpdateEmitter.class)
+@ConditionalOnClass({QueryUpdateEmitter.class, AxonServerConfiguration.class})
 @AutoConfigureBefore(MessagingAutoConfiguration.class)
 public class SubscriptionQueryAutoConfiguration {
 
-
     @Bean
     @ConditionalOnMissingBean(QueryBus.class)
-    public EnhancedAxonHubQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonHubConfiguration axonHubConfiguration,
-                                    AxonConfiguration axonConfiguration, TransactionManager txManager,
-                                    @Qualifier("messageSerializer") Serializer messageSerializer,
-                                    Serializer genericSerializer,
-                                    QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
+    public EnhancedAxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager,
+                                               AxonServerConfiguration axonHubConfiguration,
+                                               AxonConfiguration axonConfiguration, TransactionManager txManager,
+                                               @Qualifier("messageSerializer") Serializer messageSerializer,
+                                               Serializer genericSerializer,
+                                               QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
         SimpleQueryBus simpleQueryBus = new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
                                                      txManager, queryInvocationErrorHandler);
-        return new EnhancedAxonHubQueryBus(platformConnectionManager, axonHubConfiguration,
+        return new EnhancedAxonServerQueryBus(platformConnectionManager, axonHubConfiguration,
                                            simpleQueryBus, simpleQueryBus,
                                            messageSerializer, genericSerializer, priorityCalculator);
     }

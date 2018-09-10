@@ -13,20 +13,19 @@
  * limitations under the License.
  */
 
-package io.axoniq.axonhub.client.boot;
+package io.axoniq.axonserver.connector.boot;
 
 
-import io.axoniq.axonhub.client.AxonHubConfiguration;
+import io.axoniq.axonhub.client.AxonServerConfiguration;
 import io.axoniq.axonhub.client.PlatformConnectionManager;
-import io.axoniq.axonhub.client.event.axon.AxonHubEventStore;
+import io.axoniq.axonhub.client.event.axon.AxonServerEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -37,16 +36,17 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureAfter(MessagingAutoConfiguration.class)
-@ConditionalOnClass(QueryUpdateEmitter.class)
-public class EventStoreAutoConfiguration {
+@ConditionalOnClass(AxonServerConfiguration.class)
+@ConditionalOnMissingClass("org.axonframework.queryhandling.QueryUpdateEmitter")
+public class EventStorePre33AutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
-    public EventStore eventStore(AxonHubConfiguration axonHubConfiguration,
-                                 AxonConfiguration configuration,
+    public EventStore eventStore(AxonServerConfiguration axonHubConfiguration,
                                  PlatformConnectionManager platformConnectionManager,
-                                 Serializer snapshotSerializer,
-                                 @Qualifier("eventSerializer") Serializer serializer) {
-        return new AxonHubEventStore(axonHubConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.upcasterChain());
+                                 AxonConfiguration configuration,
+                                 Serializer serializer) {
+        return new AxonServerEventStore(axonHubConfiguration, platformConnectionManager, serializer, configuration.upcasterChain());
     }
+
 }
 
