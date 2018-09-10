@@ -232,8 +232,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void suspect(Address suspected_mbr) {
-        logger.warn("Member is suspect: {}", suspected_mbr);
+    public void suspect(Address suspectedMember) {
+        logger.warn("Member is suspect: {}", suspectedMember);
     }
 
     @Override
