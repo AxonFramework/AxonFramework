@@ -319,16 +319,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Sets the paused flag, causing processor threads to shut down.
-     *
-     * @deprecated in favor of {@link #shutDown()}.
-     */
-    @Deprecated
-    public void pause() {
-        this.state.updateAndGet(s -> s.isRunning() ? State.PAUSED : s);
-    }
-
-    /**
      * Instructs the processor to release the segment with given {@code segmentId}. This will also blacklist this
      * segment for twice the {@link TrackingEventProcessorConfiguration#getTokenClaimInterval() token claim interval},
      * to ensure it is not immediately reclaimed.
