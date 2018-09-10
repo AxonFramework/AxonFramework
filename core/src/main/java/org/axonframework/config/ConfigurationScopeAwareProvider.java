@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.saga.AbstractSagaManager;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.messaging.ScopeAware;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -50,9 +50,10 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
      * Instantiate a lazy {@link ScopeAwareProvider} with the given {@code configuration} parameter.
      *
      * @param configuration a {@link Configuration} used to retrieve {@link ScopeAware} components from
+     * @throws IllegalArgumentException when {@code configuration} is {@code null}
      */
     public ConfigurationScopeAwareProvider(Configuration configuration) {
-        this.configuration = requireNonNull(configuration);
+        this.configuration = Assert.nonNull(configuration, () -> "configuration may not be null");
     }
 
     @Override

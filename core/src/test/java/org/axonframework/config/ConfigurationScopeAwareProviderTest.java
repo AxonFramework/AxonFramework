@@ -54,7 +54,7 @@ public class ConfigurationScopeAwareProviderTest {
         when(aggregateConfiguration.repository()).thenReturn(aggregateRepository);
 
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
-                .collect(toList());
+                                                        .collect(toList());
 
         assertThat(components, equalTo(asList(aggregateRepository)));
     }
@@ -66,7 +66,7 @@ public class ConfigurationScopeAwareProviderTest {
         when(sagaConfiguration.getSagaManager()).thenReturn(sagaManager);
 
         List<ScopeAware> components = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
-                .collect(toList());
+                                                        .collect(toList());
 
         assertThat(components, equalTo(asList(sagaManager)));
     }
@@ -86,7 +86,7 @@ public class ConfigurationScopeAwareProviderTest {
 
         // provision once
         List<ScopeAware> first = scopeAwareProvider.provideScopeAwareStream(anyScopeDescriptor())
-                .collect(toList());
+                                                   .collect(toList());
         reset(configuration, aggregateConfiguration);
 
         // provision twice
@@ -111,14 +111,23 @@ public class ConfigurationScopeAwareProviderTest {
             this.delegate = delegate;
         }
 
+        /**
+         * No-op.
+         */
         @Override
         public void initialize(Configuration config) {
         }
 
+        /**
+         * No-op.
+         */
         @Override
         public void start() {
         }
 
+        /**
+         * No-op.
+         */
         @Override
         public void shutdown() {
         }
