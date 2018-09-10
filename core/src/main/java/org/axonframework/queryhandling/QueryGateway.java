@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.queryhandling.responsetypes.ResponseType;
 import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import reactor.util.concurrent.Queues;
@@ -33,7 +34,7 @@ import java.util.stream.Stream;
  * @author Milan Savic
  * @since 3.1
  */
-public interface QueryGateway {
+public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMessage<?,?>> {
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with

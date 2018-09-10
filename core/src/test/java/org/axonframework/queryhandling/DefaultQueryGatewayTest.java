@@ -85,6 +85,20 @@ public class DefaultQueryGatewayTest {
                                                    x -> "query".equals(x.getPayload())), any(), anyInt());
     }
 
+    @Test
+    public void testDispatchInterceptor() {
+        when(mockBus.query(anyMessage(String.class, String.class)))
+                .thenReturn(CompletableFuture.completedFuture(answer));
+        testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
+                "dispatch-" + queryMessage.getPayload(),
+                queryMessage.getQueryName(),
+                queryMessage.getResponseType()));
+
+        testSubject.query("query", String.class).join();
+
+        verify(mockBus).query(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "dispatch-query".equals(x.getPayload())));
+    }
+
     @SuppressWarnings("unused")
     private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
