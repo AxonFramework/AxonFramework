@@ -25,13 +25,12 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
-import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Specialization of the SimpleCommandBus that processed Commands asynchronously from the calling thread. By default,
@@ -143,9 +142,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder executor(Executor executor) {
-            assertThat(executor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("Executor may not be null"));
+            assertNonNull(executor, "Executor may not be null");
             this.executor = executor;
             return this;
         }
@@ -160,9 +157,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         }
 
         private void validate() {
-            assertThat(executor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The Executor is a hard requirement and should be provided"));
+            assertNonNull(executor, "The Executor is a hard requirement and should be provided");
         }
     }
 }

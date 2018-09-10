@@ -35,14 +35,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -252,9 +251,7 @@ public class SimpleCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
-            assertThat(transactionManager,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("TransactionManager may not be null"));
+            assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
         }
@@ -267,9 +264,7 @@ public class SimpleCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-            assertThat(messageMonitor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("MessageMonitor may not be null"));
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;
         }
@@ -284,9 +279,7 @@ public class SimpleCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
-            assertThat(rollbackConfiguration,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("RollbackConfiguration may not be null"));
+            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
             this.rollbackConfiguration = rollbackConfiguration;
             return this;
         }
@@ -301,18 +294,10 @@ public class SimpleCommandBus implements CommandBus {
         }
 
         private void validate() {
-            assertThat(transactionManager,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The TransactionManager is a hard requirement and should be provided"));
-            assertThat(messageMonitor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The MessageMonitor is a hard requirement and should be provided"));
-            assertThat(rollbackConfiguration,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The RollbackConfiguration is a hard requirement and should be provided"));
+            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
+            assertNonNull(rollbackConfiguration,
+                          "The RollbackConfiguration is a hard requirement and should be provided");
         }
     }
 }

@@ -26,11 +26,10 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Abstract implementation of a CommandGateway, which handles the dispatch interceptors and retrying on failure. The
@@ -135,9 +134,7 @@ public abstract class AbstractCommandGateway {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder commandBus(CommandBus commandBus) {
-            assertThat(commandBus,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("CommandBus may not be null"));
+            assertNonNull(commandBus, "CommandBus may not be null");
             this.commandBus = commandBus;
             return this;
         }
@@ -182,10 +179,7 @@ public abstract class AbstractCommandGateway {
         }
 
         protected void validate() {
-            assertThat(commandBus,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The CommandBus is a hard requirement and should be provided"));
+            assertNonNull(commandBus, "The CommandBus is a hard requirement and should be provided");
         }
     }
 }

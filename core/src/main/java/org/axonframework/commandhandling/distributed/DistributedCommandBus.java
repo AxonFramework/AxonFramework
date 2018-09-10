@@ -33,13 +33,12 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static java.lang.String.format;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -233,9 +232,7 @@ public class DistributedCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder commandRouter(CommandRouter commandRouter) {
-            assertThat(commandRouter,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("CommandRouter may not be null"));
+            assertNonNull(commandRouter, "CommandRouter may not be null");
             this.commandRouter = commandRouter;
             return this;
         }
@@ -249,9 +246,7 @@ public class DistributedCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder connector(CommandBusConnector connector) {
-            assertThat(connector,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("CommandBusConnector may not be null"));
+            assertNonNull(connector, "CommandBusConnector may not be null");
             this.connector = connector;
             return this;
         }
@@ -264,9 +259,7 @@ public class DistributedCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-            assertThat(messageMonitor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("MessageMonitor may not be null"));
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;
         }
@@ -281,18 +274,9 @@ public class DistributedCommandBus implements CommandBus {
         }
 
         private void validate() {
-            assertThat(commandRouter,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The CommandRouter is a hard requirement and should be provided"));
-            assertThat(connector,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The CommandBusConnector is a hard requirement and should be provided"));
-            assertThat(messageMonitor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The MessageMonitor is a hard requirement and should be provided"));
+            assertNonNull(commandRouter, "The CommandRouter is a hard requirement and should be provided");
+            assertNonNull(connector, "The CommandBusConnector is a hard requirement and should be provided");
+            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
         }
     }
 }

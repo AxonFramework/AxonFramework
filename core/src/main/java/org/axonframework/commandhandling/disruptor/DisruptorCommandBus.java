@@ -76,7 +76,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -854,9 +855,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder coolingDownPeriod(long coolingDownPeriod) {
-            assertThat(coolingDownPeriod,
-                       count -> count > 0,
-                       () -> new AxonConfigurationException("The cooling down period must be a positive number"));
+            assertCoolingDownPeriod(coolingDownPeriod);
             this.coolingDownPeriod = coolingDownPeriod;
             return this;
         }
@@ -873,9 +872,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder commandTargetResolver(CommandTargetResolver commandTargetResolver) {
-            assertThat(commandTargetResolver,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("CommandTargetResolver may not be null"));
+            assertNonNull(commandTargetResolver, "CommandTargetResolver may not be null");
             this.commandTargetResolver = commandTargetResolver;
             return this;
         }
@@ -891,9 +888,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder publisherThreadCount(int publisherThreadCount) {
-            assertThat(publisherThreadCount,
-                       count -> count > 0,
-                       () -> new AxonConfigurationException("The publisher thread count must at least be 1"));
+            assertPublisherThreadCount(publisherThreadCount);
             this.publisherThreadCount = publisherThreadCount;
             return this;
         }
@@ -906,9 +901,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-            assertThat(messageMonitor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("MessageMonitor may not be null"));
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;
         }
@@ -936,9 +929,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
-            assertThat(rollbackConfiguration,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("RollbackConfiguration may not be null"));
+            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
             this.rollbackConfiguration = rollbackConfiguration;
             return this;
         }
@@ -952,9 +943,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder bufferSize(int bufferSize) {
-            assertThat(bufferSize,
-                       size -> size > 0 && size % 2 == 0,
-                       () -> new AxonConfigurationException("The buffer size must be positive and a power of 2"));
+            assertBufferSize(bufferSize);
             this.bufferSize = bufferSize;
             return this;
         }
@@ -968,9 +957,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder producerType(ProducerType producerType) {
-            assertThat(producerType,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("ProducerType may not be null"));
+            assertNonNull(producerType, "ProducerType may not be null");
             this.producerType = producerType;
             return this;
         }
@@ -995,9 +982,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @see com.lmax.disruptor.YieldingWaitStrategy YieldingWaitStrategy
          */
         public Builder waitStrategy(WaitStrategy waitStrategy) {
-            assertThat(waitStrategy,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("WaitStrategy may not be null"));
+            assertNonNull(waitStrategy, "WaitStrategy may not be null");
             this.waitStrategy = waitStrategy;
             return this;
         }
@@ -1014,9 +999,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder invokerThreadCount(int invokerThreadCount) {
-            assertThat(invokerThreadCount,
-                       count -> count > 0,
-                       () -> new AxonConfigurationException("The invoker thread count must be at least 1"));
+            assertInvokerThreadCount(invokerThreadCount);
             this.invokerThreadCount = invokerThreadCount;
             return this;
         }
@@ -1032,9 +1015,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder cache(Cache cache) {
-            assertThat(cache,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("Cache may not be null"));
+            assertNonNull(cache, "Cache may not be null");
             this.cache = cache;
             return this;
         }
@@ -1049,41 +1030,35 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         private void validate() {
-            assertThat(coolingDownPeriod,
-                       count -> count > 0,
-                       () -> new AxonConfigurationException("The cooling down period must be a positive number"));
-            assertThat(commandTargetResolver,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The CommandTargetResolver is a hard requirement and should be provided"));
-            assertThat(publisherThreadCount,
-                       count -> count > 0,
-                       () -> new AxonConfigurationException("The publisher thread count must at least be 1"));
-            assertThat(messageMonitor,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The MessageMonitor is a hard requirement and should be provided"));
-            assertThat(rollbackConfiguration,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The RollbackConfiguration is a hard requirement and should be provided"));
-            assertThat(bufferSize,
-                       size -> size > 0 && size % 2 == 0,
-                       () -> new AxonConfigurationException("The buffer size must be positive and a power of 2"));
-            assertThat(producerType,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The ProducerType is a hard requirement and should be provided"));
-            assertThat(waitStrategy,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The WaitStrategy is a hard requirement and should be provided"));
-            assertThat(invokerThreadCount,
-                       count -> count > 0,
-                       () -> new AxonConfigurationException("The invoker thread count must be at least 1"));
-            assertThat(cache,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The Cache is a hard requirement and should be provided"));
+            assertCoolingDownPeriod(coolingDownPeriod);
+            assertNonNull(commandTargetResolver,
+                          "The CommandTargetResolver is a hard requirement and should be provided");
+            assertPublisherThreadCount(publisherThreadCount);
+            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
+            assertNonNull(rollbackConfiguration,
+                          "The RollbackConfiguration is a hard requirement and should be provided");
+            assertBufferSize(bufferSize);
+            assertNonNull(producerType, "The ProducerType is a hard requirement and should be provided");
+            assertNonNull(waitStrategy, "The WaitStrategy is a hard requirement and should be provided");
+            assertInvokerThreadCount(invokerThreadCount);
+            assertNonNull(cache, "The Cache is a hard requirement and should be provided");
+        }
+
+        private void assertCoolingDownPeriod(long coolingDownPeriod) {
+            assertThat(coolingDownPeriod, count -> count > 0, "The cooling down period must be a positive number");
+        }
+
+        private void assertBufferSize(int bufferSize) {
+            assertThat(bufferSize, size -> size > 0 && size % 2 == 0,
+                       "The buffer size must be positive and a power of 2");
+        }
+
+        private void assertPublisherThreadCount(int publisherThreadCount) {
+            assertThat(publisherThreadCount, count -> count > 0, "The publisher thread count must at least be 1");
+        }
+
+        private void assertInvokerThreadCount(int invokerThreadCount) {
+            assertThat(invokerThreadCount, count -> count > 0, "The invoker thread count must be at least 1");
         }
     }
 }
