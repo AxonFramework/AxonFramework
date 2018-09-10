@@ -21,7 +21,6 @@ import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.amqp.eventhandling.AMQPMessage;
 import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
 import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
-import org.axonframework.amqp.eventhandling.EventPublicationFailedException;
 import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.common.Assert;
