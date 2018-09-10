@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * A {@link CommandRouter} implementation which uses Spring Cloud's {@link DiscoveryClient}s to propagate its
@@ -401,9 +401,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder discoveryClient(DiscoveryClient discoveryClient) {
-            assertThat(discoveryClient,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("DiscoveryClient may not be null"));
+            assertNonNull(discoveryClient, "DiscoveryClient may not be null");
             this.discoveryClient = discoveryClient;
             return this;
         }
@@ -417,9 +415,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder localServiceInstance(Registration localServiceInstance) {
-            assertThat(localServiceInstance,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("Registration may not be null"));
+            assertNonNull(localServiceInstance, "Registration may not be null");
             this.localServiceInstance = localServiceInstance;
             return this;
         }
@@ -433,9 +429,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder routingStrategy(RoutingStrategy routingStrategy) {
-            assertThat(routingStrategy,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("RoutingStrategy may not be null"));
+            assertNonNull(routingStrategy, "RoutingStrategy may not be null");
             this.routingStrategy = routingStrategy;
             return this;
         }
@@ -451,9 +445,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder serviceInstanceFilter(Predicate<ServiceInstance> serviceInstanceFilter) {
-            assertThat(serviceInstanceFilter,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("ServiceInstanceFilter may not be null"));
+            assertNonNull(serviceInstanceFilter, "ServiceInstanceFilter may not be null");
             this.serviceInstanceFilter = serviceInstanceFilter;
             return this;
         }
@@ -468,9 +460,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder consistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
-            assertThat(consistentHashChangeListener,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("ConsistentHashChangeListener may not be null"));
+            assertNonNull(consistentHashChangeListener, "ConsistentHashChangeListener may not be null");
             this.consistentHashChangeListener = consistentHashChangeListener;
             return this;
         }
@@ -485,26 +475,13 @@ public class SpringCloudCommandRouter implements CommandRouter {
         }
 
         private void validate() {
-            assertThat(discoveryClient,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The DiscoveryClient is a hard requirement and should be provided"));
-            assertThat(localServiceInstance,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The Registration is a hard requirement and should be provided"));
-            assertThat(routingStrategy,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The RoutingStrategy is a hard requirement and should be provided"));
-            assertThat(serviceInstanceFilter,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The ServiceInstanceFilter is a hard requirement and should be provided"));
-            assertThat(consistentHashChangeListener,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The ConsistentHashChangeListener is a hard requirement and should be provided"));
+            assertNonNull(discoveryClient, "The DiscoveryClient is a hard requirement and should be provided");
+            assertNonNull(localServiceInstance, "The Registration is a hard requirement and should be provided");
+            assertNonNull(routingStrategy, "The RoutingStrategy is a hard requirement and should be provided");
+            assertNonNull(serviceInstanceFilter,
+                          "The ServiceInstanceFilter is a hard requirement and should be provided");
+            assertNonNull(consistentHashChangeListener,
+                          "The ConsistentHashChangeListener is a hard requirement and should be provided");
         }
     }
 }

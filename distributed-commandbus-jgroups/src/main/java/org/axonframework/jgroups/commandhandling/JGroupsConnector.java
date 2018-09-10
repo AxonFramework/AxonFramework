@@ -61,7 +61,8 @@ import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -232,8 +233,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     @Override
-    public void suspect(Address suspected_mbr) {
-        logger.warn("Member is suspect: {}", suspected_mbr);
+    public void suspect(Address suspectedMember) {
+        logger.warn("Member is suspect: {}", suspectedMember);
     }
 
     @Override
@@ -496,9 +497,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder localSegment(CommandBus localSegment) {
-            assertThat(localSegment,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The localSegment may not be null"));
+            assertNonNull(localSegment, "The localSegment may not be null");
             this.localSegment = localSegment;
             return this;
         }
@@ -510,9 +509,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder channel(JChannel channel) {
-            assertThat(channel,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("JChannel may not be null"));
+            assertNonNull(channel, "JChannel may not be null");
             this.channel = channel;
             return this;
         }
@@ -524,9 +521,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder clusterName(String clusterName) {
-            assertThat(clusterName,
-                       name -> Objects.nonNull(name) && !name.equals(""),
-                       () -> new AxonConfigurationException("The clusterName may not be null or empty"));
+            assertClusterName(clusterName, "The clusterName may not be null or empty");
             this.clusterName = clusterName;
             return this;
         }
@@ -538,9 +533,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
-            assertThat(serializer,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("Serializer may not be null"));
+            assertNonNull(serializer, "Serializer may not be null");
             this.serializer = serializer;
             return this;
         }
@@ -555,9 +548,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder routingStrategy(RoutingStrategy routingStrategy) {
-            assertThat(routingStrategy,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("RoutingStrategy may not be null"));
+            assertNonNull(routingStrategy, "RoutingStrategy may not be null");
             this.routingStrategy = routingStrategy;
             return this;
         }
@@ -572,9 +563,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder consistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
-            assertThat(consistentHashChangeListener,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("ConsistentHashChangeListener may not be null"));
+            assertNonNull(consistentHashChangeListener, "ConsistentHashChangeListener may not be null");
             this.consistentHashChangeListener = consistentHashChangeListener;
             return this;
         }
@@ -589,29 +578,17 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
 
         private void validate() {
-            assertThat(localSegment,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The localSegment is a hard requirement and should be provided"));
-            assertThat(channel,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("The JChannel is a hard requirement and should be provided"));
-            assertThat(clusterName,
-                       name -> Objects.nonNull(name) && !name.equals(""),
-                       () -> new AxonConfigurationException(
-                               "The clusterName is a hard requirement and should be provided"));
-            assertThat(serializer,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The Serializer is a hard requirement and should be provided"));
-            assertThat(routingStrategy,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The RoutingStrategy is a hard requirement and should be provided"));
-            assertThat(consistentHashChangeListener,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The ConsistentHashChangeListener is a hard requirement and should be provided"));
+            assertNonNull(localSegment, "The localSegment is a hard requirement and should be provided");
+            assertNonNull(channel, "The JChannel is a hard requirement and should be provided");
+            assertClusterName(clusterName, "The clusterName is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            assertNonNull(routingStrategy, "The RoutingStrategy is a hard requirement and should be provided");
+            assertNonNull(consistentHashChangeListener,
+                          "The ConsistentHashChangeListener is a hard requirement and should be provided");
+        }
+
+        private void assertClusterName(String clusterName, String exceptionMessage) {
+            assertThat(clusterName, name -> Objects.nonNull(name) && !name.equals(""), exceptionMessage);
         }
     }
 
