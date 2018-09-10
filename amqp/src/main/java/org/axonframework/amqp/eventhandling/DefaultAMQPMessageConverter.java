@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
@@ -153,9 +153,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
-            assertThat(serializer,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("Serializer may not be null"));
+            assertNonNull(serializer, "Serializer may not be null");
             this.serializer = serializer;
             return this;
         }
@@ -168,9 +166,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder routingKeyResolver(RoutingKeyResolver routingKeyResolver) {
-            assertThat(routingKeyResolver,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("RoutingKeyResolver may not be null"));
+            assertNonNull(routingKeyResolver, "RoutingKeyResolver may not be null");
             this.routingKeyResolver = routingKeyResolver;
             return this;
         }
@@ -197,14 +193,8 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
         }
 
         private void validate() {
-            assertThat(serializer,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The Serializer is a hard requirement and should be provided"));
-            assertThat(routingKeyResolver,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The RoutingKeyResolver is a hard requirement and should be provided"));
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            assertNonNull(routingKeyResolver, "The RoutingKeyResolver is a hard requirement and should be provided");
         }
     }
 }

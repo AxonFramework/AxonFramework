@@ -39,11 +39,10 @@ import org.springframework.web.client.RestOperations;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * A {@link CommandBusConnector} implementation based on Spring Rest characteristics. Serves as a {@link RestController}
@@ -241,9 +240,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder localCommandBus(CommandBus localCommandBus) {
-            assertThat(localCommandBus,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("LocalCommandBus may not be null"));
+            assertNonNull(localCommandBus, "LocalCommandBus may not be null");
             this.localCommandBus = localCommandBus;
             return this;
         }
@@ -255,9 +252,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder restOperations(RestOperations restOperations) {
-            assertThat(restOperations,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("RestOperations may not be null"));
+            assertNonNull(restOperations, "RestOperations may not be null");
             this.restOperations = restOperations;
             return this;
         }
@@ -269,9 +264,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
-            assertThat(serializer,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException("Serializer may not be null"));
+            assertNonNull(serializer, "Serializer may not be null");
             this.serializer = serializer;
             return this;
         }
@@ -286,18 +279,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
         }
 
         private void validate() {
-            assertThat(localCommandBus,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The localCommandBus is a hard requirement and should be provided"));
-            assertThat(restOperations,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The RestOperations is a hard requirement and should be provided"));
-            assertThat(serializer,
-                       Objects::nonNull,
-                       () -> new AxonConfigurationException(
-                               "The Serializer is a hard requirement and should be provided"));
+            assertNonNull(localCommandBus, "The localCommandBus is a hard requirement and should be provided");
+            assertNonNull(restOperations, "The RestOperations is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
         }
     }
 }
