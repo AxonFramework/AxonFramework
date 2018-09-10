@@ -124,7 +124,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     }
 
     /**
-     * TransactionalId prefix for all producer instances.
+     * TransactionalIdPrefix for all producer instances.
      *
      * @return the transactionalIdPrefix.
      */
