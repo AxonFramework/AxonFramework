@@ -132,17 +132,4 @@ public abstract class Assert {
                                                               Supplier<? extends X> exceptionSupplier) throws X {
         assertThat(value, Objects::nonNull, exceptionSupplier);
     }
-
-    /**
-     * Assert that the given {@code value} is non null. If not, an {@link AxonConfigurationException} is thrown
-     * containing the provided {@code exceptionMessage}.
-     *
-     * @param value a {@code T} specifying the value to assert
-     * @param <T>   a generic specifying the type of the {@code value}, which is the input for the
-     *              {@code assertion}
-     * @throws AxonConfigurationException if the {@code value} equals {@code null}
-     */
-    public static <T> void assertNonNull(T value, String exceptionMessage) throws AxonConfigurationException {
-        assertThat(value, Objects::nonNull, () -> new AxonConfigurationException(exceptionMessage));
-    }
 }
