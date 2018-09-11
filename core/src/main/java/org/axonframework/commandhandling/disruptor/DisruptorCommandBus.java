@@ -1029,7 +1029,13 @@ public class DisruptorCommandBus implements CommandBus {
             return new DisruptorCommandBus(this);
         }
 
-        private void validate() {
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
             assertCoolingDownPeriod(coolingDownPeriod);
             assertNonNull(commandTargetResolver,
                           "The CommandTargetResolver is a hard requirement and should be provided");

@@ -577,7 +577,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
             return new JGroupsConnector(this);
         }
 
-        private void validate() {
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
             assertNonNull(localSegment, "The localSegment is a hard requirement and should be provided");
             assertNonNull(channel, "The JChannel is a hard requirement and should be provided");
             assertClusterName(clusterName, "The clusterName is a hard requirement and should be provided");

@@ -278,7 +278,13 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             return new SpringHttpCommandBusConnector(this);
         }
 
-        private void validate() {
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
             assertNonNull(localCommandBus, "The localCommandBus is a hard requirement and should be provided");
             assertNonNull(restOperations, "The RestOperations is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");

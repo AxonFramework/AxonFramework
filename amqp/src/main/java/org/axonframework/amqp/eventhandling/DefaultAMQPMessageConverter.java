@@ -192,7 +192,13 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
             return new DefaultAMQPMessageConverter(this);
         }
 
-        private void validate() {
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
             assertNonNull(routingKeyResolver, "The RoutingKeyResolver is a hard requirement and should be provided");
         }

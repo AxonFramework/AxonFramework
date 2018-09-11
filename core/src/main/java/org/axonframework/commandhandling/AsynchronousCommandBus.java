@@ -61,7 +61,6 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      */
     protected AsynchronousCommandBus(Builder builder) {
         super(builder);
-        builder.validate();
         this.executor = builder.executor;
     }
 
@@ -156,7 +155,9 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
             return new AsynchronousCommandBus(this);
         }
 
-        private void validate() {
+        @Override
+        protected void validate() {
+            super.validate();
             assertNonNull(executor, "The Executor is a hard requirement and should be provided");
         }
     }
