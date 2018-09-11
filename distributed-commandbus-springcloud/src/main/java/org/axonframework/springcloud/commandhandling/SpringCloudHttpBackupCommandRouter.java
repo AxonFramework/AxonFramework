@@ -89,7 +89,6 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
      */
     protected SpringCloudHttpBackupCommandRouter(Builder builder) {
         super(builder);
-        builder.validate();
         this.restTemplate = builder.restTemplate;
         this.messageRoutingInformationEndpoint = builder.messageRoutingInformationEndpoint;
         messageRoutingInfo = null;
@@ -267,7 +266,9 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
             return new SpringCloudHttpBackupCommandRouter(this);
         }
 
-        private void validate() {
+        @Override
+        protected void validate() {
+            super.validate();
             assertNonNull(restTemplate, "The RestTemplate is a hard requirement and should be provided");
             assertMessageRoutingInfoEndpoint(
                     messageRoutingInformationEndpoint,
