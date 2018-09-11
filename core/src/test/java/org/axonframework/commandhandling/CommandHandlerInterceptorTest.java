@@ -58,7 +58,10 @@ public class CommandHandlerInterceptorTest {
     @Before
     public void setUp() {
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
-        Repository<MyAggregate> myAggregateRepository = new EventSourcingRepository<>(MyAggregate.class, eventStore);
+        Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.<MyAggregate>builder()
+                .aggregateType(MyAggregate.class)
+                .eventStore(eventStore)
+                .build();
         CommandBus commandBus = SimpleCommandBus.builder().build();
         commandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
         AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler = new AggregateAnnotationCommandHandler<>(
@@ -150,13 +153,18 @@ public class CommandHandlerInterceptorTest {
 
     @Test(expected = AxonConfigurationException.class)
     public void testInterceptorWithNonVoidReturnType() {
-        new EventSourcingRepository<>(MyAggregateWithInterceptorReturningNonVoid.class, eventStore);
+        EventSourcingRepository.<MyAggregateWithInterceptorReturningNonVoid>builder()
+                .aggregateType(MyAggregateWithInterceptorReturningNonVoid.class)
+                .eventStore(eventStore)
+                .build();
     }
 
     @Test
     public void testInterceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
-        new EventSourcingRepository<>(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class,
-                                      eventStore);
+        EventSourcingRepository.<MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid>builder()
+                .aggregateType(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
+                .eventStore(eventStore)
+                .build();
     }
 
     @SuppressWarnings("unchecked")

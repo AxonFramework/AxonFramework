@@ -48,8 +48,10 @@ public class EventPublicationOrderTest {
     public void setUp() {
         this.commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
-        EventSourcingRepository<StubAggregate> repository =
-                new EventSourcingRepository<>(StubAggregate.class, eventStore);
+        EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.<StubAggregate>builder()
+                .aggregateType(StubAggregate.class)
+                .eventStore(eventStore)
+                .build();
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);

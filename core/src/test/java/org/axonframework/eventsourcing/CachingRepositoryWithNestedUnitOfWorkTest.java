@@ -31,8 +31,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -112,25 +111,45 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(NoCache.INSTANCE)
+                .build();
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     public void testWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(realCache)
+                .build();
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     public void testMinimalScenarioWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(NoCache.INSTANCE)
+                .build();
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     public void testMinimalScenarioWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(realCache)
+                .build();
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
@@ -236,8 +255,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     public static class AggregateCreatedEvent implements Serializable {
 
-        @AggregateIdentifier
-        final String id;
+        @AggregateIdentifier final String id;
 
         public AggregateCreatedEvent(String id) {
             this.id = id;
@@ -249,14 +267,13 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-	/*
+    /*
      * Domain Model
-	 */
+     */
 
     public static class AggregateUpdatedEvent implements Serializable {
 
-        @AggregateIdentifier
-        final String id;
+        @AggregateIdentifier final String id;
         final String token;
 
         public AggregateUpdatedEvent(String id, String token) {
