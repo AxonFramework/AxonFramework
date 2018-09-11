@@ -40,7 +40,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
 
     private final EventStorageEngine storageEngine;
 
-    private final SnapshotChooser snapshotChooser;
+    private final SnapshotResolver snapshotResolver;
 
     /**
      * Initializes an event store with given {@code storageEngine} and {@link NoOpMessageMonitor}.
@@ -61,22 +61,22 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(storageEngine,
              messageMonitor,
-             SnapshotChooser.lastSnapshotChooser());
+             SnapshotResolver.lastSnapshotResolver());
     }
 
     /**
-     * Initialize an event store with given {@code storageEngine}, {@code messageMonitor} and {@code snapshotChooser}.
+     * Initialize an event store with given {@code storageEngine}, {@code messageMonitor} and {@code snapshotResolver}.
      *
-     * @param storageEngine   The storage engine used to store and load events
-     * @param messageMonitor  The monitor used to record event publications
-     * @param snapshotChooser The function which will choose a stream of snapshots to one snapshot
+     * @param storageEngine    The storage engine used to store and load events
+     * @param messageMonitor   The monitor used to record event publications
+     * @param snapshotResolver The function which will choose one snapshot from a stream of snapshots
      */
     protected AbstractEventStore(EventStorageEngine storageEngine,
                                  MessageMonitor<? super EventMessage<?>> messageMonitor,
-                                 SnapshotChooser snapshotChooser) {
+                                 SnapshotResolver snapshotResolver) {
         super(messageMonitor);
         this.storageEngine = storageEngine;
-        this.snapshotChooser = snapshotChooser;
+        this.snapshotResolver = snapshotResolver;
     }
 
     @Override
@@ -95,7 +95,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     public DomainEventStream readEvents(String aggregateIdentifier) {
         Optional<DomainEventMessage<?>> optionalSnapshot;
         try {
-            optionalSnapshot = snapshotChooser.choose(storageEngine.readSnapshots(aggregateIdentifier));
+            optionalSnapshot = snapshotResolver.resolve(storageEngine.readSnapshots(aggregateIdentifier));
         } catch (Exception | LinkageError e) {
             optionalSnapshot = handleSnapshotReadingError(aggregateIdentifier, e);
         }

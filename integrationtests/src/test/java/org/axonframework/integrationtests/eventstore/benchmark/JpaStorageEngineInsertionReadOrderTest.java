@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.SnapshotChooser;
+import org.axonframework.eventsourcing.eventstore.SnapshotResolver;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
@@ -128,8 +128,13 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore =
-                new EmbeddedEventStore(testSubject, null, 20, 1000, 100, TimeUnit.MILLISECONDS, SnapshotChooser.lastSnapshotChooser());
+        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject,
+                                                                       null,
+                                                                       20,
+                                                                       1000,
+                                                                       100,
+                                                                       TimeUnit.MILLISECONDS,
+                                                                       SnapshotResolver.lastSnapshotResolver());
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {

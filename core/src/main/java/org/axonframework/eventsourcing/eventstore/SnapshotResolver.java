@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * @since 4.0
  */
 @FunctionalInterface
-public interface SnapshotChooser {
+public interface SnapshotResolver {
 
     /**
      * Chooses the correct snapshot (if any) within the stream of given {@code snapshots}.
@@ -37,14 +37,14 @@ public interface SnapshotChooser {
      * @param snapshots A stream of snapshots for given aggregate
      * @return at most one chosen snapshot from a stream of given {@code snapshots}.
      */
-    Optional<DomainEventMessage<?>> choose(Stream<DomainEventMessage<?>> snapshots);
+    Optional<DomainEventMessage<?>> resolve(Stream<DomainEventMessage<?>> snapshots);
 
     /**
-     * Implementation of {@link SnapshotChooser} which takes the last snapshot taken in the system.
+     * Implementation of {@link SnapshotResolver} which takes the last snapshot taken in the system.
      *
-     * @return chooser which returns the last snapshot
+     * @return resolver which returns the last snapshot
      */
-    static SnapshotChooser lastSnapshotChooser() {
+    static SnapshotResolver lastSnapshotResolver() {
         return snapshots -> snapshots.max(Comparator.comparingLong(DomainEventMessage::getSequenceNumber));
     }
 }
