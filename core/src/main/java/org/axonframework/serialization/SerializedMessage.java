@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * @author Rene de Waele
  */
-public class SerializedMessage<T> extends AbstractMessage<T> implements SerializationAware {
+public class SerializedMessage<T> extends AbstractMessage<T> {
 
     private static final long serialVersionUID = 8079093289710229594L;
 

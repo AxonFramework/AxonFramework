@@ -18,7 +18,6 @@ package org.axonframework.messaging;
 
 import org.axonframework.serialization.SerializationAware;
 import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
 /**
@@ -30,12 +29,11 @@ import org.axonframework.serialization.Serializer;
  *
  * @author Rene de Waele
  */
-public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
+public abstract class MessageDecorator<T> implements Message<T> {
 
     private static final long serialVersionUID = 3969631713723578521L;
 
     private final Message<T> delegate;
-    private transient volatile SerializedObjectHolder serializedObjectHolder;
 
     /**
      * Initializes a new decorator with given {@code delegate} message. The decorator delegates to the delegate for
@@ -69,25 +67,12 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
 
     @Override
     public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        if (delegate instanceof SerializationAware) {
-            return ((SerializationAware) delegate).serializePayload(serializer, expectedRepresentation);
-        }
-        return serializedObjectHolder().serializePayload(serializer, expectedRepresentation);
+        return delegate.serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
     public <S> SerializedObject<S> serializeMetaData(Serializer serializer, Class<S> expectedRepresentation) {
-        if (delegate instanceof SerializationAware) {
-            return ((SerializationAware) delegate).serializeMetaData(serializer, expectedRepresentation);
-        }
-        return serializedObjectHolder().serializeMetaData(serializer, expectedRepresentation);
-    }
-
-    private SerializedObjectHolder serializedObjectHolder() {
-        if (serializedObjectHolder == null) {
-            serializedObjectHolder = new SerializedObjectHolder(delegate);
-        }
-        return serializedObjectHolder;
+        return delegate.serializeMetaData(serializer, expectedRepresentation);
     }
 
     /**

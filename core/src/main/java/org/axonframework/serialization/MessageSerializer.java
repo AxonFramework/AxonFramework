@@ -60,9 +60,6 @@ public class MessageSerializer implements Serializer {
      */
     public static <T> SerializedObject<T> serializePayload(Message<?> message, Serializer serializer,
                                                            Class<T> expectedRepresentation) {
-        if (message instanceof SerializationAware) {
-            return ((SerializationAware) message).serializePayload(serializer, expectedRepresentation);
-        }
         SerializedObject<T> serializedObject = serializer.serialize(message.getPayload(), expectedRepresentation);
         if (message.getPayload() == null) {
             // make sure the payload type is maintained
@@ -85,9 +82,6 @@ public class MessageSerializer implements Serializer {
      */
     public static <T> SerializedObject<T> serializeMetaData(Message<?> message, Serializer serializer,
                                                             Class<T> expectedRepresentation) {
-        if (message instanceof SerializationAware) {
-            return ((SerializationAware) message).serializeMetaData(serializer, expectedRepresentation);
-        }
         return serializer.serialize(message.getMetaData(), expectedRepresentation);
     }
 

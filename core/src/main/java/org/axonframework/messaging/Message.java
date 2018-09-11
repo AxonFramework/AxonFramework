@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.serialization.SerializationAware;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -35,7 +36,7 @@ import java.util.Map;
  * @see EventMessage
  * @since 2.0
  */
-public interface Message<T> extends Serializable {
+public interface Message<T> extends Serializable, SerializationAware {
 
     /**
      * Returns the identifier of this message. Two messages with the same identifiers should be interpreted as
