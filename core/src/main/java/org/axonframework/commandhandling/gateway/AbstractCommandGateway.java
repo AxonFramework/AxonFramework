@@ -178,6 +178,12 @@ public abstract class AbstractCommandGateway {
             return this;
         }
 
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
         protected void validate() {
             assertNonNull(commandBus, "The CommandBus is a hard requirement and should be provided");
         }

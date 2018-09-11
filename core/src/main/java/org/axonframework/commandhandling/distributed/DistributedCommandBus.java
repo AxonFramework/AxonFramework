@@ -273,7 +273,13 @@ public class DistributedCommandBus implements CommandBus {
             return new DistributedCommandBus(this);
         }
 
-        private void validate() {
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
             assertNonNull(commandRouter, "The CommandRouter is a hard requirement and should be provided");
             assertNonNull(connector, "The CommandBusConnector is a hard requirement and should be provided");
             assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");

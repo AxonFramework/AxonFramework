@@ -293,7 +293,13 @@ public class SimpleCommandBus implements CommandBus {
             return new SimpleCommandBus(this);
         }
 
-        private void validate() {
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
             assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
             assertNonNull(rollbackConfiguration,
