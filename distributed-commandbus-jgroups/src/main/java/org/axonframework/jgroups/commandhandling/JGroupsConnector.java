@@ -604,7 +604,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         }
 
         private void assertClusterName(String clusterName, String exceptionMessage) {
-            assertThat(clusterName, name -> Objects.nonNull(name) && !name.equals(""), exceptionMessage);
+            assertThat(clusterName, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
         }
     }
 

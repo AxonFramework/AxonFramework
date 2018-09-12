@@ -277,7 +277,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         }
 
         private void assertMessageRoutingInfoEndpoint(String messageRoutingInfoEndpoint, String exceptionMessage) {
-            assertThat(messageRoutingInfoEndpoint, name -> Objects.nonNull(name) && !name.equals(""), exceptionMessage);
+            assertThat(messageRoutingInfoEndpoint, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
         }
     }
 }
