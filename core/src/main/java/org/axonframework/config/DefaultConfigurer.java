@@ -167,8 +167,10 @@ public class DefaultConfigurer implements Configurer {
                         null, null, true
                 ))
                 .registerComponent(TokenStore.class,
-                                   c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class),
-                                                          c.serializer()))
+                                   c -> JpaTokenStore.builder()
+                                                     .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                     .serializer(c.serializer())
+                                                     .build())
                 .registerComponent(SagaStore.class,
                                    c -> new JpaSagaStore(c.serializer(),
                                                          c.getComponent(EntityManagerProvider.class)));
