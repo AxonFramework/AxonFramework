@@ -327,7 +327,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *
          * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
          *                      store
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateType(Class<T> aggregateType) {
             assertNonNull(aggregateType, "The aggregateType may not be null");
@@ -341,7 +341,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *
          * @param parameterResolverFactory a {@link ParameterResolverFactory} used to resolve parameters for annotated
          *                                 handlers contained in the Aggregate
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
@@ -355,7 +355,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *
          * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
          *                          {@code aggregateType}.
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
@@ -370,7 +370,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          *
          * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
          *                       {@link Repository} will store
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
             assertNonNull(aggregateModel, "AggregateModel may not be null");

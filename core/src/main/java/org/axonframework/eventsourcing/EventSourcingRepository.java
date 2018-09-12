@@ -80,10 +80,10 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     /**
-     * Builder class to instantiate a {@link EventSourcingRepository}. Can also be used to instantiate a
-     * {@link CachingEventSourcingRepository}. This Builder will check whether a {@link Cache} is provided. If this
-     * holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
-     * EventSourcingRepository.
+     * Instantiate a Builder to be able to create a {@link EventSourcingRepository} for aggregate type {@code T}.
+     * Can also be used to instantiate a {@link CachingEventSourcingRepository} for aggregate type {@code T}. This
+     * Builder will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function
+     * returns a CachingEventSourcingRepository instead of an EventSourcingRepository.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory} and the
      * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation.
@@ -251,7 +251,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          *
          * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source
          *                   an Aggregate
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> eventStore(EventStore eventStore) {
             assertNonNull(eventStore, "EventStore may not be null");
@@ -265,7 +265,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          *
          * @param snapshotTriggerDefinition a {@link SnapshotTriggerDefinition} specifying when to trigger a snapshot
          *                                  for an Aggregate contained in this repository
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> snapshotTriggerDefinition(SnapshotTriggerDefinition snapshotTriggerDefinition) {
             assertNonNull(snapshotTriggerDefinition, "SnapshotTriggerDefinition may not be null");
@@ -279,7 +279,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          * {@link EventSourcingRepository}.
          *
          * @param aggregateFactory the {@link AggregateFactory} used to create new Aggregate instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateFactory(AggregateFactory<T> aggregateFactory) {
             assertNonNull(aggregateFactory, "AggregateFactory may not be null");
@@ -291,7 +291,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          * Sets the {@link RepositoryProvider} which services repositories for specific aggregate types.
          *
          * @param repositoryProvider a {@link RepositoryProvider} servicing repositories for specific aggregate types
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> repositoryProvider(RepositoryProvider repositoryProvider) {
             this.repositoryProvider = repositoryProvider;
@@ -302,7 +302,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
          * Sets the {@link Cache} which services repositories for specific aggregate types.
          *
          * @param cache a {@link Cache} servicing repositories for specific aggregate types
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> cache(Cache cache) {
             this.cache = cache;

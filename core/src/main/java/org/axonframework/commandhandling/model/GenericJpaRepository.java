@@ -84,7 +84,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     }
 
     /**
-     * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
+     * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, and
      * the {@code identifierConverter} to {@link Function#identity()}.
@@ -228,7 +228,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager}
          *                              instance for this repository
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> entityManagerProvider(EntityManagerProvider entityManagerProvider) {
             assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
@@ -240,7 +240,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
          * Sets the {@link EventBus} to which events are published.
          *
          * @param eventBus an {@link EventBus} to which events are published
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> eventBus(EventBus eventBus) {
             assertNonNull(eventBus, "EventBus may not be null");
@@ -252,7 +252,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
          * Sets the {@link RepositoryProvider} which services repositories for specific aggregate types.
          *
          * @param repositoryProvider a {@link RepositoryProvider} servicing repositories for specific aggregate types
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> repositoryProvider(RepositoryProvider repositoryProvider) {
             this.repositoryProvider = repositoryProvider;
@@ -265,7 +265,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
          *
          * @param identifierConverter a {@link Function} of input type {@link String} and return type {@code ?} which
          *                            converts the String based identifier to the Identifier object used in the Entity
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> identifierConverter(Function<String, ?> identifierConverter) {
             assertNonNull(identifierConverter, "The identifierConverter may not be null");
