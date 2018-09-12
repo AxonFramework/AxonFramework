@@ -114,7 +114,7 @@ public class SpringCloudCommandRouterTest {
                                               .discoveryClient(discoveryClient)
                                               .localServiceInstance(localServiceInstance)
                                               .routingStrategy(routingStrategy)
-                                              .serviceInstanceFilter(s -> true)
+                                              .serviceInstanceFilter(serviceInstance -> true)
                                               .consistentHashChangeListener(consistentHashChangeListener)
                                               .build();
     }
@@ -543,7 +543,7 @@ public class SpringCloudCommandRouterTest {
                                        .discoveryClient(discoveryClient)
                                        .localServiceInstance(localServiceInstance)
                                        .routingStrategy(routingStrategy)
-                                       .serviceInstanceFilter(s -> true)
+                                       .serviceInstanceFilter(serviceInstance -> true)
                                        .consistentHashChangeListener(consistentHashChangeListener)
                                        .build();
     }
