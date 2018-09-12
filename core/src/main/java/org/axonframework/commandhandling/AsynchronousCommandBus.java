@@ -65,7 +65,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     /**
-     * Builder class to instantiate a {@link AsynchronousCommandBus}.
+     * Instantiate a Builder to be able to create a {@link AsynchronousCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor}, {@link RollbackConfiguration} defaults to a
@@ -138,7 +138,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
          * Sets the {@link Executor} which processes the Command dispatching threads.
          *
          * @param executor a {@link Executor} to processes the Command dispatching threads
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder executor(Executor executor) {
             assertNonNull(executor, "Executor may not be null");

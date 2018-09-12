@@ -26,7 +26,7 @@ Other changes
 - org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter
 - org.axonframework.springcloud.commandhandling.SpringCloudHttpBackupCommandRouter
 - org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector
-- org.axonframework.commandhandlingAsynchronousCommandBus
+- org.axonframework.commandhandling.AsynchronousCommandBus
 - org.axonframework.commandhandling.SimpleCommandBus
 - org.axonframework.commandhandling.disruptor.DisruptorCommandBus
 - org.axonframework.commandhandling.distributed.DistributedCommandBus

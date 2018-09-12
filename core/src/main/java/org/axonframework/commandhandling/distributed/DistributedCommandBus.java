@@ -85,7 +85,7 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     /**
-     * Builder class to instantiate a {@link DistributedCommandBus}.
+     * Instantiate a Builder to be able to create a {@link DistributedCommandBus}.
      * <p>
      * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.
      * The {@link CommandRouter} and {@link CommandBusConnector} are <b>hard requirements</b> and as such should be
@@ -229,7 +229,7 @@ public class DistributedCommandBus implements CommandBus {
          * Sets the {@link CommandRouter} used to determine the target node for each dispatched command.
          *
          * @param commandRouter a {@link CommandRouter} used to determine the target node for each dispatched command
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder commandRouter(CommandRouter commandRouter) {
             assertNonNull(commandRouter, "CommandRouter may not be null");
@@ -243,7 +243,7 @@ public class DistributedCommandBus implements CommandBus {
          *
          * @param connector a {@link CommandBusConnector} which performs the actual transport of the message to the
          *                  destination node
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder connector(CommandBusConnector connector) {
             assertNonNull(connector, "CommandBusConnector may not be null");
@@ -256,7 +256,7 @@ public class DistributedCommandBus implements CommandBus {
          * monitor incoming messages and their execution result.
          *
          * @param messageMonitor a {@link MessageMonitor} used to monitor incoming messages and their execution result
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");

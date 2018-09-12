@@ -58,7 +58,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     /**
-     * Builder class to instantiate a {@link DefaultCommandGateway}.
+     * Instantiate a Builder to be able to create a {@link DefaultCommandGateway}.
      * <p>
      * The {@code dispatchInterceptors} are defaulted to an empty list.
      * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.

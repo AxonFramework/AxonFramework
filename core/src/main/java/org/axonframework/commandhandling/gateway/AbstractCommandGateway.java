@@ -45,10 +45,10 @@ public abstract class AbstractCommandGateway {
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
 
     /**
-     * Instantiate a {@link AbstractCommandGateway} based on the fields contained in the {@link Builder}.
+     * Instantiate an {@link AbstractCommandGateway} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link CommandBus} is not {@code null} and will throw an {@link AxonConfigurationException}
-     * if this is the case.
+     * Will assert that the {@link CommandBus} is not {@code null} and throws an {@link AxonConfigurationException}
+     * if it is.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractCommandGateway} instance
      */
@@ -131,7 +131,7 @@ public abstract class AbstractCommandGateway {
          * Sets the {@link CommandBus} used to dispatch commands.
          *
          * @param commandBus a {@link CommandBus} used to dispatch commands
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder commandBus(CommandBus commandBus) {
             assertNonNull(commandBus, "CommandBus may not be null");
@@ -144,7 +144,7 @@ public abstract class AbstractCommandGateway {
          * to prevent retries.
          *
          * @param retryScheduler a {@link RetryScheduler} capable of performing retries of failed commands
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder retryScheduler(RetryScheduler retryScheduler) {
             this.retryScheduler = retryScheduler;
@@ -156,7 +156,7 @@ public abstract class AbstractCommandGateway {
          * Are invoked when a command is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a command is being dispatched
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(
                 MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
@@ -168,7 +168,7 @@ public abstract class AbstractCommandGateway {
          * Are invoked when a command is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when a command is being dispatched
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(
                 List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
