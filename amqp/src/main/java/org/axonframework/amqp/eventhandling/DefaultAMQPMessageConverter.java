@@ -150,7 +150,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * Sets the serializer to serialize the Event Message's payload and Meta Data with.
          *
          * @param serializer The serializer to serialize the Event Message's payload and Meta Data with
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
@@ -163,7 +163,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * {@link PackageRoutingKeyResolver}.
          *
          * @param routingKeyResolver The strategy to use to resolve routing keys for Event Messages
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder routingKeyResolver(RoutingKeyResolver routingKeyResolver) {
             assertNonNull(routingKeyResolver, "RoutingKeyResolver may not be null");
@@ -176,7 +176,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
          * thus toggling durable message dispatching on.
          *
          * @param durable a {@code boolean} specifying whether to request durable message dispatching
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder durable(boolean durable) {
             this.durable = durable;

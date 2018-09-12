@@ -106,7 +106,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     }
 
     /**
-     * Builder class to instantiate a {@link SpringCloudCommandRouter}.
+     * Instantiate a Builder to be able to create a {@link SpringCloudCommandRouter}.
      * <p>
      * The {@code serviceInstanceFilter} is defaulted to the
      * {@link SpringCloudCommandRouter#serviceInstanceMetadataContainsMessageRoutingInformation} function, and the
@@ -292,7 +292,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     /**
      * Instantiate a {@link Member} of type {@link java.net.URI} based on the provided {@code serviceInstance}.
      * This Member is later used to send, for example, Command messages to.
-     * </p>
+     * <p>
      * A deviation is made between a local and a remote member, since if local is selected to handle the command, the
      * local CommandBus may be leveraged. The check if a {@link org.springframework.cloud.client.ServiceInstance} is
      * local is based on two potential situations: 1) the given {@code serviceInstance} is identical to the
@@ -398,7 +398,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * as a {@code CommandRouter} and to create its awareness of available nodes to send commands to.
          *
          * @param discoveryClient the {@link DiscoveryClient} used to discovery and notify other nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder discoveryClient(DiscoveryClient discoveryClient) {
             assertNonNull(discoveryClient, "DiscoveryClient may not be null");
@@ -412,7 +412,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          *
          * @param localServiceInstance the {@link Registration}, representing the local Service Instance of this
          *                             application
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder localServiceInstance(Registration localServiceInstance) {
             assertNonNull(localServiceInstance, "Registration may not be null");
@@ -426,7 +426,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          *
          * @param routingStrategy the {@link RoutingStrategy} used to define the key on which Command Messages are
          *                        routed to their respective nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder routingStrategy(RoutingStrategy routingStrategy) {
             assertNonNull(routingStrategy, "RoutingStrategy may not be null");
@@ -442,7 +442,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          *
          * @param serviceInstanceFilter the {@link Predicate} of generic type {@link ServiceInstance}, used to filter
          *                              out ServiceInstances from the membership update loop
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serviceInstanceFilter(Predicate<ServiceInstance> serviceInstanceFilter) {
             assertNonNull(serviceInstanceFilter, "ServiceInstanceFilter may not be null");
@@ -457,7 +457,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
          * @param consistentHashChangeListener the {@link ConsistentHashChangeListener} which is notified when a change
          *                                     in membership has <em>potentially</em> caused a change in the consistent
          *                                     hash
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder consistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
             assertNonNull(consistentHashChangeListener, "ConsistentHashChangeListener may not be null");

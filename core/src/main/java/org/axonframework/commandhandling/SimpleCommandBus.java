@@ -90,7 +90,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Builder class to instantiate a {@link SimpleCommandBus}.
+     * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
      * defaulted to a {@link NoOpMessageMonitor} and the {@link RollbackConfiguration} defaults to a
@@ -248,7 +248,7 @@ public class SimpleCommandBus implements CommandBus {
          * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
          *
          * @param transactionManager a {@link TransactionManager} used to manage transactions
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
@@ -261,7 +261,7 @@ public class SimpleCommandBus implements CommandBus {
          * Defaults to a {@link NoOpMessageMonitor}.
          *
          * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
@@ -276,7 +276,7 @@ public class SimpleCommandBus implements CommandBus {
          *
          * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
          *                              rolled back
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
             assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");

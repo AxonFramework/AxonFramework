@@ -230,7 +230,7 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     /**
-     * Builder class to instantiate a {@link DisruptorCommandBus}.
+     * Instantiate a Builder to be able to create a {@link DisruptorCommandBus}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -767,7 +767,7 @@ public class DisruptorCommandBus implements CommandBus {
          * {@link #publisherInterceptors(java.util.List)}.
          *
          * @param invokerInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming command
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder invokerInterceptors(
                 List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors) {
@@ -783,7 +783,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param publisherInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
          *                              command
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder publisherInterceptors(List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
             this.publisherInterceptors.clear();
@@ -798,7 +798,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param dispatchInterceptors the {@link MessageDispatchInterceptor}s dispatch interceptors to invoke when
          *                             dispatching a command
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder dispatchInterceptors(List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
             this.dispatchInterceptors.clear();
@@ -818,7 +818,7 @@ public class DisruptorCommandBus implements CommandBus {
          * case, threads are created in the DisruptorCommandBus ThreadGroup.
          *
          * @param executor the {@link Executor} that provides the processing resources
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder executor(Executor executor) {
             this.executor = executor;
@@ -835,7 +835,7 @@ public class DisruptorCommandBus implements CommandBus {
          * @param rescheduleCommandsOnCorruptState a {@code boolean} specifying whether or not to automatically
          *                                         reschedule commands that failed due to potentially corrupted
          *                                         aggregate state.
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder rescheduleCommandsOnCorruptState(boolean rescheduleCommandsOnCorruptState) {
             this.rescheduleCommandsOnCorruptState = rescheduleCommandsOnCorruptState;
@@ -852,7 +852,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param coolingDownPeriod a {@code long} specifying the cooling down period for the shutdown of the
          *                          {@link DisruptorCommandBus}, in milliseconds.
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder coolingDownPeriod(long coolingDownPeriod) {
             assertCoolingDownPeriod(coolingDownPeriod);
@@ -869,7 +869,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param commandTargetResolver The {@link CommandTargetResolver} to use to indicate which Aggregate
          *                              instance is target of an incoming Command
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder commandTargetResolver(CommandTargetResolver commandTargetResolver) {
             assertNonNull(commandTargetResolver, "CommandTargetResolver may not be null");
@@ -885,7 +885,7 @@ public class DisruptorCommandBus implements CommandBus {
          * of I/O that the process requires. If no I/O is involved, a good starting value is {@code [processors / 2]}.
          *
          * @param publisherThreadCount the number of Threads to use for publishing as an {@code int}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder publisherThreadCount(int publisherThreadCount) {
             assertPublisherThreadCount(publisherThreadCount);
@@ -898,7 +898,7 @@ public class DisruptorCommandBus implements CommandBus {
          * Defaults to a {@link NoOpMessageMonitor}.
          *
          * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
@@ -912,7 +912,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param transactionManager the {@link TransactionManager} to use to manage a transaction around the storage
          *                           and publication of events
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             this.transactionManager = transactionManager;
@@ -926,7 +926,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
          *                              rolled back
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
             assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
@@ -940,7 +940,7 @@ public class DisruptorCommandBus implements CommandBus {
          * The default is {@code 4096}.
          *
          * @param bufferSize an {@code int} specifying the buffer size to use
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder bufferSize(int bufferSize) {
             assertBufferSize(bufferSize);
@@ -954,7 +954,7 @@ public class DisruptorCommandBus implements CommandBus {
          * Defaults to a {@link ProducerType#MULTI} solution.
          *
          * @param producerType the {@link ProducerType} to use by the {@link Disruptor}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder producerType(ProducerType producerType) {
             assertNonNull(producerType, "ProducerType may not be null");
@@ -974,7 +974,7 @@ public class DisruptorCommandBus implements CommandBus {
          * Defaults to the {@link BlockingWaitStrategy}.
          *
          * @param waitStrategy The WaitStrategy to use
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          *
          * @see com.lmax.disruptor.SleepingWaitStrategy SleepingWaitStrategy
          * @see com.lmax.disruptor.BlockingWaitStrategy BlockingWaitStrategy
@@ -996,7 +996,7 @@ public class DisruptorCommandBus implements CommandBus {
          *
          * @param invokerThreadCount an {@code int} specifying the number of Threads to use for Command Handler
          *                           invocation
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder invokerThreadCount(int invokerThreadCount) {
             assertInvokerThreadCount(invokerThreadCount);
@@ -1012,7 +1012,7 @@ public class DisruptorCommandBus implements CommandBus {
          * By default, no cache is used.
          *
          * @param cache the cache to store loaded aggregates in
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder cache(Cache cache) {
             assertNonNull(cache, "Cache may not be null");

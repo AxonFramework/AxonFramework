@@ -433,7 +433,7 @@ public class CommandGatewayFactory {
         }
 
         /**
-         * Builder class to instantiate a {@link GatewayInvocationHandler}.
+         * Instantiate a Builder to be able to create a {@link GatewayInvocationHandler}.
          * <p>
          * The {@code dispatchInterceptors} are defaulted to an empty list.
          * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
@@ -488,7 +488,7 @@ public class CommandGatewayFactory {
              * Sets the {@code dispatchers} containing the methods to delegate commands to.
              *
              * @param dispatchers {@code dispatchers} containing the methods to delegate commands to
-             * @return the current Builder instance, for a fluent interfacing
+             * @return the current Builder instance, for fluent interfacing
              */
             public Builder dispatchers(Map<Method, InvocationHandler> dispatchers) {
                 this.dispatchers = new HashMap<>(dispatchers);
@@ -522,7 +522,7 @@ public class CommandGatewayFactory {
         }
 
         /**
-         * Builder class to instantiate a {@link DispatchOnInvocationHandler}.
+         * Instantiate a Builder to be able to create a {@link DispatchOnInvocationHandler}.
          * <p>
          * The {@code dispatchInterceptors} are defaulted to an empty list.
          * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
@@ -602,7 +602,7 @@ public class CommandGatewayFactory {
              * {@link CommandMessage}.
              *
              * @param metaDataExtractors an array of {@link MetaDataExtractor}
-             * @return the current Builder instance, for a fluent interfacing
+             * @return the current Builder instance, for fluent interfacing
              */
             public Builder metaDataExtractors(MetaDataExtractor[] metaDataExtractors) {
                 this.metaDataExtractors = metaDataExtractors;
@@ -615,7 +615,7 @@ public class CommandGatewayFactory {
              *
              * @param commandCallbacks the {@code commandCallbacks} which are called upon success and failure of
              *                         handling a command
-             * @return the current Builder instance, for a fluent interfacing
+             * @return the current Builder instance, for fluent interfacing
              */
             public Builder commandCallbacks(List<CommandCallback<? super C, ? super R>> commandCallbacks) {
                 this.commandCallbacks = commandCallbacks;
@@ -627,7 +627,7 @@ public class CommandGatewayFactory {
              * command.
              *
              * @param forceCallbacks a {@code boolean} specifying whether {@link CommandCallback}s should be made
-             * @return the current Builder instance, for a fluent interfacing
+             * @return the current Builder instance, for fluent interfacing
              */
             public Builder forceCallbacks(boolean forceCallbacks) {
                 this.forceCallbacks = forceCallbacks;

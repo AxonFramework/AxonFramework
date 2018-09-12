@@ -84,7 +84,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
     }
 
     /**
-     * Builder class to instantiate a {@link SpringHttpCommandBusConnector}.
+     * Instantiate a Builder to be able to create a {@link SpringHttpCommandBusConnector}.
+     * <p>
      * The {@code localCommandBus} of type (@link CommandBus}, {@link RestOperations} and {@link Serializer} are
      * <b>hard requirements</b> and as such should be provided.
      *
@@ -237,7 +238,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * segment.
          *
          * @param localCommandBus the {@link CommandBus} to publish received commands which to the local segment
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder localCommandBus(CommandBus localCommandBus) {
             assertNonNull(localCommandBus, "Local CommandBus may not be null");
@@ -249,7 +250,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * Sets the {@link RestOperations} used to send commands to other nodes.
          *
          * @param restOperations the {@link RestOperations} used to send commands to other nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder restOperations(RestOperations restOperations) {
             assertNonNull(restOperations, "RestOperations may not be null");
@@ -261,7 +262,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * Sets the {@link Serializer} used to serialize command messages when they are sent between nodes.
          *
          * @param serializer the {@link Serializer} used to serialize command messages when they are sent between nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
