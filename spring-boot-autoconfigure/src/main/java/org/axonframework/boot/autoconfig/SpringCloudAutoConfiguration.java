@@ -70,11 +70,14 @@ public class SpringCloudAutoConfiguration {
                                                                                  Registration localServiceInstance,
                                                                                  RestTemplate restTemplate,
                                                                                  RoutingStrategy routingStrategy) {
-        return new SpringCloudHttpBackupCommandRouter(discoveryClient,
-                                                      localServiceInstance,
-                                                      routingStrategy,
-                                                      restTemplate,
-                                                      properties.getSpringCloud().getFallbackUrl());
+        return SpringCloudHttpBackupCommandRouter.builder()
+                                                 .discoveryClient(discoveryClient)
+                                                 .localServiceInstance(localServiceInstance)
+                                                 .routingStrategy(routingStrategy)
+                                                 .restTemplate(restTemplate)
+                                                 .messageRoutingInformationEndpoint(properties.getSpringCloud()
+                                                                                              .getFallbackUrl())
+                                                 .build();
     }
 
     @Bean
@@ -83,7 +86,11 @@ public class SpringCloudAutoConfiguration {
     public CommandRouter springCloudCommandRouter(DiscoveryClient discoveryClient,
                                                   Registration localServiceInstance,
                                                   RoutingStrategy routingStrategy) {
-        return new SpringCloudCommandRouter(discoveryClient, localServiceInstance, routingStrategy);
+        return SpringCloudCommandRouter.builder()
+                                       .discoveryClient(discoveryClient)
+                                       .localServiceInstance(localServiceInstance)
+                                       .routingStrategy(routingStrategy)
+                                       .build();
     }
 
     @Bean
@@ -92,7 +99,11 @@ public class SpringCloudAutoConfiguration {
             @Qualifier("localSegment") CommandBus localSegment,
             RestTemplate restTemplate,
             @Qualifier("messageSerializer") Serializer serializer) {
-        return new SpringHttpCommandBusConnector(localSegment, restTemplate, serializer);
+        return SpringHttpCommandBusConnector.builder()
+                                            .localCommandBus(localSegment)
+                                            .restOperations(restTemplate)
+                                            .serializer(serializer)
+                                            .build();
     }
 
     @Bean

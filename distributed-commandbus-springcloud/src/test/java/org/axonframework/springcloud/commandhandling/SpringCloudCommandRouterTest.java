@@ -63,7 +63,7 @@ public class SpringCloudCommandRouterTest {
     private static final int LOAD_FACTOR = 1;
     private static final CommandMessage<Object> TEST_COMMAND = GenericCommandMessage.asCommandMessage("testCommand");
     private static final String ROUTING_KEY = "routingKey";
-    private static final String SERVICE_INSTANCE_ID = "SERVICEID";
+    private static final String SERVICE_INSTANCE_ID = "SERVICE_ID";
     private static final URI SERVICE_INSTANCE_URI = URI.create("endpoint");
     private static final Predicate<? super CommandMessage<?>> COMMAND_NAME_FILTER = c -> true;
     private static final boolean LOCAL_MEMBER = true;
@@ -110,11 +110,13 @@ public class SpringCloudCommandRouterTest {
 
         when(routingStrategy.getRoutingKey(any())).thenReturn(ROUTING_KEY);
 
-        testSubject = new SpringCloudCommandRouter(discoveryClient,
-                                                   localServiceInstance,
-                                                   routingStrategy,
-                                                   s -> true,
-                                                   consistentHashChangeListener);
+        testSubject = SpringCloudCommandRouter.builder()
+                                              .discoveryClient(discoveryClient)
+                                              .localServiceInstance(localServiceInstance)
+                                              .routingStrategy(routingStrategy)
+                                              .serviceInstanceFilter(serviceInstance -> true)
+                                              .consistentHashChangeListener(consistentHashChangeListener)
+                                              .build();
     }
 
     @Test
@@ -328,9 +330,12 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventBlackListsNonAxonInstances() throws Exception {
-        SpringCloudCommandRouter testSubject = new SpringCloudCommandRouter(
-                discoveryClient, localServiceInstance, routingStrategy, serviceInstance -> true
-        );
+        SpringCloudCommandRouter testSubject = SpringCloudCommandRouter.builder()
+                                                                       .discoveryClient(discoveryClient)
+                                                                       .localServiceInstance(localServiceInstance)
+                                                                       .routingStrategy(routingStrategy)
+                                                                       .serviceInstanceFilter(serviceInstance -> true)
+                                                                       .build();
 
         String blackListedInstancesFieldName = "blackListedServiceInstances";
         Field blackListedInstancesField =
@@ -366,9 +371,12 @@ public class SpringCloudCommandRouterTest {
 
     @Test
     public void testUpdateMembershipsOnHeartbeatEventDoesNotRequestInfoFromBlackListedServiceInstance() {
-        SpringCloudCommandRouter testSubject = new SpringCloudCommandRouter(
-                discoveryClient, localServiceInstance, routingStrategy, serviceInstance -> true
-        );
+        SpringCloudCommandRouter testSubject = SpringCloudCommandRouter.builder()
+                                                                       .discoveryClient(discoveryClient)
+                                                                       .localServiceInstance(localServiceInstance)
+                                                                       .routingStrategy(routingStrategy)
+                                                                       .serviceInstanceFilter(serviceInstance -> true)
+                                                                       .build();
 
         serviceInstanceMetadata.put(LOAD_FACTOR_KEY, Integer.toString(LOAD_FACTOR));
         serviceInstanceMetadata.put(SERIALIZED_COMMAND_FILTER_KEY, serializedCommandFilterData);
@@ -531,11 +539,13 @@ public class SpringCloudCommandRouterTest {
     private SpringCloudCommandRouter createRouterFor(String host) {
         Registration localServiceInstance = mock(Registration.class);
         when(localServiceInstance.getUri()).thenReturn(URI.create("http://" + host));
-        return new SpringCloudCommandRouter(discoveryClient,
-                                            localServiceInstance,
-                                            routingStrategy,
-                                            s -> true,
-                                            consistentHashChangeListener);
+        return SpringCloudCommandRouter.builder()
+                                       .discoveryClient(discoveryClient)
+                                       .localServiceInstance(localServiceInstance)
+                                       .routingStrategy(routingStrategy)
+                                       .serviceInstanceFilter(serviceInstance -> true)
+                                       .consistentHashChangeListener(consistentHashChangeListener)
+                                       .build();
     }
 
     private List<ServiceInstance> mockServiceInstances(int number) {

@@ -105,8 +105,13 @@ public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector
 
     protected JGroupsConnector instantiateConnector(CommandBus localSegment, JChannel channel, String clusterName,
                                                     Serializer serializer, RoutingStrategy routingStrategy) {
-        return new JGroupsConnector(localSegment, channel, clusterName, serializer, routingStrategy,
-                                    consistentHashChangeListener);
+        return JGroupsConnector.builder()
+                               .localSegment(localSegment)
+                               .channel(channel)
+                               .clusterName(clusterName)
+                               .serializer(serializer)
+                               .routingStrategy(routingStrategy)
+                               .consistentHashChangeListener(consistentHashChangeListener).build();
     }
 
     /**
