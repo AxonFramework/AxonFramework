@@ -39,3 +39,10 @@ Other changes
 - org.axonframework.commandhandling.model.GenericJpaRepository
 - org.axonframework.eventsourcing.EventSourcingRepository
 - org.axonframework.eventsourcing.CachingEventSourcingRepository
+- org.axonframework.commandhandling.AggregateAnnotationCommandHandler
+- org.axonframework.deadline.quartz.QuartzDeadlineManager
+- org.axonframework.deadline.SimpleDeadlineManager
+- org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler
+- org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
+- org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore
+- org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
