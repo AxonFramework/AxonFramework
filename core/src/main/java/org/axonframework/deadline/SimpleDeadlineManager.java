@@ -80,7 +80,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     /**
-     * Builder class to instantiate a {@link SimpleDeadlineManager}.
+     * Instantiate a Builder to be able to create a {@link SimpleDeadlineManager}.
      * <p>
      * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
      * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
@@ -250,7 +250,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          *
          * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
          *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
             assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
@@ -264,7 +264,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          *
          * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
          *                                 deadlines
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
             assertNonNull(scheduledExecutorService, "ScheduledExecutorService may not be null");
@@ -277,7 +277,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          * {@link NoTransactionManager}.
          *
          * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");

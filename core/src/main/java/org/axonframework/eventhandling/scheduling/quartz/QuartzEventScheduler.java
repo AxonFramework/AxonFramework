@@ -107,7 +107,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Builder class to instantiate a {@link QuartzEventScheduler}.
+     * Instantiate a Builder to be able to create a {@link QuartzEventScheduler}.
      * <p>
      * The {@link EventJobDataBinder} is defaulted to an {@link DirectEventJobDataBinder}, and the
      * {@link TransactionManager} defaults to a {@link NoTransactionManager}.
@@ -334,7 +334,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder scheduler(Scheduler scheduler) {
             assertNonNull(scheduler, "Scheduler may not be null");
@@ -346,7 +346,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          * Sets the {@link EventBus} used to publish events on once the schedule has been met.
          *
          * @param eventBus a {@link EventBus} used to publish events on once the schedule has been met
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventBus(EventBus eventBus) {
             assertNonNull(eventBus, "EventBus may not be null");
@@ -360,7 +360,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          *
          * @param jobDataBinder a {@link EventJobDataBinder} instance which reads / writes the event message to publish
          *                      to the {@link JobDataMap}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder jobDataBinder(EventJobDataBinder jobDataBinder) {
             assertNonNull(jobDataBinder, "EventJobDataBinder may not be null");
@@ -374,7 +374,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
          *
          * @param transactionManager a {@link TransactionManager} used to build transactions and ties them on event
          *                           publication
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");

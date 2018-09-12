@@ -72,7 +72,7 @@ public class JpaTokenStore implements TokenStore {
     }
 
     /**
-     * Builder class to instantiate a {@link JpaTokenStore}.
+     * Instantiate a Builder to be able to create a {@link JpaTokenStore}.
      * <p>
      * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
      * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
@@ -217,7 +217,7 @@ public class JpaTokenStore implements TokenStore {
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
          *                              access the underlying database
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
             assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
@@ -229,7 +229,7 @@ public class JpaTokenStore implements TokenStore {
          * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
          *
          * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
@@ -243,7 +243,7 @@ public class JpaTokenStore implements TokenStore {
          * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
          *
          * @param claimTimeout a timeout specifying the time after which this process will force a claim
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder claimTimeout(TemporalAmount claimTimeout) {
             assertNonNull(claimTimeout, "The claim timeout may not be null");
@@ -256,7 +256,7 @@ public class JpaTokenStore implements TokenStore {
          * {@link ManagementFactory#getRuntimeMXBean#getName} output as the node id.
          *
          * @param nodeId the id as a {@link String} to identify ownership of the tokens
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder nodeId(String nodeId) {
             assertNodeId(nodeId, "The nodeId may not be null or empty");

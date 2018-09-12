@@ -80,7 +80,7 @@ public class SimpleEventScheduler implements EventScheduler {
     }
 
     /**
-     * Builder class to instantiate a {@link SimpleEventScheduler}.
+     * Instantiate a Builder to be able to create a {@link SimpleEventScheduler}.
      * <p>
      * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The
      * {@link ScheduledExecutorService} and {@link EventBus} are a <b>hard requirements</b> and as such should be
@@ -179,7 +179,7 @@ public class SimpleEventScheduler implements EventScheduler {
          * Sets the {@link EventBus} used to publish events on once the schedule has been met.
          *
          * @param eventBus a {@link EventBus} used to publish events on once the schedule has been met
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventBus(EventBus eventBus) {
             assertNonNull(eventBus, "EventBus may not be null");
@@ -192,7 +192,7 @@ public class SimpleEventScheduler implements EventScheduler {
          *
          * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
          *                                 events
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
             assertNonNull(scheduledExecutorService, "ScheduledExecutorService may not be null");
@@ -206,7 +206,7 @@ public class SimpleEventScheduler implements EventScheduler {
          *
          * @param transactionManager a {@link TransactionManager} used to build transactions and ties them on event
          *                           publication
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");

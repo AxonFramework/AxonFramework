@@ -92,7 +92,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     /**
-     * Builder class to instantiate a {@link QuartzDeadlineManager}.
+     * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
      * <p>
      * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
      * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
@@ -204,7 +204,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
          *
          * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder scheduler(Scheduler scheduler) {
             assertNonNull(scheduler, "Scheduler may not be null");
@@ -219,7 +219,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          *
          * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
          *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
             assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
@@ -232,7 +232,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          * {@link NoTransactionManager}.
          *
          * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
@@ -246,7 +246,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          *
          * @param serializer a {@link Serializer} used to de-/serialize the {@link DeadlineMessage} and the
          *                   {@link ScopeDescriptor} into the {@link JobDataMap}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");

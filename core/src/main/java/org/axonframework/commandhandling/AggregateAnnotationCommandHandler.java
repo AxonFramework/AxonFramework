@@ -74,7 +74,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Builder class to instantiate a {@link AggregateAnnotationCommandHandler}.
+     * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
      * <p>
      * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
      * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
@@ -203,7 +203,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          *
          * @param repository a {@link Repository} used to add and load Aggregate instances of generic type {@code T}
          *                   upon handling commands for it
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> repository(Repository<T> repository) {
             assertNonNull(repository, "Repository may not be null");
@@ -216,7 +216,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          * {@link AnnotationCommandTargetResolver}.
          *
          * @param commandTargetResolver a {@link CommandTargetResolver} used to resolve the command handling target
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> commandTargetResolver(CommandTargetResolver commandTargetResolver) {
             assertNonNull(commandTargetResolver, "CommandTargetResolver may not be null");
@@ -231,7 +231,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          *
          * @param aggregateType the {@code aggregateType} specifying the type of aggregate an {@link AggregateModel}
          *                      should be instantiated for
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateType(Class<T> aggregateType) {
             assertNonNull(aggregateType, "The aggregateType may not be null");
@@ -245,7 +245,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          *
          * @param parameterResolverFactory a {@link ParameterResolverFactory} used to resolve parameters for annotated
          *                                 handlers contained in the Aggregate
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
@@ -259,7 +259,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          *
          * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
          *                          {@code aggregateType}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
@@ -274,7 +274,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          *
          * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
          *                       {@link Repository} will store
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
             assertNonNull(aggregateModel, "AggregateModel may not be null");
