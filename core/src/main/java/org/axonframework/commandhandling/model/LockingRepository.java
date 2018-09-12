@@ -240,7 +240,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
          * implemented in the {@link PessimisticLockFactory}.
          *
          * @param lockFactory a {@link LockFactory} used to lock an aggregate
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> lockFactory(LockFactory lockFactory) {
             assertNonNull(lockFactory, "LockFactory may not be null");
