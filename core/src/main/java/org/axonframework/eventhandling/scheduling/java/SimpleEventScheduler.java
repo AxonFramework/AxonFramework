@@ -176,9 +176,9 @@ public class SimpleEventScheduler implements EventScheduler {
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         /**
-         * Sets the {@link EventBus} used to publish scheduled events on once the schedule has been met.
+         * Sets the {@link EventBus} used to publish events on once the schedule has been met.
          *
-         * @param eventBus a {@link EventBus} used to publish scheduled events on once the schedule has been met
+         * @param eventBus a {@link EventBus} used to publish events on once the schedule has been met
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder eventBus(EventBus eventBus) {
