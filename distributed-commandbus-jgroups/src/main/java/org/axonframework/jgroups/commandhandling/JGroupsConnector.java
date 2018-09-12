@@ -189,11 +189,21 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         channel.disconnect();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Operation not implemented/supported for the {@link JGroupsConnector}.
+     */
     @Override
     public void getState(OutputStream output) {
         // Not supported
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Operation not implemented/supported for the {@link JGroupsConnector}.
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void setState(InputStream input) {
