@@ -18,7 +18,6 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -436,9 +435,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler<T> handler =
-                    new AggregateAnnotationCommandHandler<>(aggregateType, repository,
-                                                            new AnnotationCommandTargetResolver(),
-                                                            parameterResolverFactory);
+                    AggregateAnnotationCommandHandler.<T>builder()
+                            .aggregateType(aggregateType)
+                            .parameterResolverFactory(parameterResolverFactory)
+                            .repository(repository)
+                            .build();
             handler.subscribe(commandBus);
         }
     }

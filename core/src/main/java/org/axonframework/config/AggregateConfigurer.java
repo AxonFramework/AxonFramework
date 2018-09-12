@@ -70,11 +70,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     protected AggregateConfigurer(Class<A> aggregate) {
         this.aggregate = aggregate;
 
-        metaModel = new Component<>(() -> parent, "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
-                                    c -> c.getComponent(AggregateMetaModelFactory.class,
-                                                        () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
-                                                                                                     c.handlerDefinition(aggregate)))
-                                          .createModel(aggregate));
+        metaModel = new Component<>(() -> parent,
+                                    "aggregateMetaModel<" + aggregate.getSimpleName() + ">",
+                                    c -> c.getComponent(
+                                            AggregateMetaModelFactory.class,
+                                            () -> new AnnotatedAggregateMetaModelFactory(c.parameterResolverFactory(),
+                                                                                         c.handlerDefinition(aggregate))
+                                    ).createModel(aggregate));
         commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
                                                 c -> c.getComponent(CommandTargetResolver.class,
                                                                     AnnotationCommandTargetResolver::new));
@@ -108,9 +110,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                             .build();
                 });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
-                                         c -> new AggregateAnnotationCommandHandler<>(repository.get(),
-                                                                                      commandTargetResolver.get(),
-                                                                                      metaModel.get()));
+                                         c -> AggregateAnnotationCommandHandler.<A>builder()
+                                                 .repository(repository.get())
+                                                 .commandTargetResolver(commandTargetResolver.get())
+                                                 .aggregateModel(metaModel.get())
+                                                 .build());
     }
 
     /**

@@ -44,8 +44,12 @@ public class DisruptorRepositoryTest {
         Repository<TestAggregate> repository = commandBus
                 .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));
 
-        AggregateAnnotationCommandHandler<TestAggregate> handler
-                = new AggregateAnnotationCommandHandler<>(TestAggregate.class, repository);
+        AggregateAnnotationCommandHandler<TestAggregate> handler =
+                AggregateAnnotationCommandHandler.<TestAggregate>builder()
+                        .aggregateType(TestAggregate.class)
+                        .repository(repository)
+                        .build();
+
         handler.subscribe(commandBus);
         DefaultCommandGateway gateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
 
