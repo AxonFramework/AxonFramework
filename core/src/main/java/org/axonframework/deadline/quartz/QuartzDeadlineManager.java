@@ -269,7 +269,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
          *                                    specifications
          */
-        protected void validate() {
+        protected void validate() throws AxonConfigurationException {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
