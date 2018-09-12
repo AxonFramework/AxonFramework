@@ -113,7 +113,7 @@ public interface EventStorageEngine {
     DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber);
 
     /**
-     * Try to load a snapshot events of the aggregate with given {@code aggregateIdentifier}.
+     * Try to load snapshot events of the aggregate with given {@code aggregateIdentifier}.
      *
      * @param aggregateIdentifier The identifier of the aggregate
      * @return A stream of snapshot of the aggregate

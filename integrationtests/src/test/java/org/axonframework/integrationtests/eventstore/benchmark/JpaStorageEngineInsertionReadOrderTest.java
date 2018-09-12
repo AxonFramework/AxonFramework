@@ -134,7 +134,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
                                                                        1000,
                                                                        100,
                                                                        TimeUnit.MILLISECONDS,
-                                                                       SnapshotResolver.lastSnapshotResolver());
+                                                                       SnapshotResolver.resolveLast());
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {

@@ -93,8 +93,8 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier) {
-        return Stream.concat(historicStorage.readSnapshots(aggregateIdentifier),
-                             activeStorage.readSnapshots(aggregateIdentifier));
+        return Stream.concat(activeStorage.readSnapshots(aggregateIdentifier),
+                             historicStorage.readSnapshots(aggregateIdentifier));
     }
 
     @Override

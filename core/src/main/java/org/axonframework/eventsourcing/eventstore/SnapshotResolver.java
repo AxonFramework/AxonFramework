@@ -44,7 +44,7 @@ public interface SnapshotResolver {
      *
      * @return resolver which returns the last snapshot
      */
-    static SnapshotResolver lastSnapshotResolver() {
+    static SnapshotResolver resolveLast() {
         return snapshots -> snapshots.max(Comparator.comparingLong(DomainEventMessage::getSequenceNumber));
     }
 }

@@ -197,7 +197,7 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
                                                               String aggregateIdentifier) {
         FindIterable<Document> cursor =
                 snapshotCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
-                                  .sort(new BasicDBObject(eventConfiguration.sequenceNumberProperty(), ORDER_ASC)).limit(1);
+                                  .sort(new BasicDBObject(eventConfiguration.sequenceNumberProperty(), ORDER_ASC));
         return stream(cursor.spliterator(), false).map(this::extractSnapshot);
     }
 

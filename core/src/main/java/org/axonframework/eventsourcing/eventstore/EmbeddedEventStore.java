@@ -89,7 +89,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
              1000L,
              10000L,
              TimeUnit.MILLISECONDS,
-             SnapshotResolver.lastSnapshotResolver());
+             SnapshotResolver.resolveLast());
     }
 
     /**

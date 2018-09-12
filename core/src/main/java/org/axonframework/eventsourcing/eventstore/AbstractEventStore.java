@@ -61,7 +61,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(storageEngine,
              messageMonitor,
-             SnapshotResolver.lastSnapshotResolver());
+             SnapshotResolver.resolveLast());
     }
 
     /**

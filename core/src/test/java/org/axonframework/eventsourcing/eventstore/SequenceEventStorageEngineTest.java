@@ -142,8 +142,8 @@ public class SequenceEventStorageEngineTest {
         assertSame(event1, actual.get());
 
         InOrder inOrder = inOrder(historicStorage, activeStorage);
-        inOrder.verify(historicStorage).readSnapshots("aggregate");
         inOrder.verify(activeStorage).readSnapshots("aggregate");
+        inOrder.verify(historicStorage).readSnapshots("aggregate");
     }
 
     @Test
@@ -156,12 +156,12 @@ public class SequenceEventStorageEngineTest {
 
         List<DomainEventMessage<?>> snapshots = testSubject.readSnapshots("aggregate").collect(toList());
         assertEquals(2, snapshots.size());
-        assertSame(event2, snapshots.get(0));
-        assertSame(event1, snapshots.get(1));
+        assertSame(event1, snapshots.get(0));
+        assertSame(event2, snapshots.get(1));
 
         InOrder inOrder = inOrder(historicStorage, activeStorage);
         inOrder.verify(activeStorage).readSnapshots("aggregate");
-        inOrder.verifyNoMoreInteractions();
+        inOrder.verify(historicStorage).readSnapshots("aggregate");
     }
 
     @Test
