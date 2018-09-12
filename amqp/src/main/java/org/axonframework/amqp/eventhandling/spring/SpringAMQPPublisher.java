@@ -21,7 +21,6 @@ import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.amqp.eventhandling.AMQPMessage;
 import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
 import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
-import org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver;
 import org.axonframework.amqp.eventhandling.RoutingKeyResolver;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -351,9 +350,9 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     }
 
     /**
-     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a {@link
-     * PackageRoutingKeyResolver}, which uses the package name of the message's
-     * payload as a Routing Key.
+     * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a
+     * {@link org.axonframework.amqp.eventhandling.PackageRoutingKeyResolver}, which uses the package name of the
+     * message's payload as a Routing Key.
      * <p>
      * This setting is ignored if a {@link
      * #setMessageConverter(AMQPMessageConverter) MessageConverter} is configured.

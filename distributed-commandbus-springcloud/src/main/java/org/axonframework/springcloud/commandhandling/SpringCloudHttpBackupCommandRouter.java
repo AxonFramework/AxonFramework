@@ -252,7 +252,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
          */
         public Builder messageRoutingInformationEndpoint(String messageRoutingInformationEndpoint) {
             assertMessageRoutingInfoEndpoint(messageRoutingInformationEndpoint,
-                                             "The messageRoutingInformationEndpoint may not be null");
+                                             "The messageRoutingInformationEndpoint may not be null or empty");
             this.messageRoutingInformationEndpoint = messageRoutingInformationEndpoint;
             return this;
         }
@@ -277,7 +277,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
         }
 
         private void assertMessageRoutingInfoEndpoint(String messageRoutingInfoEndpoint, String exceptionMessage) {
-            assertThat(messageRoutingInfoEndpoint, name -> Objects.nonNull(name) && !name.equals(""), exceptionMessage);
+            assertThat(messageRoutingInfoEndpoint, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
         }
     }
 }
