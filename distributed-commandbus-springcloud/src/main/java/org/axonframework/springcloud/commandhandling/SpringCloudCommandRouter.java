@@ -51,7 +51,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * A {@link CommandRouter} implementation which uses Spring Cloud's {@link DiscoveryClient}s to propagate its
- * CommandMessage Routing Information, and to discover other Axon nodes and retrieve their Message Routing Information.
+ * Command Message Routing Information, and to discover other Axon nodes and retrieve their Message Routing Information.
  * It does so by utilizing the metadata contained in a {@link ServiceInstance} for storing the Message Routing
  * Information in. Other nodes discovered through the DiscoveryClient system which do not contain any of the required
  * Message Routing Information fields will be black listed, so not to perform any unneeded additional checks on that
