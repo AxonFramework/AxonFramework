@@ -65,7 +65,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
      * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
      * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not held.
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractRepository} instance
      */
@@ -141,9 +141,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     /**
-     * Checks the aggregate for concurrent changes. Throws a
-     * {@link ConflictingModificationException} when conflicting changes have been
-     * detected.
+     * Checks the aggregate for concurrent changes. Throws a {@link ConflictingModificationException} when conflicting
+     * changes have been detected.
      * <p>
      * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null
      * and the version number of the aggregate does not match the expected version
@@ -338,7 +337,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         /**
          * Sets the {@link ParameterResolverFactory} used to resolve parameters for annotated handlers contained in the
-         * Aggregate
+         * Aggregate. Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
          *
          * @param parameterResolverFactory a {@link ParameterResolverFactory} used to resolve parameters for annotated
          *                                 handlers contained in the Aggregate
@@ -352,6 +351,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         /**
          * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}.
+         * Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
          *
          * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
          *                          {@code aggregateType}.

@@ -67,7 +67,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
      * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
      * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not held.
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      * <p>
      * Additionally will assert that the {@link LockFactory}, {@link EntityManagerProvider}, {@link EventBus} and
      * {@code identifierConverter} are not {@code null}, resulting in an AxonConfigurationException if for any of these

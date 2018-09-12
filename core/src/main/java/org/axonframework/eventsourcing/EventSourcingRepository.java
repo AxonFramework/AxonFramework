@@ -61,7 +61,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
      * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
      * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
-     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not held.
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
      * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement, and
      * will also result in an AxonConfigurationException if both are missing.
