@@ -240,7 +240,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder localCommandBus(CommandBus localCommandBus) {
-            assertNonNull(localCommandBus, "LocalCommandBus may not be null");
+            assertNonNull(localCommandBus, "Local CommandBus may not be null");
             this.localCommandBus = localCommandBus;
             return this;
         }
@@ -285,7 +285,7 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
          *                                    specifications
          */
         protected void validate() {
-            assertNonNull(localCommandBus, "The localCommandBus is a hard requirement and should be provided");
+            assertNonNull(localCommandBus, "The local CommandBus is a hard requirement and should be provided");
             assertNonNull(restOperations, "The RestOperations is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
         }
