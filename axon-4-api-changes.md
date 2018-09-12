@@ -34,3 +34,8 @@ Other changes
 - org.axonframework.commandhandling.gatewayCommandGatewayFactory.GatewayInvocationHandler
 - org.axonframework.commandhandling.gatewayCommandGatewayFactory.DispatchOnInvocationHandler
 - org.axonframework.commandhandling.gateway.DefaultCommandGateway
+- org.axonframework.commandhandling.model.AbstractRepository
+- org.axonframework.commandhandling.model.LockingRepository
+- org.axonframework.commandhandling.model.GenericJpaRepository
+- org.axonframework.eventsourcing.EventSourcingRepository
+- org.axonframework.eventsourcing.CachingEventSourcingRepository
