@@ -87,7 +87,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         try {
             initialize();
         } catch (SchedulerException e) {
-            throw new AxonConfigurationException("Unable to initialize quartz scheduler", e);
+            throw new AxonConfigurationException("Unable to initialize QuartzDeadlineManager", e);
         }
     }
 
