@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SerializedObjectHolder implements SerializationAware {
+public class SerializedObjectHolder {
 
     private final Message message;
     private final Object payloadGuard = new Object();
@@ -50,7 +50,6 @@ public class SerializedObjectHolder implements SerializationAware {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
         synchronized (payloadGuard) {
             SerializedObject existingForm = serializedPayload.get(serializer);
@@ -66,7 +65,6 @@ public class SerializedObjectHolder implements SerializationAware {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
         synchronized (metaDataGuard) {
             SerializedObject existingForm = serializedMetaData.get(serializer);

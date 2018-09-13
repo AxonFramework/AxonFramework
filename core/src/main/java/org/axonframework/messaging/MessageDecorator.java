@@ -16,16 +16,12 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.serialization.SerializationAware;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 /**
  * Abstract implementation of a {@link Message} that delegates to an existing message. Extend this decorator class to
  * extend the message with additional features.
- * <p>
- * Messages of this type are {@link SerializationAware} meaning they will not be serialized more than once by the same
- * serializer.
  *
  * @author Rene de Waele
  */

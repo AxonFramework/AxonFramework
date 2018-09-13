@@ -17,7 +17,8 @@
 package org.axonframework.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.serialization.SerializationAware;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -36,7 +37,7 @@ import java.util.Map;
  * @see EventMessage
  * @since 2.0
  */
-public interface Message<T> extends Serializable, SerializationAware {
+public interface Message<T> extends Serializable {
 
     /**
      * Returns the identifier of this message. Two messages with the same identifiers should be interpreted as
@@ -92,4 +93,28 @@ public interface Message<T> extends Serializable, SerializationAware {
      * @return a copy of this message with the given MetaData
      */
     Message<T> andMetaData(Map<String, ?> metaData);
+
+    /**
+     * Serialize the payload of this message using given {@code serializer}, using given
+     * {@code expectedRepresentation}. This method <em>should</em> return the same SerializedObject instance when
+     * invoked multiple times using the same serializer.
+     *
+     * @param serializer             The serializer to serialize payload with
+     * @param expectedRepresentation The type of data to serialize to
+     * @param <R>                    The type of data to serialize to
+     * @return a SerializedObject containing the serialized representation of the message's payload
+     */
+    <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation);
+
+    /**
+     * Serialize the meta data of this message using given {@code serializer}, using given
+     * {@code expectedRepresentation}. This method <em>should</em> return the same SerializedObject instance when
+     * invoked multiple times using the same serializer.
+     *
+     * @param serializer             The serializer to serialize meta data with
+     * @param expectedRepresentation The type of data to serialize to
+     * @param <R>                    The type of data to serialize to
+     * @return a SerializedObject containing the serialized representation of the message's meta data
+     */
+    <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation);
 }
