@@ -21,9 +21,8 @@ import org.axonframework.amqp.eventhandling.AMQPMessage;
 import org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 
@@ -40,10 +39,11 @@ public class SpringAMQPMessageSourceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testMessageListenerInvokesAllEventProcessors() throws Exception {
-        Serializer serializer = new XStreamSerializer();
+    public void testMessageListenerInvokesAllEventProcessors() {
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        DefaultAMQPMessageConverter messageConverter = new DefaultAMQPMessageConverter(serializer);
+        DefaultAMQPMessageConverter messageConverter = DefaultAMQPMessageConverter.builder()
+                                                                                  .serializer(new XStreamSerializer())
+                                                                                  .build();
         SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
         testSubject.subscribe(eventProcessor);
 
@@ -58,10 +58,11 @@ public class SpringAMQPMessageSourceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testMessageListenerIgnoredOnDeserializationFailure() throws Exception {
-        Serializer serializer = new XStreamSerializer();
+    public void testMessageListenerIgnoredOnDeserializationFailure() {
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        DefaultAMQPMessageConverter messageConverter = new DefaultAMQPMessageConverter(serializer);
+        DefaultAMQPMessageConverter messageConverter = DefaultAMQPMessageConverter.builder()
+                                                                                  .serializer(new XStreamSerializer())
+                                                                                  .build();
         SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
         testSubject.subscribe(eventProcessor);
 

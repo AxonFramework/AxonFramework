@@ -55,22 +55,25 @@ public class AMQPAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public AMQPMessageConverter amqpMessageConverter(@Qualifier("eventSerializer") Serializer eventSerializer,
-                                                                        RoutingKeyResolver routingKeyResolver) {
-        return new DefaultAMQPMessageConverter(eventSerializer, routingKeyResolver, amqpProperties.isDurableMessages());
+                                                     RoutingKeyResolver routingKeyResolver) {
+        return DefaultAMQPMessageConverter.builder()
+                                          .serializer(eventSerializer)
+                                          .routingKeyResolver(routingKeyResolver)
+                                          .durable(amqpProperties.isDurableMessages()).build();
     }
 
     @ConditionalOnProperty("axon.amqp.exchange")
     @ConditionalOnBean(ConnectionFactory.class)
     @ConditionalOnMissingBean
     @Bean(initMethod = "start", destroyMethod = "shutDown")
-    public SpringAMQPPublisher amqpBridge(EventBus eventBus, ConnectionFactory connectionFactory,
+    public SpringAMQPPublisher amqpBridge(EventBus eventBus,
+                                          ConnectionFactory connectionFactory,
                                           AMQPMessageConverter amqpMessageConverter) {
         SpringAMQPPublisher publisher = new SpringAMQPPublisher(eventBus);
         publisher.setExchangeName(amqpProperties.getExchange());
         publisher.setConnectionFactory(connectionFactory);
         publisher.setMessageConverter(amqpMessageConverter);
         switch (amqpProperties.getTransactionMode()) {
-
             case TRANSACTIONAL:
                 publisher.setTransactional(true);
                 break;
