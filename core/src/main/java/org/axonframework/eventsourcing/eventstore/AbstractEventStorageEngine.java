@@ -27,6 +27,7 @@ import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -107,14 +108,16 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier) {
+    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
         return readSnapshotData(aggregateIdentifier).filter(snapshotFilter)
                                                     .map(snapshot -> EventUtils
                                                             .upcastAndDeserializeDomainEvents(Stream.of(snapshot),
                                                                                               serializer,
                                                                                               upcasterChain,
                                                                                               false))
-                                                    .flatMap(DomainEventStream::asStream);
+                                                    .flatMap(DomainEventStream::asStream)
+                                                    .findFirst()
+                                                    .map(event -> (DomainEventMessage<?>) event);
     }
 
     @Override
@@ -198,8 +201,11 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                                                            boolean mayBlock);
 
     /**
-     * Returns an optional serialized event entry for given {@code aggregateIdentifier} if the backing database
+     * Returns a stream of serialized event entries for given {@code aggregateIdentifier} if the backing database
      * contains a snapshot of the aggregate.
+     * <p>
+     * It is required that specific event storage engines return snapshots in descending order of their sequence number.
+     * </p>
      *
      * @param aggregateIdentifier The aggregate identifier to fetch a snapshot for
      * @return An optional with a serialized snapshot of the aggregate

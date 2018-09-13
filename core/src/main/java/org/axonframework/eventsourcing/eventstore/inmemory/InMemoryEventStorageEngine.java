@@ -29,9 +29,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEve
 public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
-    private final Map<String, List<DomainEventMessage<?>>> snapshots = new ConcurrentHashMap<>();
+    private final Map<String, DomainEventMessage<?>> snapshots = new ConcurrentHashMap<>();
 
     @Override
     public void appendEvents(List<? extends EventMessage<?>> events) {
@@ -62,15 +62,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     @Override
     public void storeSnapshot(DomainEventMessage<?> snapshot) {
-        snapshots.compute(snapshot.getAggregateIdentifier(), (aggregateIdentifier, snapshotsSoFar) -> {
-            if (snapshotsSoFar == null) {
-                CopyOnWriteArrayList<DomainEventMessage<?>> aggregateSnapshots = new CopyOnWriteArrayList<>();
-                aggregateSnapshots.add(snapshot);
-                return aggregateSnapshots;
-            }
-            snapshotsSoFar.add(snapshot);
-            return snapshotsSoFar;
-        });
+        snapshots.put(snapshot.getAggregateIdentifier(), snapshot);
     }
 
     /**
@@ -99,8 +91,8 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier) {
-        return snapshots.get(aggregateIdentifier).stream();
+    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
+        return Optional.ofNullable(snapshots.get(aggregateIdentifier));
     }
 
     @Override

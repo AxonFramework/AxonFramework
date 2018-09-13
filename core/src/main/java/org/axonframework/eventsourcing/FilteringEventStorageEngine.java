@@ -89,8 +89,8 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier) {
-        return delegate.readSnapshots(aggregateIdentifier);
+    public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
+        return delegate.readSnapshot(aggregateIdentifier);
     }
 
     @Override

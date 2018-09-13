@@ -40,8 +40,6 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
 
     private final EventStorageEngine storageEngine;
 
-    private final SnapshotResolver snapshotResolver;
-
     /**
      * Initializes an event store with given {@code storageEngine} and {@link NoOpMessageMonitor}.
      *
@@ -52,31 +50,15 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     /**
-     * Initializes an event store with given {@code storageEngine} and {@code messageMonitor}.
+     * Initialize an event store with given {@code storageEngine}, {@code messageMonitor} and {@code snapshotResolver}.
      *
      * @param storageEngine  The storage engine used to store and load events
      * @param messageMonitor The monitor used to record event publications
      */
     protected AbstractEventStore(EventStorageEngine storageEngine,
                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(storageEngine,
-             messageMonitor,
-             SnapshotResolver.resolveLast());
-    }
-
-    /**
-     * Initialize an event store with given {@code storageEngine}, {@code messageMonitor} and {@code snapshotResolver}.
-     *
-     * @param storageEngine    The storage engine used to store and load events
-     * @param messageMonitor   The monitor used to record event publications
-     * @param snapshotResolver The function which will choose one snapshot from a stream of snapshots
-     */
-    protected AbstractEventStore(EventStorageEngine storageEngine,
-                                 MessageMonitor<? super EventMessage<?>> messageMonitor,
-                                 SnapshotResolver snapshotResolver) {
         super(messageMonitor);
         this.storageEngine = storageEngine;
-        this.snapshotResolver = snapshotResolver;
     }
 
     @Override
@@ -95,7 +77,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     public DomainEventStream readEvents(String aggregateIdentifier) {
         Optional<DomainEventMessage<?>> optionalSnapshot;
         try {
-            optionalSnapshot = snapshotResolver.resolve(storageEngine.readSnapshots(aggregateIdentifier));
+            optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
         } catch (Exception | LinkageError e) {
             optionalSnapshot = handleSnapshotReadingError(aggregateIdentifier, e);
         }

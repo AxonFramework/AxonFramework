@@ -33,8 +33,8 @@ public class SequenceEventStorageEngineTest {
         historicStorage = mock(EventStorageEngine.class);
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
 
-        when(historicStorage.readSnapshots(anyString())).thenReturn(Stream.empty());
-        when(activeStorage.readSnapshots(anyString())).thenReturn(Stream.empty());
+        when(historicStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
+        when(activeStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
 
     }
 
@@ -134,16 +134,16 @@ public class SequenceEventStorageEngineTest {
     public void testSnapshotReadFromActiveThenHistoric() {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
 
-        when(historicStorage.readSnapshots("aggregate")).thenReturn(Stream.of(event1));
-        when(activeStorage.readSnapshots("aggregate")).thenReturn(Stream.empty());
+        when(historicStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event1));
+        when(activeStorage.readSnapshot("aggregate")).thenReturn(Optional.empty());
 
-        Optional<DomainEventMessage<?>> actual = testSubject.readSnapshots("aggregate").findFirst();
+        Optional<DomainEventMessage<?>> actual = testSubject.readSnapshot("aggregate");
         assertTrue(actual.isPresent());
         assertSame(event1, actual.get());
 
         InOrder inOrder = inOrder(historicStorage, activeStorage);
-        inOrder.verify(activeStorage).readSnapshots("aggregate");
-        inOrder.verify(historicStorage).readSnapshots("aggregate");
+        inOrder.verify(activeStorage).readSnapshot("aggregate");
+        inOrder.verify(historicStorage).readSnapshot("aggregate");
     }
 
     @Test
@@ -151,17 +151,16 @@ public class SequenceEventStorageEngineTest {
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>("type", "aggregate", 0, "test1");
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>("type", "aggregate", 1, "test2");
 
-        when(historicStorage.readSnapshots("aggregate")).thenReturn(Stream.of(event2));
-        when(activeStorage.readSnapshots("aggregate")).thenReturn(Stream.of(event1));
+        when(historicStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event2));
+        when(activeStorage.readSnapshot("aggregate")).thenReturn(Optional.of(event1));
 
-        List<DomainEventMessage<?>> snapshots = testSubject.readSnapshots("aggregate").collect(toList());
-        assertEquals(2, snapshots.size());
-        assertSame(event1, snapshots.get(0));
-        assertSame(event2, snapshots.get(1));
+        Optional<DomainEventMessage<?>> actual = testSubject.readSnapshot("aggregate");
+        assertTrue(actual.isPresent());
+        assertSame(event1, actual.get());
 
         InOrder inOrder = inOrder(historicStorage, activeStorage);
-        inOrder.verify(activeStorage).readSnapshots("aggregate");
-        inOrder.verify(historicStorage).readSnapshots("aggregate");
+        inOrder.verify(activeStorage).readSnapshot("aggregate");
+        inOrder.verifyNoMoreInteractions();
     }
 
     @Test

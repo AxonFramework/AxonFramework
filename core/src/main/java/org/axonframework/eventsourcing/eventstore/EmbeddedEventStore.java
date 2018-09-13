@@ -88,8 +88,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
              10000,
              1000L,
              10000L,
-             TimeUnit.MILLISECONDS,
-             SnapshotResolver.resolveLast());
+             TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -112,12 +111,10 @@ public class EmbeddedEventStore extends AbstractEventStore {
      *                         tracking (i.e. the stream is not closed when an event processor falls behind and is
      *                         removed).
      * @param timeUnit         time unit for fetch and clean up delay
-     * @param snapshotResolver the function which will choose one snapshot from a stream of snapshots
      */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
-                              int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit,
-                              SnapshotResolver snapshotResolver) {
-        super(storageEngine, monitor, snapshotResolver);
+                              int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit) {
+        super(storageEngine, monitor);
         threadFactory = new AxonThreadFactory(THREAD_GROUP);
         cleanupService = Executors.newScheduledThreadPool(1, threadFactory);
         producer = new EventProducer(timeUnit.toNanos(fetchDelay), cachedEvents);

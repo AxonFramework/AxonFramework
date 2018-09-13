@@ -20,7 +20,6 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.SnapshotResolver;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
@@ -133,8 +132,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
                                                                        20,
                                                                        1000,
                                                                        100,
-                                                                       TimeUnit.MILLISECONDS,
-                                                                       SnapshotResolver.resolveLast());
+                                                                       TimeUnit.MILLISECONDS);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {

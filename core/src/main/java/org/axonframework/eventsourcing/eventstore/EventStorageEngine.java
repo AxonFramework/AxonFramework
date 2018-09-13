@@ -113,12 +113,13 @@ public interface EventStorageEngine {
     DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber);
 
     /**
-     * Try to load snapshot events of the aggregate with given {@code aggregateIdentifier}.
+     * Try to load a snapshot event of the aggregate with given {@code aggregateIdentifier}. If the storage engine has
+     * no snapshot event of the aggregate, an empty Optional is returned.
      *
      * @param aggregateIdentifier The identifier of the aggregate
-     * @return A stream of snapshot of the aggregate
+     * @return An optional with a snapshot of the aggregate
      */
-    Stream<DomainEventMessage<?>> readSnapshots(String aggregateIdentifier);
+    Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier);
 
     /**
      * Returns the last known sequence number for the given {@code aggregateIdentifier}.

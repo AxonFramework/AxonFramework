@@ -69,7 +69,7 @@ public class EmbeddedEventStoreTest {
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
         testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS, SnapshotResolver.resolveLast());
+                                             cleanupDelay, MILLISECONDS);
     }
 
     @After
@@ -235,7 +235,7 @@ public class EmbeddedEventStoreTest {
     public void testLoadWithFailingSnapshot() {
         testSubject.publish(createEvents(110));
         storageEngine.storeSnapshot(createEvent(30));
-        when(storageEngine.readSnapshots(AGGREGATE)).thenThrow(new MockException());
+        when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
         List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(0, eventMessages.get(0).getSequenceNumber());
