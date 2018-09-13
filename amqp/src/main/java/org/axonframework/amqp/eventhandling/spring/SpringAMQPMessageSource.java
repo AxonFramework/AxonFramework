@@ -47,7 +47,7 @@ import java.util.function.Consumer;
  * @since 3.0
  */
 public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
-                                                SubscribableMessageSource<EventMessage<?>> {
+        SubscribableMessageSource<EventMessage<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAMQPMessageSource.class);
 
@@ -61,7 +61,9 @@ public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
      * @param serializer The serializer to serialize payload and metadata of events
      */
     public SpringAMQPMessageSource(Serializer serializer) {
-        this(new DefaultAMQPMessageConverter(serializer));
+        this(DefaultAMQPMessageConverter.builder()
+                                        .serializer(serializer)
+                                        .build());
     }
 
     /**
@@ -85,11 +87,12 @@ public class SpringAMQPMessageSource implements ChannelAwareMessageListener,
         if (!eventProcessors.isEmpty()) {
             try {
                 messageConverter.readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders())
-                                .ifPresent(event -> eventProcessors.forEach(ep -> ep.accept(Collections.singletonList(event))));
-            } catch(UnknownSerializedTypeException e) {
+                                .ifPresent(event -> eventProcessors.forEach(
+                                        ep -> ep.accept(Collections.singletonList(event))
+                                ));
+            } catch (UnknownSerializedTypeException e) {
                 logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
             }
         }
     }
-
 }
