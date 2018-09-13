@@ -34,7 +34,7 @@ import org.jgroups.stack.GossipRouter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.*;
+import org.mockito.ArgumentMatcher;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -62,6 +62,10 @@ public class JgroupsConnectorTest_Gossip {
     private XStreamSerializer serializer;
     private RoutingStrategy routingStrategy;
 
+    private static JChannel createChannel() throws Exception {
+        return new JChannel("org/axonframework/jgroups/commandhandling/tcp_gossip.xml");
+    }
+
     @Before
     public void setUp() throws Exception {
         channel1 = createChannel();
@@ -71,8 +75,20 @@ public class JgroupsConnectorTest_Gossip {
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = spy(new XStreamSerializer());
-        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
-        connector2 = new JGroupsConnector(mockCommandBus2, channel2, clusterName, serializer, routingStrategy);
+        connector1 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus1)
+                                     .channel(channel1)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
+        connector2 = JGroupsConnector.builder()
+                                     .localSegment(mockCommandBus2)
+                                     .channel(channel2)
+                                     .clusterName(clusterName)
+                                     .serializer(serializer)
+                                     .routingStrategy(routingStrategy)
+                                     .build();
         gossipRouter = new GossipRouter("127.0.0.1", 12001);
     }
 
@@ -132,13 +148,19 @@ public class JgroupsConnectorTest_Gossip {
 
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
-        doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat((ArgumentMatcher<SerializedObject<byte[]>>) x -> Arrays.equals("<string>Try this!</string>".getBytes(Charset.forName("UTF-8")), x.getData())));
+        doThrow(new RuntimeException("Mock")).when(serializer)
+                                             .deserialize(argThat((ArgumentMatcher<SerializedObject<byte[]>>) x -> Arrays
+                                                     .equals("<string>Try this!</string>"
+                                                                     .getBytes(Charset.forName("UTF-8")),
+                                                             x.getData())));
 
         try {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
         } catch (RuntimeException e) {
-            assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(), "Mock", e.getMessage());
+            assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(),
+                         "Mock",
+                         e.getMessage());
         }
     }
 
@@ -153,10 +175,6 @@ public class JgroupsConnectorTest_Gossip {
             }
             Thread.sleep(100);
         }
-    }
-
-    private static JChannel createChannel() throws Exception {
-        return new JChannel("org/axonframework/jgroups/commandhandling/tcp_gossip.xml");
     }
 
     private static class CountingCommandHandler implements MessageHandler<CommandMessage<?>> {
