@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.axonframework.common.Assert.notNull;
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 
 /**
  * Implementation of {@link DeadlineManager} which uses Java's {@link ScheduledExecutorService} as scheduling and
@@ -123,26 +124,28 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void schedule(Duration triggerDuration,
-                         String deadlineName,
-                         Object messageOrPayload,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
+    public String schedule(Duration triggerDuration,
+                           String deadlineName,
+                           Object messageOrPayload,
+                           ScopeDescriptor deadlineScope) {
+        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload);
+        String deadlineId = deadlineMessage.getIdentifier();
+
         runOnPrepareCommitOrNow(() -> {
-            DeadlineMessage<Object> deadlineMessage =
-                    GenericDeadlineMessage.asDeadlineMessage(deadlineName, messageOrPayload);
-            deadlineMessage = processDispatchInterceptors(deadlineMessage);
+            DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineName,
                                                          deadlineScope,
-                                                         deadlineMessage,
-                                                         scheduleId);
+                                                         interceptedDeadlineMessage,
+                                                         deadlineId);
             ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
                     deadlineTask,
                     triggerDuration.toMillis(),
                     TimeUnit.MILLISECONDS
             );
-            scheduledTasks.put(new DeadlineId(deadlineName, scheduleId), scheduledFuture);
+            scheduledTasks.put(new DeadlineId(deadlineName, deadlineId), scheduledFuture);
         });
+
+        return deadlineId;
     }
 
     @Override

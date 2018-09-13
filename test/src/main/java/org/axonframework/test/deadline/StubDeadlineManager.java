@@ -41,6 +41,8 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+
 /**
  * Stub implementation of {@link DeadlineManager}. Records all scheduled and met deadlines.
  *
@@ -89,29 +91,27 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Override
-    public void schedule(Instant triggerDateTime,
+    public String schedule(Instant triggerDateTime,
                          String deadlineName,
                          Object payloadOrMessage,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
-        DeadlineMessage<Object> deadlineMessage =
-                GenericDeadlineMessage.asDeadlineMessage(deadlineName, payloadOrMessage);
+                         ScopeDescriptor deadlineScope) {
+        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, payloadOrMessage);
         deadlineMessage = processDispatchInterceptors(deadlineMessage);
         schedules.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                 deadlineName,
-                                                scheduleId,
+                                                deadlineMessage.getIdentifier(),
                                                 counter.getAndIncrement(),
                                                 deadlineMessage,
                                                 deadlineScope));
+        return deadlineMessage.getIdentifier();
     }
 
     @Override
-    public void schedule(Duration triggerDuration,
-                         String deadlineName,
-                         Object payloadOrMessage,
-                         ScopeDescriptor deadlineScope,
-                         String scheduleId) {
-        schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope, scheduleId);
+    public String schedule(Duration triggerDuration,
+                           String deadlineName,
+                           Object payloadOrMessage,
+                           ScopeDescriptor deadlineScope) {
+        return schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope);
     }
 
     @Override
