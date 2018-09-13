@@ -54,8 +54,13 @@ public class SerializedObjectHolder {
         synchronized (payloadGuard) {
             SerializedObject existingForm = serializedPayload.get(serializer);
             if (existingForm == null) {
-                SerializedObject<T> serialized = MessageSerializer.serializePayload(message, serializer,
-                                                                                    expectedRepresentation);
+                SerializedObject<T> serialized = serializer.serialize(message.getPayload(), expectedRepresentation);
+                if (message.getPayload() == null) {
+                    // make sure the payload type is maintained
+                    serialized = new SimpleSerializedObject<>(serialized.getData(),
+                                                              serialized.getContentType(),
+                                                              serializer.typeForClass(message.getPayloadType()));
+                }
                 serializedPayload.put(serializer, serialized);
                 return serialized;
             } else {
@@ -69,7 +74,7 @@ public class SerializedObjectHolder {
         synchronized (metaDataGuard) {
             SerializedObject existingForm = serializedMetaData.get(serializer);
             if (existingForm == null) {
-                SerializedObject<T> serialized = MessageSerializer.serializeMetaData(message, serializer, expectedRepresentation);
+                SerializedObject<T> serialized = serializer.serialize(message.getMetaData(), expectedRepresentation);
                 serializedMetaData.put(serializer, serialized);
                 return serialized;
             } else {

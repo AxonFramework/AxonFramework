@@ -20,7 +20,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.Headers;
 import org.axonframework.messaging.MetaData;
@@ -38,7 +37,6 @@ import java.util.Optional;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Default implementation of the AMQPMessageConverter interface. This implementation will suffice in most cases. It
@@ -82,7 +80,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
 
     @Override
     public AMQPMessage createAMQPMessage(EventMessage<?> eventMessage) {
-        SerializedObject<byte[]> serializedObject = serializePayload(eventMessage, serializer, byte[].class);
+        SerializedObject<byte[]> serializedObject = eventMessage.serializePayload(serializer, byte[].class);
         String routingKey = routingKeyResolver.resolveRoutingKey(eventMessage);
         AMQP.BasicProperties.Builder properties = new AMQP.BasicProperties.Builder();
         Map<String, Object> headers = new HashMap<>();

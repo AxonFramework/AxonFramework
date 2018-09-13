@@ -18,8 +18,8 @@ package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.*;
 
@@ -64,10 +64,10 @@ public class GenericMessageTest {
     @Test
     public void testMessageSerialization() {
         GenericMessage<String> message = new GenericMessage<>("payload", Collections.singletonMap("key", "value"));
-        MessageSerializer messageSerializer = new MessageSerializer(new JacksonSerializer());
+        Serializer jacksonSerializer = new JacksonSerializer();
 
-        SerializedObject<String> serializedPayload = message.serializePayload(messageSerializer, String.class);
-        SerializedObject<String> serializedMetaData = message.serializeMetaData(messageSerializer, String.class);
+        SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
+        SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
 
         Assert.assertEquals("\"payload\"", serializedPayload.getData());
         Assert.assertEquals("{\"key\":\"value\",\"foo\":\"bar\"}", serializedMetaData.getData());
