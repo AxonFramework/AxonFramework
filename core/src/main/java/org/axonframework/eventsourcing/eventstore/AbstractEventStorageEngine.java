@@ -208,7 +208,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * </p>
      *
      * @param aggregateIdentifier The aggregate identifier to fetch a snapshot for
-     * @return An optional with a serialized snapshot of the aggregate
+     * @return A stream of serialized snapshots of the aggregate
      */
     protected abstract Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
 

@@ -50,7 +50,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     /**
-     * Initialize an event store with given {@code storageEngine}, {@code messageMonitor} and {@code snapshotResolver}.
+     * Initialize an event store with given {@code storageEngine} and {@code messageMonitor}.
      *
      * @param storageEngine  The storage engine used to store and load events
      * @param messageMonitor The monitor used to record event publications
