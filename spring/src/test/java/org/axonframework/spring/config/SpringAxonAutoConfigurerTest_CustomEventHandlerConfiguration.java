@@ -45,19 +45,7 @@ import static org.junit.Assert.*;
 public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
 
     @Autowired(required = false)
-    private EventStore eventStore;
-
-    @Autowired(required = false)
     private EventBus eventBus;
-
-    @Autowired(required = false)
-    private CommandBus commandBus;
-
-    @Autowired(required = false)
-    private QueryBus queryBus;
-
-    @Autowired
-    private org.axonframework.config.Configuration axonConfig;
 
     @Autowired
     private Context.MyEventHandler myEventHandler;

@@ -17,7 +17,6 @@
 package org.axonframework.test.deadline;
 
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Instant;
