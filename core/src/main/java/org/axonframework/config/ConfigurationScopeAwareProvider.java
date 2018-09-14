@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.saga.AbstractSagaManager;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.messaging.ScopeAware;
@@ -26,59 +27,59 @@ import org.axonframework.messaging.ScopeDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Implementation of the {@link ScopeAwareProvider} which will retrieve a {@link List} of {@link ScopeAware} components
  * in a lazy manner. It does this by pulling these components from the provided {@link Configuration} as soon as
- * #provideScopeAwareStream(ScopeDescriptor) has been called.
+ * {@link #provideScopeAwareStream(ScopeDescriptor)} is called.
  *
  * @author Steven van Beelen
+ * @author Rob van der Linden Vooren
  * @since 3.3
  */
 public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
 
+    private final Configuration configuration;
+
     private List<ScopeAware> scopeAwareComponents;
-    private Configuration configuration;
 
     /**
      * Instantiate a lazy {@link ScopeAwareProvider} with the given {@code configuration} parameter.
      *
      * @param configuration a {@link Configuration} used to retrieve {@link ScopeAware} components from
+     * @throws IllegalArgumentException when {@code configuration} is {@code null}
      */
     public ConfigurationScopeAwareProvider(Configuration configuration) {
-        scopeAwareComponents = new ArrayList<>();
-        this.configuration = configuration;
+        this.configuration = Assert.nonNull(configuration, () -> "configuration may not be null");
     }
 
     @Override
     public Stream<ScopeAware> provideScopeAwareStream(ScopeDescriptor scopeDescriptor) {
-        if (scopeAwareComponents.isEmpty()) {
-            lookupScopeAwareComponents();
+        if (scopeAwareComponents == null) {
+            scopeAwareComponents = retrieveScopeAwareComponents();
         }
-
         return scopeAwareComponents.stream();
     }
 
-    private void lookupScopeAwareComponents() {
-        scopeAwareComponents.addAll(retrieveAggregateRepositories());
-        scopeAwareComponents.addAll(retrieveSagaManagers());
+    private List<ScopeAware> retrieveScopeAwareComponents() {
+        List<ScopeAware> components = new ArrayList<>();
+        components.addAll(retrieveAggregateRepositories());
+        components.addAll(retrieveSagaManagers());
+        return components;
     }
 
     private List<Repository> retrieveAggregateRepositories() {
-        return configuration.getModules().stream()
-                            .filter(module -> module instanceof AggregateConfiguration)
-                            .map(module -> (AggregateConfiguration) module)
+        return configuration.findModules(AggregateConfiguration.class).stream()
                             .map((Function<AggregateConfiguration, Repository>) AggregateConfiguration::repository)
-                            .collect(Collectors.toList());
+                            .collect(toList());
     }
 
     private List<AbstractSagaManager> retrieveSagaManagers() {
-        return configuration.getModules().stream()
-                            .filter(module -> module instanceof SagaConfiguration)
-                            .map(module -> (SagaConfiguration) module)
+        return configuration.findModules(SagaConfiguration.class).stream()
                             .map((Function<SagaConfiguration, AnnotatedSagaManager>) SagaConfiguration::getSagaManager)
-                            .collect(Collectors.toList());
+                            .collect(toList());
     }
 }
