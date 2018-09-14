@@ -23,6 +23,7 @@ import org.axonframework.common.digest.Digester;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Component used by command routers to find members capable of handling a given command. Members are selected based on
@@ -191,14 +192,10 @@ public class ConsistentHash {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ConsistentHash [");
-        Collection<ConsistentHashMember> members = this.members.values();
-        members.forEach(m -> sb.append(m.toString()).append(","));
-        if (!members.isEmpty()) {
-            sb.delete(sb.length() - 1, sb.length());
-        }
-        sb.append("]");
-        return sb.toString();
+        String join = this.members.values().stream()
+                .map(ConsistentHashMember::toString)
+                .collect(Collectors.joining(","));
+        return "ConsistentHash ["+join+"]";
     }
 
     /**
