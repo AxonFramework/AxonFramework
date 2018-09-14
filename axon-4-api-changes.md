@@ -19,7 +19,6 @@ Other changes
 | org.axonframework.serialization.MessageSerializer  | All messages are serializable now.  |
 | org.axonframework.serialization.SerializationAware | All messages are serializable now.  |
 
-
 ### Classes for which the Constructor has been replaced for a Builder
 
 - org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter
