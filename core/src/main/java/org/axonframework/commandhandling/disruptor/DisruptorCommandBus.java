@@ -18,17 +18,8 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.MonitorAwareCallback;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
-import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.model.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.IdentifierFactory;
@@ -38,11 +29,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -52,17 +39,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
 
@@ -225,19 +206,13 @@ public class DisruptorCommandBus implements CommandBus {
     private EventPublisher[] initializePublisherThreads(DisruptorConfiguration configuration, Executor executor,
                                                         TransactionManager transactionManager) {
         EventPublisher[] publishers = new EventPublisher[configuration.getPublisherThreadCount()];
-        for (int t = 0; t < publishers.length; t++) {
-            publishers[t] = new EventPublisher(executor, transactionManager,
-                                               configuration.getRollbackConfiguration(), t);
-        }
+        Arrays.setAll(publishers, t-> new EventPublisher(executor, transactionManager, configuration.getRollbackConfiguration(), t));
         return publishers;
     }
 
     private CommandHandlerInvoker[] initializeInvokerThreads(DisruptorConfiguration configuration) {
-        CommandHandlerInvoker[] invokers;
-        invokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
-        for (int t = 0; t < invokers.length; t++) {
-            invokers[t] = new CommandHandlerInvoker(configuration.getCache(), t);
-        }
+        CommandHandlerInvoker[] invokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
+        Arrays.setAll(invokers, t -> new CommandHandlerInvoker(configuration.getCache(), t));
         return invokers;
     }
 
