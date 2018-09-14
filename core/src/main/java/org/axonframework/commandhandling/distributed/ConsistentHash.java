@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Component used by command routers to find members capable of handling a given command. Members are selected based on
@@ -268,12 +269,9 @@ public class ConsistentHash {
          * @return the hashes covered by this member
          */
         public Set<String> hashes() {
-            Set<String> newHashes = new TreeSet<>();
-            for (int t = 0; t < segmentCount; t++) {
-                String hash = hash(name() + " #" + t);
-                newHashes.add(hash);
-            }
-            return newHashes;
+            return IntStream.range(0, segmentCount)
+                    .mapToObj(i -> hash(name() + " #" + i))
+                    .collect(Collectors.toSet());
         }
 
         @Override
