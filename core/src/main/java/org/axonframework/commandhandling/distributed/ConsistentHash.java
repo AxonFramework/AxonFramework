@@ -105,26 +105,19 @@ public class ConsistentHash {
      */
     public Optional<Member> getMember(String routingKey, CommandMessage<?> commandMessage) {
         String hash = hash(routingKey);
-        SortedMap<String, ConsistentHashMember> tailMap = hashToMember.tailMap(hash);
-        Iterator<Map.Entry<String, ConsistentHashMember>> tailIterator = tailMap.entrySet().iterator();
-        Optional<Member> foundMember = findSuitableMember(commandMessage, tailIterator);
+        Optional<Member> foundMember = findSuitableMember(commandMessage, hashToMember.tailMap(hash).values());
         if (!foundMember.isPresent()) {
-            Iterator<Map.Entry<String, ConsistentHashMember>> headIterator =
-                    hashToMember.headMap(hash).entrySet().iterator();
-            foundMember = findSuitableMember(commandMessage, headIterator);
+            foundMember = findSuitableMember(commandMessage, hashToMember.headMap(hash).values());
         }
         return foundMember;
     }
 
     private Optional<Member> findSuitableMember(CommandMessage<?> commandMessage,
-                                                Iterator<Map.Entry<String, ConsistentHashMember>> iterator) {
-        while (iterator.hasNext()) {
-            Map.Entry<String, ConsistentHashMember> entry = iterator.next();
-            if (entry.getValue().commandFilter.test(commandMessage)) {
-                return Optional.of(entry.getValue());
-            }
-        }
-        return Optional.empty();
+                                                Collection<ConsistentHashMember> members) {
+        return members.stream()
+                .filter(member -> member.commandFilter.test(commandMessage))
+                .map(Member.class::cast)
+                .findAny();
     }
 
     /**
