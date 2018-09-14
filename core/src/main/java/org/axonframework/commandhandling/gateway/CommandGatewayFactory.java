@@ -33,6 +33,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -212,12 +213,8 @@ public class CommandGatewayFactory {
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
-        for (Class<?> parameter : gatewayMethod.getParameterTypes()) {
-            if (CommandCallback.class.isAssignableFrom(parameter)) {
-                return true;
-            }
-        }
-        return false;
+        return Stream.of(gatewayMethod.getParameterTypes())
+                .anyMatch(CommandCallback.class::isAssignableFrom);
     }
 
     /**
@@ -314,12 +311,8 @@ public class CommandGatewayFactory {
     }
 
     private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
-        for (Class<?> declaredException : declaredExceptions) {
-            if (declaredException.isAssignableFrom(exceptionClass)) {
-                return true;
-            }
-        }
-        return false;
+        return Stream.of(declaredExceptions)
+                .anyMatch(declaredException -> declaredException.isAssignableFrom(exceptionClass));
     }
 
     /**
@@ -476,16 +469,12 @@ public class CommandGatewayFactory {
 
         @Override
         public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-            for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onSuccess(commandMessage, result);
-            }
+            callbacks.forEach(callback -> callback.onSuccess(commandMessage, result));
         }
 
         @Override
         public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-            for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onFailure(commandMessage, cause);
-            }
+            callbacks.forEach(callback -> callback.onFailure(commandMessage, cause));
         }
     }
 
