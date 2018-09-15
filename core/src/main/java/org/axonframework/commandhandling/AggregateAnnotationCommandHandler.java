@@ -30,6 +30,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Command handler that handles commands based on {@link CommandHandler}
@@ -142,17 +143,10 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        Collection<Registration> subscriptions = new ArrayList<>();
-        for (String supportedCommand : supportedCommandNames()) {
-            Registration subscription = commandBus.subscribe(supportedCommand, this);
-            if (subscription != null) {
-                subscriptions.add(subscription);
-            }
-        }
-        return () -> {
-            subscriptions.forEach(Registration::cancel);
-            return true;
-        };
+        List<Registration> subscriptions = supportedCommandNames().stream()
+                .map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
+                .filter(Objects::nonNull).collect(Collectors.toList());
+        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
     private Map<String, MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
