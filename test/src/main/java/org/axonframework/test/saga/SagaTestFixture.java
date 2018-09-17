@@ -161,15 +161,18 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     protected void ensureSagaResourcesInitialized() {
         if (!resourcesInitialized) {
-            ParameterResolverFactory parameterResolverFactory = ordered(new SimpleResourceParameterResolverFactory(
-                                                                                registeredResources),
-                                                                        ClasspathParameterResolverFactory
-                                                                                .forClass(sagaType));
-            sagaRepository = new AnnotatedSagaRepository<>(sagaType,
-                                                           sagaStore,
-                                                           new TransienceValidatingResourceInjector(),
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
+            ParameterResolverFactory parameterResolverFactory = ordered(
+                    new SimpleResourceParameterResolverFactory(registeredResources),
+                    ClasspathParameterResolverFactory.forClass(sagaType)
+            );
+
+            sagaRepository = AnnotatedSagaRepository.<T>builder()
+                    .sagaType(sagaType)
+                    .parameterResolverFactory(parameterResolverFactory)
+                    .handlerDefinition(handlerDefinition)
+                    .sagaStore(sagaStore)
+                    .resourceInjector(new TransienceValidatingResourceInjector())
+                    .build();
             sagaManager = new AnnotatedSagaManager<>(sagaType,
                                                      sagaRepository,
                                                      parameterResolverFactory,

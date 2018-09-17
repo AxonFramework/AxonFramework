@@ -67,7 +67,7 @@ public class JpaSagaStoreTest {
         JpaSagaStore sagaStore = JpaSagaStore.builder()
                                              .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
                                              .build();
-        repository = new AnnotatedSagaRepository<>(StubSaga.class, sagaStore);
+        repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
@@ -224,7 +224,7 @@ public class JpaSagaStoreTest {
             }
         };
 
-        repository = new AnnotatedSagaRepository<>(StubSaga.class, sagaStore);
+        repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
                 IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier());
