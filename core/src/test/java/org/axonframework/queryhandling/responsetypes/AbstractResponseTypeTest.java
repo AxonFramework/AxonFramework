@@ -1,5 +1,7 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import org.axonframework.messaging.responsetypes.ResponseType;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -17,10 +19,10 @@ import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
 
 /**
- * Helper test implementation of {@link org.axonframework.queryhandling.responsetypes.ResponseType} tests.
+ * Helper test implementation of {@link ResponseType} tests.
  *
  * @param <R> a generic for the expected response type of the
- *            {@link org.axonframework.queryhandling.responsetypes.ResponseType} test subject
+ *            {@link ResponseType} test subject
  */
 public abstract class AbstractResponseTypeTest<R> {
 
@@ -35,7 +37,7 @@ public abstract class AbstractResponseTypeTest<R> {
 
     /**
      * Helper function to make testing of the
-     * {@link org.axonframework.queryhandling.responsetypes.ResponseType#matches(Type)} function easier.
+     * {@link ResponseType#matches(Type)} function easier.
      * Takes a {@code methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract
      * class. There after it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as
      * input for the test subject's match function.

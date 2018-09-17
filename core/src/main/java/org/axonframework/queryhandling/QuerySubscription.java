@@ -1,7 +1,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -42,13 +42,13 @@ class QuerySubscription<R> {
 
     /**
      * Check if this {@link QuerySubscription} can handle the given {@code queryResponseType}, by calling the
-     * {@link org.axonframework.queryhandling.responsetypes.ResponseType#matches(Type)} function on it and providing the
+     * {@link ResponseType#matches(Type)} function on it and providing the
      * set {@code responseType} of this subscription.
      *
-     * @param queryResponseType a {@link org.axonframework.queryhandling.responsetypes.ResponseType} to match this
+     * @param queryResponseType a {@link ResponseType} to match this
      *                          subscriptions it's {@code responseType} against
      * @return true of the given {@code queryResponseType} its
-     * {@link org.axonframework.queryhandling.responsetypes.ResponseType#matches(Type)} returns true, false if otherwise
+     * {@link ResponseType#matches(Type)} returns true, false if otherwise
      */
     public boolean canHandle(ResponseType queryResponseType) {
         return queryResponseType.matches(responseType);

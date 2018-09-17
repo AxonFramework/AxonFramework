@@ -26,7 +26,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;

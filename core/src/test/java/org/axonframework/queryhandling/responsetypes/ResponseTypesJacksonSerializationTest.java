@@ -17,6 +17,9 @@
 package org.axonframework.queryhandling.responsetypes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.junit.*;
 
 import java.io.IOException;

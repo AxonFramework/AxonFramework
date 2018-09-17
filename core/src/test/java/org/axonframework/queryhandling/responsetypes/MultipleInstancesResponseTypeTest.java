@@ -1,5 +1,6 @@
 package org.axonframework.queryhandling.responsetypes;
 
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.junit.*;
 
 import java.util.ArrayList;
