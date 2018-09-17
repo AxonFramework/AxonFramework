@@ -20,7 +20,7 @@ message MetaDataValue {
 
 message ProcessingInstruction {
     ProcessingKey key = 1;
-    io.axoniq.axonserver.grpc.MetaDataValue value = 2;
+    MetaDataValue value = 2;
 }
 
 enum ProcessingKey {

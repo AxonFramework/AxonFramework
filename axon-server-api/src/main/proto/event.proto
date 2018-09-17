@@ -87,7 +87,7 @@ message RowResponse {
 
 message ReadHighestSequenceNrRequest {
     string aggregate_id = 1;
-    int64 from_sequence_nr = 3;
+    int64 from_sequence_nr = 2;
 }
 
 message ReadHighestSequenceNrResponse {
@@ -122,8 +122,8 @@ message Event {
     int64 aggregate_sequence_number = 3;
     string aggregate_type = 4;
     int64 timestamp = 5;
-    io.axoniq.axonserver.grpc.SerializedObject payload = 6;
-    map<string, io.axoniq.axonserver.grpc.MetaDataValue> meta_data = 7;
+    SerializedObject payload = 6;
+    map<string, MetaDataValue> meta_data = 7;
     bool snapshot = 8;
 }
 

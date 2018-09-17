@@ -3,31 +3,29 @@ package io.axoniq.axonserver.grpc.control;
 option java_multiple_files = true;
 
 service PlatformService {
-    rpc GetPlatformServer (ClientIdentification) returns (PlatformInfo) {
-    }
+    rpc GetPlatformServer (ClientIdentification) returns (PlatformInfo) {}
 
     rpc OpenStream( stream PlatformInboundInstruction) returns (stream PlatformOutboundInstruction) {}
-
 }
 
 message PlatformInboundInstruction {
     oneof request {
         ClientIdentification register = 1;
         EventProcessorInfo event_processor_info = 2;
-        Application application = 10;
-        User user = 11;
-        ContextUpdate context = 12;
+        Application application = 3;
+        User user = 4;
+        ContextUpdate context = 5;
     }
 }
 
 message PlatformOutboundInstruction {
     oneof request {
         NodeInfo node_notification = 1;
-        RequestReconnect request_reconnect = 3;
-        PauseEventProcessor pause_event_processor = 4;
-        StartEventProcessor start_event_processor = 5;
-        ReleaseEventProcessorSegment release_segment = 6;
-        RequestEventProcessorInfo request_event_processor_info = 7;
+        RequestReconnect request_reconnect = 2;
+        PauseEventProcessor pause_event_processor = 3;
+        StartEventProcessor start_event_processor = 4;
+        ReleaseEventProcessorSegment release_segment = 5;
+        RequestEventProcessorInfo request_event_processor_info = 6;
     }
 }
 
@@ -64,9 +62,9 @@ message Application {
 
 message User {
     string name = 1;
-    string password = 3;
-    repeated string roles = 4;
-    Action action = 5;
+    string password = 2;
+    repeated string roles = 3;
+    Action action = 4;
 }
 
 message ApplicationRole {
@@ -98,8 +96,8 @@ enum Action {
 
 message ContextUpdate {
     string name = 1;
-    repeated string nodes = 3;
-    ContextAction action = 4;
+    repeated string nodes = 2;
+    ContextAction action = 3;
 }
 
 enum ContextAction {
@@ -109,7 +107,6 @@ enum ContextAction {
     DELETE_NODES = 3;
 }
 
-
 message EventProcessorInfo {
     message EventTrackerInfo {
         int32 segment_id = 1;
@@ -117,7 +114,6 @@ message EventProcessorInfo {
         bool replaying = 3;
         int32 one_part_of = 4;
     }
-
     string processor_name = 1;
     string mode = 2;
     int32 active_threads = 3;
