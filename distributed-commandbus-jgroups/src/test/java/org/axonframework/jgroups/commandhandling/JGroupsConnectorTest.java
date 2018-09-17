@@ -152,8 +152,8 @@ public class JGroupsConnectorTest {
             }
             callbacks.add(callback);
         }
-        for (FutureCallback callback : callbacks) {
-            assertEquals("The Reply!", callback.get());
+        for (FutureCallback<?, ?> callback : callbacks) {
+            assertEquals("The Reply!", callback.get().getPayload());
         }
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());
@@ -200,10 +200,10 @@ public class JGroupsConnectorTest {
         FutureCallback<Object, Object> callback4 = new FutureCallback<>();
         dcb2.dispatch(new GenericCommandMessage<>(1L), callback4);
 
-        assertEquals("The Reply!", callback1.get());
-        assertEquals("The Reply!", callback2.get());
-        assertEquals("The Reply!", callback3.get());
-        assertEquals("The Reply!", callback4.get());
+        assertEquals("The Reply!", callback1.get().getPayload());
+        assertEquals("The Reply!", callback2.get().getPayload());
+        assertEquals("The Reply!", callback3.get().getPayload());
+        assertEquals("The Reply!", callback4.get().getPayload());
 
         assertEquals(connector1.getConsistentHash(), connector2.getConsistentHash());
     }
@@ -311,8 +311,8 @@ public class JGroupsConnectorTest {
             }
             callbacks.add(callback);
         }
-        for (FutureCallback callback : callbacks) {
-            assertEquals("The Reply!", callback.get());
+        for (FutureCallback<?, ?> callback : callbacks) {
+            assertEquals("The Reply!", callback.get().getPayload());
         }
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());
@@ -357,7 +357,7 @@ public class JGroupsConnectorTest {
 
         callback = new FutureCallback<>();
         dcb1.dispatch(new GenericCommandMessage<>("string"), callback);
-        assertNull(callback.getResult());
+        assertNull(callback.getResult().getPayload());
     }
 
     @SuppressWarnings("unchecked")
@@ -395,8 +395,8 @@ public class JGroupsConnectorTest {
             }
             callbacks.add(callback);
         }
-        for (FutureCallback callback : callbacks) {
-            assertEquals("The Reply!", callback.get());
+        for (FutureCallback<?, ?> callback : callbacks) {
+            assertEquals("The Reply!", callback.get().getPayload());
         }
         assertEquals(100, counter1.get() + counter2.get());
         System.out.println("Node 1 got " + counter1.get());

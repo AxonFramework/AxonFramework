@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandResponseMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -459,7 +460,7 @@ public class CommandGatewayFactory {
                 }
                 callbacks.addAll(commandCallbacks);
                 send(command, new CompositeCallback(callbacks));
-                return future;
+                return future.thenApply(Message::getPayload);
             } else {
                 sendAndForget(command);
                 return null;

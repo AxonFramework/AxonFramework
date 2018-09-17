@@ -109,7 +109,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param <C>      The type of payload of the command
      * @param <R>      The type of result expected from the command handler
      */
-    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
         MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command).orElseThrow(() -> {

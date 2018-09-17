@@ -60,7 +60,7 @@ public class FutureCallbackTest {
         assertTrue(t.isAlive());
         testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         t.join(THREAD_JOIN_TIMEOUT);
-        assertEquals("Hello world", resultFromParallelThread);
+        assertEquals(COMMAND_RESPONSE_MESSAGE, resultFromParallelThread);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -112,6 +112,6 @@ public class FutureCallbackTest {
         testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         assertTrue(testSubject.isDone());
         t.join(THREAD_JOIN_TIMEOUT);
-        assertEquals("Hello world", resultFromParallelThread);
+        assertEquals(COMMAND_RESPONSE_MESSAGE, resultFromParallelThread);
     }
 }
