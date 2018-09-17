@@ -1,5 +1,6 @@
 package org.axonframework.boot;
 
+import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -32,7 +33,10 @@ import static org.mockito.Mockito.*;
  * @author Milan Savic
  */
 @ContextConfiguration(classes = JdbcAutoConfigurationTest.Context.class)
-@EnableAutoConfiguration(exclude = {JpaRepositoriesAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        JpaRepositoriesAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        AxonServerAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class JdbcAutoConfigurationTest {
 

@@ -16,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
 import org.axonframework.boot.autoconfig.AMQPAutoConfiguration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -52,7 +53,11 @@ import static org.junit.Assert.assertTrue;
 
 @SpringBootTest
 @SpringBootConfiguration
-@EnableAutoConfiguration(exclude = {AMQPAutoConfiguration.class, JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        AMQPAutoConfiguration.class,
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class,
+        AxonServerAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class TrackingEventProcessorIntegrationTest {
 

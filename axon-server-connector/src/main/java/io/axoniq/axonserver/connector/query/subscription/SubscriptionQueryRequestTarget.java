@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Sara Pellegrini
  */
-class SubscriptionQueryRequestTarget {
+public class SubscriptionQueryRequestTarget {
 
     private final Logger logger = LoggerFactory.getLogger(SubscriptionQueryRequestTarget.class);
 
@@ -49,7 +49,7 @@ class SubscriptionQueryRequestTarget {
 
     private final Map<String, SubscriptionQueryResult<QueryResponseMessage<Object>, SubscriptionQueryUpdateMessage<Object>>> subscriptions = new ConcurrentHashMap<>();
 
-    SubscriptionQueryRequestTarget(QueryBus localSegment,
+    public SubscriptionQueryRequestTarget(QueryBus localSegment,
                                    Publisher<QueryProviderOutbound> publisher,
                                    SubscriptionMessageSerializer serializer) {
         this.localSegment = localSegment;
@@ -58,7 +58,7 @@ class SubscriptionQueryRequestTarget {
     }
 
 
-    void onSubscriptionQueryRequest(QueryProviderInbound inbound) {
+    public void onSubscriptionQueryRequest(QueryProviderInbound inbound) {
         SubscriptionQueryRequest subscriptionQuery = inbound.getSubscriptionQueryRequest();
         try {
             switch (subscriptionQuery.getRequestCase()) {
@@ -103,11 +103,11 @@ class SubscriptionQueryRequestTarget {
 
     private void unsubscribe(SubscriptionQuery unsubscribe) {
         String subscriptionId = unsubscribe.getSubscriptionIdentifier();
-        logger.debug("unsubscribe locally subscriptionId " + subscriptionId);
+        logger.debug("unsubscribe locally subscriptionId {}", subscriptionId);
         subscriptions.remove(subscriptionId).cancel();
     }
 
-    void onApplicationDisconnected() {
+    public void onApplicationDisconnected() {
         subscriptions.values().forEach(Registration::cancel);
         subscriptions.clear();
     }

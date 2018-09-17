@@ -16,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -54,7 +55,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ContextConfiguration
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class,
+        AxonServerAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithHibernateTest {
 

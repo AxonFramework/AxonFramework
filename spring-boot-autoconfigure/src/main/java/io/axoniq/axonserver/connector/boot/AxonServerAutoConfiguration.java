@@ -20,6 +20,7 @@ import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.PlatformConnectionManager;
 import io.axoniq.axonserver.connector.command.AxonServerCommandBus;
 import io.axoniq.axonserver.connector.command.CommandPriorityCalculator;
+import io.axoniq.axonserver.connector.event.axon.AxonServerEventStore;
 import io.axoniq.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import io.axoniq.axonserver.connector.query.AxonServerQueryBus;
 import io.axoniq.axonserver.connector.query.QueryPriorityCalculator;
@@ -30,6 +31,7 @@ import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -56,7 +58,7 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
-public class MessagingAutoConfiguration  implements ApplicationContextAware  {
+public class AxonServerAutoConfiguration implements ApplicationContextAware  {
     private ApplicationContext applicationContext;
 
     @Bean
@@ -126,10 +128,11 @@ public class MessagingAutoConfiguration  implements ApplicationContextAware  {
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
+        SimpleQueryBus simpleQueryBus = new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
+                                                     txManager, queryInvocationErrorHandler);
         return new AxonServerQueryBus(platformConnectionManager, axonHubConfiguration,
-                                      new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                                      txManager, queryInvocationErrorHandler),
-                                   messageSerializer, genericSerializer, priorityCalculator);
+                                      simpleQueryBus, simpleQueryBus,
+                                      messageSerializer, genericSerializer, priorityCalculator);
     }
 
     @Override
@@ -142,6 +145,16 @@ public class MessagingAutoConfiguration  implements ApplicationContextAware  {
                                                                       PlatformConnectionManager connectionManager,
                                                                       AxonServerConfiguration configuration) {
         return new EventProcessorInfoConfiguration(eventHandlingConfiguration, connectionManager, configuration);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public EventStore eventStore(AxonServerConfiguration axonHubConfiguration,
+                                 AxonConfiguration configuration,
+                                 PlatformConnectionManager platformConnectionManager,
+                                 Serializer snapshotSerializer,
+                                 @Qualifier("eventSerializer") Serializer serializer) {
+        return new AxonServerEventStore(axonHubConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.upcasterChain());
     }
 
 }

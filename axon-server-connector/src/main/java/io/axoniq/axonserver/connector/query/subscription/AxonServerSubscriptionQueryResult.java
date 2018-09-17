@@ -49,7 +49,7 @@ import static java.util.Optional.ofNullable;
  *
  * @author Sara Pellegrini
  */
-class AxonServerSubscriptionQueryResult implements
+public class AxonServerSubscriptionQueryResult implements
         Supplier<SubscriptionQueryResult<QueryResponse, QueryUpdate>>,
         StreamObserver<SubscriptionQueryResponse> {
 
@@ -67,7 +67,7 @@ class AxonServerSubscriptionQueryResult implements
 
     private MonoSink<QueryResponse> initialResultSink;
 
-    AxonServerSubscriptionQueryResult(
+    public AxonServerSubscriptionQueryResult(
             SubscriptionQuery query,
             Function<StreamObserver<SubscriptionQueryResponse>, StreamObserver<SubscriptionQueryRequest>> openStreamFn,
             AxonServerConfiguration configuration,

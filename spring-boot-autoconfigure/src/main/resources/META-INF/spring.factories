@@ -12,7 +12,4 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.boot.autoconfig.NoOpTransactionAutoConfiguration,\
   org.axonframework.boot.autoconfig.DistributedAutoConfiguration,\
   org.axonframework.boot.autoconfig.InfraConfiguration,\
-  io.axoniq.axonserver.connector.boot.MessagingAutoConfiguration,\
-  io.axoniq.axonserver.connector.boot.SubscriptionQueryAutoConfiguration,\
-  io.axoniq.axonserver.connector.boot.EventStoreAutoConfiguration,\
-  io.axoniq.axonserver.connector.boot.EventStorePre33AutoConfiguration
+  io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration

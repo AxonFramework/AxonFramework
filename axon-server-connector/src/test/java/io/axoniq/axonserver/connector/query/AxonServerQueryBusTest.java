@@ -71,10 +71,9 @@ public class AxonServerQueryBusTest {
         ser = new XStreamSerializer();
         queryBus = new AxonServerQueryBus(new PlatformConnectionManager(conf),
                                           conf,
-                                          localSegment,
+                                          localSegment, localSegment,
                                           ser,
-                                          ser,
-                                          new QueryPriorityCalculator() {
+                                          ser, new QueryPriorityCalculator() {
                                        });
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
@@ -131,10 +130,9 @@ public class AxonServerQueryBusTest {
 
         AxonServerQueryBus queryBus2 = new AxonServerQueryBus(platformConnectionManager,
                                                               conf,
-                                                              localSegment,
+                                                              localSegment, localSegment,
                                                               ser,
-                                                              ser,
-                                                              new QueryPriorityCalculator() {
+                                                              ser, new QueryPriorityCalculator() {
                                                         });
         Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
 
@@ -176,8 +174,10 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void handlerInterceptor() {
-        AxonServerQueryBus bus = new AxonServerQueryBus(platformConnectionManager, conf, new SimpleQueryBus(), ser, ser,
-                                                        new QueryPriorityCalculator() {});
+        SimpleQueryBus localSegment = new SimpleQueryBus();
+        AxonServerQueryBus bus = new AxonServerQueryBus(platformConnectionManager, conf,
+                                                        localSegment,
+                                                        localSegment, ser, ser, new QueryPriorityCalculator() {});
         bus.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
         List<Object> results = new LinkedList<>();
         bus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {

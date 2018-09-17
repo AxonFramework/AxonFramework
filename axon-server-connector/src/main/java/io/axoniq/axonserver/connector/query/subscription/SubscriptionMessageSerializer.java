@@ -119,7 +119,7 @@ public class SubscriptionMessageSerializer {
     }
 
 
-    SubscriptionQuery serialize(SubscriptionQueryMessage message) {
+    public SubscriptionQuery serialize(SubscriptionQueryMessage message) {
         QueryRequest queryRequest = QueryRequest.newBuilder().setTimestamp(System.currentTimeMillis())
                                                 .setMessageIdentifier(message.getIdentifier())
                                                 .setQuery(message.getQueryName())

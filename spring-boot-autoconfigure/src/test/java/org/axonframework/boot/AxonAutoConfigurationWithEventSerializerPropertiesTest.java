@@ -16,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -45,7 +46,10 @@ import javax.persistence.PersistenceContext;
 import static org.junit.Assert.*;
 
 @ContextConfiguration
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class,
+        AxonServerAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 @TestPropertySource("classpath:application.serializertest.properties")
 public class AxonAutoConfigurationWithEventSerializerPropertiesTest {

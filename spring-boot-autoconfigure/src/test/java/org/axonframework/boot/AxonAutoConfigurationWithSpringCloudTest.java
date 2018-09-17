@@ -15,6 +15,7 @@
 
 package org.axonframework.boot;
 
+import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.*;
@@ -56,10 +57,12 @@ import static org.mockito.Mockito.mock;
 
 
 @ContextConfiguration(classes = AxonAutoConfigurationWithSpringCloudTest.TestContext.class)
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class,
+@EnableAutoConfiguration(exclude = {
+        JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
-        DataSourceAutoConfiguration.class})
+        DataSourceAutoConfiguration.class,
+        AxonServerAutoConfiguration.class})
 @TestPropertySource("classpath:test.springcloud.application.properties")
 @RunWith(SpringRunner.class)
 public class AxonAutoConfigurationWithSpringCloudTest {
