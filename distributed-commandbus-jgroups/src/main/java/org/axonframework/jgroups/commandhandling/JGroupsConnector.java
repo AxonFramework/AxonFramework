@@ -274,13 +274,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private void processReplyMessage(JGroupsReplyMessage message) {
-        CommandCallbackWrapper<Object, Object, Object> callbackWrapper =
-                callbackRepository.fetchAndRemove(message.getCommandIdentifier());
+        CommandCallbackWrapper callbackWrapper = callbackRepository.fetchAndRemove(message.getCommandIdentifier());
         if (callbackWrapper == null) {
             logger.warn("Received a callback for a message that has either already received a callback, "
                                 + "or which was not sent through this node. Ignoring.");
         } else {
             if (message.isSuccess()) {
+                //noinspection unchecked
                 callbackWrapper.success(message.getCommandResponseMessage(serializer));
             } else {
                 Throwable exception = getOrDefault(message.getError(serializer), new IllegalStateException(

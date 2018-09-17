@@ -83,8 +83,8 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
      *
      * @param result the result of the command
      */
-    public void success(R result) {
-        onSuccess(getMessage(), asCommandResponseMessage(result));
+    public void success(CommandResponseMessage<R> result) {
+        onSuccess(getMessage(), result);
     }
 
     @Override
