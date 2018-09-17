@@ -150,16 +150,11 @@
             <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>io.axoniq</groupId>
             <artifactId>axon-server-connector</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.axonframework</groupId>-->
-            <!--<artifactId>axon-spring-boot-starter</artifactId>-->
-        <!--</dependency>-->
     </dependencies>
 
     <build>

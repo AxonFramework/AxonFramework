@@ -16,7 +16,6 @@
 
 package org.axonframework.boot.autoconfig;
 
-import io.axoniq.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.boot.EventProcessorProperties;
 import org.axonframework.boot.SerializerProperties;
@@ -215,7 +214,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return sequencingPolicy;
     }
 
-    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class, AxonServerCommandBus.class}, value = CommandBus.class)
+    @ConditionalOnMissingBean(ignored = {DistributedCommandBus.class}, value = CommandBus.class)
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
