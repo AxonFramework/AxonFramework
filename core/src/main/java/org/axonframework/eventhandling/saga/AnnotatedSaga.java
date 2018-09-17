@@ -50,7 +50,6 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
      * @param sagaId            The identifier of this Saga instance
      * @param associationValues The current associations of this Saga
      * @param annotatedSaga     The object instance representing the Saga
-     * @param trackingToken     The token identifying the position in a stream the saga has last processed
      * @param metaModel         The model describing Saga structure
      */
     public AnnotatedSaga(String sagaId,
