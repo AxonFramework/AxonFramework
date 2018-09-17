@@ -73,6 +73,9 @@ public class JpaAutoConfiguration {
     @ConditionalOnMissingBean(SagaStore.class)
     @Bean
     public JpaSagaStore sagaStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
-        return new JpaSagaStore(serializer, entityManagerProvider);
+        return JpaSagaStore.builder()
+                           .entityManagerProvider(entityManagerProvider)
+                           .serializer(serializer)
+                           .build();
     }
 }
