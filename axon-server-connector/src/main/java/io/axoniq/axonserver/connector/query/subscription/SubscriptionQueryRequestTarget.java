@@ -15,11 +15,11 @@
 
 package io.axoniq.axonserver.connector.query.subscription;
 
-import io.axoniq.axonhub.SubscriptionQuery;
-import io.axoniq.axonhub.SubscriptionQueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import io.axoniq.axonserver.connector.Publisher;
-import io.axoniq.axonhub.grpc.QueryProviderInbound;
-import io.axoniq.axonhub.grpc.QueryProviderOutbound;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import org.axonframework.common.Registration;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryResponseMessage;

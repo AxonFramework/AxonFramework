@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.query;
 
-import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.axonhub.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;

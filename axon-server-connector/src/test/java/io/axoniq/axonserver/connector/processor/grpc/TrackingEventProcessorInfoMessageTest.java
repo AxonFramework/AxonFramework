@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector.processor.grpc;
 
-import io.axoniq.platform.grpc.EventProcessorInfo;
+import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;

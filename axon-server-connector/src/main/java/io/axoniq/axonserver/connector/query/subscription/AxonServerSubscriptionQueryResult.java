@@ -15,12 +15,12 @@
 
 package io.axoniq.axonserver.connector.query.subscription;
 
-import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.QueryUpdate;
-import io.axoniq.axonhub.QueryUpdateCompleteExceptionally;
-import io.axoniq.axonhub.SubscriptionQuery;
-import io.axoniq.axonhub.SubscriptionQueryRequest;
-import io.axoniq.axonhub.SubscriptionQueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.Publisher;
 import io.axoniq.axonserver.connector.query.RemoteQueryException;
@@ -41,7 +41,7 @@ import reactor.core.publisher.MonoSink;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static io.axoniq.axonhub.SubscriptionQueryRequest.newBuilder;
+import static io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest.newBuilder;
 import static java.util.Optional.ofNullable;
 
 /**

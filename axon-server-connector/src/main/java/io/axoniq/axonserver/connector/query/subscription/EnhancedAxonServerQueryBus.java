@@ -19,7 +19,7 @@ import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.PlatformConnectionManager;
 import io.axoniq.axonserver.connector.query.AxonServerQueryBus;
 import io.axoniq.axonserver.connector.query.QueryPriorityCalculator;
-import io.axoniq.axonhub.grpc.QueryServiceGrpc;
+import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static io.axoniq.axonhub.grpc.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
+import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
 
 /**
  * AxonHub implementation for the QueryBus that support subscription queries.

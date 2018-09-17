@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.query.subscription;
 
-import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;

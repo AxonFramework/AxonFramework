@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector;
 
-import io.axoniq.platform.grpc.*;
+import io.axoniq.axonserver.grpc.control.*;
 import io.grpc.stub.StreamObserver;
 
 /**

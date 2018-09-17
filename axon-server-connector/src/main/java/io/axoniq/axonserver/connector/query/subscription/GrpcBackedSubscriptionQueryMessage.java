@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.query.subscription;
 
-import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.axonhub.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import io.axoniq.axonserver.connector.query.GrpcBackedQueryMessage;
 import io.axoniq.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MetaData;

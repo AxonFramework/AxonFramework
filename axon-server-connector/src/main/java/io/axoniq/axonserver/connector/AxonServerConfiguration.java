@@ -16,7 +16,7 @@
 package io.axoniq.axonserver.connector;
 
 import io.axoniq.axonserver.connector.event.util.EventCipher;
-import io.axoniq.platform.grpc.NodeInfo;
+import io.axoniq.axonserver.grpc.control.NodeInfo;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;

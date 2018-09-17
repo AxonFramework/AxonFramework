@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.processor.grpc;
 
-import io.axoniq.platform.grpc.EventProcessorInfo;
-import io.axoniq.platform.grpc.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 
 /**

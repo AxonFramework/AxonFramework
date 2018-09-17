@@ -15,11 +15,11 @@
 
 package io.axoniq.axonserver.connector.query.subscription;
 
-import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.QueryUpdate;
-import io.axoniq.axonhub.SubscriptionQuery;
-import io.axoniq.axonhub.SubscriptionQueryRequest;
-import io.axoniq.axonhub.SubscriptionQueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.queryhandling.SubscriptionQueryBackpressure;
 import org.junit.*;

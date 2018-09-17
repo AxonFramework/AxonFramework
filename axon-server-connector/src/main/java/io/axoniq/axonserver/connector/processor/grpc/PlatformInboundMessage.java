@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector.processor.grpc;
 
-import io.axoniq.platform.grpc.PlatformInboundInstruction;
+import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 
 /**
  * Created by Sara Pellegrini on 15/03/2018.

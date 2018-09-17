@@ -18,18 +18,18 @@ package io.axoniq.axonserver.connector.processor;
 import io.axoniq.axonserver.connector.PlatformConnectionManager;
 import io.axoniq.axonserver.connector.processor.grpc.GrpcEventProcessorMapping;
 import io.axoniq.axonserver.connector.processor.grpc.PlatformInboundMessage;
-import io.axoniq.platform.grpc.PauseEventProcessor;
-import io.axoniq.platform.grpc.PlatformOutboundInstruction;
-import io.axoniq.platform.grpc.ReleaseEventProcessorSegment;
-import io.axoniq.platform.grpc.RequestEventProcessorInfo;
-import io.axoniq.platform.grpc.StartEventProcessor;
+import io.axoniq.axonserver.grpc.control.PauseEventProcessor;
+import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import io.axoniq.axonserver.grpc.control.ReleaseEventProcessorSegment;
+import io.axoniq.axonserver.grpc.control.RequestEventProcessorInfo;
+import io.axoniq.axonserver.grpc.control.StartEventProcessor;
 import org.axonframework.eventhandling.EventProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
-import static io.axoniq.platform.grpc.PlatformOutboundInstruction.RequestCase.*;
+import static io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction.RequestCase.*;
 
 
 /**

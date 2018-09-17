@@ -15,13 +15,13 @@
 
 package io.axoniq.axonserver.connector.query.subscription;
 
-import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.QueryUpdate;
-import io.axoniq.axonhub.QueryUpdateComplete;
-import io.axoniq.axonhub.QueryUpdateCompleteExceptionally;
-import io.axoniq.axonhub.SubscriptionQuery;
-import io.axoniq.axonhub.SubscriptionQueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import io.axoniq.axonserver.grpc.query.QueryUpdateComplete;
+import io.axoniq.axonserver.grpc.query.QueryUpdateCompleteExceptionally;
+import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
+import io.axoniq.axonserver.grpc.query.SubscriptionQueryResponse;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.ErrorCode;
 import io.axoniq.axonserver.connector.query.GrpcBackedResponseMessage;
@@ -30,13 +30,13 @@ import io.axoniq.axonserver.connector.util.GrpcMetaDataConverter;
 import io.axoniq.axonserver.connector.util.GrpcMetadataSerializer;
 import io.axoniq.axonserver.connector.util.GrpcObjectSerializer;
 import io.axoniq.axonserver.connector.util.GrpcPayloadSerializer;
-import io.axoniq.axonhub.grpc.QueryProviderOutbound;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
 
-import static io.axoniq.axonhub.grpc.QueryProviderOutbound.newBuilder;
+import static io.axoniq.axonserver.grpc.query.QueryProviderOutbound.newBuilder;
 
 /**
  * Serializer for Subscription Query Messages

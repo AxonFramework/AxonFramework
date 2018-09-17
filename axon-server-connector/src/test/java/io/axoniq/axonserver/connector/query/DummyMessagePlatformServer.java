@@ -16,13 +16,13 @@
 package io.axoniq.axonserver.connector.query;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonhub.QueryRequest;
-import io.axoniq.axonhub.QueryResponse;
-import io.axoniq.axonhub.QuerySubscription;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
+import io.axoniq.axonserver.grpc.query.QuerySubscription;
 import io.axoniq.axonserver.connector.PlatformService;
-import io.axoniq.axonhub.grpc.QueryProviderInbound;
-import io.axoniq.axonhub.grpc.QueryProviderOutbound;
-import io.axoniq.axonhub.grpc.QueryServiceGrpc;
+import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
+import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
+import io.axoniq.axonserver.grpc.query.QueryServiceGrpc;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.grpc.Server;
