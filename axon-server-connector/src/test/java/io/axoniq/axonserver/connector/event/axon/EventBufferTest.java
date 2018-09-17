@@ -16,9 +16,9 @@
 package io.axoniq.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axondb.Event;
-import io.axoniq.axondb.grpc.EventWithToken;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;

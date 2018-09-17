@@ -1,8 +1,7 @@
 syntax = "proto3";
-package io.axoniq.axondb.grpc;
-import "eventstore_messages.proto";
+package io.axoniq.axonserver.grpc.event;
+import "common.proto";
 option java_multiple_files = true;
-
 
 service EventStore {
 
@@ -42,11 +41,9 @@ service EventStore {
 }
 
 message GetFirstTokenRequest {
-
 }
 
 message GetLastTokenRequest {
-
 }
 
 message GetTokenAtRequest {
@@ -118,3 +115,23 @@ message GetEventsRequest {
     string processor = 5;
 }
 
+message Event {
+    /* A message id */
+    string message_identifier = 1;
+    string aggregate_identifier = 2;
+    int64 aggregate_sequence_number = 3;
+    string aggregate_type = 4;
+    int64 timestamp = 5;
+    io.axoniq.axonserver.grpc.SerializedObject payload = 6;
+    map<string, io.axoniq.axonserver.grpc.MetaDataValue> meta_data = 7;
+    bool snapshot = 8;
+}
+
+message QueryValue {
+    oneof data {
+        string text_value = 1;
+        sint64 number_value = 2;
+        bool boolean_value = 3;
+        double double_value = 4;
+    }
+}

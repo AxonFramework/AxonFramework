@@ -1,7 +1,7 @@
 package io.axoniq.axonserver.connector.util;
 
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonserver.grpc.ProcessingInstruction;
+import io.axoniq.axonserver.grpc.ProcessingKey;
 
 import java.util.List;
 

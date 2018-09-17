@@ -16,13 +16,13 @@
 package io.axoniq.axonserver.connector.command;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonhub.Command;
+import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.PlatformConnectionManager;
-import io.axoniq.axonhub.grpc.CommandProviderInbound;
-import io.axoniq.axonhub.grpc.CommandProviderOutbound;
-import io.axoniq.platform.MetaDataValue;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.MetaDataValue;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;

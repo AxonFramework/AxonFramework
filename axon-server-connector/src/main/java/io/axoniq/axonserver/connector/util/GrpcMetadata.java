@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector.util;
 
-import io.axoniq.platform.MetaDataValue;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 

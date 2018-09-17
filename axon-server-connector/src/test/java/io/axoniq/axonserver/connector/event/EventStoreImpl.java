@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.event;
 
-import io.axoniq.axondb.Event;
-import io.axoniq.axondb.grpc.*;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.*;
 import io.grpc.stub.StreamObserver;
 
 import java.util.ArrayList;

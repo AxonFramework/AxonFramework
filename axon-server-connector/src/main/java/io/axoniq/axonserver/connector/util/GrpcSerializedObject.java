@@ -24,9 +24,9 @@ import org.axonframework.serialization.SerializedType;
  */
 public class GrpcSerializedObject implements SerializedObject<byte[]> {
 
-    private final io.axoniq.platform.SerializedObject payload;
+    private final io.axoniq.axonserver.grpc.SerializedObject payload;
 
-    public GrpcSerializedObject(io.axoniq.platform.SerializedObject payload) {
+    public GrpcSerializedObject(io.axoniq.axonserver.grpc.SerializedObject payload) {
         this.payload = payload;
     }
 

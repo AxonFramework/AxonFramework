@@ -27,7 +27,7 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  * Created by Sara Pellegrini on 28/06/2018.
  * sara.pellegrini@gmail.com
  */
-public class GrpcPayloadSerializer implements Function<Message, io.axoniq.platform.SerializedObject> {
+public class GrpcPayloadSerializer implements Function<Message, io.axoniq.axonserver.grpc.SerializedObject> {
 
     private final GrpcObjectSerializer<Message> delegate;
 
@@ -49,7 +49,7 @@ public class GrpcPayloadSerializer implements Function<Message, io.axoniq.platfo
     }
 
     @Override
-    public io.axoniq.platform.SerializedObject apply(Message message) {
+    public io.axoniq.axonserver.grpc.SerializedObject apply(Message message) {
         return delegate.apply(message);
     }
 }

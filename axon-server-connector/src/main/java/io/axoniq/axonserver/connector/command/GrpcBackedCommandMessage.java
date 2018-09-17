@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.command;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.platform.MetaDataValue;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -99,7 +99,7 @@ public class GrpcBackedCommandMessage<C> implements CommandMessage<C> {
             case TEXT_VALUE:
                 return value.getTextValue();
             case BYTES_VALUE:
-                io.axoniq.platform.SerializedObject bytesValue = value.getBytesValue();
+                io.axoniq.axonserver.grpc.SerializedObject bytesValue = value.getBytesValue();
                 return serializer.deserialize(new SimpleSerializedObject<>(bytesValue.getData().toByteArray(),
                         byte[].class,
                         bytesValue.getType(),

@@ -22,7 +22,7 @@ import io.axoniq.axonserver.connector.PlatformConnectionManager;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonserver.connector.common.AssertUtils;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;

@@ -16,8 +16,8 @@
 package io.axoniq.axonserver.connector.event.util;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axondb.Event;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;

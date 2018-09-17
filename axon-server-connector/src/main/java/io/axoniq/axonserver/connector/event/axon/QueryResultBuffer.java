@@ -14,8 +14,8 @@
  */
 package io.axoniq.axonserver.connector.event.axon;
 
-import io.axoniq.axondb.grpc.QueryEventsResponse;
-import io.axoniq.axondb.grpc.RowResponse;
+import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
+import io.axoniq.axonserver.grpc.event.RowResponse;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

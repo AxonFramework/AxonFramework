@@ -16,7 +16,7 @@
 package io.axoniq.axonserver.connector.util;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.platform.MetaDataValue;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -73,7 +73,7 @@ public class GrpcMetaDataConverter {
             builder.setBooleanValue((Boolean) value);
         } else {
             SerializedObject<byte[]> serializedObject = serializer.serialize(value, byte[].class);
-            builder.setBytesValue(io.axoniq.platform.SerializedObject.newBuilder()
+            builder.setBytesValue(io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                                                        .setType(serializedObject.getType().getName())
                                                                        .setData(ByteString.copyFrom(serializedObject.getData()))
                                                                        .setRevision(getOrDefault(serializedObject.getType().getRevision(), ""))
@@ -113,7 +113,7 @@ public class GrpcMetaDataConverter {
             case TEXT_VALUE:
                 return value.getTextValue();
             case BYTES_VALUE:
-                io.axoniq.platform.SerializedObject bytesValue = value.getBytesValue();
+                io.axoniq.axonserver.grpc.SerializedObject bytesValue = value.getBytesValue();
                 return serializer.deserialize(new SimpleSerializedObject<>(bytesValue.getData().toByteArray(),
                                                                            byte[].class,
                                                                            bytesValue.getType(),

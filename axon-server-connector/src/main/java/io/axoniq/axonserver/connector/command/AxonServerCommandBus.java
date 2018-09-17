@@ -15,9 +15,9 @@
 
 package io.axoniq.axonserver.connector.command;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.CommandResponse;
-import io.axoniq.axonhub.CommandSubscription;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.command.CommandSubscription;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.DispatchInterceptors;
 import io.axoniq.axonserver.connector.ErrorCode;
@@ -26,9 +26,9 @@ import io.axoniq.axonserver.connector.util.ContextAddingInterceptor;
 import io.axoniq.axonserver.connector.util.ExceptionSerializer;
 import io.axoniq.axonserver.connector.util.FlowControllingStreamObserver;
 import io.axoniq.axonserver.connector.util.TokenAddingInterceptor;
-import io.axoniq.axonhub.grpc.CommandProviderInbound;
-import io.axoniq.axonhub.grpc.CommandProviderOutbound;
-import io.axoniq.axonhub.grpc.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
 import io.grpc.ClientInterceptor;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.commandhandling.CommandBus;

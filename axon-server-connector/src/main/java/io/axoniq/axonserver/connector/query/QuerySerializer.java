@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.query;
 
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonserver.grpc.ProcessingInstruction;
+import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
@@ -24,7 +24,7 @@ import io.axoniq.axonserver.connector.util.GrpcMetaDataConverter;
 import io.axoniq.axonserver.connector.util.GrpcMetadataSerializer;
 import io.axoniq.axonserver.connector.util.GrpcObjectSerializer;
 import io.axoniq.axonserver.connector.util.GrpcPayloadSerializer;
-import io.axoniq.platform.MetaDataValue;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;

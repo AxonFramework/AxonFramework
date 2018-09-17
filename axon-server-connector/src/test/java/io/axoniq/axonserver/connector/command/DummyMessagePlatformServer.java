@@ -15,15 +15,15 @@
 
 package io.axoniq.axonserver.connector.command;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.CommandResponse;
-import io.axoniq.axonhub.ErrorMessage;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.connector.ErrorCode;
 import io.axoniq.axonserver.connector.PlatformService;
-import io.axoniq.axonhub.grpc.CommandProviderInbound;
-import io.axoniq.axonhub.grpc.CommandProviderOutbound;
-import io.axoniq.axonhub.grpc.CommandServiceGrpc;
-import io.axoniq.platform.SerializedObject;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;

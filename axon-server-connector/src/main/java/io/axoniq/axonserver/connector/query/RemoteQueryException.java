@@ -1,6 +1,6 @@
 package io.axoniq.axonserver.connector.query;
 
-import io.axoniq.axonhub.ErrorMessage;
+import io.axoniq.axonserver.grpc.ErrorMessage;
 
 /**
  * Author: marc

@@ -15,9 +15,9 @@
 
 package io.axoniq.axonserver.connector.command;
 
-import io.axoniq.axonhub.Command;
+import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
-import io.axoniq.axonhub.grpc.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.serialization.Serializer;

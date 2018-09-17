@@ -14,8 +14,8 @@
  */
 package io.axoniq.axonserver.connector.event.axon;
 
-import io.axoniq.axondb.QueryValue;
-import io.axoniq.axondb.grpc.RowResponse;
+import io.axoniq.axonserver.grpc.event.QueryValue;
+import io.axoniq.axonserver.grpc.event.RowResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;

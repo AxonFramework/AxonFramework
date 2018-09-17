@@ -14,7 +14,7 @@
  */
 package io.axoniq.axonserver.connector.command;
 
-import io.axoniq.axonhub.ErrorMessage;
+import io.axoniq.axonserver.grpc.ErrorMessage;
 
 /**
  * @author Marc Gathier

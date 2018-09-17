@@ -1,0 +1,55 @@
+syntax = "proto3";
+package io.axoniq.axonserver.grpc.command;
+import "common.proto";
+option java_multiple_files = true;
+
+service CommandService {
+    rpc OpenStream( stream CommandProviderOutbound) returns (stream CommandProviderInbound) {}
+    rpc Dispatch( Command) returns (CommandResponse) {}
+}
+
+message CommandProviderOutbound {
+    oneof request {
+        CommandSubscription subscribe = 1;
+        CommandSubscription unsubscribe = 2;
+        FlowControl flowControl = 3;
+        CommandResponse commandResponse = 4;
+    }
+}
+
+message CommandProviderInbound {
+    oneof request {
+        Confirmation confirmation = 1;
+        Command command = 2;
+    }
+}
+
+message Command {
+    /* A message id */
+    string message_identifier = 1;
+    string name = 2;
+    int64 timestamp = 3;
+    SerializedObject payload = 4;
+    map<string, MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+    string clientId = 7;
+    string componentName = 8;
+}
+
+message CommandResponse {
+    /* A message id */
+    string message_identifier = 1;
+    string error_code = 2;
+    ErrorMessage message = 3;
+    SerializedObject payload = 4;
+    map<string, MetaDataValue> meta_data = 5;
+    repeated ProcessingInstruction processing_instructions = 6;
+    string request_identifier = 7;
+}
+
+message CommandSubscription {
+    string message_id = 1;
+    string command = 2;
+    string component_name = 3;
+    string client_name = 4;
+}

@@ -17,9 +17,9 @@ package io.axoniq.axonserver.connector;
 
 import io.axoniq.axonserver.connector.util.ContextAddingInterceptor;
 import io.axoniq.axonserver.connector.util.TokenAddingInterceptor;
-import io.axoniq.axonhub.grpc.CommandProviderInbound;
-import io.axoniq.axonhub.grpc.CommandProviderOutbound;
-import io.axoniq.axonhub.grpc.CommandServiceGrpc;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
 import io.axoniq.axonhub.grpc.QueryProviderInbound;
 import io.axoniq.axonhub.grpc.QueryProviderOutbound;
 import io.axoniq.axonhub.grpc.QueryServiceGrpc;

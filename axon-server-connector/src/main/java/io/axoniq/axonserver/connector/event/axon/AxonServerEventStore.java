@@ -16,13 +16,13 @@
 package io.axoniq.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axondb.Event;
-import io.axoniq.axondb.grpc.EventWithToken;
-import io.axoniq.axondb.grpc.GetAggregateEventsRequest;
-import io.axoniq.axondb.grpc.GetEventsRequest;
-import io.axoniq.axondb.grpc.QueryEventsRequest;
-import io.axoniq.axondb.grpc.QueryEventsResponse;
-import io.axoniq.axondb.grpc.ReadHighestSequenceNrResponse;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetEventsRequest;
+import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
+import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
+import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.ErrorCode;
 import io.axoniq.axonserver.connector.PlatformConnectionManager;
@@ -203,7 +203,7 @@ public class AxonServerEventStore extends AbstractEventStore {
             }
             SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(eventMessage, serializer, byte[].class);
             builder.setMessageIdentifier(eventMessage.getIdentifier())
-                   .setPayload(io.axoniq.platform.SerializedObject.newBuilder()
+                   .setPayload(io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                                                     .setType(serializedPayload.getType().getName())
                                                                     .setRevision(getOrDefault(serializedPayload.getType().getRevision(), ""))
                                                                     .setData(ByteString.copyFrom(serializedPayload.getData())))
@@ -364,7 +364,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createTailToken() {
             try {
-                io.axoniq.axondb.grpc.TrackingToken token = eventStoreClient.getFirstToken().get();
+                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getFirstToken().get();
                 if( token.getToken() < 0 ) return null;
                 return new GlobalSequenceTrackingToken(token.getToken()-1);
             } catch (Throwable e) {
@@ -375,7 +375,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createHeadToken() {
             try {
-                io.axoniq.axondb.grpc.TrackingToken token = eventStoreClient.getLastToken().get();
+                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getLastToken().get();
                 return new GlobalSequenceTrackingToken(token.getToken());
             } catch (Throwable e) {
                 throw ErrorCode.convert(e);
@@ -385,7 +385,7 @@ public class AxonServerEventStore extends AbstractEventStore {
         @Override
         public TrackingToken createTokenAt(Instant instant) {
             try {
-                io.axoniq.axondb.grpc.TrackingToken token = eventStoreClient.getTokenAt(instant).get();
+                io.axoniq.axonserver.grpc.event.TrackingToken token = eventStoreClient.getTokenAt(instant).get();
                 if( token.getToken() < 0 ) return null;
                 return new GlobalSequenceTrackingToken(token.getToken()-1);
             } catch (Throwable e) {

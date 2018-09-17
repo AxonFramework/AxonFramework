@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector.event.axon;
 
-import io.axoniq.axondb.grpc.EventWithToken;
+import io.axoniq.axonserver.grpc.event.EventWithToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.*;

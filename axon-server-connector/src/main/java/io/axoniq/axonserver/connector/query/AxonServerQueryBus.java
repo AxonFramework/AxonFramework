@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector.query;
 
-import io.axoniq.axonhub.ErrorMessage;
+import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonhub.QueryRequest;
 import io.axoniq.axonhub.QueryResponse;
 import io.axoniq.axonhub.QuerySubscription;

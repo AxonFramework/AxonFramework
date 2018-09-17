@@ -25,7 +25,7 @@ import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.Publisher;
 import io.axoniq.axonserver.connector.query.RemoteQueryException;
 import io.axoniq.axonserver.connector.util.FlowControllingStreamObserver;
-import io.axoniq.axonhub.grpc.FlowControl;
+import io.axoniq.axonserver.grpc.FlowControl;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Registration;
 import org.axonframework.queryhandling.DefaultSubscriptionQueryResult;

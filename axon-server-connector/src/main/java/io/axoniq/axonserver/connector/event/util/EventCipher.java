@@ -16,9 +16,9 @@
 package io.axoniq.axonserver.connector.event.util;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axondb.Event;
-import io.axoniq.platform.SerializedObject;
-import io.axoniq.axondb.grpc.EventWithToken;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.event.EventWithToken;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;

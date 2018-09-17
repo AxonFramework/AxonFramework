@@ -15,7 +15,7 @@
 
 package io.axoniq.axonserver.connector.event.axon;
 
-import io.axoniq.axondb.Event;
+import io.axoniq.axonserver.grpc.event.Event;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;

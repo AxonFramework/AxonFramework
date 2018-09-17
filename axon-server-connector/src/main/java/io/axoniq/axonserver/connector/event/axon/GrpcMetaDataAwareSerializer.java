@@ -15,7 +15,7 @@
 package io.axoniq.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.util.GrpcMetaDataConverter;
-import io.axoniq.platform.MetaDataValue;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;

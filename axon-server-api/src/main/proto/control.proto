@@ -1,0 +1,3 @@
+syntax = "proto3";
+package io.axoniq.axonserver.grpc.control;
+option java_multiple_files = true;

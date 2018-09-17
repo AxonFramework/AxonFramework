@@ -29,7 +29,7 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  * Created by Sara Pellegrini on 11/05/2018.
  * sara.pellegrini@gmail.com
  */
-public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.platform.SerializedObject> {
+public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.axonserver.grpc.SerializedObject> {
 
     public interface Serializer<A> {
         <T> SerializedObject<T> serialize(A object, Class<T> expectedRepresentation);
@@ -46,9 +46,9 @@ public class GrpcObjectSerializer<O> implements Function<O, io.axoniq.platform.S
     }
 
     @Override
-    public io.axoniq.platform.SerializedObject apply(O o) {
+    public io.axoniq.axonserver.grpc.SerializedObject apply(O o) {
         SerializedObject<byte[]> serializedPayload = serializer.serialize(o, byte[].class);
-        return io.axoniq.platform.SerializedObject.newBuilder()
+        return io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                .setData(ByteString.copyFrom(serializedPayload.getData()))
                                .setType(serializedPayload.getType().getName())
                                .setRevision(getOrDefault(serializedPayload.getType().getRevision(), ""))

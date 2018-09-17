@@ -15,18 +15,18 @@
 
 package io.axoniq.axonserver.connector.command;
 
-import io.axoniq.axonhub.Command;
-import io.axoniq.axonhub.CommandResponse;
-import io.axoniq.axonhub.ProcessingInstruction;
-import io.axoniq.axonhub.ProcessingKey;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import io.axoniq.axonserver.grpc.ProcessingInstruction;
+import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.util.GrpcMetaDataConverter;
 import io.axoniq.axonserver.connector.util.GrpcMetadataSerializer;
 import io.axoniq.axonserver.connector.util.GrpcObjectSerializer;
 import io.axoniq.axonserver.connector.util.GrpcPayloadSerializer;
 import io.axoniq.axonserver.connector.util.GrpcSerializedObject;
-import io.axoniq.axonhub.grpc.CommandProviderOutbound;
-import io.axoniq.platform.MetaDataValue;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
+import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.serialization.Serializer;
 

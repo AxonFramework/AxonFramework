@@ -15,8 +15,8 @@
 
 package io.axoniq.axonserver.connector.event;
 
-import io.axoniq.axondb.Event;
-import io.axoniq.axondb.grpc.Confirmation;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.Confirmation;
 import io.axoniq.axonserver.connector.event.util.EventCipher;
 import io.grpc.stub.StreamObserver;
 

@@ -15,20 +15,20 @@
 
 package io.axoniq.axonserver.connector.event;
 
-import io.axoniq.axondb.Event;
-import io.axoniq.axondb.grpc.Confirmation;
-import io.axoniq.axondb.grpc.EventStoreGrpc;
-import io.axoniq.axondb.grpc.EventWithToken;
-import io.axoniq.axondb.grpc.GetAggregateEventsRequest;
-import io.axoniq.axondb.grpc.GetEventsRequest;
-import io.axoniq.axondb.grpc.GetFirstTokenRequest;
-import io.axoniq.axondb.grpc.GetLastTokenRequest;
-import io.axoniq.axondb.grpc.GetTokenAtRequest;
-import io.axoniq.axondb.grpc.QueryEventsRequest;
-import io.axoniq.axondb.grpc.QueryEventsResponse;
-import io.axoniq.axondb.grpc.ReadHighestSequenceNrRequest;
-import io.axoniq.axondb.grpc.ReadHighestSequenceNrResponse;
-import io.axoniq.axondb.grpc.TrackingToken;
+import io.axoniq.axonserver.grpc.event.Event;
+import io.axoniq.axonserver.grpc.event.Confirmation;
+import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
+import io.axoniq.axonserver.grpc.event.EventWithToken;
+import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetEventsRequest;
+import io.axoniq.axonserver.grpc.event.GetFirstTokenRequest;
+import io.axoniq.axonserver.grpc.event.GetLastTokenRequest;
+import io.axoniq.axonserver.grpc.event.GetTokenAtRequest;
+import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
+import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
+import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrRequest;
+import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
+import io.axoniq.axonserver.grpc.event.TrackingToken;
 import io.axoniq.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.connector.AxonServerException;
 import io.axoniq.axonserver.connector.PlatformConnectionManager;

@@ -1,0 +1,4 @@
+syntax = "proto3";
+package io.axoniq.axonserver.grpc.query;
+import "common.proto";
+option java_multiple_files = true;
