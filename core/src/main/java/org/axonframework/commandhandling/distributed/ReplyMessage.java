@@ -15,6 +15,10 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.GenericCommandResponseMessage;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -30,9 +34,10 @@ public abstract class ReplyMessage {
 
     protected String commandIdentifier;
     protected boolean success;
-    protected String resultType;
-    protected String resultRevision;
-    protected byte[] serializedResult;
+    protected byte[] serializedMetaData;
+    protected String payloadType;
+    protected String payloadRevision;
+    protected byte[] serializedPayload;
 
     /**
      * Default constructor required for de-/serialization of extending classes. Do not use directly.
@@ -42,28 +47,24 @@ public abstract class ReplyMessage {
 
     /**
      * Initializes a ReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code returnValue}. The parameter {@code success} determines whether the was executed successfully or not.
+     * {@code commandResponseMessage}. The parameter {@code success} determines whether the was executed successfully or
+     * not.
      *
-     * @param commandIdentifier The identifier of the command to which the message is a reply
-     * @param success           Whether or not the command executed successfully or not
-     * @param returnValue       The return value of command process
-     *                          the given {@code returnValue} is ignored.
-     * @param serializer        The serializer to serialize the message contents with
+     * @param commandIdentifier      The identifier of the command to which the message is a reply
+     * @param success                Whether or not the command executed successfully or not
+     * @param commandResponseMessage The response message of command process
+     * @param serializer             The serializer to serialize the message contents with
      */
-    public ReplyMessage(String commandIdentifier, boolean success, Object returnValue, Serializer serializer) {
+    public ReplyMessage(String commandIdentifier, boolean success, CommandResponseMessage<?> commandResponseMessage,
+                        Serializer serializer) {
         this.success = success;
-        SerializedObject<byte[]> result;
-        if (returnValue == null) {
-            result = null;
-        } else {
-            result = serializer.serialize(returnValue, byte[].class);
-        }
         this.commandIdentifier = commandIdentifier;
-        if (result != null) {
-            this.resultType = result.getType().getName();
-            this.resultRevision = result.getType().getRevision();
-            this.serializedResult = result.getData();
-        }
+        SerializedObject<byte[]> metaData = commandResponseMessage.serializeMetaData(serializer, byte[].class);
+        this.serializedMetaData = metaData.getData();
+        SerializedObject<byte[]> payload = commandResponseMessage.serializePayload(serializer, byte[].class);
+        this.serializedPayload = payload.getData();
+        this.payloadType = payload.getType().getName();
+        this.payloadRevision = payload.getType().getRevision();
     }
 
     /**
@@ -74,11 +75,15 @@ public abstract class ReplyMessage {
      * @param serializer The serializer to deserialize the result with
      * @return The return value of command processing
      */
-    public Object getReturnValue(Serializer serializer) {
-        if (!success || resultType == null) {
+    public CommandResponseMessage<?> getCommandResponseMessage(Serializer serializer) {
+        if (!success || payloadType == null) {
             return null;
         }
-        return deserializeResult(serializer);
+        Object payload = deserializePayload(serializer);
+        SerializedMetaData<byte[]> serializedMetaData =
+                new SerializedMetaData<>(this.serializedMetaData, byte[].class);
+        MetaData metaData = serializer.deserialize(serializedMetaData);
+        return new GenericCommandResponseMessage<>(payload, metaData);
     }
 
     /**
@@ -89,15 +94,10 @@ public abstract class ReplyMessage {
      * @return The exception thrown during command processing
      */
     public Throwable getError(Serializer serializer) {
-        if (success || resultType == null) {
+        if (success || payloadType == null) {
             return null;
         }
-        return (Throwable) deserializeResult(serializer);
-    }
-
-    private Object deserializeResult(Serializer serializer) {
-        return serializer.deserialize(new SimpleSerializedObject<>(serializedResult, byte[].class,
-                resultType, resultRevision));
+        return (Throwable) deserializePayload(serializer);
     }
 
     /**
@@ -120,35 +120,49 @@ public abstract class ReplyMessage {
     }
 
     /**
-     * Returns the result type of the serialized result for which this message is a reply.
+     * Returns the payload type of the serialized reply message.
      *
-     * @return the result type of the serialized result for which this message is a reply as a {@code String}
+     * @return the payload type of the serialized reply message as a {@code String}
      */
-    public String getResultType() {
-        return resultType;
+    public String getPayloadType() {
+        return payloadType;
     }
 
     /**
-     * Returns the result revision of the serialized result for which this message is a reply.
+     * Returns the payload revision of the serialized reply message.
      *
-     * @return the result revision of the serialized result for which this message is a reply as a {@code String}
+     * @return the payload revision of the serialized reply message as a {@code String}
      */
-    public String getResultRevision() {
-        return resultRevision;
+    public String getPayloadRevision() {
+        return payloadRevision;
     }
 
     /**
-     * Returns the serialized result for which this message is a reply.
+     * Returns the serialized payload of the serialized reply message.
      *
-     * @return the serialized result for which this message is a reply as a {@code byte[]}
+     * @return the serialized payload of the serialized reply message as a {@code byte[]}
      */
-    public byte[] getSerializedResult() {
-        return serializedResult;
+    public byte[] getSerializedPayload() {
+        return serializedPayload;
+    }
+
+    /**
+     * Returns the serialized meta data of the serialized reply message.
+     *
+     * @return the serialized meta data of the serialized reply message as a {@code byte[]}
+     */
+    public byte[] getSerializedMetaData() {
+        return serializedMetaData;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandIdentifier, success, resultType, resultRevision, serializedResult);
+        return Objects.hash(commandIdentifier,
+                            success,
+                            payloadType,
+                            payloadRevision,
+                            serializedPayload,
+                            serializedMetaData);
     }
 
     @Override
@@ -162,9 +176,10 @@ public abstract class ReplyMessage {
         final ReplyMessage other = (ReplyMessage) obj;
         return Objects.equals(this.commandIdentifier, other.commandIdentifier)
                 && Objects.equals(this.success, other.success)
-                && Objects.equals(this.resultType, other.resultType)
-                && Objects.equals(this.resultRevision, other.resultRevision)
-                && Objects.deepEquals(this.serializedResult, other.serializedResult);
+                && Objects.equals(this.payloadType, other.payloadType)
+                && Objects.equals(this.payloadRevision, other.payloadRevision)
+                && Objects.deepEquals(this.serializedPayload, other.serializedPayload)
+                && Objects.deepEquals(this.serializedMetaData, other.serializedMetaData);
     }
 
     @Override
@@ -172,10 +187,16 @@ public abstract class ReplyMessage {
         return "ReplyMessage{" +
                 "commandIdentifier='" + commandIdentifier + '\'' +
                 ", success=" + success +
-                ", resultType='" + resultType + '\'' +
-                ", resultRevision='" + resultRevision + '\'' +
-                ", serializedResult=" + Arrays.toString(serializedResult) +
+                ", payloadType='" + payloadType + '\'' +
+                ", payloadRevision='" + payloadRevision + '\'' +
+                ", serializedPayload=" + Arrays.toString(serializedPayload) +
+                ", serializedMetaData=" + Arrays.toString(serializedMetaData) +
                 '}';
+    }
+
+    private Object deserializePayload(Serializer serializer) {
+        return serializer.deserialize(new SimpleSerializedObject<>(serializedPayload, byte[].class,
+                                                                   payloadType, payloadRevision));
     }
 
 }

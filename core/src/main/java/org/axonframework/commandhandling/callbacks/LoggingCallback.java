@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public class LoggingCallback implements CommandCallback<Object, Object> {
     }
 
     @Override
-    public void onSuccess(CommandMessage message, Object result) {
+    public void onSuccess(CommandMessage message, CommandResponseMessage commandResponseMessage) {
         logger.info("Command executed successfully: {}", message.getCommandName());
     }
 

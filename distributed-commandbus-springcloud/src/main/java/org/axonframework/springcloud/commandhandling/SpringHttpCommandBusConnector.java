@@ -18,6 +18,7 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.common.AxonConfigurationException;
@@ -41,6 +42,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -112,7 +115,8 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             SpringHttpReplyMessage<R> replyMessage =
                     this.<C, R>sendRemotely(destination, commandMessage, EXPECT_REPLY).getBody();
             if (replyMessage.isSuccess()) {
-                callback.onSuccess(commandMessage, replyMessage.getReturnValue(serializer));
+                callback.onSuccess(commandMessage,
+                                   asCommandResponseMessage(replyMessage.getCommandResponseMessage(serializer)));
             } else {
                 callback.onFailure(commandMessage, replyMessage.getError(serializer));
             }
@@ -194,10 +198,16 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
 
     private SpringHttpReplyMessage createReply(CommandMessage<?> commandMessage, boolean success, Object result) {
         try {
-            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(), success, result, serializer);
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
+                                                success,
+                                                asCommandResponseMessage(result),
+                                                serializer);
         } catch (Exception e) {
             logger.warn("Could not serialize command reply [{}]. Sending back NULL.", result, e);
-            return new SpringHttpReplyMessage(commandMessage.getIdentifier(), success, null, serializer);
+            return new SpringHttpReplyMessage<>(commandMessage.getIdentifier(),
+                                                success,
+                                                asCommandResponseMessage(null),
+                                                serializer);
         }
     }
 
@@ -211,8 +221,9 @@ public class SpringHttpCommandBusConnector implements CommandBusConnector {
             implements CommandCallback<C, R> {
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-            super.complete(createReply(commandMessage, true, result));
+        public void onSuccess(CommandMessage<? extends C> commandMessage,
+                              CommandResponseMessage<? extends R> commandResponseMessage) {
+            super.complete(createReply(commandMessage, true, commandResponseMessage));
         }
 
         @Override

@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
+import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -81,7 +82,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, ? super R> callback) {
         doDispatch(intercept(command), callback);
     }
 
@@ -135,7 +136,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     @SuppressWarnings({"unchecked"})
-    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, R> callback) {
+    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler,
+                                 CommandCallback<? super C, ? super R> callback) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{}]", command.getCommandName());
         }
@@ -145,7 +147,8 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
+            CommandResponseMessage<R> result =
+                    asCommandResponseMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
 
             callback.onSuccess(command, result);
         } catch (Exception e) {

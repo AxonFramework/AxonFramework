@@ -18,6 +18,7 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.eventhandling.EventMessage;
@@ -59,7 +60,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     private final FieldFilter fieldFilter;
     private final Supplier<Aggregate<T>> state;
     private final DeadlineManagerValidator deadlineManagerValidator;
-    private Object actualReturnValue;
+    private CommandResponseMessage<?> actualReturnValue;
     private Throwable actualException;
 
     /**
@@ -210,8 +211,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         matcher.describeTo(description);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, description);
-        } else if (!matcher.matches(actualReturnValue)) {
-            reporter.reportWrongResult(actualReturnValue, description);
+        } else if (!matcher.matches(actualReturnValue.getPayload())) {
+            reporter.reportWrongResult(actualReturnValue.getPayload(), description);
         }
         return this;
     }
@@ -248,7 +249,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualReturnValue, description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
         }
         if (!matcher.matches(actualException)) {
             reporter.reportWrongException(actualException, description);
@@ -257,8 +258,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-        actualReturnValue = result;
+    public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
+        actualReturnValue = commandResponseMessage;
     }
 
     @Override

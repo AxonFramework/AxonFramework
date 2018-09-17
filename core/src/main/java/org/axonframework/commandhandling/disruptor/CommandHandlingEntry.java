@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
@@ -38,7 +39,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private InterceptorChain invocationInterceptorChain;
     private InterceptorChain publisherInterceptorChain;
     private Exception exceptionResult;
-    private Object result;
+    private CommandResponseMessage<?> result;
     private int publisherSegmentId;
     private BlacklistDetectingCallback callback;
     // for recovery of corrupt aggregates
@@ -97,7 +98,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      *
      * @param result the result of the command's execution, if successful
      */
-    public void setResult(Object result) {
+    public void setResult(CommandResponseMessage<?> result) {
         this.result = result;
     }
 
@@ -107,7 +108,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      *
      * @return the result of the command's execution, if any
      */
-    public Object getResult() {
+    public CommandResponseMessage<?> getResult() {
         return result;
     }
 

@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -78,8 +80,8 @@ public class DefaultCommandGatewayTest {
         final AtomicReference<Object> actualResult = new AtomicReference<>();
         testSubject.send("Command", new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                actualResult.set(result);
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
+                actualResult.set(commandResponseMessage);
             }
 
             @Override
@@ -131,8 +133,7 @@ public class DefaultCommandGatewayTest {
     public void testSendWithoutCallback_() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onSuccess((CommandMessage) invocation.getArguments()[0],
-                               "returnValue");
+                    .onSuccess((CommandMessage) invocation.getArguments()[0], asCommandResponseMessage("returnValue"));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 

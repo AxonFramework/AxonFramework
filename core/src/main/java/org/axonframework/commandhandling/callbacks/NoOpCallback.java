@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
@@ -40,7 +41,7 @@ public final class NoOpCallback implements CommandCallback<Object, Object> {
      * This implementation does nothing.
      */
     @Override
-    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+    public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
     }
 
     /**

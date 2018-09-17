@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.callbacks;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResponseMessage;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -39,8 +40,9 @@ import static java.util.Objects.requireNonNull;
 public class FutureCallback<C, R> extends CompletableFuture<R> implements CommandCallback<C, R> {
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage, R executionResult) {
-        super.complete(executionResult);
+    public void onSuccess(CommandMessage<? extends C> commandMessage,
+                          CommandResponseMessage<? extends R> commandResponseMessage) {
+        super.complete(commandResponseMessage.getPayload());
     }
 
     @Override

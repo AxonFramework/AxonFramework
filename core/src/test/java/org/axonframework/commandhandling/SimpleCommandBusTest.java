@@ -62,8 +62,9 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"),
                              new CommandCallback<Object, CommandMessage<?>>() {
                                  @Override
-                                 public void onSuccess(CommandMessage<?> command, CommandMessage<?> result) {
-                                     assertEquals("Say hi!", result.getPayload());
+                                 public void onSuccess(CommandMessage<?> command,
+                                                       CommandResponseMessage<? extends CommandMessage<?>> commandResponseMessage) {
+                                     assertEquals("Say hi!", commandResponseMessage.getPayload().getPayload());
                                  }
 
                                  @Override
@@ -87,8 +88,9 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"),
                              new CommandCallback<Object, CommandMessage<?>>() {
                                  @Override
-                                 public void onSuccess(CommandMessage<?> commandMessage, CommandMessage<?> result) {
-                                     assertEquals("Say hi!", result.getPayload());
+                                 public void onSuccess(CommandMessage<?> commandMessage,
+                                                       CommandResponseMessage<? extends CommandMessage<?>> commandResponseMessage) {
+                                     assertEquals("Say hi!", commandResponseMessage.getPayload().getPayload());
                                  }
 
                                  @Override
@@ -112,7 +114,7 @@ public class SimpleCommandBusTest {
         });
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
                 fail("Expected exception");
             }
 
@@ -137,7 +139,7 @@ public class SimpleCommandBusTest {
 
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
                 fail("Expected exception");
             }
 
@@ -216,8 +218,9 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
                                  @Override
-                                 public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                                     assertEquals("Hi there!", result);
+                                 public void onSuccess(CommandMessage<?> commandMessage,
+                                                       CommandResponseMessage<?> commandResponseMessage) {
+                                     assertEquals("Hi there!", commandResponseMessage.getPayload());
                                  }
 
                                  @Override
@@ -256,7 +259,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
                 fail("Expected exception to be thrown");
             }
 
@@ -291,7 +294,7 @@ public class SimpleCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
                 fail("Expected exception to be propagated");
             }
 

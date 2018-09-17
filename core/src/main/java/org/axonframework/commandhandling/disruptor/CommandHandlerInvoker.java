@@ -49,6 +49,8 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+
 /**
  * Component of the DisruptorCommandBus that invokes the command handler. The execution is done within a Unit Of Work.
  * If an aggregate has been pre-loaded, it is set to the ThreadLocal.
@@ -102,7 +104,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             entry.start();
             try {
                 Object result = entry.getInvocationInterceptorChain().proceed();
-                entry.setResult(result);
+                entry.setResult(asCommandResponseMessage(result));
             } catch (Exception throwable) {
                 entry.setExceptionResult(throwable);
             } finally {
