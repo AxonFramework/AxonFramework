@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.saga.repository;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.CollectionUtils;
+import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventhandling.saga.AnnotatedSaga;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -66,8 +67,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * <p>
      * Will assert that the {@code sagaType}, {@link SagaStore} and {@link ResourceInjector} are not {@code null}, and
      * will throw an {@link AxonConfigurationException} if any of them is {@code null}.
-     * Additionally, the Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as the
-     * saga type to be stored or derive it based on the given {@code sagaType}.
+     * Additionally, the provided  Builder's goal is to either build a {@link SagaModel} specifying generic {@code T} as
+     * the Saga type to be stored or derive it based on the given {@code sagaType}.
      * All Sagas in this repository must be {@code instanceOf} this saga type.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AnnotatedSagaRepository} instance
@@ -75,7 +76,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     protected AnnotatedSagaRepository(Builder<T> builder) {
         super(builder);
         this.sagaType = builder.sagaType;
-        this.sagaModel = builder.sagaModel;
+        this.sagaModel = builder.buildSagaModel();
         this.sagaStore = builder.sagaStore;
         this.resourceInjector = builder.resourceInjector;
         this.managedSagas = new ConcurrentHashMap<>();
@@ -237,9 +238,9 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * Builder class to instantiate a {@link AnnotatedSagaRepository}.
      * <p>
      * The {@link ResourceInjector} is defaulted to a {@link NoResourceInjector}.
-     * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate it
-     * based of the required {@code sagaType} field of type {@link Class} Thus, either the SagaModel <b>or</b> the
-     * {@code sagaType} should be provided. All Saga in this repository must be {@code instanceOf} this saga type.
+     * This Builder either allows directly setting a {@link SagaModel} of generic type {@code T}, or it will generate
+     * one based of the required {@code sagaType} field of type {@link Class}. Thus, either the SagaModel <b>or</b> the
+     * {@code sagaType} should be provided. All Sagas in this repository must be {@code instanceOf} this saga type.
      * Additionally, the {@code sagaType} and {@link SagaStore} are <b>hard requirements</b> and as such should be
      * provided.
      *
@@ -255,12 +256,18 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         private SagaStore<? super T> sagaStore;
         private ResourceInjector resourceInjector = NoResourceInjector.INSTANCE;
 
+        @Override
+        public Builder<T> lockFactory(LockFactory lockFactory) {
+            super.lockFactory(lockFactory);
+            return this;
+        }
+
         /**
-         * Sets the {@code sagaType} as a {@code Class}, specifying the type of Saga this
+         * Sets the {@code sagaType} as a {@link Class}, specifying the type of Saga this
          * {@link org.axonframework.eventhandling.saga.SagaRepository} will store. If no {@link SagaModel} is specified
          * directly, a model will be derived from this type.
          *
-         * @param sagaType the {@code sagaType} specifying the type of Saga this
+         * @param sagaType the {@link Class} specifying the type of Saga this
          *                 {@link org.axonframework.eventhandling.saga.SagaRepository} will store
          * @return the current Builder instance, for fluent interfacing
          */
@@ -271,11 +278,11 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
         }
 
         /**
-         * Sets the {@link ParameterResolverFactory} used to resolve parameters for annotated handlers contained in the
-         * Saga. Only used to instantiate a {@link SagaModel} if no SagaModel has been provided directly.
+         * Sets the {@link ParameterResolverFactory} used to resolve parameters for annotated handlers for the given
+         * {@code sagaType}. Only used to instantiate a {@link SagaModel} if no SagaModel has been provided directly.
          *
          * @param parameterResolverFactory a {@link ParameterResolverFactory} used to resolve parameters for annotated
-         *                                 handlers contained in the Aggregate
+         *                                 handlers for the given {@code sagaType}
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
@@ -300,11 +307,11 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
         /**
          * Sets the {@link SagaModel} of generic type {@code T}, describing the structure of the Saga this
-         * {@link org.axonframework.eventhandling.saga.SagaRepository} will store. If this is not provided directly, the
-         * {@code sagaType} will be used to instantiate a SagaModel.
+         * {@link org.axonframework.eventhandling.saga.SagaRepository} implementation will store. If this is not
+         * provided directly, the {@code sagaType} will be used to instantiate a SagaModel.
          *
          * @param sagaModel the {@link SagaModel} of generic type {@code T} of the Saga this
-         *                  {@link org.axonframework.eventhandling.saga.SagaRepository} will store
+         *                  {@link org.axonframework.eventhandling.saga.SagaRepository} implementation will store
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> sagaModel(SagaModel<T> sagaModel) {
@@ -353,8 +360,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
          * this {@link org.axonframework.eventhandling.saga.SagaRepository} will store.
          *
          * @return a {@link SagaModel} of generic type {@code T} describing the Saga this
-         * {@link org.axonframework.eventhandling.saga.SagaRepository}
-         * will store
+         * {@link org.axonframework.eventhandling.saga.SagaRepository} implementation will store
          */
         SagaModel<T> buildSagaModel() {
             if (sagaModel == null) {
@@ -364,6 +370,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
             }
         }
 
+        @SuppressWarnings("Duplicates")
         private SagaModel<T> inspectSagaModel() {
             if (parameterResolverFactory == null && handlerDefinition == null) {
                 return new AnnotationSagaMetaModelFactory().modelOf(sagaType);
