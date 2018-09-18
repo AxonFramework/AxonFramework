@@ -23,7 +23,6 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
@@ -173,11 +172,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                     .sagaStore(sagaStore)
                     .resourceInjector(new TransienceValidatingResourceInjector())
                     .build();
-            sagaManager = new AnnotatedSagaManager<>(sagaType,
-                                                     sagaRepository,
-                                                     parameterResolverFactory,
-                                                     handlerDefinition,
-                                                     new LoggingErrorHandler());
+            sagaManager = AnnotatedSagaManager.<T>builder()
+                    .sagaRepository(sagaRepository)
+                    .sagaType(sagaType)
+                    .parameterResolverFactory(parameterResolverFactory)
+                    .handlerDefinition(handlerDefinition)
+                    .build();
             resourcesInitialized = true;
         }
     }

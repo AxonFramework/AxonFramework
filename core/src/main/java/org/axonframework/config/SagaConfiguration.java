@@ -337,11 +337,13 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                  .build());
         sagaManager = new Component<>(() -> config,
                                       managerName,
-                                      c -> new AnnotatedSagaManager<>(sagaType,
-                                                                      sagaRepository.get(),
-                                                                      c.parameterResolverFactory(),
-                                                                      c.handlerDefinition(sagaType),
-                                                                      listenerInvocationErrorHandler.get()));
+                                      c -> AnnotatedSagaManager.<S>builder()
+                                              .sagaRepository(sagaRepository.get())
+                                              .sagaType(sagaType)
+                                              .parameterResolverFactory(c.parameterResolverFactory())
+                                              .handlerDefinition(c.handlerDefinition(sagaType))
+                                              .listenerInvocationErrorHandler(listenerInvocationErrorHandler.get())
+                                              .build());
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
                                                               c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                                                                   TrackingEventProcessorConfiguration::forSingleThreadedProcessing));

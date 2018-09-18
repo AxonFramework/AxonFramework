@@ -57,7 +57,11 @@ public class AnnotatedSagaManagerTest {
                         .sagaStore(sagaStore)
                         .build()
         );
-        manager = new AnnotatedSagaManager<>(MyTestSaga.class, sagaRepository, MyTestSaga::new);
+        manager = AnnotatedSagaManager.<MyTestSaga>builder()
+                .sagaRepository(sagaRepository)
+                .sagaType(MyTestSaga.class)
+                .sagaFactory(MyTestSaga::new)
+                .build();
     }
 
     @Test
