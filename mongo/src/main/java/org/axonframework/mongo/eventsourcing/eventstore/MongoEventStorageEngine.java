@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * EventStorageEngine implementation that uses Mongo to store and fetch events.
@@ -190,8 +191,8 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        return storageStrategy.findLastSnapshot(template.snapshotCollection(), aggregateIdentifier);
+    protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+        return storageStrategy.findSnapshots(template.snapshotCollection(), aggregateIdentifier);
     }
 
     @Override

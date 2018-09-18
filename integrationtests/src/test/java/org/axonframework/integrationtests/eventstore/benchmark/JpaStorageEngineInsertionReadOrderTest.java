@@ -127,8 +127,12 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore =
-                new EmbeddedEventStore(testSubject, null, 20, 1000, 100, TimeUnit.MILLISECONDS);
+        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject,
+                                                                       null,
+                                                                       20,
+                                                                       1000,
+                                                                       100,
+                                                                       TimeUnit.MILLISECONDS);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
         int counter = 0;
         while (counter < expectedEventCount) {

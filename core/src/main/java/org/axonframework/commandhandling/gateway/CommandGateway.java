@@ -45,7 +45,7 @@ public interface CommandGateway {
      * @param callback The callback to notify when the command has been processed
      * @param <R>      The type of result expected from command execution
      */
-    <C, R> void send(C command, CommandCallback<? super C, R> callback);
+    <C, R> void send(C command, CommandCallback<? super C, ? super R> callback);
 
     /**
      * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when

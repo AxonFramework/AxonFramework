@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Sorts.descending;
+import static com.mongodb.client.model.Sorts.orderBy;
 import static java.util.stream.StreamSupport.stream;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.DateTimeUtils.parseInstant;
@@ -184,18 +186,18 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     }
 
     @Override
-    public Optional<? extends DomainEventData<?>> findLastSnapshot(MongoCollection<Document> snapshotCollection,
-                                                                   String aggregateIdentifier) {
+    public Stream<? extends DomainEventData<?>> findSnapshots(MongoCollection<Document> snapshotCollection,
+                                                              String aggregateIdentifier) {
         FindIterable<Document> cursor =
                 snapshotCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
-                                  .sort(new BasicDBObject(eventConfiguration.sequenceNumberProperty(), ORDER_DESC)).limit(1);
-        return stream(cursor.spliterator(), false).findFirst().map(this::extractSnapshot);
+                                  .sort(orderBy(descending(eventConfiguration.sequenceNumberProperty())));
+        return stream(cursor.spliterator(), false).map(this::extractSnapshot);
     }
 
     @Override
     public Optional<Long> lastSequenceNumberFor(MongoCollection<Document> eventsCollection, String aggregateIdentifier) {
         Document lastDocument = eventsCollection.find(eq(eventConfiguration.aggregateIdentifierProperty(), aggregateIdentifier))
-                                                .sort(Sorts.descending(eventConfiguration.sequenceNumberProperty()))
+                                                .sort(descending(eventConfiguration.sequenceNumberProperty()))
                                                 .first();
         return Optional.ofNullable(lastDocument).map(this::extractHighestSequenceNumber);
     }

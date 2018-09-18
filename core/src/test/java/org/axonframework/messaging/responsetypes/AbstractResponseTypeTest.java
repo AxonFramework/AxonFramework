@@ -1,4 +1,22 @@
-package org.axonframework.queryhandling.responsetypes;
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging.responsetypes;
+
+import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -17,10 +35,10 @@ import static org.axonframework.common.ReflectionUtils.methodOf;
 import static org.junit.Assert.*;
 
 /**
- * Helper test implementation of {@link org.axonframework.queryhandling.responsetypes.ResponseType} tests.
+ * Helper test implementation of {@link ResponseType} tests.
  *
  * @param <R> a generic for the expected response type of the
- *            {@link org.axonframework.queryhandling.responsetypes.ResponseType} test subject
+ *            {@link ResponseType} test subject
  */
 public abstract class AbstractResponseTypeTest<R> {
 
@@ -35,7 +53,7 @@ public abstract class AbstractResponseTypeTest<R> {
 
     /**
      * Helper function to make testing of the
-     * {@link org.axonframework.queryhandling.responsetypes.ResponseType#matches(Type)} function easier.
+     * {@link ResponseType#matches(Type)} function easier.
      * Takes a {@code methodNameToTest} which it uses to pull a {@link java.lang.reflect.Method} from this abstract
      * class. There after it will pull the return {@link java.lang.reflect.Type} from that method, which it will use as
      * input for the test subject's match function.

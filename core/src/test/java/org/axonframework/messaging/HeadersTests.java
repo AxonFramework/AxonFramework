@@ -37,7 +37,6 @@ import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
 import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
 import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
 import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -98,7 +97,7 @@ public class HeadersTests {
     @Test
     public void testGeneratingDefaultMessagingHeaders() {
         EventMessage<Object> message = asEventMessage("foo");
-        SerializedObject<byte[]> serializedObject = serializePayload(message, serializer, byte[].class);
+        SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
         Map<String, Object> expected = new HashMap<String, Object>() {{
             put(MESSAGE_ID, message.getIdentifier());
             put(MESSAGE_TYPE, serializedObject.getType().getName());
@@ -118,7 +117,7 @@ public class HeadersTests {
     @Test
     public void testGeneratingDomainMessagingHeaders() {
         DomainEventMessage<String> message = domainMessage();
-        SerializedObject<byte[]> serializedObject = serializePayload(message, serializer, byte[].class);
+        SerializedObject<byte[]> serializedObject = message.serializePayload(serializer, byte[].class);
 
         Map<String, Object> expected = new HashMap<String, Object>() {{
             put(MESSAGE_ID, message.getIdentifier());

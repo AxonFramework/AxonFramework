@@ -1,4 +1,20 @@
-package org.axonframework.queryhandling.responsetypes;
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,7 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A {@link org.axonframework.queryhandling.responsetypes.ResponseType} implementation that will match with query
+ * A {@link ResponseType} implementation that will match with query
  * handlers which return a multiple instances of the expected response type. If matching succeeds, the
  * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to a
  * {@link java.util.List} with generic type {@code R}.
@@ -26,7 +42,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
     private static final Logger logger = LoggerFactory.getLogger(MultipleInstancesResponseType.class);
 
     /**
-     * Instantiate a {@link org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType} with the given
+     * Instantiate a {@link MultipleInstancesResponseType} with the given
      * {@code expectedCollectionGenericType} as the type to be matched against and which the convert function will use
      * as the generic for the {@link java.util.List} return value.
      *
@@ -68,7 +84,7 @@ public class MultipleInstancesResponseType<R> extends AbstractResponseType<List<
 
     /**
      * Converts the given {@code response} of type {@link java.lang.Object} into the type {@link java.util.List} with
-     * generic type {@code R} from this {@link org.axonframework.queryhandling.responsetypes.ResponseType} instance.
+     * generic type {@code R} from this {@link ResponseType} instance.
      * Will ensure that if the given {@code response} is of another collections format (e.g. an array, or a
      * {@link java.util.stream.Stream}) that it will be converted to a List.
      * Should only be called if {@link ResponseType#matches(Type)} returns true. Will throw an

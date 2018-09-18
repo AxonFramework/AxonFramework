@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.RingBuffer;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,9 +66,10 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+    public void onSuccess(CommandMessage<? extends C> commandMessage,
+                          CommandResultMessage<? extends R> commandResultMessage) {
         if (delegate != null) {
-            delegate.onSuccess(commandMessage, result);
+            delegate.onSuccess(commandMessage, commandResultMessage);
         }
     }
 

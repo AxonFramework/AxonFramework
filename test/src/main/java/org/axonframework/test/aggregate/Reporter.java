@@ -119,17 +119,17 @@ public class Reporter {
     /**
      * Reports an error due to a wrong return value.
      *
-     * @param actualReturnValue The actual return value
-     * @param expectation       A description of the expected value
+     * @param actual      The actual description / return value
+     * @param expectation The expected description / return value
      */
-    public void reportWrongResult(Object actualReturnValue, Description expectation) {
+    public void reportWrongResult(Object actual, Object expectation) {
         StringBuilder sb = new StringBuilder("The command handler returned an unexpected value");
         sb.append(NEWLINE)
           .append(NEWLINE)
           .append("Expected <"); //NOSONAR
         sb.append(expectation.toString());
         sb.append("> but got <");
-        describe(actualReturnValue, sb);
+        describe(actual, sb);
         sb.append(">")
           .append(NEWLINE);
         throw new AxonAssertionError(sb.toString());
@@ -195,24 +195,24 @@ public class Reporter {
     }
 
     /**
-     * Report an error due to a difference in one of the fields of an event.
+     * Report an error due to a difference in one of the fields of the message payload.
      *
-     * @param eventType The (runtime) type of event the difference was found in
-     * @param field     The field that contains the difference
-     * @param actual    The actual value of the field
-     * @param expected  The expected value of the field
+     * @param messageType The (runtime) type of the message the difference was found in
+     * @param field       The field that contains the difference
+     * @param actual      The actual value of the field
+     * @param expected    The expected value of the field
      */
-    public void reportDifferentEventContents(Class<?> eventType, Field field, Object actual,
-                                             Object expected) {
-        StringBuilder sb = new StringBuilder("One of the events contained different values than expected");
+    public void reportDifferentPayloads(Class<?> messageType, Field field, Object actual,
+                                        Object expected) {
+        StringBuilder sb = new StringBuilder("One of the messages contained different values than expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("In an event of type [")
-          .append(eventType.getSimpleName())
+          .append("In a message of type [")
+          .append(messageType.getSimpleName())
           .append("], the property [")
           .append(field.getName())
           .append("] ");
-        if (!eventType.equals(field.getDeclaringClass())) {
+        if (!messageType.equals(field.getDeclaringClass())) {
             sb.append("(declared in [")
               .append(field.getDeclaringClass().getSimpleName())
               .append("]) ");
@@ -230,19 +230,19 @@ public class Reporter {
     }
 
     /**
-     * Report an error due to a difference in the metadata of an event
+     * Report an error due to a difference in the metadata of a message
      *
-     * @param eventType         The (runtime) type of event the difference was found in
+     * @param messageType       The (runtime) type of the message the difference was found in
      * @param missingEntries    The expected key-value pairs that where not present in the metadata
      * @param additionalEntries Key-value pairs that where present in the metadata but not expected
      */
-    public void reportDifferentMetaData(Class<?> eventType, Map<String, Object> missingEntries,
+    public void reportDifferentMetaData(Class<?> messageType, Map<String, Object> missingEntries,
                                         Map<String, Object> additionalEntries) {
-        StringBuilder sb = new StringBuilder("One of the events contained different metadata than expected");
+        StringBuilder sb = new StringBuilder("One of the messages contained different metadata than expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
-          .append("In an event of type [")
-          .append(eventType.getSimpleName())
+          .append("In a message of type [")
+          .append(messageType.getSimpleName())
           .append("], ");
         if (!additionalEntries.isEmpty()) {
             sb.append("metadata entries" + NEWLINE).append("[");
