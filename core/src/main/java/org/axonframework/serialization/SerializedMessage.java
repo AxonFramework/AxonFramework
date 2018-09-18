@@ -27,12 +27,11 @@ import java.util.Map;
  * metadata on demand when {@link #getPayload()} or {@link #getMetaData()} is called.
  * <p>
  * The SerializedMessage guarantees that the payload and metadata will not be deserialized more than once. Messages of
- * this type are also {@link SerializationAware} meaning they will not be serialized more than once by the same
- * serializer.
+ * this type  will not be serialized more than once by the same serializer.
  *
  * @author Rene de Waele
  */
-public class SerializedMessage<T> extends AbstractMessage<T> implements SerializationAware {
+public class SerializedMessage<T> extends AbstractMessage<T> {
 
     private static final long serialVersionUID = 8079093289710229594L;
 

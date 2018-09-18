@@ -385,7 +385,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          * @return a {@link AggregateModel} of generic type {@code T} describing the Aggregate this {@link Repository}
          * will store
          */
-        AggregateModel<T> buildAggregateModel() {
+        protected AggregateModel<T> buildAggregateModel() {
             if (aggregateModel == null) {
                 return inspectAggregateModel();
             } else {

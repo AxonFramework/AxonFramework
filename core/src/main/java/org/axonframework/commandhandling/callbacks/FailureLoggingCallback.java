@@ -17,6 +17,7 @@ package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +56,9 @@ public class FailureLoggingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-        delegate.onSuccess(commandMessage, result);
+    public void onSuccess(CommandMessage<? extends C> commandMessage,
+                          CommandResultMessage<? extends R> commandResultMessage) {
+        delegate.onSuccess(commandMessage, commandResultMessage);
     }
 
     @Override

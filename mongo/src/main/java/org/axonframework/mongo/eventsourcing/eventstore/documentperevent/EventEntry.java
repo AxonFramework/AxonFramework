@@ -28,8 +28,6 @@ import org.bson.Document;
 import java.time.Instant;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Implementation of a serialized event message that can be used to create a Mongo document.
@@ -61,8 +59,8 @@ public class EventEntry implements DomainEventData<Object> {
         if (serializer.canSerializeTo(DBObject.class)) {
             serializationTarget = DBObject.class;
         }
-        SerializedObject<?> serializedPayloadObject = serializePayload(event, serializer, serializationTarget);
-        SerializedObject<?> serializedMetaDataObject = serializeMetaData(event, serializer, serializationTarget);
+        SerializedObject<?> serializedPayloadObject = event.serializePayload(serializer, serializationTarget);
+        SerializedObject<?> serializedMetaDataObject = event.serializeMetaData(serializer, serializationTarget);
         serializedPayload = serializedPayloadObject.getData();
         payloadType = serializedPayloadObject.getType().getName();
         payloadRevision = serializedPayloadObject.getType().getRevision();

@@ -91,7 +91,7 @@ public class DefaultConfigurerTest {
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -190,7 +190,7 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -215,7 +215,7 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules()
                          .stream()
@@ -268,7 +268,7 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -292,7 +292,7 @@ public class DefaultConfigurerTest {
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
     }

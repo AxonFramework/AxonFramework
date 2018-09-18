@@ -108,8 +108,12 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testStoreAndLoadSnapshot() {
-        testSubject.storeSnapshot(createEvent());
+        testSubject.storeSnapshot(createEvent(0));
+        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createEvent(3));
+        testSubject.storeSnapshot(createEvent(2));
         assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        assertEquals(3, testSubject.readSnapshot(AGGREGATE).get().getSequenceNumber());
     }
 
     @Test

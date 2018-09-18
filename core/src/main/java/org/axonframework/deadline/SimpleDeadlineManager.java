@@ -302,9 +302,6 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
-            assertNonNull(scheduledExecutorService,
-                          "The ScheduledExecutorService is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
         }
     }
 }

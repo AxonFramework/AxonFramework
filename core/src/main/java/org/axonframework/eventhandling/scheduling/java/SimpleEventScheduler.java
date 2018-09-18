@@ -176,9 +176,9 @@ public class SimpleEventScheduler implements EventScheduler {
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
 
         /**
-         * Sets the {@link EventBus} used to publish events on once the schedule has been met.
+         * Sets the {@link EventBus} used to publish events on to, once the schedule has been met.
          *
-         * @param eventBus a {@link EventBus} used to publish events on once the schedule has been met
+         * @param eventBus a {@link EventBus} used to publish events on to, once the schedule has been met
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventBus(EventBus eventBus) {
@@ -233,7 +233,6 @@ public class SimpleEventScheduler implements EventScheduler {
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
             assertNonNull(scheduledExecutorService,
                           "The ScheduledExecutorService is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
         }
     }
 }

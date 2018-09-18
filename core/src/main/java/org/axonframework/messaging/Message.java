@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -91,4 +93,28 @@ public interface Message<T> extends Serializable {
      * @return a copy of this message with the given MetaData
      */
     Message<T> andMetaData(Map<String, ?> metaData);
+
+    /**
+     * Serialize the payload of this message to the {@code expectedRepresentation} using given {@code serializer}. This
+     * method <em>should</em> return the same SerializedObject instance when invoked multiple times using the same
+     * serializer.
+     *
+     * @param serializer             The serializer to serialize payload with
+     * @param expectedRepresentation The type of data to serialize to
+     * @param <R>                    The type of the serialized data
+     * @return a SerializedObject containing the serialized representation of the message's payload
+     */
+    <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation);
+
+    /**
+     * Serialize the meta data of this message to the {@code expectedRepresentation} using given {@code serializer}.
+     * This method <em>should</em> return the same SerializedObject instance when invoked multiple times using the same
+     * serializer.
+     *
+     * @param serializer             The serializer to serialize meta data with
+     * @param expectedRepresentation The type of data to serialize to
+     * @param <R>                    The type of the serialized data
+     * @return a SerializedObject containing the serialized representation of the message's meta data
+     */
+    <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation);
 }

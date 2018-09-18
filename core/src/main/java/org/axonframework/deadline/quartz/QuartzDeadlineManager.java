@@ -272,8 +272,6 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
         }
     }
 }

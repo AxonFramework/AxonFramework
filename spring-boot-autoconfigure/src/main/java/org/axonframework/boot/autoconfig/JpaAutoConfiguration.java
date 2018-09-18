@@ -67,7 +67,10 @@ public class JpaAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public TokenStore tokenStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
-        return JpaTokenStore.builder().entityManagerProvider(entityManagerProvider).serializer(serializer).build();
+        return JpaTokenStore.builder()
+                            .entityManagerProvider(entityManagerProvider)
+                            .serializer(serializer)
+                            .build();
     }
 
     @ConditionalOnMissingBean(SagaStore.class)

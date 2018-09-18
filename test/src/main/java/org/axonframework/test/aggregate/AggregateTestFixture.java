@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.Aggregate;
@@ -809,7 +810,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private FixtureExecutionException exception;
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         }
 
         @Override

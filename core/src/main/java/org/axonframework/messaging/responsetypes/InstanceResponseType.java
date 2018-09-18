@@ -1,4 +1,20 @@
-package org.axonframework.queryhandling.responsetypes;
+/*
+ * Copyright (c) 2010-2018. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging.responsetypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.reflect.Type;
 
 /**
- * A {@link org.axonframework.queryhandling.responsetypes.ResponseType} implementation that will match with query
+ * A {@link ResponseType} implementation that will match with query
  * handlers which return a single instance of the expected response type. If matching succeeds, the
  * {@link ResponseType#convert(Object)} function will be called, which will cast the query handler it's response to
  * {@code R}.
@@ -18,7 +34,7 @@ import java.lang.reflect.Type;
 public class InstanceResponseType<R> extends AbstractResponseType<R> {
 
     /**
-     * Instantiate a {@link org.axonframework.queryhandling.responsetypes.InstanceResponseType} with the given
+     * Instantiate a {@link InstanceResponseType} with the given
      * {@code expectedResponseType} as the type to be matched against and to which the query response should be converted
      * to.
      *

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.responsetypes;
+package org.axonframework.messaging.responsetypes;
 
 import org.axonframework.common.TypeReflectionUtils;
 
@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 /**
- * Abstract implementation of the {@link org.axonframework.queryhandling.responsetypes.ResponseType} which contains
+ * Abstract implementation of the {@link ResponseType} which contains
  * match functions for the majority of the {@link java.lang.reflect.Type} options available.
  * For single instance response types, a direct assignable to check will be performed. For multiple instances response
  * types, the match will be performed against the containing type of that array/collection/etc.
@@ -39,7 +39,7 @@ public abstract class AbstractResponseType<R> implements ResponseType<R> {
     protected final Class<?> expectedResponseType;
 
     /**
-     * Instantiate a {@link org.axonframework.queryhandling.responsetypes.ResponseType} with the given
+     * Instantiate a {@link ResponseType} with the given
      * {@code expectedResponseType} as the type to be matched against and to which the query response should be
      * converted to, as is or as the contained type for an array/list/etc.
      *

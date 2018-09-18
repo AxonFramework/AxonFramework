@@ -18,7 +18,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.junit.*;
 import reactor.test.StepVerifier;
 
