@@ -103,7 +103,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
     protected abstract Saga<T> doCreateInstance(String sagaIdentifier, Supplier<T> factoryMethod);
 
     /**
-     * Builder class to instantiate a {@link LockingSagaRepository}.
+     * Abstract Builder class to instantiate {@link LockingSagaRepository} implementations.
      * <p>
      * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
      * {@link PessimisticLockFactory}.
