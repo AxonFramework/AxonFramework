@@ -27,7 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Abstract test for {@link MongoEventStorageEngine} tests.
@@ -112,6 +115,17 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
                                                       .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event4, event3), readEvents);
+    }
+
+    @Test
+    public void testStoreAndLoadSnapshot() {
+        testSubject.storeSnapshot(createEvent(0));
+        testSubject.storeSnapshot(createEvent(1));
+        testSubject.storeSnapshot(createEvent(3));
+        testSubject.storeSnapshot(createEvent(2));
+        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        // note - MongoDB stores the last inserted snapshot, as opposed to the one with the largest sequence number
+        assertEquals(2, testSubject.readSnapshot(AGGREGATE).get().getSequenceNumber());
     }
 
     protected void setTestSubject(MongoEventStorageEngine testSubject) {
