@@ -13,6 +13,12 @@ Other changes
 | org.axonframework.messaging.MessageStream | org.axonframework.common.stream.BlockingStream |
 | org.axonframework.messaging.StreamUtils   | org.axonframework.common.stream.StreamUtils    |
 
+### Removed classes
+|                           Class                    |             Why                     |
+|----------------------------------------------------|-------------------------------------|
+| org.axonframework.serialization.MessageSerializer  | All messages are serializable now.  |
+| org.axonframework.serialization.SerializationAware | All messages are serializable now.  |
+
 ### Classes for which the Constructor has been replaced for a Builder
 
 - org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter

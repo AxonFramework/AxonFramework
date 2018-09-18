@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * @author Rene de Waele
@@ -132,8 +130,8 @@ public abstract class AbstractEventStoreBenchmark {
         return IntStream.range(startSequenceNumber, startSequenceNumber + count)
                         .mapToObj(sequenceNumber -> createEvent(aggregateId, sequenceNumber))
                         .peek(event -> serializer().ifPresent(serializer -> {
-                            serializePayload(event, serializer, byte[].class);
-                            serializeMetaData(event, serializer, byte[].class);
+                            event.serializePayload(serializer, byte[].class);
+                            event.serializeMetaData(serializer, byte[].class);
                         })).toArray(EventMessage[]::new);
     }
 
