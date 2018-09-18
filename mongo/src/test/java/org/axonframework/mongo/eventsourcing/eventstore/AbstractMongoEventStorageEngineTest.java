@@ -124,6 +124,7 @@ public abstract class AbstractMongoEventStorageEngineTest extends BatchingEventS
         testSubject.storeSnapshot(createEvent(3));
         testSubject.storeSnapshot(createEvent(2));
         assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        // note - MongoDB stores the last inserted snapshot, as opposed to the one with the largest sequence number
         assertEquals(2, testSubject.readSnapshot(AGGREGATE).get().getSequenceNumber());
     }
 
