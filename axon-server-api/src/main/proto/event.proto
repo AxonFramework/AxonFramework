@@ -87,7 +87,7 @@ message RowResponse {
 
 message ReadHighestSequenceNrRequest {
     string aggregate_id = 1;
-    int64 from_sequence_nr = 2;
+    int64 from_sequence_nr = 3;
 }
 
 message ReadHighestSequenceNrResponse {

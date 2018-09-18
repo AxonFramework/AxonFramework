@@ -51,7 +51,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * Configures AxonHub as implementation for the CommandBus and QueryBus
+ * Configures AxonServer as implementation for the CommandBus and QueryBus
  *
  * @author Marc Gathier
  */
@@ -62,7 +62,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
     private ApplicationContext applicationContext;
 
     @Bean
-    public AxonServerConfiguration axonHubConfiguration() {
+    public AxonServerConfiguration axonServerConfiguration() {
         AxonServerConfiguration configuration = new AxonServerConfiguration();
         configuration.setComponentName(clientName(applicationContext.getId()));
         return configuration;
@@ -81,7 +81,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
     @Bean
     @Primary
     @ConditionalOnMissingBean(CommandBus.class)
-    public AxonServerCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration, AxonServerConfiguration axonHubConfiguration,
+    public AxonServerCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration, AxonServerConfiguration axonServerConfiguration,
                                            Serializer serializer, PlatformConnectionManager platformConnectionManager,
                                            RoutingStrategy routingStrategy,
                                            CommandPriorityCalculator priorityCalculator) {
@@ -89,7 +89,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
 
-        return new AxonServerCommandBus(platformConnectionManager, axonHubConfiguration, commandBus, serializer, routingStrategy,
+        return new AxonServerCommandBus(platformConnectionManager, axonServerConfiguration, commandBus, serializer, routingStrategy,
                                      priorityCalculator);
     }
 
@@ -123,14 +123,14 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
     // The Axon Hub QueryBus requires Axon 3.2+
     @ConditionalOnClass(name = {"org.axonframework.queryhandling.responsetypes.ResponseType"})
     @ConditionalOnMissingBean(QueryBus.class)
-    public AxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration axonHubConfiguration,
+    public AxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration axonServerConfiguration,
                                        AxonConfiguration axonConfiguration, TransactionManager txManager,
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
         SimpleQueryBus simpleQueryBus = new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
                                                      txManager, queryInvocationErrorHandler);
-        return new AxonServerQueryBus(platformConnectionManager, axonHubConfiguration,
+        return new AxonServerQueryBus(platformConnectionManager, axonServerConfiguration,
                                       simpleQueryBus, simpleQueryBus,
                                       messageSerializer, genericSerializer, priorityCalculator);
     }
@@ -149,12 +149,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
 
     @Bean
     @ConditionalOnMissingBean
-    public EventStore eventStore(AxonServerConfiguration axonHubConfiguration,
+    public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
                                  AxonConfiguration configuration,
                                  PlatformConnectionManager platformConnectionManager,
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer serializer) {
-        return new AxonServerEventStore(axonHubConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.upcasterChain());
+        return new AxonServerEventStore(axonServerConfiguration, platformConnectionManager, snapshotSerializer, serializer, configuration.upcasterChain());
     }
 
 }

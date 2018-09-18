@@ -38,7 +38,7 @@ public class AxonServerConfiguration {
     private String servers;
 
     /**
-     * clientId as it registers itself to AxonHub, must be unique
+     * clientId as it registers itself to AxonServer, must be unique
      */
     private String clientName = ManagementFactory.getRuntimeMXBean().getName();
     /**
@@ -62,7 +62,7 @@ public class AxonServerConfiguration {
      */
     private String certFile;
     /**
-     * Use TLS for connection to AxonHub
+     * Use TLS for connection to AxonServer
      */
     private boolean sslEnabled;
 
@@ -90,12 +90,12 @@ public class AxonServerConfiguration {
     private int queryThreads = 10;
 
     /**
-     * Interval (in ms.) application sends status updates on event processors to AxonHub
+     * Interval (in ms.) application sends status updates on event processors to AxonServer
      */
     private int processorsNotificationRate = 500;
 
     /**
-     * Initial delay (in ms.) before application sends first status update on event processors to AxonHub
+     * Initial delay (in ms.) before application sends first status update on event processors to AxonServer
      */
     private int processorsNotificationInitialDelay = 5000;
 

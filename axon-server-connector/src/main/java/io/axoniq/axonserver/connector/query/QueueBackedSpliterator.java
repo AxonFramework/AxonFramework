@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Converts the push interface for QueryResponses from AxonHub to a pull interface to be used by Axon Framework
+ * Converts the push interface for QueryResponses from AxonServer to a pull interface to be used by Axon Framework
  * Uses a queue to cache messages
  * @author Marc Gathier
  */

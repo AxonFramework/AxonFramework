@@ -12,20 +12,17 @@ message PlatformInboundInstruction {
     oneof request {
         ClientIdentification register = 1;
         EventProcessorInfo event_processor_info = 2;
-        Application application = 3;
-        User user = 4;
-        ContextUpdate context = 5;
     }
 }
 
 message PlatformOutboundInstruction {
     oneof request {
         NodeInfo node_notification = 1;
-        RequestReconnect request_reconnect = 2;
-        PauseEventProcessor pause_event_processor = 3;
-        StartEventProcessor start_event_processor = 4;
-        ReleaseEventProcessorSegment release_segment = 5;
-        RequestEventProcessorInfo request_event_processor_info = 6;
+        RequestReconnect request_reconnect = 3;
+        PauseEventProcessor pause_event_processor = 4;
+        StartEventProcessor start_event_processor = 5;
+        ReleaseEventProcessorSegment release_segment = 6;
+        RequestEventProcessorInfo request_event_processor_info = 7;
     }
 }
 
@@ -49,63 +46,6 @@ message ClientIdentification {
     string component_name = 2;
 }
 
-
-message Application {
-    string name = 1;
-    string description = 2;
-    string hashed_token = 3;
-    repeated ApplicationRole roles = 4;
-    Action action = 5;
-    bool fine_grained_access_control = 6;
-    string token_prefix = 7;
-}
-
-message User {
-    string name = 1;
-    string password = 2;
-    repeated string roles = 3;
-    Action action = 4;
-}
-
-message ApplicationRole {
-    string name = 1;
-    int64 end_date = 2;
-    string context = 3;
-}
-
-message LoadBalanceStrategy {
-    string name = 1;
-    string factoryBean = 2;
-    string label = 3;
-    Action action = 4;
-}
-
-message ProcessorLBStrategy {
-    string component = 1;
-    string processor = 2;
-    string context = 3;
-    string strategy = 4;
-    Action action = 5;
-}
-
-enum Action {
-    MERGE = 0;
-    DELETE = 1;
-    RENEW = 2;
-}
-
-message ContextUpdate {
-    string name = 1;
-    repeated string nodes = 2;
-    ContextAction action = 3;
-}
-
-enum ContextAction {
-    MERGE_CONTEXT = 0;
-    DELETE_CONTEXT = 1;
-    ADD_NODES = 2;
-    DELETE_NODES = 3;
-}
 
 message EventProcessorInfo {
     message EventTrackerInfo {

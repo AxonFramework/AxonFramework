@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 
 /**
  * Wrapper around the standard StreamObserver that guarantees that the onNext calls are executed in a thread-safe manner.
- * Also maintains flow control sending a new message with permits to AxonHub when it is ready to handle more messages
+ * Also maintains flow control sending a new message with permits to AxonServer when it is ready to handle more messages
  *
  * @author Marc Gathier
  */
@@ -43,10 +43,10 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
     private final Function<FlowControl, T> requestWrapper;
 
     /**
-     * @param wrappedStreamObserver stream observer to send messages to AxonHub
-     * @param configuration AxonHub configuration for flow control
+     * @param wrappedStreamObserver stream observer to send messages to AxonServer
+     * @param configuration AxonServer configuration for flow control
      * @param requestWrapper Function to create a new permits request
-     * @param isConfirmationMessage predicate to test if the message sent to AxonHub is a confirmation message
+     * @param isConfirmationMessage predicate to test if the message sent to AxonServer is a confirmation message
      */
     public FlowControllingStreamObserver(StreamObserver<T> wrappedStreamObserver, AxonServerConfiguration configuration,
                                          Function<FlowControl, T> requestWrapper, Predicate<T> isConfirmationMessage) {
@@ -76,7 +76,7 @@ public class FlowControllingStreamObserver<T> implements StreamObserver<T> {
         synchronized (wrappedStreamObserver) {
             wrappedStreamObserver.onNext(t);
         }
-        logger.debug("Sending response to axonhub platform, remaining permits: {}", remainingPermits.get());
+        logger.debug("Sending response to AxonServer platform, remaining permits: {}", remainingPermits.get());
 
         if( isConfirmationMessage.test(t) ) {
             markConsumed(1);

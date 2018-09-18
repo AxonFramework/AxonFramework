@@ -107,7 +107,7 @@ public class PlatformConnectionManager {
                     break;
                 } catch( StatusRuntimeException sre) {
                     shutdown(candidate);
-                    logger.warn("Connecting to AxonHub node {}:{} failed: {}", nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage());
+                    logger.warn("Connecting to AxonServer node {}:{} failed: {}", nodeInfo.getHostName(), nodeInfo.getGrpcPort(), sre.getMessage());
                     if( sre.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
                         unavailable = true;
                     }
@@ -115,7 +115,7 @@ public class PlatformConnectionManager {
             }
             if( unavailable) {
                 scheduleReconnect();
-                throw new RuntimeException("No connection to AxonHub available");
+                throw new RuntimeException("No connection to AxonServer available");
             }
         }
         return channel;

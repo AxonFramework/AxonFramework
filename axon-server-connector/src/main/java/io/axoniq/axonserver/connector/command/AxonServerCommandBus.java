@@ -77,8 +77,8 @@ public class AxonServerCommandBus implements CommandBus {
         this( platformConnectionManager, configuration, localSegment, serializer, routingStrategy, new CommandPriorityCalculator(){});
     }
     /**
-     * @param platformConnectionManager creates connection to AxonHub platform
-     * @param configuration contains client and component names used to identify the application in AxonHub
+     * @param platformConnectionManager creates connection to AxonServer platform
+     * @param configuration contains client and component names used to identify the application in AxonServer
      * @param localSegment handles incoming commands
      * @param serializer serializer/deserializer for command requests and responses
      * @param routingStrategy determines routing key based on command message
@@ -242,7 +242,7 @@ public class AxonServerCommandBus implements CommandBus {
                                 .build()
                 ).build());
             } catch (Exception sre) {
-                logger.warn("Subscribe at axonhub platform failed - {}, trying again at later moment", sre.getMessage());
+                logger.warn("Subscribe at AxonServer platform failed - {}, trying again at later moment", sre.getMessage());
             } finally {
                 subscribing = false;
             }
@@ -363,7 +363,7 @@ public class AxonServerCommandBus implements CommandBus {
 
         public void disconnect() {
             if( subscriberStreamObserver != null)
-                subscriberStreamObserver.onCompleted(); //onError(new AxonHubException("AXONIQ-0001", "Cancelled by client"));
+                subscriberStreamObserver.onCompleted(); //onError(new AxonServerException("AXONIQ-0001", "Cancelled by client"));
         }
     }
 

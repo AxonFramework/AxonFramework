@@ -15,6 +15,7 @@
 
 package org.axonframework.boot;
 
+import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
 import org.axonframework.boot.autoconfig.SpringCloudAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -51,7 +52,8 @@ import static org.junit.Assert.*;
         WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
-        SpringCloudAutoConfiguration.class
+        SpringCloudAutoConfiguration.class,
+        AxonServerAutoConfiguration.class
 })
 @TestPropertySource("classpath:test.jgroups.application.properties")
 @RunWith(SpringRunner.class)

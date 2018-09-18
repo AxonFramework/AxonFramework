@@ -49,7 +49,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 /**
- * Generic client for EventStore through AxonHub. Does not require any Axon framework classes.
+ * Generic client for EventStore through AxonServer. Does not require any Axon framework classes.
  */
 public class AxonDBClient {
     private final Logger logger = LoggerFactory.getLogger(AxonDBClient.class);

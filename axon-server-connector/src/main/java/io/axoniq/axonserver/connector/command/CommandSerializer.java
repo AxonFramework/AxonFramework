@@ -33,7 +33,7 @@ import org.axonframework.serialization.Serializer;
 import java.util.UUID;
 
 /**
- * Converter between Axon CommandMessage and AxonHub GRPC message.
+ * Converter between Axon CommandMessage and AxonServer GRPC message.
  *
  * @author Marc Gathier
  */

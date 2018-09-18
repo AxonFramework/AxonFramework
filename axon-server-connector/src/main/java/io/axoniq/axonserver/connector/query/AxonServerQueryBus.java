@@ -85,7 +85,7 @@ import static io.axoniq.axonserver.connector.util.ProcessingInstructionHelper.pr
 import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.SUBSCRIPTION_QUERY_REQUEST;
 
 /**
- * AxonHub implementation for the QueryBus. Delegates incoming queries to the specified localSegment.
+ * AxonServer implementation for the QueryBus. Delegates incoming queries to the specified localSegment.
  *
  * @author Marc Gathier
  */
@@ -106,9 +106,9 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
 
     /**
-     * Creates an instance of the AxonHubQueryBus
-     * @param platformConnectionManager creates connection to AxonHub platform
-     * @param configuration             contains client and component names used to identify the application in AxonHub
+     * Creates an instance of the AxonServerQueryBus
+     * @param platformConnectionManager creates connection to AxonServer platform
+     * @param configuration             contains client and component names used to identify the application in AxonServer
      * @param updateEmitter
      * @param localSegment              handles incoming query requests
      * @param messageSerializer         serializer/deserializer for payload and metadata of query requests and responses
@@ -426,7 +426,7 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
         public void disconnect() {
             if( outboundStreamObserver != null)
-                outboundStreamObserver.onCompleted();//onError(new AxonHubException("AXONIQ-0001", "Cancelled by client"));
+                outboundStreamObserver.onCompleted();//onError(new AxonServerException("AXONIQ-0001", "Cancelled by client"));
         }
 
         private QuerySubscription.Builder subscriptionBuilder(QueryDefinition queryDefinition, int nrHandlers) {

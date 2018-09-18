@@ -30,7 +30,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
 
 /**
- * Converter between Axon QueryRequest/QueryResponse and AxonHub GRPC messages.
+ * Converter between Axon QueryRequest/QueryResponse and AxonServer GRPC messages.
  * @author Marc Gathier
  */
 public class QuerySerializer {

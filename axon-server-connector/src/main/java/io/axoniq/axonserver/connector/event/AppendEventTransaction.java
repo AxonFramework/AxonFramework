@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Sends one or more events to AxonHub in a single transaction.
+ * Sends one or more events to AxonServer in a single transaction.
  */
 public class AppendEventTransaction {
     private final StreamObserver<Event> eventStreamObserver;

@@ -65,7 +65,7 @@ import java.util.stream.Stream;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * Axon EventStore implementation that connects to the AxonIQ AxonHub Server to store and retrieve Events.
+ * Axon EventStore implementation that connects to the AxonIQ AxonServer Server to store and retrieve Events.
  *
  * @author Zoltan Altfatter
  * @author Marc Gathier
@@ -81,7 +81,7 @@ public class AxonServerEventStore extends AbstractEventStore {
      * The Event Store will delay creating the connection until the first activity takes place.
      *
      * @param configuration The configuration describing the servers to connect with and how to manage flow control
-     * @param platformConnectionManager manager for connections to AxonHub platform
+     * @param platformConnectionManager manager for connections to AxonServer platform
      * @param serializer    The serializer to serialize Event payloads with
      */
     public AxonServerEventStore(AxonServerConfiguration configuration, PlatformConnectionManager platformConnectionManager, Serializer serializer) {
@@ -94,7 +94,7 @@ public class AxonServerEventStore extends AbstractEventStore {
      * The Event Store will delay creating the connection until the first activity takes place.
      *
      * @param configuration The configuration describing the servers to connect with and how to manage flow control
-     * @param platformConnectionManager manager for connections to AxonHub platform
+     * @param platformConnectionManager manager for connections to AxonServer platform
      * @param serializer    The serializer to serialize Event payloads with
      * @param upcasterChain The upcaster to modify received Event representations with
      */
@@ -108,7 +108,7 @@ public class AxonServerEventStore extends AbstractEventStore {
      * Allows for different serializers for snapshots and events (requires AxonFramework 3.3 or higher)
      *
      * @param configuration The configuration describing the servers to connect with and how to manage flow control
-     * @param platformConnectionManager  manager for connections to AxonHub platform
+     * @param platformConnectionManager  manager for connections to AxonServer platform
      * @param snapshotSerializer    The serializer to serialize Snapshot payloads with
      * @param eventSerializer   The serializer to serialize Event payloads with
      * @param upcasterChain The upcaster to modify received Event representations with
