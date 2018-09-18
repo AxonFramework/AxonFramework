@@ -28,8 +28,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**

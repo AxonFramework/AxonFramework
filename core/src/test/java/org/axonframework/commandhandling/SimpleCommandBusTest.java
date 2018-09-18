@@ -160,7 +160,7 @@ public class SimpleCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test(expected = NoHandlerForCommandException.class)
-    public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
+    public void testDispatchCommand_HandlerUnsubscribed() {
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.close();

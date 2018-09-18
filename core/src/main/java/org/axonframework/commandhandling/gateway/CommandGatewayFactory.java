@@ -23,8 +23,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
-import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;

@@ -27,7 +27,7 @@ Other changes
 ### Removed classes
 
 |                           Class                                       |                       Why                     |
-|-----------------------------------------------------------------------------------------------------------------------|
+|-----------------------------------------------------------------------|-----------------------------------------------|
 | org.axonframework.commandhandling.disruptor.DisruptorConfiguration    | Removed in favor DisruptorCommandBus.Builder  |
 
 ### Classes for which the Constructor has been replaced for a Builder

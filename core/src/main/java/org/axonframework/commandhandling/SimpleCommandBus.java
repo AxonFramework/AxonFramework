@@ -41,8 +41,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -302,10 +302,7 @@ public class SimpleCommandBus implements CommandBus {
          *                                    specifications
          */
         protected void validate() {
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
-            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
-            assertNonNull(rollbackConfiguration,
-                          "The RollbackConfiguration is a hard requirement and should be provided");
+            // No assertions required, kept for overriding
         }
     }
 }
