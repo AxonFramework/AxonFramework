@@ -19,7 +19,6 @@ package org.axonframework.amqp.eventhandling.legacy;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -39,7 +38,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  */
 public class EventMessageWriter {
 
-    private final MessageSerializer serializer;
+    private final Serializer serializer;
     private final DataOutput out;
 
     /**
@@ -50,7 +49,7 @@ public class EventMessageWriter {
      */
     public EventMessageWriter(DataOutput output, Serializer serializer) {
         this.out = output;
-        this.serializer = new MessageSerializer(serializer);
+        this.serializer = serializer;
     }
 
     /**
@@ -59,7 +58,7 @@ public class EventMessageWriter {
      * @param eventMessage the EventMessage to write to the underlying output
      * @throws IOException when any exception occurs writing to the underlying stream
      */
-    public void writeEventMessage(EventMessage eventMessage) throws IOException {
+    public void writeEventMessage(EventMessage<?> eventMessage) throws IOException {
         if (DomainEventMessage.class.isInstance(eventMessage)) {
             out.writeByte(EventMessageType.DOMAIN_EVENT_MESSAGE.getTypeByte());
         } else {
@@ -72,8 +71,8 @@ public class EventMessageWriter {
             out.writeUTF(domainEventMessage.getAggregateIdentifier());
             out.writeLong(domainEventMessage.getSequenceNumber());
         }
-        SerializedObject<byte[]> serializedPayload = serializer.serializePayload(eventMessage, byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(eventMessage, byte[].class);
+        SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(serializer, byte[].class);
+        SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(serializer, byte[].class);
 
         out.writeUTF(serializedPayload.getType().getName());
         String revision = serializedPayload.getType().getRevision();

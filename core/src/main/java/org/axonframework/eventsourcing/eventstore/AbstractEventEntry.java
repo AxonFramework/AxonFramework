@@ -27,8 +27,6 @@ import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Abstract base class of a serialized event. Fields in this class contain JPA annotations that direct JPA event storage
@@ -68,8 +66,8 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
      * @param contentType  The data type of the payload and metadata after serialization
      */
     public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
-        SerializedObject<T> payload = serializePayload(eventMessage, serializer, contentType);
-        SerializedObject<T> metaData = serializeMetaData(eventMessage, serializer, contentType);
+        SerializedObject<T> payload = eventMessage.serializePayload(serializer, contentType);
+        SerializedObject<T> metaData = eventMessage.serializeMetaData(serializer, contentType);
         this.eventIdentifier = eventMessage.getIdentifier();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();

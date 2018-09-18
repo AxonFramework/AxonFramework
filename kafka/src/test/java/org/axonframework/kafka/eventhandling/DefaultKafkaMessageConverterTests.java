@@ -42,7 +42,6 @@ import static org.axonframework.kafka.eventhandling.HeaderUtils.valueAsString;
 import static org.axonframework.messaging.Headers.MESSAGE_ID;
 import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
 import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -85,7 +84,7 @@ public class DefaultKafkaMessageConverterTests {
     public void testWriting_EventMessageAsKafkaMessage_ShouldAppendEventHeaders() {
         EventMessage<?> expected = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(expected, SOME_TOPIC);
-        SerializedObject<byte[]> serializedObject = serializePayload(expected, serializer, byte[].class);
+        SerializedObject<byte[]> serializedObject = expected.serializePayload(serializer, byte[].class);
 
         assertEventHeaders("key", expected, serializedObject, senderMessage.headers());
     }
