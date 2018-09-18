@@ -18,6 +18,9 @@ package org.axonframework.messaging;
 
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedObjectHolder;
+import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 
@@ -35,6 +38,7 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     private final MetaData metaData;
     private final Class<T> payloadType;
     private final T payload;
+    private transient volatile SerializedObjectHolder serializedObjectHolder;
 
     /**
      * Constructs a Message for the given {@code payload} using the correlation data of the current Unit of Work, if
@@ -141,5 +145,22 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     @Override
     protected Message<T> withMetaData(MetaData metaData) {
         return new GenericMessage<>(this, metaData);
+    }
+
+    @Override
+    public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
+        return serializedObjectHolder().serializePayload(serializer, expectedRepresentation);
+    }
+
+    @Override
+    public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
+        return serializedObjectHolder().serializeMetaData(serializer, expectedRepresentation);
+    }
+
+    private SerializedObjectHolder serializedObjectHolder() {
+        if (serializedObjectHolder == null) {
+            serializedObjectHolder = new SerializedObjectHolder(this);
+        }
+        return serializedObjectHolder;
     }
 }

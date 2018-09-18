@@ -15,9 +15,9 @@
 
 package org.axonframework.springcloud.commandhandling;
 
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.ReplyMessage;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.Serializable;
 
@@ -28,17 +28,18 @@ public class SpringHttpReplyMessage<R> extends ReplyMessage implements Serializa
 
     /**
      * Initializes a SpringHttpReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code returnValue}. The parameter {@code success} determines whether the was executed successfully or not.
+     * {@code commandResultMessage}. The parameter {@code success} determines whether the was executed successfully or
+     * not.
      *
-     * @param commandIdentifier The identifier of the command to which the message is a reply
-     * @param success           Whether or not the command executed successfully or not
-     * @param returnValue       The return value of command process
-     *                          the given {@code returnValue} is ignored.
-     * @param serializer        The serializer to serialize the message contents with
+     * @param commandIdentifier    The identifier of the command to which the message is a reply
+     * @param success              Whether or not the command executed successfully or not
+     * @param commandResultMessage The return value of command process
+     *                             the given {@code commandResultMessage} is ignored.
+     * @param serializer           The serializer to serialize the message contents with
      */
-    public SpringHttpReplyMessage(String commandIdentifier, boolean success, Object returnValue,
-                                  Serializer serializer) {
-        super(commandIdentifier, success, returnValue, serializer);
+    public SpringHttpReplyMessage(String commandIdentifier, boolean success,
+                                  CommandResultMessage<R> commandResultMessage, Serializer serializer) {
+        super(commandIdentifier, success, commandResultMessage, serializer);
     }
 
     @SuppressWarnings("unused")
@@ -47,14 +48,9 @@ public class SpringHttpReplyMessage<R> extends ReplyMessage implements Serializa
     }
 
     @Override
-    public R getReturnValue(Serializer serializer) {
-        if (!success || resultType == null) {
-            return null;
-        }
-
-        SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<>(serializedResult, byte[].class, resultType, resultRevision);
-        return serializer.deserialize(serializedObject);
+    @SuppressWarnings("unchecked")
+    public CommandResultMessage<R> getCommandResultMessage(Serializer serializer) {
+        return (CommandResultMessage<R>) super.getCommandResultMessage(serializer);
     }
 
 }

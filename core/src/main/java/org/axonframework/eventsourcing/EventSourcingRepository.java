@@ -346,8 +346,6 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         protected void validate() {
             super.validate();
             assertNonNull(eventStore, "The EventStore is a hard requirement and should be provided");
-            assertNonNull(snapshotTriggerDefinition,
-                          "The SnapshotTriggerDefinition is a hard requirement and should be provided");
             if (aggregateFactory == null) {
                 assertNonNull(
                         aggregateType,

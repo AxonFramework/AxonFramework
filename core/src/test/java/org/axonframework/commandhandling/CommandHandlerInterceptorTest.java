@@ -77,7 +77,8 @@ public class CommandHandlerInterceptorTest {
     @Test
     public void testInterceptor() {
         commandGateway.sendAndWait(asCommandMessage(new CreateMyAggregateCommand("id")));
-        String result = commandGateway.sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")));
+        String result = commandGateway
+                .sendAndWait(asCommandMessage(new UpdateMyAggregateStateCommand("id", "state")));
 
         ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 

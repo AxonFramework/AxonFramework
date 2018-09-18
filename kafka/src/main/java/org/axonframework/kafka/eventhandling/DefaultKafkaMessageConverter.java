@@ -37,7 +37,6 @@ import java.util.function.BiFunction;
 
 import static org.axonframework.kafka.eventhandling.HeaderUtils.*;
 import static org.axonframework.messaging.Headers.*;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * Converts: {@link EventMessage} to {@link ProducerRecord kafkaMessage} and {@link ConsumerRecord message read from
@@ -91,7 +90,7 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
 
     @Override
     public ProducerRecord<String, byte[]> createKafkaMessage(EventMessage<?> eventMessage, String topic) {
-        SerializedObject<byte[]> serializedObject = serializePayload(eventMessage, serializer, byte[].class);
+        SerializedObject<byte[]> serializedObject = eventMessage.serializePayload(serializer, byte[].class);
         byte[] payload = serializedObject.getData();
         return new ProducerRecord<>(topic,
                                     null,

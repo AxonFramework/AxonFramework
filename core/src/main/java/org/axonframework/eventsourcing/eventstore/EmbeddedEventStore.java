@@ -83,28 +83,34 @@ public class EmbeddedEventStore extends AbstractEventStore {
      * @param monitor       the metrics monitor that tracks how many events are ingested by the event store
      */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor) {
-        this(storageEngine, monitor, 10000, 1000L, 10000L, TimeUnit.MILLISECONDS);
+        this(storageEngine,
+             monitor,
+             10000,
+             1000L,
+             10000L,
+             TimeUnit.MILLISECONDS);
     }
 
     /**
      * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and custom
      * settings.
      *
-     * @param storageEngine the storage engine to use
-     * @param monitor       the metrics monitor that tracks how many events are ingested by the event store
-     * @param cachedEvents  the maximum number of events in the cache that is shared between the streams of tracking
-     *                      event processors
-     * @param fetchDelay    the time to wait before fetching new events from the backing storage engine while tracking
-     *                      after a previous stream was fetched and read. Note that this only applies to situations in
-     *                      which no events from the current application have meanwhile been committed. If the current
-     *                      application commits events then those events are fetched without delay.
-     * @param cleanupDelay  the delay between two clean ups of lagging event processors. An event processor is lagging
-     *                      behind and removed from the set of processors that track cached events if the oldest event
-     *                      in the cache is newer than the last processed event of the event processor. Once removed the
-     *                      processor will be independently fetching directly from the event storage engine until it has
-     *                      caught up again. Event processors will not notice this change during tracking (i.e. the
-     *                      stream is not closed when an event processor falls behind and is removed).
-     * @param timeUnit      time unit for fetch and clean up delay
+     * @param storageEngine    the storage engine to use
+     * @param monitor          the metrics monitor that tracks how many events are ingested by the event store
+     * @param cachedEvents     the maximum number of events in the cache that is shared between the streams of tracking
+     *                         event processors
+     * @param fetchDelay       the time to wait before fetching new events from the backing storage engine while
+     *                         tracking after a previous stream was fetched and read. Note that this only applies to
+     *                         situations in which no events from the current application have meanwhile been committed.
+     *                         If the current application commits events then those events are fetched without delay.
+     * @param cleanupDelay     the delay between two clean ups of lagging event processors. An event processor is
+     *                         lagging behind and removed from the set of processors that track cached events if the
+     *                         oldest event in the cache is newer than the last processed event of the event processor.
+     *                         Once removed the processor will be independently fetching directly from the event storage
+     *                         engine until it has caught up again. Event processors will not notice this change during
+     *                         tracking (i.e. the stream is not closed when an event processor falls behind and is
+     *                         removed).
+     * @param timeUnit         time unit for fetch and clean up delay
      */
     public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
                               int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit) {

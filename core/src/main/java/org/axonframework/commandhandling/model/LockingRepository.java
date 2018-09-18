@@ -247,11 +247,5 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
             this.lockFactory = lockFactory;
             return this;
         }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            assertNonNull(lockFactory, "The LockFactory is a hard requirement and should be provided");
-        }
     }
 }

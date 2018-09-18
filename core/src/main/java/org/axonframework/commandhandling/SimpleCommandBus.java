@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -105,7 +106,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, ? super R> callback) {
         doDispatch(intercept(command), callback);
     }
 
@@ -132,7 +133,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param <C>      The type of payload of the command
      * @param <R>      The type of result expected from the command handler
      */
-    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
 
         MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command).orElseThrow(() -> {
@@ -161,7 +162,7 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"unchecked"})
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
-                                 CommandCallback<? super C, R> callback) {
+                                 CommandCallback<? super C, ? super R> callback) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{}]", command.getCommandName());
         }
@@ -171,7 +172,8 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            R result = (R) unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
+            CommandResultMessage<R> result =
+                    asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
 
             callback.onSuccess(command, result);
         } catch (Exception e) {
@@ -300,10 +302,7 @@ public class SimpleCommandBus implements CommandBus {
          *                                    specifications
          */
         protected void validate() {
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
-            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
-            assertNonNull(rollbackConfiguration,
-                          "The RollbackConfiguration is a hard requirement and should be provided");
+            // No assertions required, kept for overriding
         }
     }
 }

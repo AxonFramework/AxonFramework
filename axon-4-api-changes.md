@@ -8,15 +8,26 @@ Other changes
 
 ### Moved classes
 
-|               Axon 3                      |                    Axon 4                      |
-|-------------------------------------------|------------------------------------------------|
-| org.axonframework.messaging.MessageStream | org.axonframework.common.stream.BlockingStream |
-| org.axonframework.messaging.StreamUtils   | org.axonframework.common.stream.StreamUtils    |
+|                                 Axon 3                                        |                                  Axon 4                                    |
+|-------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| org.axonframework.messaging.MessageStream                                     | org.axonframework.common.stream.BlockingStream                             |
+| org.axonframework.messaging.StreamUtils                                       | org.axonframework.common.stream.StreamUtils                                |
+| org.axonframework.queryhandling.responsetypes.AbstractResponseType            | org.axonframework.messaging.responsetypes.AbstractResponseType             |
+| org.axonframework.queryhandling.responsetypes.InstanceResponseType            | org.axonframework.messaging.responsetypes.InstanceResponseType             |
+| org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType   | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType    |
+| org.axonframework.queryhandling.responsetypes.ResponseType                    | org.axonframework.messaging.responsetypes.ResponseType                     |
+| org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                    |
+
+### Removed classes
+|                           Class                    |             Why                     |
+|----------------------------------------------------|-------------------------------------|
+| org.axonframework.serialization.MessageSerializer  | All messages are serializable now.  |
+| org.axonframework.serialization.SerializationAware | All messages are serializable now.  |
 
 ### Removed classes
 
 |                           Class                                       |                       Why                     |
-|-----------------------------------------------------------------------------------------------------------------------|
+|-----------------------------------------------------------------------|-----------------------------------------------|
 | org.axonframework.commandhandling.disruptor.DisruptorConfiguration    | Removed in favor DisruptorCommandBus.Builder  |
 
 ### Classes for which the Constructor has been replaced for a Builder
