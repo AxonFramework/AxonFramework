@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -25,10 +24,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +43,7 @@ public class SimpleCommandBusTest {
 
     @Before
     public void setUp() {
-        this.testSubject = new SimpleCommandBus();
+        this.testSubject = SimpleCommandBus.builder().build();
     }
 
     @After
@@ -163,7 +160,7 @@ public class SimpleCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test(expected = NoHandlerForCommandException.class)
-    public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
+    public void testDispatchCommand_HandlerUnsubscribed() {
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.close();
@@ -179,17 +176,19 @@ public class SimpleCommandBusTest {
             public void reportSuccess() {
                 fail("Expected #reportFailure");
             }
+
             @Override
             public void reportFailure(Throwable cause) {
                 countDownLatch.countDown();
             }
+
             @Override
             public void reportIgnored() {
                 fail("Expected #reportFailure");
             }
         };
 
-        testSubject = new SimpleCommandBus(NoTransactionManager.INSTANCE, messageMonitor);
+        testSubject = SimpleCommandBus.builder().messageMonitor(messageMonitor).build();
 
         try {
             testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), mock(CommandCallback.class));
@@ -209,9 +208,10 @@ public class SimpleCommandBusTest {
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle(
                         (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
-                                                                  (InterceptorChain) invocation.getArguments()[1]));
+                        (InterceptorChain) invocation.getArguments()[1]));
         when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> commandHandler.handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
+                .thenAnswer(invocation -> commandHandler
+                        .handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
         when(commandHandler.handle(isA(CommandMessage.class))).thenReturn("Hi there!");
@@ -248,9 +248,10 @@ public class SimpleCommandBusTest {
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle(
                         (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
-                                                                  (InterceptorChain) invocation.getArguments()[1]));
+                        (InterceptorChain) invocation.getArguments()[1]));
         when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> commandHandler.handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
+                .thenAnswer(invocation -> commandHandler
+                        .handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage()));
 
         testSubject.registerHandlerInterceptor(mockInterceptor1);
         testSubject.registerHandlerInterceptor(mockInterceptor2);
@@ -260,16 +261,17 @@ public class SimpleCommandBusTest {
 
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                fail("Expected exception to be thrown");
-            }
+                                 @Override
+                                 public void onSuccess(CommandMessage<?> commandMessage,
+                                                       CommandResultMessage<?> commandResultMessage) {
+                                     fail("Expected exception to be thrown");
+                                 }
 
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                assertEquals("Faking failed command handling", cause.getMessage());
-            }
-        });
+                                 @Override
+                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                                     assertEquals("Faking failed command handling", cause.getMessage());
+                                 }
+                             });
 
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
         inOrder.verify(mockInterceptor1).handle(
@@ -282,7 +284,8 @@ public class SimpleCommandBusTest {
     @SuppressWarnings({"ThrowableInstanceNeverThrown", "unchecked"})
     @Test
     public void testInterceptorChain_InterceptorThrowsException() throws Exception {
-        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class, "stubName");
+        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 =
+                mock(MessageHandlerInterceptor.class, "stubName");
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[1]).proceed());
@@ -295,16 +298,17 @@ public class SimpleCommandBusTest {
         doThrow(someException).when(mockInterceptor2).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
-                fail("Expected exception to be propagated");
-            }
+                                 @Override
+                                 public void onSuccess(CommandMessage<?> commandMessage,
+                                                       CommandResultMessage<?> commandResultMessage) {
+                                     fail("Expected exception to be propagated");
+                                 }
 
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                assertEquals("Mocking", cause.getMessage());
-            }
-        });
+                                 @Override
+                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+                                     assertEquals("Mocking", cause.getMessage());
+                                 }
+                             });
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
         inOrder.verify(mockInterceptor1).handle(
                 isA(UnitOfWork.class), isA(InterceptorChain.class));
@@ -314,6 +318,7 @@ public class SimpleCommandBusTest {
     }
 
     private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
+
         @Override
         public Object handle(CommandMessage<?> message) {
             return message;

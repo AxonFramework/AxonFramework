@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -32,11 +31,24 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Factory that creates Gateway implementations from custom interface definitions. The behavior of the method is defined
@@ -165,12 +177,17 @@ public class CommandGatewayFactory {
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
 
-            InvocationHandler dispatcher =
-                    new DispatchOnInvocationHandler(commandBus, retryScheduler, dispatchInterceptors, extractors,
-                                                    commandCallbacks, true);
+            InvocationHandler dispatcher = DispatchOnInvocationHandler.builder()
+                                                                      .commandBus(commandBus)
+                                                                      .retryScheduler(retryScheduler)
+                                                                      .dispatchInterceptors(dispatchInterceptors)
+                                                                      .metaDataExtractors(extractors)
+                                                                      .commandCallbacks(commandCallbacks)
+                                                                      .forceCallbacks(true)
+                                                                      .build();
 
             if (!Arrays.asList(CompletableFuture.class, Future.class, CompletionStage.class)
-                    .contains(gatewayMethod.getReturnType())) {
+                       .contains(gatewayMethod.getReturnType())) {
 
                 if (arguments.length >= 3 && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1]) &&
                         (Long.TYPE.isAssignableFrom(arguments[arguments.length - 2]) ||
@@ -178,20 +195,29 @@ public class CommandGatewayFactory {
                     dispatcher =
                             wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2, arguments.length - 1);
                 } else {
-                    Map<String, Object> timeout = AnnotationUtils.findAnnotationAttributes(gatewayMethod, Timeout.class)
-                                                                 .orElse(AnnotationUtils.findAnnotationAttributes(gatewayMethod.getDeclaringClass(), Timeout.class)
-                                                                 .orElse(null));
+                    Map<String, Object> timeout =
+                            findAnnotationAttributes(gatewayMethod, Timeout.class).orElse(
+                                    findAnnotationAttributes(gatewayMethod.getDeclaringClass(), Timeout.class)
+                                            .orElse(null)
+                            );
                     if (timeout != null) {
-                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, (int)timeout.get("timeout"),
+                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, (int) timeout.get("timeout"),
                                                                   (TimeUnit) timeout.get("unit"));
                     } else if (!Void.TYPE.equals(gatewayMethod.getReturnType()) ||
                             gatewayMethod.getExceptionTypes().length > 0) {
                         dispatcher = wrapToWaitForResult(dispatcher);
                     } else if (commandCallbacks.isEmpty() && !hasCallbackParameters(gatewayMethod)) {
                         // switch to fire-and-forget mode
-                        dispatcher = wrapToFireAndForget(
-                                new DispatchOnInvocationHandler(commandBus, retryScheduler, dispatchInterceptors,
-                                                                extractors, commandCallbacks, false));
+                        DispatchOnInvocationHandler fireAndForgetHandler =
+                                DispatchOnInvocationHandler.builder()
+                                                           .commandBus(commandBus)
+                                                           .retryScheduler(retryScheduler)
+                                                           .dispatchInterceptors(dispatchInterceptors)
+                                                           .metaDataExtractors(extractors)
+                                                           .commandCallbacks(commandCallbacks)
+                                                           .forceCallbacks(false)
+                                                           .build();
+                        dispatcher = wrapToFireAndForget(fireAndForgetHandler);
                     }
                 }
                 Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
@@ -206,10 +232,16 @@ public class CommandGatewayFactory {
             dispatchers.put(gatewayMethod, dispatcher);
         }
 
-        return gatewayInterface
-                .cast(Proxy.newProxyInstance(gatewayInterface.getClassLoader(), new Class[]{gatewayInterface},
-                                             new GatewayInvocationHandler(dispatchers, commandBus, retryScheduler,
-                                                                          dispatchInterceptors)));
+        GatewayInvocationHandler gatewayInvocationHandler =
+                GatewayInvocationHandler.builder()
+                                        .commandBus(commandBus)
+                                        .retryScheduler(retryScheduler)
+                                        .dispatchInterceptors(dispatchInterceptors)
+                                        .dispatchers(dispatchers)
+                                        .build();
+        return gatewayInterface.cast(Proxy.newProxyInstance(
+                gatewayInterface.getClassLoader(), new Class[]{gatewayInterface}, gatewayInvocationHandler
+        ));
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
@@ -362,7 +394,7 @@ public class CommandGatewayFactory {
                 extractors.add(new MetaDataExtractor(i, null));
             } else {
                 Optional<Map<String, Object>> metaDataAnnotation =
-                        AnnotationUtils.findAnnotationAttributes(parameters[i], MetaDataValue.class);
+                        findAnnotationAttributes(parameters[i], MetaDataValue.class);
                 if (metaDataAnnotation.isPresent()) {
                     extractors.add(new MetaDataExtractor(i, (String) metaDataAnnotation.get().get("metaDataValue")));
                 }
@@ -387,22 +419,32 @@ public class CommandGatewayFactory {
          * @param invokedMethod The method being invoked
          * @param args          The arguments of the invocation
          * @return the return value of the invocation
+         *
          * @throws Exception any exceptions that occurred while processing the invocation
          */
         R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
     }
 
-    private static class GatewayInvocationHandler extends AbstractCommandGateway implements java.lang.reflect
-            .InvocationHandler {
+    private static class GatewayInvocationHandler extends AbstractCommandGateway
+            implements java.lang.reflect.InvocationHandler {
 
         private final Map<Method, InvocationHandler> dispatchers;
 
-        public GatewayInvocationHandler(Map<Method, InvocationHandler> dispatchers, CommandBus commandBus,
-                                        RetryScheduler retryScheduler,
-                                        List<MessageDispatchInterceptor<? super CommandMessage<?>>>
-                                                dispatchInterceptors) {
-            super(commandBus, retryScheduler, dispatchInterceptors);
-            this.dispatchers = new HashMap<>(dispatchers);
+        protected GatewayInvocationHandler(Builder builder) {
+            super(builder);
+            this.dispatchers = builder.dispatchers;
+        }
+
+        /**
+         * Instantiate a Builder to be able to create a {@link GatewayInvocationHandler}.
+         * <p>
+         * The {@code dispatchInterceptors} are defaulted to an empty list.
+         * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+         *
+         * @return a Builder to be able to create a {@link GatewayInvocationHandler}
+         */
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -414,25 +456,84 @@ public class CommandGatewayFactory {
                 return invocationHandler.invoke(proxy, method, args);
             }
         }
+
+        private static class Builder extends AbstractCommandGateway.Builder {
+
+            private Map<Method, InvocationHandler> dispatchers;
+
+            @Override
+            public Builder commandBus(CommandBus commandBus) {
+                super.commandBus(commandBus);
+                return this;
+            }
+
+            @Override
+            public Builder retryScheduler(RetryScheduler retryScheduler) {
+                super.retryScheduler(retryScheduler);
+                return this;
+            }
+
+            @Override
+            public Builder dispatchInterceptors(
+                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+                super.dispatchInterceptors(dispatchInterceptors);
+                return this;
+            }
+
+            @Override
+            public Builder dispatchInterceptors(
+                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+                super.dispatchInterceptors(dispatchInterceptors);
+                return this;
+            }
+
+            /**
+             * Sets the {@code dispatchers} containing the methods to delegate commands to.
+             *
+             * @param dispatchers {@code dispatchers} containing the methods to delegate commands to
+             * @return the current Builder instance, for fluent interfacing
+             */
+            public Builder dispatchers(Map<Method, InvocationHandler> dispatchers) {
+                this.dispatchers = new HashMap<>(dispatchers);
+                return this;
+            }
+
+            /**
+             * Initializes a {@link GatewayInvocationHandler} as specified through this Builder.
+             *
+             * @return a {@link GatewayInvocationHandler} as specified through this Builder
+             */
+            public GatewayInvocationHandler build() {
+                return new GatewayInvocationHandler(this);
+            }
+        }
     }
 
-    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway implements
-            InvocationHandler<CompletableFuture<R>> {
+    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
+            implements InvocationHandler<CompletableFuture<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
         private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
         private final boolean forceCallbacks;
 
-        protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
-                                              List<MessageDispatchInterceptor<? super CommandMessage<?>>>
-                                                      messageDispatchInterceptors,
-                                              MetaDataExtractor[] metaDataExtractors, // NOSONAR
-                                              List<CommandCallback<? super C, ? super R>> commandCallbacks,
-                                              boolean forceCallbacks) {
-            super(commandBus, retryScheduler, messageDispatchInterceptors);
-            this.metaDataExtractors = metaDataExtractors; // NOSONAR
-            this.commandCallbacks = commandCallbacks;
-            this.forceCallbacks = forceCallbacks;
+        @SuppressWarnings("unchecked")
+        protected DispatchOnInvocationHandler(Builder builder) {
+            super(builder);
+            this.metaDataExtractors = builder.metaDataExtractors; // NOSONAR
+            this.commandCallbacks = builder.commandCallbacks;
+            this.forceCallbacks = builder.forceCallbacks;
+        }
+
+        /**
+         * Instantiate a Builder to be able to create a {@link DispatchOnInvocationHandler}.
+         * <p>
+         * The {@code dispatchInterceptors} are defaulted to an empty list.
+         * The {@link CommandBus} is a <b>hard requirements</b> and as such should be provided.
+         *
+         * @return a Builder to be able to create a {@link DispatchOnInvocationHandler}
+         */
+        public static Builder builder() {
+            return new Builder();
         }
 
         @SuppressWarnings("unchecked")
@@ -464,6 +565,85 @@ public class CommandGatewayFactory {
             } else {
                 sendAndForget(command);
                 return null;
+            }
+        }
+
+        private static class Builder<C, R> extends AbstractCommandGateway.Builder {
+
+            private MetaDataExtractor[] metaDataExtractors;
+            private List<CommandCallback<? super C, ? super R>> commandCallbacks;
+            private boolean forceCallbacks;
+
+            @Override
+            public Builder commandBus(CommandBus commandBus) {
+                super.commandBus(commandBus);
+                return this;
+            }
+
+            @Override
+            public Builder retryScheduler(RetryScheduler retryScheduler) {
+                super.retryScheduler(retryScheduler);
+                return this;
+            }
+
+            @Override
+            public Builder dispatchInterceptors(
+                    MessageDispatchInterceptor<? super CommandMessage<?>>... dispatchInterceptors) {
+                super.dispatchInterceptors(dispatchInterceptors);
+                return this;
+            }
+
+            @Override
+            public Builder dispatchInterceptors(
+                    List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+                super.dispatchInterceptors(dispatchInterceptors);
+                return this;
+            }
+
+            /**
+             * Sets the {@code metaDataExtractors}, used to extract any MetaData parameters and store them in the
+             * {@link CommandMessage}.
+             *
+             * @param metaDataExtractors an array of {@link MetaDataExtractor}
+             * @return the current Builder instance, for fluent interfacing
+             */
+            public Builder metaDataExtractors(MetaDataExtractor[] metaDataExtractors) {
+                this.metaDataExtractors = metaDataExtractors;
+                return this;
+            }
+
+            /**
+             * Sets the {@code commandCallbacks}, a {@link List} of type {@link CommandCallback}, which are called upon
+             * success and failure of handling a command.
+             *
+             * @param commandCallbacks the {@code commandCallbacks} which are called upon success and failure of
+             *                         handling a command
+             * @return the current Builder instance, for fluent interfacing
+             */
+            public Builder commandCallbacks(List<CommandCallback<? super C, ? super R>> commandCallbacks) {
+                this.commandCallbacks = commandCallbacks;
+                return this;
+            }
+
+            /**
+             * Toggles {@code forceCallbacks}, which will force a {@link CommandCallback} to be hit after handling a
+             * command.
+             *
+             * @param forceCallbacks a {@code boolean} specifying whether {@link CommandCallback}s should be made
+             * @return the current Builder instance, for fluent interfacing
+             */
+            public Builder forceCallbacks(boolean forceCallbacks) {
+                this.forceCallbacks = forceCallbacks;
+                return this;
+            }
+
+            /**
+             * Initializes a {@link DispatchOnInvocationHandler} as specified through this Builder.
+             *
+             * @return a {@link DispatchOnInvocationHandler} as specified through this Builder
+             */
+            public DispatchOnInvocationHandler build() {
+                return new DispatchOnInvocationHandler(this);
             }
         }
     }
@@ -596,7 +776,7 @@ public class CommandGatewayFactory {
         @Override
         public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args)
-                    .get(toLong(args[timeoutIndex]), (TimeUnit) args[timeUnitIndex]);
+                           .get(toLong(args[timeoutIndex]), (TimeUnit) args[timeUnitIndex]);
         }
 
         private long toLong(Object arg) {
@@ -671,7 +851,8 @@ public class CommandGatewayFactory {
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage,
+                              CommandResultMessage<? extends R> commandResultMessage) {
             if (parameterType.matches(commandResultMessage.getPayloadType())) {
                 delegate.onSuccess(commandMessage, commandResultMessage);
             }

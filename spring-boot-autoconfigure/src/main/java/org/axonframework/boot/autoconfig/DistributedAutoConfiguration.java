@@ -38,9 +38,11 @@ public class DistributedAutoConfiguration {
     public DistributedCommandBus distributedCommandBus(CommandRouter router,
                                                        CommandBusConnector connector,
                                                        DistributedCommandBusProperties distributedCommandBusProperties) {
-        DistributedCommandBus commandBus = new DistributedCommandBus(router, connector);
+        DistributedCommandBus commandBus = DistributedCommandBus.builder()
+                                                                .commandRouter(router)
+                                                                .connector(connector)
+                                                                .build();
         commandBus.updateLoadFactor(distributedCommandBusProperties.getLoadFactor());
         return commandBus;
     }
-
 }

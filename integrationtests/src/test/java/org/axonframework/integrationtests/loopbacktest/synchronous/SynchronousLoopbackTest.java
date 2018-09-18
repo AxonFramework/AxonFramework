@@ -59,7 +59,7 @@ public class SynchronousLoopbackTest {
     @Before
     public void setUp() {
         aggregateIdentifier = UUID.randomUUID().toString();
-        commandBus = new SimpleCommandBus();
+        commandBus = SimpleCommandBus.builder().build();
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
                                                            new AggregateCreatedEvent(aggregateIdentifier), null));

@@ -24,8 +24,7 @@ import org.axonframework.jgroups.commandhandling.JGroupsConnector;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.context.ApplicationContext;
 
 import static org.junit.Assert.*;
@@ -68,7 +67,8 @@ public class JGroupsConnectorFactoryBeanTest {
         verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
-        testSubject.stop(() -> {});
+        testSubject.stop(() -> {
+        });
 
         verify(mockChannel).close();
     }
@@ -78,7 +78,7 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.setClusterName("ClusterName");
         XStreamSerializer serializer = new XStreamSerializer();
         testSubject.setSerializer(serializer);
-        SimpleCommandBus localSegment = new SimpleCommandBus();
+        SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
         testSubject.setLocalSegment(localSegment);
         RoutingStrategy routingStrategy = CommandMessage::getCommandName;
         testSubject.setRoutingStrategy(routingStrategy);
@@ -98,7 +98,8 @@ public class JGroupsConnectorFactoryBeanTest {
         verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
-        testSubject.stop(() -> {});
+        testSubject.stop(() -> {
+        });
 
         verify(mockChannel).close();
     }
@@ -109,7 +110,7 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.setClusterName("ClusterName");
         XStreamSerializer serializer = new XStreamSerializer();
         testSubject.setSerializer(serializer);
-        SimpleCommandBus localSegment = new SimpleCommandBus();
+        SimpleCommandBus localSegment = SimpleCommandBus.builder().build();
         testSubject.setLocalSegment(localSegment);
         RoutingStrategy routingStrategy = CommandMessage::getCommandName;
         testSubject.setRoutingStrategy(routingStrategy);
@@ -131,8 +132,10 @@ public class JGroupsConnectorFactoryBeanTest {
     }
 
     private class ConnectorInstantiationExposingFactoryBean extends JGroupsConnectorFactoryBean {
+
         @Override
-        public JGroupsConnector instantiateConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer, RoutingStrategy routingStrategy) {
+        public JGroupsConnector instantiateConnector(CommandBus localSegment, JChannel channel, String clusterName,
+                                                     Serializer serializer, RoutingStrategy routingStrategy) {
             return mockConnector;
         }
     }

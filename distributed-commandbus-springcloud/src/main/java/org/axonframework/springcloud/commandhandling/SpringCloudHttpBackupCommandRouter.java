@@ -96,7 +96,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
     }
 
     /**
-     * Builder class to instantiate a {@link SpringCloudHttpBackupCommandRouter}.
+     * Instantiate a Builder to be able to create a {@link SpringCloudHttpBackupCommandRouter}.
      * <p>
      * The {@code serviceInstanceFilter} is defaulted to a {@link Predicate} which always returns {@code true}, the
      * {@link ConsistentHashChangeListener} to a no-op solution and the {@code messageRoutingInformationEndpoint} to
@@ -234,7 +234,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
          *
          * @param restTemplate the {@link RestTemplate} used as the backup mechanism to request another member's
          *                     {@link MessageRoutingInformation} with.
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder restTemplate(RestTemplate restTemplate) {
             assertNonNull(restTemplate, "RestTemplate may not be null");
@@ -249,7 +249,7 @@ public class SpringCloudHttpBackupCommandRouter extends SpringCloudCommandRouter
          *
          * @param messageRoutingInformationEndpoint the endpoint where to retrieve the another nodes message routing
          *                                          information from
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder messageRoutingInformationEndpoint(String messageRoutingInformationEndpoint) {
             assertMessageRoutingInfoEndpoint(messageRoutingInformationEndpoint,

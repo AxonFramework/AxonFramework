@@ -16,10 +16,15 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -37,6 +42,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
 import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -51,34 +57,52 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
+    private final TransactionManager transactionManager;
+    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+    private RollbackConfiguration rollbackConfiguration;
+
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
-    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors
-            = new CopyOnWriteArrayList<>();
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
-            = new CopyOnWriteArrayList<>();
-    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
-    private final TransactionManager transactionManager;
-    private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors =
+            new CopyOnWriteArrayList<>();
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
+            new CopyOnWriteArrayList<>();
 
     /**
-     * Initializes the SimpleCommandBus. This instance shall not manage any transactions or expose any monitoring
-     * information.
+     * Private default constructor to support 'spying' in test cases.
      */
-    public SimpleCommandBus() {
-        this(NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE);
+    private SimpleCommandBus() {
+        this(new Builder());
     }
 
     /**
-     * Initializes the SimpleCommandBus with the given {@code transactionManager} and {@code messageMonitor}
+     * Instantiate a {@link SimpleCommandBus} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param transactionManager The transactionManager to manage transaction with
-     * @param messageMonitor     the message monitor to monitor the command bus
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleCommandBus} instance
      */
-    public SimpleCommandBus(TransactionManager transactionManager,
-                            MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-        this.transactionManager = transactionManager;
-        this.messageMonitor = messageMonitor;
+    protected SimpleCommandBus(Builder builder) {
+        builder.validate();
+        this.transactionManager = builder.transactionManager;
+        this.messageMonitor = builder.messageMonitor;
+        this.rollbackConfiguration = builder.rollbackConfiguration;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link SimpleCommandBus}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
+     * defaulted to a {@link NoOpMessageMonitor} and the {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.
+     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
+     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     *
+     * @return a Builder to be able to create a {@link SimpleCommandBus}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -136,7 +160,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     @SuppressWarnings({"unchecked"})
-    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler,
+    protected <C, R> void handle(CommandMessage<C> command,
+                                 MessageHandler<? super CommandMessage<?>> handler,
                                  CommandCallback<? super C, ? super R> callback) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{}]", command.getCommandName());
@@ -174,7 +199,8 @@ public class SimpleCommandBus implements CommandBus {
      * @return handle to unregister the interceptor
      */
     @Override
-    public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
+    public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<? super CommandMessage<?>> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -187,18 +213,96 @@ public class SimpleCommandBus implements CommandBus {
      * @return handle to unregister the interceptor
      */
     @Override
-    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     /**
-     * Sets the RollbackConfiguration that allows you to change when the UnitOfWork is committed. If not set the
-     * RollbackOnUncheckedExceptionConfiguration will be used, which triggers a rollback on all unchecked exceptions.
+     * Sets the {@link RollbackConfiguration} that allows you to change when the {@link UnitOfWork} is rolled back. If
+     * not set the, {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} will be used, which triggers a rollback on
+     * all unchecked exceptions.
      *
-     * @param rollbackConfiguration The RollbackConfiguration.
+     * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
+     *                              rolled back
      */
     public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
+    }
+
+    /**
+     * Builder class to instantiate a {@link SimpleCommandBus}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
+     * defaulted to a {@link NoOpMessageMonitor} and the {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.
+     * The {@link TransactionManager}, {@link MessageMonitor} and {@link RollbackConfiguration} are <b>hard
+     * requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     */
+    public static class Builder {
+
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+        private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
+
+        /**
+         * Sets the {@link TransactionManager} used to manage transactions. Defaults to a {@link NoTransactionManager}.
+         *
+         * @param transactionManager a {@link TransactionManager} used to manage transactions
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageMonitor} of generic type {@link CommandMessage} used the to monitor the command bus.
+         * Defaults to a {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RollbackConfiguration} which allows you to specify when a {@link UnitOfWork} should be rolled
+         * back. Defaults to a {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, which triggers a rollback on all
+         * unchecked exceptions.
+         *
+         * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
+         *                              rolled back
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
+            this.rollbackConfiguration = rollbackConfiguration;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SimpleCommandBus} as specified through this Builder.
+         *
+         * @return a {@link SimpleCommandBus} as specified through this Builder
+         */
+        public SimpleCommandBus build() {
+            return new SimpleCommandBus(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
+            // No assertions required, kept for overriding
+        }
     }
 }

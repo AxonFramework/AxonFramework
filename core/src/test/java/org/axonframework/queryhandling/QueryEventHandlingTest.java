@@ -23,7 +23,7 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.junit.Test;
+import org.junit.*;
 
 public class QueryEventHandlingTest {
 
@@ -32,10 +32,10 @@ public class QueryEventHandlingTest {
         UserSummaryProjection userSummaryProjection = new UserSummaryProjection();
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
-        configurer.configureCommandBus(c -> new SimpleCommandBus())
+        configurer.configureCommandBus(c -> SimpleCommandBus.builder().build())
                   .configureQueryBus(c -> new SimpleQueryBus())
                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                .registerQueryHandler(c -> userSummaryProjection);
+                  .registerQueryHandler(c -> userSummaryProjection);
 
         EventHandlingConfiguration ehConfiguration = new EventHandlingConfiguration();
         ehConfiguration.registerEventHandler(c -> userSummaryProjection);
@@ -48,18 +48,25 @@ public class QueryEventHandlingTest {
     }
 
     class UserCreatedEvent {
+
         private final String userId;
 
-        UserCreatedEvent(String userId) {this.userId = userId;}
+        UserCreatedEvent(String userId) {
+            this.userId = userId;
+        }
     }
 
     class FindUserQuery {
+
         private final String userId;
 
-        FindUserQuery(String userId) {this.userId = userId;}
+        FindUserQuery(String userId) {
+            this.userId = userId;
+        }
     }
 
     class UserSummaryProjection {
+
         @EventHandler
         public void on(UserCreatedEvent event) {
             System.out.println("User created event handled");

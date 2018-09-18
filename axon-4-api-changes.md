@@ -24,6 +24,12 @@ Other changes
 | org.axonframework.serialization.MessageSerializer  | All messages are serializable now.  |
 | org.axonframework.serialization.SerializationAware | All messages are serializable now.  |
 
+### Removed classes
+
+|                           Class                                       |                       Why                     |
+|-----------------------------------------------------------------------|-----------------------------------------------|
+| org.axonframework.commandhandling.disruptor.DisruptorConfiguration    | Removed in favor DisruptorCommandBus.Builder  |
+
 ### Classes for which the Constructor has been replaced for a Builder
 
 - org.axonframework.amqp.eventhandling.DefaultAMQPMessageConverter
@@ -31,3 +37,11 @@ Other changes
 - org.axonframework.springcloud.commandhandling.SpringCloudCommandRouter
 - org.axonframework.springcloud.commandhandling.SpringCloudHttpBackupCommandRouter
 - org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector
+- org.axonframework.commandhandling.AsynchronousCommandBus
+- org.axonframework.commandhandling.SimpleCommandBus
+- org.axonframework.commandhandling.disruptor.DisruptorCommandBus
+- org.axonframework.commandhandling.distributed.DistributedCommandBus
+- org.axonframework.commandhandling.gateway.AbstractCommandGateway
+- org.axonframework.commandhandling.gatewayCommandGatewayFactory.GatewayInvocationHandler
+- org.axonframework.commandhandling.gatewayCommandGatewayFactory.DispatchOnInvocationHandler
+- org.axonframework.commandhandling.gateway.DefaultCommandGateway

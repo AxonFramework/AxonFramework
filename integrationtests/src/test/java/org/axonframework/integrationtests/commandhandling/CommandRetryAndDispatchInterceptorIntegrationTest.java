@@ -16,17 +16,18 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.gateway.*;
+import org.axonframework.commandhandling.gateway.AbstractCommandGateway;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.gateway.IntervalRetryScheduler;
+import org.axonframework.commandhandling.gateway.RetryingCallback;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
@@ -49,7 +50,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
 
     @Before
     public void setUp() {
-        this.commandBus = new SimpleCommandBus();
+        this.commandBus = SimpleCommandBus.builder().build();
         scheduledThreadPool = Executors.newScheduledThreadPool(1);
         retryScheduler = new IntervalRetryScheduler(scheduledThreadPool, 0, 1);
     }
@@ -63,24 +64,24 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     }
 
     /**
-     * Tests that exceptions thrown by dispatch interceptors on another thread
-     * are handled properly.
+     * Tests that exceptions thrown by dispatch interceptors on another thread are handled properly.
      * <p/>
      * Documentation states, <blockquote> Exceptions have the following effect:<br>
-     * Any declared checked exception will be thrown if the Command Handler (or
-     * an interceptor) threw an exceptions of that type. If a checked exception
-     * is thrown that has not been declared, it is wrapped in a
-     * CommandExecutionException, which is a RuntimeException.<br>
-     * &hellip; </blockquote>
+     * Any declared checked exception will be thrown if the Command Handler (or an interceptor) threw an exceptions of
+     * that type. If a checked exception is thrown that has not been declared, it is wrapped in a
+     * CommandExecutionException, which is a RuntimeException.<br> &hellip; </blockquote>
      */
     @Test(expected =
             SecurityException.class, // per documentation, an unchecked exception (theoretically
             // the only kind throwable by an interceptor) is returned unwrapped
             timeout = 10000) // bug is that the caller waits forever for a CommandCallback.onFailure that never comes...
     public void testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller() {
-        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler);
+        commandGateway = DefaultCommandGateway.builder()
+                                              .commandBus(commandBus)
+                                              .retryScheduler(retryScheduler)
+                                              .build();
 
-        // trigger retry
+        // Trigger retry
         commandBus.subscribe(String.class.getName(), commandMessage -> {
             throw new ConcurrencyException("some retryable exception");
         });
@@ -90,7 +91,8 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         final Thread testThread = Thread.currentThread();
         commandBus.registerDispatchInterceptor(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
-            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<? extends CommandMessage<?>> messages) {
+            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
+                    List<? extends CommandMessage<?>> messages) {
                 return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
                         return message; // ok
@@ -108,9 +110,8 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     }
 
     /**
-     * Tests that metadata added by a
-     * {@linkplain AbstractCommandGateway#AbstractCommandGateway(CommandBus, RetryScheduler, List)
-     * command gateway's dispatch interceptors} is preserved on retry.
+     * Tests that metadata added by a {@link AbstractCommandGateway} command gateway's dispatch interceptors is
+     * preserved on retry.
      * <p/>
      * It'd be nice if metadata added by a
      * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's
@@ -118,21 +119,25 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
      * be possible given how {@link RetryingCallback} works, so verify that it
      * is not preserved.
      */
+    @SuppressWarnings("unchecked")
     @Test(timeout = 10000)
     public void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
-        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler,
-                                                   (MessageDispatchInterceptor<CommandMessage<?>>) messages -> (index, message) -> {
-            if (Thread.currentThread() == testThread) {
-                return message.andMetaData(
-                        Collections.singletonMap("gatewayMetaData", "myUserSession"));
-            } else {
-                // gateway interceptor should only be called from the caller's thread
-                throw new SecurityException("test dispatch interceptor exception");
-            }
-        });
+        commandGateway =
+                DefaultCommandGateway.builder()
+                                     .commandBus(commandBus)
+                                     .retryScheduler(retryScheduler)
+                                     .dispatchInterceptors((MessageDispatchInterceptor<CommandMessage<?>>) messages -> (index, message) -> {
+                                         if (Thread.currentThread() == testThread) {
+                                             return message.andMetaData(
+                                                     Collections.singletonMap("gatewayMetaData", "myUserSession"));
+                                         } else {
+                                             // gateway interceptor should only be called from the caller's thread
+                                             throw new SecurityException("test dispatch interceptor exception");
+                                         }
+                                     }).build();
 
-        // trigger retry, then return metadata for verification
+        // Trigger retry, then return metadata for verification
         commandBus.subscribe(String.class.getName(), commandMessage -> {
             if (Thread.currentThread() == testThread) {
                 throw new ConcurrencyException("some retryable exception");
@@ -156,9 +161,12 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     @Test(timeout = 10000)
     public void testCommandBusDispatchInterceptorMetaDataIsNotPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
-        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler);
+        commandGateway = DefaultCommandGateway.builder()
+                                              .commandBus(commandBus)
+                                              .retryScheduler(retryScheduler)
+                                              .build();
 
-        // trigger retry, then return metadata for verification
+        // Trigger retry, then return metadata for verification
         commandBus.subscribe(String.class.getName(), commandMessage -> {
             if (Thread.currentThread() == testThread) {
                 throw new ConcurrencyException("some retryable exception");

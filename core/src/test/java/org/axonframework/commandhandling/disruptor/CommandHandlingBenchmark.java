@@ -46,7 +46,7 @@ public class CommandHandlingBenchmark {
 
     public static void main(String[] args) {
         EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        CommandBus cb = new SimpleCommandBus();
+        CommandBus cb = SimpleCommandBus.builder().build();
         eventStore.publish(new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), 0, new SomeEvent()));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
@@ -73,8 +73,6 @@ public class CommandHandlingBenchmark {
             }
         };
         cb.subscribe(String.class.getName(), new MyCommandHandler(repository));
-//        new AnnotationCommandHandlerAdapter(new MyCommandHandler(repository), cb).subscribe();
-
 
         long COMMAND_COUNT = 5 * 1000 * 1000;
         cb.dispatch(GenericCommandMessage.asCommandMessage("ready,"));

@@ -31,10 +31,8 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
+import org.junit.*;
+import org.mockito.*;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -71,8 +69,8 @@ public class JgroupsConnectorTest_Gossip {
         channel1 = createChannel();
         channel2 = createChannel();
         routingStrategy = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
-        mockCommandBus1 = spy(new SimpleCommandBus());
-        mockCommandBus2 = spy(new SimpleCommandBus());
+        mockCommandBus1 = spy(SimpleCommandBus.builder().build());
+        mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = spy(new XStreamSerializer());
         connector1 = JGroupsConnector.builder()
@@ -132,12 +130,18 @@ public class JgroupsConnectorTest_Gossip {
 
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        DistributedCommandBus bus1 = new DistributedCommandBus(connector1, connector1);
+        DistributedCommandBus bus1 = DistributedCommandBus.builder()
+                                                          .commandRouter(connector1)
+                                                          .connector(connector1)
+                                                          .build();
         bus1.updateLoadFactor(20);
         connector1.connect();
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
 
-        DistributedCommandBus bus2 = new DistributedCommandBus(connector2, connector2);
+        DistributedCommandBus bus2 = DistributedCommandBus.builder()
+                                                          .commandRouter(connector2)
+                                                          .connector(connector2)
+                                                          .build();
         bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
         bus2.updateLoadFactor(20);
         connector2.connect();
@@ -146,7 +150,7 @@ public class JgroupsConnectorTest_Gossip {
         // now, they should detect eachother and start syncing their state
         waitForConnectorSync();
 
-        CommandGateway gateway1 = new DefaultCommandGateway(bus1);
+        CommandGateway gateway1 = DefaultCommandGateway.builder().commandBus(bus1).build();
 
         doThrow(new RuntimeException("Mock")).when(serializer)
                                              .deserialize(argThat((ArgumentMatcher<SerializedObject<byte[]>>) x -> Arrays

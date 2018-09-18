@@ -44,12 +44,21 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.*;
+import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -58,7 +67,11 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -204,7 +217,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default command gateway.
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
-        return new DefaultCommandGateway(config.commandBus());
+        return DefaultCommandGateway.builder().commandBus(config.commandBus()).build();
     }
 
     /**
@@ -274,11 +287,14 @@ public class DefaultConfigurer implements Configurer {
      * @return The default CommandBus to use.
      */
     protected CommandBus defaultCommandBus(Configuration config) {
-        SimpleCommandBus cb =
-                new SimpleCommandBus(config.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE),
-                                     config.messageMonitor(SimpleCommandBus.class, "commandBus"));
-        cb.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
-        return cb;
+        SimpleCommandBus commandBus =
+                SimpleCommandBus.builder()
+                                .transactionManager(config.getComponent(TransactionManager.class,
+                                                                        () -> NoTransactionManager.INSTANCE))
+                                .messageMonitor(config.messageMonitor(SimpleCommandBus.class, "commandBus"))
+                                .build();
+        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+        return commandBus;
     }
 
     /**
