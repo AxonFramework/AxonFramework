@@ -29,7 +29,6 @@
         <dependency>
             <groupId>io.axoniq</groupId>
             <artifactId>axon-server-api</artifactId>
-            <version>${project.parent.version}</version>
             <optional>true</optional>
         </dependency>
 
