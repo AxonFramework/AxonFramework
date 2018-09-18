@@ -282,7 +282,6 @@ public class DistributedCommandBus implements CommandBus {
         protected void validate() {
             assertNonNull(commandRouter, "The CommandRouter is a hard requirement and should be provided");
             assertNonNull(connector, "The CommandBusConnector is a hard requirement and should be provided");
-            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
         }
     }
 }

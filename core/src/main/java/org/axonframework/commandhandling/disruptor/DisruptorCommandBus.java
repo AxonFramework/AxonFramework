@@ -1039,17 +1039,9 @@ public class DisruptorCommandBus implements CommandBus {
          */
         protected void validate() {
             assertCoolingDownPeriod(coolingDownPeriod);
-            assertNonNull(commandTargetResolver,
-                          "The CommandTargetResolver is a hard requirement and should be provided");
             assertPublisherThreadCount(publisherThreadCount);
-            assertNonNull(messageMonitor, "The MessageMonitor is a hard requirement and should be provided");
-            assertNonNull(rollbackConfiguration,
-                          "The RollbackConfiguration is a hard requirement and should be provided");
             assertBufferSize(bufferSize);
-            assertNonNull(producerType, "The ProducerType is a hard requirement and should be provided");
-            assertNonNull(waitStrategy, "The WaitStrategy is a hard requirement and should be provided");
             assertInvokerThreadCount(invokerThreadCount);
-            assertNonNull(cache, "The Cache is a hard requirement and should be provided");
         }
 
         private void assertCoolingDownPeriod(long coolingDownPeriod) {
