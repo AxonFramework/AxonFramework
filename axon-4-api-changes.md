@@ -46,3 +46,10 @@ Other changes
 - org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler
 - org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore
 - org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore
+- org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore
+- org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore
+- org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository
+- org.axonframework.eventhandling.saga.repository.CachingSagaStore
+- org.axonframework.eventhandling.saga.repository.LockingSagaRepository
+- org.axonframework.eventhandling.saga.AbstractSagaManager
+- org.axonframework.eventhandling.saga.AnnotatedSagaManager
