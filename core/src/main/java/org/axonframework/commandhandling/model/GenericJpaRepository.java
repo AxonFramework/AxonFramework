@@ -288,7 +288,6 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
-            assertNonNull(identifierConverter, "The identifierConverter is a hard requirement and should be provided");
         }
     }
 }
