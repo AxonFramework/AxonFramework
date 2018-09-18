@@ -134,7 +134,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
          *                                    specifications
          */
         protected void validate() throws AxonConfigurationException {
-            assertNonNull(lockFactory, "The LockFactory is a hard requirement and should be provided");
+            // Kept to be overridden
         }
     }
 }

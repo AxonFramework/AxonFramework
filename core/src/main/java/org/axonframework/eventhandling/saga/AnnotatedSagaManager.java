@@ -223,7 +223,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
          * @return a {@link SagaModel} of generic type {@code T} describing the Saga this
          * {@link AbstractSagaManager} implementation will manage
          */
-        SagaModel<T> buildSagaModel() {
+        protected SagaModel<T> buildSagaModel() {
             if (sagaModel == null) {
                 return inspectSagaModel();
             } else {

@@ -372,8 +372,6 @@ public class JdbcSagaStore implements SagaStore<Object> {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
-            assertNonNull(sqlSchema, "The SagaSqlSchema is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
         }
     }
 

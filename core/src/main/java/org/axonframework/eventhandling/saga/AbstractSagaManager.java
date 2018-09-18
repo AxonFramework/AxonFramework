@@ -304,9 +304,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
         protected void validate() throws AxonConfigurationException {
             assertNonNull(sagaRepository, "The SagaRepository is a hard requirement and should be provided");
             assertNonNull(sagaType, "The sagaType is a hard requirement and should be provided");
-            assertNonNull(sagaFactory, "The sagaFactory is a hard requirement and should be provided");
-            assertNonNull(listenerInvocationErrorHandler,
-                          "The ListenerInvocationErrorHandler is a hard requirement and should be provided");
         }
     }
 }
