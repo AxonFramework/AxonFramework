@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * CommandBus implementation that does not perform any actions on subscriptions or dispatched commands, but records
@@ -57,7 +57,7 @@ public class RecordingCommandBus implements CommandBus {
         dispatchedCommands.add(command);
         try {
             callback.onSuccess(command,
-                               asCommandResponseMessage(callbackBehavior
+                               asCommandResultMessage(callbackBehavior
                                                                 .handle(command.getPayload(), command.getMetaData())));
         } catch (Throwable throwable) {
             callback.onFailure(command, throwable);

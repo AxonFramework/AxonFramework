@@ -3,9 +3,9 @@ package org.axonframework.springcloud.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResponseMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.SimpleMember;
@@ -28,7 +28,7 @@ import java.net.URI;
 import java.util.Arrays;
 
 import static java.util.Collections.singletonMap;
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -41,8 +41,8 @@ public class SpringHttpCommandBusConnectorTest {
     private static final CommandMessage<String> COMMAND_MESSAGE =
             new GenericCommandMessage<>("command", singletonMap("commandKey", "commandValue"));
 
-    private static final CommandResponseMessage<String> COMMAND_RESULT =
-            new GenericCommandResponseMessage<>("result", singletonMap("commandResponseKey", "CommandResponseValue"));
+    private static final CommandResultMessage<String> COMMAND_RESULT =
+            new GenericCommandResultMessage<>("result", singletonMap("commandResultKey", "CommandResultValue"));
     private static final Exception COMMAND_ERROR = new Exception("oops");
 
     private SpringHttpCommandBusConnector testSubject;
@@ -133,14 +133,14 @@ public class SpringHttpCommandBusConnectorTest {
         ArgumentCaptor<CommandMessage<? extends String>> commandMessageArgumentCaptor =
                 ArgumentCaptor.forClass(CommandMessage.class);
         //noinspection unchecked
-        ArgumentCaptor<CommandResponseMessage<? extends String>> commandResponseMessageArgumentCaptor =
-                ArgumentCaptor.forClass(CommandResponseMessage.class);
+        ArgumentCaptor<CommandResultMessage<? extends String>> commandResultMessageArgumentCaptor =
+                ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(commandCallback).onSuccess(commandMessageArgumentCaptor.capture(),
-                                          commandResponseMessageArgumentCaptor.capture());
+                                          commandResultMessageArgumentCaptor.capture());
         assertEquals(COMMAND_MESSAGE.getMetaData(), commandMessageArgumentCaptor.getValue().getMetaData());
         assertEquals(COMMAND_MESSAGE.getPayload(), commandMessageArgumentCaptor.getValue().getPayload());
-        assertEquals(COMMAND_RESULT.getMetaData(), commandResponseMessageArgumentCaptor.getValue().getMetaData());
-        assertEquals(COMMAND_RESULT.getPayload(), commandResponseMessageArgumentCaptor.getValue().getPayload());
+        assertEquals(COMMAND_RESULT.getMetaData(), commandResultMessageArgumentCaptor.getValue().getMetaData());
+        assertEquals(COMMAND_RESULT.getPayload(), commandResultMessageArgumentCaptor.getValue().getPayload());
     }
 
     @Test
@@ -149,7 +149,7 @@ public class SpringHttpCommandBusConnectorTest {
         SpringHttpReplyMessage<String> testReplyMessage =
                 new SpringHttpReplyMessage<>(COMMAND_MESSAGE.getIdentifier(),
                                              false,
-                                             asCommandResponseMessage(COMMAND_ERROR),
+                                             asCommandResultMessage(COMMAND_ERROR),
                                              serializer);
         ResponseEntity<SpringHttpReplyMessage<String>> testResponseEntity =
                 new ResponseEntity<>(testReplyMessage, HttpStatus.OK);
@@ -206,9 +206,9 @@ public class SpringHttpCommandBusConnectorTest {
 
         assertEquals(COMMAND_MESSAGE.getIdentifier(), result.getCommandIdentifier());
         assertTrue(result.isSuccess());
-        CommandResponseMessage commandResponseMessage = result.getCommandResponseMessage(serializer);
-        assertEquals(COMMAND_RESULT.getPayload(), commandResponseMessage.getPayload());
-        assertEquals(COMMAND_RESULT.getMetaData(), commandResponseMessage.getMetaData());
+        CommandResultMessage commandResultMessage = result.getCommandResultMessage(serializer);
+        assertEquals(COMMAND_RESULT.getPayload(), commandResultMessage.getPayload());
+        assertEquals(COMMAND_RESULT.getMetaData(), commandResultMessage.getMetaData());
 
         verify(localCommandBus).dispatch(any(), any());
     }

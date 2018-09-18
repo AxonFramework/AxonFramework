@@ -77,7 +77,7 @@ public class SynchronousLoopbackTest {
         };
         expectErrorCallback = new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
                 fail("Expected this command to fail");
             }
 

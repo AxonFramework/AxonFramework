@@ -63,7 +63,7 @@ import java.util.function.Supplier;
  *     public void testCommandHandlerCase() {
  *         fixture.<strong>given(new MyEvent(1), new MyEvent(2))</strong>
  *                .when(new TestCommand())
- *                .expectResponseMessagePayload(null)
+ *                .expectResultMessagePayload(null)
  *                .expectEvents(new MyEvent(3));
  *     }
  * <br/>  }
@@ -184,7 +184,7 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.
-     * The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectResponseMessagePayload(Object)},
+     * The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectResultMessagePayload(Object)},
      * for example, use this filter.
      * <p/>
      * When multiple filters are registered, a Field must be accepted by all registered filters in order to be

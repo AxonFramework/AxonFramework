@@ -54,7 +54,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectResponseMessageMatching(new DoesMatch<>())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(sequenceOf(matches(i -> true)));
     }
 
@@ -63,7 +63,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectResponseMessageMatching(new DoesMatch<>())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(payloadsMatching(sequenceOf(matches(i -> true))));
     }
 
@@ -72,7 +72,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectResponseMessageMatching(new DoesMatch<>())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(payloadsMatching(exactSequenceOf(matches(i -> true))));
     }
 
@@ -81,7 +81,7 @@ public class FixtureTest_MatcherParams {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"))
-                .expectResponseMessageMatching(new DoesMatch<>())
+                .expectResultMessageMatching(new DoesMatch<>())
                 .expectEventsMatching(payloadsMatching(predicate(ml -> !ml.isEmpty())));
     }
 
@@ -97,7 +97,7 @@ public class FixtureTest_MatcherParams {
                     .registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new StrangeCommand("aggregateId"))
-                    .expectResponseMessageMatching(new DoesMatch<>());
+                    .expectResultMessageMatching(new DoesMatch<>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage().contains("but got <exception of type [StrangeCommandReceivedException]>"));
@@ -135,10 +135,10 @@ public class FixtureTest_MatcherParams {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
-                    .expectResponseMessageMatching(new DoesNotMatch<>());
+                    .expectResultMessageMatching(new DoesNotMatch<>());
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
-            assertTrue(e.getMessage().contains("<something you can never give me> but got <GenericCommandResponseMessage{payload={null}"));
+            assertTrue(e.getMessage().contains("<something you can never give me> but got <GenericCommandResultMessage{payload={null}"));
         }
     }
 

@@ -18,7 +18,7 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.eventhandling.EventMessage;
@@ -61,7 +61,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     private final FieldFilter fieldFilter;
     private final Supplier<Aggregate<T>> state;
     private final DeadlineManagerValidator deadlineManagerValidator;
-    private CommandResponseMessage<?> actualReturnValue;
+    private CommandResultMessage<?> actualReturnValue;
     private Throwable actualException;
 
     /**
@@ -128,7 +128,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectSuccessfulHandlerExecution() {
-        return expectResponseMessageMatching(anything());
+        return expectResultMessageMatching(anything());
     }
 
     @Override
@@ -196,11 +196,11 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectResponseMessagePayload(Object expectedPayload) {
+    public ResultValidator<T> expectResultMessagePayload(Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        PayloadMatcher<CommandResponseMessage<?>> expectedMatcher = new PayloadMatcher<>(equalTo(expectedPayload));
-        PayloadMatcher<CommandResponseMessage<?>> actualMatcher = new PayloadMatcher<>(equalTo(actualReturnValue.getPayload()));
+        PayloadMatcher<CommandResultMessage<?>> expectedMatcher = new PayloadMatcher<>(equalTo(expectedPayload));
+        PayloadMatcher<CommandResultMessage<?>> actualMatcher = new PayloadMatcher<>(equalTo(actualReturnValue.getPayload()));
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
         if (actualException != null) {
@@ -212,9 +212,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectResponseMessagePayloadMatching(Matcher<?> matcher) {
+    public ResultValidator<T> expectResultMessagePayloadMatching(Matcher<?> matcher) {
         if (matcher == null) {
-            return expectResponseMessagePayloadMatching(nullValue());
+            return expectResultMessagePayloadMatching(nullValue());
         }
         StringDescription expectedDescription = new StringDescription();
         matcher.describeTo(expectedDescription);
@@ -227,17 +227,17 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectResponseMessage(CommandResponseMessage expectedReturnMessage) {
-        expectResponseMessagePayload(expectedReturnMessage.getPayload());
+    public ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage) {
+        expectResultMessagePayload(expectedResultMessage.getPayload());
 
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        MapEntryMatcher expectedMatcher = new MapEntryMatcher(expectedReturnMessage.getMetaData());
+        MapEntryMatcher expectedMatcher = new MapEntryMatcher(expectedResultMessage.getMetaData());
         MapEntryMatcher actualMatcher = new MapEntryMatcher(actualReturnValue.getMetaData());
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
-        if (!verifyMetaDataEquality(expectedReturnMessage.getPayloadType(),
-                                    expectedReturnMessage.getMetaData(),
+        if (!verifyMetaDataEquality(expectedResultMessage.getPayloadType(),
+                                    expectedResultMessage.getMetaData(),
                                     actualReturnValue.getMetaData())) {
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
@@ -246,9 +246,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectResponseMessageMatching(Matcher<? super CommandResponseMessage<?>> matcher) {
+    public ResultValidator<T> expectResultMessageMatching(Matcher<? super CommandResultMessage<?>> matcher) {
         if (matcher == null) {
-            return expectResponseMessageMatching(nullValue());
+            return expectResultMessageMatching(nullValue());
         }
         StringDescription expectedDescription = new StringDescription();
         matcher.describeTo(expectedDescription);
@@ -301,8 +301,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
-        actualReturnValue = commandResponseMessage;
+    public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+        actualReturnValue = commandResultMessage;
     }
 
     @Override

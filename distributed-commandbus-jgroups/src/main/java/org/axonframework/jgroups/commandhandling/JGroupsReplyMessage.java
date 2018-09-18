@@ -16,7 +16,7 @@
 
 package org.axonframework.jgroups.commandhandling;
 
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.ReplyMessage;
 import org.axonframework.serialization.Serializer;
 import org.jgroups.util.Streamable;
@@ -44,18 +44,18 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
 
     /**
      * Initializes a JGroupsReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code commandResponseMessage}. The parameter {@code success} determines whether the was executed successfully or
+     * {@code commandResultMessage}. The parameter {@code success} determines whether the was executed successfully or
      * not.
      *
-     * @param commandIdentifier      The identifier of the command to which the message is a reply
-     * @param success                Whether or not the command executed successfully or not
-     * @param commandResponseMessage The return value of command process
-     *                               the given {@code commandResponseMessage} is ignored.
-     * @param serializer             The serializer to serialize the message contents with
+     * @param commandIdentifier    The identifier of the command to which the message is a reply
+     * @param success              Whether or not the command executed successfully or not
+     * @param commandResultMessage The return value of command process
+     *                             the given {@code commandResultMessage} is ignored.
+     * @param serializer           The serializer to serialize the message contents with
      */
     public JGroupsReplyMessage(String commandIdentifier, boolean success,
-                               CommandResponseMessage<?> commandResponseMessage, Serializer serializer) {
-        super(commandIdentifier, success, commandResponseMessage, serializer);
+                               CommandResultMessage<?> commandResultMessage, Serializer serializer) {
+        super(commandIdentifier, success, commandResultMessage, serializer);
     }
 
     @Override

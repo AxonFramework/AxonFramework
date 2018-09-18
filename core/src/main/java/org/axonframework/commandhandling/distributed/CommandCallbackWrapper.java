@@ -17,9 +17,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
-
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 
 /**
  * Wrapper for a Command callback. This is used in a CommandCallbackRepository
@@ -78,19 +76,19 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
     }
 
     /**
-     * Invokes {@link CommandCallback#onSuccess(CommandMessage, CommandResponseMessage)} with given {@code result} on
+     * Invokes {@link CommandCallback#onSuccess(CommandMessage, CommandResultMessage)} with given {@code result} on
      * the wrapped callback.
      *
      * @param result the result of the command
      */
-    public void success(CommandResponseMessage<R> result) {
+    public void success(CommandResultMessage<R> result) {
         onSuccess(getMessage(), result);
     }
 
     @Override
     public void onSuccess(CommandMessage<? extends C> message,
-                          CommandResponseMessage<? extends R> commandResponseMessage) {
-        wrapped.onSuccess(message, commandResponseMessage);
+                          CommandResultMessage<? extends R> commandResultMessage) {
+        wrapped.onSuccess(message, commandResultMessage);
     }
 
     @Override

@@ -15,8 +15,8 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandResponseMessage;
-import org.axonframework.commandhandling.GenericCommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -47,21 +47,21 @@ public abstract class ReplyMessage {
 
     /**
      * Initializes a ReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code commandResponseMessage}. The parameter {@code success} determines whether the was executed successfully or
+     * {@code commandResultMessage}. The parameter {@code success} determines whether the was executed successfully or
      * not.
      *
-     * @param commandIdentifier      The identifier of the command to which the message is a reply
-     * @param success                Whether or not the command executed successfully or not
-     * @param commandResponseMessage The response message of command process
-     * @param serializer             The serializer to serialize the message contents with
+     * @param commandIdentifier    The identifier of the command to which the message is a reply
+     * @param success              Whether or not the command executed successfully or not
+     * @param commandResultMessage The result message of command process
+     * @param serializer           The serializer to serialize the message contents with
      */
-    public ReplyMessage(String commandIdentifier, boolean success, CommandResponseMessage<?> commandResponseMessage,
+    public ReplyMessage(String commandIdentifier, boolean success, CommandResultMessage<?> commandResultMessage,
                         Serializer serializer) {
         this.success = success;
         this.commandIdentifier = commandIdentifier;
-        SerializedObject<byte[]> metaData = commandResponseMessage.serializeMetaData(serializer, byte[].class);
+        SerializedObject<byte[]> metaData = commandResultMessage.serializeMetaData(serializer, byte[].class);
         this.serializedMetaData = metaData.getData();
-        SerializedObject<byte[]> payload = commandResponseMessage.serializePayload(serializer, byte[].class);
+        SerializedObject<byte[]> payload = commandResultMessage.serializePayload(serializer, byte[].class);
         this.serializedPayload = payload.getData();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
@@ -75,7 +75,7 @@ public abstract class ReplyMessage {
      * @param serializer The serializer to deserialize the result with
      * @return The return value of command processing
      */
-    public CommandResponseMessage<?> getCommandResponseMessage(Serializer serializer) {
+    public CommandResultMessage<?> getCommandResultMessage(Serializer serializer) {
         if (!success || payloadType == null) {
             return null;
         }
@@ -83,7 +83,7 @@ public abstract class ReplyMessage {
         SerializedMetaData<byte[]> serializedMetaData =
                 new SerializedMetaData<>(this.serializedMetaData, byte[].class);
         MetaData metaData = serializer.deserialize(serializedMetaData);
-        return new GenericCommandResponseMessage<>(payload, metaData);
+        return new GenericCommandResultMessage<>(payload, metaData);
     }
 
     /**

@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -61,18 +61,18 @@ public class FixtureTest_RegularParams {
                                                                       fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"));
-        validator.expectResponseMessagePayload(null);
+        validator.expectResultMessagePayload(null);
         validator.expectEvents(new MyEvent("aggregateId", 2));
     }
 
     @Test
-    public void testFirstFixtureMatchingCommandResponseMessage() {
+    public void testFirstFixtureMatchingCommandResultMessage() {
         ResultValidator validator = fixture
                 .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
                                                                       fixture.getEventBus()))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"));
-        validator.expectResponseMessage(asCommandResponseMessage(null));
+        validator.expectResultMessage(asCommandResultMessage(null));
         validator.expectEvents(new MyEvent("aggregateId", 2));
     }
 
@@ -84,7 +84,7 @@ public class FixtureTest_RegularParams {
                 .registerFieldFilter(field -> !field.getName().equals("someBytes"))
                 .given(new MyEvent("aggregateId", 1))
                 .when(new TestCommand("aggregateId"));
-        validator.expectResponseMessagePayload(null);
+        validator.expectResultMessagePayload(null);
         validator.expectEvents(new MyEvent("aggregateId", 2, "ignored".getBytes()));
     }
 
@@ -96,7 +96,7 @@ public class FixtureTest_RegularParams {
                 .given(new MyEvent("aggregateId", 1),
                        new MyEvent("aggregateId", 2))
                 .when(new TestCommand("aggregateId"))
-                .expectResponseMessagePayloadMatching(IsNull.nullValue())
+                .expectResultMessagePayloadMatching(IsNull.nullValue())
                 .expectEvents(new MyEvent("aggregateId", 3));
     }
 
@@ -321,7 +321,7 @@ public class FixtureTest_RegularParams {
             fixture.registerAnnotatedCommandHandler(commandHandler)
                     .given(givenEvents)
                     .when(new TestCommand("aggregateId"))
-                    .expectResponseMessagePayload("some");
+                    .expectResultMessagePayload("some");
             fail("Expected an AxonAssertionError");
         } catch (AxonAssertionError e) {
             assertTrue(e.getMessage(), e.getMessage().contains("<Message with payload <\"some\">> but got <Message with payload <null>>"));

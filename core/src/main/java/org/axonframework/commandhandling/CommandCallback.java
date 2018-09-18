@@ -18,7 +18,7 @@ package org.axonframework.commandhandling;
 
 /**
  * Interface describing a callback that is invoked when command handler execution has finished. Depending of the outcome
- * of the execution, either the {@link #onSuccess(CommandMessage, CommandResponseMessage)} or the {@link
+ * of the execution, either the {@link #onSuccess(CommandMessage, CommandResultMessage)} or the {@link
  * #onFailure(CommandMessage, Throwable)} is called.
  *
  * @param <R> the type of result of the command handling
@@ -31,11 +31,11 @@ public interface CommandCallback<C, R> {
     /**
      * Invoked when command handling execution was successful.
      *
-     * @param commandMessage         The message that was dispatched
-     * @param commandResponseMessage The result message of the command handling execution, if any.
+     * @param commandMessage       The message that was dispatched
+     * @param commandResultMessage The result message of the command handling execution, if any.
      */
     void onSuccess(CommandMessage<? extends C> commandMessage,
-                   CommandResponseMessage<? extends R> commandResponseMessage);
+                   CommandResultMessage<? extends R> commandResultMessage);
 
     /**
      * Invoked when command handling execution resulted in an error.

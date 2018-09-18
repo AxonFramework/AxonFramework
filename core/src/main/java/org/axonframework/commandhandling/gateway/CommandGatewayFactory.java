@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -479,9 +479,9 @@ public class CommandGatewayFactory {
 
         @Override
         public void onSuccess(CommandMessage<? extends C> commandMessage,
-                              CommandResponseMessage<? extends R> commandResponseMessage) {
+                              CommandResultMessage<? extends R> commandResultMessage) {
             for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onSuccess(commandMessage, commandResponseMessage);
+                callback.onSuccess(commandMessage, commandResultMessage);
             }
         }
 
@@ -671,9 +671,9 @@ public class CommandGatewayFactory {
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResponseMessage<? extends R> commandResponseMessage) {
-            if (parameterType.matches(commandResponseMessage.getPayloadType())) {
-                delegate.onSuccess(commandMessage, commandResponseMessage);
+        public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage) {
+            if (parameterType.matches(commandResultMessage.getPayloadType())) {
+                delegate.onSuccess(commandMessage, commandResultMessage);
             }
         }
 

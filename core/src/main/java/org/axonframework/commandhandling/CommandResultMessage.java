@@ -21,17 +21,17 @@ import org.axonframework.messaging.Message;
 import java.util.Map;
 
 /**
- * Message that represents a response from handling a {@link CommandMessage}.
+ * Message that represents a result from handling a {@link CommandMessage}.
  *
  * @param <R> The type of payload contained in this Message
  * @author Milan Savic
  * @since 4.0
  */
-public interface CommandResponseMessage<R> extends Message<R> {
+public interface CommandResultMessage<R> extends Message<R> {
 
     @Override
-    CommandResponseMessage<R> withMetaData(Map<String, ?> metaData);
+    CommandResultMessage<R> withMetaData(Map<String, ?> metaData);
 
     @Override
-    CommandResponseMessage<R> andMetaData(Map<String, ?> metaData);
+    CommandResultMessage<R> andMetaData(Map<String, ?> metaData);
 }

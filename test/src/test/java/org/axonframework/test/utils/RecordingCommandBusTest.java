@@ -18,7 +18,7 @@ package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
@@ -45,9 +45,9 @@ public class RecordingCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
                 assertNull("Expected default callback behavior to invoke onSuccess(null)",
-                           commandResponseMessage.getPayload());
+                           commandResultMessage.getPayload());
             }
 
             @Override
@@ -68,8 +68,8 @@ public class RecordingCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
-                assertEquals("callbackResult", commandResponseMessage.getPayload());
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+                assertEquals("callbackResult", commandResultMessage.getPayload());
             }
 
             @Override

@@ -77,8 +77,8 @@ public class AsynchronousCommandBusTest {
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResponseMessage<Object>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResponseMessage.class);
+        ArgumentCaptor<CommandResultMessage<Object>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
         inOrder.verify(mockCallback).onSuccess(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(command, commandCaptor.getValue());
         assertNull(responseCaptor.getValue().getPayload());

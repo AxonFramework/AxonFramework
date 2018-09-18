@@ -768,7 +768,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private FixtureExecutionException exception;
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
+        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         }
 
         @Override

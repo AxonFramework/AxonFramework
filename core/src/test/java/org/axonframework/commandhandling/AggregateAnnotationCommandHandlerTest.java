@@ -159,8 +159,8 @@ public class AggregateAnnotationCommandHandlerTest {
         verify(mockRepository).newInstance(any());
         // make sure the identifier was invoked in the callback
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResponseMessage<String>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResponseMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
         verify(callback).onSuccess(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("id", responseCaptor.getValue().getPayload());
@@ -176,8 +176,8 @@ public class AggregateAnnotationCommandHandlerTest {
         verify(mockRepository).newInstance(any());
         // make sure the identifier was invoked in the callback
         ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
-        ArgumentCaptor<CommandResponseMessage<String>> responseCaptor = ArgumentCaptor
-                .forClass(CommandResponseMessage.class);
+        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
         verify(callback).onSuccess(commandCaptor.capture(), responseCaptor.capture());
         assertEquals(message, commandCaptor.getValue());
         assertEquals("id", responseCaptor.getValue().getPayload());
@@ -192,8 +192,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("Method works fine", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("Method works fine", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -217,8 +217,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("Method with version works fine", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("Method with version works fine", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -251,8 +251,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("Method with version works fine", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("Method with version works fine", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -275,8 +275,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("Field works fine", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("Field works fine", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -300,8 +300,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("Field with version works fine", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("Field with version works fine", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -325,9 +325,9 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     assertEquals("Field with integer version works fine",
-                                                 commandResponseMessage.getPayload());
+                                                 commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -351,7 +351,7 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     fail("Expected an exception, as the entity was not initialized");
                                 }
 
@@ -378,9 +378,9 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     assertEquals("entity command handled just fine",
-                                                 commandResponseMessage.getPayload());
+                                                 commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -407,8 +407,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("handled by 2", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("handled by 2", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -433,7 +433,7 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     fail("Expected exception");
                                 }
 
@@ -458,7 +458,7 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     fail("Expected exception");
                                 }
 
@@ -483,9 +483,9 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     assertEquals("nested entity command handled just fine",
-                                                 commandResponseMessage.getPayload());
+                                                 commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -517,8 +517,8 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
-                                    assertEquals("handled by 2", commandResponseMessage.getPayload());
+                                                      CommandResultMessage<?> commandResultMessage) {
+                                    assertEquals("handled by 2", commandResultMessage.getPayload());
                                 }
 
                                 @Override
@@ -543,7 +543,7 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     fail("Expected exception");
                                 }
 
@@ -567,7 +567,7 @@ public class AggregateAnnotationCommandHandlerTest {
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage,
-                                                      CommandResponseMessage<?> commandResponseMessage) {
+                                                      CommandResultMessage<?> commandResultMessage) {
                                     fail("Expected exception");
                                 }
 

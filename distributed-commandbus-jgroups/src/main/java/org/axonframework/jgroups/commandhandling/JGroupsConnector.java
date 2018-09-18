@@ -19,7 +19,7 @@ package org.axonframework.jgroups.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
@@ -62,7 +62,7 @@ import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -281,7 +281,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         } else {
             if (message.isSuccess()) {
                 //noinspection unchecked
-                callbackWrapper.success(message.getCommandResponseMessage(serializer));
+                callbackWrapper.success(message.getCommandResultMessage(serializer));
             } else {
                 Throwable exception = getOrDefault(message.getError(serializer), new IllegalStateException(
                         format("Unknown execution failure for command [%s]", message.getCommandIdentifier())));
@@ -298,8 +298,8 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
                 localSegment.dispatch(commandMessage, new CommandCallback<C, R>() {
                     @Override
                     public void onSuccess(CommandMessage<? extends C> commandMessage,
-                                          CommandResponseMessage<? extends R> result) {
-                        sendReply(msg.getSrc(), message.getCommandIdentifier(), result, null);
+                                          CommandResultMessage<? extends R> commandResultMessage) {
+                        sendReply(msg.getSrc(), message.getCommandIdentifier(), commandResultMessage, null);
                     }
 
                     @Override
@@ -323,13 +323,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         boolean success = cause == null;
         Object reply;
         try {
-            CommandResponseMessage<?> commandResponseMessage =
-                    success ? asCommandResponseMessage(result) : asCommandResponseMessage(cause);
-            reply = new JGroupsReplyMessage(commandIdentifier, success, commandResponseMessage, serializer);
+            CommandResultMessage<?> commandResultMessage =
+                    success ? asCommandResultMessage(result) : asCommandResultMessage(cause);
+            reply = new JGroupsReplyMessage(commandIdentifier, success, commandResultMessage, serializer);
         } catch (Exception e) {
             logger.warn(String.format("Could not serialize command reply [%s]. Sending back NULL.",
                                       success ? result : cause), e);
-            reply = new JGroupsReplyMessage(commandIdentifier, success, asCommandResponseMessage(null), serializer);
+            reply = new JGroupsReplyMessage(commandIdentifier, success, asCommandResultMessage(null), serializer);
         }
         try {
             channel.send(address, reply);

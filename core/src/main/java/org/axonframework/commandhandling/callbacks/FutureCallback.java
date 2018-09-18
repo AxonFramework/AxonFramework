@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.callbacks;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * Command Handler Callback that allows the dispatching thread to wait for the result of the callback, using the Future
@@ -38,13 +38,13 @@ import static org.axonframework.commandhandling.GenericCommandResponseMessage.as
  * @author Allard Buijze
  * @since 0.6
  */
-public class FutureCallback<C, R> extends CompletableFuture<CommandResponseMessage<? extends R>>
+public class FutureCallback<C, R> extends CompletableFuture<CommandResultMessage<? extends R>>
         implements CommandCallback<C, R> {
 
     @Override
     public void onSuccess(CommandMessage<? extends C> commandMessage,
-                          CommandResponseMessage<? extends R> commandResponseMessage) {
-        super.complete(commandResponseMessage);
+                          CommandResultMessage<? extends R> commandResultMessage) {
+        super.complete(commandResultMessage);
     }
 
     @Override
@@ -66,12 +66,12 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResponseMessa
      *
      * @see #get()
      */
-    public CommandResponseMessage<? extends R> getResult() {
+    public CommandResultMessage<? extends R> getResult() {
         try {
             return get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return asCommandResponseMessage(null);
+            return asCommandResultMessage(null);
         } catch (ExecutionException e) {
             throw asRuntime(e);
         }
@@ -92,14 +92,14 @@ public class FutureCallback<C, R> extends CompletableFuture<CommandResponseMessa
      * @param unit    the time unit of the timeout argument
      * @return the result of the command handler execution.
      */
-    public CommandResponseMessage<? extends R> getResult(long timeout, TimeUnit unit) {
+    public CommandResultMessage<? extends R> getResult(long timeout, TimeUnit unit) {
         try {
             return get(timeout, unit);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return asCommandResponseMessage(null);
+            return asCommandResultMessage(null);
         } catch (TimeoutException e) {
-            return asCommandResponseMessage(null);
+            return asCommandResultMessage(null);
         } catch (ExecutionException e) {
             throw asRuntime(e);
         }

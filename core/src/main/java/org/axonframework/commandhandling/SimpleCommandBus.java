@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
-import static org.axonframework.commandhandling.GenericCommandResponseMessage.asCommandResponseMessage;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's name.
@@ -147,8 +147,8 @@ public class SimpleCommandBus implements CommandBus {
             unitOfWork.attachTransaction(transactionManager);
             InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
 
-            CommandResponseMessage<R> result =
-                    asCommandResponseMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
+            CommandResultMessage<R> result =
+                    asCommandResultMessage(unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration));
 
             callback.onSuccess(command, result);
         } catch (Exception e) {

@@ -21,7 +21,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResponseMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -513,7 +513,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, CommandResponseMessage<?> commandResponseMessage) {
+        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         }
 
         @Override
@@ -605,7 +605,7 @@ public class DisruptorCommandBus implements CommandBus {
                                 new CommandCallback<Object, Object>() {
                                     @Override
                                     public void onSuccess(CommandMessage<?> commandMessage,
-                                                          CommandResponseMessage<?> commandResponseMessage) {
+                                                          CommandResultMessage<?> commandResultMessage) {
                                         future.complete(null);
                                     }
 
