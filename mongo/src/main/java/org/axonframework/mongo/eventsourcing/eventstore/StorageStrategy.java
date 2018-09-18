@@ -104,17 +104,6 @@ public interface StorageStrategy {
                                                           TrackingToken lastToken, int batchSize);
 
     /**
-     * Finds the entry containing the last snapshot event for an aggregate with given {@code aggregateIdentifier}
-     * in the given {@code collection}.
-     *
-     * @param snapshotCollection  The collection to find the last snapshot event in
-     * @param aggregateIdentifier The identifier of the aggregate to find a snapshot for
-     * @return an optional with DomainEventData of the snapshot if found
-     */
-    Optional<? extends DomainEventData<?>> findLastSnapshot(MongoCollection<Document> snapshotCollection,
-                                                            String aggregateIdentifier);
-
-    /**
      * Finds entries containing snapshot events for an aggregate with given {@code aggregateIdentifier} in the given
      * {@code collection}.
      *
