@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.util.Map;
 

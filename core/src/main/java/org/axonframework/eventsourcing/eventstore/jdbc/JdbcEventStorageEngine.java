@@ -47,14 +47,13 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEventMessage;
-import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * EventStorageEngine implementation that uses JDBC to store and fetch events.
@@ -255,8 +254,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
                             for (EventMessage<?> eventMessage : events) {
                                 DomainEventMessage<?> event = asDomainEventMessage(eventMessage);
-                                SerializedObject<?> payload = serializePayload(event, serializer, dataType);
-                                SerializedObject<?> metaData = serializeMetaData(event, serializer, dataType);
+                                SerializedObject<?> payload = event.serializePayload(serializer, dataType);
+                                SerializedObject<?> metaData = event.serializeMetaData(serializer, dataType);
                                 preparedStatement.setString(1, event.getIdentifier());
                                 preparedStatement.setString(2, event.getAggregateIdentifier());
                                 preparedStatement.setLong(3, event.getSequenceNumber());
@@ -360,8 +359,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
                                                Serializer serializer) throws SQLException {
-        SerializedObject<?> payload = serializePayload(snapshot, serializer, dataType);
-        SerializedObject<?> metaData = serializeMetaData(snapshot, serializer, dataType);
+        SerializedObject<?> payload = snapshot.serializePayload(serializer, dataType);
+        SerializedObject<?> metaData = snapshot.serializeMetaData(serializer, dataType);
         final String sql = "INSERT INTO " + schema.snapshotTable() + " (" +
                 String.join(", ", schema.eventIdentifierColumn(), schema.aggregateIdentifierColumn(),
                             schema.sequenceNumberColumn(), schema.typeColumn(), schema.timestampColumn(),
@@ -482,13 +481,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+    protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return transactionManager.fetchInTransaction(() -> {
             List<DomainEventData<?>> result =
                     executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
                                  JdbcUtils.listResults(this::getSnapshotData), e -> new EventStoreException(
                                     format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
-            return result.stream().findFirst();
+            return result.stream();
         });
     }
 

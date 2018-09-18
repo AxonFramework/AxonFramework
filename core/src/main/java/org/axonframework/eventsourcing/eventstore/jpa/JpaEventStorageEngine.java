@@ -48,6 +48,7 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.sql.DataSource;
@@ -335,7 +336,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+    protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return transactionManager.fetchInTransaction(
                 () -> entityManager()
                         .createQuery(
@@ -349,7 +350,6 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                         .setMaxResults(1)
                         .getResultList()
                         .stream()
-                        .findFirst()
         );
     }
 

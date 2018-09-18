@@ -27,9 +27,6 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
-import static org.axonframework.serialization.MessageSerializer.serializePayload;
-
 /**
  * Base class for dispatch messages which may be used in the {@link CommandBusConnector} upon dispatching a command
  * to other nodes.
@@ -61,9 +58,9 @@ public abstract class DispatchMessage {
      */
     protected DispatchMessage(CommandMessage<?> commandMessage, Serializer serializer, boolean expectReply) {
         this.commandIdentifier = commandMessage.getIdentifier();
-        SerializedObject<byte[]> metaData = serializeMetaData(commandMessage, serializer, byte[].class);
+        SerializedObject<byte[]> metaData = commandMessage.serializeMetaData(serializer, byte[].class);
         this.serializedMetaData = metaData.getData();
-        SerializedObject<byte[]> payload = serializePayload(commandMessage, serializer, byte[].class);
+        SerializedObject<byte[]> payload = commandMessage.serializePayload(serializer, byte[].class);
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
         this.serializedPayload = payload.getData();

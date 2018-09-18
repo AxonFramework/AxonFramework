@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -270,7 +271,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
@@ -567,7 +568,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         }
 
         @Override
@@ -658,7 +659,8 @@ public class DisruptorCommandBus implements CommandBus {
                         new BlacklistDetectingCallback<>(
                                 new CommandCallback<Object, Object>() {
                                     @Override
-                                    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+                                    public void onSuccess(CommandMessage<?> commandMessage,
+                                                          CommandResultMessage<?> commandResultMessage) {
                                         future.complete(null);
                                     }
 

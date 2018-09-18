@@ -28,7 +28,7 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.EmitterProcessor;

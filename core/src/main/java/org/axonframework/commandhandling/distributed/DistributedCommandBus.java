@@ -122,7 +122,7 @@ public class DistributedCommandBus implements CommandBus {
      * @throws CommandDispatchException when an error occurs while dispatching the command to a segment
      */
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
         MessageMonitor.MonitorCallback messageMonitorCallback = messageMonitor.onMessageIngested(interceptedCommand);
         Member destination = commandRouter.findDestination(interceptedCommand)

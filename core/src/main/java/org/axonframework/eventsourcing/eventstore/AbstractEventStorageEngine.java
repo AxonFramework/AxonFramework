@@ -109,11 +109,15 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier).filter(snapshotFilter).map(entry -> {
-            DomainEventStream stream =
-                    EventUtils.upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false);
-            return stream.hasNext() ? stream.next() : null;
-        });
+        return readSnapshotData(aggregateIdentifier).filter(snapshotFilter)
+                                                    .map(snapshot -> EventUtils
+                                                            .upcastAndDeserializeDomainEvents(Stream.of(snapshot),
+                                                                                              serializer,
+                                                                                              upcasterChain,
+                                                                                              false))
+                                                    .flatMap(DomainEventStream::asStream)
+                                                    .findFirst()
+                                                    .map(event -> (DomainEventMessage<?>) event);
     }
 
     @Override
@@ -197,13 +201,16 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
                                                                            boolean mayBlock);
 
     /**
-     * Returns an optional serialized event entry for given {@code aggregateIdentifier} if the backing database
+     * Returns a stream of serialized event entries for given {@code aggregateIdentifier} if the backing database
      * contains a snapshot of the aggregate.
+     * <p>
+     * It is required that specific event storage engines return snapshots in descending order of their sequence number.
+     * </p>
      *
      * @param aggregateIdentifier The aggregate identifier to fetch a snapshot for
-     * @return An optional with a serialized snapshot of the aggregate
+     * @return A stream of serialized snapshots of the aggregate
      */
-    protected abstract Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
+    protected abstract Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
 
     /**
      * Get the serializer used by this storage engine when storing and retrieving snapshots.

@@ -83,7 +83,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     @Override
     protected <C, R> void handle(CommandMessage<C> command,
                                  MessageHandler<? super CommandMessage<?>> handler,
-                                 CommandCallback<? super C, R> callback) {
+                                 CommandCallback<? super C, ? super R> callback) {
         executor.execute(() -> super.handle(command, handler, callback));
     }
 

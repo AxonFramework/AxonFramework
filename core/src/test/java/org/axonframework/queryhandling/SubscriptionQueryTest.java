@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.junit.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;

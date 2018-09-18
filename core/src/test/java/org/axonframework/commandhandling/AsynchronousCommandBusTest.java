@@ -28,6 +28,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -78,7 +80,12 @@ public class AsynchronousCommandBusTest {
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
-        inOrder.verify(mockCallback).onSuccess(eq(command), isNull());
+        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        ArgumentCaptor<CommandResultMessage<Object>> responseCaptor = ArgumentCaptor
+                .forClass(CommandResultMessage.class);
+        inOrder.verify(mockCallback).onSuccess(commandCaptor.capture(), responseCaptor.capture());
+        assertEquals(command, commandCaptor.getValue());
+        assertNull(responseCaptor.getValue().getPayload());
     }
 
     @SuppressWarnings("unchecked")

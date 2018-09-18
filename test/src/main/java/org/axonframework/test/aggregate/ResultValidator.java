@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
@@ -88,21 +89,41 @@ public interface ResultValidator<T> {
     ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
     /**
-     * Expect the command handler to return the given {@code expectedReturnValue} after execution. The actual and
+     * Expect the command handler to return the given {@code expectedPayload} after execution. The actual and
      * expected values are compared using their equals methods.
      *
-     * @param expectedReturnValue The expected return value of the command execution
+     * @param expectedPayload The expected result message payload of the command execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectReturnValue(Object expectedReturnValue);
+    ResultValidator<T> expectResultMessagePayload(Object expectedPayload);
 
     /**
-     * Expect the command handler to return a value that matches the given {@code matcher} after execution.
+     * Expect the command handler to return a payload that matches the given {@code matcher} after execution.
      *
      * @param matcher The matcher to verify the actual return value against
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectReturnValueMatching(Matcher<?> matcher);
+    ResultValidator<T> expectResultMessagePayloadMatching(Matcher<?> matcher);
+
+    /**
+     * Expect the command handler to return the given {@code expectedResultMessage} after execution. The actual and
+     * expected values are compared using their equals methods.
+     * <p>
+     * Comparison is done on message payload and meta data.
+     * </p>
+     *
+     * @param expectedResultMessage The expected result message of the command execution
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage);
+
+    /**
+     * Expect the command handler to return a value that matches the given {@code matcher} after execution.
+     *
+     * @param matcher The matcher to verify the actual result message against
+     * @return the current ResultValidator, for fluent interfacing
+     */
+    ResultValidator<T> expectResultMessageMatching(Matcher<? super CommandResultMessage<?>> matcher);
 
     /**
      * Expect an exception message to occur during command handler execution that matches with the given {@code
