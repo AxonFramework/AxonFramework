@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.lock.DeadlockException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -63,8 +64,9 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-        delegate.onSuccess(commandMessage, result);
+    public void onSuccess(CommandMessage<? extends C> commandMessage,
+                          CommandResultMessage<? extends R> commandResultMessage) {
+        delegate.onSuccess(commandMessage, commandResultMessage);
     }
 
     @Override

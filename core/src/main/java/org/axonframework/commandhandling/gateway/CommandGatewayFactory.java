@@ -20,15 +20,16 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
@@ -330,12 +331,14 @@ public class CommandGatewayFactory {
      * command is an instance of that type. If Axon is unable to detect the type, the callback is always invoked,
      * potentially causing {@link java.lang.ClassCastException}.
      *
-     * @param callback The callback to register
-     * @param <R>      The type of return value the callback is interested in
+     * @param callback     The callback to register
+     * @param responseType The actual response type of the command
+     * @param <R>          The type of return value the callback is interested in
      * @return this instance for further configuration
      */
-    public <C, R> CommandGatewayFactory registerCommandCallback(CommandCallback<C, R> callback) {
-        this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback));
+    public <C, R> CommandGatewayFactory registerCommandCallback(CommandCallback<C, R> callback,
+                                                                ResponseType<R> responseType) {
+        this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback, responseType));
         return this;
     }
 
@@ -457,7 +460,7 @@ public class CommandGatewayFactory {
                 }
                 callbacks.addAll(commandCallbacks);
                 send(command, new CompositeCallback(callbacks));
-                return future;
+                return future.thenApply(Message::getPayload);
             } else {
                 sendAndForget(command);
                 return null;
@@ -475,9 +478,10 @@ public class CommandGatewayFactory {
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage,
+                              CommandResultMessage<? extends R> commandResultMessage) {
             for (CommandCallback<? super C, ? super R> callback : callbacks) {
-                callback.onSuccess(commandMessage, result);
+                callback.onSuccess(commandMessage, commandResultMessage);
             }
         }
 
@@ -655,31 +659,21 @@ public class CommandGatewayFactory {
         }
     }
 
-    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, Object> {
+    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, R> {
 
         private final CommandCallback<C, R> delegate;
-        private final Class<R> parameterType;
+        private final ResponseType<R> parameterType;
 
         @SuppressWarnings("unchecked")
-        public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate) {
+        public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate, ResponseType<R> responseType) {
             this.delegate = delegate;
-            Class discoveredParameterType = Object.class;
-            for (Method m : ReflectionUtils.methodsOf(delegate.getClass())) {
-                if (m.getGenericParameterTypes().length == 2 && m.getGenericParameterTypes()[1] != Object.class &&
-                        "onSuccess".equals(m.getName()) && Modifier.isPublic(m.getModifiers())) {
-                    discoveredParameterType = m.getParameterTypes()[1];
-                    if (discoveredParameterType != Object.class) {
-                        break;
-                    }
-                }
-            }
-            parameterType = discoveredParameterType;
+            parameterType = responseType;
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, Object result) {
-            if (parameterType.isInstance(result) || (!parameterType.isPrimitive() && result == null)) {
-                delegate.onSuccess(commandMessage, parameterType.cast(result));
+        public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<? extends R> commandResultMessage) {
+            if (parameterType.matches(commandResultMessage.getPayloadType())) {
+                delegate.onSuccess(commandMessage, commandResultMessage);
             }
         }
 

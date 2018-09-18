@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
+
 /**
  * CommandBus implementation that does not perform any actions on subscriptions or dispatched commands, but records
  * them instead. This implementation is not a stand-in replacement for a mock, but might prove useful in many simple
@@ -51,10 +53,12 @@ public class RecordingCommandBus implements CommandBus {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C,? super R> callback) {
         dispatchedCommands.add(command);
         try {
-            callback.onSuccess(command, (R) callbackBehavior.handle(command.getPayload(), command.getMetaData()));
+            callback.onSuccess(command,
+                               asCommandResultMessage(callbackBehavior
+                                                                .handle(command.getPayload(), command.getMetaData())));
         } catch (Throwable throwable) {
             callback.onFailure(command, throwable);
         }

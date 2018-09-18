@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FailureLoggingCallback;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +92,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     @Override
-    public <C, R> void send(C command, CommandCallback<? super C, R> callback) {
+    public <C, R> void send(C command, CommandCallback<? super C, ? super R> callback) {
         super.send(command, callback);
     }
 
@@ -109,9 +110,9 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) {
-        FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
+        FutureCallback<Object, R> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
-        return (R) futureCallback.getResult();
+        return futureCallback.getResult().getPayload();
     }
 
     /**
@@ -132,15 +133,15 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
-        FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
+        FutureCallback<Object, R> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
-        return (R) futureCallback.getResult(timeout, unit);
+        return futureCallback.getResult(timeout, unit).getPayload();
     }
 
     @Override
     public <R> CompletableFuture<R> send(Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
         send(command, new FailureLoggingCallback<>(logger, callback));
-        return callback;
+        return callback.thenApply(Message::getPayload);
     }
 }
