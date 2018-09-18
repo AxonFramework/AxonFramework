@@ -66,7 +66,7 @@ public class FixtureTest_Resources {
         fixture.registerInjectableResource(resource)
                .given(new MyEvent("id", 1))
                .when(new TestCommand("id"))
-               .expectReturnValue(fixture.getCommandBus());
+               .expectResponseMessagePayload(fixture.getCommandBus());
 
         verify(resource).execute(isA(Runnable.class));
         verifyNoMoreInteractions(resource);

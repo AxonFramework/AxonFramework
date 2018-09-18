@@ -31,6 +31,7 @@ import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.matchers.MapEntryMatcher;
+import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -88,7 +89,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
+            if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -127,7 +128,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
 
     @Override
     public ResultValidator<T> expectSuccessfulHandlerExecution() {
-        return expectReturnValueMatching(anything());
+        return expectResponseMessageMatching(anything());
     }
 
     @Override
@@ -195,24 +196,66 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
     }
 
     @Override
-    public ResultValidator<T> expectReturnValue(Object expectedReturnValue) {
-        if (expectedReturnValue == null) {
-            return expectReturnValueMatching(nullValue());
+    public ResultValidator<T> expectResponseMessagePayload(Object expectedPayload) {
+        StringDescription expectedDescription = new StringDescription();
+        StringDescription actualDescription = new StringDescription();
+        PayloadMatcher<CommandResponseMessage<?>> expectedMatcher = new PayloadMatcher<>(equalTo(expectedPayload));
+        PayloadMatcher<CommandResponseMessage<?>> actualMatcher = new PayloadMatcher<>(equalTo(actualReturnValue.getPayload()));
+        expectedMatcher.describeTo(expectedDescription);
+        actualMatcher.describeTo(actualDescription);
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.getPayload())) {
+            reporter.reportWrongResult(actualDescription, expectedDescription);
         }
-        return expectReturnValueMatching(equalTo(expectedReturnValue));
+        return this;
     }
 
     @Override
-    public ResultValidator<T> expectReturnValueMatching(Matcher<?> matcher) {
+    public ResultValidator<T> expectResponseMessagePayloadMatching(Matcher<?> matcher) {
         if (matcher == null) {
-            return expectReturnValueMatching(nullValue());
+            return expectResponseMessagePayloadMatching(nullValue());
         }
-        StringDescription description = new StringDescription();
-        matcher.describeTo(description);
+        StringDescription expectedDescription = new StringDescription();
+        matcher.describeTo(expectedDescription);
         if (actualException != null) {
-            reporter.reportUnexpectedException(actualException, description);
+            reporter.reportUnexpectedException(actualException, expectedDescription);
         } else if (!matcher.matches(actualReturnValue.getPayload())) {
-            reporter.reportWrongResult(actualReturnValue.getPayload(), description);
+            reporter.reportWrongResult(actualReturnValue.getPayload(), expectedDescription);
+        }
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectResponseMessage(CommandResponseMessage expectedReturnMessage) {
+        expectResponseMessagePayload(expectedReturnMessage.getPayload());
+
+        StringDescription expectedDescription = new StringDescription();
+        StringDescription actualDescription = new StringDescription();
+        MapEntryMatcher expectedMatcher = new MapEntryMatcher(expectedReturnMessage.getMetaData());
+        MapEntryMatcher actualMatcher = new MapEntryMatcher(actualReturnValue.getMetaData());
+        expectedMatcher.describeTo(expectedDescription);
+        actualMatcher.describeTo(actualDescription);
+        if (!verifyMetaDataEquality(expectedReturnMessage.getPayloadType(),
+                                    expectedReturnMessage.getMetaData(),
+                                    actualReturnValue.getMetaData())) {
+            reporter.reportWrongResult(actualDescription, expectedDescription);
+        }
+
+        return this;
+    }
+
+    @Override
+    public ResultValidator<T> expectResponseMessageMatching(Matcher<? super CommandResponseMessage<?>> matcher) {
+        if (matcher == null) {
+            return expectResponseMessageMatching(nullValue());
+        }
+        StringDescription expectedDescription = new StringDescription();
+        matcher.describeTo(expectedDescription);
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        } else if (!matcher.matches(actualReturnValue)) {
+            reporter.reportWrongResult(actualReturnValue, expectedDescription);
         }
         return this;
     }
@@ -279,16 +322,25 @@ public class ResultValidatorImpl<T> implements ResultValidator<T>, CommandCallba
         }
     }
 
-    private boolean verifyEventEquality(Object expectedEvent, Object actualEvent) {
-        if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
+    private boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+        if (expectedPayload != null && actualPayload == null) {
             return false;
         }
-        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedEvent, fieldFilter);
-        if (!matcher.matches(actualEvent)) {
-            reporter.reportDifferentEventContents(expectedEvent.getClass(),
-                                                  matcher.getFailedField(),
-                                                  matcher.getFailedFieldActualValue(),
-                                                  matcher.getFailedFieldExpectedValue());
+        if (expectedPayload == null && actualPayload != null) {
+            return false;
+        }
+        if (expectedPayload == null) {
+            return true;
+        }
+        if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
+            return false;
+        }
+        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedPayload, fieldFilter);
+        if (!matcher.matches(actualPayload)) {
+            reporter.reportDifferentPayloads(expectedPayload.getClass(),
+                                             matcher.getFailedField(),
+                                             matcher.getFailedFieldActualValue(),
+                                             matcher.getFailedFieldExpectedValue());
         }
         return true;
     }
