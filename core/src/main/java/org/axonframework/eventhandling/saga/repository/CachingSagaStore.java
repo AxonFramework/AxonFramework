@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.saga.repository;
 
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
@@ -24,6 +24,8 @@ import org.axonframework.eventhandling.saga.AssociationValues;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Saga Repository implementation that adds caching behavior to the repository it wraps. Both associations and sagas
@@ -39,25 +41,37 @@ import java.util.Set;
 public class CachingSagaStore<T> implements SagaStore<T> {
 
     private final SagaStore<T> delegate;
-    // guarded by "associationsCacheLock"
+    // This Cache guarded by "associationsCacheLock"
     private final Cache associationsCache;
     private final Cache sagaCache;
 
     /**
-     * Initializes an instance delegating to the given {@code delegate}, storing associations in the given
-     * {@code associationsCache} and Saga instances in the given {@code sagaCache}.
+     * Instantiate a {@link CachingSagaStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@code delegate} {@link SagaStore}, Saga {@code associationsCache} and {@code sagaCache} are
+     * not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param delegate          The repository instance providing access to (persisted) entries
-     * @param associationsCache The cache to store association information is
-     * @param sagaCache         The cache to store Saga instances in
+     * @param builder the {@link Builder} used to instantiate a {@link CachingSagaStore} instance
      */
-    public CachingSagaStore(SagaStore<T> delegate, Cache associationsCache, Cache sagaCache) {
-        Assert.notNull(delegate, () -> "You must provide a SagaRepository instance to delegate to");
-        Assert.notNull(associationsCache, () -> "You must provide a Cache instance to store the association values");
-        Assert.notNull(sagaCache, () -> "You must provide a Cache instance to store the sagas");
-        this.delegate = delegate;
-        this.associationsCache = associationsCache;
-        this.sagaCache = sagaCache;
+    protected CachingSagaStore(Builder<T> builder) {
+        builder.validate();
+        this.delegate = builder.delegateSagaStore;
+        this.associationsCache = builder.associationsCache;
+        this.sagaCache = builder.sagaCache;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link CachingSagaStore}.
+     * <p>
+     * The {@code delegateSagaStore} of type {@link SagaStore, the {@code associationsCache} and {@code sagaCache}
+     * (both of type {@link Cache}) are <b>hard requirements</b> and as such should be provided.
+     *
+     * @param <T> a generic specifying the Saga type contained in this
+     *            {@link org.axonframework.eventhandling.saga.SagaRepository} implementation
+     * @return a Builder to be able to create a {@link CachingSagaStore}
+     */
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
     }
 
     @Override
@@ -134,12 +148,85 @@ public class CachingSagaStore<T> implements SagaStore<T> {
         sagaCache.put(sagaIdentifier, new CacheEntry<>(saga, associationValues.asSet()));
         delegate.updateSaga(sagaType, sagaIdentifier, saga, associationValues);
         associationValues.removedAssociations()
-                .forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
+                         .forEach(av -> removeAssociationValueFromCache(sagaType, sagaIdentifier, av));
         addCachedAssociations(associationValues.addedAssociations(), sagaIdentifier, sagaType);
     }
 
     private String cacheKey(AssociationValue associationValue, Class<?> sagaType) {
         return sagaType.getName() + "/" + associationValue.getKey() + "=" + associationValue.getValue();
+    }
+
+    /**
+     * Builder class to instantiate a {@link CachingSagaStore}.
+     * <p>
+     * The {@code delegateSagaStore} of type {@link SagaStore, the {@code associationsCache} and {@code sagaCache}
+     * (both of type {@link Cache}) are <b>hard requirements</b> and as such should be provided.
+     *
+     * @param <T> a generic specifying the Saga type contained in this
+     *            {@link org.axonframework.eventhandling.saga.SagaRepository} implementation
+     */
+    public static class Builder<T> {
+
+        private SagaStore<T> delegateSagaStore;
+        private Cache associationsCache;
+        private Cache sagaCache;
+
+        /**
+         * Sets the {@link SagaStore} instance providing access to (persisted) entries.
+         *
+         * @param delegateSagaStore the {@link SagaStore} instance providing access to (persisted) entries
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder<T> delegateSagaStore(SagaStore<T> delegateSagaStore) {
+            assertNonNull(delegateSagaStore, "Delegate SagaStore may not be null");
+            this.delegateSagaStore = delegateSagaStore;
+            return this;
+        }
+
+        /**
+         * Sets the {@code associationsCache} of type {@link Cache} used to store Saga associations with.
+         *
+         * @param associationsCache a {@link Cache} used to store Saga associations with
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder<T> associationsCache(Cache associationsCache) {
+            assertNonNull(associationsCache, "AssociationsCache may not be null");
+            this.associationsCache = associationsCache;
+            return this;
+        }
+
+        /**
+         * Sets the {@code sagaCache} of type {@link Cache} used to store Sagas with.
+         *
+         * @param sagaCache a {@link Cache} used to store Sagas with
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder<T> sagaCache(Cache sagaCache) {
+            assertNonNull(sagaCache, "SagaCache may not be null");
+            this.sagaCache = sagaCache;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link CachingSagaStore} as specified through this Builder.
+         *
+         * @return a {@link CachingSagaStore} as specified through this Builder
+         */
+        public CachingSagaStore<T> build() {
+            return new CachingSagaStore<>(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(delegateSagaStore, "The delegate SagaStore is a hard requirement and should be provided");
+            assertNonNull(associationsCache, "The associationsCache is a hard requirement and should be provided");
+            assertNonNull(sagaCache, "The sagaCache is a hard requirement and should be provided");
+        }
     }
 
     private static class CacheEntry<T> implements Entry<T>, Serializable {
