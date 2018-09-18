@@ -179,7 +179,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     /**
      * Builder class to instantiate a {@link AggregateAnnotationCommandHandler}.
      * <p>
-     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
+     * The {@link CommandTargetResolver} is defaulted to an {@link AnnotationCommandTargetResolver}
      * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
      * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
      * aggregate). To instantiate this AggregateModel, either an AggregateModel can be provided directly or an
@@ -326,8 +326,6 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(repository, "The Repository is a hard requirement and should be provided");
-            assertNonNull(commandTargetResolver,
-                          "The CommandTargetResolver is a hard requirement and should be provided");
             if (aggregateModel == null) {
                 assertNonNull(
                         aggregateType,

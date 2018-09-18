@@ -283,7 +283,6 @@ public class JpaTokenStore implements TokenStore {
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
-            assertNonNull(claimTimeout, "The claim timeout is a hard requirement and should be provided");
             assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
         }
 

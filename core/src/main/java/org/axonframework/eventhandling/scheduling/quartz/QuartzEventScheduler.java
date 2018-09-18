@@ -400,8 +400,6 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         protected void validate() throws AxonConfigurationException {
             assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
             assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
-            assertNonNull(jobDataBinder, "The EventJobDataBinder is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
         }
     }
 }

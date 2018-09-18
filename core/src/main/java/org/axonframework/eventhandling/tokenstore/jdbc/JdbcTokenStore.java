@@ -86,7 +86,7 @@ public class JdbcTokenStore implements TokenStore {
      * Instantiate a Builder to be able to create a {@link JdbcTokenStore}.
      * <p>
      * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
-     * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * the {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
      * {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and {@link Serializer} are
      * a <b>hard requirements</b> and as such should be provided.
      *
@@ -553,10 +553,7 @@ public class JdbcTokenStore implements TokenStore {
         protected void validate() throws AxonConfigurationException {
             assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
             assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
-            assertNonNull(schema, "The TokenSchema is a hard requirement and should be provided");
-            assertNonNull(claimTimeout, "The claim timeout is a hard requirement and should be provided");
             assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
-            assertNonNull(contentType, "The content type is a hard requirement and should be provided");
         }
 
         private void assertNodeId(String nodeId, String exceptionMessage) {

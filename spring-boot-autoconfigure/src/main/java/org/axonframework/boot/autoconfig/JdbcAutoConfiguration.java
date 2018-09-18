@@ -71,7 +71,10 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer) {
-        return JdbcTokenStore.builder().connectionProvider(connectionProvider).serializer(serializer).build();
+        return JdbcTokenStore.builder()
+                             .connectionProvider(connectionProvider)
+                             .serializer(serializer)
+                             .build();
     }
 
     @ConditionalOnMissingBean(SagaStore.class)
