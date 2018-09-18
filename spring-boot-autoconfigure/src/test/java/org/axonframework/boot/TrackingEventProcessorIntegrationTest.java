@@ -16,7 +16,7 @@
 
 package org.axonframework.boot;
 
-import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
+import org.axonframework.boot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.boot.autoconfig.AMQPAutoConfiguration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;

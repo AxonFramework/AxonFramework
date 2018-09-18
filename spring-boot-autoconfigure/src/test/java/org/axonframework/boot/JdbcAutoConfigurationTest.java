@@ -1,6 +1,6 @@
 package org.axonframework.boot;
 
-import io.axoniq.axonserver.connector.boot.AxonServerAutoConfiguration;
+import org.axonframework.boot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;

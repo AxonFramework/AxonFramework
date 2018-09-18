@@ -151,7 +151,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.axoniq</groupId>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-server-connector</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

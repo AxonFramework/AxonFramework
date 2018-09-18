@@ -23,7 +23,6 @@
         <version>3.4-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.axoniq</groupId>
     <artifactId>axon-server-connector</artifactId>
 
     <dependencies>
