@@ -16,11 +16,16 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
+import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -30,9 +35,12 @@ import org.axonframework.commandhandling.model.AggregateScopeDescriptor;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
@@ -47,7 +55,11 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +77,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -92,7 +106,7 @@ import static java.lang.String.format;
  * <p>
  * Commands that have been executed against a potentially corrupt Aggregate will result in a {@link
  * AggregateStateCorruptedException} exception. These commands are automatically rescheduled for processing by
- * default. Use {@link DisruptorConfiguration#setRescheduleCommandsOnCorruptState(boolean)} disable this feature. Note
+ * default. Use {@link Builder#rescheduleCommandsOnCorruptState(boolean)} to disable this feature. Note
  * that the order in which commands are executed is not fully guaranteed when this feature is enabled (default).
  *
  * <em>Limitations of this implementation</em>
@@ -125,9 +139,9 @@ public class DisruptorCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
 
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> commandHandlers = new ConcurrentHashMap<>();
-    private final Disruptor<CommandHandlingEntry> disruptor;
-    private final CommandHandlerInvoker[] commandHandlerInvokers;
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> commandHandlers =
+            new ConcurrentHashMap<>();
+
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
     private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors;
     private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors;
@@ -137,76 +151,117 @@ public class DisruptorCommandBus implements CommandBus {
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
+    private final Disruptor<CommandHandlingEntry> disruptor;
+    private final CommandHandlerInvoker[] commandHandlerInvokers;
+
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
 
     /**
-     * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
-     * WaitStrategy on a RingBuffer of size 4096. The (2) Threads required for command execution are created
-     * immediately. Additional threads are used to invoke response callbacks and to initialize a recovery process in
-     * the case of errors.
-     */
-    public DisruptorCommandBus() {
-        this(new DisruptorConfiguration());
-    }
-
-    /**
-     * Initialize the DisruptorCommandBus with given resources and settings. The Threads required for command
-     * execution are immediately requested from the Configuration's Executor, if any. Otherwise, they are created.
+     * Instantiate a {@link DisruptorCommandBus} based on the fields contained in the {@link Builder}. The Threads
+     * required for command execution are immediately requested from the Configuration's Executor, if any. Otherwise,
+     * they are created.
+     * <p>
+     * Will assert that the {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration},
+     * {@link ProducerType}, {@link WaitStrategy} and {@link Cache} are not {@code null}. Additional verification is
+     * done on the the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
+     * {@code invokerThreadCount} to check whether they are positive numbers. If any of these checks fails, an
+     * {@link AxonConfigurationException} will be thrown.
      *
-     * @param configuration The configuration for the command bus
+     * @param builder the {@link Builder} used to instantiate a {@link DisruptorCommandBus} instance
      */
     @SuppressWarnings("unchecked")
-    public DisruptorCommandBus(DisruptorConfiguration configuration) {
-        Assert.notNull(configuration, () -> "configuration may not be null");
-        Executor executor = configuration.getExecutor();
+    protected DisruptorCommandBus(Builder builder) {
+        builder.validate();
+
+        dispatchInterceptors = new CopyOnWriteArrayList<>(builder.dispatchInterceptors);
+        invokerInterceptors = new CopyOnWriteArrayList<>(builder.invokerInterceptors);
+        publisherInterceptors = new ArrayList<>(builder.publisherInterceptors);
+
+        Executor executor = builder.executor;
         if (executor == null) {
             executorService = Executors.newCachedThreadPool(new AxonThreadFactory("DisruptorCommandBus"));
             executor = executorService;
         } else {
             executorService = null;
         }
-        rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
-        invokerInterceptors = new CopyOnWriteArrayList<>(configuration.getInvokerInterceptors());
-        publisherInterceptors = new ArrayList<>(configuration.getPublisherInterceptors());
-        dispatchInterceptors = new CopyOnWriteArrayList<>(configuration.getDispatchInterceptors());
-        TransactionManager transactionManager = configuration.getTransactionManager();
-        disruptor = new Disruptor<>(CommandHandlingEntry::new, configuration.getBufferSize(), executor,
-                                    configuration.getProducerType(), configuration.getWaitStrategy());
-        commandTargetResolver = configuration.getCommandTargetResolver();
+        rescheduleOnCorruptState = builder.rescheduleCommandsOnCorruptState;
+        coolingDownPeriod = builder.coolingDownPeriod;
+        commandTargetResolver = builder.commandTargetResolver;
 
-        // configure invoker Threads
-        commandHandlerInvokers = initializeInvokerThreads(configuration);
-        // configure publisher Threads
-        EventPublisher[] publishers = initializePublisherThreads(configuration, executor,
-                                                                 transactionManager);
-        messageMonitor = configuration.getMessageMonitor();
+        // Configure publisher Threads
+        EventPublisher[] publishers = initializePublisherThreads(builder.publisherThreadCount,
+                                                                 executor,
+                                                                 builder.transactionManager,
+                                                                 builder.rollbackConfiguration);
         publisherCount = publishers.length;
+        messageMonitor = builder.messageMonitor;
+
+        disruptor = new Disruptor<>(CommandHandlingEntry::new,
+                                    builder.bufferSize,
+                                    executor,
+                                    builder.producerType,
+                                    builder.waitStrategy);
+        // Configure invoker Threads
+        commandHandlerInvokers = initializeInvokerThreads(builder.invokerThreadCount, builder.cache);
+
         disruptor.setDefaultExceptionHandler(new ExceptionHandler());
-
         disruptor.handleEventsWith(commandHandlerInvokers).then(publishers);
-
-        coolingDownPeriod = configuration.getCoolingDownPeriod();
         disruptor.start();
     }
 
-    private EventPublisher[] initializePublisherThreads(DisruptorConfiguration configuration, Executor executor,
-                                                        TransactionManager transactionManager) {
-        EventPublisher[] publishers = new EventPublisher[configuration.getPublisherThreadCount()];
+    private EventPublisher[] initializePublisherThreads(int publisherThreadCount,
+                                                        Executor executor,
+                                                        TransactionManager transactionManager,
+                                                        RollbackConfiguration rollbackConfiguration) {
+        EventPublisher[] publishers = new EventPublisher[publisherThreadCount];
         for (int t = 0; t < publishers.length; t++) {
-            publishers[t] = new EventPublisher(executor, transactionManager,
-                                               configuration.getRollbackConfiguration(), t);
+            publishers[t] = new EventPublisher(executor, transactionManager, rollbackConfiguration, t);
         }
         return publishers;
     }
 
-    private CommandHandlerInvoker[] initializeInvokerThreads(DisruptorConfiguration configuration) {
+    private CommandHandlerInvoker[] initializeInvokerThreads(int invokerThreadCount, Cache cache) {
         CommandHandlerInvoker[] invokers;
-        invokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
+        invokers = new CommandHandlerInvoker[invokerThreadCount];
         for (int t = 0; t < invokers.length; t++) {
-            invokers[t] = new CommandHandlerInvoker(configuration.getCache(), t);
+            invokers[t] = new CommandHandlerInvoker(cache, t);
         }
         return invokers;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link DisruptorCommandBus}.
+     * <p>
+     * The following configurable fields have defaults:
+     * <ul>
+     * <li>The {@code rescheduleCommandsOnCorruptState} defaults to {@code true}.</li>
+     * <li>The {@code coolingDownPeriod} defaults to {@code 1000}.</li>
+     * <li>The {@link CommandTargetResolver} defaults to an {@link AnnotationCommandTargetResolver}.</li>
+     * <li>The {@code publisherThreadCount} defaults to {@code 1}.</li>
+     * <li>The {@link MessageMonitor} defaults to {@link NoOpMessageMonitor#INSTANCE}.</li>
+     * <li>The {@link RollbackConfiguration} defaults to {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.</li>
+     * <li>The {@code bufferSize} defaults to {@code 4096}.</li>
+     * <li>The {@link ProducerType} defaults to {@link ProducerType#MULTI}.</li>
+     * <li>The {@link WaitStrategy} defaults to a {@link BlockingWaitStrategy}.</li>
+     * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
+     * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
+     * </ul>
+     * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
+     * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can be
+     * specified by providing an {@link Executor}.
+     * <p>
+     * The {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link ProducerType},
+     * {@link WaitStrategy} and {@link Cache} are a <b>hard requirements</b>. Thus setting them to {@code null} will
+     * result in an {@link AxonConfigurationException}.
+     * Additionally, the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
+     * {@code invokerThreadCount} have a positive number constraint, thus will also result in an
+     * AxonConfigurationException if set otherwise.
+     *
+     * @return a Builder to be able to create a {@link DisruptorCommandBus}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -216,7 +271,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, ? super R> callback) {
         Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
@@ -240,6 +295,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param callback The callback to notify when command handling is completed
      * @param <R>      The expected return type of the command
      */
+    @SuppressWarnings("Duplicates")
     private <C, R> void doDispatch(CommandMessage<? extends C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
@@ -467,8 +523,8 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Shuts down the command bus. It no longer accepts new commands, and finishes processing commands that have
-     * already been published. This method will not shut down any executor that has been provided as part of the
-     * Configuration.
+     * already been published. This method <b>will not</b> shut down any executor that has been provided as part of the
+     * Builder process.
      */
     public void stop() {
         if (!started) {
@@ -512,7 +568,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         }
 
         @Override
@@ -603,7 +659,8 @@ public class DisruptorCommandBus implements CommandBus {
                         new BlacklistDetectingCallback<>(
                                 new CommandCallback<Object, Object>() {
                                     @Override
-                                    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+                                    public void onSuccess(CommandMessage<?> commandMessage,
+                                                          CommandResultMessage<?> commandResultMessage) {
                                         future.complete(null);
                                     }
 
@@ -648,6 +705,360 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public void handleOnShutdownException(Throwable ex) {
             logger.error("Error while shutting down the DisruptorCommandBus", ex);
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link DisruptorCommandBus}.
+     * <p>
+     * The following configurable fields have defaults:
+     * <ul>
+     * <li>The {@code rescheduleCommandsOnCorruptState} defaults to {@code true}.</li>
+     * <li>The {@code coolingDownPeriod} defaults to {@code 1000}.</li>
+     * <li>The {@link CommandTargetResolver} defaults to an {@link AnnotationCommandTargetResolver}.</li>
+     * <li>The {@code publisherThreadCount} defaults to {@code 1}.</li>
+     * <li>The {@link MessageMonitor} defaults to {@link NoOpMessageMonitor#INSTANCE}.</li>
+     * <li>The {@link RollbackConfiguration} defaults to {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}.</li>
+     * <li>The {@code bufferSize} defaults to {@code 4096}.</li>
+     * <li>The {@link ProducerType} defaults to {@link ProducerType#MULTI}.</li>
+     * <li>The {@link WaitStrategy} defaults to a {@link BlockingWaitStrategy}.</li>
+     * <li>The {@code invokerThreadCount} defaults to {@code 1}.</li>
+     * <li>The {@link Cache} defaults to {@link NoCache#INSTANCE}.</li>
+     * </ul>
+     * The (2) Threads required for command execution are created immediately. Additional threads are used to invoke
+     * response callbacks and to initialize a recovery process in the case of errors. The thread creation process can be
+     * specified by providing an {@link Executor}.
+     * <p>
+     * The {@link CommandTargetResolver}, {@link MessageMonitor}, {@link RollbackConfiguration}, {@link ProducerType},
+     * {@link WaitStrategy} and {@link Cache} are a <b>hard requirements</b>. Thus setting them to {@code null} will
+     * result in an {@link AxonConfigurationException}.
+     * Additionally, the {@code coolingDownPeriod}, {@code publisherThreadCount}, {@code bufferSize} and
+     * {@code invokerThreadCount} have a positive number constraint, thus will also result in an
+     * AxonConfigurationException if set otherwise.
+     */
+    public static class Builder {
+
+        private static final int DEFAULT_BUFFER_SIZE = 4096;
+
+        private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors =
+                new ArrayList<>();
+        private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors =
+                new ArrayList<>();
+        private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
+                new ArrayList<>();
+        private Executor executor;
+        private boolean rescheduleCommandsOnCorruptState = true;
+        private long coolingDownPeriod = 1000;
+        private CommandTargetResolver commandTargetResolver = new AnnotationCommandTargetResolver();
+        private int publisherThreadCount = 1;
+        private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private TransactionManager transactionManager;
+        private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
+        private int bufferSize = DEFAULT_BUFFER_SIZE;
+        private ProducerType producerType = ProducerType.MULTI;
+        private WaitStrategy waitStrategy = new BlockingWaitStrategy();
+        private int invokerThreadCount = 1;
+        private Cache cache = NoCache.INSTANCE;
+
+        /**
+         * Set the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage} to use with the
+         * {@link DisruptorCommandBus} during in the invocation thread. The interceptors are invoked by the thread that
+         * also executes the command handler.
+         * <p/>
+         * Note that this is *not* the thread that stores and publishes the generated events. See
+         * {@link #publisherInterceptors(java.util.List)}.
+         *
+         * @param invokerInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder invokerInterceptors(
+                List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors) {
+            this.invokerInterceptors.clear();
+            this.invokerInterceptors.addAll(invokerInterceptors);
+            return this;
+        }
+
+        /**
+         * Configures the {@link MessageHandlerInterceptor} of generic type {@link CommandMessage}  to use with the
+         * {@link DisruptorCommandBus} during the publication of changes. The interceptors are invoked by the thread
+         * that also stores and publishes the events.
+         *
+         * @param publisherInterceptors the {@link MessageHandlerInterceptor}s to invoke when handling an incoming
+         *                              command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder publisherInterceptors(List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
+            this.publisherInterceptors.clear();
+            this.publisherInterceptors.addAll(publisherInterceptors);
+            return this;
+        }
+
+        /**
+         * Configures {@link MessageDispatchInterceptor} of generic type {@link CommandMessage} to use with the
+         * {@link DisruptorCommandBus} when commands are dispatched. The interceptors are invoked by the thread that
+         * provides the commands to the command bus.
+         *
+         * @param dispatchInterceptors the {@link MessageDispatchInterceptor}s dispatch interceptors to invoke when
+         *                             dispatching a command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder dispatchInterceptors(List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
+            this.dispatchInterceptors.clear();
+            this.dispatchInterceptors.addAll(dispatchInterceptors);
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} that provides the processing resources (Threads) for the components of the
+         * {@link DisruptorCommandBus}. The provided executor must be capable of providing the required number of
+         * threads. Three threads are required immediately at startup and will not be returned until the CommandBus is
+         * stopped. Additional threads are used to invoke callbacks and start a recovery process in case aggregate state
+         * has been corrupted. Failure to do this results in the disruptor hanging at startup, waiting for resources to
+         * become available.
+         * <p/>
+         * Defaults to {@code null}, causing the DisruptorCommandBus to create the necessary threads itself. In that
+         * case, threads are created in the DisruptorCommandBus ThreadGroup.
+         *
+         * @param executor the {@link Executor} that provides the processing resources
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder executor(Executor executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Set the indicator specifying whether commands that failed because they were executed against potentially
+         * corrupted aggregate state should be automatically rescheduled. Commands that caused the aggregate state to
+         * become corrupted are <em>never</em> automatically rescheduled, to prevent poison message syndrome.
+         * <p/>
+         * Defaults to {@code true}.
+         *
+         * @param rescheduleCommandsOnCorruptState a {@code boolean} specifying whether or not to automatically
+         *                                         reschedule commands that failed due to potentially corrupted
+         *                                         aggregate state.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder rescheduleCommandsOnCorruptState(boolean rescheduleCommandsOnCorruptState) {
+            this.rescheduleCommandsOnCorruptState = rescheduleCommandsOnCorruptState;
+            return this;
+        }
+
+        /**
+         * Sets the cooling down period in milliseconds. This is the time in which new commands are no longer accepted,
+         * but the {@link DisruptorCommandBus} may reschedule commands that may have been executed against a
+         * corrupted Aggregate. If no commands have been rescheduled during this period, the disruptor shuts down
+         * completely. Otherwise, it wait until no commands were scheduled for processing.
+         * <p/>
+         * Defaults to 1000 ms (1 second).
+         *
+         * @param coolingDownPeriod a {@code long} specifying the cooling down period for the shutdown of the
+         *                          {@link DisruptorCommandBus}, in milliseconds.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder coolingDownPeriod(long coolingDownPeriod) {
+            assertCoolingDownPeriod(coolingDownPeriod);
+            this.coolingDownPeriod = coolingDownPeriod;
+            return this;
+        }
+
+        /**
+         * Sets the {@link CommandTargetResolver} that must be used to indicate which Aggregate instance will be
+         * invoked by an incoming command. The {@link DisruptorCommandBus} only uses this value if
+         * {@link #invokerThreadCount(int)}}, or {@link #publisherThreadCount(int)} is greater than {@code 1}.
+         * <p/>
+         * Defaults to an {@link AnnotationCommandTargetResolver} instance.
+         *
+         * @param commandTargetResolver The {@link CommandTargetResolver} to use to indicate which Aggregate
+         *                              instance is target of an incoming Command
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder commandTargetResolver(CommandTargetResolver commandTargetResolver) {
+            assertNonNull(commandTargetResolver, "CommandTargetResolver may not be null");
+            this.commandTargetResolver = commandTargetResolver;
+            return this;
+        }
+
+        /**
+         * Sets the number of Threads that should be used to store and publish the generated Events. Defaults to
+         * {@code 1}.
+         * <p/>
+         * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
+         * of I/O that the process requires. If no I/O is involved, a good starting value is {@code [processors / 2]}.
+         *
+         * @param publisherThreadCount the number of Threads to use for publishing as an {@code int}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder publisherThreadCount(int publisherThreadCount) {
+            assertPublisherThreadCount(publisherThreadCount);
+            this.publisherThreadCount = publisherThreadCount;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageMonitor} of generic type {@link CommandMessage} used the to monitor the command bus.
+         * Defaults to a {@link NoOpMessageMonitor}.
+         *
+         * @param messageMonitor a {@link MessageMonitor} used the message monitor to monitor the command bus
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+            assertNonNull(messageMonitor, "MessageMonitor may not be null");
+            this.messageMonitor = messageMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} to use to manage a transaction around the storage and publication of
+         * events. The default ({@code null}) is to not have publication and storage of events wrapped in a transaction.
+         *
+         * @param transactionManager the {@link TransactionManager} to use to manage a transaction around the storage
+         *                           and publication of events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RollbackConfiguration} which allows you to specify when a {@link UnitOfWork} should be rolled
+         * back. Defaults to a {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, which triggers a rollback on all
+         * unchecked exceptions.
+         *
+         * @param rollbackConfiguration a {@link RollbackConfiguration} specifying when a {@link UnitOfWork} should be
+         *                              rolled back
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+            assertNonNull(rollbackConfiguration, "RollbackConfiguration may not be null");
+            this.rollbackConfiguration = rollbackConfiguration;
+            return this;
+        }
+
+        /**
+         * Sets the buffer size to use. This field must be positive and a power of 2.
+         * <p>
+         * The default is {@code 4096}.
+         *
+         * @param bufferSize an {@code int} specifying the buffer size to use
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder bufferSize(int bufferSize) {
+            assertBufferSize(bufferSize);
+            this.bufferSize = bufferSize;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ProducerType} to use by the {@link Disruptor}.
+         * <p>
+         * Defaults to a {@link ProducerType#MULTI} solution.
+         *
+         * @param producerType the {@link ProducerType} to use by the {@link Disruptor}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder producerType(ProducerType producerType) {
+            assertNonNull(producerType, "ProducerType may not be null");
+            this.producerType = producerType;
+            return this;
+        }
+
+        /**
+         * Sets the {@link WaitStrategy} which is used to make dependent threads wait for tasks to be completed. The
+         * choice of strategy mainly depends on the number of processors available and the number of tasks other than
+         * the {@link DisruptorCommandBus} being processed.
+         * <p/>
+         * The {@link com.lmax.disruptor.BusySpinWaitStrategy} provides the best throughput at the lowest latency, but
+         * also put a big claim on available CPU resources. The {@link com.lmax.disruptor.SleepingWaitStrategy} yields
+         * lower performance, but leaves resources available for other processes to use.
+         * <p/>
+         * Defaults to the {@link BlockingWaitStrategy}.
+         *
+         * @param waitStrategy The WaitStrategy to use
+         * @return the current Builder instance, for fluent interfacing
+         *
+         * @see com.lmax.disruptor.SleepingWaitStrategy SleepingWaitStrategy
+         * @see com.lmax.disruptor.BlockingWaitStrategy BlockingWaitStrategy
+         * @see com.lmax.disruptor.BusySpinWaitStrategy BusySpinWaitStrategy
+         * @see com.lmax.disruptor.YieldingWaitStrategy YieldingWaitStrategy
+         */
+        public Builder waitStrategy(WaitStrategy waitStrategy) {
+            assertNonNull(waitStrategy, "WaitStrategy may not be null");
+            this.waitStrategy = waitStrategy;
+            return this;
+        }
+
+        /**
+         * Sets the number of Threads that should be used to invoke the Command Handlers. Defaults to {@code 1}.
+         * <p/>
+         * A good value for this setting mainly depends on the number of cores your machine has, as well as the amount
+         * of I/O that the process requires. A good range, if no I/O is involved is
+         * {@code 1 .. ([processor count] / 2)}.
+         *
+         * @param invokerThreadCount an {@code int} specifying the number of Threads to use for Command Handler
+         *                           invocation
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder invokerThreadCount(int invokerThreadCount) {
+            assertInvokerThreadCount(invokerThreadCount);
+            this.invokerThreadCount = invokerThreadCount;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Cache} in which loaded aggregates will be stored. Aggregates that are not active in the
+         * CommandBus' buffer will be loaded from this cache. If they are not in the cache, a new instance will be
+         * constructed using Events from the {@link EventStore}.
+         * <p/>
+         * By default, no cache is used.
+         *
+         * @param cache the cache to store loaded aggregates in
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder cache(Cache cache) {
+            assertNonNull(cache, "Cache may not be null");
+            this.cache = cache;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link DisruptorCommandBus} as specified through this Builder.
+         *
+         * @return a {@link DisruptorCommandBus} as specified through this Builder
+         */
+        public DisruptorCommandBus build() {
+            return new DisruptorCommandBus(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder as set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() {
+            assertCoolingDownPeriod(coolingDownPeriod);
+            assertPublisherThreadCount(publisherThreadCount);
+            assertBufferSize(bufferSize);
+            assertInvokerThreadCount(invokerThreadCount);
+        }
+
+        private void assertCoolingDownPeriod(long coolingDownPeriod) {
+            assertThat(coolingDownPeriod, count -> count > 0, "The cooling down period must be a positive number");
+        }
+
+        private void assertBufferSize(int bufferSize) {
+            assertThat(bufferSize, size -> size > 0 && size % 2 == 0,
+                       "The buffer size must be positive and a power of 2");
+        }
+
+        private void assertPublisherThreadCount(int publisherThreadCount) {
+            assertThat(publisherThreadCount, count -> count > 0, "The publisher thread count must at least be 1");
+        }
+
+        private void assertInvokerThreadCount(int invokerThreadCount) {
+            assertThat(invokerThreadCount, count -> count > 0, "The invoker thread count must be at least 1");
         }
     }
 }

@@ -19,6 +19,7 @@ package org.axonframework.jgroups.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
@@ -61,6 +62,7 @@ import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -120,10 +122,11 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     /**
-     * Builder class to instantiate a {@link JGroupsConnector}. The {@link RoutingStrategy} is defaulted to an
-     * {@link AnnotationRoutingStrategy}, and the {@link ConsistentHashChangeListener} to a no-op solution.
-     * The {@link CommandBus}, {@link JChannel}, {@code clusterName} and {@link Serializer} are <b>hard
-     * requirements</b> and as such should be provided.
+     * Instantiate a Builder to be able to create a {@link JGroupsConnector}.
+     * <p>
+     * The {@link RoutingStrategy} is defaulted to an {@link AnnotationRoutingStrategy}, and the
+     * {@link ConsistentHashChangeListener} to a no-op solution. The {@link CommandBus}, {@link JChannel},
+     * {@code clusterName} and {@link Serializer} are <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link JGroupsConnector}
      */
@@ -272,14 +275,14 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     }
 
     private void processReplyMessage(JGroupsReplyMessage message) {
-        CommandCallbackWrapper<Object, Object, Object> callbackWrapper =
-                callbackRepository.fetchAndRemove(message.getCommandIdentifier());
+        CommandCallbackWrapper callbackWrapper = callbackRepository.fetchAndRemove(message.getCommandIdentifier());
         if (callbackWrapper == null) {
             logger.warn("Received a callback for a message that has either already received a callback, "
                                 + "or which was not sent through this node. Ignoring.");
         } else {
             if (message.isSuccess()) {
-                callbackWrapper.success(message.getReturnValue(serializer));
+                //noinspection unchecked
+                callbackWrapper.success(message.getCommandResultMessage(serializer));
             } else {
                 Throwable exception = getOrDefault(message.getError(serializer), new IllegalStateException(
                         format("Unknown execution failure for command [%s]", message.getCommandIdentifier())));
@@ -295,8 +298,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
                 //noinspection unchecked
                 localSegment.dispatch(commandMessage, new CommandCallback<C, R>() {
                     @Override
-                    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-                        sendReply(msg.getSrc(), message.getCommandIdentifier(), result, null);
+                    public void onSuccess(CommandMessage<? extends C> commandMessage,
+                                          CommandResultMessage<? extends R> commandResultMessage) {
+                        sendReply(msg.getSrc(), message.getCommandIdentifier(), commandResultMessage, null);
                     }
 
                     @Override
@@ -320,11 +324,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         boolean success = cause == null;
         Object reply;
         try {
-            reply = new JGroupsReplyMessage(commandIdentifier, success, success ? result : cause, serializer);
+            CommandResultMessage<?> commandResultMessage =
+                    success ? asCommandResultMessage(result) : asCommandResultMessage(cause);
+            reply = new JGroupsReplyMessage(commandIdentifier, success, commandResultMessage, serializer);
         } catch (Exception e) {
             logger.warn(String.format("Could not serialize command reply [%s]. Sending back NULL.",
                                       success ? result : cause), e);
-            reply = new JGroupsReplyMessage(commandIdentifier, success, null, serializer);
+            reply = new JGroupsReplyMessage(commandIdentifier, success, asCommandResultMessage(null), serializer);
         }
         try {
             channel.send(address, reply);
@@ -504,7 +510,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * Sets the {@code localSegment} of type {@link CommandBus} commands on the local node.
          *
          * @param localSegment the {@code localSegment} of type {@link CommandBus} commands on the local node
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder localSegment(CommandBus localSegment) {
             assertNonNull(localSegment, "The localSegment may not be null");
@@ -516,7 +522,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * Sets the {@code channel} of type {@link JChannel} used to connect between nodes.
          *
          * @param channel the {@code channel} of type {@link JChannel} used to connect between nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder channel(JChannel channel) {
             assertNonNull(channel, "JChannel may not be null");
@@ -528,7 +534,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * Sets the {@code clusterName} to which nodes can connect to each other.
          *
          * @param clusterName the {@code clusterName} to which nodes can connect to each other
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder clusterName(String clusterName) {
             assertClusterName(clusterName, "The clusterName may not be null or empty");
@@ -540,7 +546,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * Sets the {@link Serializer} used to serialize command messages when they are sent between nodes.
          *
          * @param serializer the {@link Serializer} used to serialize command messages when they are sent between nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
@@ -555,7 +561,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          *
          * @param routingStrategy the {@link RoutingStrategy} used to define the key based on which Command Messages are
          *                        routed to their respective handler nodes
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder routingStrategy(RoutingStrategy routingStrategy) {
             assertNonNull(routingStrategy, "RoutingStrategy may not be null");
@@ -570,7 +576,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
          * @param consistentHashChangeListener the {@link ConsistentHashChangeListener} which is notified when a change
          *                                     in membership has <em>potentially</em> caused a change in the consistent
          *                                     hash
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder consistentHashChangeListener(ConsistentHashChangeListener consistentHashChangeListener) {
             assertNonNull(consistentHashChangeListener, "ConsistentHashChangeListener may not be null");

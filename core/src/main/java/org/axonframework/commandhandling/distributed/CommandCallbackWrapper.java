@@ -17,6 +17,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 
 /**
  * Wrapper for a Command callback. This is used in a CommandCallbackRepository
@@ -27,7 +28,7 @@ import org.axonframework.commandhandling.CommandMessage;
  * @author Koen Lavooij
  */
 public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
-    private final CommandCallback<? super C, R> wrapped;
+    private final CommandCallback<? super C, ? super R> wrapped;
     private final A sessionId;
     private final CommandMessage<C> message;
 
@@ -39,7 +40,8 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
      * @param message   the command message that was sent
      * @param callback  the command callback to notify when the command result is received
      */
-    public CommandCallbackWrapper(A channelId, CommandMessage<C> message, CommandCallback<? super C, R> callback) {
+    public CommandCallbackWrapper(A channelId, CommandMessage<C> message,
+                                  CommandCallback<? super C, ? super R> callback) {
         this.wrapped = callback;
         this.sessionId = channelId;
         this.message = message;
@@ -74,18 +76,19 @@ public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
     }
 
     /**
-     * Invokes {@link CommandCallback#onSuccess(CommandMessage, Object)} with given {@code result} on the wrapped
-     * callback.
+     * Invokes {@link CommandCallback#onSuccess(CommandMessage, CommandResultMessage)} with given {@code result} on
+     * the wrapped callback.
      *
      * @param result the result of the command
      */
-    public void success(R result) {
+    public void success(CommandResultMessage<R> result) {
         onSuccess(getMessage(), result);
     }
 
     @Override
-    public void onSuccess(CommandMessage<? extends C> message, R result) {
-        wrapped.onSuccess(message, result);
+    public void onSuccess(CommandMessage<? extends C> message,
+                          CommandResultMessage<? extends R> commandResultMessage) {
+        wrapped.onSuccess(message, commandResultMessage);
     }
 
     @Override

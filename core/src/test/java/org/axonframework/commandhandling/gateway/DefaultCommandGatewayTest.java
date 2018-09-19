@@ -19,16 +19,16 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -53,13 +54,19 @@ public class DefaultCommandGatewayTest {
     private RetryScheduler mockRetryScheduler;
     private MessageDispatchInterceptor mockCommandMessageTransformer;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         mockCommandMessageTransformer = mock(MessageDispatchInterceptor.class);
-        when(mockCommandMessageTransformer.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
-        testSubject = new DefaultCommandGateway(mockCommandBus, mockRetryScheduler, mockCommandMessageTransformer);
+        when(mockCommandMessageTransformer.handle(isA(CommandMessage.class)))
+                .thenAnswer(invocation -> invocation.getArguments()[0]);
+        testSubject = DefaultCommandGateway.builder()
+                                           .commandBus(mockCommandBus)
+                                           .retryScheduler(mockRetryScheduler)
+                                           .dispatchInterceptors(mockCommandMessageTransformer)
+                                           .build();
     }
 
     @SuppressWarnings({"unchecked", "serial"})
@@ -78,8 +85,8 @@ public class DefaultCommandGatewayTest {
         final AtomicReference<Object> actualResult = new AtomicReference<>();
         testSubject.send("Command", new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                actualResult.set(result);
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+                actualResult.set(commandResultMessage);
             }
 
             @Override
@@ -131,8 +138,7 @@ public class DefaultCommandGatewayTest {
     public void testSendWithoutCallback_() throws ExecutionException, InterruptedException {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onSuccess((CommandMessage) invocation.getArguments()[0],
-                               "returnValue");
+                    .onSuccess((CommandMessage) invocation.getArguments()[0], asCommandResultMessage("returnValue"));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
@@ -242,7 +248,8 @@ public class DefaultCommandGatewayTest {
         unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
-        verify(mockCommandBus).dispatch(argThat(x -> "test".equals(x.getMetaData().get("correlationId"))), isA(CommandCallback.class));
+        verify(mockCommandBus).dispatch(argThat(x -> "test".equals(x.getMetaData().get("correlationId"))),
+                                        isA(CommandCallback.class));
 
         CurrentUnitOfWork.clear(unitOfWork);
     }

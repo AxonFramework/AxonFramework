@@ -22,8 +22,8 @@ import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -70,7 +70,7 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
         @Primary
         @Bean(destroyMethod = "shutdown")
         public CommandBus commandBus() {
-            return new AsynchronousCommandBus();
+            return AsynchronousCommandBus.builder().build();
         }
 
         @Autowired
@@ -88,7 +88,7 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
 
         @Bean
         public CommandBus simpleCommandBus() {
-            return new SimpleCommandBus();
+            return SimpleCommandBus.builder().build();
         }
 
         @Bean
@@ -116,7 +116,6 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             public void on(String event) {
                 fail("Event Handler on aggregate shouldn't be invoked");
             }
-
         }
 
         @Component
@@ -174,7 +173,6 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
                 received.add(event);
             }
         }
-
     }
 
     public static class SomeEvent {
@@ -189,6 +187,4 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             return id;
         }
     }
-
-
 }

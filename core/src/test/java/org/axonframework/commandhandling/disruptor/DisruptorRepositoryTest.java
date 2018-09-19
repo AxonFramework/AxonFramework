@@ -28,12 +28,11 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Test;
+import org.junit.*;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class DisruptorRepositoryTest {
 
@@ -41,14 +40,14 @@ public class DisruptorRepositoryTest {
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus();
+        DisruptorCommandBus commandBus = DisruptorCommandBus.builder().build();
         Repository<TestAggregate> repository = commandBus
                 .createRepository(eventStore, new GenericAggregateFactory<>(TestAggregate.class));
 
         AggregateAnnotationCommandHandler<TestAggregate> handler
                 = new AggregateAnnotationCommandHandler<>(TestAggregate.class, repository);
         handler.subscribe(commandBus);
-        DefaultCommandGateway gateway = new DefaultCommandGateway(commandBus);
+        DefaultCommandGateway gateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
 
         // Create the aggregate
         String aggregateId = "" + System.currentTimeMillis();

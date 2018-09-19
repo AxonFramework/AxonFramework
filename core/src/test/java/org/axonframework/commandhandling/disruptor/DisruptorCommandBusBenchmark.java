@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -54,7 +54,7 @@ public class DisruptorCommandBusBenchmark {
     public static void main(String[] args) throws InterruptedException {
         InMemoryEventStore eventStore = new InMemoryEventStore();
         StubHandler stubHandler = new StubHandler();
-        DisruptorCommandBus commandBus = new DisruptorCommandBus();
+        DisruptorCommandBus commandBus = DisruptorCommandBus.builder().build();
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(eventStore,
                                                               new GenericAggregateFactory<>(StubAggregate.class)));

@@ -17,7 +17,7 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseType;
 
 import java.util.Arrays;
 import java.util.List;

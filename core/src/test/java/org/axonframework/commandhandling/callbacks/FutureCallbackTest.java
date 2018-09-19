@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.MockException;
 import org.junit.Before;
@@ -26,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.axonframework.commandhandling.GenericCommandResultMessage.asCommandResultMessage;
 import static org.junit.Assert.*;
 
 /**
@@ -34,6 +36,8 @@ import static org.junit.Assert.*;
 public class FutureCallbackTest {
 
     private static final CommandMessage<Object> COMMAND_MESSAGE = GenericCommandMessage.asCommandMessage("Test");
+    private static final CommandResultMessage<String> COMMAND_RESPONSE_MESSAGE =
+            asCommandResultMessage("Hello world");
     private volatile FutureCallback<Object, Object> testSubject;
     private volatile Object resultFromParallelThread;
     private static final int THREAD_JOIN_TIMEOUT = 1000;
@@ -54,9 +58,9 @@ public class FutureCallbackTest {
         });
         t.start();
         assertTrue(t.isAlive());
-        testSubject.onSuccess(COMMAND_MESSAGE, "Hello world");
+        testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         t.join(THREAD_JOIN_TIMEOUT);
-        assertEquals("Hello world", resultFromParallelThread);
+        assertEquals(COMMAND_RESPONSE_MESSAGE, resultFromParallelThread);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -89,7 +93,7 @@ public class FutureCallbackTest {
         });
         t.start();
         t.join(1000);
-        testSubject.onSuccess(COMMAND_MESSAGE, "Hello world");
+        testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         assertTrue(resultFromParallelThread instanceof TimeoutException);
     }
 
@@ -105,9 +109,9 @@ public class FutureCallbackTest {
         t.start();
         assertTrue(t.isAlive());
         assertFalse(testSubject.isDone());
-        testSubject.onSuccess(COMMAND_MESSAGE, "Hello world");
+        testSubject.onSuccess(COMMAND_MESSAGE, COMMAND_RESPONSE_MESSAGE);
         assertTrue(testSubject.isDone());
         t.join(THREAD_JOIN_TIMEOUT);
-        assertEquals("Hello world", resultFromParallelThread);
+        assertEquals(COMMAND_RESPONSE_MESSAGE, resultFromParallelThread);
     }
 }

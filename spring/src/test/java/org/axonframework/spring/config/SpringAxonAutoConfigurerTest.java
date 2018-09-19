@@ -25,16 +25,16 @@ import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.SagaConfiguration;
+import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.replay.ReplayAwareMessageHandlerWrapper;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -63,7 +63,7 @@ import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -252,7 +252,7 @@ public class SpringAxonAutoConfigurerTest {
                 ResponseTypes.multipleInstancesOf(String.class),
                 ResponseTypes.instanceOf(String.class));
 
-        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>>result = queryBus
+        SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result = queryBus
                 .subscriptionQuery(queryMessage);
         eventBus.publish(asEventMessage("New chat message"));
 
@@ -307,12 +307,12 @@ public class SpringAxonAutoConfigurerTest {
         @Primary
         @Bean(destroyMethod = "shutdown")
         public CommandBus commandBus() {
-            return new AsynchronousCommandBus();
+            return AsynchronousCommandBus.builder().build();
         }
 
         @Bean
         public CommandBus simpleCommandBus() {
-            return new SimpleCommandBus();
+            return SimpleCommandBus.builder().build();
         }
 
         @Bean

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.disruptor;
+package org.axonframework.commandhandling;
 
-import org.junit.Test;
+import org.axonframework.messaging.Message;
+
+import java.util.Map;
 
 /**
- * @author Allard Buijze
+ * Message that represents a result from handling a {@link CommandMessage}.
+ *
+ * @param <R> The type of payload contained in this Message
+ * @author Milan Savic
+ * @since 4.0
  */
-public class DisruptorConfigurationTest {
+public interface CommandResultMessage<R> extends Message<R> {
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetIllegalPublisherThreadCount() {
-        new DisruptorConfiguration().setPublisherThreadCount(0);
-    }
+    @Override
+    CommandResultMessage<R> withMetaData(Map<String, ?> metaData);
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetIllegalInvokerThreadCount() {
-        new DisruptorConfiguration().setInvokerThreadCount(0);
-    }
-
+    @Override
+    CommandResultMessage<R> andMetaData(Map<String, ?> metaData);
 }

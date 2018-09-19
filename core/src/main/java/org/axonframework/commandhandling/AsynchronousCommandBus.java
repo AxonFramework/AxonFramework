@@ -16,10 +16,12 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 
@@ -27,6 +29,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Specialization of the SimpleCommandBus that processed Commands asynchronously from the calling thread. By default,
@@ -47,39 +51,39 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     private final Executor executor;
 
     /**
-     * Initialize the AsynchronousCommandBus, using a Cached Thread Pool.
+     * Instantiate a {@link AsynchronousCommandBus} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration} and
+     * {@link Executor} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
+     * {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link AsynchronousCommandBus} instance
      */
-    public AsynchronousCommandBus() {
-        this(Executors.newCachedThreadPool());
+    protected AsynchronousCommandBus(Builder builder) {
+        super(builder);
+        this.executor = builder.executor;
     }
 
     /**
-     * Initialize the AsynchronousCommandBus using the given {@code executor}.
+     * Instantiate a Builder to be able to create a {@link AsynchronousCommandBus}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}, the {@link MessageMonitor} is
+     * defaulted to a {@link NoOpMessageMonitor}, {@link RollbackConfiguration} defaults to a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and the {@link Executor} defaults to a
+     * {@link Executors#newCachedThreadPool}.
+     * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration} and {@link Executor} are
+     * <b>hard requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
      *
-     * @param executor The executor that processes Command dispatching threads
+     * @return a Builder to be able to create a {@link AsynchronousCommandBus}
      */
-    public AsynchronousCommandBus(Executor executor) {
-        this(executor, NoTransactionManager.INSTANCE, NoOpMessageMonitor.INSTANCE);
-    }
-
-    /**
-     * Initialize the AsynchronousCommandBus using the given {@code executor}, {@code transactionManager} and
-     * {@code messageMonitor}.
-     *
-     * @param executor           The executor that processes Command dispatching threads
-     * @param transactionManager The transactionManager to manage transaction with
-     * @param messageMonitor     The message monitor to monitor the command bus
-     */
-    public AsynchronousCommandBus(Executor executor,
-                                  TransactionManager transactionManager,
-                                  MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-        super(transactionManager, messageMonitor);
-        Assert.notNull(executor, () -> "executor may not be null");
-        this.executor = executor;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
-    protected <C, R> void handle(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler, CommandCallback<? super C, R> callback) {
+    protected <C, R> void handle(CommandMessage<C> command,
+                                 MessageHandler<? super CommandMessage<?>> handler,
+                                 CommandCallback<? super C, ? super R> callback) {
         executor.execute(() -> super.handle(command, handler, callback));
     }
 
@@ -99,4 +103,56 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         }
     }
 
+    /**
+     * Builder class to instantiate a {@link AsynchronousCommandBus}.
+     * <p>
+     * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration} and {@link Executor} are
+     * respectively defaulted to a {@link NoTransactionManager}, a {@link NoOpMessageMonitor}, a
+     * {@link RollbackConfigurationType#UNCHECKED_EXCEPTIONS} and a {@link Executors#newCachedThreadPool}.
+     * The {@link TransactionManager}, {@link MessageMonitor}, {@link RollbackConfiguration} and {@link Executor} are
+     * <b>hard requirements</b>. Thus setting them to {@code null} will result in an {@link AxonConfigurationException}.
+     */
+    public static class Builder extends SimpleCommandBus.Builder {
+
+        private Executor executor = Executors.newCachedThreadPool();
+
+        @Override
+        public Builder transactionManager(TransactionManager transactionManager) {
+            super.transactionManager(transactionManager);
+            return this;
+        }
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        @Override
+        public Builder rollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
+            super.rollbackConfiguration(rollbackConfiguration);
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} which processes the Command dispatching threads.
+         *
+         * @param executor a {@link Executor} to processes the Command dispatching threads
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder executor(Executor executor) {
+            assertNonNull(executor, "Executor may not be null");
+            this.executor = executor;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link AsynchronousCommandBus} as specified through this Builder.
+         *
+         * @return a {@link AsynchronousCommandBus} as specified through this Builder
+         */
+        public AsynchronousCommandBus build() {
+            return new AsynchronousCommandBus(this);
+        }
+    }
 }

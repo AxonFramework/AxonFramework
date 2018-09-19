@@ -16,6 +16,7 @@
 
 package org.axonframework.jgroups.commandhandling;
 
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.ReplyMessage;
 import org.axonframework.serialization.Serializer;
 import org.jgroups.util.Streamable;
@@ -43,29 +44,33 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
 
     /**
      * Initializes a JGroupsReplyMessage containing a reply to the command with given {commandIdentifier} and given
-     * {@code returnValue}. The parameter {@code success} determines whether the was executed successfully or not.
+     * {@code commandResultMessage}. The parameter {@code success} determines whether the was executed successfully or
+     * not.
      *
-     * @param commandIdentifier The identifier of the command to which the message is a reply
-     * @param success           Whether or not the command executed successfully or not
-     * @param returnValue       The return value of command process
-     *                          the given {@code returnValue} is ignored.
-     * @param serializer        The serializer to serialize the message contents with
+     * @param commandIdentifier    The identifier of the command to which the message is a reply
+     * @param success              Whether or not the command executed successfully or not
+     * @param commandResultMessage The return value of command process
+     *                             the given {@code commandResultMessage} is ignored.
+     * @param serializer           The serializer to serialize the message contents with
      */
-    public JGroupsReplyMessage(String commandIdentifier, boolean success, Object returnValue, Serializer serializer) {
-        super(commandIdentifier, success, returnValue, serializer);
+    public JGroupsReplyMessage(String commandIdentifier, boolean success,
+                               CommandResultMessage<?> commandResultMessage, Serializer serializer) {
+        super(commandIdentifier, success, commandResultMessage, serializer);
     }
 
     @Override
     public void writeTo(DataOutput out) throws IOException {
         out.writeUTF(commandIdentifier);
         out.writeBoolean(success);
-        if (resultType == null) {
+        out.writeInt(serializedMetaData.length);
+        out.write(serializedMetaData);
+        if (payloadType == null) {
             out.writeUTF(NULL);
         } else {
-            out.writeUTF(resultType);
-            out.writeUTF(resultRevision == null ? NULL : resultRevision);
-            out.writeInt(serializedResult.length);
-            out.write(serializedResult);
+            out.writeUTF(payloadType);
+            out.writeUTF(payloadRevision == null ? NULL : payloadRevision);
+            out.writeInt(serializedPayload.length);
+            out.write(serializedPayload);
         }
     }
 
@@ -73,16 +78,18 @@ public class JGroupsReplyMessage extends ReplyMessage implements Streamable, Ext
     public void readFrom(DataInput in) throws IOException {
         commandIdentifier = in.readUTF();
         success = in.readBoolean();
-        resultType = in.readUTF();
-        if (NULL.equals(resultType)) {
-            resultType = null;
+        serializedMetaData = new byte[in.readInt()];
+        in.readFully(serializedMetaData);
+        payloadType = in.readUTF();
+        if (NULL.equals(payloadType)) {
+            payloadType = null;
         } else {
-            resultRevision = in.readUTF();
-            if (NULL.equals(resultRevision)) {
-                resultRevision = null;
+            payloadRevision = in.readUTF();
+            if (NULL.equals(payloadRevision)) {
+                payloadRevision = null;
             }
-            serializedResult = new byte[in.readInt()];
-            in.readFully(serializedResult);
+            serializedPayload = new byte[in.readInt()];
+            in.readFully(serializedPayload);
         }
     }
 

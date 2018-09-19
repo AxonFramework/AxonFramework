@@ -29,7 +29,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -43,7 +47,11 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.JavaSerializer;
+import org.axonframework.serialization.RevisionResolver;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -104,7 +112,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                 XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
                 xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
                 return xStreamSerializer;
-
         }
     }
 
@@ -157,7 +164,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {
-        return new DefaultCommandGateway(commandBus);
+        return DefaultCommandGateway.builder().commandBus(commandBus).build();
     }
 
     @Bean
@@ -218,8 +225,14 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleCommandBus commandBus(TransactionManager txManager, AxonConfiguration axonConfiguration) {
-        SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
-        commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
+        SimpleCommandBus commandBus =
+                SimpleCommandBus.builder()
+                                .transactionManager(txManager)
+                                .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
+                                .build();
+        commandBus.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
+        );
         return commandBus;
     }
 
@@ -247,5 +260,4 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public void setBeanClassLoader(ClassLoader classLoader) {
         this.beanClassLoader = classLoader;
     }
-
 }

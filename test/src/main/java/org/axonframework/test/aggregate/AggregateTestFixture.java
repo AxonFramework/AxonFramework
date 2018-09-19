@@ -95,7 +95,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      */
     public AggregateTestFixture(Class<T> aggregateType) {
         deadlineManager = new StubDeadlineManager();
-        commandBus = new SimpleCommandBus();
+        commandBus = SimpleCommandBus.builder().build();
         eventStore = new RecordingEventStore();
         resources.add(commandBus);
         resources.add(eventStore);
@@ -777,7 +777,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         private FixtureExecutionException exception;
 
         @Override
-        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
         }
 
         @Override

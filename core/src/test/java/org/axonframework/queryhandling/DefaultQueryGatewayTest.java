@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;

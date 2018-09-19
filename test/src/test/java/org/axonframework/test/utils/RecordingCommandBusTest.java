@@ -18,6 +18,7 @@ package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
@@ -44,13 +45,14 @@ public class RecordingCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                assertNull("Expected default callback behavior to invoke onSuccess(null)", result);
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+                assertNull("Expected default callback behavior to invoke onSuccess(null)",
+                           commandResultMessage.getPayload());
             }
 
             @Override
             public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                fail("Didn't expect callack to be invoked");
+                fail("Didn't expect callback to be invoked");
             }
         });
         //noinspection AssertEqualsBetweenInconvertibleTypes
@@ -66,13 +68,13 @@ public class RecordingCommandBusTest {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                assertEquals("callbackResult", result);
+            public void onSuccess(CommandMessage<?> commandMessage, CommandResultMessage<?> commandResultMessage) {
+                assertEquals("callbackResult", commandResultMessage.getPayload());
             }
 
             @Override
             public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                fail("Didn't expect callack to be invoked");
+                fail("Didn't expect callback to be invoked");
             }
         });
         //noinspection AssertEqualsBetweenInconvertibleTypes

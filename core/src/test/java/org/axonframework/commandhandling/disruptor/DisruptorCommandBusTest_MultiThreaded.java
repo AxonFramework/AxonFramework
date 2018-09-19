@@ -39,10 +39,8 @@ import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.stubbing.*;
 
 import java.util.List;
 import java.util.Map;
@@ -53,14 +51,8 @@ import java.util.stream.Stream;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -77,18 +69,19 @@ public class DisruptorCommandBusTest_MultiThreaded {
     public void setUp() {
         StubHandler stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
-        testSubject = new DisruptorCommandBus(
-            new DisruptorConfiguration().setBufferSize(4)
-                .setProducerType(ProducerType.MULTI)
-                .setWaitStrategy(new SleepingWaitStrategy())
-                .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                .setInvokerThreadCount(2)
-                .setPublisherThreadCount(3));
+        testSubject = DisruptorCommandBus.builder()
+                                         .bufferSize(4)
+                                         .producerType(ProducerType.MULTI)
+                                         .waitStrategy(new SleepingWaitStrategy())
+                                         .rollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                                         .invokerThreadCount(2)
+                                         .publisherThreadCount(3)
+                                         .build();
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         spiedRepository = spy(testSubject.createRepository(inMemoryEventStore,
-            new GenericAggregateFactory<>(StubAggregate.class)));
+                                                           new GenericAggregateFactory<>(StubAggregate.class)));
         stubHandler.setRepository(spiedRepository);
     }
 
@@ -105,8 +98,9 @@ public class DisruptorCommandBusTest_MultiThreaded {
         doAnswer(trackCreateAndLoad(garbageCollectionPrevention)).when(spiedRepository).load(isA(String.class));
 
         List<String> aggregateIdentifiers = IntStream.range(0, AGGREGATE_COUNT)
-            .mapToObj(i -> IdentifierFactory.getInstance().generateIdentifier())
-            .collect(toList());
+                                                     .mapToObj(i -> IdentifierFactory.getInstance()
+                                                                                     .generateIdentifier())
+                                                     .collect(toList());
 
         CommandCallback mockCallback = mock(CommandCallback.class);
 
@@ -118,7 +112,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         assertEquals(10, inMemoryEventStore.loadCounter.get());
         assertEquals(20, garbageCollectionPrevention.size());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
-            inMemoryEventStore.storedEventCounter.get());
+                     inMemoryEventStore.storedEventCounter.get());
         verify(mockCallback, times(1000)).onSuccess(any(), any());
         verify(mockCallback, times(10)).onFailure(any(), isA(MockException.class));
     }
@@ -133,21 +127,21 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private Stream<CommandMessage<Object>> generateCommands(List<String> aggregateIdentifiers) {
         Stream<CommandMessage<Object>> create = aggregateIdentifiers.stream()
-            .map(CreateCommand::new)
-            .map(GenericCommandMessage::asCommandMessage);
+                                                                    .map(CreateCommand::new)
+                                                                    .map(GenericCommandMessage::asCommandMessage);
         Stream<CommandMessage<Object>> head = IntStream.range(0, 10)
-            .mapToObj(k -> aggregateIdentifiers.stream()
-                .map(StubCommand::new)
-                .map(GenericCommandMessage::asCommandMessage))
-            .reduce(Stream.of(), Stream::concat);
+                                                       .mapToObj(k -> aggregateIdentifiers.stream()
+                                                                                          .map(StubCommand::new)
+                                                                                          .map(GenericCommandMessage::asCommandMessage))
+                                                       .reduce(Stream.of(), Stream::concat);
         Stream<CommandMessage<Object>> errors = aggregateIdentifiers.stream()
-            .map(ErrorCommand::new)
-            .map(GenericCommandMessage::asCommandMessage);
+                                                                    .map(ErrorCommand::new)
+                                                                    .map(GenericCommandMessage::asCommandMessage);
         Stream<CommandMessage<Object>> tail = IntStream.range(11, 100)
-            .mapToObj(k -> aggregateIdentifiers.stream()
-                .map(StubCommand::new)
-                .map(GenericCommandMessage::asCommandMessage))
-            .reduce(Stream.of(), Stream::concat);
+                                                       .mapToObj(k -> aggregateIdentifiers.stream()
+                                                                                          .map(StubCommand::new)
+                                                                                          .map(GenericCommandMessage::asCommandMessage))
+                                                       .reduce(Stream.of(), Stream::concat);
 
         return Stream.of(create, head, errors, tail).flatMap(identity());
     }
@@ -279,7 +273,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
-                Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(payload.getAggregateIdentifier().toString()));
+                Aggregate<StubAggregate> aggregate = repository
+                        .newInstance(() -> new StubAggregate(payload.getAggregateIdentifier().toString()));
                 aggregate.execute(StubAggregate::doSomething);
             } else {
                 Aggregate<StubAggregate> aggregate = repository.load(payload.getAggregateIdentifier().toString());

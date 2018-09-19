@@ -77,14 +77,14 @@ public class DefaultConfigurerTest {
     public void defaultConfigurationWithEventSourcing() throws Exception {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                .configureCommandBus(c -> new AsynchronousCommandBus())
+                                                .configureCommandBus(c -> AsynchronousCommandBus.builder().build())
                                                 .configureAggregate(StubAggregate.class)
                                                 .buildConfiguration();
         config.start();
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -164,7 +164,8 @@ public class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
                                                 .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                                                    AsynchronousCommandBus commandBus =
+                                                            AsynchronousCommandBus.builder().build();
                                                     commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
                                                     return commandBus;
                                                 })
@@ -178,7 +179,7 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -192,7 +193,8 @@ public class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
                                                 .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                                                    AsynchronousCommandBus commandBus =
+                                                            AsynchronousCommandBus.builder().build();
                                                     commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
                                                     return commandBus;
                                                 })
@@ -202,7 +204,7 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertTrue(config.getModules()
                          .stream()
@@ -214,7 +216,8 @@ public class DefaultConfigurerTest {
     public void testMissingEntityManagerProviderIsReported() {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                                                 .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                                                    AsynchronousCommandBus commandBus =
+                                                            AsynchronousCommandBus.builder().build();
                                                     commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
                                                     return commandBus;
                                                 })
@@ -235,7 +238,8 @@ public class DefaultConfigurerTest {
         Configuration config = DefaultConfigurer.jpaConfiguration(() -> em)
                                                 .registerComponent(TransactionManager.class, c -> transactionManager)
                                                 .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus = new AsynchronousCommandBus();
+                                                    AsynchronousCommandBus commandBus =
+                                                            AsynchronousCommandBus.builder().build();
                                                     commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
                                                     return commandBus;
                                                 })
@@ -249,7 +253,7 @@ public class DefaultConfigurerTest {
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config,
@@ -273,7 +277,7 @@ public class DefaultConfigurerTest {
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-        assertEquals("test", callback.get());
+        assertEquals("test", callback.get().getPayload());
         assertEquals(1, defaultMonitor.getMessages().size());
         assertEquals(1, commandBusMonitor.getMessages().size());
     }
