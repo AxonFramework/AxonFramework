@@ -35,7 +35,7 @@ public class AxonServerConfiguration {
     /**
      * Comma seperated list of AxonDB servers. Each element is hostname or hostname:grpcPort. When no grpcPort is specified, default port 8123 is used.
      */
-    private String servers;
+    private String servers = "localhost";
 
     /**
      * clientId as it registers itself to AxonServer, must be unique
