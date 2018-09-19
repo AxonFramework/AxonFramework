@@ -305,6 +305,11 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-server-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.axoniq</groupId>
                 <artifactId>axon-server-api</artifactId>
                 <version>${axonserver.api.version}</version>

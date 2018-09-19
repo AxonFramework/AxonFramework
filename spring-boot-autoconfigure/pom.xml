@@ -153,7 +153,6 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-server-connector</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * Author: marc
  */
-@ConfigurationProperties(prefix = "axoniq.axonserver")
+@ConfigurationProperties(prefix = "axon.axonserver")
 public class AxonServerConfiguration {
     private static final int DEFAULT_GRPC_PORT = 8124;
 
