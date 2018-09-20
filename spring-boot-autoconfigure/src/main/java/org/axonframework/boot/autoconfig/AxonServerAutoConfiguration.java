@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +25,6 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
-import org.axonframework.boot.autoconfig.AxonAutoConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
@@ -58,7 +58,7 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
-public class AxonServerAutoConfiguration implements ApplicationContextAware  {
+public class AxonServerAutoConfiguration implements ApplicationContextAware {
     private ApplicationContext applicationContext;
 
     @Bean
@@ -69,7 +69,9 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
     }
 
     private String clientName(String id) {
-        if (id.contains(":")) return id.substring(0, id.indexOf(":"));
+        if (id.contains(":")) {
+            return id.substring(0, id.indexOf(":"));
+        }
         return id;
     }
 
@@ -86,11 +88,15 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
                                            RoutingStrategy routingStrategy,
                                            CommandPriorityCalculator priorityCalculator) {
 
-        SimpleCommandBus commandBus = new SimpleCommandBus(txManager, axonConfiguration.messageMonitor(CommandBus.class, "commandBus"));
+        SimpleCommandBus commandBus = SimpleCommandBus.builder()
+                                                      .transactionManager(txManager)
+                                                      .messageMonitor(axonConfiguration.messageMonitor(CommandBus.class, "commandBus"))
+                                                      .build();
+
         commandBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders()));
 
         return new AxonServerCommandBus(platformConnectionManager, axonServerConfiguration, commandBus, serializer, routingStrategy,
-                                     priorityCalculator);
+                                        priorityCalculator);
     }
 
     @Bean
@@ -129,7 +135,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware  {
                                        Serializer genericSerializer,
                                        QueryPriorityCalculator priorityCalculator, QueryInvocationErrorHandler queryInvocationErrorHandler) {
         SimpleQueryBus simpleQueryBus = new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                                     txManager, queryInvocationErrorHandler);
+                                                           txManager, queryInvocationErrorHandler);
         return new AxonServerQueryBus(platformConnectionManager, axonServerConfiguration,
                                       simpleQueryBus, simpleQueryBus,
                                       messageSerializer, genericSerializer, priorityCalculator);

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,9 +16,9 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import io.axoniq.axonserver.grpc.command.Command;
-import io.axoniq.axonserver.grpc.command.CommandResponse;
-import io.axoniq.axonserver.grpc.command.CommandSubscription;
+import io.axoniq.axonserver.grpc.command.*;
+import io.grpc.ClientInterceptor;
+import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.DispatchInterceptors;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -26,15 +27,7 @@ import org.axonframework.axonserver.connector.util.ContextAddingInterceptor;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.TokenAddingInterceptor;
-import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
-import io.axoniq.axonserver.grpc.command.CommandServiceGrpc;
-import io.grpc.ClientInterceptor;
-import io.grpc.stub.StreamObserver;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -46,11 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
@@ -101,7 +90,8 @@ public class AxonServerCommandBus implements CommandBus {
     public <C> void dispatch(CommandMessage<C> command) {
         dispatch(command, new CommandCallback<C, Object>() {
             @Override
-            public void onSuccess(CommandMessage<? extends C> commandMessage, Object o) {
+            public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<?> commandResultMessage) {
+
             }
 
             @Override
@@ -111,7 +101,7 @@ public class AxonServerCommandBus implements CommandBus {
     }
 
     @Override
-    public <C, R> void dispatch(CommandMessage<C> commandMessage, CommandCallback<? super C, R> commandCallback) {
+    public <C, R> void dispatch(CommandMessage<C> commandMessage, CommandCallback<? super C, ? super R> commandCallback) {
         logger.debug("Dispatch with callback: {}", commandMessage.getCommandName());
         CommandMessage<C> command = dispatchInterceptors.intercept(commandMessage);
             CommandServiceGrpc.newStub(platformConnectionManager.getChannel())
@@ -136,7 +126,7 @@ public class AxonServerCommandBus implements CommandBus {
                                                         }
                                                     }
 
-                                                    commandCallback.onSuccess(command, payload);
+                                                    commandCallback.onSuccess(command, new GenericCommandResultMessage<>(payload));
                                                 } else {
                                                     commandCallback.onFailure(command,
                                                                               new CommandExecutionException(
@@ -339,10 +329,9 @@ public class AxonServerCommandBus implements CommandBus {
             logger.debug("DispatchLocal: {}", command.getCommandName());
             localSegment.dispatch(command, new CommandCallback<C, Object>() {
                 @Override
-                public void onSuccess(CommandMessage<? extends C> commandMessage, Object o) {
+                public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<?> commandResultMessage) {
                     logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    responseObserver.onNext(serializer.serialize(o, command.getIdentifier()));
-
+                    responseObserver.onNext(serializer.serialize(commandResultMessage.getPayload(), command.getIdentifier()));
                 }
 
                 @Override

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,14 +26,15 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.axonframework.queryhandling.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.Assert.*;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by Sara Pellegrini on 28/06/2018.
@@ -52,8 +54,8 @@ public class QuerySerializerTest {
     private final QuerySerializer testSubject = new QuerySerializer(jacksonSerializer, xStreamSerializer, configuration);
 
     @Test
-    public void testSerializeRequest(){
-        QueryMessage<String, Integer> message = new GenericQueryMessage<>("Test","MyQueryName",instanceOf(int.class));
+    public void testSerializeRequest() {
+        QueryMessage<String, Integer> message = new GenericQueryMessage<>("Test", "MyQueryName", instanceOf(int.class));
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
@@ -65,7 +67,7 @@ public class QuerySerializerTest {
     }
 
     @Test
-    public void testSerializeResponse(){
+    public void testSerializeResponse() {
         Map<String, ?> metadata = new HashMap<String, Object>() {{
             this.put("firstKey", "firstValue");
             this.put("secondKey", "secondValue");
@@ -76,7 +78,7 @@ public class QuerySerializerTest {
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertEquals(message.getPayloadType(), deserialized.getPayloadType());
-        assertEquals(message.getPayload(),deserialized.getPayload());
+        assertEquals(message.getPayload(), deserialized.getPayload());
     }
 
 }

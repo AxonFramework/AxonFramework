@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,18 +17,15 @@
 package org.axonframework.axonserver.connector.command;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonserver.grpc.command.Command;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
-import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
-import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandProviderInbound;
+import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import io.grpc.stub.StreamObserver;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.commandhandling.*;
 import org.axonframework.common.Registration;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
@@ -65,7 +63,7 @@ public class AxonServerCommandBusTest {
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        localSegment = new SimpleCommandBus();
+        localSegment = SimpleCommandBus.builder().build();
         ser = new XStreamSerializer();
         testSubject = new AxonServerCommandBus(new PlatformConnectionManager(conf), conf, localSegment, ser,
                 command -> "RoutingKey", new CommandPriorityCalculator() {});
@@ -85,9 +83,10 @@ public class AxonServerCommandBusTest {
         AtomicReference<String> resultHolder = new AtomicReference<>();
         AtomicBoolean failure = new AtomicBoolean(false);
         testSubject.dispatch(commandMessage, new CommandCallback<String, String>() {
+
             @Override
-            public void onSuccess(CommandMessage<? extends String> commandMessage, String result) {
-                resultHolder.set(result);
+            public void onSuccess(CommandMessage<? extends String> commandMessage, CommandResultMessage<? extends String> result) {
+                resultHolder.set(result.getPayload());
                 waiter.countDown();
             }
 
@@ -109,8 +108,8 @@ public class AxonServerCommandBusTest {
         AtomicBoolean failure = new AtomicBoolean(false);
         testSubject.dispatch(commandMessage, new CommandCallback<String, String>() {
             @Override
-            public void onSuccess(CommandMessage<? extends String> commandMessage, String result) {
-                resultHolder.set(result);
+            public void onSuccess(CommandMessage<? extends String> commandMessage, CommandResultMessage<? extends String> result) {
+                resultHolder.set(result.getPayload());
                 waiter.countDown();
             }
 

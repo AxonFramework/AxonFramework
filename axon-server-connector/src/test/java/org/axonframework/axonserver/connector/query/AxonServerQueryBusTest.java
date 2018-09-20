@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,23 +17,25 @@
 package org.axonframework.axonserver.connector.query;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonserver.grpc.query.QueryRequest;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
-import org.axonframework.axonserver.connector.common.AssertUtils;
-import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.grpc.stub.StreamObserver;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.PlatformConnectionManager;
+import org.axonframework.axonserver.connector.common.AssertUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -40,9 +43,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * Author: marc
@@ -126,7 +131,7 @@ public class AxonServerQueryBusTest {
 
 
     @Test
-    public void processQuery() throws Exception {
+    public void processQuery() {
 
         AxonServerQueryBus queryBus2 = new AxonServerQueryBus(platformConnectionManager,
                                                               conf,

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,13 +17,8 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import com.google.protobuf.ByteString;
-import io.axoniq.axonserver.grpc.event.Event;
-import io.axoniq.axonserver.grpc.event.EventWithToken;
-import io.axoniq.axonserver.grpc.event.GetAggregateEventsRequest;
-import io.axoniq.axonserver.grpc.event.GetEventsRequest;
-import io.axoniq.axonserver.grpc.event.QueryEventsRequest;
-import io.axoniq.axonserver.grpc.event.QueryEventsResponse;
-import io.axoniq.axonserver.grpc.event.ReadHighestSequenceNrResponse;
+import io.axoniq.axonserver.grpc.event.*;
+import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.PlatformConnectionManager;
@@ -30,23 +26,13 @@ import org.axonframework.axonserver.connector.event.AppendEventTransaction;
 import org.axonframework.axonserver.connector.event.AxonDBClient;
 import org.axonframework.axonserver.connector.util.FlowControllingStreamObserver;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
-import io.grpc.stub.StreamObserver;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.EventUtils;
-import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
-import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.serialization.MessageSerializer;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -194,14 +180,14 @@ public class AxonServerEventStore extends AbstractEventStore {
             }
         }
 
-        public Event map(EventMessage eventMessage, Serializer serializer) {
+        public Event map(EventMessage<?> eventMessage, Serializer serializer) {
             Event.Builder builder = Event.newBuilder();
             if (eventMessage instanceof GenericDomainEventMessage) {
                 builder.setAggregateIdentifier(((GenericDomainEventMessage) eventMessage).getAggregateIdentifier())
                        .setAggregateSequenceNumber(((GenericDomainEventMessage) eventMessage).getSequenceNumber())
                        .setAggregateType(((GenericDomainEventMessage) eventMessage).getType());
             }
-            SerializedObject<byte[]> serializedPayload = MessageSerializer.serializePayload(eventMessage, serializer, byte[].class);
+            SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(serializer, byte[].class);
             builder.setMessageIdentifier(eventMessage.getIdentifier())
                    .setPayload(io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                                                                  .setType(serializedPayload.getType().getName())
@@ -399,9 +385,9 @@ public class AxonServerEventStore extends AbstractEventStore {
         }
 
         @Override
-        protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+        protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
             // snapshots are automatically fetched server-side, which is faster
-            return Optional.empty();
+            return Stream.empty();
         }
 
     }
