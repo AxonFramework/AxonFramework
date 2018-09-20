@@ -18,8 +18,6 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
-import org.axonframework.queryhandling.responsetypes.ResponseType;
-import org.axonframework.queryhandling.responsetypes.ResponseTypes;
 import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;

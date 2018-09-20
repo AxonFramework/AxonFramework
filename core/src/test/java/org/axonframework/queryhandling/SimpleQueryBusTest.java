@@ -64,7 +64,10 @@ public class SimpleQueryBusTest {
         monitorCallback = mock(MessageMonitor.MonitorCallback.class);
         when(messageMonitor.onMessageIngested(any())).thenReturn(monitorCallback);
 
-        testSubject = new SimpleQueryBus(messageMonitor, null, errorHandler);
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .errorHandler(errorHandler)
+                                    .build();
 
         MessageHandlerInterceptor<QueryMessage<?, ?>> correlationDataInterceptor =
                 new CorrelationDataInterceptor<>(new MessageOriginProvider(CORRELATION_ID, TRACE_ID));
@@ -150,7 +153,9 @@ public class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(mockTxManager);
+        testSubject = SimpleQueryBus.builder()
+                                    .transactionManager(mockTxManager)
+                                    .build();
 
         testSubject.subscribe(String.class.getName(),
                               methodOf(this.getClass(), "stringListQueryHandler").getGenericReturnType(),
@@ -179,7 +184,9 @@ public class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(mockTxManager);
+        testSubject = SimpleQueryBus.builder()
+                                    .transactionManager(mockTxManager)
+                                    .build();
 
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
@@ -421,7 +428,11 @@ public class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(messageMonitor, mockTxManager, errorHandler);
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .transactionManager(mockTxManager)
+                                    .errorHandler(errorHandler)
+                                    .build();
 
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
@@ -441,7 +452,11 @@ public class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(messageMonitor, mockTxManager, errorHandler);
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .transactionManager(mockTxManager)
+                                    .errorHandler(errorHandler)
+                                    .build();
 
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
@@ -465,7 +480,11 @@ public class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(messageMonitor, mockTxManager, errorHandler);
+        testSubject = SimpleQueryBus.builder()
+                                    .messageMonitor(messageMonitor)
+                                    .transactionManager(mockTxManager)
+                                    .errorHandler(errorHandler)
+                                    .build();
 
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");

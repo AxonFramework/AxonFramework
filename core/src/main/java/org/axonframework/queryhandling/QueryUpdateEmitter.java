@@ -16,6 +16,8 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+
 import java.util.function.Predicate;
 
 /**
@@ -35,7 +37,7 @@ import java.util.function.Predicate;
  * @author Milan Savic
  * @since 3.3
  */
-public interface QueryUpdateEmitter {
+public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<SubscriptionQueryUpdateMessage<?>> {
 
     /**
      * Emits incremental update (as return value of provided update function) to subscription queries matching given
@@ -139,4 +141,26 @@ public interface QueryUpdateEmitter {
                 m -> queryType.isAssignableFrom(m.getPayloadType()) && filter.test((Q) m.getPayload());
         completeExceptionally(sqmFilter, cause);
     }
+
+    /**
+     * Checks whether there is a query update handler for a given {@code query}.
+     *
+     * @param query the subscription query for which we have registered the update handler
+     * @return {@code true} if there is an update handler registered for given {@code query}, {@code false} otherwise
+     */
+    boolean queryUpdateHandlerRegistered(SubscriptionQueryMessage<?, ?, ?> query);
+
+    /**
+     * Registers an Update Handler for given {@code query} with given {@code backpressure} and {@code updateBufferSize}.
+     *
+     * @param query            the subscription query for which we register an Update Handler
+     * @param backpressure     the backpressure mechanism to be used for emitting updates
+     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
+     *                         made
+     * @param <U>              the incremental response types of the query
+     * @return the object which contains updates and a registration which can be used to cancel them
+     */
+    <U> UpdateHandlerRegistration<U> registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?> query,
+                                                           SubscriptionQueryBackpressure backpressure,
+                                                           int updateBufferSize);
 }

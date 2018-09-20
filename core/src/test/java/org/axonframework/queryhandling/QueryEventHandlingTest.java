@@ -33,7 +33,7 @@ public class QueryEventHandlingTest {
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.configureCommandBus(c -> SimpleCommandBus.builder().build())
-                  .configureQueryBus(c -> new SimpleQueryBus())
+                  .configureQueryBus(c -> SimpleQueryBus.builder().build())
                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                   .registerQueryHandler(c -> userSummaryProjection);
 
