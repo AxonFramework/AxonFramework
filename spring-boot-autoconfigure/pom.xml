@@ -150,6 +150,10 @@
             <version>${jackson.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-server-connector</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
