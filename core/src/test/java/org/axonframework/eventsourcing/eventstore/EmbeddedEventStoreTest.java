@@ -66,7 +66,7 @@ public class EmbeddedEventStoreTest {
     @Before
     public void setUp() {
         storageEngine = spy(new InMemoryEventStorageEngine());
-        threadFactory = spy(new AxonThreadFactory(new ThreadGroup(EmbeddedEventStore.class.getSimpleName())));
+        threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY);
     }
 
