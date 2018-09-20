@@ -126,8 +126,6 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    // The Axon Hub QueryBus requires Axon 3.2+
-    @ConditionalOnClass(name = {"org.axonframework.queryhandling.responsetypes.ResponseType"})
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonServerQueryBus queryBus(PlatformConnectionManager platformConnectionManager, AxonServerConfiguration axonServerConfiguration,
                                        AxonConfiguration axonConfiguration, TransactionManager txManager,
