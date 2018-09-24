@@ -18,7 +18,8 @@ package org.axonframework.config;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static java.util.Arrays.stream;
+import static org.junit.Assert.fail;
 
 /**
  * Assertion utils for axon {@link Configuration}.
@@ -36,26 +37,16 @@ public class ConfigAssertions {
      * Asserts whether given {@code modules} are present in the provided {@code configuration}.
      *
      * @param configuration Axon configuration
-     * @param modules       Module configurations
+     * @param moduleTypes   expected module configuration types present in {@code configuration}
      */
     @SafeVarargs
     public static void assertExpectedModules(Configuration configuration,
-                                             Class<? extends ModuleConfiguration>... modules) {
-        List<ModuleConfiguration> configurationModules = configuration.getModules();
-        boolean[] matches = new boolean[configurationModules.size()];
-        for (Class<? extends ModuleConfiguration> module : modules) {
-            boolean found = false;
-            for (int i = 0; i < configurationModules.size(); i++) {
-                if (module.isInstance(configurationModules.get(i)) && !matches[i]) {
-                    found = true;
-                    matches[i] = true;
-                    break;
-                }
+                                             Class<? extends ModuleConfiguration>... moduleTypes) {
+        stream(moduleTypes).forEach(moduleType -> {
+            List<? extends ModuleConfiguration> matches = configuration.findModules(moduleType);
+            if (matches.isEmpty()) {
+                fail("No module of type '" + moduleType.getName() + "' was found in the provided configuration");
             }
-            if (!found) {
-                fail("Module '" + module + "' was not found in the provided configuration");
-                break;
-            }
-        }
+        });
     }
 }
