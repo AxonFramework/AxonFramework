@@ -61,13 +61,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -78,7 +78,7 @@ import java.util.function.Function;
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "org.axonframework.boot.autoconfig.JpaAutoConfiguration",
-        "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration"
+        "org.axonframework.boot.autoconfig.ObjectMapperAutoConfiguration"
 })
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
@@ -105,13 +105,6 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     public RevisionResolver revisionResolver() {
         return new AnnotationRevisionResolver();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnExpression("'${axon.serializer.general}' == 'jackson' || '${axon.serializer.events}' == 'jackson' || '${axon.serializer.messages}' == 'jackson'")
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper().findAndRegisterModules();
     }
 
     @Bean
@@ -151,7 +144,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                        SerializerProperties.SerializerType serializerType) {
         switch (serializerType) {
             case JACKSON:
-                ObjectMapper objectMapper = applicationContext.getBean(ObjectMapper.class);
+                Map<String, ObjectMapper> objectMapperBeans = applicationContext.getBeansOfType(ObjectMapper.class);
+                ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
+                        ? objectMapperBeans.get("defaultAxonObjectMapper")
+                        : objectMapperBeans.values().stream().findFirst()
+                                           .orElseThrow(() -> new NoClassDefFoundError(
+                                                   "com/fasterxml/jackson/databind/ObjectMapper"
+                                           ));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
                 return new JacksonSerializer(objectMapper, revisionResolver, converter);
             case JAVA:

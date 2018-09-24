@@ -38,7 +38,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 })
 @RunWith(SpringRunner.class)
 @TestPropertySource("classpath:application.serializer-without-jackson.test.properties")
-public class AxonAutoConfigurationWithJacksonSerializerTest {
+public class AxonAutoConfigurationWithoutObjectMapperTest {
 
     @Autowired
     private ApplicationContext applicationContext;
