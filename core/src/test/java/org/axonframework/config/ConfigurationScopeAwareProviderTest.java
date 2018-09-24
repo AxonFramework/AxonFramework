@@ -111,25 +111,19 @@ public class ConfigurationScopeAwareProviderTest {
             this.delegate = delegate;
         }
 
-        /**
-         * No-op.
-         */
         @Override
         public void initialize(Configuration config) {
+            // No-op, only ipmlemented for test case
         }
 
-        /**
-         * No-op.
-         */
         @Override
         public void start() {
+            // No-op, only ipmlemented for test case
         }
 
-        /**
-         * No-op.
-         */
         @Override
         public void shutdown() {
+            // No-op, only ipmlemented for test case
         }
 
         @Override
