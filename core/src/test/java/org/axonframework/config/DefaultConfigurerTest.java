@@ -324,6 +324,33 @@ public class DefaultConfigurerTest {
         inOrder.verify(module3).shutdown();
     }
 
+    @Test
+    public void testModuleHandlersOrderingAfterConfigIsInitialized() {
+        ModuleConfiguration module1 = mock(ModuleConfiguration.class);
+        ModuleConfiguration module2 = mock(ModuleConfiguration.class);
+        ModuleConfiguration module3 = mock(ModuleConfiguration.class);
+        when(module1.phase()).thenReturn(2);
+        when(module2.phase()).thenReturn(3);
+        when(module3.phase()).thenReturn(1);
+
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        Configuration configuration = configurer.buildConfiguration();
+        configurer.registerModule(module1)
+                  .registerModule(module2)
+                  .registerModule(module3);
+        configuration.start();
+        assertNotNull(configuration);
+        configuration.shutdown();
+
+        InOrder inOrder = inOrder(module1, module2, module3);
+        inOrder.verify(module3).start();
+        inOrder.verify(module1).start();
+        inOrder.verify(module2).start();
+        inOrder.verify(module2).shutdown();
+        inOrder.verify(module1).shutdown();
+        inOrder.verify(module3).shutdown();
+    }
+
     @Entity(name = "StubAggregate")
     private static class StubAggregate {
 
