@@ -285,7 +285,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                     TrackingEventProcessor trackingEventProcessor =
                             trackingEventProcessor(config, name, ehi, processorConfig, Configuration::eventBus);
                     trackingEventProcessor
-                            .registerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                            .registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return trackingEventProcessor;
                 });
         return this;
@@ -581,7 +581,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                                                              conf,
                                                                              eventHandlerInvoker,
                                                                              Configuration::eventBus);
-        eventProcessor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
+        eventProcessor.registerHandlerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
         return eventProcessor;
     }
 
