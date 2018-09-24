@@ -298,8 +298,15 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     ? sagaAnnotation.configurationBean()
                     : lcFirst(sagaType.getSimpleName()) + "Configuration";
             if (!explicitSagaConfig && !beanFactory.containsBean(configName)) {
-                SagaConfiguration<?> sagaConfiguration =
-                        SagaConfiguration.subscribingSagaManager(sagaType);
+                ProcessingGroup processingGroupAnnotation = beanFactory.findAnnotationOnBean(saga,
+                                                                                             ProcessingGroup.class);
+                SagaConfiguration<?> sagaConfiguration;
+                if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
+                    sagaConfiguration = SagaConfiguration.subscribingSagaManager(sagaType,
+                                                                                 processingGroupAnnotation.value());
+                } else {
+                    sagaConfiguration = SagaConfiguration.subscribingSagaManager(sagaType);
+                }
                 beanFactory.registerSingleton(configName, sagaConfiguration);
 
                 if (!"".equals(sagaAnnotation.sagaStore())) {
