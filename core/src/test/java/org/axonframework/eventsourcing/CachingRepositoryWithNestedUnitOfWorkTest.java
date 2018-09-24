@@ -53,8 +53,10 @@ import static org.junit.Assert.*;
  * <p/>
  * Committing a unit of work may result in additional units of work being created -- typically as part of the 'publish
  * event' phase: <ol> <li>A Command is dispatched. <li>A UOW is created, started. <li>The command completes.
- * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is saved.
- * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified. </ol>
+ * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is
+ * saved.
+ * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified.
+ * </ol>
  * </ol>
  * <p/>
  * When the events are published, an @EventHandler may dispatch an additional command, which creates its own UOW
@@ -67,8 +69,10 @@ import static org.junit.Assert.*;
  * into the cache, exposing it to subsequent UOWs. The state of the aggregate in any UOW is not guaranteed to be
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
- * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
- * primarily by events being assigned duplicate sequence numbers. The {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine} detects this and throws an
+ * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
+ * itself
+ * primarily by events being assigned duplicate sequence numbers. The {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
+ * detects this and throws an
  * exception noting that an 'identical' entity has already been persisted.
  * <p/>
  * <p/>
@@ -253,9 +257,14 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
+    /*
+     * Domain Model
+     */
+
     public static class AggregateCreatedEvent implements Serializable {
 
-        @AggregateIdentifier final String id;
+        @AggregateIdentifier
+        private final String id;
 
         public AggregateCreatedEvent(String id) {
             this.id = id;
@@ -267,14 +276,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-    /*
-     * Domain Model
-     */
-
     public static class AggregateUpdatedEvent implements Serializable {
 
-        @AggregateIdentifier final String id;
-        final String token;
+        @AggregateIdentifier
+        private final String id;
+        private final String token;
 
         public AggregateUpdatedEvent(String id, String token) {
             this.id = id;
@@ -322,8 +328,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
      */
     private final class CommandExecutingEventListener implements EventListener {
 
-        final String token;
-        final String previousToken;
+        private final String token;
+        private final String previousToken;
         private final boolean commit;
 
         private CommandExecutingEventListener(String token, String previousToken, boolean commit) {

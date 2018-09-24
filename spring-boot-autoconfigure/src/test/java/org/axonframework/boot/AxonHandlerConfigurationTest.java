@@ -16,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import org.axonframework.boot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.queryhandling.QueryGateway;
@@ -36,8 +37,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.junit.Assert.assertEquals;
 
 @ContextConfiguration(classes = AxonHandlerConfigurationTest.Context.class)
-@EnableAutoConfiguration(exclude = {JmxAutoConfiguration.class, WebClientAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        JmxAutoConfiguration.class,
+        WebClientAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class,
+        DataSourceAutoConfiguration.class,
+        AxonServerAutoConfiguration.class})
 @RunWith(SpringRunner.class)
 public class AxonHandlerConfigurationTest {
 

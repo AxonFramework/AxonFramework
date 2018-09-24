@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,9 @@ public interface Message<T> extends Serializable {
      * @param <R>                    The type of the serialized data
      * @return a SerializedObject containing the serialized representation of the message's payload
      */
-    <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation);
+    default <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
+        return serializer.serialize(getPayload(), expectedRepresentation);
+    }
 
     /**
      * Serialize the meta data of this message to the {@code expectedRepresentation} using given {@code serializer}.
@@ -116,5 +118,7 @@ public interface Message<T> extends Serializable {
      * @param <R>                    The type of the serialized data
      * @return a SerializedObject containing the serialized representation of the message's meta data
      */
-    <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation);
+    default <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
+        return serializer.serialize(getMetaData(), expectedRepresentation);
+    }
 }
