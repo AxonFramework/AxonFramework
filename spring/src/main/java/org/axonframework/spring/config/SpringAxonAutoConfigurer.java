@@ -33,6 +33,7 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.ProcessingGroup;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
@@ -298,8 +299,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     ? sagaAnnotation.configurationBean()
                     : lcFirst(sagaType.getSimpleName()) + "Configuration";
             if (!explicitSagaConfig && !beanFactory.containsBean(configName)) {
-                ProcessingGroup processingGroupAnnotation = beanFactory.findAnnotationOnBean(saga,
-                                                                                             ProcessingGroup.class);
+                ProcessingGroup processingGroupAnnotation =
+                        beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
                 SagaConfiguration<?> sagaConfiguration;
                 if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
                     sagaConfiguration = SagaConfiguration.subscribingSagaManager(sagaType,
