@@ -25,7 +25,16 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.ProcessingGroup;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
@@ -290,8 +299,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     ? sagaAnnotation.configurationBean()
                     : lcFirst(sagaType.getSimpleName()) + "Configuration";
             if (!explicitSagaConfig && !beanFactory.containsBean(configName)) {
-                ProcessingGroup processingGroupAnnotation = beanFactory.findAnnotationOnBean(saga,
-                                                                                             ProcessingGroup.class);
+                ProcessingGroup processingGroupAnnotation =
+                        beanFactory.findAnnotationOnBean(saga, ProcessingGroup.class);
                 SagaConfiguration<?> sagaConfiguration;
                 if (processingGroupAnnotation != null && !"".equals(processingGroupAnnotation.value())) {
                     sagaConfiguration = SagaConfiguration.subscribingSagaManager(sagaType,
@@ -311,13 +320,16 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
     }
 
+    /**
+     * @param <A> generic specifying the Aggregate type being registered
+     */
     @SuppressWarnings("unchecked")
-    private void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
+    private <A> void registerAggregateBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
         String[] aggregates = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
         for (String aggregate : aggregates) {
             Aggregate aggregateAnnotation = beanFactory.findAnnotationOnBean(aggregate, Aggregate.class);
-            Class<?> aggregateType = beanFactory.getType(aggregate);
-            AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
+            Class<A> aggregateType = (Class<A>) beanFactory.getType(aggregate);
+            AggregateConfigurer<A> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateType);
             if ("".equals(aggregateAnnotation.repository())) {
                 String repositoryName = lcFirst(aggregateType.getSimpleName()) + "Repository";
                 String factoryName =
@@ -345,15 +357,20 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     }
                     if (AnnotationUtils.isAnnotationPresent(aggregateType, "javax.persistence.Entity")) {
                         aggregateConf.configureRepository(
-                                c -> new GenericJpaRepository(
-                                        c.getComponent(EntityManagerProvider.class,
-                                                       () -> beanFactory.getBean(EntityManagerProvider.class)),
-                                        aggregateType,
-                                        c.eventBus(),
-                                        c::repository,
-                                        c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
-                                        c.parameterResolverFactory(),
-                                        c.handlerDefinition(aggregateType)));
+                                c -> GenericJpaRepository.<A>builder()
+                                        .aggregateType(aggregateType)
+                                        .parameterResolverFactory(c.parameterResolverFactory())
+                                        .handlerDefinition(c.handlerDefinition(aggregateType))
+                                        .lockFactory(c.getComponent(
+                                                LockFactory.class, () -> NullLockFactory.INSTANCE
+                                        ))
+                                        .entityManagerProvider(c.getComponent(
+                                                EntityManagerProvider.class,
+                                                () -> beanFactory.getBean(EntityManagerProvider.class)
+                                        ))
+                                        .eventBus(c.eventBus())
+                                        .repositoryProvider(c::repository)
+                                        .build());
                     }
                 }
             } else {
@@ -430,7 +447,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
         @Override
         public String[] selectImports(AnnotationMetadata importingClassMetadata) {
-            return new String[]{ SpringAxonAutoConfigurer.class.getName() };
+            return new String[]{SpringAxonAutoConfigurer.class.getName()};
         }
     }
 

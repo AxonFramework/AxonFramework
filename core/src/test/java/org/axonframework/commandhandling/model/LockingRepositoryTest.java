@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -31,16 +30,14 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -59,8 +56,8 @@ public class LockingRepositoryTest {
         mockEventStore = mock(EventStore.class);
         lockFactory = spy(new PessimisticLockFactory());
         when(lockFactory.obtainLock(anyString()))
-                        .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
-        testSubject = new InMemoryLockingRepository(lockFactory, mockEventStore);
+                .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
+        testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventStore(mockEventStore).build();
         testSubject = spy(testSubject);
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -138,14 +135,14 @@ public class LockingRepositoryTest {
     @Test
     public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
         lockFactory = spy(new PessimisticLockFactory());
-        testSubject = new InMemoryLockingRepository(lockFactory, mockEventStore);
+        testSubject = InMemoryLockingRepository.builder().lockFactory(lockFactory).eventStore(mockEventStore).build();
         testSubject = spy(testSubject);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         when(lockFactory.obtainLock(aggregate.getIdentifier()))
-                        .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
+                .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
         verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
@@ -183,10 +180,14 @@ public class LockingRepositoryTest {
         private Map<Object, Aggregate<StubAggregate>> store = new HashMap<>();
         private int saveCount;
 
-        public InMemoryLockingRepository(LockFactory lockManager, EventStore eventStore) {
-            super(StubAggregate.class, lockManager);
-            this.eventStore = eventStore;
-            aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class);
+        private InMemoryLockingRepository(Builder builder) {
+            super(builder);
+            this.eventStore = builder.eventStore;
+            this.aggregateModel = builder.buildAggregateModel();
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -218,6 +219,30 @@ public class LockingRepositoryTest {
 
         public void resetSaveCount() {
             saveCount = 0;
+        }
+
+        private static class Builder extends LockingRepository.Builder<StubAggregate> {
+
+            private EventStore eventStore;
+
+            private Builder() {
+                super.aggregateType(StubAggregate.class);
+            }
+
+            @Override
+            public Builder lockFactory(LockFactory lockFactory) {
+                super.lockFactory(lockFactory);
+                return this;
+            }
+
+            public Builder eventStore(EventStore eventStore) {
+                this.eventStore = eventStore;
+                return this;
+            }
+
+            public InMemoryLockingRepository build() {
+                return new InMemoryLockingRepository(this);
+            }
         }
     }
 }

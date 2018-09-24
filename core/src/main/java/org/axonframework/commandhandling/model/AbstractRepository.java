@@ -19,8 +19,10 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -34,7 +36,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.common.Assert.nonNull;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -56,57 +58,20 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     private final AggregateModel<T> aggregateModel;
 
     /**
-     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
-     * repository must be {@code instanceOf} this aggregate type.
+     * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
+     * <p>
+     * The provided Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
+     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      *
-     * @param aggregateType The type of aggregate stored in this repository
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractRepository} instance
      */
-    protected AbstractRepository(Class<T> aggregateType) {
-        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(
-                nonNull(aggregateType, () -> "aggregateType may not be null")
-        ));
-    }
-
-    /**
-     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
-     * repository must be {@code instanceOf} this aggregate type.
-     *
-     * @param aggregateType            The type of aggregate stored in this repository
-     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
-     */
-    protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        this(AnnotatedAggregateMetaModelFactory.inspectAggregate(
-                nonNull(aggregateType, () -> "aggregateType may not be null"),
-                nonNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null")
-        ));
-    }
-
-    /**
-     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
-     * repository must be {@code instanceOf} this aggregate type.
-     *
-     * @param aggregateType            The type of aggregate stored in this repository
-     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
-    protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
-                                 HandlerDefinition handlerDefinition) {
-        this(AnnotatedAggregateMetaModelFactory
-                     .inspectAggregate(nonNull(aggregateType, () -> "aggregateType may not be null"),
-                                       nonNull(parameterResolverFactory,
-                                               () -> "parameterResolverFactory may not be null"),
-                                       nonNull(handlerDefinition, () -> "handler definition may not be null")));
-    }
-
-    /**
-     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
-     * repository must be {@code instanceOf} this aggregate type.
-     *
-     * @param aggregateModel The model describing the structure of the aggregate
-     */
-    protected AbstractRepository(AggregateModel<T> aggregateModel) {
-        Assert.notNull(aggregateModel, () -> "aggregateModel may not be null");
-        this.aggregateModel = aggregateModel;
+    protected AbstractRepository(Builder<T> builder) {
+        builder.validate();
+        this.aggregateModel = builder.buildAggregateModel();
     }
 
     @Override
@@ -176,9 +141,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     /**
-     * Checks the aggregate for concurrent changes. Throws a
-     * {@link ConflictingModificationException} when conflicting changes have been
-     * detected.
+     * Checks the aggregate for concurrent changes. Throws a {@link ConflictingModificationException} when conflicting
+     * changes have been detected.
      * <p>
      * This implementation throws a {@link ConflictingAggregateVersionException} if the expected version is not null
      * and the version number of the aggregate does not match the expected version
@@ -210,7 +174,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
             doCommit(aggregate);
         } else {
             CurrentUnitOfWork.get().onPrepareCommit(u -> {
-                // if the aggregate isn't "managed" anymore, it means its state was invalidated by a rollback
+                // If the aggregate isn't "managed" anymore, it means its state was invalidated by a rollback
                 doCommit(aggregate);
             });
         }
@@ -336,5 +300,128 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     public boolean canResolve(ScopeDescriptor scopeDescription) {
         return scopeDescription instanceof AggregateScopeDescriptor
                 && Objects.equals(aggregateModel.type(), ((AggregateScopeDescriptor) scopeDescription).getType());
+    }
+
+    /**
+     * Abstract Builder class to instantiate {@link AbstractRepository} implementations.
+     * <p>
+     * This Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the aggregate
+     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     *
+     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     */
+    public static abstract class Builder<T> {
+
+        protected Class<T> aggregateType;
+        private ParameterResolverFactory parameterResolverFactory;
+        private HandlerDefinition handlerDefinition;
+        private AggregateModel<T> aggregateModel;
+
+        /**
+         * Sets the {@code aggregateType} as a {@code Class}, specifying the type of aggregate this {@link Repository}
+         * will store. Either this field or the {@link #aggregateModel(AggregateModel)} should be provided to correctly
+         * instantiate a Repository.
+         *
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
+         *                      store
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> aggregateType(Class<T> aggregateType) {
+            assertNonNull(aggregateType, "The aggregateType may not be null");
+            this.aggregateType = aggregateType;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ParameterResolverFactory} used to resolve parameters for annotated handlers contained in the
+         * Aggregate. Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         *
+         * @param parameterResolverFactory a {@link ParameterResolverFactory} used to resolve parameters for annotated
+         *                                 handlers contained in the Aggregate
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+            assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
+            this.parameterResolverFactory = parameterResolverFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}.
+         * Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         *
+         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
+         *                          {@code aggregateType}.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+            assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
+            this.handlerDefinition = handlerDefinition;
+            return this;
+        }
+
+        /**
+         * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate this
+         * {@link Repository} will store. Either this field or the {@link #aggregateType(Class)} should be provided to
+         * correctly instantiate a Repository.
+         *
+         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
+         *                       {@link Repository} will store
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+            assertNonNull(aggregateModel, "AggregateModel may not be null");
+            this.aggregateModel = aggregateModel;
+            return this;
+        }
+
+        /**
+         * Instantiate the {@link AggregateModel} of generic type {@code T} describing the structure of the Aggregate
+         * this {@link Repository} will store.
+         *
+         * @return a {@link AggregateModel} of generic type {@code T} describing the Aggregate this {@link Repository}
+         * will store
+         */
+        protected AggregateModel<T> buildAggregateModel() {
+            if (aggregateModel == null) {
+                return inspectAggregateModel();
+            } else {
+                return aggregateModel;
+            }
+        }
+
+        private AggregateModel<T> inspectAggregateModel() {
+            if (parameterResolverFactory == null && handlerDefinition == null) {
+                return AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType);
+            } else if (parameterResolverFactory != null && handlerDefinition == null) {
+                handlerDefinition = ClasspathHandlerDefinition.forClass(aggregateType);
+            }
+            return AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                    aggregateType, parameterResolverFactory, handlerDefinition
+            );
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            if (aggregateModel == null) {
+                assertNonNull(
+                        aggregateType,
+                        "No AggregateModel is set, whilst either it or the aggregateType is a hard requirement"
+                );
+                return;
+            }
+            assertNonNull(
+                    aggregateModel,
+                    "No aggregateType is set, whilst either it or the AggregateModel is a hard requirement"
+            );
+        }
     }
 }

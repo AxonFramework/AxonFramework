@@ -24,16 +24,17 @@ import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.common.Assert;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.concurrent.Callable;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -53,341 +54,53 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     private final RepositoryProvider repositoryProvider;
 
     /**
-     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
-     * aggregate instances of given {@code aggregateType}.
+     * Instantiate a {@link EventSourcingRepository} based on the fields contained in the {@link Builder}.
+     * <p>
+     * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
+     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
+     * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
+     * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement, and
+     * will also result in an AxonConfigurationException if both are missing.
+     * <p>
+     * Additionally will assert that the {@link LockFactory}, {@link EventStore} and {@link SnapshotTriggerDefinition}
+     * are not {@code null}, resulting in an AxonConfigurationException if for any of these this is the case.
      *
-     * @param aggregateType      The type of aggregate stored in this repository
-     * @param eventStore         The event store that holds the event streams for this repository
-     * @see LockingRepository#LockingRepository(Class)
+     * @param builder the {@link Builder} used to instantiate a {@link EventSourcingRepository} instance
      */
-    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
-        this(new GenericAggregateFactory<>(aggregateType),
-             eventStore,
-             NoSnapshotTriggerDefinition.INSTANCE);
+    protected EventSourcingRepository(Builder<T> builder) {
+        super(builder);
+        this.eventStore = builder.eventStore;
+        this.aggregateFactory = builder.buildAggregateFactory();
+        this.snapshotTriggerDefinition = builder.snapshotTriggerDefinition;
+        this.repositoryProvider = builder.repositoryProvider;
     }
 
     /**
-     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
-     * aggregate instances of given {@code aggregateType}.
+     * Instantiate a Builder to be able to create a {@link EventSourcingRepository} for aggregate type {@code T}.
+     * Can also be used to instantiate a {@link CachingEventSourcingRepository} for aggregate type {@code T}. This
+     * Builder will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function
+     * returns a CachingEventSourcingRepository instead of an EventSourcingRepository.
+     * <p>
+     * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory} and the
+     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation.
+     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
+     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
+     * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement.
+     * <p>
+     * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @param aggregateType      The type of aggregate stored in this repository
-     * @param eventStore         The event store that holds the event streams for this repository
-     * @param repositoryProvider Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
+     * @return a Builder to be able to create a {@link EventSourcingRepository}
      */
-    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
-                                   RepositoryProvider repositoryProvider) {
-        this(new GenericAggregateFactory<>(aggregateType),
-             eventStore,
-             NoSnapshotTriggerDefinition.INSTANCE,
-             repositoryProvider);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
-     * aggregate instances of given {@code aggregateType}.
-     *
-     * @param aggregateType             The type of aggregate stored in this repository
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(new GenericAggregateFactory<>(aggregateType), eventStore, snapshotTriggerDefinition);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
-     * aggregate instances of given {@code aggregateType}.
-     *
-     * @param aggregateType             The type of aggregate stored in this repository
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        this(new GenericAggregateFactory<>(aggregateType), eventStore, snapshotTriggerDefinition, repositoryProvider);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances.
-     *
-     * @param aggregateFactory   The factory for new aggregate instances
-     * @param eventStore         The event store that holds the event streams for this repository
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore) {
-        this(aggregateFactory, eventStore, NoSnapshotTriggerDefinition.INSTANCE);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances.
-     *
-     * @param aggregateFactory   The factory for new aggregate instances
-     * @param eventStore         The event store that holds the event streams for this repository
-     * @param repositoryProvider Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   RepositoryProvider repositoryProvider) {
-        this(aggregateFactory, eventStore, NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances.
-     *
-     * @param aggregateModel     The meta model describing the aggregate's structure
-     * @param aggregateFactory   The factory for new aggregate instances
-     * @param eventStore         The event store that holds the event streams for this repository
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
-                                   EventStore eventStore) {
-        this(aggregateModel, aggregateFactory, eventStore, NoSnapshotTriggerDefinition.INSTANCE);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances.
-     *
-     * @param aggregateModel     The meta model describing the aggregate's structure
-     * @param aggregateFactory   The factory for new aggregate instances
-     * @param eventStore         The event store that holds the event streams for this repository
-     * @param repositoryProvider Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
-                                   EventStore eventStore, RepositoryProvider repositoryProvider) {
-        this(aggregateModel, aggregateFactory, eventStore, NoSnapshotTriggerDefinition.INSTANCE, repositoryProvider);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory, eventStore, snapshotTriggerDefinition, null);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        super(aggregateFactory.getAggregateType());
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.aggregateFactory = aggregateFactory;
-        this.eventStore = eventStore;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
-     *
-     * @param aggregateModel            The meta model describing the aggregate's structure
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
-                                   EventStore eventStore, SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateModel, aggregateFactory, eventStore, snapshotTriggerDefinition, null);
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances and triggering snapshots using the given {@code snapshotTriggerDefinition}
-     *
-     * @param aggregateModel            The meta model describing the aggregate's structure
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, AggregateFactory<T> aggregateFactory,
-                                   EventStore eventStore, SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        super(aggregateModel);
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.aggregateFactory = aggregateFactory;
-        this.eventStore = eventStore;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initializes a repository with a locking strategy underpinned by the given {@code lockFactory}, uses the given
-     * {@code aggregateFactory} to create new aggregate instances and triggering snapshots using the given
-     * {@code snapshotTriggerDefinition}
-     *
-     * @param aggregateModel            The meta model describing the aggregate's structure
-     * @param lockFactory               The locking strategy to apply to this repository
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class, LockFactory)
-     */
-    public EventSourcingRepository(AggregateModel<T> aggregateModel, LockFactory lockFactory,
-                                   AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        super(aggregateModel, lockFactory);
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.aggregateFactory = aggregateFactory;
-        this.eventStore = eventStore;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   ParameterResolverFactory parameterResolverFactory,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory,
-             eventStore,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
-             snapshotTriggerDefinition,
-             null);
-    }
-
-
-    /**
-     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
-     * create new aggregate instances.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param handlerDefinition         The handler definition used to create concrete handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     * @see LockingRepository#LockingRepository(Class)
-     */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   ParameterResolverFactory parameterResolverFactory,
-                                   HandlerDefinition handlerDefinition,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        super(aggregateFactory.getAggregateType(), parameterResolverFactory, handlerDefinition);
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.eventStore = eventStore;
-        this.aggregateFactory = aggregateFactory;
-        this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initialize a repository with the given locking strategy.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param lockFactory               the locking strategy to apply to this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory, eventStore, lockFactory, snapshotTriggerDefinition, null);
-    }
-
-    /**
-     * Initialize a repository with the given locking strategy.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param lockFactory               the locking strategy to apply to this repository
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        super(aggregateFactory.getAggregateType(), lockFactory);
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.eventStore = eventStore;
-        this.aggregateFactory = aggregateFactory;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.repositoryProvider = repositoryProvider;
-    }
-
-    /**
-     * Initialize a repository with the given locking strategy and parameter resolver factory.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param lockFactory               The locking strategy to apply to this repository
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
-                                   ParameterResolverFactory parameterResolverFactory,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition) {
-        this(aggregateFactory,
-             eventStore,
-             lockFactory,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(aggregateFactory.getAggregateType()),
-             snapshotTriggerDefinition,
-             null);
-    }
-
-    /**
-     * Initialize a repository with the given locking strategy and parameter resolver factory.
-     *
-     * @param aggregateFactory          The factory for new aggregate instances
-     * @param eventStore                The event store that holds the event streams for this repository
-     * @param lockFactory               The locking strategy to apply to this repository
-     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param handlerDefinition         The handler definition used to create concrete handlers
-     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
-     * @param repositoryProvider        Provides repositories for specific aggregate types
-     */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
-                                   ParameterResolverFactory parameterResolverFactory,
-                                   HandlerDefinition handlerDefinition,
-                                   SnapshotTriggerDefinition snapshotTriggerDefinition,
-                                   RepositoryProvider repositoryProvider) {
-        super(aggregateFactory.getAggregateType(), lockFactory, parameterResolverFactory, handlerDefinition);
-        Assert.notNull(eventStore, () -> "eventStore may not be null");
-        this.eventStore = eventStore;
-        this.aggregateFactory = aggregateFactory;
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-        this.repositoryProvider = repositoryProvider;
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -396,6 +109,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the loaded aggregate
      * @return the fully initialized aggregate
+     *
      * @throws AggregateDeletedException  in case an aggregate existed in the past, but has been deleted
      * @throws AggregateNotFoundException when an aggregate with the given identifier does not exist
      */
@@ -424,9 +138,9 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @return the domain event stream for the given aggregateIdentifier
      */
     protected DomainEventStream readEvents(String aggregateIdentifier) {
-    	return eventStore.readEvents(aggregateIdentifier);
+        return eventStore.readEvents(aggregateIdentifier);
     }
-    
+
     @Override
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && expectedVersion < aggregate.version()) {
@@ -466,5 +180,183 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     public AggregateFactory<T> getAggregateFactory() {
         return aggregateFactory;
+    }
+
+    /**
+     * Builder class to instantiate a {@link EventSourcingRepository}. Can also be used to instantiate a
+     * {@link CachingEventSourcingRepository}. This Builder will check whether a {@link Cache} is provided. If this
+     * holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
+     * EventSourcingRepository.
+     * <p>
+     * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory} and the
+     * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation.
+     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
+     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * The same criteria holds for the {@link AggregateFactory}. Either the AggregateFactory can be set directly or it
+     * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement.
+     * <p>
+     * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     *
+     * @param <T> a generic specifying the Aggregate type contained in this
+     *            {@link org.axonframework.commandhandling.model.Repository} implementation
+     */
+    public static class Builder<T> extends LockingRepository.Builder<T> {
+
+        protected EventStore eventStore;
+        protected SnapshotTriggerDefinition snapshotTriggerDefinition = NoSnapshotTriggerDefinition.INSTANCE;
+        private AggregateFactory<T> aggregateFactory;
+        protected RepositoryProvider repositoryProvider;
+        protected Cache cache;
+
+        @Override
+        public Builder<T> aggregateType(Class<T> aggregateType) {
+            super.aggregateType(aggregateType);
+            return this;
+        }
+
+        @Override
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+            super.parameterResolverFactory(parameterResolverFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+            super.handlerDefinition(handlerDefinition);
+            return this;
+        }
+
+        @Override
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+            super.aggregateModel(aggregateModel);
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * If this Builder is used to instantiate a {@link CachingEventSourcingRepository}, do note that an optimistic
+         * locking strategy is not compatible with a caching approach.
+         */
+        @Override
+        public Builder<T> lockFactory(LockFactory lockFactory) {
+            super.lockFactory(lockFactory);
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventStore} that holds the event stream this repository needs to event source an Aggregate.
+         *
+         * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source
+         *                   an Aggregate
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> eventStore(EventStore eventStore) {
+            assertNonNull(eventStore, "EventStore may not be null");
+            this.eventStore = eventStore;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SnapshotTriggerDefinition} specifying when to trigger a snapshot for an Aggregate contained
+         * in this repository.
+         *
+         * @param snapshotTriggerDefinition a {@link SnapshotTriggerDefinition} specifying when to trigger a snapshot
+         *                                  for an Aggregate contained in this repository
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> snapshotTriggerDefinition(SnapshotTriggerDefinition snapshotTriggerDefinition) {
+            assertNonNull(snapshotTriggerDefinition, "SnapshotTriggerDefinition may not be null");
+            this.snapshotTriggerDefinition = snapshotTriggerDefinition;
+            return this;
+        }
+
+        /**
+         * Sets the {@link AggregateFactory} used to create new Aggregate instances. Either this field or the
+         * {@link #aggregateType(Class)} should be provided to correctly instantiate an AggregateFactory for this
+         * {@link EventSourcingRepository}.
+         *
+         * @param aggregateFactory the {@link AggregateFactory} used to create new Aggregate instances
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> aggregateFactory(AggregateFactory<T> aggregateFactory) {
+            assertNonNull(aggregateFactory, "AggregateFactory may not be null");
+            this.aggregateFactory = aggregateFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link RepositoryProvider} which services repositories for specific aggregate types.
+         *
+         * @param repositoryProvider a {@link RepositoryProvider} servicing repositories for specific aggregate types
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> repositoryProvider(RepositoryProvider repositoryProvider) {
+            this.repositoryProvider = repositoryProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Cache} which services repositories for specific aggregate types.
+         *
+         * @param cache a {@link Cache} servicing repositories for specific aggregate types
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> cache(Cache cache) {
+            this.cache = cache;
+            return this;
+        }
+
+
+        /**
+         * Initializes a {@link EventSourcingRepository} or {@link CachingEventSourcingRepository} as specified through
+         * this Builder. Will return a CachingEventSourcingRepository if {@link #cache(Cache)} has been set. Otherwise
+         * builds a regular EventSourcingRepository
+         *
+         * @param <R> a generic extending {@link EventSourcingRepository}, so allowing both an EventSourcingRepository
+         *            and {@link CachingEventSourcingRepository} return type
+         * @return a {@link EventSourcingRepository} or {@link CachingEventSourcingRepository} (if {@link #cache(Cache)}
+         * has been set) as specified through this Builder
+         */
+        @SuppressWarnings("unchecked")
+        public <R extends EventSourcingRepository<T>> R build() {
+            return cache != null
+                    ? (R) new CachingEventSourcingRepository<>(this)
+                    : (R) new EventSourcingRepository<>(this);
+        }
+
+        /**
+         * Instantiate the {@link AggregateFactory} of generic type {@code T} for the Aggregate this
+         * {@link EventSourcingRepository} will instantiate based on an event stream.
+         *
+         * @return a {@link AggregateFactory} of generic type {@code T} for the Aggregate this
+         * {@link EventSourcingRepository} will instantiate based on an event stream
+         */
+        private AggregateFactory<T> buildAggregateFactory() {
+            if (aggregateFactory == null) {
+                return new GenericAggregateFactory<>(aggregateType);
+            } else {
+                return aggregateFactory;
+            }
+        }
+
+        @Override
+        protected void validate() {
+            super.validate();
+            assertNonNull(eventStore, "The EventStore is a hard requirement and should be provided");
+            if (aggregateFactory == null) {
+                assertNonNull(
+                        aggregateType,
+                        "No AggregateFactory is set, whilst either it or the aggregateType is a hard requirement"
+                );
+                return;
+            }
+            assertNonNull(
+                    aggregateFactory,
+                    "No aggregateType is set, whilst either it or the AggregateFactory is a hard requirement"
+            );
+        }
     }
 }

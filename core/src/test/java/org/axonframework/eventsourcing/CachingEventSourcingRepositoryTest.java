@@ -32,9 +32,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +58,12 @@ public class CachingEventSourcingRepositoryTest {
         ehCache = cacheManager.getCache("testCache");
         cache = spy(new EhCacheAdapter(ehCache));
 
-        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, cache);
+        testSubject = CachingEventSourcingRepository.<StubAggregate>builder()
+                .aggregateType(StubAggregate.class)
+                .aggregateFactory(new StubAggregateFactory())
+                .eventStore(mockEventStore)
+                .cache(cache)
+                .build();
     }
 
     @After
@@ -75,26 +78,14 @@ public class CachingEventSourcingRepositoryTest {
     public void testAggregatesRetrievedFromCache() throws Exception {
         startAndGetUnitOfWork();
 
-//        // ensure the cached aggregate has been committed before being cached.
-//        doThrow(new AssertionError("Aggregate should not have a null version when cached"))
-//                .when(cache).put(eq("aggregateId"), argThat(new TypeSafeMatcher<Aggregate>() {
-//            @Override
-//            public boolean matchesSafely(Aggregate item) {
-//                return item.version() == null;
-//            }
-//
-//            @Override
-//            public void describeTo(Description description) {
-//                description.appendText("An aggregate with a non-null version");
-//            }
-//        }));
-
-        LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> aggregate1 = testSubject.newInstance(() -> new StubAggregate("aggregateId"));
+        LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> aggregate1 =
+                testSubject.newInstance(() -> new StubAggregate("aggregateId"));
         aggregate1.execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
         startAndGetUnitOfWork();
-        LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> reloadedAggregate1 = testSubject.load("aggregateId", null);
+        LockAwareAggregate<StubAggregate, EventSourcedAggregate<StubAggregate>> reloadedAggregate1 =
+                testSubject.load("aggregateId", null);
         assertSame(aggregate1.getWrappedAggregate(), reloadedAggregate1.getWrappedAggregate());
         aggregate1.execute(StubAggregate::doSomething);
         aggregate1.execute(StubAggregate::doSomething);
