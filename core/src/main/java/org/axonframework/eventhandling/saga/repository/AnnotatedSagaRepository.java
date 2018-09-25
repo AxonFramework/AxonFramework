@@ -362,7 +362,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
          * @return a {@link SagaModel} of generic type {@code T} describing the Saga this
          * {@link org.axonframework.eventhandling.saga.SagaRepository} implementation will store
          */
-        SagaModel<T> buildSagaModel() {
+        protected SagaModel<T> buildSagaModel() {
             if (sagaModel == null) {
                 return inspectSagaModel();
             } else {
