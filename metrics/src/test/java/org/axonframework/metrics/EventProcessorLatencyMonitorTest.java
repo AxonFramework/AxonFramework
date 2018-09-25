@@ -39,7 +39,7 @@ public class EventProcessorLatencyMonitorTest {
     private MeterRegistry meterRegistry;
 
     @Before
-    public void setup() {
+    public void setUp() {
         meterRegistry = new SimpleMeterRegistry();
     }
 

@@ -19,6 +19,7 @@ package org.axonframework.metrics;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.messaging.Message;
+import org.axonframework.metrics.reservoir.SlidingTimeWindowReservoir;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.concurrent.TimeUnit;

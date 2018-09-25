@@ -1,4 +1,4 @@
-package org.axonframework.metrics;
+package org.axonframework.metrics.reservoir;
 
 import io.micrometer.core.instrument.Clock;
 
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>
  * Adapted from com.codahale.metrics.SlidingTimeWindowReservoir from io.dropwizard.metrics:metrics-core:3.1.2
  */
-class SlidingTimeWindowReservoir {
+public class SlidingTimeWindowReservoir {
 
     // allow for this many duplicate ticks before overwriting measurements
     private static final int COLLISION_BUFFER = 256;
@@ -34,7 +34,7 @@ class SlidingTimeWindowReservoir {
      * @param windowUnit the unit of {@code window}
      * @param clock      the {@link Clock} to use
      */
-    SlidingTimeWindowReservoir(long window, TimeUnit windowUnit, Clock clock) {
+    public SlidingTimeWindowReservoir(long window, TimeUnit windowUnit, Clock clock) {
         this.clock = clock;
         this.measurements = new ConcurrentSkipListMap<>();
         this.window = windowUnit.toNanos(window) * COLLISION_BUFFER;
@@ -42,14 +42,14 @@ class SlidingTimeWindowReservoir {
         this.count = new AtomicLong();
     }
 
-    void update(long value) {
+    public void update(long value) {
         if (count.incrementAndGet() % TRIM_THRESHOLD == 0) {
             trim();
         }
         measurements.put(getTick(), value);
     }
 
-    List<Long> getMeasurements() {
+    public List<Long> getMeasurements() {
         trim();
         return new ArrayList<>(measurements.values());
     }
