@@ -47,13 +47,16 @@ public class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     private ApplicationContext applicationContext;
 
     @Autowired
+    private MeterRegistry meterRegistry;
+
+    @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
 
     @Test
     public void testContextInitialization() {
         assertNotNull(applicationContext);
 
-        assertNotNull(applicationContext.getBean(MeterRegistry.class));
+        assertNotNull(meterRegistry);
 
         assertTrue(applicationContext.containsBean("globalMetricRegistry"));
         assertNotNull(applicationContext.getBean(GlobalMetricRegistry.class));

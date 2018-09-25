@@ -17,10 +17,10 @@
 package org.axonframework.boot.autoconfig;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.boot.MetricsProperties;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
-import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -40,13 +40,22 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
-@AutoConfigureAfter({org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration.class, CompositeMeterRegistryAutoConfiguration.class})
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration",
+        "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration"
+})
 @ConditionalOnClass(name = {
         "io.micrometer.core.instrument.MeterRegistry",
         "org.axonframework.metrics.GlobalMetricRegistry"
 })
 @EnableConfigurationProperties(MetricsProperties.class)
 public class MetricsAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public static MeterRegistry metricRegistry() {
+        return new SimpleMeterRegistry();
+    }
 
     @Bean
     @ConditionalOnMissingBean

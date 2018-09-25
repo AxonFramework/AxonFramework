@@ -16,6 +16,7 @@
 
 package org.axonframework.boot;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
 import org.junit.*;
@@ -45,6 +46,9 @@ public class AxonAutoConfigurationWithMetricsTest {
     private ApplicationContext applicationContext;
 
     @Autowired
+    private MeterRegistry meterRegistry;
+
+    @Autowired
     private GlobalMetricRegistry globalMetricRegistry;
 
     @Autowired
@@ -53,6 +57,9 @@ public class AxonAutoConfigurationWithMetricsTest {
     @Test
     public void testContextInitialization() {
         assertNotNull(applicationContext);
+
+        assertNotNull(applicationContext.getBean(MeterRegistry.class));
+        assertNotNull(meterRegistry);
 
         assertTrue(applicationContext.containsBean("globalMetricRegistry"));
         assertNotNull(applicationContext.getBean(GlobalMetricRegistry.class));
