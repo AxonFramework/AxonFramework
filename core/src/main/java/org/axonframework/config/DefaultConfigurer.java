@@ -384,7 +384,7 @@ public class DefaultConfigurer implements Configurer {
         if (initialized) {
             module.initialize(config);
             startHandlers.add(new RunnableHandler(module.phase(), module::start));
-            shutdownHandlers.add(new RunnableHandler(module.phase(), module::start));
+            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
         }
         this.modules.add(module);
         return this;

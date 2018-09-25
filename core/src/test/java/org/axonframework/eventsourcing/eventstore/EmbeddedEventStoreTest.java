@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -59,17 +61,19 @@ public class EmbeddedEventStoreTest {
 
     private EmbeddedEventStore testSubject;
     private EventStorageEngine storageEngine;
+    private ThreadFactory threadFactory;
 
     @Before
     public void setUp() {
         storageEngine = spy(new InMemoryEventStorageEngine());
+        threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY);
     }
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
         testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
-                                             cleanupDelay, MILLISECONDS);
+                                             cleanupDelay, MILLISECONDS, threadFactory);
     }
 
     @After
@@ -285,6 +289,20 @@ public class EmbeddedEventStoreTest {
         unitOfWork.rollback();
 
         Assert.assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+    }
+
+    @Test(timeout = 5000)
+    public void testCustomThreadFactoryIsUsed() throws Exception {
+        CountDownLatch lock = new CountDownLatch(1);
+        TrackingEventStream stream = testSubject.openStream(null);
+        Thread t = new Thread(() -> stream.asStream().findFirst().ifPresent(event -> lock.countDown()));
+        t.start();
+        assertFalse(lock.await(100, MILLISECONDS));
+        testSubject.publish(createEvent());
+        t.join();
+        assertEquals(0, lock.getCount());
+
+        verify(threadFactory, atLeastOnce()).newThread(any(Runnable.class));
     }
 
     private static class SynchronizedBooleanAnswer implements Answer<Boolean> {
