@@ -24,8 +24,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.sql.DataSource;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 @ConditionalOnBean(DataSource.class)
 @Configuration
@@ -71,7 +71,10 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer) {
-        return new JdbcTokenStore(connectionProvider, serializer);
+        return JdbcTokenStore.builder()
+                             .connectionProvider(connectionProvider)
+                             .serializer(serializer)
+                             .build();
     }
 
     @ConditionalOnMissingBean(SagaStore.class)

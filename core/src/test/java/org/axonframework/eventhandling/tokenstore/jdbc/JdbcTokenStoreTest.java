@@ -24,11 +24,8 @@ import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -39,13 +36,13 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.sql.DataSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -108,6 +105,7 @@ public class JdbcTokenStoreTest {
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
 
+    @SuppressWarnings("Duplicates")
     @Transactional
     @Test
     public void testInitializeTokensAtGivenPosition() {
@@ -134,9 +132,15 @@ public class JdbcTokenStoreTest {
     public void testQuerySegments() {
         transactionManager.executeInTransaction(() -> assertNull(tokenStore.fetchToken("test", 0)));
 
-        transactionManager.executeInTransaction(() -> tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0));
-        transactionManager.executeInTransaction(() -> tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1));
-        transactionManager.executeInTransaction(() -> tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1));
+        transactionManager.executeInTransaction(
+                () -> tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0)
+        );
+        transactionManager.executeInTransaction(
+                () -> tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1)
+        );
+        transactionManager.executeInTransaction(
+                () -> tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1)
+        );
 
         transactionManager.executeInTransaction(() -> {
             final int[] segments = tokenStore.fetchSegments("proc1");
@@ -226,6 +230,7 @@ public class JdbcTokenStoreTest {
     @Configuration
     public static class Context {
 
+        @SuppressWarnings("Duplicates")
         @Bean
         public DataSource dataSource() {
             JDBCDataSource dataSource = new JDBCDataSource();
@@ -242,23 +247,35 @@ public class JdbcTokenStoreTest {
 
         @Bean
         public JdbcTokenStore tokenStore(DataSource dataSource) {
-            return new JdbcTokenStore(dataSource::getConnection, new XStreamSerializer());
+            return JdbcTokenStore.builder()
+                                 .connectionProvider(dataSource::getConnection)
+                                 .serializer(new XStreamSerializer())
+                                 .build();
         }
 
         @Bean
         public JdbcTokenStore concurrentTokenStore(DataSource dataSource) {
-            return new JdbcTokenStore(dataSource::getConnection, new XStreamSerializer(), new TokenSchema(),
-                    Duration.ofSeconds(2), "concurrent", byte[].class);
+            return JdbcTokenStore.builder()
+                                 .connectionProvider(dataSource::getConnection)
+                                 .serializer(new XStreamSerializer())
+                                 .claimTimeout(Duration.ofSeconds(2))
+                                 .nodeId("concurrent")
+                                 .build();
         }
 
         @Bean
         public JdbcTokenStore stealingTokenStore(DataSource dataSource) {
-            return new JdbcTokenStore(dataSource::getConnection, new XStreamSerializer(), new TokenSchema(),
-                    Duration.ofSeconds(-1), "stealing", byte[].class);
+            return JdbcTokenStore.builder()
+                                 .connectionProvider(dataSource::getConnection)
+                                 .serializer(new XStreamSerializer())
+                                 .claimTimeout(Duration.ofSeconds(-1))
+                                 .nodeId("stealing")
+                                 .build();
         }
 
         @Bean
         public TransactionManager transactionManager(PlatformTransactionManager txManager) {
+            //noinspection Duplicates
             return () -> {
                 TransactionStatus transaction = txManager.getTransaction(new DefaultTransactionDefinition());
                 return new Transaction() {
@@ -275,5 +292,4 @@ public class JdbcTokenStoreTest {
             };
         }
     }
-
 }

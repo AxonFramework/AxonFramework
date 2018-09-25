@@ -81,12 +81,16 @@ public class SpawningNewAggregateTest {
 
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(aggregate2Repository);
 
-        AggregateAnnotationCommandHandler<Aggregate1> aggregate1CommandHandler = new AggregateAnnotationCommandHandler<>(
-                Aggregate1.class,
-                aggregate1Repository);
-        AggregateAnnotationCommandHandler<Aggregate2> aggregate2CommandHandler = new AggregateAnnotationCommandHandler<>(
-                Aggregate2.class,
-                aggregate2Repository);
+        AggregateAnnotationCommandHandler<Aggregate1> aggregate1CommandHandler =
+                AggregateAnnotationCommandHandler.<Aggregate1>builder()
+                        .aggregateType(Aggregate1.class)
+                        .repository(aggregate1Repository)
+                        .build();
+        AggregateAnnotationCommandHandler<Aggregate2> aggregate2CommandHandler =
+                AggregateAnnotationCommandHandler.<Aggregate2>builder()
+                        .aggregateType(Aggregate2.class)
+                        .repository(aggregate2Repository)
+                        .build();
         aggregate1CommandHandler.subscribe(commandBus);
         aggregate2CommandHandler.subscribe(commandBus);
     }

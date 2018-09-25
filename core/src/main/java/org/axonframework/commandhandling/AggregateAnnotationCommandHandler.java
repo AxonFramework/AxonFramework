@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.commandhandling.model.inspection.CommandMessageHandlingMember;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -29,13 +29,18 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Command handler that handles commands based on {@link CommandHandler}
- * annotations on an aggregate. Those annotations may appear on methods, in which case a specific aggregate instance
- * needs to be targeted by the command, or on the constructor. The latter will create a new Aggregate instance, which
- * is then stored in the repository.
+ * Command handler that handles commands based on {@link CommandHandler} annotations on an aggregate. Those annotations
+ * may appear on methods, in which case a specific aggregate instance needs to be targeted by the command, or on the
+ * constructor. The latter will create a new Aggregate instance, which is then stored in the repository.
  *
  * @param <T> the type of aggregate this handler handles commands for
  * @author Allard Buijze
@@ -45,93 +50,44 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         SupportedCommandNamesAware {
 
     private final Repository<T> repository;
-
     private final CommandTargetResolver commandTargetResolver;
     private final Map<String, MessageHandler<CommandMessage<?>>> handlers;
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
-     * given {@code repository} to add and load aggregate instances.
+     * Instantiate a {@link AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link Repository} and {@link CommandTargetResolver} are not {@code null}, and will throw
+     * an {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided Builder's
+     * goal is to create an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
+     * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
+     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * AggregateModel <b>or</b> the {@code aggregateType} should be provided. An AxonConfigurationException is thrown
+     * if this criteria is not met.
      *
-     * @param aggregateType The type of aggregate
-     * @param repository    The repository providing access to aggregate instances
+     * @param builder the {@link Builder} used to instantiate a {@link AggregateAnnotationCommandHandler} instance
      */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository) {
-        this(aggregateType, repository, new AnnotationCommandTargetResolver());
+    protected AggregateAnnotationCommandHandler(Builder<T> builder) {
+        builder.validate();
+        this.repository = builder.repository;
+        this.commandTargetResolver = builder.commandTargetResolver;
+        this.handlers = initializeHandlers(builder.buildAggregateModel());
     }
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
-     * given {@code repository} to add and load aggregate instances and the default ParameterResolverFactory.
+     * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
+     * <p>
+     * The {@link CommandTargetResolver} is defaulted to amn {@link AnnotationCommandTargetResolver}
+     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
+     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
+     * aggregate). To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
-     * @param aggregateType         The type of aggregate
-     * @param repository            The repository providing access to aggregate instances
-     * @param commandTargetResolver The target resolution strategy
+     * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
+     * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
      */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
-                                             CommandTargetResolver commandTargetResolver) {
-        this(aggregateType, repository, commandTargetResolver,
-                ClasspathParameterResolverFactory.forClass(aggregateType));
-    }
-
-    /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
-     * given {@code repository} to add and load aggregate instances and the given
-     * {@code parameterResolverFactory}.
-     *
-     * @param aggregateType            The type of aggregate
-     * @param repository               The repository providing access to aggregate instances
-     * @param commandTargetResolver    The target resolution strategy
-     * @param parameterResolverFactory The strategy for resolving parameter values for handler methods
-     */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
-                                             CommandTargetResolver commandTargetResolver,
-                                             ParameterResolverFactory parameterResolverFactory) {
-        this(repository, commandTargetResolver,
-             AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, parameterResolverFactory));
-    }
-
-    /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the given
-     * {@code repository} to add and load aggregate instances, the given {@code parameterResolverFactory} to resolve
-     * parameters which are required by handlers and the given {@code handlerDefinition} used to create handlers.
-     *
-     * @param aggregateType            The type of aggregate
-     * @param repository               The repository providing access to aggregate instances
-     * @param commandTargetResolver    The target resolution strategy
-     * @param parameterResolverFactory The strategy for resolving parameter values for handler methods
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType,
-                                             Repository<T> repository,
-                                             CommandTargetResolver commandTargetResolver,
-                                             ParameterResolverFactory parameterResolverFactory,
-                                             HandlerDefinition handlerDefinition) {
-        this(repository,
-             commandTargetResolver,
-             AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType,
-                                                                 parameterResolverFactory,
-                                                                 handlerDefinition));
-    }
-
-    /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
-     * given {@code repository} to add and load aggregate instances and the given
-     * {@code parameterResolverFactory}.
-     *
-     * @param repository            The repository providing access to aggregate instances
-     * @param commandTargetResolver The target resolution strategy
-     * @param aggregateModel        The description of the command handling model
-     */
-    public AggregateAnnotationCommandHandler(Repository<T> repository,
-                                             CommandTargetResolver commandTargetResolver,
-                                             AggregateModel<T> aggregateModel) {
-        Assert.notNull(aggregateModel, () -> "aggregateModel may not be null");
-        Assert.notNull(repository, () -> "repository may not be null");
-        Assert.notNull(commandTargetResolver, () -> "commandTargetResolver may not be null");
-        this.repository = repository;
-        this.commandTargetResolver = commandTargetResolver;
-        this.handlers = initializeHandlers(aggregateModel);
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -160,8 +116,8 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         AggregateCommandHandler aggregateCommandHandler = new AggregateCommandHandler();
         aggregateModel.commandHandlers().forEach((k, v) -> {
             if (v.unwrap(CommandMessageHandlingMember.class)
-                    .map(CommandMessageHandlingMember::isFactoryHandler)
-                    .orElse(false)) {
+                 .map(CommandMessageHandlingMember::isFactoryHandler)
+                 .orElse(false)) {
                 handlersFound.put(k, new AggregateConstructorCommandHandler(v));
             } else {
                 handlersFound.put(k, aggregateCommandHandler);
@@ -217,6 +173,170 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         public Object handle(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
             return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link AggregateAnnotationCommandHandler}.
+     * <p>
+     * The {@link CommandTargetResolver} is defaulted to an {@link AnnotationCommandTargetResolver}
+     * The {@link Repository} is a <b>hard requirement</b> and as such should be provided.
+     * Next to that, this Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given
+     * aggregate). To instantiate this AggregateModel, either an AggregateModel can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     *
+     * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
+     */
+    public static class Builder<T> {
+
+        private Repository<T> repository;
+        private CommandTargetResolver commandTargetResolver = new AnnotationCommandTargetResolver();
+        private Class<T> aggregateType;
+        private ParameterResolverFactory parameterResolverFactory;
+        private HandlerDefinition handlerDefinition;
+        private AggregateModel<T> aggregateModel;
+
+        /**
+         * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
+         * commands for it.
+         *
+         * @param repository a {@link Repository} used to add and load Aggregate instances of generic type {@code T}
+         *                   upon handling commands for it
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> repository(Repository<T> repository) {
+            assertNonNull(repository, "Repository may not be null");
+            this.repository = repository;
+            return this;
+        }
+
+        /**
+         * Sets the {@link CommandTargetResolver} used to resolve the command handling target. Defaults to an
+         * {@link AnnotationCommandTargetResolver}.
+         *
+         * @param commandTargetResolver a {@link CommandTargetResolver} used to resolve the command handling target
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> commandTargetResolver(CommandTargetResolver commandTargetResolver) {
+            assertNonNull(commandTargetResolver, "CommandTargetResolver may not be null");
+            this.commandTargetResolver = commandTargetResolver;
+            return this;
+        }
+
+        /**
+         * Sets the {@code aggregateType} as a {@code Class}, specifying the type of aggregate an {@link AggregateModel}
+         * should be created for. Either this field or the {@link #aggregateModel(AggregateModel)} should be provided to
+         * correctly instantiate an {@link AggregateAnnotationCommandHandler}.
+         *
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate an {@link AggregateModel}
+         *                      should be instantiated for
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> aggregateType(Class<T> aggregateType) {
+            assertNonNull(aggregateType, "The aggregateType may not be null");
+            this.aggregateType = aggregateType;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ParameterResolverFactory} used to resolve parameters for annotated handlers contained in the
+         * Aggregate. Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         *
+         * @param parameterResolverFactory a {@link ParameterResolverFactory} used to resolve parameters for annotated
+         *                                 handlers contained in the Aggregate
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+            assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
+            this.parameterResolverFactory = parameterResolverFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}.
+         * Only used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
+         *
+         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
+         *                          {@code aggregateType}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+            assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
+            this.handlerDefinition = handlerDefinition;
+            return this;
+        }
+
+        /**
+         * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate the
+         * {@link AnnotationCommandHandlerAdapter} will handle. Either this field or the {@link #aggregateType(Class)}
+         * should be provided to correctly instantiate an {@link AggregateAnnotationCommandHandler}.
+         *
+         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
+         *                       {@link Repository} will store
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+            assertNonNull(aggregateModel, "AggregateModel may not be null");
+            this.aggregateModel = aggregateModel;
+            return this;
+        }
+
+        /**
+         * Instantiate the {@link AggregateModel} of generic type {@code T} describing the structure of the Aggregate
+         * this {@link AggregateAnnotationCommandHandler} will handle commands for.
+         *
+         * @return a {@link AggregateModel} of generic type {@code T} describing the Aggregate this {@link
+         * AggregateAnnotationCommandHandler} will handle commands for
+         */
+        private AggregateModel<T> buildAggregateModel() {
+            if (aggregateModel == null) {
+                return inspectAggregateModel();
+            } else {
+                return aggregateModel;
+            }
+        }
+
+        private AggregateModel<T> inspectAggregateModel() {
+            if (parameterResolverFactory == null) {
+                parameterResolverFactory = ClasspathParameterResolverFactory.forClass(aggregateType);
+            }
+
+            return handlerDefinition == null
+                    ? AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, parameterResolverFactory)
+                    : AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType,
+                                                                          parameterResolverFactory,
+                                                                          handlerDefinition);
+        }
+
+        /**
+         * Initializes a {@link AggregateAnnotationCommandHandler} as specified through this Builder.
+         *
+         * @return a {@link AggregateAnnotationCommandHandler} as specified through this Builder
+         */
+        public AggregateAnnotationCommandHandler<T> build() {
+            return new AggregateAnnotationCommandHandler<>(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(repository, "The Repository is a hard requirement and should be provided");
+            if (aggregateModel == null) {
+                assertNonNull(
+                        aggregateType,
+                        "No AggregateModel is set, whilst either it or the aggregateType is a hard requirement"
+                );
+                return;
+            }
+            assertNonNull(
+                    aggregateModel,
+                    "No aggregateType is set, whilst either it or the AggregateModel is a hard requirement"
+            );
         }
     }
 }

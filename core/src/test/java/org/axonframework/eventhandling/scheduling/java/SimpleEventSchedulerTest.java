@@ -21,13 +21,14 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.quartz.SchedulerException;
+import org.junit.*;
+import org.mockito.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -35,7 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -46,19 +47,22 @@ public class SimpleEventSchedulerTest {
 
     private SimpleEventScheduler testSubject;
     private EventBus eventBus;
-    private ScheduledExecutorService executorService;
+    private ScheduledExecutorService scheduledExecutorService;
 
     @Before
     public void setUp() {
         eventBus = mock(EventBus.class);
-        executorService = Executors.newSingleThreadScheduledExecutor();
-        testSubject = new SimpleEventScheduler(executorService, eventBus);
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        testSubject = SimpleEventScheduler.builder()
+                                          .scheduledExecutorService(scheduledExecutorService)
+                                          .eventBus(eventBus)
+                                          .build();
     }
 
     @After
     public void tearDown() {
-        if (executorService != null) {
-            executorService.shutdownNow();
+        if (scheduledExecutorService != null) {
+            scheduledExecutorService.shutdownNow();
         }
     }
 
@@ -107,9 +111,9 @@ public class SimpleEventSchedulerTest {
         verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
                 && event2.getPayload().equals(item.getPayload())
                 && event2.getMetaData().equals(item.getMetaData())));
-        executorService.shutdown();
+        scheduledExecutorService.shutdown();
         assertTrue("Executor refused to shutdown within a second",
-                   executorService.awaitTermination(1, TimeUnit.SECONDS));
+                   scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS));
     }
 
     private EventMessage<Object> createEvent() {

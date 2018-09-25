@@ -64,9 +64,12 @@ public class CommandHandlerInterceptorTest {
                 .build();
         CommandBus commandBus = SimpleCommandBus.builder().build();
         commandGateway = DefaultCommandGateway.builder().commandBus(commandBus).build();
-        AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler = new AggregateAnnotationCommandHandler<>(
-                MyAggregate.class,
-                myAggregateRepository);
+        AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler =
+                AggregateAnnotationCommandHandler.<MyAggregate>builder()
+                        .aggregateType(MyAggregate.class)
+                        .repository(myAggregateRepository)
+                        .build();
+
         myAggregateCommandHandler.subscribe(commandBus);
     }
 

@@ -23,6 +23,8 @@ public class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite 
 
     @Override
     public DeadlineManager buildDeadlineManager(Configuration configuration) {
-        return new SimpleDeadlineManager(new ConfigurationScopeAwareProvider(configuration));
+        return SimpleDeadlineManager.builder()
+                                    .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+                                    .build();
     }
 }

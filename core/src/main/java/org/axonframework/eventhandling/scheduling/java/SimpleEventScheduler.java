@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -34,7 +34,13 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * An {@link EventScheduler} implementation that uses Java's ScheduledExecutorService as scheduling and triggering
@@ -52,40 +58,38 @@ public class SimpleEventScheduler implements EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventScheduler.class);
 
-    private final ScheduledExecutorService executorService;
+    private final ScheduledExecutorService scheduledExecutorService;
     private final EventBus eventBus;
     private final TransactionManager transactionManager;
+
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
     /**
-     * Initialize the SimpleEventScheduler using the given {@code executorService} as trigger and execution
-     * mechanism, and publishes events to the given {@code eventBus}.
+     * Instantiate a {@link SimpleEventScheduler} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link ScheduledExecutorService}, {@link EventBus} and {@link TransactionManager} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param executorService The backing ScheduledExecutorService
-     * @param eventBus        The Event Bus on which Events are to be published
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleEventScheduler} instance
      */
-    public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus) {
-        this(executorService, eventBus, NoTransactionManager.INSTANCE);
+    protected SimpleEventScheduler(Builder builder) {
+        builder.validate();
+        this.scheduledExecutorService = builder.scheduledExecutorService;
+        this.eventBus = builder.eventBus;
+        this.transactionManager = builder.transactionManager;
     }
 
     /**
-     * Initialize the SimpleEventScheduler using the given {@code executorService} as trigger and execution
-     * mechanism, and publishes events to the given {@code eventBus}. The {@code eventTriggerCallback} is
-     * invoked just before and after publication of a scheduled event.
+     * Instantiate a Builder to be able to create a {@link SimpleEventScheduler}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The
+     * {@link ScheduledExecutorService} and {@link EventBus} are a <b>hard requirements</b> and as such should be
+     * provided.
      *
-     * @param executorService   The backing ScheduledExecutorService
-     * @param eventBus          The Event Bus on which Events are to be published
-     * @param transactionManager to manage the transaction around Event publication
+     * @return a Builder to be able to create a {@link SimpleEventScheduler}
      */
-    public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus,
-                                TransactionManager transactionManager) {
-        Assert.notNull(executorService, () -> "executorService may not be null");
-        Assert.notNull(eventBus, () -> "eventBus may not be null");
-        Assert.notNull(transactionManager, () -> "transactionManager may not be null");
-
-        this.executorService = executorService;
-        this.eventBus = eventBus;
-        this.transactionManager = transactionManager;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -96,9 +100,9 @@ public class SimpleEventScheduler implements EventScheduler {
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
         String tokenId = IdentifierFactory.getInstance().generateIdentifier();
-        ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event, tokenId),
-                                                             triggerDuration.toMillis(),
-                                                             TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> future = scheduledExecutorService.schedule(new PublishEventTask(event, tokenId),
+                                                                      triggerDuration.toMillis(),
+                                                                      TimeUnit.MILLISECONDS);
         tokens.put(tokenId, future);
         return new SimpleScheduleToken(tokenId);
     }
@@ -150,11 +154,85 @@ public class SimpleEventScheduler implements EventScheduler {
             EventMessage<?> eventMessage;
             if (event instanceof EventMessage) {
                 eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
-                                                               ((EventMessage) event).getMetaData());
+                                                         ((EventMessage) event).getMetaData());
             } else {
                 eventMessage = new GenericEventMessage<>(event, MetaData.emptyInstance());
             }
             return eventMessage;
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link SimpleEventScheduler}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to a {@link NoTransactionManager}. The
+     * {@link ScheduledExecutorService} and {@link EventBus} are a <b>hard requirements</b> and as such should be
+     * provided.
+     */
+    public static class Builder {
+
+        private ScheduledExecutorService scheduledExecutorService;
+        private EventBus eventBus;
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+
+        /**
+         * Sets the {@link EventBus} used to publish events on to, once the schedule has been met.
+         *
+         * @param eventBus a {@link EventBus} used to publish events on to, once the schedule has been met
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventBus(EventBus eventBus) {
+            assertNonNull(eventBus, "EventBus may not be null");
+            this.eventBus = eventBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering events.
+         *
+         * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
+         *                                 events
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+            assertNonNull(scheduledExecutorService, "ScheduledExecutorService may not be null");
+            this.scheduledExecutorService = scheduledExecutorService;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used to build transactions and ties them on event publication. Defaults
+         * to a {@link NoTransactionManager}.
+         *
+         * @param transactionManager a {@link TransactionManager} used to build transactions and ties them on event
+         *                           publication
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SimpleEventScheduler} as specified through this Builder.
+         *
+         * @return a {@link SimpleEventScheduler} as specified through this Builder
+         */
+        public SimpleEventScheduler build() {
+            return new SimpleEventScheduler(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
+            assertNonNull(scheduledExecutorService,
+                          "The ScheduledExecutorService is a hard requirement and should be provided");
         }
     }
 }
