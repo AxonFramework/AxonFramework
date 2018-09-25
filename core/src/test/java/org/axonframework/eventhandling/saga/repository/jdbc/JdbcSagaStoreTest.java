@@ -22,9 +22,7 @@ import org.axonframework.eventhandling.saga.AssociationValuesImpl;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.StubSaga;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -32,8 +30,7 @@ import java.util.Set;
 
 import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Kristian Rosenvold
@@ -52,7 +49,7 @@ public class JdbcSagaStoreTest {
         dataSource.setUrl("jdbc:hsqldb:mem:test");
 
         connection = dataSource.getConnection();
-        testSubject = new JdbcSagaStore(dataSource, new HsqlSagaSqlSchema());
+        testSubject = JdbcSagaStore.builder().dataSource(dataSource).sqlSchema(new HsqlSagaSqlSchema()).build();
         testSubject.createSchema();
 
         reset(dataSource);
@@ -84,7 +81,8 @@ public class JdbcSagaStoreTest {
 
     @Test
     public void testLoadSagaByAssociationValue() {
-        AssociationValues associationsValues = new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
+        AssociationValues associationsValues =
+                new AssociationValuesImpl(singleton(new AssociationValue("key", "value")));
         testSubject.insertSaga(StubSaga.class, "123", new StubSaga(), associationsValues.asSet());
         testSubject.insertSaga(StubSaga.class, "456", new StubSaga(), singleton(new AssociationValue("key", "value2")));
 

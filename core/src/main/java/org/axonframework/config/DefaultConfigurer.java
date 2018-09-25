@@ -172,8 +172,10 @@ public class DefaultConfigurer implements Configurer {
                                                      .serializer(c.serializer())
                                                      .build())
                 .registerComponent(SagaStore.class,
-                                   c -> new JpaSagaStore(c.serializer(),
-                                                         c.getComponent(EntityManagerProvider.class)));
+                                   c -> JpaSagaStore.builder()
+                                                    .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                    .serializer(c.serializer())
+                                                    .build());
     }
 
     /**

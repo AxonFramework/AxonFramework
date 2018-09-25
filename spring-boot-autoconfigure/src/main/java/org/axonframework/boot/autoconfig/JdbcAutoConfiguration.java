@@ -80,6 +80,10 @@ public class JdbcAutoConfiguration {
     @ConditionalOnMissingBean(SagaStore.class)
     @Bean
     public JdbcSagaStore sagaStore(ConnectionProvider connectionProvider, Serializer serializer) {
-        return new JdbcSagaStore(connectionProvider, new GenericSagaSqlSchema(), serializer);
+        return JdbcSagaStore.builder()
+                            .connectionProvider(connectionProvider)
+                            .sqlSchema(new GenericSagaSqlSchema())
+                            .serializer(serializer)
+                            .build();
     }
 }
