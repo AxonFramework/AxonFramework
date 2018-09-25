@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.eventhandling.scheduling.java;
 
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -72,7 +73,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     @Override
     public void afterPropertiesSet() {
         if (executorService == null) {
-            executorService = Executors.newSingleThreadScheduledExecutor();
+            executorService = Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory(SimpleEventSchedulerFactoryBean.class.getSimpleName()));
             executorServiceToShutDown = executorService;
         }
         if (eventBus == null) {
