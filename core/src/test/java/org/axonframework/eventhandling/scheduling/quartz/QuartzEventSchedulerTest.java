@@ -90,7 +90,7 @@ public class QuartzEventSchedulerTest {
     }
 
     @Test
-    public void testScheduleJob_TransactionalUnitOfWork() throws InterruptedException {
+    public void testScheduleJobTransactionalUnitOfWork() throws InterruptedException {
         Transaction mockTransaction = mock(Transaction.class);
         final TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.startTransaction()).thenReturn(mockTransaction);
@@ -120,9 +120,8 @@ public class QuartzEventSchedulerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testScheduleJob_TransactionalUnitOfWork_FailingTransaction() throws InterruptedException {
+    public void testScheduleJobTransactionalUnitOfWorkFailingTransaction() throws InterruptedException {
         final TransactionManager transactionManager = mock(TransactionManager.class);
         final CountDownLatch latch = new CountDownLatch(1);
         when(transactionManager.startTransaction()).thenAnswer(i -> {
