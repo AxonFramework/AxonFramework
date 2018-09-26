@@ -16,7 +16,11 @@
 
 package org.axonframework.jgroups.commandhandling;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
@@ -32,9 +36,7 @@ import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.stack.IpAddress;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -246,26 +248,11 @@ public class JGroupsConnectorTest {
 
         for (int i = 0; i <= 100; i = i + 10) {
             dcb1.updateLoadFactor(i);
-
         }
         // send some fake news
         channel1.send(null, new JoinMessage(1, DenyAll.INSTANCE, 0, false));
 
         waitForConnectorSync();
-    }
-
-
-    private void waitForConnectorSync() throws InterruptedException {
-        int t = 0;
-        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
-            // don't have a member for String yet, which means we must wait a little longer
-            if (t++ > 300) {
-                assertEquals("Connectors did not synchronize within 15 seconds.", connector1.getConsistentHash(),
-                             connector2.getConsistentHash());
-            }
-            Thread.sleep(50);
-        }
-        Thread.yield();
     }
 
     @SuppressWarnings("unchecked")
@@ -387,6 +374,19 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus2, times(66)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
+    private void waitForConnectorSync() throws InterruptedException {
+        int t = 0;
+        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+            // don't have a member for String yet, which means we must wait a little longer
+            if (t++ > 300) {
+                assertEquals("Connectors did not synchronize within 15 seconds.", connector1.getConsistentHash(),
+                             connector2.getConsistentHash());
+            }
+            Thread.sleep(50);
+        }
+        Thread.yield();
+    }
+
     @Test
     public void testDisconnectClosesJChannelConnection() throws Exception {
         connector1.connect();
@@ -395,6 +395,41 @@ public class JGroupsConnectorTest {
         connector1.disconnect();
 
         assertFalse("Expected channel to be disconnected on connector.disconnect()", channel1.isConnected());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testConnectAndDispatchMessagesWaitingOnCallback() throws Exception {
+        Integer numberOfDispatchedAndWaitedForCommands = 100;
+        String firstCommandHandlerName = "firstCommandHandlerName";
+        String secondCommandHandlerName = "secondCommandHandlerName";
+        int commandHandlingCounter = 0;
+
+        CommandDispatchingCommandHandler commandHandlerOne = new CommandDispatchingCommandHandler(
+                numberOfDispatchedAndWaitedForCommands, dcb1, secondCommandHandlerName
+        );
+        dcb1.subscribe(firstCommandHandlerName, commandHandlerOne);
+        connector1.connect();
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        CommandDispatchingCommandHandler commandHandlerTwo = new CommandDispatchingCommandHandler(
+                numberOfDispatchedAndWaitedForCommands, dcb2, firstCommandHandlerName
+        );
+        dcb2.subscribe(secondCommandHandlerName, commandHandlerTwo);
+        connector2.connect();
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        // Wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        FutureCallback<Integer, Integer> futureCallback = new FutureCallback<>();
+        dcb1.dispatch(new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter),
+                                                  secondCommandHandlerName),
+                      futureCallback);
+
+        assertEquals(numberOfDispatchedAndWaitedForCommands, futureCallback.getResult());
+        verify(mockCommandBus1, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        verify(mockCommandBus2, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
     private static void closeSilently(JChannel channel) {
@@ -424,20 +459,32 @@ public class JGroupsConnectorTest {
         }
     }
 
-    public static void assertWithin(int time, TimeUnit unit, Runnable assertion) {
-        long now = System.currentTimeMillis();
-        long deadline = now + unit.toMillis(time);
-        do {
-            try {
-                assertion.run();
-                break;
-            } catch (AssertionError e) {
-                if (now >= deadline) {
-                    throw e;
-                }
-            }
-            now = System.currentTimeMillis();
-        } while (true);
-    }
+    private static class CommandDispatchingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
+        private final int counterMax;
+        private final CommandBus commandBus;
+        private final String commandHandlerName;
+
+        private CommandDispatchingCommandHandler(int counterMax, CommandBus commandBus, String commandHandlerName) {
+            this.counterMax = counterMax;
+            this.commandBus = commandBus;
+            this.commandHandlerName = commandHandlerName;
+        }
+
+        @Override
+        public Integer handle(CommandMessage<?> commandMessage) {
+            Integer commandHandlingCounter = (Integer) commandMessage.getPayload();
+            int count = ++commandHandlingCounter;
+            if (count == counterMax) {
+                return counterMax;
+            }
+
+            FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
+            commandBus.dispatch(
+                    new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), commandHandlerName),
+                    futureCallback
+            );
+            return (Integer) futureCallback.getResult(1000, TimeUnit.MILLISECONDS);
+        }
+    }
 }
