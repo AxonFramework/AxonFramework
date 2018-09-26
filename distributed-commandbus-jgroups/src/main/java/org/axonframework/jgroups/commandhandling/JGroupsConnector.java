@@ -182,8 +182,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      * @param serializer                   The serializer to serialize Command Messages with
      * @param routingStrategy              The strategy for routing Commands to a Node
      * @param consistentHashChangeListener The callback to invoke when the consistent hash has changed
-     * @param executorService              a {@link ExecutorService} used to instantiates threads to process received
-     *                                     messages
+     * @param executorService              a {@link ExecutorService} used to to process received messages
      */
     public JGroupsConnector(CommandBus localSegment,
                             JChannel channel,
@@ -256,7 +255,7 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         members.put(localAddress, new VersionedMember(localMember, membershipVersion.getAndIncrement()));
         updateConsistentHash(ch -> ch.with(localMember, loadFactor, commandFilter));
         if (!executorProvided) {
-            executorService = Executors.newCachedThreadPool(new AxonThreadFactory("JGroupsConnector"));
+            executorService = Executors.newCachedThreadPool(new AxonThreadFactory("JGroupsConnector - " + localName));
         }
     }
 
