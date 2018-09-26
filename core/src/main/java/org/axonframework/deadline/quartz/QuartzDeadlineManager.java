@@ -17,7 +17,6 @@
 package org.axonframework.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;

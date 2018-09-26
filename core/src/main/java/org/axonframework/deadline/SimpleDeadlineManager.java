@@ -23,7 +23,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -42,7 +41,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
-import static org.axonframework.common.Assert.notNull;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

@@ -54,7 +54,7 @@ public class UpdateHandlerRegistration<U> {
     /**
      * Gets the updates.
      *
-     * @return a {@link Flux} for subscribing to updates stream
+     * @return a {@link Flux} for subscribing to the update stream
      */
     public Flux<SubscriptionQueryUpdateMessage<U>> getUpdates() {
         return updates;

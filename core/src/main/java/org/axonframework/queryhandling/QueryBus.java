@@ -176,7 +176,7 @@ public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage<
     /**
      * Gets the {@link QueryUpdateEmitter} associated with this {@link QueryBus}.
      *
-     * @return associated {@link QueryUpdateEmitter}
+     * @return the associated {@link QueryUpdateEmitter}
      */
     QueryUpdateEmitter queryUpdateEmitter();
 }

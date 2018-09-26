@@ -79,7 +79,7 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryUpdateEmitter queryUpdateEmitter;
 
     /**
-     * Initialize the query bus without monitoring on messages and a {@link LoggingQueryInvocationErrorHandler}.
+     * Instantiate the query bus based on the fields contained in the {@link Builder}.
      */
     protected SimpleQueryBus(Builder builder) {
         builder.validate();
