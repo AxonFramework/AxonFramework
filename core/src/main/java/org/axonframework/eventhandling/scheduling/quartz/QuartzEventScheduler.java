@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
@@ -44,9 +45,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
-import javax.annotation.PostConstruct;
 
-import static org.axonframework.common.Assert.notNull;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
 import static org.axonframework.messaging.Headers.*;
 import static org.quartz.JobKey.jobKey;
@@ -62,16 +62,62 @@ import static org.quartz.JobKey.jobKey;
 public class QuartzEventScheduler implements org.axonframework.eventhandling.scheduling.EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(QuartzEventScheduler.class);
+
     private static final String JOB_NAME_PREFIX = "event-";
     private static final String DEFAULT_GROUP_NAME = "AxonFramework-Events";
 
-    private Scheduler scheduler;
-    private EventBus eventBus;
-    private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
-    private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+    private final Scheduler scheduler;
+    private final EventBus eventBus;
+    private final EventJobDataBinder jobDataBinder;
+    private final TransactionManager transactionManager;
 
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
+
+    /**
+     * Instantiate a {@link QuartzEventScheduler} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link Scheduler}, {@link EventBus}, {@link EventJobDataBinder} and
+     * {@link TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of
+     * them is {@code null}.
+     * The EventBus, TransactionManager and EventJobDataBinder will be tied to the Scheduler's context. If this
+     * initialization step fails, this will too result in an AxonConfigurationException.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link QuartzEventScheduler} instance
+     */
+    protected QuartzEventScheduler(Builder builder) {
+        builder.validate();
+        scheduler = builder.scheduler;
+        eventBus = builder.eventBus;
+        jobDataBinder = builder.jobDataBinder;
+        transactionManager = builder.transactionManager;
+
+        try {
+            initialize();
+        } catch (SchedulerException e) {
+            throw new AxonConfigurationException("Unable to initialize QuartzEventScheduler", e);
+        }
+    }
+
+    private void initialize() throws SchedulerException {
+        scheduler.getContext().put(EVENT_BUS_KEY, eventBus);
+        scheduler.getContext().put(TRANSACTION_MANAGER_KEY, transactionManager);
+        scheduler.getContext().put(EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);
+        initialized = true;
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link QuartzEventScheduler}.
+     * <p>
+     * The {@link EventJobDataBinder} is defaulted to an {@link DirectEventJobDataBinder}, and the
+     * {@link TransactionManager} defaults to a {@link NoTransactionManager}.
+     * The {@link Scheduler} and {@link EventBus} are a <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link QuartzEventScheduler}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
 
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
@@ -148,67 +194,12 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Initializes the QuartzEventScheduler. Makes the configured {@link EventBus} available to the Quartz Scheduler.
-     *
-     * @throws SchedulerException if an error occurs preparing the Quartz Scheduler for use.
-     */
-    @PostConstruct
-    public void initialize() throws SchedulerException {
-        notNull(scheduler, () -> "A Scheduler must be provided.");
-        notNull(eventBus, () -> "An EventBus must be provided.");
-        notNull(jobDataBinder, () -> "An EventJobDataBinder must be provided.");
-
-        scheduler.getContext().put(EVENT_BUS_KEY, eventBus);
-        scheduler.getContext().put(TRANSACTION_MANAGER_KEY, transactionManager);
-        scheduler.getContext().put(EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);
-
-        initialized = true;
-    }
-
-    /**
-     * Sets the backing Quartz Scheduler for this timer.
-     *
-     * @param scheduler the backing Quartz Scheduler for this timer
-     */
-    public void setScheduler(Scheduler scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    /**
-     * Sets the event bus to which scheduled events need to be published.
-     *
-     * @param eventBus the event bus to which scheduled events need to be published.
-     */
-    public void setEventBus(EventBus eventBus) {
-        this.eventBus = eventBus;
-    }
-
-    /**
      * Sets the group identifier to use when scheduling jobs with Quartz. Defaults to "AxonFramework-Events".
      *
      * @param groupIdentifier the group identifier to use when scheduling jobs with Quartz
      */
     public void setGroupIdentifier(String groupIdentifier) {
         this.groupIdentifier = groupIdentifier;
-    }
-
-    /**
-     * Sets the transaction manager that manages a transaction around the publication of an event.
-     *
-     * @param transactionManager the callback to invoke before and after publication of a scheduled event
-     */
-    public void setTransactionManager(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
-    /**
-     * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
-     * {@link JobDataMap}. Defaults to {@link DirectEventJobDataBinder}.
-     *
-     * @param jobDataBinder to use
-     */
-    public void setEventJobDataBinder(EventJobDataBinder jobDataBinder) {
-        this.jobDataBinder = jobDataBinder;
     }
 
     /**
@@ -322,6 +313,93 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
         private Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {
             return Instant.ofEpochMilli((long) jobDataMap.get(MESSAGE_TIMESTAMP));
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link QuartzEventScheduler}.
+     * <p>
+     * The {@link EventJobDataBinder} is defaulted to an {@link DirectEventJobDataBinder}, and the
+     * {@link TransactionManager} defaults to a {@link NoTransactionManager}.
+     * The {@link Scheduler} and {@link EventBus} are a <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private Scheduler scheduler;
+        private EventBus eventBus;
+        private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+
+        /**
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
+         *
+         * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scheduler(Scheduler scheduler) {
+            assertNonNull(scheduler, "Scheduler may not be null");
+            this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventBus} used to publish events on once the schedule has been met.
+         *
+         * @param eventBus a {@link EventBus} used to publish events on once the schedule has been met
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder eventBus(EventBus eventBus) {
+            assertNonNull(eventBus, "EventBus may not be null");
+            this.eventBus = eventBus;
+            return this;
+        }
+
+        /**
+         * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
+         * {@link JobDataMap}. Defaults to {@link DirectEventJobDataBinder}.
+         *
+         * @param jobDataBinder a {@link EventJobDataBinder} instance which reads / writes the event message to publish
+         *                      to the {@link JobDataMap}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder jobDataBinder(EventJobDataBinder jobDataBinder) {
+            assertNonNull(jobDataBinder, "EventJobDataBinder may not be null");
+            this.jobDataBinder = jobDataBinder;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used to build transactions and ties them on event publication. Defaults
+         * to a {@link NoTransactionManager}.
+         *
+         * @param transactionManager a {@link TransactionManager} used to build transactions and ties them on event
+         *                           publication
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link QuartzEventScheduler} as specified through this Builder.
+         *
+         * @return a {@link QuartzEventScheduler} as specified through this Builder
+         */
+        public QuartzEventScheduler build() {
+            return new QuartzEventScheduler(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
+            assertNonNull(eventBus, "The EventBus is a hard requirement and should be provided");
         }
     }
 }

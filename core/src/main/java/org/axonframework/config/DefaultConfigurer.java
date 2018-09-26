@@ -169,11 +169,15 @@ public class DefaultConfigurer implements Configurer {
                         null, null, true
                 ))
                 .registerComponent(TokenStore.class,
-                                   c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class),
-                                                          c.serializer()))
+                                   c -> JpaTokenStore.builder()
+                                                     .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                     .serializer(c.serializer())
+                                                     .build())
                 .registerComponent(SagaStore.class,
-                                   c -> new JpaSagaStore(c.serializer(),
-                                                         c.getComponent(EntityManagerProvider.class)));
+                                   c -> JpaSagaStore.builder()
+                                                    .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                    .serializer(c.serializer())
+                                                    .build());
     }
 
     /**
@@ -203,7 +207,9 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
-        components.put(QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter));
+        components.put(
+                QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
+        );
         components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
@@ -317,7 +323,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default DeadlineManager to use
      */
     protected DeadlineManager defaultDeadlineManager(Configuration config) {
-        return new SimpleDeadlineManager(new ConfigurationScopeAwareProvider(config));
+        return SimpleDeadlineManager.builder().scopeAwareProvider(new ConfigurationScopeAwareProvider(config)).build();
     }
 
     /**
@@ -379,7 +385,7 @@ public class DefaultConfigurer implements Configurer {
         if (initialized) {
             module.initialize(config);
             startHandlers.add(new RunnableHandler(module.phase(), module::start));
-            shutdownHandlers.add(new RunnableHandler(module.phase(), module::start));
+            shutdownHandlers.add(new RunnableHandler(module.phase(), module::shutdown));
         }
         this.modules.add(module);
         return this;
@@ -471,8 +477,9 @@ public class DefaultConfigurer implements Configurer {
     public Configuration buildConfiguration() {
         if (!initialized) {
             verifyIdentifierFactory();
-            boolean missingEventProcessingConfiguration = modules.stream()
-                                                                 .noneMatch(m -> m.unwrap() instanceof EventProcessingConfiguration);
+            boolean missingEventProcessingConfiguration =
+                    modules.stream()
+                           .noneMatch(m -> m.unwrap() instanceof EventProcessingConfiguration);
             if (missingEventProcessingConfiguration) {
                 registerModule(new EventProcessingConfiguration());
             }

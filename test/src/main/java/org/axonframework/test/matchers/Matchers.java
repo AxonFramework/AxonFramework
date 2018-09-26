@@ -112,7 +112,7 @@ public abstract class Matchers {
      */
     @SafeVarargs
     @Factory
-    public static <T> Matcher<List<T>> exactSequenceOf(Matcher<? super T>... matchers) {
+    public static <T> Matcher<List<T>> exactSequenceOf(Matcher<T>... matchers) {
         return new ExactSequenceMatcher<>(matchers);
     }
 

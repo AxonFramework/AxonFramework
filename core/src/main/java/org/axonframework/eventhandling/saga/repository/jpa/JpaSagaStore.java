@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.saga.repository.jpa;
 
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
@@ -27,19 +27,21 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * JPA implementation of the Saga Store. It uses an {@link javax.persistence.EntityManager} to persist the actual saga
- * in a backing store in serialized form.
+ * JPA implementation of the {@link SagaStore}. It uses an {@link javax.persistence.EntityManager} to persist the actual
+ * saga in a backing store in serialized form.
  * <p/>
  * After each operations that modified the backing store, {@link javax.persistence.EntityManager#flush()} is invoked to
  * ensure the store contains the last modifications. To override this behavior, see {@link
@@ -92,40 +94,50 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     private final EntityManagerProvider entityManagerProvider;
     private final Serializer serializer;
+
     private volatile boolean useExplicitFlush = true;
 
     /**
-     * Initializes a Saga Repository with an {@link XStreamSerializer} and given {@code entityManagerProvider}.
+     * Instantiate a {@link JpaSagaStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EntityManagerProvider} and {@link Serializer} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
+     * @param builder the {@link Builder} used to instantiate a {@link JpaSagaStore} instance
      */
-    public JpaSagaStore(EntityManagerProvider entityManagerProvider) {
-        this(new XStreamSerializer(), entityManagerProvider);
+    protected JpaSagaStore(Builder builder) {
+        builder.validate();
+        this.entityManagerProvider = builder.entityManagerProvider;
+        this.serializer = builder.serializer;
+        addNamedQueriesTo(this.entityManagerProvider.getEntityManager());
     }
 
     /**
-     * Initializes a Saga Repository with the given {@code serializer} and {@code entityManagerProvider}.
+     * Instantiate a Builder to be able to create a {@link JpaSagaStore}.
+     * <p>
+     * The {@link Serializer} is defaulted to an {@link XStreamSerializer}.
+     * The {@link EntityManagerProvider} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @param serializer            The serializer to serialize saga instances with
-     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
+     * @return a Builder to be able to create a {@link JpaSagaStore}
      */
-    public JpaSagaStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
-        Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
-        this.entityManagerProvider = entityManagerProvider;
+    public static Builder builder() {
+        return new Builder();
+    }
 
-        this.serializer = serializer;
-
-        EntityManager entityManager = this.entityManagerProvider.getEntityManager();
+    private void addNamedQueriesTo(EntityManager entityManager) {
         EntityManagerFactory entityManagerFactory = entityManager.getEntityManagerFactory();
         entityManagerFactory.addNamedQuery(LOAD_SAGA_NAMED_QUERY, entityManager.createQuery(LOAD_SAGA_QUERY));
-        entityManagerFactory
-                .addNamedQuery(DELETE_ASSOCIATION_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATION_QUERY));
-        entityManagerFactory
-                .addNamedQuery(FIND_ASSOCIATION_IDS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATION_IDS_QUERY));
-        entityManagerFactory
-                .addNamedQuery(DELETE_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATIONS_QUERY));
-        entityManagerFactory
-                .addNamedQuery(FIND_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATIONS_QUERY));
+        entityManagerFactory.addNamedQuery(
+                DELETE_ASSOCIATION_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATION_QUERY)
+        );
+        entityManagerFactory.addNamedQuery(
+                FIND_ASSOCIATION_IDS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATION_IDS_QUERY));
+        entityManagerFactory.addNamedQuery(
+                DELETE_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(DELETE_ASSOCIATIONS_QUERY)
+        );
+        entityManagerFactory.addNamedQuery(
+                FIND_ASSOCIATIONS_NAMED_QUERY, entityManager.createQuery(FIND_ASSOCIATIONS_QUERY)
+        );
         entityManagerFactory.addNamedQuery(DELETE_SAGA_NAMED_QUERY, entityManager.createQuery(DELETE_SAGA_QUERY));
         entityManagerFactory.addNamedQuery(UPDATE_SAGA_NAMED_QUERY, entityManager.createQuery(UPDATE_SAGA_QUERY));
     }
@@ -334,6 +346,64 @@ public class JpaSagaStore implements SagaStore<Object> {
      */
     protected Class<? extends SimpleSerializedObject<?>> serializedObjectType() {
         return SerializedSaga.class;
+    }
+
+    /**
+     * Builder class to instantiate a {@link JpaSagaStore}.
+     * <p>
+     * The {@link Serializer} is defaulted to an {@link XStreamSerializer}.
+     * The {@link EntityManagerProvider} is a <b>hard requirement</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private EntityManagerProvider entityManagerProvider;
+        private Serializer serializer = new XStreamSerializer();
+
+        /**
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
+         * underlying database.
+         *
+         * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
+         *                              access the underlying database
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
+            assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
+            this.entityManagerProvider = entityManagerProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JpaSagaStore} as specified through this Builder.
+         *
+         * @return a {@link JpaSagaStore} as specified through this Builder
+         */
+        public JpaSagaStore build() {
+            return new JpaSagaStore(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(entityManagerProvider,
+                          "The EntityManagerProvider is a hard requirement and should be provided");
+        }
     }
 
     private static class EntryImpl<S> implements Entry<S> {

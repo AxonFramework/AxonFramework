@@ -16,6 +16,7 @@
 
 package org.axonframework.deadline;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -31,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.String.format;
 import static org.axonframework.common.Assert.notNull;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of {@link DeadlineManager} which uses Java's {@link ScheduledExecutorService} as scheduling and
@@ -69,58 +70,33 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     private final Map<DeadlineId, Future<?>> scheduledTasks = new ConcurrentHashMap<>();
 
     /**
-     * Initializes SimpleDeadlineManager with {@code scopeAwareProvider} which will load and send messages to
-     * {@link org.axonframework.messaging.Scope} implementing components. {@link NoTransactionManager} is used as
-     * transaction manager and {@link Executors#newSingleThreadScheduledExecutor()} with {@link AxonThreadFactory} is
-     * used as scheduled executor service.
+     * Instantiate a {@link SimpleDeadlineManager} based on the fields contained in the {@link Builder} to handle the
+     * process around scheduling and triggering a {@link DeadlineMessage}.
+     * <p>
+     * Will assert that the {@link ScopeAwareProvider}, {@link ScheduledExecutorService} and {@link TransactionManager}
+     * are not {@code null}, and will throw an {@link AxonConfigurationException} if either of them is {@code null}.
      *
-     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param builder the {@link Builder} used to instantiate a {@link SimpleDeadlineManager} instance
      */
-    public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider) {
-        this(scopeAwareProvider, NoTransactionManager.INSTANCE);
+    protected SimpleDeadlineManager(Builder builder) {
+        builder.validate();
+        this.scopeAwareProvider = builder.scopeAwareProvider;
+        this.scheduledExecutorService = builder.scheduledExecutorService;
+        this.transactionManager = builder.transactionManager;
     }
 
     /**
-     * Initializes SimpleDeadlineManager with {@code transactionManager} and {@code scopeAwareProvider} which will
-     * load and send messages to {@link org.axonframework.messaging.Scope} implementing components.
-     * {@link Executors#newSingleThreadScheduledExecutor()} with {@link AxonThreadFactory} is used as scheduled executor
-     * service.
+     * Instantiate a Builder to be able to create a {@link SimpleDeadlineManager}.
+     * <p>
+     * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
+     * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
+     * {@link NoTransactionManager}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be
+     * provided.
      *
-     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
-     * @param transactionManager The transaction manager used to manage transaction during processing of {@link
-     *                           DeadlineMessage} when deadline is not met
+     * @return a Builder to be able to create a {@link SimpleDeadlineManager}
      */
-    public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider, TransactionManager transactionManager) {
-        this(scopeAwareProvider,
-             Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory(THREAD_FACTORY_GROUP_NAME)),
-             transactionManager);
-    }
-
-    /**
-     * Initializes a SimpleDeadlineManager to handle the process around scheduling and triggering a
-     * {@link DeadlineMessage}
-     *
-     * @param scopeAwareProvider       a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                                 Messages to components which implement {@link org.axonframework.messaging.Scope}
-     * @param scheduledExecutorService Java's service used for scheduling and triggering deadlines
-     * @param transactionManager       The transaction manager used to manage transaction during processing of {@link
-     *                                 DeadlineMessage} when deadline is not met
-     */
-    public SimpleDeadlineManager(ScopeAwareProvider scopeAwareProvider,
-                                 ScheduledExecutorService scheduledExecutorService,
-                                 TransactionManager transactionManager) {
-        notNull(
-                scopeAwareProvider,
-                () -> "cannot process deadline messages without scope aware components to send them too"
-        );
-        notNull(scheduledExecutorService, () -> "scheduledExecutorService may not be null");
-        notNull(transactionManager, () -> "transactionManager may not be null");
-
-        this.scheduledExecutorService = scheduledExecutorService;
-        this.transactionManager = transactionManager;
-        this.scopeAwareProvider = scopeAwareProvider;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -213,6 +189,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
             }
         }
 
+        @SuppressWarnings("Duplicates")
         private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope) {
             scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                               .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
@@ -272,6 +249,83 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                     "deadlineName='" + deadlineName + '\'' +
                     ", deadlineId='" + deadlineId + '\'' +
                     '}';
+        }
+    }
+
+    /**
+     * Builder class to instantiate a {@link SimpleDeadlineManager}.
+     * <p>
+     * The {@link ScheduledExecutorService} is defaulted to an {@link Executors#newSingleThreadScheduledExecutor()}
+     * which contains an {@link AxonThreadFactory}, and the {@link TransactionManager} defaults to a
+     * {@link NoTransactionManager}. The {@link ScopeAwareProvider} is a <b>hard requirement</b> and as such should be
+     * provided.
+     */
+    public static class Builder {
+
+        private ScopeAwareProvider scopeAwareProvider;
+        private ScheduledExecutorService scheduledExecutorService =
+                Executors.newSingleThreadScheduledExecutor(new AxonThreadFactory(THREAD_FACTORY_GROUP_NAME));
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+
+        /**
+         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
+         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * right Scope to trigger a deadline in.
+         *
+         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
+         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
+            assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
+            this.scopeAwareProvider = scopeAwareProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ScheduledExecutorService} used for scheduling and triggering deadlines. Defaults to a
+         * {@link Executors#newSingleThreadScheduledExecutor()}, containing an {@link AxonThreadFactory}.
+         *
+         * @param scheduledExecutorService a {@link ScheduledExecutorService} used for scheduling and triggering
+         *                                 deadlines
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+            assertNonNull(scheduledExecutorService, "ScheduledExecutorService may not be null");
+            this.scheduledExecutorService = scheduledExecutorService;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used to build transactions and ties them to deadline. Defaults to a
+         * {@link NoTransactionManager}.
+         *
+         * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link SimpleDeadlineManager} as specified through this Builder.
+         *
+         * @return a {@link SimpleDeadlineManager} as specified through this Builder
+         */
+        public SimpleDeadlineManager build() {
+            return new SimpleDeadlineManager(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
         }
     }
 }

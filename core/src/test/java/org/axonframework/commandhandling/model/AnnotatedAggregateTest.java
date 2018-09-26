@@ -8,19 +8,16 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.ArgumentMatcher;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
 
@@ -31,22 +28,26 @@ public class AnnotatedAggregateTest {
     @Before
     public void setUp() {
         eventBus = mock(EventStore.class);
-        repository = new StubRepository(eventBus);
+        repository = StubRepository.builder().eventBus(eventBus).build();
     }
 
     @Test
     public void testApplyingEventInHandlerPublishesInRightOrder() throws Exception {
         Command command = new Command(ID);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(asCommandMessage(command));
-        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository.newInstance(() -> new AggregateRoot(command)));
+        Aggregate<AggregateRoot> aggregate = uow.executeWithResult(() -> repository
+                .newInstance(() -> new AggregateRoot(command)));
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
-        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class.equals(x.getPayloadType())));
-        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class.equals(x.getPayloadType())));
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
+                .equals(x.getPayloadType())));
+        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
+                .equals(x.getPayloadType())));
     }
 
     private static class Command {
+
         private final String id;
 
         private Command(String id) {
@@ -59,6 +60,7 @@ public class AnnotatedAggregateTest {
     }
 
     private static class Event_1 {
+
         private final String id;
 
         private Event_1(String id) {
@@ -71,6 +73,7 @@ public class AnnotatedAggregateTest {
     }
 
     private static class Event_2 {
+
         private final String id;
 
         public Event_2(String id) {
@@ -106,12 +109,17 @@ public class AnnotatedAggregateTest {
         }
     }
 
-    private class StubRepository extends AbstractRepository<AggregateRoot, Aggregate<AggregateRoot>> {
+    private static class StubRepository extends AbstractRepository<AggregateRoot, Aggregate<AggregateRoot>> {
+
         private final EventBus eventBus;
 
-        public StubRepository(EventBus eventBus) {
-            super(AggregateRoot.class);
-            this.eventBus = eventBus;
+        private StubRepository(Builder builder) {
+            super(builder);
+            this.eventBus = builder.eventBus;
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -132,6 +140,24 @@ public class AnnotatedAggregateTest {
         @Override
         protected void doDelete(Aggregate<AggregateRoot> aggregate) {
 
+        }
+
+        private static class Builder extends AbstractRepository.Builder<AggregateRoot> {
+
+            private EventBus eventBus;
+
+            private Builder() {
+                aggregateType(AggregateRoot.class);
+            }
+
+            public Builder eventBus(EventBus eventBus) {
+                this.eventBus = eventBus;
+                return this;
+            }
+
+            public StubRepository build() {
+                return new StubRepository(this);
+            }
         }
     }
 }

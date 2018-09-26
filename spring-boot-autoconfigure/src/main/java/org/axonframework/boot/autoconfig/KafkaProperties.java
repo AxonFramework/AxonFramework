@@ -70,7 +70,8 @@ public class KafkaProperties {
     private String defaultTopic;
 
     /**
-     * Additional properties used to configure the client.
+     * Additional properties, common to producers and consumers, used to configure the
+     * client.
      */
     private Map<String, String> properties = new HashMap<String, String>();
 
@@ -276,6 +277,11 @@ public class KafkaProperties {
          */
         private Integer maxPollRecords;
 
+        /**
+         * Additional consumer-specific properties used to configure the client.
+         */
+        private final Map<String, String> properties = new HashMap<>();
+
         public Ssl getSsl() {
             return this.ssl;
         }
@@ -376,6 +382,10 @@ public class KafkaProperties {
             this.maxPollRecords = maxPollRecords;
         }
 
+        public Map<String, String> getProperties() {
+            return this.properties;
+        }
+
         public Map<String, Object> buildProperties() {
             Map<String, Object> properties = new HashMap<String, Object>();
             if (this.autoCommitInterval != null) {
@@ -443,6 +453,7 @@ public class KafkaProperties {
                 properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG,
                                this.maxPollRecords);
             }
+            properties.putAll(this.properties);
             return properties;
         }
     }
@@ -538,6 +549,11 @@ public class KafkaProperties {
          */
         private Integer retries;
 
+        /**
+         * Additional producer-specific properties used to configure the client.
+         */
+        private final Map<String, String> properties = new HashMap<>();
+
         public Ssl getSsl() {
             return this.ssl;
         }
@@ -622,6 +638,10 @@ public class KafkaProperties {
             this.retries = retries;
         }
 
+        public Map<String, String> getProperties() {
+            return this.properties;
+        }
+
         public Map<String, Object> buildProperties() {
             Map<String, Object> properties = new HashMap<String, Object>();
             if (this.acks != null) {
@@ -675,6 +695,7 @@ public class KafkaProperties {
                 properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                                this.valueSerializer);
             }
+            properties.putAll(this.properties);
             return properties;
         }
     }

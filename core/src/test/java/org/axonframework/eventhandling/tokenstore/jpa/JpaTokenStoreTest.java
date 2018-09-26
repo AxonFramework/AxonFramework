@@ -27,10 +27,8 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -46,14 +44,19 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -110,6 +113,7 @@ public class JpaTokenStoreTest {
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
 
+    @SuppressWarnings("Duplicates")
     @Transactional
     @Test
     public void testInitializeTokensAtGivenPosition() {
@@ -257,12 +261,9 @@ public class JpaTokenStoreTest {
             // and make sure the token is still owned
             TokenEntry tokenEntry = entityManager.find(TokenEntry.class, new TokenEntry.PK("processor", 0));
             assertEquals("local", tokenEntry.getOwner());
-
         } finally {
             executor1.shutdown();
         }
-
-
     }
 
     @Test
@@ -295,6 +296,7 @@ public class JpaTokenStoreTest {
             return new ContainerManagedEntityManagerProvider();
         }
 
+        @SuppressWarnings("Duplicates")
         @Bean
         public DataSource dataSource() {
             JDBCDataSource dataSource = new JDBCDataSource();
@@ -312,7 +314,8 @@ public class JpaTokenStoreTest {
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.dialect", new HSQLDialect()));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.hbm2ddl.auto", "create-drop"));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.show_sql", "true"));
-            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.connection.url", "jdbc:hsqldb:mem:testdb"));
+            sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.connection.url",
+                                                                      "jdbc:hsqldb:mem:testdb"));
             return sessionFactory;
         }
 
@@ -323,23 +326,36 @@ public class JpaTokenStoreTest {
 
         @Bean
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(10), "local");
+            return JpaTokenStore.builder()
+                                .entityManagerProvider(entityManagerProvider)
+                                .serializer(new XStreamSerializer())
+                                .nodeId("local")
+                                .build();
         }
 
         @Bean
         public JpaTokenStore concurrentJpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(2),
-                                     "concurrent");
+            return JpaTokenStore.builder()
+                                .entityManagerProvider(entityManagerProvider)
+                                .serializer(new XStreamSerializer())
+                                .claimTimeout(Duration.ofSeconds(2))
+                                .nodeId("concurrent")
+                                .build();
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return new JpaTokenStore(entityManagerProvider, new XStreamSerializer(), Duration.ofSeconds(-1),
-                                     "stealing");
+            return JpaTokenStore.builder()
+                                .entityManagerProvider(entityManagerProvider)
+                                .serializer(new XStreamSerializer())
+                                .claimTimeout(Duration.ofSeconds(-1))
+                                .nodeId("stealing")
+                                .build();
         }
 
         @Bean
         public TransactionManager transactionManager(PlatformTransactionManager txManager) {
+            //noinspection Duplicates
             return () -> {
                 TransactionStatus transaction = txManager.getTransaction(new DefaultTransactionDefinition());
                 return new Transaction() {
@@ -356,5 +372,4 @@ public class JpaTokenStoreTest {
             };
         }
     }
-
 }

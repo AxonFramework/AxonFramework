@@ -45,7 +45,10 @@ public class AbstractRepositoryTest {
 
     @Before
     public void setUp() {
-        testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(JpaAggregate.class) {
+        testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
+                new AbstractRepository.Builder<JpaAggregate>() {
+                }.aggregateType(JpaAggregate.class)
+        ) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)

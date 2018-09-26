@@ -22,9 +22,7 @@ import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collections;
 import java.util.Set;
@@ -46,7 +44,7 @@ public class LockingSagaRepositoryTest {
         lockFactory = mock(LockFactory.class);
         lock = mock(Lock.class);
         when(lockFactory.obtainLock(anyString())).thenReturn(lock);
-        subject = spy(new CustomSagaRepository(lockFactory));
+        subject = spy(CustomSagaRepository.builder().lockFactory(lockFactory).build());
         DefaultUnitOfWork.startAndGet(null);
     }
 
@@ -80,9 +78,13 @@ public class LockingSagaRepositoryTest {
         private final Saga<Object> saga;
 
         @SuppressWarnings("unchecked")
-        private CustomSagaRepository(LockFactory lockFactory) {
-            super(lockFactory);
+        private CustomSagaRepository(Builder builder) {
+            super(builder);
             saga = mock(Saga.class);
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -99,6 +101,18 @@ public class LockingSagaRepositoryTest {
         protected Saga<Object> doCreateInstance(String sagaIdentifier, Supplier<Object> factoryMethod) {
             return saga;
         }
-    }
 
+        private static class Builder extends LockingSagaRepository.Builder<Object> {
+
+            @Override
+            public Builder lockFactory(LockFactory lockFactory) {
+                super.lockFactory(lockFactory);
+                return this;
+            }
+
+            public CustomSagaRepository build() {
+                return new CustomSagaRepository(this);
+            }
+        }
+    }
 }

@@ -21,9 +21,7 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collections;
 import java.util.Set;
@@ -42,7 +40,7 @@ public class CachingSagaStoreTest {
     private CachingSagaStore<StubSaga> testSubject;
     private CacheManager cacheManager;
     private net.sf.ehcache.Cache ehCache;
-    private SagaStore<Object> mockSagaStore;
+    private SagaStore<StubSaga> mockSagaStore;
 
     @SuppressWarnings("unchecked")
     @Before
@@ -53,9 +51,14 @@ public class CachingSagaStoreTest {
         associationsCache = spy(new EhCacheAdapter(ehCache));
         sagaCache = spy(new EhCacheAdapter(ehCache));
 
-        mockSagaStore = spy(new InMemorySagaStore());
+        SagaStore sagaStore = new InMemorySagaStore();
+        mockSagaStore = spy(sagaStore);
 
-        testSubject = new CachingSagaStore(mockSagaStore, associationsCache, sagaCache);
+        testSubject = CachingSagaStore.<StubSaga>builder()
+                .delegateSagaStore(mockSagaStore)
+                .associationsCache(associationsCache)
+                .sagaCache(sagaCache)
+                .build();
     }
 
     @After

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.tokenstore.jpa;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
@@ -24,15 +25,18 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 
 import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
@@ -40,6 +44,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * entities.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class JpaTokenStore implements TokenStore {
 
@@ -51,30 +56,32 @@ public class JpaTokenStore implements TokenStore {
     private final String nodeId;
 
     /**
-     * Initializes a token store with given {@code entityManagerProvider} and {@code serializer}.
+     * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EntityManager}, {@link Serializer}, {@code claimTimeout} and {@code nodeId} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param entityManagerProvider The provider of the entity manager
-     * @param serializer            The serializer used to serialize tokens
+     * @param builder the {@link Builder} used to instantiate a {@link JpaTokenStore} instance
      */
-    public JpaTokenStore(EntityManagerProvider entityManagerProvider, Serializer serializer) {
-        this(entityManagerProvider, serializer, Duration.ofSeconds(10), ManagementFactory.getRuntimeMXBean().getName());
+    protected JpaTokenStore(Builder builder) {
+        builder.validate();
+        this.entityManagerProvider = builder.entityManagerProvider;
+        this.serializer = builder.serializer;
+        this.claimTimeout = builder.claimTimeout;
+        this.nodeId = builder.nodeId;
     }
 
     /**
-     * Initialize the JpaTokenStore with given resources. The given {@code claimTimeout} is used to 'steal' any claim
-     * that has not been updated since that amount of time.
+     * Instantiate a Builder to be able to create a {@link JpaTokenStore}.
+     * <p>
+     * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
+     * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
+     * {@link Serializer} are a <b>hard requirements</b> and as such should be provided.
      *
-     * @param entityManagerProvider provides the EntityManager to access the underlying database
-     * @param serializer            The serializer to serialize tokens with
-     * @param claimTimeout          The timeout after which this process will force a claim
-     * @param nodeId                The identifier to identify ownership of the tokens
+     * @return a Builder to be able to create a {@link JpaTokenStore}
      */
-    public JpaTokenStore(EntityManagerProvider entityManagerProvider, Serializer serializer,
-                         TemporalAmount claimTimeout, String nodeId) {
-        this.entityManagerProvider = entityManagerProvider;
-        this.serializer = serializer;
-        this.claimTimeout = claimTimeout;
-        this.nodeId = nodeId;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -83,7 +90,8 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
+    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken)
+            throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         if (fetchSegments(processorName).length > 0) {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
@@ -105,13 +113,14 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public void releaseClaim(String processorName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.owner = null " +
-                                                        "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                                        "AND te.segment = :segment")
-                                   .setParameter("processorName", processorName)
-                                   .setParameter("segment", segment)
-                                   .setParameter("owner", nodeId)
+
+        int updates = entityManager.createQuery(
+                "UPDATE TokenEntry te SET te.owner = null " +
+                        "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                        "AND te.segment = :segment"
+        ).setParameter("processorName", processorName).setParameter("segment", segment).setParameter("owner", nodeId)
                                    .executeUpdate();
+
         if (updates == 0) {
             logger.warn("Releasing claim of token {}/{} failed. It was not owned by {}", processorName, segment,
                         nodeId);
@@ -146,13 +155,14 @@ public class JpaTokenStore implements TokenStore {
 
     @Override
     public int[] fetchSegments(String processorName) {
-
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        final List<Integer> resultList = entityManager.createQuery("SELECT te.segment FROM TokenEntry te " +
-                                                                           "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                                                                   Integer.class)
-                                                      .setParameter("processorName", processorName)
-                                                      .getResultList();
+
+        final List<Integer> resultList = entityManager.createQuery(
+                "SELECT te.segment FROM TokenEntry te "
+                        + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                Integer.class
+        ).setParameter("processorName", processorName).getResultList();
+
         return resultList.stream().mapToInt(i -> i).toArray();
     }
 
@@ -164,6 +174,7 @@ public class JpaTokenStore implements TokenStore {
      * @param segment       the segment of the event processor
      * @param entityManager the entity manager instance to use for the query
      * @return the token entry for the given processor name and segment
+     *
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
      *                                     it is claimed by another process.
      */
@@ -186,4 +197,97 @@ public class JpaTokenStore implements TokenStore {
         return token;
     }
 
+    /**
+     * Builder class to instantiate a {@link JpaTokenStore}.
+     * <p>
+     * The {@code claimTimeout} to a 10 seconds duration, and the {@code nodeId} is defaulted to the
+     * {@link ManagementFactory#getRuntimeMXBean#getName} output. The {@link EntityManagerProvider} and
+     * {@link Serializer} are a <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private EntityManagerProvider entityManagerProvider;
+        private Serializer serializer;
+        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
+        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
+
+        /**
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
+         * underlying database.
+         *
+         * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
+         *                              access the underlying database
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
+            assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
+            this.entityManagerProvider = entityManagerProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
+         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
+         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
+         *
+         * @param claimTimeout a timeout specifying the time after which this process will force a claim
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder claimTimeout(TemporalAmount claimTimeout) {
+            assertNonNull(claimTimeout, "The claim timeout may not be null");
+            this.claimTimeout = claimTimeout;
+            return this;
+        }
+
+        /**
+         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to
+         * {@link ManagementFactory#getRuntimeMXBean#getName} output as the node id.
+         *
+         * @param nodeId the id as a {@link String} to identify ownership of the tokens
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder nodeId(String nodeId) {
+            assertNodeId(nodeId, "The nodeId may not be null or empty");
+            this.nodeId = nodeId;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JpaTokenStore} as specified through this Builder.
+         *
+         * @return a {@link JpaTokenStore} as specified through this Builder
+         */
+        public JpaTokenStore build() {
+            return new JpaTokenStore(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(entityManagerProvider,
+                          "The EntityManagerProvider is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
+        }
+
+        private void assertNodeId(String nodeId, String exceptionMessage) {
+            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
+        }
+    }
 }

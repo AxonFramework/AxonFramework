@@ -90,10 +90,11 @@ public class AggregateAnnotationCommandHandlerTest {
                 new CustomParameterResolverFactory());
         aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(StubCommandAnnotatedAggregate.class,
                                                                              parameterResolverFactory);
-        testSubject = new AggregateAnnotationCommandHandler<>(StubCommandAnnotatedAggregate.class,
-                                                              mockRepository,
-                                                              new AnnotationCommandTargetResolver(),
-                                                              parameterResolverFactory);
+        testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
+                .aggregateType(StubCommandAnnotatedAggregate.class)
+                .parameterResolverFactory(parameterResolverFactory)
+                .repository(mockRepository)
+                .build();
         testSubject.subscribe(commandBus);
     }
 
@@ -513,7 +514,12 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Test(expected = AxonConfigurationException.class)
     public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() {
-        new AggregateAnnotationCommandHandler(CollectionFieldWithoutGenerics.class, mockRepository);
+        Repository<CollectionFieldWithoutGenerics> mockRepo =
+                (Repository<CollectionFieldWithoutGenerics>) mock(Repository.class);
+        AggregateAnnotationCommandHandler.<CollectionFieldWithoutGenerics>builder()
+                .aggregateType(CollectionFieldWithoutGenerics.class)
+                .repository(mockRepo)
+                .build();
     }
 
     @Test

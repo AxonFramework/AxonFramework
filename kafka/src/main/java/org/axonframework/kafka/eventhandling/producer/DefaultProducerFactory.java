@@ -114,6 +114,25 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     }
 
     /**
+     * Return an unmodifiable reference to the configuration map for this factory.
+     * Useful for cloning to make a similar factory.
+     *
+     * @return the configs.
+     */
+    public Map<String, Object> configurationProperties() {
+        return Collections.unmodifiableMap(configs);
+    }
+
+    /**
+     * TransactionalIdPrefix for all producer instances.
+     *
+     * @return the transactionalIdPrefix.
+     */
+    public String transactionIdPrefix() {
+        return transactionIdPrefix;
+    }
+
+    /**
      * Closes all producer instances.
      */
     @Override

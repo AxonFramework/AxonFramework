@@ -16,13 +16,14 @@
 
 package org.axonframework.deadline.quartz;
 
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
@@ -42,8 +43,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.deadline.GenericDeadlineMessage.asDeadlineMessage;
 import static org.quartz.JobKey.jobKey;
 
@@ -66,61 +67,41 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private final Serializer serializer;
 
     /**
-     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
-     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. A
-     * {@link NoTransactionManager} will be used as the transaction manager and the {@link XStreamSerializer} for
-     * serializing the {@link JobDataMap} contents.
+     * Instantiate a {@link QuartzDeadlineManager} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link Scheduler}, {@link ScopeAwareProvider}, {@link TransactionManager} and
+     * {@link Serializer} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of them is
+     * {@code null}.
+     * The TransactionManager, ScopeAwareProvider and Serializer will be tied to the Scheduler's context. If this
+     * initialization step fails, this will too result in an AxonConfigurationException.
      *
-     * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
-     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
+     * @param builder the {@link Builder} used to instantiate a {@link QuartzDeadlineManager} instance
      */
-    public QuartzDeadlineManager(Scheduler scheduler, ScopeAwareProvider scopeAwareProvider) {
-        this(scheduler, scopeAwareProvider, NoTransactionManager.INSTANCE);
-    }
-
-    /**
-     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
-     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. Uses the {@link
-     * XStreamSerializer} for serializing the deadline message and scope in to the {@link JobDataMap}.
-     *
-     * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
-     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
-     * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
-     */
-    public QuartzDeadlineManager(Scheduler scheduler,
-                                 ScopeAwareProvider scopeAwareProvider,
-                                 TransactionManager transactionManager) {
-        this(scheduler, scopeAwareProvider, transactionManager, new XStreamSerializer());
-    }
-
-    /**
-     * Initializes QuartzDeadlineManager with given {@code scheduler} and {@code scopeAwareProvider} which will load
-     * and send messages to {@link org.axonframework.messaging.Scope} implementing components. Uses the given {@code
-     * serializer} for serializing the deadline message and scope in to the {@link JobDataMap}.
-     *
-     * @param scheduler          A {@link Scheduler} used for scheduling and triggering purposes
-     * @param scopeAwareProvider a {@link List} of {@link ScopeAware} components which are able to load and send
-     *                           Messages to components which implement {@link org.axonframework.messaging.Scope}
-     * @param transactionManager A {@link TransactionManager} which builds transactions and ties them to deadline
-     * @param serializer         The {@link Serializer} which will be used to de-/serialize the {@link DeadlineMessage}
-     *                           and the {@link ScopeDescriptor} into the {@link JobDataMap}
-     */
-    public QuartzDeadlineManager(Scheduler scheduler,
-                                 ScopeAwareProvider scopeAwareProvider,
-                                 TransactionManager transactionManager,
-                                 Serializer serializer) {
-        this.scheduler = scheduler;
-        this.scopeAwareProvider = scopeAwareProvider;
-        this.transactionManager = transactionManager;
-        this.serializer = serializer;
+    protected QuartzDeadlineManager(Builder builder) {
+        builder.validate();
+        this.scheduler = builder.scheduler;
+        this.scopeAwareProvider = builder.scopeAwareProvider;
+        this.transactionManager = builder.transactionManager;
+        this.serializer = builder.serializer;
 
         try {
             initialize();
         } catch (SchedulerException e) {
-            throw new DeadlineException("Unable to initialize quartz scheduler", e);
+            throw new AxonConfigurationException("Unable to initialize QuartzDeadlineManager", e);
         }
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link QuartzDeadlineManager}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
+     * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
+     * as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link QuartzDeadlineManager}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     private void initialize() throws SchedulerException {
@@ -202,5 +183,94 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                              .forJob(key)
                              .startAt(Date.from(triggerDateTime))
                              .build();
+    }
+
+    /**
+     * Builder class to instantiate a {@link QuartzDeadlineManager}.
+     * <p>
+     * The {@link TransactionManager} is defaulted to an {@link NoTransactionManager}, and the {@link Serializer} to a
+     * {@link XStreamSerializer}. The {@link Scheduler} and {@link ScopeAwareProvider} are <b>hard requirements</b> and
+     * as such should be provided.
+     */
+    public static class Builder {
+
+        private Scheduler scheduler;
+        private ScopeAwareProvider scopeAwareProvider;
+        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
+        private Serializer serializer = new XStreamSerializer();
+
+        /**
+         * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
+         *
+         * @param scheduler a {@link Scheduler} used for scheduling and triggering purposes of the deadlines
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scheduler(Scheduler scheduler) {
+            assertNonNull(scheduler, "Scheduler may not be null");
+            this.scheduler = scheduler;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
+         * {@link org.axonframework.messaging.Scope} instances for a given {@link ScopeDescriptor}. Used to return the
+         * right Scope to trigger a deadline in.
+         *
+         * @param scopeAwareProvider a {@link ScopeAwareProvider} used to find the right
+         *                           {@link org.axonframework.messaging.Scope} to trigger a deadline in
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder scopeAwareProvider(ScopeAwareProvider scopeAwareProvider) {
+            assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
+            this.scopeAwareProvider = scopeAwareProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used to build transactions and ties them to deadline. Defaults to a
+         * {@link NoTransactionManager}.
+         *
+         * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
+            this.transactionManager = transactionManager;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize the {@link DeadlineMessage} and the {@link ScopeDescriptor}
+         * into the {@link JobDataMap}. Defaults to a {@link XStreamSerializer}.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize the {@link DeadlineMessage} and the
+         *                   {@link ScopeDescriptor} into the {@link JobDataMap}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link QuartzDeadlineManager} as specified through this Builder.
+         *
+         * @return a {@link QuartzDeadlineManager} as specified through this Builder
+         */
+        public QuartzDeadlineManager build() {
+            return new QuartzDeadlineManager(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(scheduler, "The Scheduler is a hard requirement and should be provided");
+            assertNonNull(scopeAwareProvider, "The ScopeAwareProvider is a hard requirement and should be provided");
+        }
     }
 }

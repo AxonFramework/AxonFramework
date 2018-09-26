@@ -16,7 +16,11 @@
 
 package org.axonframework.config;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.AsynchronousCommandBus;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
@@ -38,16 +42,19 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.*;
 
-import javax.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Id;
+import javax.persistence.Persistence;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.common.AssertUtils.assertWithin;
@@ -164,19 +171,23 @@ public class DefaultConfigurerTest {
     @Test
     public void testJpaConfigurationWithInitialTransactionManagerJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
-        Configuration config = DefaultConfigurer.jpaConfiguration(() -> em, transactionManager)
-                                                .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus =
-                                                            AsynchronousCommandBus.builder().build();
-                                                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
-                                                    return commandBus;
-                                                })
-                                                .configureAggregate(
-                                                        defaultConfiguration(StubAggregate.class)
-                                                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
-                                                                                                                     StubAggregate.class, c.eventBus(),
-                                                                                                                     c.parameterResolverFactory())))
-                                                .buildConfiguration();
+        Configuration config = DefaultConfigurer.jpaConfiguration(
+                () -> em, transactionManager).configureCommandBus(c -> {
+            AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+            commandBus.registerHandlerInterceptor(
+                    new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))
+            );
+            return commandBus;
+        }).configureAggregate(
+                defaultConfiguration(StubAggregate.class).configureRepository(
+                        c -> GenericJpaRepository.<StubAggregate>builder()
+                                .aggregateType(StubAggregate.class)
+                                .entityManagerProvider(new SimpleEntityManagerProvider(em))
+                                .eventBus(c.eventBus())
+                                .parameterResolverFactory(c.parameterResolverFactory())
+                                .build()
+                )
+        ).buildConfiguration();
 
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
@@ -237,20 +248,24 @@ public class DefaultConfigurerTest {
     @Test
     public void testJpaConfigurationWithJpaRepository() throws Exception {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(em));
-        Configuration config = DefaultConfigurer.jpaConfiguration(() -> em)
-                                                .registerComponent(TransactionManager.class, c -> transactionManager)
-                                                .configureCommandBus(c -> {
-                                                    AsynchronousCommandBus commandBus =
-                                                            AsynchronousCommandBus.builder().build();
-                                                    commandBus.registerHandlerInterceptor(new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class)));
-                                                    return commandBus;
-                                                })
-                                                .configureAggregate(
-                                                        defaultConfiguration(StubAggregate.class)
-                                                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em),
-                                                                                                                     StubAggregate.class, c.eventBus(),
-                                                                                                                     c.parameterResolverFactory())))
-                                                .buildConfiguration();
+        Configuration config = DefaultConfigurer.jpaConfiguration(() -> em).registerComponent(
+                TransactionManager.class, c -> transactionManager
+        ).configureCommandBus(c -> {
+            AsynchronousCommandBus commandBus = AsynchronousCommandBus.builder().build();
+            commandBus.registerHandlerInterceptor(
+                    new TransactionManagingInterceptor<>(c.getComponent(TransactionManager.class))
+            );
+            return commandBus;
+        }).configureAggregate(
+                defaultConfiguration(StubAggregate.class).configureRepository(
+                        c -> GenericJpaRepository.<StubAggregate>builder()
+                                .aggregateType(StubAggregate.class)
+                                .entityManagerProvider(new SimpleEntityManagerProvider(em))
+                                .eventBus(c.eventBus())
+                                .parameterResolverFactory(c.parameterResolverFactory())
+                                .build()
+                )
+        ).buildConfiguration();
 
         config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
@@ -322,6 +337,33 @@ public class DefaultConfigurerTest {
         inOrder.verify(module3).initialize(configuration);
         inOrder.verify(module1).initialize(configuration);
         inOrder.verify(module2).initialize(configuration);
+        inOrder.verify(module3).start();
+        inOrder.verify(module1).start();
+        inOrder.verify(module2).start();
+        inOrder.verify(module2).shutdown();
+        inOrder.verify(module1).shutdown();
+        inOrder.verify(module3).shutdown();
+    }
+
+    @Test
+    public void testModuleHandlersOrderingAfterConfigIsInitialized() {
+        ModuleConfiguration module1 = mock(ModuleConfiguration.class);
+        ModuleConfiguration module2 = mock(ModuleConfiguration.class);
+        ModuleConfiguration module3 = mock(ModuleConfiguration.class);
+        when(module1.phase()).thenReturn(2);
+        when(module2.phase()).thenReturn(3);
+        when(module3.phase()).thenReturn(1);
+
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        Configuration configuration = configurer.buildConfiguration();
+        configurer.registerModule(module1)
+                  .registerModule(module2)
+                  .registerModule(module3);
+        configuration.start();
+        assertNotNull(configuration);
+        configuration.shutdown();
+
+        InOrder inOrder = inOrder(module1, module2, module3);
         inOrder.verify(module3).start();
         inOrder.verify(module1).start();
         inOrder.verify(module2).start();

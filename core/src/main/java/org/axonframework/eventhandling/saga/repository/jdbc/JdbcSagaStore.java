@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.saga.repository.jdbc;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
@@ -30,7 +31,6 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,14 +38,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.sql.DataSource;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 
 
 /**
- * Jdbc implementation of the Saga Repository.
- * <p/>
- * <p/>
+ * Jdbc implementation of the {@link SagaStore}.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
@@ -55,57 +55,38 @@ public class JdbcSagaStore implements SagaStore<Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcSagaStore.class);
 
-    private Serializer serializer;
     private final ConnectionProvider connectionProvider;
-
-    private final SagaSqlSchema sqldef;
+    private final SagaSqlSchema sqlSchema;
+    private Serializer serializer;
 
     /**
-     * Initializes a Saga Repository, using given {@code connectionProvider} to obtain connections to the
-     * database, using a Generic SQL Schema.
+     * Instantiate a {@link JdbcSagaStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link ConnectionProvider}, {@link SagaSqlSchema} and {@link Serializer} are not
+     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param connectionProvider The data source to obtain connections from
+     * @param builder the {@link Builder} used to instantiate a {@link JdbcSagaStore} instance
      */
-    public JdbcSagaStore(ConnectionProvider connectionProvider) {
-        this(connectionProvider, new GenericSagaSqlSchema());
+    protected JdbcSagaStore(Builder builder) {
+        builder.validate();
+        this.connectionProvider = builder.connectionProvider;
+        this.sqlSchema = builder.sqlSchema;
+        this.serializer = builder.serializer;
     }
 
     /**
-     * Initializes a Saga Repository, using given {@code dataSource} to obtain connections to the database, and
-     * given {@code sqldef} to execute SQL statements.
+     * Instantiate a Builder to be able to create a {@link JdbcSagaStore}.
+     * <p>
+     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}, and the {@link Serializer} to a
+     * {@link XStreamSerializer}.
+     * The {@link ConnectionProvider} is a <b>hard requirement</b> and as such should be provided. You can chose to
+     * provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used ConnectionProvider will
+     * be a {@link DataSourceConnectionProvider} wrapped by a {@link UnitOfWorkAwareConnectionProviderWrapper}.
      *
-     * @param dataSource The data source to obtain connections from
-     * @param sqldef     The definition of SQL operations to execute
+     * @return a Builder to be able to create a {@link JdbcSagaStore}
      */
-    public JdbcSagaStore(DataSource dataSource, SagaSqlSchema sqldef) {
-        this(new UnitOfWorkAwareConnectionProviderWrapper(new DataSourceConnectionProvider(dataSource)), sqldef);
-    }
-
-    /**
-     * Initializes a Saga Repository, using given {@code connectionProvider} to obtain connections to the
-     * database, and given {@code sqldef} to execute SQL statements.
-     *
-     * @param connectionProvider The provider to obtain connections from
-     * @param sqldef             The definition of SQL operations to execute
-     */
-    public JdbcSagaStore(ConnectionProvider connectionProvider, SagaSqlSchema sqldef) {
-        this(connectionProvider, sqldef, new XStreamSerializer());
-    }
-
-    /**
-     * Initializes a Saga Repository, using given {@code connectionProvider} to obtain connections to the
-     * database, and given {@code sqldef} to execute SQL statements and {@code serializer} to serialize
-     * Sagas.
-     *
-     * @param connectionProvider The provider to obtain connections from
-     * @param sqldef             The definition of SQL operations to execute
-     * @param serializer         The serializer to serialize and deserialize Saga instances with
-     */
-    public JdbcSagaStore(ConnectionProvider connectionProvider,
-                         SagaSqlSchema sqldef, Serializer serializer) {
-        this.connectionProvider = connectionProvider;
-        this.sqldef = sqldef;
-        this.serializer = serializer;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -115,12 +96,12 @@ public class JdbcSagaStore implements SagaStore<Object> {
         Connection conn = null;
         try {
             conn = connectionProvider.getConnection();
-            statement = sqldef.sql_loadSaga(conn, sagaIdentifier);
+            statement = sqlSchema.sql_loadSaga(conn, sagaIdentifier);
             resultSet = statement.executeQuery();
 
             SerializedObject<?> serializedSaga = null;
             if (resultSet.next()) {
-                serializedSaga = sqldef.readSerializedSaga(resultSet);
+                serializedSaga = sqlSchema.readSerializedSaga(resultSet);
             }
             if (serializedSaga == null) {
                 return null;
@@ -130,7 +111,9 @@ public class JdbcSagaStore implements SagaStore<Object> {
                 logger.debug("Loaded saga id [{}] of type [{}]", sagaIdentifier, loadedSaga.getClass().getName());
             }
 
-            Set<AssociationValue> associations = sqldef.readAssociationValues(sqldef.sql_findAssociations(conn, sagaIdentifier, sagaTypeName(sagaType)).executeQuery());
+            Set<AssociationValue> associations = sqlSchema.readAssociationValues(
+                    sqlSchema.sql_findAssociations(conn, sagaIdentifier, sagaTypeName(sagaType)).executeQuery()
+            );
 
             return new EntryImpl<>(associations, loadedSaga);
         } catch (SQLException e) {
@@ -149,8 +132,9 @@ public class JdbcSagaStore implements SagaStore<Object> {
         Connection conn = null;
         try {
             conn = connectionProvider.getConnection();
-            statement = sqldef.sql_findAssocSagaIdentifiers(conn, associationValue.getKey(),
-                                                            associationValue.getValue(), sagaTypeName(sagaType));
+            statement = sqlSchema.sql_findAssocSagaIdentifiers(
+                    conn, associationValue.getKey(), associationValue.getValue(), sagaTypeName(sagaType)
+            );
             resultSet = statement.executeQuery();
             Set<String> result = new TreeSet<>();
             while (resultSet.next()) {
@@ -173,8 +157,8 @@ public class JdbcSagaStore implements SagaStore<Object> {
         Connection conn = null;
         try {
             conn = connectionProvider.getConnection();
-            statement1 = sqldef.sql_deleteAssociationEntries(conn, sagaIdentifier);
-            statement2 = sqldef.sql_deleteSagaEntry(conn, sagaIdentifier);
+            statement1 = sqlSchema.sql_deleteAssociationEntries(conn, sagaIdentifier);
+            statement2 = sqlSchema.sql_deleteSagaEntry(conn, sagaIdentifier);
             statement1.executeUpdate();
             statement2.executeUpdate();
         } catch (SQLException e) {
@@ -199,32 +183,31 @@ public class JdbcSagaStore implements SagaStore<Object> {
         Connection conn = null;
         try {
             conn = connectionProvider.getConnection();
-            statement = sqldef.sql_updateSaga(conn,
-                                              entry.getSagaId(),
-                                              entry.getSerializedSaga(),
-                                              entry.getSagaType(),
-                                              entry.getRevision()
+            statement = sqlSchema.sql_updateSaga(conn,
+                                                 entry.getSagaId(),
+                                                 entry.getSerializedSaga(),
+                                                 entry.getSagaType(),
+                                                 entry.getRevision()
             );
             updateCount = statement.executeUpdate();
             if (updateCount != 0) {
                 for (AssociationValue associationValue : associationValues.addedAssociations()) {
                     closeQuietly(statement);
-                    statement = sqldef.sql_storeAssocValue(conn,
-                                                           associationValue.getKey(),
-                                                           associationValue.getValue(),
-                                                           sagaTypeName(sagaType),
-                                                           sagaIdentifier);
+                    statement = sqlSchema.sql_storeAssocValue(conn,
+                                                              associationValue.getKey(),
+                                                              associationValue.getValue(),
+                                                              sagaTypeName(sagaType),
+                                                              sagaIdentifier);
                     statement.executeUpdate();
                 }
                 for (AssociationValue associationValue : associationValues.removedAssociations()) {
                     closeQuietly(statement);
-                    statement = sqldef.sql_removeAssocValue(conn,
-                                                            associationValue.getKey(),
-                                                            associationValue.getValue(),
-                                                            sagaTypeName(sagaType),
-                                                            sagaIdentifier);
+                    statement = sqlSchema.sql_removeAssocValue(conn,
+                                                               associationValue.getKey(),
+                                                               associationValue.getValue(),
+                                                               sagaTypeName(sagaType),
+                                                               sagaIdentifier);
                     statement.executeUpdate();
-
                 }
             }
         } catch (SQLException e) {
@@ -241,7 +224,8 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga,
+                           Set<AssociationValue> associationValues) {
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
             logger.debug("Storing saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
@@ -251,20 +235,19 @@ public class JdbcSagaStore implements SagaStore<Object> {
         PreparedStatement statement = null;
         try {
             conn = connectionProvider.getConnection();
-            statement = sqldef.sql_storeSaga(conn, entry.getSagaId(), entry.getRevision(), entry.getSagaType(),
-                                             entry.getSerializedSaga());
+            statement = sqlSchema.sql_storeSaga(conn, entry.getSagaId(), entry.getRevision(), entry.getSagaType(),
+                                                entry.getSerializedSaga());
             statement.executeUpdate();
 
             for (AssociationValue associationValue : associationValues) {
                 closeQuietly(statement);
-                statement = sqldef.sql_storeAssocValue(conn,
-                                                       associationValue.getKey(),
-                                                       associationValue.getValue(),
-                                                       sagaTypeName(sagaType),
-                                                       sagaIdentifier);
+                statement = sqlSchema.sql_storeAssocValue(conn,
+                                                          associationValue.getKey(),
+                                                          associationValue.getValue(),
+                                                          sagaTypeName(sagaType),
+                                                          sagaIdentifier);
                 statement.executeUpdate();
             }
-
         } catch (SQLException e) {
             throw new SagaStorageException("Exception occurred while attempting to store a Saga Entry", e);
         } finally {
@@ -294,14 +277,106 @@ public class JdbcSagaStore implements SagaStore<Object> {
     public void createSchema() throws SQLException {
         final Connection connection = connectionProvider.getConnection();
         try {
-            sqldef.sql_createTableSagaEntry(connection).executeUpdate();
-            sqldef.sql_createTableAssocValueEntry(connection).executeUpdate();
+            sqlSchema.sql_createTableSagaEntry(connection).executeUpdate();
+            sqlSchema.sql_createTableAssocValueEntry(connection).executeUpdate();
         } finally {
             closeQuietly(connection);
         }
     }
 
+    /**
+     * Builder class to instantiate a {@link JdbcSagaStore}.
+     * <p>
+     * The {@link SagaSqlSchema} is defaulted to an {@link GenericSagaSqlSchema}, and the {@link Serializer} to a
+     * {@link XStreamSerializer}.
+     * The {@link ConnectionProvider} is a <b>hard requirement</b> and as such should be provided. You can chose to
+     * provide a {@link DataSource} instead of a ConnectionProvider, but in that case the used ConnectionProvider will
+     * be a {@link DataSourceConnectionProvider} wrapped by a {@link UnitOfWorkAwareConnectionProviderWrapper}.
+     */
+    public static class Builder {
+
+        private ConnectionProvider connectionProvider;
+        private SagaSqlSchema sqlSchema = new GenericSagaSqlSchema();
+        private Serializer serializer = new XStreamSerializer();
+
+        /**
+         * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
+         *
+         * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder connectionProvider(ConnectionProvider connectionProvider) {
+            assertNonNull(connectionProvider, "ConnectionProvider may not be null");
+            this.connectionProvider = connectionProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ConnectionProvider} by providing a {@link DataSource}. The given {@code dataSource} in turn
+         * will added to a {@link DataSourceConnectionProvider}, which is wrapped by a
+         * {@link UnitOfWorkAwareConnectionProviderWrapper}. This will provide access to a JDBC connection for this
+         * {@link SagaStore} implementation.
+         *
+         * @param dataSource a {@link DataSource} which ends up in a {@link DataSourceConnectionProvider}, wrapped by a
+         *                   {@link UnitOfWorkAwareConnectionProviderWrapper} as the {@link ConnectionProvider} for this
+         *                   {@link SagaStore} implementation
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder dataSource(DataSource dataSource) {
+            assertNonNull(dataSource, "DataSource used to instantiate a ConnectionProvider may not be null");
+            DataSourceConnectionProvider dataSourceConnectionProvider = new DataSourceConnectionProvider(dataSource);
+            this.connectionProvider = new UnitOfWorkAwareConnectionProviderWrapper(dataSourceConnectionProvider);
+            return this;
+        }
+
+        /**
+         * Sets the {@link SagaSqlSchema} defining the SQL operations to execute for this {@link SagaStore}
+         * implementation. Defaults to a {@link GenericSagaSqlSchema}.
+         *
+         * @param sqlSchema the {@link SagaSqlSchema} defining the SQL operations to execute for this {@link SagaStore}
+         *                  implementation
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder sqlSchema(SagaSqlSchema sqlSchema) {
+            assertNonNull(sqlSchema, "SagaSqlSchema may not be null");
+            this.sqlSchema = sqlSchema;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JdbcSagaStore} as specified through this Builder.
+         *
+         * @return a {@link JdbcSagaStore} as specified through this Builder
+         */
+        public JdbcSagaStore build() {
+            return new JdbcSagaStore(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
+        }
+    }
+
     private static class EntryImpl<S> implements Entry<S> {
+
         private final Set<AssociationValue> associations;
         private final S loadedSaga;
 

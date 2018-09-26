@@ -31,8 +31,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -54,8 +53,10 @@ import static org.junit.Assert.*;
  * <p/>
  * Committing a unit of work may result in additional units of work being created -- typically as part of the 'publish
  * event' phase: <ol> <li>A Command is dispatched. <li>A UOW is created, started. <li>The command completes.
- * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is saved.
- * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified. </ol>
+ * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is
+ * saved.
+ * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified.
+ * </ol>
  * </ol>
  * <p/>
  * When the events are published, an @EventHandler may dispatch an additional command, which creates its own UOW
@@ -68,8 +69,10 @@ import static org.junit.Assert.*;
  * into the cache, exposing it to subsequent UOWs. The state of the aggregate in any UOW is not guaranteed to be
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
- * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
- * primarily by events being assigned duplicate sequence numbers. The {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine} detects this and throws an
+ * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
+ * itself
+ * primarily by events being assigned duplicate sequence numbers. The {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
+ * detects this and throws an
  * exception noting that an 'identical' entity has already been persisted.
  * <p/>
  * <p/>
@@ -112,25 +115,45 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(NoCache.INSTANCE)
+                .build();
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     public void testWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(realCache)
+                .build();
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     public void testMinimalScenarioWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(NoCache.INSTANCE)
+                .build();
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     public void testMinimalScenarioWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
+        repository = CachingEventSourcingRepository.<TestAggregate>builder()
+                .aggregateType(TestAggregate.class)
+                .aggregateFactory(aggregateFactory)
+                .eventStore(eventStore)
+                .cache(realCache)
+                .build();
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
@@ -234,10 +257,14 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
+    /*
+     * Domain Model
+     */
+
     public static class AggregateCreatedEvent implements Serializable {
 
         @AggregateIdentifier
-        final String id;
+        private final String id;
 
         public AggregateCreatedEvent(String id) {
             this.id = id;
@@ -249,15 +276,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-	/*
-     * Domain Model
-	 */
-
     public static class AggregateUpdatedEvent implements Serializable {
 
         @AggregateIdentifier
-        final String id;
-        final String token;
+        private final String id;
+        private final String token;
 
         public AggregateUpdatedEvent(String id, String token) {
             this.id = id;
@@ -305,8 +328,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
      */
     private final class CommandExecutingEventListener implements EventListener {
 
-        final String token;
-        final String previousToken;
+        private final String token;
+        private final String previousToken;
         private final boolean commit;
 
         private CommandExecutingEventListener(String token, String previousToken, boolean commit) {

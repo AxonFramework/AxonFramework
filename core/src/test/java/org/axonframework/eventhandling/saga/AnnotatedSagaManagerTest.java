@@ -25,8 +25,7 @@ import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStor
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -37,8 +36,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singletonMap;
 import static junit.framework.TestCase.fail;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,8 +51,17 @@ public class AnnotatedSagaManagerTest {
     @Before
     public void setUp() {
         sagaStore = new InMemorySagaStore();
-        sagaRepository = spy(new AnnotatedSagaRepository<>(MyTestSaga.class, sagaStore));
-        manager = new AnnotatedSagaManager<>(MyTestSaga.class, sagaRepository, MyTestSaga::new);
+        sagaRepository = spy(
+                AnnotatedSagaRepository.<MyTestSaga>builder()
+                        .sagaType(MyTestSaga.class)
+                        .sagaStore(sagaStore)
+                        .build()
+        );
+        manager = AnnotatedSagaManager.<MyTestSaga>builder()
+                .sagaRepository(sagaRepository)
+                .sagaType(MyTestSaga.class)
+                .sagaFactory(MyTestSaga::new)
+                .build();
     }
 
     @Test
@@ -154,7 +161,7 @@ public class AnnotatedSagaManagerTest {
         handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
-    
+
     private void handle(EventMessage<?> event) throws Exception {
         DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
             manager.handle(event, Segment.ROOT_SEGMENT);
@@ -164,10 +171,10 @@ public class AnnotatedSagaManagerTest {
 
     private Collection<MyTestSaga> repositoryContents(String lookupValue) {
         return sagaStore.findSagas(MyTestSaga.class, new AssociationValue("myIdentifier", lookupValue))
-                .stream()
-                .map(id -> sagaStore.loadSaga(MyTestSaga.class, id))
-                .map(SagaStore.Entry::saga)
-                .collect(Collectors.toList());
+                        .stream()
+                        .map(id -> sagaStore.loadSaga(MyTestSaga.class, id))
+                        .map(SagaStore.Entry::saga)
+                        .collect(Collectors.toList());
     }
 
     public static class MyTestSaga {
@@ -206,7 +213,8 @@ public class AnnotatedSagaManagerTest {
         }
 
         @SagaEventHandler(associationProperty = "myIdentifier")
-        public void handleSpecificMiddleEvent(MiddleEvent event, @MetaDataValue(value = "catA", required = true) String category) {
+        public void handleSpecificMiddleEvent(MiddleEvent event,
+                                              @MetaDataValue(value = "catA", required = true) String category) {
             // this handler is more specific, but requires meta data that not all events might have
             capturedEvents.add(event);
             specificHandlerInvocations++;

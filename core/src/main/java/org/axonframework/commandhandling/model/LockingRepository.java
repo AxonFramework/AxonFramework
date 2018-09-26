@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Implementation of the Repository interface that takes provides a locking mechanism to prevent concurrent
  * modifications of persisted aggregates. Unless there is a locking mechanism present in the underlying persistence
@@ -47,110 +49,31 @@ import java.util.concurrent.Callable;
  * @author Allard Buijze
  * @since 0.3
  */
-public abstract class LockingRepository<T, A extends Aggregate<T>> extends AbstractRepository<T,
-        LockAwareAggregate<T, A>> {
+public abstract class LockingRepository<T, A extends Aggregate<T>> extends
+        AbstractRepository<T, LockAwareAggregate<T, A>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
     private final LockFactory lockFactory;
 
     /**
-     * Initialize a repository with a pessimistic locking strategy.
+     * Instantiate a {@link LockingRepository} based on the fields contained in the {@link Builder}.
+     * <p>
+     * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
+     * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
+     * To instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an
+     * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
+     * <p>
+     * Additionally will assert that the {@link LockFactory} is not {@code null}, resulting in an
+     * AxonConfigurationException if this is the case.
      *
-     * @param aggregateType The type of aggregate stored in this repository
+     * @param builder the {@link Builder} used to instantiate a {@link LockingRepository} instance
      */
-    protected LockingRepository(Class<T> aggregateType) {
-        this(aggregateType, new PessimisticLockFactory());
-    }
-
-    /**
-     * Initialize a repository with a pessimistic locking strategy, using the given {@code aggregateModel}, describing
-     * the structure of the aggregate.
-     *
-     * @param aggregateModel The model describing the structure of the aggregate
-     */
-    protected LockingRepository(AggregateModel<T> aggregateModel) {
-        this(aggregateModel, new PessimisticLockFactory());
-    }
-
-    /**
-     * Initialize a repository with a pessimistic locking strategy and a parameter resolver factory.
-     *
-     * @param aggregateType            The type of aggregate stored in this repository
-     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
-     */
-    protected LockingRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        this(aggregateType, new PessimisticLockFactory(), parameterResolverFactory);
-    }
-
-    /**
-     * Initialize a repository with a pessimistic locking strategy and a parameter resolver factory.
-     *
-     * @param aggregateType            The type of aggregate stored in this repository
-     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
-    protected LockingRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory,
-                                HandlerDefinition handlerDefinition) {
-        this(aggregateType,
-             new PessimisticLockFactory(),
-             parameterResolverFactory,
-             handlerDefinition);
-    }
-
-    /**
-     * Initialize the repository with the given {@code lockFactory}.
-     *
-     * @param aggregateType The type of aggregate stored in this repository
-     * @param lockFactory   the lock factory to use
-     */
-    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory) {
-        super(aggregateType);
-        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
-        this.lockFactory = lockFactory;
-    }
-
-    /**
-     * Initialize the repository with the given {@code lockFactory} and {@code aggregateModel}
-     *
-     * @param aggregateModel The model describing the structure of the aggregate
-     * @param lockFactory    the lock factory to use
-     */
-    protected LockingRepository(AggregateModel<T> aggregateModel, LockFactory lockFactory) {
-        super(aggregateModel);
-        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
-        this.lockFactory = lockFactory;
-    }
-
-    /**
-     * Initialize the repository with the given {@code lockFactory} and {@code parameterResolverFactory}.
-     *
-     * @param aggregateType            The type of aggregate stored in this repository
-     * @param lockFactory              The lock factory to use
-     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
-     */
-    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
-                                ParameterResolverFactory parameterResolverFactory) {
-        super(aggregateType, parameterResolverFactory);
-        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
-        this.lockFactory = lockFactory;
-    }
-
-    /**
-     * Initialize the repository with the given {@code lockFactory}, {@code parameterResolverFactory} and {@code
-     * handlerDefinition}.
-     *
-     * @param aggregateType            The type of aggregate stored in this repository
-     * @param lockFactory              The lock factory to use
-     * @param parameterResolverFactory The parameter resolver factory used to resolve parameters of annotated handlers
-     * @param handlerDefinition        The handler definition used to create concrete handlers
-     */
-    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory,
-                                ParameterResolverFactory parameterResolverFactory,
-                                HandlerDefinition handlerDefinition) {
-        super(aggregateType, parameterResolverFactory, handlerDefinition);
-        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
-        this.lockFactory = lockFactory;
+    protected LockingRepository(Builder<T> builder) {
+        super(builder);
+        this.lockFactory = builder.lockFactory;
     }
 
     @Override
@@ -176,6 +99,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      *
      * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
+     *
      * @throws Exception when the factoryMethod throws an exception
      */
     protected abstract A doCreateNewForLock(Callable<T> factoryMethod) throws Exception;
@@ -186,6 +110,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
+     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
@@ -264,7 +189,63 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate to load
      * @return a fully initialized aggregate
+     *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
     protected abstract A doLoadWithLock(String aggregateIdentifier, Long expectedVersion);
+
+    /**
+     * Abstract Builder class to instantiate {@link LockingRepository} implementations.
+     * <p>
+     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
+     * {@link PessimisticLockFactory}.
+     * A goal of this Builder goal is to create an {@link AggregateModel} specifying generic {@code T} as the aggregate
+     * type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     *
+     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     */
+    protected static abstract class Builder<T> extends AbstractRepository.Builder<T> {
+
+        private LockFactory lockFactory = new PessimisticLockFactory();
+
+        @Override
+        public Builder<T> aggregateType(Class<T> aggregateType) {
+            super.aggregateType(aggregateType);
+            return this;
+        }
+
+        @Override
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+            super.parameterResolverFactory(parameterResolverFactory);
+            return this;
+        }
+
+        @Override
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
+            super.handlerDefinition(handlerDefinition);
+            return this;
+        }
+
+        @Override
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
+            super.aggregateModel(aggregateModel);
+            return this;
+        }
+
+        /**
+         * Sets the {@link LockFactory} used to lock an aggregate. Defaults to a pessimistic locking strategy,
+         * implemented in the {@link PessimisticLockFactory}.
+         *
+         * @param lockFactory a {@link LockFactory} used to lock an aggregate
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> lockFactory(LockFactory lockFactory) {
+            assertNonNull(lockFactory, "LockFactory may not be null");
+            this.lockFactory = lockFactory;
+            return this;
+        }
+    }
 }

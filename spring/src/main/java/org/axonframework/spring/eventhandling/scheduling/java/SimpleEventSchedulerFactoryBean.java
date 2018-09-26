@@ -78,13 +78,17 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
         if (eventBus == null) {
             eventBus = applicationContext.getBean(EventBus.class);
         }
-        if (transactionManager == null) {
-            this.eventScheduler = new SimpleEventScheduler(executorService, eventBus);
-        } else {
-            this.eventScheduler = new SimpleEventScheduler(
-                    executorService, eventBus,
-                    new SpringTransactionManager(transactionManager, transactionDefinition));
+
+        SimpleEventScheduler.Builder eventSchedulerBuilder =
+                SimpleEventScheduler.builder()
+                                    .scheduledExecutorService(executorService)
+                                    .eventBus(eventBus);
+        if (transactionManager != null) {
+            eventSchedulerBuilder.transactionManager(
+                    new SpringTransactionManager(transactionManager, transactionDefinition)
+            );
         }
+        this.eventScheduler = eventSchedulerBuilder.build();
     }
 
     @Override

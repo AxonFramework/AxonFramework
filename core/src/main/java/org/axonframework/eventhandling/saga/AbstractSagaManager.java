@@ -16,11 +16,12 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.Message;
@@ -34,6 +35,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Abstract implementation of the SagaManager interface that provides basic functionality required by most SagaManager
@@ -52,20 +55,20 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     private volatile ListenerInvocationErrorHandler listenerInvocationErrorHandler;
 
     /**
-     * Initializes the SagaManager with the given {@code sagaRepository}.
+     * Instantiate a {@link AbstractSagaManager} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@code sagaType}, {@code sagaFactory}, {@link SagaRepository} and
+     * {@link ListenerInvocationErrorHandler} are not {@code null}, and will throw an {@link AxonConfigurationException}
+     * if any of them is {@code null}.
      *
-     * @param sagaType                       The type of Saga Managed by this instance
-     * @param sagaRepository                 The repository providing the saga instances.
-     * @param sagaFactory                    The factory responsible for creating new Saga instances
-     * @param listenerInvocationErrorHandler The error handler to invoke when an error occurs
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractSagaManager} instance
      */
-    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
-                                  ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
-        this.sagaType = sagaType;
-        this.sagaFactory = sagaFactory;
-        Assert.notNull(sagaRepository, () -> "sagaRepository may not be null");
-        this.sagaRepository = sagaRepository;
-        this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
+    protected AbstractSagaManager(Builder<T> builder) {
+        builder.validate();
+        this.sagaRepository = builder.sagaRepository;
+        this.sagaType = builder.sagaType;
+        this.sagaFactory = builder.sagaFactory;
+        this.listenerInvocationErrorHandler = builder.listenerInvocationErrorHandler;
     }
 
     @Override
@@ -191,7 +194,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     public void send(Message<?> message, ScopeDescriptor scopeDescription) throws Exception {
         if (!(message instanceof EventMessage)) {
             String exceptionMessage = String.format(
-                    "Something else than an EventMessage was scheduled for Saga of type [%s], whilst Sagas can only handle EventMessages.",
+                    "Something else than an EventMessage was scheduled for Saga of type [%s], "
+                            + "whilst Sagas can only handle EventMessages.",
                     getSagaType()
             );
             throw new IllegalArgumentException(exceptionMessage);
@@ -213,5 +217,93 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     public boolean canResolve(ScopeDescriptor scopeDescription) {
         return scopeDescription instanceof SagaScopeDescriptor
                 && Objects.equals(sagaType.getSimpleName(), ((SagaScopeDescriptor) scopeDescription).getType());
+    }
+
+    /**
+     * Abstract Builder class to instantiate {@link AbstractSagaManager} implementations.
+     * <p>
+     * The {@code sagaFactory} is defaulted to a {@code sagaType.newInstance()} call throwing a
+     * {@link SagaInstantiationException} if it fails, and the {@link ListenerInvocationErrorHandler} is defaulted to
+     * a {@link LoggingErrorHandler}.
+     * The {@link SagaRepository} and {@code sagaType} are <b>hard requirements</b> and as such should be provided.
+     *
+     * @param <T> a generic specifying the Saga type managed by this implementation
+     */
+    public abstract static class Builder<T> {
+
+        private SagaRepository<T> sagaRepository;
+        protected Class<T> sagaType;
+        private Supplier<T> sagaFactory = () -> newInstance(sagaType);
+        private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
+
+        private static <T> T newInstance(Class<T> type) {
+            try {
+                return type.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new SagaInstantiationException("Exception while trying to instantiate a new Saga", e);
+            }
+        }
+
+        /**
+         * Sets the {@link SagaRepository} of generic type {@code T} used to save and load Saga instances.
+         *
+         * @param sagaRepository a {@link SagaRepository} of generic type {@code T} used to save and load Saga instances
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder<T> sagaRepository(SagaRepository<T> sagaRepository) {
+            assertNonNull(sagaRepository, "SagaRepository may not be null");
+            this.sagaRepository = sagaRepository;
+            return this;
+        }
+
+        /**
+         * Sets the {@code sagaType} as a {@link Class} managed by this instance.
+         *
+         * @param sagaType the {@link Class} specifying the type of Saga managed by this instance
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> sagaType(Class<T> sagaType) {
+            assertNonNull(sagaType, "The sagaType may not be null");
+            this.sagaType = sagaType;
+            return this;
+        }
+
+        /**
+         * Sets the {@code sagaFactory} of type {@link Supplier} responsible for creating new Saga instances.
+         * Defaults to a {@code sagaType.newInstance()} call throwing a {@link SagaInstantiationException} if it fails.
+         *
+         * @param sagaFactory a {@link Supplier} of Saga type {@code T} responsible for creating new Saga instances
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder<T> sagaFactory(Supplier<T> sagaFactory) {
+            assertNonNull(sagaFactory, "The sagaFactory may not be null");
+            this.sagaFactory = sagaFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ListenerInvocationErrorHandler} invoked when an error occurs. Defaults to a
+         * {@link LoggingErrorHandler}.
+         *
+         * @param listenerInvocationErrorHandler a {@link ListenerInvocationErrorHandler} invoked when an error occurs
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder<T> listenerInvocationErrorHandler(
+                ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+            assertNonNull(listenerInvocationErrorHandler, "ListenerInvocationErrorHandler may not be null");
+            this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
+            return this;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(sagaRepository, "The SagaRepository is a hard requirement and should be provided");
+            assertNonNull(sagaType, "The sagaType is a hard requirement and should be provided");
+        }
     }
 }

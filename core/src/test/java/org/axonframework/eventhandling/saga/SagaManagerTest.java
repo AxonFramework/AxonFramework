@@ -23,22 +23,19 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
 
 import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-/**
- *
- */
 public class SagaManagerTest {
 
     private AbstractSagaManager<Object> testSubject;
@@ -47,7 +44,6 @@ public class SagaManagerTest {
     private Saga<Object> mockSaga1;
     private Saga<Object> mockSaga2;
     private Saga<Object> mockSaga3;
-    private SagaCreationPolicy sagaCreationPolicy;
     private AssociationValue associationValue;
 
     @SuppressWarnings("unchecked")
@@ -79,9 +75,12 @@ public class SagaManagerTest {
 
         when(mockSagaRepository.find(eq(associationValue)))
                 .thenReturn(setOf("saga1", "saga2", "saga3", "noSaga"));
-        sagaCreationPolicy = SagaCreationPolicy.NONE;
 
-        testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockErrorHandler);
+        testSubject = TestableAbstractSagaManager.builder()
+                                                 .sagaRepository(mockSagaRepository)
+                                                 .listenerInvocationErrorHandler(mockErrorHandler)
+                                                 .associationValue(associationValue)
+                                                 .build();
     }
 
     @Test
@@ -121,8 +120,12 @@ public class SagaManagerTest {
 
     @Test
     public void testSagaIsCreatedInRootSegment() throws Exception {
-        this.sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
-        this.associationValue = new AssociationValue("someKey", "someValue");
+        testSubject = TestableAbstractSagaManager.builder()
+                                                 .sagaRepository(mockSagaRepository)
+                                                 .listenerInvocationErrorHandler(mockErrorHandler)
+                                                 .sagaCreationPolicy(SagaCreationPolicy.IF_NONE_FOUND)
+                                                 .associationValue(new AssociationValue("someKey", "someValue"))
+                                                 .build();
 
         EventMessage<?> event = new GenericEventMessage<>(new Object());
         when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
@@ -134,8 +137,13 @@ public class SagaManagerTest {
 
     @Test
     public void testSagaIsOnlyCreatedInSegmentMatchingAssociationValue() throws Exception {
-        this.sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
-        this.associationValue = new AssociationValue("someKey", "someValue");
+        testSubject = TestableAbstractSagaManager.builder()
+                                                 .sagaRepository(mockSagaRepository)
+                                                 .listenerInvocationErrorHandler(mockErrorHandler)
+                                                 .sagaCreationPolicy(SagaCreationPolicy.IF_NONE_FOUND)
+                                                 .associationValue(new AssociationValue("someKey", "someValue"))
+                                                 .build();
+
         Segment[] segments = Segment.ROOT_SEGMENT.split();
         Segment matchingSegment = segments[0].matches("someValue") ? segments[0] : segments[1];
         Segment otherSegment = segments[0].matches("someValue") ? segments[1] : segments[0];
@@ -156,7 +164,7 @@ public class SagaManagerTest {
                                                  matchingSegment.matches(sagaId)));
         createdSaga.getAllValues()
                    .forEach(sagaId -> assertFalse("Saga ID matched against the wrong segment: " + sagaId,
-                                                 otherSegment.matches(sagaId)));
+                                                  otherSegment.matches(sagaId)));
     }
 
     @Test
@@ -176,11 +184,19 @@ public class SagaManagerTest {
         return new CopyOnWriteArraySet<>(Arrays.asList(items));
     }
 
-    private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
+    private static class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
 
-        private TestableAbstractSagaManager(SagaRepository<Object> sagaRepository,
-                                            ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
-            super(Object.class, sagaRepository, Object::new, listenerInvocationErrorHandler);
+        private final SagaCreationPolicy sagaCreationPolicy;
+        private final AssociationValue associationValue;
+
+        private TestableAbstractSagaManager(Builder builder) {
+            super(builder);
+            this.sagaCreationPolicy = builder.sagaCreationPolicy;
+            this.associationValue = builder.associationValue;
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -196,6 +212,56 @@ public class SagaManagerTest {
         @Override
         protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
             return singleton(associationValue);
+        }
+
+        public static class Builder extends AbstractSagaManager.Builder<Object> {
+
+            private SagaCreationPolicy sagaCreationPolicy = SagaCreationPolicy.NONE;
+            private AssociationValue associationValue;
+
+            private Builder() {
+                super.sagaType(Object.class);
+                super.sagaFactory(Object::new);
+            }
+
+            @Override
+            public Builder sagaRepository(SagaRepository<Object> sagaRepository) {
+                super.sagaRepository(sagaRepository);
+                return this;
+            }
+
+            @Override
+            public Builder sagaType(Class<Object> sagaType) {
+                super.sagaType(sagaType);
+                return this;
+            }
+
+            @Override
+            public Builder sagaFactory(Supplier<Object> sagaFactory) {
+                super.sagaFactory(sagaFactory);
+                return this;
+            }
+
+            @Override
+            public Builder listenerInvocationErrorHandler(
+                    ListenerInvocationErrorHandler listenerInvocationErrorHandler) {
+                super.listenerInvocationErrorHandler(listenerInvocationErrorHandler);
+                return this;
+            }
+
+            private Builder sagaCreationPolicy(SagaCreationPolicy sagaCreationPolicy) {
+                this.sagaCreationPolicy = sagaCreationPolicy;
+                return this;
+            }
+
+            private Builder associationValue(AssociationValue associationValue) {
+                this.associationValue = associationValue;
+                return this;
+            }
+
+            public TestableAbstractSagaManager build() {
+                return new TestableAbstractSagaManager(this);
+            }
         }
     }
 }

@@ -26,10 +26,8 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
@@ -49,6 +47,7 @@ import static org.mockito.Mockito.*;
 public class QuartzEventSchedulerTest {
 
     private static final String GROUP_ID = "TestGroup";
+
     private QuartzEventScheduler testSubject;
     private EventBus eventBus;
     private Scheduler scheduler;
@@ -56,15 +55,15 @@ public class QuartzEventSchedulerTest {
     @Before
     public void setUp() throws SchedulerException {
         eventBus = mock(EventBus.class);
-        SchedulerFactory schedFact = new org.quartz.impl.StdSchedulerFactory();
-        testSubject = new QuartzEventScheduler();
-        scheduler = schedFact.getScheduler();
+        SchedulerFactory schedulerFactory = new org.quartz.impl.StdSchedulerFactory();
+        scheduler = schedulerFactory.getScheduler();
         scheduler.getContext().put(EventBus.class.getName(), eventBus);
         scheduler.start();
-        testSubject.setScheduler(scheduler);
-        testSubject.setEventBus(eventBus);
+        testSubject = QuartzEventScheduler.builder()
+                                          .scheduler(scheduler)
+                                          .eventBus(eventBus)
+                                          .build();
         testSubject.setGroupIdentifier(GROUP_ID);
-        testSubject.initialize();
     }
 
     @After
@@ -90,14 +89,17 @@ public class QuartzEventSchedulerTest {
         verify(eventBus).publish(isA(EventMessage.class));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testScheduleJob_TransactionalUnitOfWork() throws InterruptedException, SchedulerException {
+    public void testScheduleJobTransactionalUnitOfWork() throws InterruptedException {
         Transaction mockTransaction = mock(Transaction.class);
         final TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.startTransaction()).thenReturn(mockTransaction);
-        testSubject.setTransactionManager(transactionManager);
-        testSubject.initialize();
+        testSubject = QuartzEventScheduler.builder()
+                                          .scheduler(scheduler)
+                                          .eventBus(eventBus)
+                                          .transactionManager(transactionManager)
+                                          .build();
+        testSubject.setGroupIdentifier(GROUP_ID);
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
@@ -118,17 +120,21 @@ public class QuartzEventSchedulerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testScheduleJob_TransactionalUnitOfWork_FailingTransaction() throws InterruptedException, SchedulerException {
+    public void testScheduleJobTransactionalUnitOfWorkFailingTransaction() throws InterruptedException {
         final TransactionManager transactionManager = mock(TransactionManager.class);
         final CountDownLatch latch = new CountDownLatch(1);
         when(transactionManager.startTransaction()).thenAnswer(i -> {
             latch.countDown();
             throw new MockException();
         });
-        testSubject.setTransactionManager(transactionManager);
-        testSubject.initialize();
+        testSubject = QuartzEventScheduler.builder()
+                                          .scheduler(scheduler)
+                                          .eventBus(eventBus)
+                                          .transactionManager(transactionManager)
+                                          .build();
+        testSubject.setGroupIdentifier(GROUP_ID);
+
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), buildTestEvent());

@@ -173,7 +173,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
             Class<S> sagaType,
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> messageSourceBuilder,
             Function<Configuration, EventProcessingStrategy> eventProcessingStrategy) {
-        ProcessorInfo processorInfo = new ProcessorInfo(true, ProcessorInfo.ProcessorType.SUBSCRIBING, processingGroupName(sagaType));
+        ProcessorInfo processorInfo =
+                new ProcessorInfo(true, ProcessorInfo.ProcessorType.SUBSCRIBING, processingGroupName(sagaType));
         return new SagaConfiguration<>(sagaType,
                                        processorInfo,
                                        SubscribingEventProcessor.class,
@@ -327,18 +328,22 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                     c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
         sagaRepository = new Component<>(() -> config,
                                          repositoryName,
-                                         c -> new AnnotatedSagaRepository<>(sagaType,
-                                                                            sagaStore.get(),
-                                                                            c.resourceInjector(),
-                                                                            c.parameterResolverFactory(),
-                                                                            c.handlerDefinition(sagaType)));
+                                         c -> AnnotatedSagaRepository.<S>builder()
+                                                 .sagaType(sagaType)
+                                                 .parameterResolverFactory(c.parameterResolverFactory())
+                                                 .handlerDefinition(c.handlerDefinition(sagaType))
+                                                 .sagaStore(sagaStore.get())
+                                                 .resourceInjector(c.resourceInjector())
+                                                 .build());
         sagaManager = new Component<>(() -> config,
                                       managerName,
-                                      c -> new AnnotatedSagaManager<>(sagaType,
-                                                                      sagaRepository.get(),
-                                                                      c.parameterResolverFactory(),
-                                                                      c.handlerDefinition(sagaType),
-                                                                      listenerInvocationErrorHandler.get()));
+                                      c -> AnnotatedSagaManager.<S>builder()
+                                              .sagaRepository(sagaRepository.get())
+                                              .sagaType(sagaType)
+                                              .parameterResolverFactory(c.parameterResolverFactory())
+                                              .handlerDefinition(c.handlerDefinition(sagaType))
+                                              .listenerInvocationErrorHandler(listenerInvocationErrorHandler.get())
+                                              .build());
         trackingEventProcessorConfiguration = new Component<>(() -> config, "ProcessorConfiguration",
                                                               c -> c.getComponent(TrackingEventProcessorConfiguration.class,
                                                                                   TrackingEventProcessorConfiguration::forSingleThreadedProcessing));
@@ -380,7 +385,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public SagaConfiguration<S> registerHandlerInterceptor(
             Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptorBuilder) {
         if (config != null) {
-            eventProcessingConfiguration().registerHandlerInterceptor(processorInfo.getProcessingGroup(), handlerInterceptorBuilder);
+            eventProcessingConfiguration().registerHandlerInterceptor(processorInfo.getProcessingGroup(),
+                                                                      handlerInterceptorBuilder);
         } else {
             handlerInterceptors.add(handlerInterceptorBuilder);
         }
@@ -499,14 +505,17 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     @Override
     public void initialize(Configuration config) {
         this.config = config;
-        eventProcessingConfiguration().registerHandlerInvoker(processorInfo.getProcessingGroup(), c -> sagaManager.get());
+        eventProcessingConfiguration().registerHandlerInvoker(processorInfo.getProcessingGroup(),
+                                                              c -> sagaManager.get());
         eventProcessingConfiguration().registerTokenStore(processorInfo.getProcessingGroup(), c -> tokenStore.get());
         eventProcessingConfiguration().configureMessageMonitor(processorInfo.getProcessingGroup(),
-                                                         c -> (MessageMonitor<Message<?>>) messageMonitor.get());
-        eventProcessingConfiguration().configureErrorHandler(processorInfo.getProcessingGroup(), c -> errorHandler.get());
+                                                               c -> (MessageMonitor<Message<?>>) messageMonitor.get());
+        eventProcessingConfiguration().configureErrorHandler(processorInfo.getProcessingGroup(),
+                                                             c -> errorHandler.get());
         eventProcessingConfiguration().configureRollbackConfiguration(processorInfo.getProcessingGroup(),
-                                                                c -> rollbackConfiguration.get());
-        eventProcessingConfiguration().configureTransactionManager(processorInfo.getProcessingGroup(), c -> transactionManager.get());
+                                                                      c -> rollbackConfiguration.get());
+        eventProcessingConfiguration().configureTransactionManager(processorInfo.getProcessingGroup(),
+                                                                   c -> transactionManager.get());
         handlerInterceptors.forEach(i -> eventProcessingConfiguration()
                 .registerHandlerInterceptor(processorInfo.getProcessingGroup(), i));
         if (processorInfo.isCreateNewProcessor()) {

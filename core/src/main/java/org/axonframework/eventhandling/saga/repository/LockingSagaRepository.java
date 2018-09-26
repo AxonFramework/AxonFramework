@@ -15,8 +15,10 @@
 
 package org.axonframework.eventhandling.saga.repository;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -24,22 +26,29 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.function.Supplier;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+
 /**
  * Abstract implementation of a saga repository that locks access to a saga while the saga is being operated on.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
 
     private final LockFactory lockFactory;
 
     /**
-     * Initializes a saga repository that locks access to a saga while the saga is being operated on.
+     * Instantiate a {@link LockingSagaRepository} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link LockFactory} is not {@code null}. Will throw an {@link AxonConfigurationException} if
+     * it is.
      *
-     * @param lockFactory the factory of locks used by this repository
+     * @param builder the {@link Builder} used to instantiate a {@link LockingSagaRepository} instance
      */
-    protected LockingSagaRepository(LockFactory lockFactory) {
-        this.lockFactory = lockFactory;
+    protected LockingSagaRepository(Builder<T> builder) {
+        builder.validate();
+        this.lockFactory = builder.lockFactory;
     }
 
     /**
@@ -88,9 +97,44 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      * {@code factoryMethod}.
      *
      * @param sagaIdentifier the identifier to use for the new saga instance
-     * @param factoryMethod Used to create a new Saga delegate
+     * @param factoryMethod  Used to create a new Saga delegate
      * @return a new Saga instance wrapping an instance of type {@code T}
      */
     protected abstract Saga<T> doCreateInstance(String sagaIdentifier, Supplier<T> factoryMethod);
 
+    /**
+     * Abstract Builder class to instantiate {@link LockingSagaRepository} implementations.
+     * <p>
+     * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
+     * {@link PessimisticLockFactory}.
+     *
+     * @param <T> a generic specifying the Saga type contained in this {@link SagaRepository} implementation
+     */
+    public abstract static class Builder<T> {
+
+        private LockFactory lockFactory = new PessimisticLockFactory();
+
+        /**
+         * Sets the {@link LockFactory} used to lock an aggregate. Defaults to a pessimistic locking strategy,
+         * implemented in the {@link PessimisticLockFactory}.
+         *
+         * @param lockFactory a {@link LockFactory} used to lock an aggregate
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> lockFactory(LockFactory lockFactory) {
+            assertNonNull(lockFactory, "LockFactory may not be null");
+            this.lockFactory = lockFactory;
+            return this;
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
+        }
+    }
 }

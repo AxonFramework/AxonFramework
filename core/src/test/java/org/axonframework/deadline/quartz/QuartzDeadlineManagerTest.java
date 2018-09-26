@@ -32,7 +32,10 @@ public class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite 
         try {
             Scheduler scheduler = new StdSchedulerFactory().getScheduler();
             QuartzDeadlineManager quartzDeadlineManager =
-                    new QuartzDeadlineManager(scheduler, new ConfigurationScopeAwareProvider(configuration));
+                    QuartzDeadlineManager.builder()
+                                         .scheduler(scheduler)
+                                         .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
+                                         .build();
             scheduler.start();
             return quartzDeadlineManager;
         } catch (SchedulerException e) {

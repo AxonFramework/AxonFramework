@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.tokenstore.jdbc;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.eventhandling.tokenstore.AbstractTokenEntry;
@@ -36,8 +37,11 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
+import java.util.Objects;
 
 import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
@@ -46,6 +50,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * database contains a table named {@link TokenSchema#tokenTable()} in which to store the tokens.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class JdbcTokenStore implements TokenStore {
 
@@ -59,36 +64,36 @@ public class JdbcTokenStore implements TokenStore {
     private final Class<?> contentType;
 
     /**
-     * Initialize the JpaTokenStore with given resources. The given {@code claimTimeout} is used to 'steal' any claim
-     * that has not been updated since that amount of time. The token is serialized to a byte array.
+     * Instantiate a {@link JdbcTokenStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link ConnectionProvider}, {@link Serializer}, {@link TokenSchema}, {@code claimTimeout},
+     * {@code nodeId} and {@code contentType} are not {@code null}, and will throw an {@link AxonConfigurationException}
+     * if any of them is {@code null}.
      *
-     * @param connectionProvider The provider of connections to the underlying database
-     * @param serializer         The serializer to serialize tokens with
+     * @param builder the {@link Builder} used to instantiate a {@link JdbcTokenStore} instance
      */
-    public JdbcTokenStore(ConnectionProvider connectionProvider, Serializer serializer) {
-        this(connectionProvider, serializer, new TokenSchema(), Duration.ofSeconds(10),
-             ManagementFactory.getRuntimeMXBean().getName(), byte[].class);
+    protected JdbcTokenStore(Builder builder) {
+        builder.validate();
+        this.connectionProvider = builder.connectionProvider;
+        this.serializer = builder.serializer;
+        this.schema = builder.schema;
+        this.claimTimeout = builder.claimTimeout;
+        this.nodeId = builder.nodeId;
+        this.contentType = builder.contentType;
     }
 
     /**
-     * Initialize the JpaTokenStore with given resources. The given {@code claimTimeout} is used to 'steal' any claim
-     * that has not been updated since that amount of time.
+     * Instantiate a Builder to be able to create a {@link JdbcTokenStore}.
+     * <p>
+     * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
+     * the {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and {@link Serializer} are
+     * a <b>hard requirements</b> and as such should be provided.
      *
-     * @param connectionProvider The provider of connections to the underlying database
-     * @param serializer         The serializer to serialize tokens with
-     * @param schema             The schema that describes a Jdbc token entry
-     * @param claimTimeout       The timeout after which this process will force a claim
-     * @param nodeId             The identifier to identify ownership of the tokens
-     * @param contentType        The data type of the serialized token
+     * @return a Builder to be able to create a {@link JdbcTokenStore}
      */
-    public JdbcTokenStore(ConnectionProvider connectionProvider, Serializer serializer, TokenSchema schema,
-                          TemporalAmount claimTimeout, String nodeId, Class<?> contentType) {
-        this.connectionProvider = connectionProvider;
-        this.serializer = serializer;
-        this.schema = schema;
-        this.claimTimeout = claimTimeout;
-        this.nodeId = nodeId;
-        this.contentType = contentType;
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -114,7 +119,8 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken) throws UnableToClaimTokenException {
+    public void initializeTokenSegments(String processorName, int segmentCount, TrackingToken initialToken)
+            throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             executeQuery(connection,
@@ -128,7 +134,9 @@ public class JdbcTokenStore implements TokenStore {
                              }
                              return null;
                          },
-                         e -> new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.", e));
+                         e -> new UnableToClaimTokenException(
+                                 "Could not initialize segments. Some segments were already present.", e
+                         ));
         } finally {
             closeQuietly(connection);
         }
@@ -189,7 +197,9 @@ public class JdbcTokenStore implements TokenStore {
                 // ignore
             }
             if (result[0] < 1) {
-                logger.warn("Releasing claim of token {}/{} failed. It was owned by another node.", processorName, segment);
+                logger.warn(
+                        "Releasing claim of token {}/{} failed. It was owned by another node.", processorName, segment
+                );
             }
         } finally {
             closeQuietly(connection);
@@ -200,9 +210,13 @@ public class JdbcTokenStore implements TokenStore {
     public int[] fetchSegments(String processorName) {
         Connection connection = getConnection();
         try {
-            List<Integer> integers = executeQuery(connection, c -> selectForSegments(c, processorName),
-                                                  listResults(rs -> rs.getInt(schema.segmentColumn())), e -> new JdbcException(
-                            format("Could not load segments for processor [%s]", processorName), e));
+            List<Integer> integers = executeQuery(connection,
+                                                  c -> selectForSegments(c, processorName),
+                                                  listResults(rs -> rs.getInt(schema.segmentColumn())),
+                                                  e -> new JdbcException(format(
+                                                          "Could not load segments for processor [%s]", processorName
+                                                  ), e)
+            );
             return integers.stream().mapToInt(i -> i).toArray();
         } finally {
             closeQuietly(connection);
@@ -210,16 +224,19 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying storage.
+     * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying
+     * storage.
      *
      * @param connection    the connection to the underlying database
      * @param processorName the name of the processor to fetch the segments for
      * @return a {@link PreparedStatement} that will fetch segments when executed
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
-        final String sql = "SELECT " + schema.segmentColumn() + " FROM " +
-                schema.tokenTable() + " WHERE " + schema.processorNameColumn() + " = ? ORDER BY " + schema.segmentColumn() + " ASC";
+        final String sql = "SELECT " + schema.segmentColumn() +
+                " FROM " + schema.tokenTable() +
+                " WHERE " + schema.processorNameColumn() + " = ? ORDER BY " + schema.segmentColumn() + " ASC";
         PreparedStatement preparedStatement =
                 connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         preparedStatement.setString(1, processorName);
@@ -234,6 +251,7 @@ public class JdbcTokenStore implements TokenStore {
      * @param processorName the name of the processor to fetch the entry for
      * @param segment       the segment of the processor to fetch the entry for
      * @return a {@link PreparedStatement} that will fetch an updatable token entry when executed
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     protected PreparedStatement selectForUpdate(Connection connection, String processorName,
@@ -282,6 +300,7 @@ public class JdbcTokenStore implements TokenStore {
      * @param resultSet the updatable query result of an executed {@link PreparedStatement}
      * @param entry     the entry extracted from the given result set
      * @return the claimed tracking token
+     *
      * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
      * @throws SQLException                when an exception occurs while claiming the token entry
      */
@@ -309,6 +328,7 @@ public class JdbcTokenStore implements TokenStore {
      * @param processorName the name of the processor to load or insert a token entry for
      * @param segment       the segment of the processor to load or insert a token entry for
      * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
+     *
      * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
      * @throws SQLException                when an exception occurs while loading or inserting the entry
      */
@@ -328,6 +348,7 @@ public class JdbcTokenStore implements TokenStore {
      * @param processorName the name of the processor to insert a token for
      * @param segment       the segment of the processor to insert a token for
      * @return the tracking token of the inserted entry
+     *
      * @throws SQLException when an exception occurs while inserting a token entry
      */
     protected TrackingToken insertTokenEntry(ResultSet resultSet, TrackingToken token, String processorName,
@@ -351,6 +372,7 @@ public class JdbcTokenStore implements TokenStore {
      *
      * @param resultSet the result set of a prior select statement containing a single token entry
      * @return an token entry with data extracted from the result set
+     *
      * @throws SQLException if the result set cannot be converted to an entry
      */
     protected AbstractTokenEntry<?> readTokenEntry(ResultSet resultSet) throws SQLException {
@@ -370,6 +392,7 @@ public class JdbcTokenStore implements TokenStore {
      * @param processorName the name of the processor for which to release this node's claim
      * @param segment       the segment of the processor for which to release this node's claim
      * @return a {@link PreparedStatement} that will release the claim this node has on the token entry
+     *
      * @throws SQLException if the statement to release a claim cannot be created
      */
     protected PreparedStatement releaseClaim(Connection connection, String processorName,
@@ -394,6 +417,7 @@ public class JdbcTokenStore implements TokenStore {
      * @param columnName the name of the column containing the serialized token
      * @param <T>        the type of data to return
      * @return the serialized data of the token
+     *
      * @throws SQLException if the token cannot be read from the entry
      */
     @SuppressWarnings("unchecked")
@@ -417,5 +441,123 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    /**
+     * Builder class to instantiate a {@link JdbcTokenStore}.
+     * <p>
+     * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
+     * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and {@link Serializer} are
+     * a <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder {
 
+        private ConnectionProvider connectionProvider;
+        private Serializer serializer;
+        private TokenSchema schema = new TokenSchema();
+        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
+        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
+        private Class<?> contentType = byte[].class;
+
+        /**
+         * Sets the {@link ConnectionProvider} used to provide connections to the underlying database.
+         *
+         * @param connectionProvider a {@link ConnectionProvider} used to provide connections to the underlying database
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder connectionProvider(ConnectionProvider connectionProvider) {
+            assertNonNull(connectionProvider, "ConnectionProvider may not be null");
+            this.connectionProvider = connectionProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@code schema} which describes a JDBC token entry for this {@link TokenStore}. Defaults to a default
+         * {@link TokenSchema} instance.
+         *
+         * @param schema a {@link TokenSchema} which describes a JDBC token entry for this {@link TokenStore}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder schema(TokenSchema schema) {
+            assertNonNull(schema, "TokenSchema may not be null");
+            this.schema = schema;
+            return this;
+        }
+
+        /**
+         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
+         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
+         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
+         *
+         * @param claimTimeout a timeout specifying the time after which this process will force a claim
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder claimTimeout(TemporalAmount claimTimeout) {
+            assertNonNull(claimTimeout, "The claim timeout may not be null");
+            this.claimTimeout = claimTimeout;
+            return this;
+        }
+
+        /**
+         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to
+         * {@link ManagementFactory#getRuntimeMXBean#getName} output as the node id.
+         *
+         * @param nodeId the id as a {@link String} to identify ownership of the tokens
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder nodeId(String nodeId) {
+            assertNodeId(nodeId, "The nodeId may not be null or empty");
+            this.nodeId = nodeId;
+            return this;
+        }
+
+        /**
+         * Sets the {@code contentType} to which a {@link TrackingToken} should be serialized. Defaults to a
+         * {@code byte[]} {@link Class} type.
+         *
+         * @param contentType the content type as a {@link Class }to which a {@link TrackingToken} should be serialized
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder contentType(Class<?> contentType) {
+            assertNonNull(contentType, "The content type may not be null");
+            this.contentType = contentType;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link JdbcTokenStore} as specified through this Builder.
+         *
+         * @return a {@link JdbcTokenStore} as specified through this Builder
+         */
+        public JdbcTokenStore build() {
+            return new JdbcTokenStore(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+            assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
+        }
+
+        private void assertNodeId(String nodeId, String exceptionMessage) {
+            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
+        }
+    }
 }

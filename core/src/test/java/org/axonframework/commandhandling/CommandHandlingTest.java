@@ -21,11 +21,14 @@ import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventUtils;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,9 +39,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
-/**
- *
- */
 public class CommandHandlingTest {
 
     private EventSourcingRepository<StubAggregate> repository;
@@ -48,7 +48,10 @@ public class CommandHandlingTest {
     @Before
     public void setUp() {
         stubEventStore = new StubEventStore();
-        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore);
+        repository = EventSourcingRepository.<StubAggregate>builder()
+                .aggregateType(StubAggregate.class)
+                .eventStore(stubEventStore)
+                .build();
         aggregateIdentifier = "testAggregateIdentifier";
     }
 

@@ -28,10 +28,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -41,9 +39,9 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -66,8 +64,10 @@ public class JpaSagaStoreTest {
 
     @Before
     public void setUp() {
-        JpaSagaStore sagaStore = new JpaSagaStore(new SimpleEntityManagerProvider(entityManager));
-        repository = new AnnotatedSagaRepository<>(StubSaga.class, sagaStore);
+        JpaSagaStore sagaStore = JpaSagaStore.builder()
+                                             .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                             .build();
+        repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
@@ -76,15 +76,14 @@ public class JpaSagaStoreTest {
         // the serialized form of the Saga exceeds the default length of a blob.
         // So we must alter the table to prevent data truncation
         entityManager.createNativeQuery("ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
-                .executeUpdate();
+                     .executeUpdate();
 
         startUnitOfWork();
-
     }
 
     protected void startUnitOfWork() {
         Assert.isTrue(unitOfWork == null || !unitOfWork.isActive(),
-                () -> "Cannot start unit of work. There is one still active.");
+                      () -> "Cannot start unit of work. There is one still active.");
         unitOfWork = DefaultUnitOfWork.startAndGet(null);
         TransactionStatus tx = txManager.getTransaction(new DefaultTransactionDefinition());
         unitOfWork.onRollback(u -> txManager.rollback(tx));
@@ -103,7 +102,7 @@ public class JpaSagaStoreTest {
     public void testAddingAnInactiveSagaDoesntStoreIt() throws Exception {
         unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                    StubSaga::new);
+                                                            StubSaga::new);
             saga.execute(testSaga -> {
                 testSaga.registerAssociationValue(new AssociationValue("key", "value"));
                 testSaga.end();
@@ -114,8 +113,8 @@ public class JpaSagaStoreTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(0L,
-                (long) entityManager.createQuery("select count(*) from SagaEntry", Long.class).getSingleResult());
+        long result = entityManager.createQuery("select count(*) from SagaEntry", Long.class).getSingleResult();
+        assertEquals(0L, result);
     }
 
 
@@ -138,7 +137,7 @@ public class JpaSagaStoreTest {
     public void testAddAndLoadSaga_ByAssociationValue() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                    StubSaga::new);
+                                                            StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
         });
@@ -163,7 +162,7 @@ public class JpaSagaStoreTest {
     public void testLoadSaga_AssociationValueRemoved() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                    StubSaga::new);
+                                                            StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
         });
@@ -184,13 +183,13 @@ public class JpaSagaStoreTest {
     public void testEndSaga() throws Exception {
         String identifier = unitOfWork.executeWithResult(() -> {
             Saga<StubSaga> saga = repository.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
-                    StubSaga::new);
+                                                            StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
         });
         entityManager.clear();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                .setParameter("id", identifier).getResultList().isEmpty());
+                                 .setParameter("id", identifier).getResultList().isEmpty());
         startUnitOfWork();
         unitOfWork.execute(() -> {
             Saga<StubSaga> loaded = repository.load(identifier);
@@ -200,14 +199,15 @@ public class JpaSagaStoreTest {
 
         assertNull(entityManager.find(SagaEntry.class, identifier));
         assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                .setParameter("id", identifier).getResultList().isEmpty());
+                                .setParameter("id", identifier).getResultList().isEmpty());
     }
 
     @DirtiesContext
     @Test
     public void testStoreSagaWithCustomEntity() throws Exception {
-
-        JpaSagaStore sagaStore = new JpaSagaStore(new SimpleEntityManagerProvider(entityManager)) {
+        JpaSagaStore sagaStore = new JpaSagaStore(
+                JpaSagaStore.builder().entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+        ) {
             @Override
             protected AbstractSagaEntry<?> createSagaEntry(Object saga, String sagaIdentifier, Serializer serializer) {
                 return new CustomSagaEntry(saga, sagaIdentifier, serializer);
@@ -224,7 +224,7 @@ public class JpaSagaStoreTest {
             }
         };
 
-        repository = new AnnotatedSagaRepository<>(StubSaga.class, sagaStore);
+        repository = AnnotatedSagaRepository.<StubSaga>builder().sagaType(StubSaga.class).sagaStore(sagaStore).build();
 
         String identifier = unitOfWork.executeWithResult(() -> repository.createInstance(
                 IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier());
@@ -240,6 +240,4 @@ public class JpaSagaStoreTest {
             assertNotNull(entityManager.find(CustomSagaEntry.class, identifier));
         });
     }
-
-
 }

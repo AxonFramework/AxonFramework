@@ -23,18 +23,15 @@ import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStor
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.messaging.unitofwork.DefaultUnitOfWork.startAndGet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -49,7 +46,7 @@ public class AnnotatedSagaRepositoryTest {
     public void setUp() {
         currentUnitOfWork = startAndGet(null);
         this.store = spy(new InMemorySagaStore());
-        this.testSubject = new AnnotatedSagaRepository<>(Object.class, store);
+        this.testSubject = AnnotatedSagaRepository.builder().sagaType(Object.class).sagaStore(store).build();
     }
 
     @After
@@ -147,5 +144,4 @@ public class AnnotatedSagaRepositoryTest {
 
         assertEquals(singleton(sagaId), testSubject.find(associationValue));
     }
-
 }
