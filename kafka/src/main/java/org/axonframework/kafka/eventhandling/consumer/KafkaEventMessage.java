@@ -26,7 +26,7 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEve
 
 /**
  * Wrapper around an {@link TrackedEventMessage} containing additional required information to correctly publish it over
- * a Kafka stream.
+ * a Kafka topic.
  *
  * @author Nakul Mishra
  * @since 3.3
