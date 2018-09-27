@@ -547,7 +547,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                                    errorHandler.get(),
                                                                                    trackingEventProcessorConfiguration
                                                                                            .get());
-        trackingEventProcessor.registerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+        trackingEventProcessor.registerHandlerInterceptor(
+                new CorrelationDataInterceptor<>(config.correlationDataProviders()));
         return trackingEventProcessor;
     }
 
@@ -563,7 +564,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                                                                             errorHandler.get(),
                                                                                             messageMonitor.get());
         subscribingEventProcessor
-                .registerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                .registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
         return subscribingEventProcessor;
     }
 

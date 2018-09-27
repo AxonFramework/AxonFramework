@@ -258,7 +258,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     public void testMultiThreadTokenIsStoredWhenEventIsRead() throws Exception {
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
@@ -373,7 +373,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
     public void testMultiThreadTokensAreStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 if (uow.getMessage().equals(events.get(1))) {
                     throw new MockException();
@@ -381,7 +381,7 @@ public class TrackingEventProcessorTest_MultiThreaded {
             });
             return interceptorChain.proceed();
         }));
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));

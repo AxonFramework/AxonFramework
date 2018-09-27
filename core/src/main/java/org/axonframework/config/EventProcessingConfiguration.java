@@ -285,7 +285,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                     TrackingEventProcessor trackingEventProcessor =
                             trackingEventProcessor(config, name, ehi, processorConfig, Configuration::eventBus);
                     trackingEventProcessor
-                            .registerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
+                            .registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return trackingEventProcessor;
                 });
         return this;
@@ -322,7 +322,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                                                    Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
             eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
-                    .registerInterceptor(interceptorBuilder.apply(configuration)));
+                    .registerHandlerInterceptor(interceptorBuilder.apply(configuration)));
         }
         handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                    .add(interceptorBuilder);
@@ -581,7 +581,7 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
                                                                              conf,
                                                                              eventHandlerInvoker,
                                                                              Configuration::eventBus);
-        eventProcessor.registerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
+        eventProcessor.registerHandlerInterceptor(new CorrelationDataInterceptor<>(conf.correlationDataProviders()));
         return eventProcessor;
     }
 
@@ -666,12 +666,12 @@ public class EventProcessingConfiguration implements ModuleConfiguration {
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(config))
-                                   .forEach(eventProcessor::registerInterceptor);
+                                   .forEach(eventProcessor::registerHandlerInterceptor);
 
         defaultHandlerInterceptors.stream()
                                   .map(f -> f.apply(configuration, processorName))
                                   .filter(Objects::nonNull)
-                                  .forEach(eventProcessor::registerInterceptor);
+                                  .forEach(eventProcessor::registerHandlerInterceptor);
 
         return eventProcessor;
     }

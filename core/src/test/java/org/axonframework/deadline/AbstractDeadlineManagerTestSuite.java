@@ -143,6 +143,29 @@ public abstract class AbstractDeadlineManagerTestSuite {
     }
 
     @Test
+    public void testHandlerInterceptorOnAggregate() {
+        configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
+            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
+                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId")));
+            return chain.proceed();
+        });
+        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+    }
+
+    @Test
+    public void testDispatchInterceptorOnAggregate() {
+        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
+                GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(), new DeadlinePayload("fakeId")));
+        configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
+
+        assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
+                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+    }
+
+    @Test
     public void testDeadlineOnSaga() {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
@@ -181,6 +204,33 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE),
                               new ScheduleSpecificDeadline(IDENTIFIER, null),
                               new SpecificDeadlineOccurredEvent(null));
+    }
+
+    @Test
+    public void testHandlerInterceptorOnSaga() {
+        EventMessage<Object> testEventMessage =
+                asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
+        configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
+            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
+                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload("fakeId")));
+            return chain.proceed();
+        });
+        configuration.eventStore().publish(testEventMessage);
+
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
+                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
+    }
+
+    @Test
+    public void testDispatchInterceptorOnSaga() {
+        EventMessage<Object> testEventMessage =
+                asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
+        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
+                GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(), new DeadlinePayload("fakeId")));
+        configuration.eventStore().publish(testEventMessage);
+
+        assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),
+                              new DeadlineOccurredEvent(new DeadlinePayload("fakeId")));
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {

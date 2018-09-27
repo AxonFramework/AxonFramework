@@ -44,8 +44,10 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
@@ -240,9 +242,13 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager) {
-        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                  transactionManager,
-                                  axonConfiguration.getComponent(QueryInvocationErrorHandler.class));
+        return SimpleQueryBus.builder()
+                             .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
+                             .transactionManager(transactionManager)
+                             .errorHandler(axonConfiguration.getComponent(QueryInvocationErrorHandler.class,
+                                                                          LoggingQueryInvocationErrorHandler::new))
+                             .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                             .build();
     }
 
     @ConditionalOnBean(QueryInvocationErrorHandler.class)
@@ -251,9 +257,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean
     public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager,
                                    QueryInvocationErrorHandler eh) {
-        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                  transactionManager,
-                                  eh);
+        return SimpleQueryBus.builder()
+                             .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
+                             .transactionManager(transactionManager)
+                             .errorHandler(eh)
+                             .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                             .build();
     }
 
     @Override

@@ -220,7 +220,7 @@ public class TrackingEventProcessorTest {
     @Test
     public void testTokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
@@ -242,7 +242,7 @@ public class TrackingEventProcessorTest {
                                                  PropagatingErrorHandler.INSTANCE,
                                                  TrackingEventProcessorConfiguration.forSingleThreadedProcessing());
         CountDownLatch countDownLatch = new CountDownLatch(2);
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
@@ -262,13 +262,13 @@ public class TrackingEventProcessorTest {
     @Test
     public void testTokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 throw new MockException();
             });
             return interceptorChain.proceed();
         }));
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
@@ -380,7 +380,7 @@ public class TrackingEventProcessorTest {
     public void testFirstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
         List<? extends EventMessage<?>> events = createEvents(2);
         CountDownLatch countDownLatch = new CountDownLatch(2);
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 if (uow.getMessage().equals(events.get(1))) {
                     throw new MockException();
@@ -388,7 +388,7 @@ public class TrackingEventProcessorTest {
             });
             return interceptorChain.proceed();
         }));
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
@@ -414,7 +414,7 @@ public class TrackingEventProcessorTest {
         when(eventBus.openStream(null)).thenReturn(trackingEventStreamOf(events.iterator()));
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
 
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 if (uow.getMessage().equals(events.get(1))) {
                     throw new MockException();
@@ -425,7 +425,7 @@ public class TrackingEventProcessorTest {
 
         CountDownLatch countDownLatch = new CountDownLatch(2);
 
-        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerHandlerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
