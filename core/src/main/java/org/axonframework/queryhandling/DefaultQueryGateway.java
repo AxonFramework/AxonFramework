@@ -15,10 +15,14 @@
  */
 package org.axonframework.queryhandling;
 
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -33,7 +37,7 @@ import java.util.stream.Stream;
 public class DefaultQueryGateway implements QueryGateway {
 
     private final QueryBus queryBus;
-    private final MessageDispatchInterceptor<? super QueryMessage<?, ?>>[] dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Initializes the gateway to send queries to the given {@code queryBus} and invoking given
@@ -46,7 +50,7 @@ public class DefaultQueryGateway implements QueryGateway {
     public DefaultQueryGateway(QueryBus queryBus,
                                MessageDispatchInterceptor<? super QueryMessage<?, ?>>... dispatchInterceptors) {
         this.queryBus = queryBus;
-        this.dispatchInterceptors = dispatchInterceptors;
+        Arrays.stream(dispatchInterceptors).forEach(this::registerDispatchInterceptor);
     }
 
     @Override
@@ -76,6 +80,13 @@ public class DefaultQueryGateway implements QueryGateway {
         return new DefaultSubscriptionQueryResult<>(result.initialResult().map(QueryResponseMessage::getPayload),
                                                     result.updates().map(SubscriptionQueryUpdateMessage::getPayload),
                                                     result);
+    }
+
+    @Override
+    public Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
     }
 
     @SuppressWarnings("unchecked")

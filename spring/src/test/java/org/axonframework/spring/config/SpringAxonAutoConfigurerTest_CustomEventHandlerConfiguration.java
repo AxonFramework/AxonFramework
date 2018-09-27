@@ -45,19 +45,7 @@ import static org.junit.Assert.*;
 public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
 
     @Autowired(required = false)
-    private EventStore eventStore;
-
-    @Autowired(required = false)
     private EventBus eventBus;
-
-    @Autowired(required = false)
-    private CommandBus commandBus;
-
-    @Autowired(required = false)
-    private QueryBus queryBus;
-
-    @Autowired
-    private org.axonframework.config.Configuration axonConfig;
 
     @Autowired
     private Context.MyEventHandler myEventHandler;
@@ -90,7 +78,7 @@ public class SpringAxonAutoConfigurerTest_CustomEventHandlerConfiguration {
             ehConfig.byDefaultAssignTo("test");
             epConfig.registerEventProcessor("test", (name, c, eh) -> {
                 SubscribingEventProcessor processor = new SubscribingEventProcessor(name, eh, c.eventBus());
-                processor.registerInterceptor((unitOfWork, interceptorChain) -> {
+                processor.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
                     unitOfWork.transformMessage(m -> m.andMetaData(singletonMap("key", "value")));
                     return interceptorChain.proceed();
                 });

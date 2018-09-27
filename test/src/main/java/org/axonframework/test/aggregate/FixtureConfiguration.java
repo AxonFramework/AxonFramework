@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.RepositoryProvider;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -170,7 +171,8 @@ public interface FixtureConfiguration<T> {
      * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandDispatchInterceptor(MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
+    FixtureConfiguration<T> registerCommandDispatchInterceptor(
+            MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
 
     /**
      * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
@@ -180,7 +182,29 @@ public interface FixtureConfiguration<T> {
      * @param commandHandlerInterceptor the command handler interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
+    FixtureConfiguration<T> registerCommandHandlerInterceptor(
+            MessageHandlerInterceptor<CommandMessage<?>> commandHandlerInterceptor);
+
+    /**
+     * Registers a deadline dispatch interceptor which will always be invoked before a deadline is dispatched
+     * (scheduled) on the {@link org.axonframework.deadline.DeadlineManager} to perform a task specified in the
+     * interceptor.
+     *
+     * @param deadlineDispatchInterceptor the interceptor for dispatching (scheduling) deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor);
+
+    /**
+     * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
+     * task specified in the interceptor.
+     *
+     * @param deadlineHandlerInterceptor the interceptor for handling deadlines
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.

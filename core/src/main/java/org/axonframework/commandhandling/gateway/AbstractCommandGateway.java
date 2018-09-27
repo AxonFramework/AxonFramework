@@ -21,11 +21,11 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -91,6 +91,18 @@ public abstract class AbstractCommandGateway {
     }
 
     /**
+     * Registers a command dispatch interceptor within a {@link CommandGateway}.
+     *
+     * @param interceptor To intercept command messages
+     * @return a registration which can be used to cancel the registration of given interceptor
+     */
+    protected Registration registerDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> interceptor) {
+        dispatchInterceptors.add(interceptor);
+        return () -> dispatchInterceptors.remove(interceptor);
+    }
+
+    /**
      * Invokes all the dispatch interceptors and returns the CommandMessage instance that should be dispatched.
      *
      * @param commandMessage The incoming command message
@@ -125,7 +137,7 @@ public abstract class AbstractCommandGateway {
         private CommandBus commandBus;
         private RetryScheduler retryScheduler;
         private List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors =
-                Collections.emptyList();
+                new CopyOnWriteArrayList<>();
 
         /**
          * Sets the {@link CommandBus} used to dispatch commands.
@@ -173,8 +185,8 @@ public abstract class AbstractCommandGateway {
         public Builder dispatchInterceptors(
                 List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
             this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
-                    ? new ArrayList<>(dispatchInterceptors)
-                    : Collections.emptyList();
+                    ? new CopyOnWriteArrayList<>(dispatchInterceptors)
+                    : new CopyOnWriteArrayList<>();
             return this;
         }
 

@@ -19,7 +19,10 @@ package org.axonframework.deadline.quartz;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -38,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
@@ -72,6 +76,8 @@ public class DeadlineJob implements Job {
      */
     public static final String JOB_DATA_SERIALIZER = Serializer.class.getName();
 
+    public static final String HANDLER_INTERCEPTORS = MessageHandlerInterceptor.class.getName();
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         if (LOGGER.isDebugEnabled()) {
@@ -87,13 +93,24 @@ public class DeadlineJob implements Job {
             Serializer serializer = (Serializer) schedulerContext.get(JOB_DATA_SERIALIZER);
             TransactionManager transactionManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
             ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
+            List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
+                    (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>) schedulerContext.get(HANDLER_INTERCEPTORS);
 
             DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
             ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
             DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
-            unitOfWork.execute(() -> executeScheduledDeadline(scopeAwareComponents, deadlineMessage, deadlineScope));
+            InterceptorChain chain =
+                    new DefaultInterceptorChain<>(unitOfWork,
+                                                  handlerInterceptors,
+                                                  interceptedDeadlineMessage -> {
+                                                      executeScheduledDeadline(scopeAwareComponents,
+                                                                               interceptedDeadlineMessage,
+                                                                               deadlineScope);
+                                                      return null;
+                                                  });
+            unitOfWork.executeWithResult(chain::proceed);
 
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("Job successfully executed. Deadline message [{}] processed.",
