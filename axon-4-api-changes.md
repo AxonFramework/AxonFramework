@@ -48,9 +48,10 @@ the other Builder implementations introduced. This entails the following changes
 
 ### Removed classes
 
-|                           Class                                       |                       Why                     |
-|-----------------------------------------------------------------------|-----------------------------------------------|
-| org.axonframework.commandhandling.disruptor.DisruptorConfiguration    | Removed in favor DisruptorCommandBus.Builder  |
+|                                   Class                                       |                       Why                     |
+|-------------------------------------------------------------------------------|-----------------------------------------------|
+| org.axonframework.commandhandling.disruptor.DisruptorConfiguration            | Removed in favor DisruptorCommandBus.Builder  |
+| org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration    | Removed in favor KafkaPublisher.Builder       |
 
 ### Classes for which the Constructor has been replaced for a Builder
 
@@ -87,3 +88,6 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventhandling.saga.AbstractSagaManager
 - org.axonframework.eventhandling.saga.AnnotatedSagaManager
 - org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter
+- org.axonframework.kafka.eventhandling.consumer.AsyncFetcher
+- org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory
+- org.axonframework.kafka.eventhandling.producer.KafkaPublisher

@@ -86,7 +86,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
      * The {@code bufferFactory} is defaulted to an {@link SortedKafkaMessageBuffer}, the {@link ExecutorService} to an
      * {@link Executors#newCachedThreadPool()} using an {@link AxonThreadFactory}, the {@link KafkaMessageConverter} to
      * a {@link DefaultKafkaMessageConverter}, the {@code topic} to {@code Axon.Events}, the
-     * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milli seconds.
+     * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milliseconds.
      * The {@link ConsumerFactory} is a <b>hard requirements</b> and as such should be provided.
      *
      * @param <K> a generic type for the key of the {@link ConsumerFactory}, {@link ConsumerRecord} and {@link
@@ -131,7 +131,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
      * The {@code bufferFactory} is defaulted to an {@link SortedKafkaMessageBuffer}, the {@link ExecutorService} to an
      * {@link Executors#newCachedThreadPool()} using an {@link AxonThreadFactory}, the {@link KafkaMessageConverter} to
      * a {@link DefaultKafkaMessageConverter}, the {@code topic} to {@code Axon.Events}, the
-     * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milli seconds.
+     * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milliseconds.
      * The {@link ConsumerFactory} is a <b>hard requirements</b> and as such should be provided.
      *
      * @param <K> a generic type for the key of the {@link ConsumerFactory}, {@link ConsumerRecord} and {@link
@@ -219,7 +219,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
         /**
          * Sets the {@link KafkaMessageConverter} used to convert Kafka messages into
          * {@link org.axonframework.eventhandling.EventMessage}s. Defaults to a {@link DefaultKafkaMessageConverter}
-         * using a {@link XStreamSerializer}.
+         * using the {@link XStreamSerializer}.
          * <p>
          * Note that configuring a MessageConverter on the builder is mandatory if the value type is not {@code byte[]}.
          *
@@ -262,8 +262,8 @@ public class AsyncFetcher<K, V> implements Fetcher {
         }
 
         /**
-         * Set the {@code pollTimeout} in milli seconds for reading messages from a topic. Defaults to {@code 5000}
-         * milli seconds.
+         * Set the {@code pollTimeout} in milliseconds for reading messages from a topic. Defaults to {@code 5000}
+         * milliseconds.
          *
          * @param timeout  the timeout as a {@code long} when reading message from the topic
          * @param timeUnit the {@link TimeUnit} in which the timeout is expressed

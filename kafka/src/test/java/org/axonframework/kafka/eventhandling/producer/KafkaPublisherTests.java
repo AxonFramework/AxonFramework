@@ -318,16 +318,15 @@ public class KafkaPublisherTests {
         DefaultKafkaMessageConverter messageConverter = DefaultKafkaMessageConverter.builder()
                                                                                     .serializer(new XStreamSerializer())
                                                                                     .build();
-        KafkaPublisher<?, ?> testSubject = new KafkaPublisher<>(
-                KafkaPublisherConfiguration.<String, byte[]>builder()
-                        .withProducerFactory(pf)
-                        .withPublisherAckTimeout(1000)
-                        .withMessageMonitor(monitor)
-                        .withMessageSource(eventBus)
-                        .withMessageConverter(messageConverter)
-                        .withTopic(topic)
-                        .build()
-        );
+        KafkaPublisher<?, ?> testSubject = KafkaPublisher.<String, byte[]>builder()
+                .messageSource(eventBus)
+                .producerFactory(pf)
+                .messageConverter(messageConverter)
+                .messageMonitor(monitor)
+                .topic(topic)
+                .publisherAckTimeout(1000)
+                .build();
+
         testSubject.start();
         return testSubject;
     }

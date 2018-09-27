@@ -28,7 +28,6 @@ import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
 import org.axonframework.kafka.eventhandling.consumer.Fetcher;
 import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
 import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
-import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration;
 import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
 import org.junit.*;
 import org.junit.runner.*;
@@ -58,11 +57,11 @@ public class KafkaIntegrationTest {
         eventBus = new SimpleEventBus();
         ProducerFactory<String, byte[]> producerFactory =
                 ProducerConfigUtil.ackProducerFactory(kafka, ByteArraySerializer.class);
-        KafkaPublisher<String, byte[]> publisher = new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
-                                                                                .withProducerFactory(producerFactory)
-                                                                                .withTopic("integration")
-                                                                                .withMessageSource(eventBus)
-                                                                                .build());
+        KafkaPublisher<String, byte[]> publisher = KafkaPublisher.<String, byte[]>builder()
+                .messageSource(eventBus)
+                .producerFactory(producerFactory)
+                .topic("integration")
+                .build();
         publisher.start();
         ConsumerFactory<String, byte[]> cf =
                 new DefaultConsumerFactory<>(minimal(kafka, "consumer1", ByteArrayDeserializer.class));

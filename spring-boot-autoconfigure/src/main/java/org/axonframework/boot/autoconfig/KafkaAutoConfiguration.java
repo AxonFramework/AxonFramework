@@ -28,7 +28,6 @@ import org.axonframework.kafka.eventhandling.consumer.SortedKafkaMessageBuffer;
 import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
 import org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory;
 import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
-import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration;
 import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
@@ -53,7 +52,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @author Nakul Mishra
  * @since 3.0
  */
-
 @Configuration
 @ConditionalOnClass(KafkaPublisher.class)
 @EnableConfigurationProperties(KafkaProperties.class)
@@ -103,14 +101,13 @@ public class KafkaAutoConfiguration {
                                                          EventBus eventBus,
                                                          KafkaMessageConverter<String, byte[]> kafkaMessageConverter,
                                                          AxonConfiguration configuration) {
-        return new KafkaPublisher<>(KafkaPublisherConfiguration.<String, byte[]>builder()
-                                            .withTopic(properties.getDefaultTopic())
-                                            .withMessageConverter(kafkaMessageConverter)
-                                            .withProducerFactory(kafkaProducerFactory)
-                                            .withMessageSource(eventBus)
-                                            .withMessageMonitor(configuration
-                                                                        .messageMonitor(KafkaPublisher.class, "kafkaPublisher"))
-                                            .build());
+        return KafkaPublisher.<String, byte[]>builder()
+                .messageSource(eventBus)
+                .producerFactory(kafkaProducerFactory)
+                .messageConverter(kafkaMessageConverter)
+                .messageMonitor(configuration.messageMonitor(KafkaPublisher.class, "kafkaPublisher"))
+                .topic(properties.getDefaultTopic())
+                .build();
     }
 
     @ConditionalOnMissingBean
