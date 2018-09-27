@@ -5,6 +5,18 @@ Other changes
 =============
 
 * TrackingToken removed from `AnnotatedSaga` and `SagaStore` implementations
+* The org.axonframework.kafka.eventhandling.consumer.AsyncFetcher it's Builder solution has been made equal to the other
+Builder implementations introduced. This entails the following changes:
+ - The AsyncFetcher constructor has been made protected for overriding
+ - The AsyncFetcher#builder(Map<String, Object>) function is removed in favor of AsyncFetcher.Builder#consumerFactory(Map<String, Object>)
+ - The AsyncFetcher#builder(ConsumerFactory<K, V>) function is removed in favor of AsyncFetcher.Builder#consumerFactory(ConsumerFactory<K, V>)
+ - A AsyncFetcher#builder() is added to instantiate the AsyncFetcher.Builder
+ - AsyncFetcher.Builder#withPool(ExecutorService) has been renamed to AsyncFetcher.Builder#executorService(ExecutorService) 
+ - AsyncFetcher.Builder#withMessageConverter(KafkaMessageConverter<K, V>) has been renamed to AsyncFetcher.Builder#messageConverter(KafkaMessageConverter<K, V>) 
+ - AsyncFetcher.Builder#withBufferFactory(Supplier<Buffer<KafkaEventMessage>>) has been renamed to AsyncFetcher.Builder#bufferFactory(Supplier<Buffer<KafkaEventMessage>>) 
+ - AsyncFetcher.Builder#withTopic(String) has been renamed to AsyncFetcher.Builder#topic(String) 
+ - AsyncFetcher.Builder#onRecordPublished(BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void>) has been renamed to AsyncFetcher.Builder#consumerRecordCallback(BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void>) 
+ - AsyncFetcher.Builder#withPollTimeout(long, TimeUnit) has been renamed to AsyncFetcher.Builder#pollTimeout(long, TimeUnit) 
 
 ### Moved classes
 
@@ -64,3 +76,4 @@ Other changes
 - org.axonframework.eventhandling.saga.repository.LockingSagaRepository
 - org.axonframework.eventhandling.saga.AbstractSagaManager
 - org.axonframework.eventhandling.saga.AnnotatedSagaManager
+- org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter
