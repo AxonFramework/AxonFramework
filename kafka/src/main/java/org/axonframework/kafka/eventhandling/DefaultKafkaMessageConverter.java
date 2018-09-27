@@ -19,7 +19,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.async.SequencingPolicy;
@@ -39,17 +39,17 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.kafka.eventhandling.HeaderUtils.*;
 import static org.axonframework.messaging.Headers.*;
 
 /**
  * Converts: {@link EventMessage} to {@link ProducerRecord kafkaMessage} and {@link ConsumerRecord message read from
- * Kafka} back
- * to {@link EventMessage} (if possible).
+ * Kafka} back to {@link EventMessage} (if possible).
  * <p>
  * During conversion it passes all meta-data entries with {@code 'axon-metadata-'} prefix to {@link Headers}. Other
- * message-specific attributes are added as metadata. The payload is serialized using the
- * configured {@link Serializer} and passed as the message body.
+ * message-specific attributes are added as metadata. The payload is serialized using the configured {@link Serializer}
+ * and passed as the message body.
  * <p>
  * This implementation will suffice in most cases.
  *
@@ -65,32 +65,33 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
     private final BiFunction<String, Object, RecordHeader> headerValueMapper;
 
     /**
-     * Initializes the KafkaMessageConverter with the given {@code serializer}.
+     * Instantiate a {@link DefaultKafkaMessageConverter} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link Serializer} is not {@code null} and will throw an {@link AxonConfigurationException}
+     * if it is {@code null}.
      *
-     * @param serializer The serializer to serialize the Event Message's payload with.
+     * @param builder the {@link Builder} used to instantiate a {@link DefaultKafkaMessageConverter} instance
      */
-    public DefaultKafkaMessageConverter(Serializer serializer) {
-        this(serializer, SequentialPerAggregatePolicy.instance(), byteMapper());
+    protected DefaultKafkaMessageConverter(Builder builder) {
+        builder.validate();
+        this.serializer = builder.serializer;
+        this.sequencingPolicy = builder.sequencingPolicy;
+        this.headerValueMapper = builder.headerValueMapper;
     }
 
     /**
-     * Initializes the KafkaMessageConverter with the given {@code serializer}, {@code sequencingPolicy} and
-     * {@code objectMapper}.
+     * Instantiate a Builder to be able to create a {@link DefaultKafkaMessageConverter}.
+     * <p>
+     * The {@link SequencingPolicy} is defaulted to an {@link SequentialPerAggregatePolicy}, and the
+     * {@code headerValueMapper} is defaulted to the {@link HeaderUtils#byteMapper()} function.
+     * The {@link Serializer} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @param serializer        The serializer to serialize the Event Message's payload and Meta Data with
-     * @param sequencingPolicy  The policy to generate the key of the {@link ProducerRecord}.
-     * @param headerValueMapper The Function for mapping values to Kafka headers.
+     * @return a Builder to be able to create a {@link DefaultKafkaMessageConverter}
      */
-    public DefaultKafkaMessageConverter(Serializer serializer,
-                                        SequencingPolicy<? super EventMessage<?>> sequencingPolicy,
-                                        BiFunction<String, Object, RecordHeader> headerValueMapper) {
-        Assert.notNull(serializer, () -> "Serializer may not be null");
-        Assert.notNull(sequencingPolicy, () -> "SequencingPolicy may not be null");
-        Assert.notNull(headerValueMapper, () -> "HeaderValueMapper may not be null");
-        this.serializer = serializer;
-        this.sequencingPolicy = sequencingPolicy;
-        this.headerValueMapper = headerValueMapper;
+    public static Builder builder() {
+        return new Builder();
     }
+
 
     @Override
     public ProducerRecord<String, byte[]> createKafkaMessage(EventMessage<?> eventMessage, String topic) {
@@ -159,5 +160,78 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
 
     private Optional<EventMessage<?>> event(SerializedMessage<?> message, long timestamp) {
         return Optional.of(new GenericEventMessage<>(message, () -> Instant.ofEpochMilli(timestamp)));
+    }
+
+    /**
+     * Builder class to instantiate a {@link DefaultKafkaMessageConverter}.
+     * <p>
+     * The {@link SequencingPolicy} is defaulted to an {@link SequentialPerAggregatePolicy}, and the
+     * {@code headerValueMapper} is defaulted to the {@link HeaderUtils#byteMapper()} function.
+     * The {@link Serializer} is a <b>hard requirement</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private Serializer serializer;
+        private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
+        private BiFunction<String, Object, RecordHeader> headerValueMapper = byteMapper();
+
+        /**
+         * Sets the serializer to serialize the Event Message's payload with.
+         *
+         * @param serializer The serializer to serialize the Event Message's payload with
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Sets the {@link SequencingPolicy}, with a generic of being a super of {@link EventMessage}, used to generate
+         * the key for the {@link ProducerRecord}. Defaults to a {@link SequentialPerAggregatePolicy} instance.
+         *
+         * @param sequencingPolicy a {@link SequencingPolicy} used to generate the key for the {@link ProducerRecord}
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder sequencingPolicy(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+            assertNonNull(sequencingPolicy, "SequencingPolicy may not be null");
+            this.sequencingPolicy = sequencingPolicy;
+            return this;
+        }
+
+        /**
+         * Sets the {@code headerValueMapper}, a {@link BiFunction} of {@link String}, {@link Object} and
+         * {@link RecordHeader}, used for mapping values to Kafka headers. Defaults to the
+         * {@link HeaderUtils#byteMapper()} function.
+         *
+         * @param headerValueMapper a {@link BiFunction} of {@link String}, {@link Object} and {@link RecordHeader},
+         *                          used for mapping values to Kafka headers
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder headerValueMapper(BiFunction<String, Object, RecordHeader> headerValueMapper) {
+            assertNonNull(headerValueMapper, "{} may not be null");
+            this.headerValueMapper = headerValueMapper;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link DefaultKafkaMessageConverter} as specified through this Builder.
+         *
+         * @return a {@link DefaultKafkaMessageConverter} as specified through this Builder
+         */
+        public DefaultKafkaMessageConverter build() {
+            return new DefaultKafkaMessageConverter(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        }
     }
 }

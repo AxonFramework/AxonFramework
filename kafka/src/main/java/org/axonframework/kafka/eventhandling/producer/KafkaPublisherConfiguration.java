@@ -83,8 +83,11 @@ public class KafkaPublisherConfiguration<K, V> {
 
         private SubscribableMessageSource<EventMessage<?>> messageSource;
         private ProducerFactory<K, V> producerFactory;
+        @SuppressWarnings("unchecked")
         private KafkaMessageConverter<K, V> messageConverter =
-                (KafkaMessageConverter<K, V>) new DefaultKafkaMessageConverter(new XStreamSerializer());
+                (KafkaMessageConverter<K, V>) DefaultKafkaMessageConverter.builder()
+                                                                          .serializer(new XStreamSerializer())
+                                                                          .build();
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.instance();
         private String topic = "Axon.Events";
         private long publisherAckTimeout = 1000;

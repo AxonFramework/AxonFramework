@@ -132,8 +132,11 @@ public class AsyncFetcher<K, V> implements Fetcher {
 
         private final ConsumerFactory<K, V> consumerFactory;
         private Supplier<Buffer<KafkaEventMessage>> bufferFactory = SortedKafkaMessageBuffer::new;
+        @SuppressWarnings("unchecked")
         private KafkaMessageConverter<K, V> converter =
-                (KafkaMessageConverter<K, V>) new DefaultKafkaMessageConverter(new XStreamSerializer());
+                (KafkaMessageConverter<K, V>) DefaultKafkaMessageConverter.builder()
+                                                                          .serializer(new XStreamSerializer())
+                                                                          .build();
         private String topic = "Axon.Events";
         private long pollTimeout = 5_000;
 

@@ -33,11 +33,8 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
@@ -60,8 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.kafka.eventhandling.ConsumerConfigUtil.transactionalConsumerFactory;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.ackProducerFactory;
 import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.txnProducerFactory;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -319,13 +315,16 @@ public class KafkaPublisherTests {
     }
 
     private KafkaPublisher<?, ?> publisher(String topic, ProducerFactory<String, byte[]> pf) {
+        DefaultKafkaMessageConverter messageConverter = DefaultKafkaMessageConverter.builder()
+                                                                                    .serializer(new XStreamSerializer())
+                                                                                    .build();
         KafkaPublisher<?, ?> testSubject = new KafkaPublisher<>(
                 KafkaPublisherConfiguration.<String, byte[]>builder()
                         .withProducerFactory(pf)
                         .withPublisherAckTimeout(1000)
                         .withMessageMonitor(monitor)
                         .withMessageSource(eventBus)
-                        .withMessageConverter(new DefaultKafkaMessageConverter(new XStreamSerializer()))
+                        .withMessageConverter(messageConverter)
                         .withTopic(topic)
                         .build()
         );

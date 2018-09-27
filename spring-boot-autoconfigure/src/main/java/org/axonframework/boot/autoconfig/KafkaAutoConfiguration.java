@@ -19,8 +19,17 @@ package org.axonframework.boot.autoconfig;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
-import org.axonframework.kafka.eventhandling.consumer.*;
-import org.axonframework.kafka.eventhandling.producer.*;
+import org.axonframework.kafka.eventhandling.consumer.AsyncFetcher;
+import org.axonframework.kafka.eventhandling.consumer.ConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.DefaultConsumerFactory;
+import org.axonframework.kafka.eventhandling.consumer.Fetcher;
+import org.axonframework.kafka.eventhandling.consumer.KafkaMessageSource;
+import org.axonframework.kafka.eventhandling.consumer.SortedKafkaMessageBuffer;
+import org.axonframework.kafka.eventhandling.producer.ConfirmationMode;
+import org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory;
+import org.axonframework.kafka.eventhandling.producer.KafkaPublisher;
+import org.axonframework.kafka.eventhandling.producer.KafkaPublisherConfiguration;
+import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.AxonConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -83,7 +92,7 @@ public class KafkaAutoConfiguration {
     @Bean
     public KafkaMessageConverter<String, byte[]> kafkaMessageConverter(
             @Qualifier("eventSerializer") Serializer eventSerializer) {
-        return new DefaultKafkaMessageConverter(eventSerializer);
+        return DefaultKafkaMessageConverter.builder().serializer(eventSerializer).build();
     }
 
     @ConditionalOnMissingBean
@@ -114,7 +123,6 @@ public class KafkaAutoConfiguration {
                            .withMessageConverter(kafkaMessageConverter)
                            .withBufferFactory(() -> new SortedKafkaMessageBuffer<>(properties.getFetcher().getBufferSize()))
                            .build();
-
     }
 
     @ConditionalOnMissingBean
