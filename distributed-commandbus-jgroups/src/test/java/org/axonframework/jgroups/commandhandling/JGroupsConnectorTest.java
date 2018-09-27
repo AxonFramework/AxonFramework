@@ -40,6 +40,7 @@ import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -120,7 +121,9 @@ public class JGroupsConnectorTest {
         distributedCommandBus1.dispatch(commandMessage, futureCallback);
         futureCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
-        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
+        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of
+        // ReplyingCallback is tested in its unit tests
+        //noinspection unchecked
         verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)),
                                          any(CommandCallback.class));
     }
@@ -151,6 +154,7 @@ public class JGroupsConnectorTest {
 
         List<FutureCallback> callbacks = new ArrayList<>();
 
+        //noinspection Duplicates
         for (int t = 0; t < 100; t++) {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
@@ -245,6 +249,7 @@ public class JGroupsConnectorTest {
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()
                               .map(i -> i.getConnectionEndpoint(Address.class).orElse(null))
+                              .filter(Objects::nonNull)
                               .anyMatch(a -> a.equals(new IpAddress(12345))));
     }
 
@@ -296,6 +301,7 @@ public class JGroupsConnectorTest {
 
         List<FutureCallback> callbacks = new ArrayList<>();
 
+        //noinspection Duplicates
         for (int t = 0; t < 100; t++) {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
@@ -353,6 +359,7 @@ public class JGroupsConnectorTest {
         } catch (Exception e) {
             //expected
         }
+        //noinspection unchecked
         verify(mockCommandBus1).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
 
         callback = new FutureCallback<>();
@@ -437,16 +444,16 @@ public class JGroupsConnectorTest {
         int commandHandlingCounter = 0;
 
         CommandDispatchingCommandHandler commandHandlerOne = new CommandDispatchingCommandHandler(
-                numberOfDispatchedAndWaitedForCommands, dcb1, secondCommandHandlerName
+                numberOfDispatchedAndWaitedForCommands, distributedCommandBus1, secondCommandHandlerName
         );
-        dcb1.subscribe(firstCommandHandlerName, commandHandlerOne);
+        distributedCommandBus1.subscribe(firstCommandHandlerName, commandHandlerOne);
         connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
         CommandDispatchingCommandHandler commandHandlerTwo = new CommandDispatchingCommandHandler(
-                numberOfDispatchedAndWaitedForCommands, dcb2, firstCommandHandlerName
+                numberOfDispatchedAndWaitedForCommands, distributedCommandBus2, firstCommandHandlerName
         );
-        dcb2.subscribe(secondCommandHandlerName, commandHandlerTwo);
+        distributedCommandBus2.subscribe(secondCommandHandlerName, commandHandlerTwo);
         connector2.connect();
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -454,11 +461,12 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
 
         FutureCallback<Integer, Integer> futureCallback = new FutureCallback<>();
-        dcb1.dispatch(new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter),
-                                                  secondCommandHandlerName),
-                      futureCallback);
+        distributedCommandBus1.dispatch(
+                new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), secondCommandHandlerName),
+                futureCallback
+        );
 
-        assertEquals(numberOfDispatchedAndWaitedForCommands, futureCallback.getResult());
+        assertEquals(numberOfDispatchedAndWaitedForCommands, futureCallback.getResult().getPayload());
         verify(mockCommandBus1, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
@@ -479,7 +487,7 @@ public class JGroupsConnectorTest {
 
         private final AtomicInteger counter;
 
-        public CountingCommandHandler(AtomicInteger counter) {
+        private CountingCommandHandler(AtomicInteger counter) {
             this.counter = counter;
         }
 
@@ -515,6 +523,7 @@ public class JGroupsConnectorTest {
                     new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), commandHandlerName),
                     futureCallback
             );
-            return (Integer) futureCallback.getResult(1000, TimeUnit.MILLISECONDS);
-    }}
+            return (Integer) futureCallback.getResult(1000, TimeUnit.MILLISECONDS).getPayload();
+        }
+    }
 }
