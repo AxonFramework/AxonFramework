@@ -76,8 +76,8 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
     /**
      * Instantiate a {@link DefaultProducerFactory} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@code configuration} and {@code transactionIdPrefix} are not {@code null}, and will throw
-     * an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the {@code configuration} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link []} instance
      */
@@ -98,8 +98,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
      * The {@code closeTimeout} is defaulted to {@code 30}, the {@link TimeUnit} for the {@code closeTimeout} is
      * defaulted to {@link TimeUnit#SECONDS}, the {@code producerCacheSize} defaults to {@code 10} and the
      * {@link ConfirmationMode} is defaulted to {@link ConfirmationMode#NONE}.
-     * The {@code configuration} and {@code transactionIdPrefix} are a <b>hard requirements</b> and as such should be
-     * provided.
+     * The {@code configuration} is a <b>hard requirement</b> and as such should be provided.
      *
      * @param <K> a generic type for the key of the {@link Producer} this {@link ProducerFactory} will create
      * @param <V> a generic type for the value of the {@link Producer} this {@link ProducerFactory} will create
@@ -290,8 +289,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
      * The {@code closeTimeout} is defaulted to {@code 30}, the {@link TimeUnit} for the {@code closeTimeout} is
      * defaulted to {@link TimeUnit#SECONDS}, the {@code producerCacheSize} defaults to {@code 10} and the
      * {@link ConfirmationMode} is defaulted to {@link ConfirmationMode#NONE}.
-     * The {@code configuration} and {@code transactionIdPrefix} are a <b>hard requirements</b> and as such should be
-     * provided.
+     * The {@code configuration} is a <b>hard requirement</b> and as such should be provided.
      *
      * @param <K> a generic type for the key of the {@link Producer} this {@link ProducerFactory} will create
      * @param <V> a generic type for the value of the {@link Producer} this {@link ProducerFactory} will create
@@ -370,7 +368,6 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          * @return the current Builder instance, for a fluent interfacing
          */
         public Builder<K, V> transactionalIdPrefix(String transactionIdPrefix) {
-            assertNonNull(transactionIdPrefix, "The transactionIdPrefix may not be null");
             this.transactionIdPrefix = transactionIdPrefix;
             return this.confirmationMode(ConfirmationMode.TRANSACTIONAL);
         }
@@ -392,7 +389,6 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          */
         protected void validate() throws AxonConfigurationException {
             assertNonNull(configuration, "The configuration is a hard requirement and should be provided");
-            assertNonNull(transactionIdPrefix, "The transactionIdPrefix is a hard requirement and should be provided");
         }
     }
 }
