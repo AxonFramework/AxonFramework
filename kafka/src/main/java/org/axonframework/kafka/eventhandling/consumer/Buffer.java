@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <E>
  * @author Nakul Mishra
+ * @since 3.3
  */
 public interface Buffer<E> {
 

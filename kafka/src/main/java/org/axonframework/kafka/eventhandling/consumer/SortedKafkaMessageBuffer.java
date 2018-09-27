@@ -29,7 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * Thread safe buffer for storing incoming Kafka messages in sorted order defined via {@link Comparable}.
  *
  * @param <E> element type.
- * @author Nakul Mishra.
+ * @author Nakul Mishra
+ * @since 3.3
  */
 public class SortedKafkaMessageBuffer<E extends Comparable & KafkaMetadataProvider> implements Buffer<E> {
 

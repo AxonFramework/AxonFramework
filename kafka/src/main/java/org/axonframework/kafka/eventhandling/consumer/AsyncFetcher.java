@@ -42,6 +42,8 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
  *
  * @param <K> The key of the Kafka entries
  * @param <V> The value type of Kafka entries
+ * @author Nakul Mishra
+ * @since 3.3
  */
 public class AsyncFetcher<K, V> implements Fetcher {
 

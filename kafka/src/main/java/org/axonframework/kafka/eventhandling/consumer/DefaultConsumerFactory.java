@@ -32,6 +32,7 @@ import java.util.Map;
  * @param <K> the key type.
  * @param <V> the value type.
  * @author Nakul Mishra
+ * @since 3.3
  */
 public class DefaultConsumerFactory<K, V> implements ConsumerFactory<K, V> {
 
@@ -56,5 +57,4 @@ public class DefaultConsumerFactory<K, V> implements ConsumerFactory<K, V> {
     public Map<String, Object> configurationProperties() {
         return Collections.unmodifiableMap(this.configs);
     }
-
 }
