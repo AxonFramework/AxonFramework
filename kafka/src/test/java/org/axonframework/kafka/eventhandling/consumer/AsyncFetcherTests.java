@@ -21,18 +21,23 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.producer.ProducerFactory;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -95,27 +100,27 @@ public class AsyncFetcherTests {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testBuilderCreation_InvalidTopic() {
-        builder(new HashMap<>()).withTopic(null).build();
+        builder().consumerFactory(new HashMap<>()).topic(null).build();
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testBuilderCreation_InvalidConsumerFactory() {
-        builder((ConsumerFactory<?, ?>) null);
+        builder().consumerFactory((ConsumerFactory<Object, Object>) null);
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testBuilderCreation_InvalidConverter() {
-        builder(new HashMap<>()).withMessageConverter(null);
+        builder().consumerFactory(new HashMap<>()).messageConverter(null);
     }
 
     @SuppressWarnings("unchecked")
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testBuilderCreation_InvalidBuffer() {
-        builder(new HashMap<>()).withBufferFactory(null);
+        builder().consumerFactory(new HashMap<>()).bufferFactory(null);
     }
 
     @SuppressWarnings("unchecked")
@@ -134,14 +139,15 @@ public class AsyncFetcherTests {
         String topic = "foo";
         ConsumerFactory<String, String> cf = mockConsumerFactory(topic);
         SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(1);
-        Fetcher testSubject = AsyncFetcher.builder(cf)
-                                          .withTopic(topic)
-                                          .withMessageConverter(new ValueConverter())
-                                          .withBufferFactory(() -> buffer)
-                                          .withPollTimeout(3000, TimeUnit.MILLISECONDS)
-                                          .withPool(newSingleThreadExecutor())
-                                          .onRecordPublished(countMessage(messageCounter))
-                                          .build();
+        Fetcher testSubject = AsyncFetcher.<String, String>builder()
+                .consumerFactory(cf)
+                .bufferFactory(() -> buffer)
+                .executorService(newSingleThreadExecutor())
+                .messageConverter(new ValueConverter())
+                .topic(topic)
+                .consumerRecordCallback(countMessage(messageCounter))
+                .pollTimeout(3000, TimeUnit.MILLISECONDS)
+                .build();
         testSubject.start(null);
         messageCounter.await();
 
@@ -173,13 +179,14 @@ public class AsyncFetcherTests {
             put(3, 4L);
             put(4, 0L);
         }};
-        Fetcher testSubject = AsyncFetcher.builder(cf)
-                                          .withTopic(topic)
-                                          .withMessageConverter(new ValueConverter())
-                                          .withBufferFactory(() -> buffer)
-                                          .withPollTimeout(3000, TimeUnit.MILLISECONDS)
-                                          .onRecordPublished(countMessage(messageCounter))
-                                          .build();
+        Fetcher testSubject = AsyncFetcher.<String, String>builder()
+                .consumerFactory(cf)
+                .bufferFactory(() -> buffer)
+                .messageConverter(new ValueConverter())
+                .topic(topic)
+                .consumerRecordCallback(countMessage(messageCounter))
+                .pollTimeout(3000, TimeUnit.MILLISECONDS)
+                .build();
         KafkaTrackingToken startingToken = KafkaTrackingToken.newInstance(positions);
 
         testSubject.start(startingToken);

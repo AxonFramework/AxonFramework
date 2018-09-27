@@ -117,12 +117,13 @@ public class KafkaAutoConfiguration {
     @Bean(destroyMethod = "shutdown")
     public Fetcher kafkaFetcher(ConsumerFactory<String, byte[]> kafkaConsumerFactory,
                                 KafkaMessageConverter<String, byte[]> kafkaMessageConverter) {
-        return AsyncFetcher.builder(kafkaConsumerFactory)
-                           .withTopic(properties.getDefaultTopic())
-                           .withPollTimeout(properties.getFetcher().getPollTimeout(), MILLISECONDS)
-                           .withMessageConverter(kafkaMessageConverter)
-                           .withBufferFactory(() -> new SortedKafkaMessageBuffer<>(properties.getFetcher().getBufferSize()))
-                           .build();
+        return AsyncFetcher.<String, byte[]>builder()
+                .consumerFactory(kafkaConsumerFactory)
+                .bufferFactory(() -> new SortedKafkaMessageBuffer<>(properties.getFetcher().getBufferSize()))
+                .messageConverter(kafkaMessageConverter)
+                .topic(properties.getDefaultTopic())
+                .pollTimeout(properties.getFetcher().getPollTimeout(), MILLISECONDS)
+                .build();
     }
 
     @ConditionalOnMissingBean
