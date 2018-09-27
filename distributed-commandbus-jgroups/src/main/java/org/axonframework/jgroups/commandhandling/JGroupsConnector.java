@@ -33,7 +33,21 @@ import org.axonframework.commandhandling.distributed.Member;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.distributed.ServiceRegistryException;
 import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
+import org.axonframework.commandhandling.distributed.CommandCallbackRepository;
+import org.axonframework.commandhandling.distributed.CommandCallbackWrapper;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.ConsistentHashChangeListener;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.ServiceRegistryException;
+import org.axonframework.commandhandling.distributed.SimpleMember;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
@@ -54,6 +68,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -100,6 +116,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
     private volatile View currentView;
     private volatile int loadFactor = 0;
     private volatile Predicate<? super CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
+
+    private ExecutorService executorService;
+    private final boolean executorProvided = false;
 
     /**
      * Instantiate a {@link JGroupsConnector} based on the fields contained in the {@link Builder}.
@@ -183,6 +202,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, LOCAL_MEMBER, null);
         members.put(localAddress, new VersionedMember(localMember, membershipVersion.getAndIncrement()));
         updateConsistentHash(ch -> ch.with(localMember, loadFactor, commandFilter));
+        if (!executorProvided) {
+            executorService = Executors.newCachedThreadPool(new AxonThreadFactory("JGroupsConnector - " + localName));
+        }
     }
 
     /**
@@ -190,6 +212,9 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
      */
     public void disconnect() {
         channel.disconnect();
+        if (!executorProvided) {
+            executorService.shutdown();
+        }
     }
 
     /**
@@ -262,16 +287,18 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
 
     @Override
     public void receive(Message msg) {
-        Object message = msg.getObject();
-        if (message instanceof JoinMessage) {
-            processJoinMessage(msg, (JoinMessage) message);
-        } else if (message instanceof JGroupsDispatchMessage) {
-            processDispatchMessage(msg, (JGroupsDispatchMessage) message);
-        } else if (message instanceof JGroupsReplyMessage) {
-            processReplyMessage((JGroupsReplyMessage) message);
-        } else {
-            logger.warn("Received unknown message: {}", message.getClass().getName());
-        }
+        executorService.execute(() -> {
+            Object message = msg.getObject();
+            if (message instanceof JoinMessage) {
+                processJoinMessage(msg, (JoinMessage) message);
+            } else if (message instanceof JGroupsDispatchMessage) {
+                processDispatchMessage(msg, (JGroupsDispatchMessage) message);
+            } else if (message instanceof JGroupsReplyMessage) {
+                processReplyMessage((JGroupsReplyMessage) message);
+            } else {
+                logger.warn("Received unknown message: {}", message.getClass().getName());
+            }
+        });
     }
 
     private void processReplyMessage(JGroupsReplyMessage message) {
