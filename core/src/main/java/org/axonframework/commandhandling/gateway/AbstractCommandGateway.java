@@ -20,9 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.common.Assert;
-import org.axonframework.common.Registration;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.List;
