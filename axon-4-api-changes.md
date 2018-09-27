@@ -16,7 +16,17 @@ Builder implementations introduced. This entails the following changes:
  - AsyncFetcher.Builder#withBufferFactory(Supplier<Buffer<KafkaEventMessage>>) has been renamed to AsyncFetcher.Builder#bufferFactory(Supplier<Buffer<KafkaEventMessage>>) 
  - AsyncFetcher.Builder#withTopic(String) has been renamed to AsyncFetcher.Builder#topic(String) 
  - AsyncFetcher.Builder#onRecordPublished(BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void>) has been renamed to AsyncFetcher.Builder#consumerRecordCallback(BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void>) 
- - AsyncFetcher.Builder#withPollTimeout(long, TimeUnit) has been renamed to AsyncFetcher.Builder#pollTimeout(long, TimeUnit) 
+ - AsyncFetcher.Builder#withPollTimeout(long, TimeUnit) has been renamed to AsyncFetcher.Builder#pollTimeout(long, TimeUnit)
+* The org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory it's Builder solution has been made equal to 
+the other Builder implementations introduced. This entails the following changes:
+ - The DefaultProducerFactory constructor has been made protected for overriding
+ - The DefaultProducerFactory#builder(Map<String, Object>) function is removed in favor of DefaultProducerFactory.Builder#configuration(Map<String, Object>)
+ - A DefaultProducerFactory#builder() is added to instantiate the DefaultProducerFactory.Builder
+ - DefaultProducerFactory.Builder#withCloseTimeout(int, TimeUnit) has been renamed to DefaultProducerFactory.Builder#closeTimeout(int, TimeUnit) 
+ - DefaultProducerFactory.Builder#withProducerCacheSize(int) has been renamed to DefaultProducerFactory.Builder#producerCacheSize(int) 
+ - DefaultProducerFactory.Builder#withConfirmationMode(ConfirmationMode) has been renamed to DefaultProducerFactory.Builder#confirmationMode(ConfirmationMode) 
+ - DefaultProducerFactory.Builder#withTransactionalIdPrefix(String) has been renamed to DefaultProducerFactory.Builder#transactionalIdPrefix(String) 
+ 
 
 ### Moved classes
 

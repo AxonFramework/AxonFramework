@@ -20,6 +20,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaException;
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.empty;
-import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.minimal;
-import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.minimalTransactional;
-import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.producerFactory;
-import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.txnProducerFactory;
+import static org.axonframework.kafka.eventhandling.ProducerConfigUtil.*;
 import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.NONE;
 import static org.axonframework.kafka.eventhandling.producer.ConfirmationMode.TRANSACTIONAL;
 import static org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory.builder;
@@ -68,7 +65,7 @@ public class DefaultProducerFactoryTests {
 
     @Test
     public void testDefaultConfirmationMode() {
-        assertThat(builder(empty()).build().confirmationMode()).isEqualTo(NONE);
+        assertThat(builder().configuration(empty()).build().confirmationMode()).isEqualTo(NONE);
     }
 
     @Test
@@ -76,19 +73,19 @@ public class DefaultProducerFactoryTests {
         assertThat(txnProducerFactory(kafka, "foo").confirmationMode()).isEqualTo(TRANSACTIONAL);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testConfiguring_InvalidCacheSize() {
-        builder(minimal(kafka)).withProducerCacheSize(-1).build();
+        builder().configuration(minimal(kafka)).producerCacheSize(-1).build();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testConfiguring_InvalidTimeout() {
-        builder(minimal(kafka)).withCloseTimeout(-1, TimeUnit.SECONDS).build();
+        builder().configuration(minimal(kafka)).closeTimeout(-1, TimeUnit.SECONDS).build();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AxonConfigurationException.class)
     public void testConfiguring_InvalidTimeoutUnit() {
-        builder(minimal(kafka)).withCloseTimeout(1, null).build();
+        builder().configuration(minimal(kafka)).closeTimeout(1, null).build();
     }
 
     @Test
@@ -205,9 +202,10 @@ public class DefaultProducerFactoryTests {
 
     @Test
     public void testClosingProducer_ShouldReturnItToCache() {
-        ProducerFactory<Object, Object> pf = builder(minimalTransactional(kafka))
-                .withTransactionalIdPrefix("cache")
-                .withProducerCacheSize(2)
+        ProducerFactory<Object, Object> pf = builder()
+                .producerCacheSize(2)
+                .configuration(minimalTransactional(kafka))
+                .transactionalIdPrefix("cache")
                 .build();
         Producer<Object, Object> first = pf.createProducer();
         first.close();
@@ -243,7 +241,8 @@ public class DefaultProducerFactoryTests {
         pf.shutDown();
     }
 
-    private static void assertOffsets(List<Future<RecordMetadata>> results) throws InterruptedException, ExecutionException {
+    private static void assertOffsets(List<Future<RecordMetadata>> results)
+            throws InterruptedException, ExecutionException {
         for (Future<RecordMetadata> result : results) {
             assertThat(result.get().offset()).isGreaterThanOrEqualTo(0);
         }

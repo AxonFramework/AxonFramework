@@ -132,9 +132,9 @@ public class ProducerConfigUtil {
      * @return the producer factory.
      */
     public static ProducerFactory<String, String> producerFactory(KafkaEmbedded kafka) {
-        return DefaultProducerFactory
-                .<String, String>builder(minimal(kafka))
-                .withCloseTimeout(100, MILLISECONDS)
+        return DefaultProducerFactory.<String, String>builder()
+                .configuration(minimal(kafka))
+                .closeTimeout(100, MILLISECONDS)
                 .build();
     }
 
@@ -151,10 +151,10 @@ public class ProducerConfigUtil {
      * @return the producer factory.
      */
     public static <V> ProducerFactory<String, V> ackProducerFactory(KafkaEmbedded kafka, Class valueSerializer) {
-        return DefaultProducerFactory
-                .<String, V>builder(minimal(kafka, valueSerializer))
-                .withConfirmationMode(WAIT_FOR_ACK)
-                .withCloseTimeout(1000, MILLISECONDS)
+        return DefaultProducerFactory.<String, V>builder()
+                .closeTimeout(1000, MILLISECONDS)
+                .configuration(minimal(kafka, valueSerializer))
+                .confirmationMode(WAIT_FOR_ACK)
                 .build();
     }
 
@@ -172,10 +172,10 @@ public class ProducerConfigUtil {
      */
     public static ProducerFactory<String, String> txnProducerFactory(KafkaEmbedded kafka,
                                                                      String transactionalIdPrefix) {
-        return DefaultProducerFactory
-                .<String, String>builder(minimalTransactional(kafka))
-                .withTransactionalIdPrefix(transactionalIdPrefix)
-                .withCloseTimeout(100, MILLISECONDS)
+        return DefaultProducerFactory.<String, String>builder()
+                .closeTimeout(100, MILLISECONDS)
+                .configuration(minimalTransactional(kafka))
+                .transactionalIdPrefix(transactionalIdPrefix)
                 .build();
     }
 
@@ -194,10 +194,10 @@ public class ProducerConfigUtil {
     public static <V> ProducerFactory<String, V> txnProducerFactory(KafkaEmbedded kafka,
                                                                     String transactionalIdPrefix,
                                                                     Class valueSerializer) {
-        return DefaultProducerFactory
-                .<String, V>builder(minimalTransactional(kafka, valueSerializer))
-                .withTransactionalIdPrefix(transactionalIdPrefix)
-                .withCloseTimeout(100, MILLISECONDS)
+        return DefaultProducerFactory.<String, V>builder()
+                .closeTimeout(100, MILLISECONDS)
+                .configuration(minimalTransactional(kafka, valueSerializer))
+                .transactionalIdPrefix(transactionalIdPrefix)
                 .build();
     }
 }

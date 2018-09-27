@@ -75,9 +75,10 @@ public class KafkaAutoConfiguration {
         if (transactionIdPrefix == null) {
             throw new IllegalStateException("transactionalIdPrefix cannot be empty");
         }
-        return DefaultProducerFactory.<String, byte[]>builder(producer)
-                .withConfirmationMode(ConfirmationMode.TRANSACTIONAL)
-                .withTransactionalIdPrefix(transactionIdPrefix)
+        return DefaultProducerFactory.<String, byte[]>builder()
+                .configuration(producer)
+                .confirmationMode(ConfirmationMode.TRANSACTIONAL)
+                .transactionalIdPrefix(transactionIdPrefix)
                 .build();
     }
 
