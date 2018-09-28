@@ -347,7 +347,7 @@ public class AxonServerCommandBus implements CommandBus {
                 @Override
                 public void onSuccess(CommandMessage<? extends C> commandMessage, CommandResultMessage<?> commandResultMessage) {
                     logger.debug("DispatchLocal: done {}", command.getCommandName());
-                    responseObserver.onNext(serializer.serialize(commandResultMessage));
+                    responseObserver.onNext(serializer.serialize(commandResultMessage, command.getIdentifier()));
                 }
 
                 @Override

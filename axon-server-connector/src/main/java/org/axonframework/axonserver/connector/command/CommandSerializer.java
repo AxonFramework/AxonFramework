@@ -32,8 +32,11 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
+
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * Converter between Axon CommandMessage and AxonServer GRPC message.
@@ -88,11 +91,11 @@ public class CommandSerializer {
 
     }
 
-    CommandProviderOutbound serialize(CommandResultMessage commandResultMessage) {
+    CommandProviderOutbound serialize(CommandResultMessage commandResultMessage, String requestIdentifier) {
         CommandResponse.Builder responseBuilder = CommandResponse.newBuilder()
-                                                                 .setMessageIdentifier(UUID.randomUUID().toString())
+                                                                 .setMessageIdentifier(getOrDefault(commandResultMessage.getIdentifier(),UUID.randomUUID().toString()))
                                                                  .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
-                                                                 .setRequestIdentifier(commandResultMessage.getIdentifier());
+                                                                 .setRequestIdentifier(requestIdentifier);
         if (commandResultMessage.getPayload() != null) {
             responseBuilder.setPayload(objectSerializer.apply(commandResultMessage.getPayload()));
         }

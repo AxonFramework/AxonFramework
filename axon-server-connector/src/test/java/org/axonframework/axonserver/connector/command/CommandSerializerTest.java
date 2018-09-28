@@ -16,10 +16,14 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import io.axoniq.axonserver.grpc.command.CommandProviderOutbound;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.*;
@@ -61,10 +65,11 @@ public class CommandSerializerTest {
 
     @Test
     public void testSerializeResponse(){
-        Object response = "response";
+        CommandResultMessage response = new GenericCommandResultMessage("response", MetaData.with("test", "testValue"));
         CommandProviderOutbound outbound = testSubject.serialize(response, "requestIdentifier");
-        Object deserialize = testSubject.deserialize(outbound.getCommandResponse());
-        assertEquals(response, deserialize);
+        CommandResultMessage deserialize = testSubject.deserialize(outbound.getCommandResponse());
+        assertEquals(response.getPayload(),deserialize.getPayload());
+        assertEquals(response.getMetaData(),deserialize.getMetaData());
     }
 
 }
