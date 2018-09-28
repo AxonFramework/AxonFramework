@@ -175,7 +175,10 @@ public class AxonServerEventStore extends AbstractEventStore {
                 appendEventTransaction.commit();
             } catch (ExecutionException e) {
                 throw ErrorCode.convert(e.getCause());
-            } catch (TimeoutException | InterruptedException e) {
+            } catch (TimeoutException e) {
+                throw ErrorCode.convert(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw ErrorCode.convert(e);
             }
         }
