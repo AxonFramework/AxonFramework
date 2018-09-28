@@ -27,32 +27,32 @@ import org.junit.*;
 public class KafkaPublisherBuilderTests {
 
     @Test(expected = AxonConfigurationException.class)
-    public void testConfiguringInvalid_MessageSource() {
+    public void testConfiguringInvalidMessageSource() {
         KafkaPublisher.builder().messageSource(null);
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testConfiguringInvalid_ProducerFactory() {
+    public void testConfiguringInvalidProducerFactory() {
         KafkaPublisher.builder().producerFactory(null).build();
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testConfiguringInvalid_MessageConverter() {
+    public void testConfiguringInvalidMessageConverter() {
         KafkaPublisher.builder().messageConverter(null).build();
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testConfiguringInvalid_MessageMonitor() {
+    public void testConfiguringInvalidMessageMonitor() {
         KafkaPublisher.builder().messageMonitor(null).build();
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testConfiguringInvalid_KafkaTopic() {
+    public void testConfiguringInvalidKafkaTopic() {
         KafkaPublisher.builder().topic(null).build();
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testConfiguringInvalid_AckTimeout() {
+    public void testConfiguringInvalidAckTimeout() {
         KafkaPublisher.builder().publisherAckTimeout((long) -12);
     }
 }
