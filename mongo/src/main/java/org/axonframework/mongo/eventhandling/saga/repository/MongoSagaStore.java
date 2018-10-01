@@ -18,7 +18,7 @@ package org.axonframework.mongo.eventhandling.saga.repository;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCursor;
-import org.axonframework.common.Assert;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static com.mongodb.client.model.Projections.include;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementations of the SagaRepository that stores Sagas and their associations in a Mongo Database. Each Saga and
@@ -46,26 +47,29 @@ public class MongoSagaStore implements SagaStore<Object> {
     private final Serializer serializer;
 
     /**
-     * Initializes the Repository, using given {@code mongoTemplate} to access the collections containing the
-     * stored Saga instances. Serialization is done using an XStream based serializer.
+     * Instantiate a {@link MongoSagaStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link MongoTemplate} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
-     * @param mongoTemplate the template providing access to the collections
+     * @param builder the {@link Builder} used to instantiate a {@link MongoSagaStore} instance
      */
-    public MongoSagaStore(MongoTemplate mongoTemplate) {
-        this(mongoTemplate, new XStreamSerializer());
+    protected MongoSagaStore(Builder builder) {
+        builder.validate();
+        this.mongoTemplate = builder.mongoTemplate;
+        this.serializer = builder.serializer;
     }
 
     /**
-     * Initializes the Repository, using given {@code mongoTemplate} to access the collections containing the
-     * stored Saga instances, serializing Saga instances using the given {@code serializer}.
+     * Instantiate a Builder to be able to create a {@link MongoSagaStore}.
+     * <p>
+     * The {@link Serializer} is defaulted to a {@link XStreamSerializer}.
+     * The {@link MongoTemplate} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @param mongoTemplate the template providing access to the collections
-     * @param serializer    the serializer to serialize Saga instances with
+     * @return a Builder to be able to create a {@link MongoSagaStore}
      */
-    public MongoSagaStore(MongoTemplate mongoTemplate, Serializer serializer) {
-        Assert.notNull(mongoTemplate, () -> "mongoTemplate may not be null");
-        this.mongoTemplate = mongoTemplate;
-        this.serializer = serializer;
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -93,7 +97,10 @@ public class MongoSagaStore implements SagaStore<Object> {
     public Set<String> findSagas(Class<?> sagaType, AssociationValue associationValue) {
         final BasicDBObject value = associationValueQuery(sagaType, associationValue);
 
-        MongoCursor<Document> dbCursor = mongoTemplate.sagaCollection().find(value).projection(include("sagaIdentifier")).iterator();
+        MongoCursor<Document> dbCursor = mongoTemplate.sagaCollection()
+                                                      .find(value)
+                                                      .projection(include("sagaIdentifier"))
+                                                      .iterator();
         Set<String> found = new TreeSet<>();
         while (dbCursor.hasNext()) {
             found.add((String) dbCursor.next().get("sagaIdentifier"));
@@ -127,7 +134,10 @@ public class MongoSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType,
+                           String sagaIdentifier,
+                           Object saga,
+                           Set<AssociationValue> associationValues) {
         SagaEntry<?> sagaEntry = new SagaEntry<>(sagaIdentifier, saga, associationValues, serializer);
         Document sagaObject = sagaEntry.asDocument();
         mongoTemplate.sagaCollection().insertOne(sagaObject);
@@ -137,4 +147,58 @@ public class MongoSagaStore implements SagaStore<Object> {
         return serializer.typeForClass(sagaType).getName();
     }
 
+    /**
+     * Builder class to instantiate a {@link MongoSagaStore}.
+     * <p>
+     * The {@link Serializer} is defaulted to a {@link XStreamSerializer}.
+     * The {@link MongoTemplate} is a <b>hard requirement</b> and as such should be provided.
+     */
+    public static class Builder {
+
+        private MongoTemplate mongoTemplate;
+        private Serializer serializer = new XStreamSerializer();
+
+        /**
+         * Sets the {@link MongoTemplate} providing access to the collections.
+         *
+         * @param mongoTemplate the {@link MongoTemplate} providing access to the collections
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder mongoTemplate(MongoTemplate mongoTemplate) {
+            assertNonNull(mongoTemplate, "MongoTemplate may not be null");
+            this.mongoTemplate = mongoTemplate;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
+         *
+         * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder serializer(Serializer serializer) {
+            assertNonNull(serializer, "Serializer may not be null");
+            this.serializer = serializer;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link MongoSagaStore} as specified through this Builder.
+         *
+         * @return a {@link MongoSagaStore} as specified through this Builder
+         */
+        public MongoSagaStore build() {
+            return new MongoSagaStore(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        protected void validate() throws AxonConfigurationException {
+            assertNonNull(mongoTemplate, "The MongoTemplate is a hard requirement and should be provided");
+        }
+    }
 }

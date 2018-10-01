@@ -91,3 +91,4 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.kafka.eventhandling.consumer.AsyncFetcher
 - org.axonframework.kafka.eventhandling.producer.DefaultProducerFactory
 - org.axonframework.kafka.eventhandling.producer.KafkaPublisher
+- org.axonframework.mongo.eventhandling.saga.repository.MongoSagaStore

@@ -23,6 +23,7 @@ import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.mongo.DefaultMongoTemplate;
+import org.axonframework.mongo.MongoTestContext;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -50,7 +51,7 @@ import static org.junit.Assert.assertFalse;
  * @author Rene de Waele
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
+@ContextConfiguration(classes = MongoTestContext.class)
 @DirtiesContext
 public class MongoEventStorageEngineTest extends AbstractMongoEventStorageEngineTest {
 

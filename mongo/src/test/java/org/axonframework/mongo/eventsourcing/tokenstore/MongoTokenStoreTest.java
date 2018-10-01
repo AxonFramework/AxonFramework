@@ -26,12 +26,13 @@ import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.MongoTemplate;
+import org.axonframework.mongo.MongoTestContext;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.bson.Document;
 import org.junit.*;
-import org.junit.runner.RunWith;
+import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -42,14 +43,17 @@ import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:META-INF/spring/mongo-context.xml"})
+@ContextConfiguration(classes = MongoTestContext.class)
 public class MongoTokenStoreTest {
 
     private MongoTokenStore tokenStore;
@@ -201,7 +205,7 @@ public class MongoTokenStoreTest {
         tokenStore.fetchToken("processor1", 2);
         tokenStore.fetchToken("processor2", 0);
 
-        assertArrayEquals(new int[]{0,1,2}, tokenStore.fetchSegments("processor1"));
+        assertArrayEquals(new int[]{0, 1, 2}, tokenStore.fetchSegments("processor1"));
         assertArrayEquals(new int[]{0}, tokenStore.fetchSegments("processor2"));
         assertArrayEquals(new int[0], tokenStore.fetchSegments("processor3"));
     }
