@@ -235,7 +235,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default query gateway.
      */
     protected QueryGateway defaultQueryGateway(Configuration config) {
-        return new DefaultQueryGateway(config.queryBus());
+        return DefaultQueryGateway.builder().queryBus(config.queryBus()).build();
     }
 
     /**

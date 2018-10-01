@@ -18,9 +18,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
+import org.junit.*;
+import org.mockito.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -43,7 +42,10 @@ public class DefaultQueryGatewayTest {
         answer = new GenericQueryResponseMessage<>("answer");
         MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
-        testSubject = new DefaultQueryGateway(mockBus, mockDispatchInterceptor);
+        testSubject = DefaultQueryGateway.builder()
+                                         .queryBus(mockBus)
+                                         .dispatchInterceptors(mockDispatchInterceptor)
+                                         .build();
         when(mockDispatchInterceptor.handle(isA(QueryMessage.class))).thenAnswer(i -> i.getArguments()[0]);
     }
 
@@ -55,7 +57,9 @@ public class DefaultQueryGatewayTest {
         CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertEquals("answer", actual.get());
 
-        verify(mockBus).query(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())));
+        verify(mockBus).query(
+                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload()))
+        );
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -68,8 +72,11 @@ public class DefaultQueryGatewayTest {
                 "query", ResponseTypes.instanceOf(String.class), 1, TimeUnit.SECONDS
         );
         assertEquals("answer", actual.findFirst().get());
-        verify(mockBus).scatterGather(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
-                                      eq(1L), eq(TimeUnit.SECONDS));
+        verify(mockBus).scatterGather(
+                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "query".equals(x.getPayload())),
+                eq(1L),
+                eq(TimeUnit.SECONDS)
+        );
     }
 
     @Test
@@ -96,7 +103,9 @@ public class DefaultQueryGatewayTest {
 
         testSubject.query("query", String.class).join();
 
-        verify(mockBus).query(argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "dispatch-query".equals(x.getPayload())));
+        verify(mockBus).query(
+                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "dispatch-query".equals(x.getPayload()))
+        );
     }
 
     @SuppressWarnings("unused")
