@@ -156,7 +156,7 @@ public class MongoSagaStore implements SagaStore<Object> {
     public static class Builder {
 
         private MongoTemplate mongoTemplate;
-        private Serializer serializer = new XStreamSerializer();
+        private Serializer serializer = XStreamSerializer.builder().build();
 
         /**
          * Sets the {@link MongoTemplate} providing access to the collections.

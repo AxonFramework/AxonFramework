@@ -58,7 +58,9 @@ public class DefaultKafkaMessageConverterTests {
 
     @Before
     public void setUp() {
-        serializer = new XStreamSerializer(new FixedValueRevisionResolver("stub-revision"));
+        serializer = XStreamSerializer.builder()
+                                      .revisionResolver(new FixedValueRevisionResolver("stub-revision"))
+                                      .build();
         testSubject = DefaultKafkaMessageConverter.builder().serializer(serializer).build();
     }
 
@@ -156,7 +158,9 @@ public class DefaultKafkaMessageConverterTests {
 
     @Test
     public void testWriting_EventMessageWithNullRevision_ShouldWriteRevisionAsNull() {
-        testSubject = DefaultKafkaMessageConverter.builder().serializer(new XStreamSerializer()).build();
+        testSubject = DefaultKafkaMessageConverter.builder()
+                                                  .serializer(XStreamSerializer.builder().build())
+                                                  .build();
         EventMessage<?> eventMessage = eventMessage();
         ProducerRecord<String, byte[]> senderMessage = testSubject.createKafkaMessage(eventMessage, SOME_TOPIC);
 

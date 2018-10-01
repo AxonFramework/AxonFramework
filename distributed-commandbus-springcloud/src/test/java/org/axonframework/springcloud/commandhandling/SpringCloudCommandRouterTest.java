@@ -90,7 +90,8 @@ public class SpringCloudCommandRouterTest {
 
     @Before
     public void setUp() throws Exception {
-        serializedCommandFilterData = new XStreamSerializer().serialize(COMMAND_NAME_FILTER, String.class).getData();
+        serializedCommandFilterData = XStreamSerializer.builder().build()
+                                                       .serialize(COMMAND_NAME_FILTER, String.class).getData();
         serializedCommandFilterClassName = COMMAND_NAME_FILTER.getClass().getName();
 
         String atomicConsistentHashFieldName = "atomicConsistentHash";
@@ -149,7 +150,8 @@ public class SpringCloudCommandRouterTest {
     @Test
     public void testUpdateMembershipUpdatesLocalServiceInstance() {
         Predicate<? super CommandMessage<?>> commandNameFilter = new CommandNameFilter(String.class.getName());
-        String commandFilterData = new XStreamSerializer().serialize(commandNameFilter, String.class).getData();
+        String commandFilterData = XStreamSerializer.builder().build()
+                                                    .serialize(commandNameFilter, String.class).getData();
         testSubject.updateMembership(LOAD_FACTOR, commandNameFilter);
 
         assertEquals(Integer.toString(LOAD_FACTOR), serviceInstanceMetadata.get(LOAD_FACTOR_KEY));

@@ -57,7 +57,8 @@ import static org.junit.Assert.*;
 public class JpaStorageEngineInsertionReadOrderTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaStorageEngineInsertionReadOrderTest.class);
-    private final Serializer serializer = new XStreamSerializer();
+
+    private final Serializer serializer = XStreamSerializer.builder().build();
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -196,5 +197,4 @@ public class JpaStorageEngineInsertionReadOrderTest {
         }
         return result;
     }
-
 }

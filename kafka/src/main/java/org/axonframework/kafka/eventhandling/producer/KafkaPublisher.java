@@ -291,7 +291,8 @@ public class KafkaPublisher<K, V> {
         @SuppressWarnings("unchecked")
         private KafkaMessageConverter<K, V> messageConverter =
                 (KafkaMessageConverter<K, V>) DefaultKafkaMessageConverter.builder()
-                                                                          .serializer(new XStreamSerializer())
+                                                                          .serializer(XStreamSerializer.builder()
+                                                                                                       .build())
                                                                           .build();
         private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.instance();
         private String topic = "Axon.Events";

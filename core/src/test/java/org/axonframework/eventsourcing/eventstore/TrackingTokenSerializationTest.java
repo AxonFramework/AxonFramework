@@ -4,12 +4,12 @@ import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.lang.reflect.Array;
 import java.util.Collections;
+
+import static org.junit.Assert.*;
 
 public class TrackingTokenSerializationTest {
 
@@ -18,7 +18,7 @@ public class TrackingTokenSerializationTest {
     @Before
     public void setUp() {
         serializers = new Serializer[]{
-                new XStreamSerializer(),
+                XStreamSerializer.builder().build(),
                 JacksonSerializer.builder().build(),
                 JavaSerializer.builder().build()
         };
@@ -29,7 +29,7 @@ public class TrackingTokenSerializationTest {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
         GapAwareTrackingToken[] results = serializeToken(token);
         for (int i = 0; i < results.length; i++) {
-            Assert.assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
+            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
         }
     }
 
@@ -38,8 +38,9 @@ public class TrackingTokenSerializationTest {
         GapAwareTrackingToken token = GapAwareTrackingToken.newInstance(10, Collections.emptySet());
         GapAwareTrackingToken[] results = serializeToken(token);
         for (int i = 0; i < results.length; i++) {
-            Assert.assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
-            Assert.assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result", token, results[i]);
+            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
+            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result",
+                         token, results[i]);
         }
     }
 
@@ -48,8 +49,9 @@ public class TrackingTokenSerializationTest {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(35);
         GlobalSequenceTrackingToken[] results = serializeToken(token);
         for (int i = 0; i < results.length; i++) {
-            Assert.assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
-            Assert.assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result", token, results[i]);
+            assertNotNull("Serializer " + serializers[i].getClass().getName() + " produced null result", results[i]);
+            assertEquals("Serializer " + serializers[i].getClass().getName() + " produced unequal result",
+                         token, results[i]);
         }
     }
 

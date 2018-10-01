@@ -81,8 +81,9 @@ public class SpringCloudHttpBackupCommandRouterTest {
         when(discoveryClient.getInstances(SERVICE_INSTANCE_ID))
                 .thenReturn(Collections.singletonList(localServiceInstance));
 
-        expectedMessageRoutingInfo =
-                new MessageRoutingInformation(LOAD_FACTOR, COMMAND_NAME_FILTER, new XStreamSerializer());
+        expectedMessageRoutingInfo = new MessageRoutingInformation(LOAD_FACTOR,
+                                                                   COMMAND_NAME_FILTER,
+                                                                   XStreamSerializer.builder().build());
 
         ResponseEntity<MessageRoutingInformation> responseEntity = mock(ResponseEntity.class);
         when(responseEntity.getBody()).thenReturn(expectedMessageRoutingInfo);

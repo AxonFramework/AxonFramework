@@ -19,14 +19,19 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
+import org.axonframework.eventsourcing.eventstore.DomainEventData;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackedEventData;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.Connection;
@@ -45,8 +50,7 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Rene de Waele
@@ -224,7 +228,13 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                   EventSchema eventSchema,
                                                   Class<?> dataType,
                                                   EventTableFactory tableFactory) {
-        return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory, 100);
+        return createEngine(upcasterChain,
+                            persistenceExceptionResolver,
+                            null,
+                            eventSchema,
+                            dataType,
+                            tableFactory,
+                            100);
     }
 
     protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
@@ -233,7 +243,13 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                   Class<?> dataType,
                                                   EventTableFactory tableFactory,
                                                   int batchSize) {
-        return createEngine(upcasterChain, persistenceExceptionResolver, null, eventSchema, dataType, tableFactory, batchSize);
+        return createEngine(upcasterChain,
+                            persistenceExceptionResolver,
+                            null,
+                            eventSchema,
+                            dataType,
+                            tableFactory,
+                            batchSize);
     }
 
     protected JdbcEventStorageEngine createEngine(Predicate<? super DomainEventData<?>> snapshotFilter) {
@@ -248,7 +264,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                   Class<?> dataType,
                                                   EventTableFactory tableFactory,
                                                   int batchSize) {
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         JdbcEventStorageEngine result = new JdbcEventStorageEngine(
                 serializer, upcasterChain, persistenceExceptionResolver, serializer, snapshotFilter, batchSize,
                 dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null

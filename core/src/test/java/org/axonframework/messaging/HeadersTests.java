@@ -29,14 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.axonframework.messaging.Headers.AGGREGATE_ID;
-import static org.axonframework.messaging.Headers.AGGREGATE_SEQ;
-import static org.axonframework.messaging.Headers.AGGREGATE_TYPE;
-import static org.axonframework.messaging.Headers.MESSAGE_ID;
-import static org.axonframework.messaging.Headers.MESSAGE_METADATA;
-import static org.axonframework.messaging.Headers.MESSAGE_REVISION;
-import static org.axonframework.messaging.Headers.MESSAGE_TIMESTAMP;
-import static org.axonframework.messaging.Headers.MESSAGE_TYPE;
+import static org.axonframework.messaging.Headers.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -50,8 +43,10 @@ public class HeadersTests {
     private Serializer serializer;
 
     @Before
-    public void setUp() throws Exception {
-        serializer = new XStreamSerializer(new FixedValueRevisionResolver("stub-revision"));
+    public void setUp() {
+        serializer = XStreamSerializer.builder()
+                                      .revisionResolver(new FixedValueRevisionResolver("stub-revision"))
+                                      .build();
     }
 
     @Test

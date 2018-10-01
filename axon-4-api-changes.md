@@ -115,3 +115,6 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler
 - org.axonframework.serialization.json.JacksonSerializer
 - org.axonframework.serialization.JavaSerializer
+- org.axonframework.serialization.AbstractXStreamSerializer
+- org.axonframework.mongo.serialization.DBObjectXStreamSerializer
+- org.axonframework.serialization.xml.XStreamSerializer

@@ -74,7 +74,7 @@ public class SpringCloudCommandRouter implements CommandRouter {
     private static final String SERIALIZED_COMMAND_FILTER = "serializedCommandFilter";
     private static final String SERIALIZED_COMMAND_FILTER_CLASS_NAME = "serializedCommandFilterClassName";
 
-    protected final XStreamSerializer serializer = new XStreamSerializer();
+    protected final XStreamSerializer serializer = XStreamSerializer.builder().build();
 
     private final DiscoveryClient discoveryClient;
     private final Registration localServiceInstance;

@@ -41,9 +41,10 @@ public class SpringAMQPMessageSourceTest {
     @SuppressWarnings("unchecked")
     public void testMessageListenerInvokesAllEventProcessors() {
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        DefaultAMQPMessageConverter messageConverter = DefaultAMQPMessageConverter.builder()
-                                                                                  .serializer(new XStreamSerializer())
-                                                                                  .build();
+        DefaultAMQPMessageConverter messageConverter =
+                DefaultAMQPMessageConverter.builder()
+                                           .serializer(XStreamSerializer.builder().build())
+                                           .build();
         SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
         testSubject.subscribe(eventProcessor);
 
@@ -60,9 +61,10 @@ public class SpringAMQPMessageSourceTest {
     @SuppressWarnings("unchecked")
     public void testMessageListenerIgnoredOnDeserializationFailure() {
         Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
-        DefaultAMQPMessageConverter messageConverter = DefaultAMQPMessageConverter.builder()
-                                                                                  .serializer(new XStreamSerializer())
-                                                                                  .build();
+        DefaultAMQPMessageConverter messageConverter =
+                DefaultAMQPMessageConverter.builder()
+                                           .serializer(XStreamSerializer.builder().build())
+                                           .build();
         SpringAMQPMessageSource testSubject = new SpringAMQPMessageSource(messageConverter);
         testSubject.subscribe(eventProcessor);
 

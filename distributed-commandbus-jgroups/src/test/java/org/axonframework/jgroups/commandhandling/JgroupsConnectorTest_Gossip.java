@@ -72,7 +72,7 @@ public class JgroupsConnectorTest_Gossip {
         mockCommandBus1 = spy(SimpleCommandBus.builder().build());
         mockCommandBus2 = spy(SimpleCommandBus.builder().build());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        serializer = spy(new XStreamSerializer());
+        serializer = spy(XStreamSerializer.builder().build());
         connector1 = JGroupsConnector.builder()
                                      .localSegment(mockCommandBus1)
                                      .channel(channel1)

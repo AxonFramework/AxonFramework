@@ -83,7 +83,7 @@ public class DeadlineJobDataBinderTest {
                         (Predicate<Object>) Objects::nonNull},
                 {
                         "XStreamSerializer",
-                        new XStreamSerializer(),
+                        XStreamSerializer.builder().build(),
                         (Function<Class, String>) clazz -> clazz.getSimpleName().toLowerCase(),
                         (Predicate<Object>) Objects::isNull
                 },

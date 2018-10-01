@@ -186,13 +186,15 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
 
     @Override
     protected MongoEventStorageEngine createEngine(EventUpcaster upcasterChain) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), upcasterChain, mongoTemplate,
+        return new MongoEventStorageEngine(XStreamSerializer.builder().build(),
+                                           upcasterChain,
+                                           mongoTemplate,
                                            new DocumentPerCommitStorageStrategy());
     }
 
     @Override
     protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        XStreamSerializer serializer = new XStreamSerializer();
+        XStreamSerializer serializer = XStreamSerializer.builder().build();
         return new MongoEventStorageEngine(
                 serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, serializer, 100, mongoTemplate,
                 new DocumentPerCommitStorageStrategy()
@@ -247,7 +249,7 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
 
         @Bean
         public Serializer serializer() {
-            return new DBObjectXStreamSerializer();
+            return DBObjectXStreamSerializer.builder().build();
         }
 
         @Bean

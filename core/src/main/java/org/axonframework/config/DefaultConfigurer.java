@@ -349,7 +349,10 @@ public class DefaultConfigurer implements Configurer {
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(Configuration config) {
-        return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
+        return XStreamSerializer.builder()
+                                .revisionResolver(config.getComponent(RevisionResolver.class,
+                                                                      AnnotationRevisionResolver::new))
+                                .build();
     }
 
     @Override

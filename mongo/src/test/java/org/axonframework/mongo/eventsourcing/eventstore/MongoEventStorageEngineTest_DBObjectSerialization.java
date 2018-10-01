@@ -137,7 +137,7 @@ public class MongoEventStorageEngineTest_DBObjectSerialization extends AbstractM
 
         @Bean
         public Serializer serializer() {
-            return new DBObjectXStreamSerializer();
+            return DBObjectXStreamSerializer.builder().build();
         }
 
         @Bean

@@ -100,7 +100,7 @@ public class AxonAutoConfigurationWithAMQPAndEventSerializer {
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
     }
 }

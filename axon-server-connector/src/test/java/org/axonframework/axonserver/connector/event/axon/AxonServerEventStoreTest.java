@@ -49,7 +49,7 @@ public class AxonServerEventStoreTest {
                                                                 .flowControl(2, 1, 1)
                                                                 .build();
         PlatformConnectionManager platformConnectionManager = new PlatformConnectionManager(config);
-        testSubject = new AxonServerEventStore(config, platformConnectionManager, new XStreamSerializer());
+        testSubject = new AxonServerEventStore(config, platformConnectionManager, XStreamSerializer.builder().build());
     }
 
     @After

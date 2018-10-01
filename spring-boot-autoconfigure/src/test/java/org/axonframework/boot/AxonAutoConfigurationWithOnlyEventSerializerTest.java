@@ -76,7 +76,7 @@ public class AxonAutoConfigurationWithOnlyEventSerializerTest {
         @Bean
         @Qualifier("messageSerializer")
         public Serializer myMessageSerializer() {
-            return new XStreamSerializer();
+            return XStreamSerializer.builder().build();
         }
     }
 }
