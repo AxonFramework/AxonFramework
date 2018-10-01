@@ -112,3 +112,4 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.mongo.AbstractMongoTemplate
 - org.axonframework.mongo.DefaultMongoTemplate
 - org.axonframework.queryhandling.DefaultQueryGateway
+- org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler

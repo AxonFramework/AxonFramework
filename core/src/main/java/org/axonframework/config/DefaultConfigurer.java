@@ -249,8 +249,10 @@ public class DefaultConfigurer implements Configurer {
                              .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
                              .transactionManager(config.getComponent(TransactionManager.class,
                                                                      NoTransactionManager::instance))
-                             .errorHandler(config.getComponent(QueryInvocationErrorHandler.class,
-                                                               LoggingQueryInvocationErrorHandler::new))
+                             .errorHandler(config.getComponent(
+                                     QueryInvocationErrorHandler.class,
+                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
+                             ))
                              .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
                              .build();
     }

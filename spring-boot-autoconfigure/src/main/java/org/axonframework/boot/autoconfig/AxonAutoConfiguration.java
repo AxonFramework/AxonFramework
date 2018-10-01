@@ -269,8 +269,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return SimpleQueryBus.builder()
                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                              .transactionManager(transactionManager)
-                             .errorHandler(axonConfiguration.getComponent(QueryInvocationErrorHandler.class,
-                                                                          LoggingQueryInvocationErrorHandler::new))
+                             .errorHandler(axonConfiguration.getComponent(
+                                     QueryInvocationErrorHandler.class,
+                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
+                             ))
                              .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                              .build();
     }
