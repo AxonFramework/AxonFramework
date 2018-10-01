@@ -54,6 +54,9 @@ import static java.lang.String.format;
 
 /**
  * An implementation of TokenStore that allows you store and retrieve tracking tokens with MongoDB.
+ *
+ * @author Joris van der Kallen
+ * @since 3.1
  */
 public class MongoTokenStore implements TokenStore {
 
