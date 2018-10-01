@@ -99,17 +99,15 @@ public class MongoTokenStoreTest {
         mongoTemplate = new DefaultMongoTemplate(mongoClient);
         trackingTokensCollection = mongoTemplate.trackingTokensCollection();
         trackingTokensCollection.drop();
-        tokenStore = new MongoTokenStore(mongoTemplate,
-                                         serializer,
-                                         claimTimeout,
-                                         testOwner,
-                                         contentType);
+
+        MongoTokenStore.Builder tokenStoreBuilder = MongoTokenStore.builder()
+                                                                   .mongoTemplate(mongoTemplate)
+                                                                   .serializer(serializer)
+                                                                   .claimTimeout(claimTimeout)
+                                                                   .contentType(contentType);
+        tokenStore = tokenStoreBuilder.nodeId(testOwner).build();
         tokenStore.ensureIndexes();
-        tokenStoreDifferentOwner = new MongoTokenStore(mongoTemplate,
-                                                       serializer,
-                                                       claimTimeout,
-                                                       "anotherOwner",
-                                                       contentType);
+        tokenStoreDifferentOwner = tokenStoreBuilder.nodeId("anotherOwner").build();
     }
 
     @After
@@ -119,10 +117,10 @@ public class MongoTokenStoreTest {
 
     @Test
     public void testClaimAndUpdateToken() {
-        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, testProcessorName, testSegment);
-        Assert.assertEquals(token, tokenStore.fetchToken(testProcessorName, testSegment));
+        assertEquals(token, tokenStore.fetchToken(testProcessorName, testSegment));
     }
 
     @Test
@@ -134,6 +132,7 @@ public class MongoTokenStoreTest {
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
 
+    @SuppressWarnings("Duplicates")
     @Test
     public void testInitializeTokensAtGivenPosition() {
         tokenStore.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
@@ -155,7 +154,7 @@ public class MongoTokenStoreTest {
 
     @Test(expected = UnableToClaimTokenException.class)
     public void testAttemptToClaimAlreadyClaimedToken() {
-        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         tokenStore.storeToken(token, testProcessorName, testSegment);
         tokenStoreDifferentOwner.storeToken(token, testProcessorName, testSegment);
@@ -163,7 +162,7 @@ public class MongoTokenStoreTest {
 
     @Test(expected = UnableToClaimTokenException.class)
     public void testAttemptToExtendClaimOnAlreadyClaimedToken() {
-        Assert.assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
+        assertNull(tokenStore.fetchToken(testProcessorName, testSegment));
         tokenStoreDifferentOwner.extendClaim(testProcessorName, testSegment);
     }
 
@@ -221,11 +220,13 @@ public class MongoTokenStoreTest {
             Future<Integer> future = executorService.submit(() -> {
                 try {
                     String owner = String.valueOf(iteration);
-                    TokenStore tokenStore = new MongoTokenStore(mongoTemplate,
-                                                                serializer,
-                                                                claimTimeout,
-                                                                owner,
-                                                                contentType);
+                    TokenStore tokenStore = MongoTokenStore.builder()
+                                                           .mongoTemplate(mongoTemplate)
+                                                           .serializer(serializer)
+                                                           .claimTimeout(claimTimeout)
+                                                           .nodeId(owner)
+                                                           .contentType(contentType)
+                                                           .build();
                     GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(iteration);
                     tokenStore.storeToken(token, testProcessorName, testSegment);
                     return iteration;
@@ -247,17 +248,19 @@ public class MongoTokenStoreTest {
                                                               }
                                                           })
                                                           .collect(Collectors.toList());
-        Assert.assertEquals(1, successfulAttempts.size());
+        assertEquals(1, successfulAttempts.size());
 
         Integer iterationOfSuccessfulAttempt = successfulAttempts.get(0)
                                                                  .get();
-        TokenStore tokenStore = new MongoTokenStore(mongoTemplate,
-                                                    serializer,
-                                                    claimTimeout,
-                                                    String.valueOf(iterationOfSuccessfulAttempt),
-                                                    contentType);
+        TokenStore tokenStore = MongoTokenStore.builder()
+                                               .mongoTemplate(mongoTemplate)
+                                               .serializer(serializer)
+                                               .claimTimeout(claimTimeout)
+                                               .nodeId(String.valueOf(iterationOfSuccessfulAttempt))
+                                               .contentType(contentType)
+                                               .build();
 
-        Assert.assertEquals(new GlobalSequenceTrackingToken(iterationOfSuccessfulAttempt),
-                            tokenStore.fetchToken(testProcessorName, testSegment));
+        assertEquals(new GlobalSequenceTrackingToken(iterationOfSuccessfulAttempt),
+                     tokenStore.fetchToken(testProcessorName, testSegment));
     }
 }
