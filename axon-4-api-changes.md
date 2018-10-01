@@ -25,8 +25,23 @@ the other Builder implementations introduced. This entails the following changes
  - DefaultProducerFactory.Builder#withCloseTimeout(int, TimeUnit) has been renamed to DefaultProducerFactory.Builder#closeTimeout(int, TimeUnit) 
  - DefaultProducerFactory.Builder#withProducerCacheSize(int) has been renamed to DefaultProducerFactory.Builder#producerCacheSize(int) 
  - DefaultProducerFactory.Builder#withConfirmationMode(ConfirmationMode) has been renamed to DefaultProducerFactory.Builder#confirmationMode(ConfirmationMode) 
- - DefaultProducerFactory.Builder#withTransactionalIdPrefix(String) has been renamed to DefaultProducerFactory.Builder#transactionalIdPrefix(String) 
- 
+ - DefaultProducerFactory.Builder#withTransactionalIdPrefix(String) has been renamed to DefaultProducerFactory.Builder#transactionalIdPrefix(String)
+* Renamed CommitEntryConfiguration.Builder functions to align with new builder approach:
+ - withFirstTimestampProperty(String) -> firstTimestampProperty(String) 
+ - withLastTimestampProperty(String) -> lastTimestampProperty(String) 
+ - withFirstSequenceNumberProperty(String) -> firstSequenceNumberProperty(String) 
+ - withLastSequenceNumberProperty(String) -> lastSequenceNumberProperty(String) 
+ - withEventsProperty(String) -> eventsProperty(String)  
+* Renamed EventEntryConfiguration.Builder functions to align with new builder approach:
+ - withTimestampProperty(String) -> timestampProperty(String)
+ - withEventIdentifierProperty(String) -> eventIdentifierProperty(String)
+ - withAggregateIdentifierProperty(String) -> aggregateIdentifierProperty(String)
+ - withSequenceNumberProperty(String) -> sequenceNumberProperty(String)
+ - withTypeProperty(String) -> typeProperty(String)
+ - withPayloadTypeProperty(String) -> payloadTypeProperty(String)
+ - withPayloadRevisionProperty(String) -> payloadRevisionProperty(String)
+ - withPayloadProperty(String) -> payloadProperty(String)
+ - withMetaDataProperty(String) -> metaDataProperty(String)
 
 ### Moved classes
 
