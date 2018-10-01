@@ -160,7 +160,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                         .objectMapper(objectMapper)
                                         .build();
             case JAVA:
-                return new JavaSerializer(revisionResolver);
+                return JavaSerializer.builder().revisionResolver(revisionResolver).build();
             case XSTREAM:
             case DEFAULT:
             default:

@@ -60,7 +60,7 @@ public class DirectEventJobDataBinderTest {
         return Arrays.asList(new Object[][]{
                 {
                         "JavaSerializer",
-                        new JavaSerializer(),
+                        JavaSerializer.builder().build(),
                         (Function<Class, String>) Class::getName,
                         (Predicate<Object>) Objects::nonNull},
                 {
