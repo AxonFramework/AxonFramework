@@ -47,7 +47,7 @@ import static org.junit.Assert.*;
  */
 public class SubscriptionQueryTest {
 
-    private final SimpleQueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+    private final SimpleQueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
     private final SimpleQueryBus queryBus = SimpleQueryBus.builder()
                                                           .queryUpdateEmitter(queryUpdateEmitter)
                                                           .build();

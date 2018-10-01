@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -61,6 +60,7 @@ import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -263,7 +263,11 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryUpdateEmitter to use
      */
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        return new SimpleQueryUpdateEmitter(config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"));
+        MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
+                config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
+        return SimpleQueryUpdateEmitter.builder()
+                                       .updateMessageMonitor(updateMessageMonitor)
+                                       .build();
     }
 
     /**

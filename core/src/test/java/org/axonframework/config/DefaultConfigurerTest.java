@@ -374,7 +374,7 @@ public class DefaultConfigurerTest {
 
     @Test
     public void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
-        QueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+        QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
         Configuration configuration = DefaultConfigurer.defaultConfiguration()
                                                        .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
                                                        .buildConfiguration();

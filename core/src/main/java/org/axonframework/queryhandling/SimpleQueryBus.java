@@ -324,7 +324,7 @@ public class SimpleQueryBus implements QueryBus {
         private MessageMonitor<? super QueryMessage<?, ?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.instance();
         private QueryInvocationErrorHandler errorHandler = new LoggingQueryInvocationErrorHandler(logger);
-        private QueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+        private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
 
         /**
          * Sets the message monitor to monitor query messages.
