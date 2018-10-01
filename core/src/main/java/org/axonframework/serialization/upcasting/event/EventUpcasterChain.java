@@ -24,6 +24,7 @@ import java.util.List;
  * related upcasters can be guaranteed.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class EventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcaster {
 

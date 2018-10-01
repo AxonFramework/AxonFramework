@@ -19,6 +19,7 @@ import java.util.stream.Stream;
  * Event upcaster that does nothing.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public enum NoOpEventUpcaster implements EventUpcaster {
 

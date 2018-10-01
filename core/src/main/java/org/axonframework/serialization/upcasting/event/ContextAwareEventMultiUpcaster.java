@@ -26,7 +26,10 @@ import org.axonframework.serialization.upcasting.SingleEntryMultiUpcaster;
  * entry to another during upcasting.
  *
  * @param <C> the type of context used as {@code C}
- *
  * @author Steven van Beelen
+ * @since 3.1
  */
-public abstract class ContextAwareEventMultiUpcaster<C> extends ContextAwareSingleEntryMultiUpcaster<IntermediateEventRepresentation, C> implements EventUpcaster { }
+public abstract class ContextAwareEventMultiUpcaster<C>
+        extends ContextAwareSingleEntryMultiUpcaster<IntermediateEventRepresentation, C> implements EventUpcaster {
+
+}

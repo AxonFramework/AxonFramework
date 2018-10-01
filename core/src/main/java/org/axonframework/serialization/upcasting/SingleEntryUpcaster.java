@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
  * representations.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public abstract class SingleEntryUpcaster<T> implements Upcaster<T> {
 
