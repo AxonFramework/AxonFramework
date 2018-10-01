@@ -71,7 +71,7 @@ public class DirectEventJobDataBinderTest {
                 },
                 {
                         "JacksonSerializer",
-                        new JacksonSerializer(),
+                        JacksonSerializer.builder().build(),
                         (Function<Class, String>) Class::getName,
                         (Predicate<Object>) Objects::isNull
                 }

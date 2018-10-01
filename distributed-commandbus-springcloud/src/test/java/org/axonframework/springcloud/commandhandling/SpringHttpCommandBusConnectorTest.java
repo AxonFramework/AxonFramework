@@ -60,7 +60,7 @@ public class SpringHttpCommandBusConnectorTest {
 
     @Before
     public void setUp() throws Exception {
-        serializer = spy(new JacksonSerializer());
+        serializer = spy(JacksonSerializer.builder().build());
         expectedUri = new URI(ENDPOINT.getScheme(),
                               ENDPOINT.getUserInfo(),
                               ENDPOINT.getHost(),

@@ -104,7 +104,7 @@ public class AxonAutoConfigurationWithEventSerializerTest {
         @Bean
         @Qualifier("eventSerializer")
         public Serializer myEventSerializer() {
-            return new JacksonSerializer();
+            return JacksonSerializer.builder().build();
         }
     }
 }

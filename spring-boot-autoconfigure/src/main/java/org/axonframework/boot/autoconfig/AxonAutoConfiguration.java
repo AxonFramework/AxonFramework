@@ -154,7 +154,11 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                                                    "com/fasterxml/jackson/databind/ObjectMapper"
                                            ));
                 ChainingConverter converter = new ChainingConverter(beanClassLoader);
-                return new JacksonSerializer(objectMapper, revisionResolver, converter);
+                return JacksonSerializer.builder()
+                                        .revisionResolver(revisionResolver)
+                                        .converter(converter)
+                                        .objectMapper(objectMapper)
+                                        .build();
             case JAVA:
                 return new JavaSerializer(revisionResolver);
             case XSTREAM:

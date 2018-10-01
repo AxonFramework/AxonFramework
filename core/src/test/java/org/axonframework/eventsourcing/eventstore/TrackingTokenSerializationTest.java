@@ -18,7 +18,7 @@ public class TrackingTokenSerializationTest {
     @Before
     public void setUp() {
         serializers = new Serializer[]{new XStreamSerializer(),
-                new JacksonSerializer(),
+                JacksonSerializer.builder().build(),
                 new JavaSerializer()};
     }
 
