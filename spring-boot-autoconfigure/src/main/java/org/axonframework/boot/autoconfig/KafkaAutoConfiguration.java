@@ -16,6 +16,7 @@
 
 package org.axonframework.boot.autoconfig;
 
+import org.axonframework.boot.KafkaProperties;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.kafka.eventhandling.DefaultKafkaMessageConverter;
 import org.axonframework.kafka.eventhandling.KafkaMessageConverter;

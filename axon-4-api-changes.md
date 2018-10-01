@@ -54,6 +54,7 @@ the other Builder implementations introduced. This entails the following changes
 | org.axonframework.queryhandling.responsetypes.MultipleInstancesResponseType   | org.axonframework.messaging.responsetypes.MultipleInstancesResponseType    |
 | org.axonframework.queryhandling.responsetypes.ResponseType                    | org.axonframework.messaging.responsetypes.ResponseType                     |
 | org.axonframework.queryhandling.responsetypes.ResponseTypes                   | org.axonframework.messaging.responsetypes.ResponseTypes                    |
+| org.axonframework.boot.autoconfig.KafkaProperties                             | org.axonframework.boot.KafkaProperties                                     |
 
 ### Removed classes
 |                           Class                    |             Why                     |
