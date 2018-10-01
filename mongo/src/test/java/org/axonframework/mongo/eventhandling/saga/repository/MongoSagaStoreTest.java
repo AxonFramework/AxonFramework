@@ -81,7 +81,7 @@ public class MongoSagaStoreTest {
         mongod = mongoExe.start();
         if (mongod == null) {
             // we're using an existing mongo instance. Make sure it's clean
-            DefaultMongoTemplate template = new DefaultMongoTemplate(new MongoClient());
+            DefaultMongoTemplate template = DefaultMongoTemplate.builder().mongoDatabase(new MongoClient()).build();
             template.eventCollection().drop();
             template.snapshotCollection().drop();
         }

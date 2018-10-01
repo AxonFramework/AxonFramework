@@ -96,7 +96,7 @@ public class MongoTokenStoreTest {
         MongoClient mongoClient = context.getBean(MongoClient.class);
         serializer = new XStreamSerializer();
 
-        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate = DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
         trackingTokensCollection = mongoTemplate.trackingTokensCollection();
         trackingTokensCollection.drop();
 

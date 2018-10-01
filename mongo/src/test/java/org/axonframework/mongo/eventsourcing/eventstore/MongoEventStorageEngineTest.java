@@ -30,7 +30,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
-import org.junit.runner.RunWith;
+import org.junit.runner.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +43,7 @@ import java.io.IOException;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 
 /**
@@ -90,7 +89,7 @@ public class MongoEventStorageEngineTest extends AbstractMongoEventStorageEngine
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);
         }
-        mongoTemplate = new DefaultMongoTemplate(mongoClient);
+        mongoTemplate = DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
         mongoTemplate.eventCollection().dropIndexes();
         mongoTemplate.snapshotCollection().dropIndexes();
         mongoTemplate.eventCollection().deleteMany(new BasicDBObject());

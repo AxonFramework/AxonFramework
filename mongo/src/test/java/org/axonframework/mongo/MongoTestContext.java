@@ -16,17 +16,17 @@ import static org.mockito.Mockito.*;
 public class MongoTestContext {
 
     @Bean
-    public MongoEventStorageEngine eventStore(MongoTemplate template) {
-        return new MongoEventStorageEngine(template);
+    public MongoEventStorageEngine mongoEventStorageEngine(MongoTemplate mongoTemplate) {
+        return new MongoEventStorageEngine(mongoTemplate);
     }
 
     @Bean
-    public MongoTemplate template(MongoClient mongoDb) {
-        return new DefaultMongoTemplate(mongoDb);
+    public MongoTemplate mongoTemplate(MongoClient mongoClient) {
+        return DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
     }
 
     @Bean
-    public MongoClient mongoDb(MongoFactory mongoFactory) {
+    public MongoClient mongoClient(MongoFactory mongoFactory) {
         return mongoFactory.createMongo();
     }
 
@@ -57,8 +57,8 @@ public class MongoTestContext {
     }
 
     @Bean
-    public MongoTemplate sagaMongoTemplate(MongoClient mongoDb) {
-        return new DefaultMongoTemplate(mongoDb);
+    public MongoTemplate sagaMongoTemplate(MongoClient mongoClient) {
+        return DefaultMongoTemplate.builder().mongoDatabase(mongoClient).build();
     }
 
     @Bean
