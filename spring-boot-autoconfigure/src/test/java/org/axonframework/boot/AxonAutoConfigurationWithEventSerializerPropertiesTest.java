@@ -97,7 +97,7 @@ public class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
 
         assertTrue(messageSerializer instanceof JavaSerializer);
-        assertEquals(serializer, engine.getSerializer());
+        assertEquals(serializer, engine.getSnapshotSerializer());
         assertEquals(eventSerializer, engine.getEventSerializer());
     }
 

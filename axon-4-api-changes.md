@@ -118,3 +118,8 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.serialization.AbstractXStreamSerializer
 - org.axonframework.mongo.serialization.DBObjectXStreamSerializer
 - org.axonframework.serialization.xml.XStreamSerializer
+- org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine
+- org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine
+- org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine
+- org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
+- org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine

@@ -29,7 +29,6 @@ import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.*;
 import org.springframework.test.annotation.DirtiesContext;
@@ -163,10 +162,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         List<String> expected = Arrays.asList(expectedPayloadOne, expectedPayloadTwo);
 
         int testBatchSize = 2;
-        testSubject = createEngine(
-                NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
-                HsqlEventTableFactory.INSTANCE, testBatchSize
-        );
+        testSubject = createEngine(defaultPersistenceExceptionResolver, new EventSchema(), testBatchSize);
         EmbeddedEventStore testEventStore = new EmbeddedEventStore(testSubject);
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
@@ -219,56 +215,66 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, new EventSchema(),
-                            byte[].class, HsqlEventTableFactory.INSTANCE);
+        return createEngine(NoOpEventUpcaster.INSTANCE,
+                            persistenceExceptionResolver,
+                            new EventSchema(),
+                            byte[].class,
+                            HsqlEventTableFactory.INSTANCE);
     }
 
-    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                  PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  EventSchema eventSchema,
-                                                  Class<?> dataType,
-                                                  EventTableFactory tableFactory) {
+    private JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
+                                                PersistenceExceptionResolver persistenceExceptionResolver,
+                                                EventSchema eventSchema,
+                                                Class<?> dataType,
+                                                EventTableFactory tableFactory) {
         return createEngine(upcasterChain,
                             persistenceExceptionResolver,
-                            null,
+                            s -> true,
                             eventSchema,
                             dataType,
                             tableFactory,
                             100);
     }
 
-    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                  PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  EventSchema eventSchema,
-                                                  Class<?> dataType,
-                                                  EventTableFactory tableFactory,
-                                                  int batchSize) {
-        return createEngine(upcasterChain,
+    private JdbcEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver,
+                                                EventSchema eventSchema,
+                                                int batchSize) {
+        return createEngine(NoOpEventUpcaster.INSTANCE,
                             persistenceExceptionResolver,
-                            null,
+                            s -> true,
                             eventSchema,
-                            dataType,
-                            tableFactory,
+                            byte[].class,
+                            HsqlEventTableFactory.INSTANCE,
                             batchSize);
     }
 
-    protected JdbcEventStorageEngine createEngine(Predicate<? super DomainEventData<?>> snapshotFilter) {
-        return createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver,
-                            snapshotFilter, new EventSchema(), byte[].class, HsqlEventTableFactory.INSTANCE, 100);
+    private JdbcEventStorageEngine createEngine(Predicate<? super DomainEventData<?>> snapshotFilter) {
+        return createEngine(NoOpEventUpcaster.INSTANCE,
+                            defaultPersistenceExceptionResolver,
+                            snapshotFilter,
+                            new EventSchema(),
+                            byte[].class,
+                            HsqlEventTableFactory.INSTANCE,
+                            100);
     }
 
-    protected JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
-                                                  PersistenceExceptionResolver persistenceExceptionResolver,
-                                                  Predicate<? super DomainEventData<?>> snapshotFilter,
-                                                  EventSchema eventSchema,
-                                                  Class<?> dataType,
-                                                  EventTableFactory tableFactory,
-                                                  int batchSize) {
-        XStreamSerializer serializer = XStreamSerializer.builder().build();
-        JdbcEventStorageEngine result = new JdbcEventStorageEngine(
-                serializer, upcasterChain, persistenceExceptionResolver, serializer, snapshotFilter, batchSize,
-                dataSource::getConnection, NoTransactionManager.INSTANCE, dataType, eventSchema, null, null
-        );
+    private JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
+                                                PersistenceExceptionResolver persistenceExceptionResolver,
+                                                Predicate<? super DomainEventData<?>> snapshotFilter,
+                                                EventSchema eventSchema,
+                                                Class<?> dataType,
+                                                EventTableFactory tableFactory,
+                                                int batchSize) {
+        JdbcEventStorageEngine result = JdbcEventStorageEngine.builder()
+                                                              .upcasterChain(upcasterChain)
+                                                              .persistenceExceptionResolver(persistenceExceptionResolver)
+                                                              .snapshotFilter(snapshotFilter)
+                                                              .batchSize(batchSize)
+                                                              .connectionProvider(dataSource::getConnection)
+                                                              .transactionManager(NoTransactionManager.INSTANCE)
+                                                              .schema(eventSchema)
+                                                              .dataType(dataType)
+                                                              .build();
 
         try {
             Connection connection = dataSource.getConnection();

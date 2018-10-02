@@ -36,8 +36,6 @@ import org.axonframework.mongo.serialization.DBObjectXStreamSerializer;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.saga.SpringResourceInjector;
 import org.junit.*;
 import org.junit.runner.*;
@@ -186,19 +184,20 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
 
     @Override
     protected MongoEventStorageEngine createEngine(EventUpcaster upcasterChain) {
-        return new MongoEventStorageEngine(XStreamSerializer.builder().build(),
-                                           upcasterChain,
-                                           mongoTemplate,
-                                           new DocumentPerCommitStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .upcasterChain(upcasterChain)
+                                      .mongoTemplate(mongoTemplate)
+                                      .storageStrategy(new DocumentPerCommitStorageStrategy())
+                                      .build();
     }
 
     @Override
     protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        XStreamSerializer serializer = XStreamSerializer.builder().build();
-        return new MongoEventStorageEngine(
-                serializer, NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver, serializer, 100, mongoTemplate,
-                new DocumentPerCommitStorageStrategy()
-        );
+        return MongoEventStorageEngine.builder()
+                                      .persistenceExceptionResolver(persistenceExceptionResolver)
+                                      .mongoTemplate(mongoTemplate)
+                                      .storageStrategy(new DocumentPerCommitStorageStrategy())
+                                      .build();
     }
 
     @Override
@@ -241,10 +240,12 @@ public class MongoEventStorageEngineTest_DocPerCommit extends AbstractMongoEvent
 
         @Bean
         public MongoEventStorageEngine mongoEventStorageEngine(Serializer serializer, MongoTemplate mongoTemplate) {
-            return new MongoEventStorageEngine(serializer,
-                                               NoOpEventUpcaster.INSTANCE,
-                                               mongoTemplate,
-                                               new DocumentPerCommitStorageStrategy());
+            return MongoEventStorageEngine.builder()
+                                          .snapshotSerializer(serializer)
+                                          .eventSerializer(serializer)
+                                          .mongoTemplate(mongoTemplate)
+                                          .storageStrategy(new DocumentPerCommitStorageStrategy())
+                                          .build();
         }
 
         @Bean

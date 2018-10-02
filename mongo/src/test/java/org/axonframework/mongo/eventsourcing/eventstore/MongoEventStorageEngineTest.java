@@ -24,11 +24,8 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.MongoTestContext;
-import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
 import org.slf4j.Logger;
@@ -40,6 +37,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
@@ -120,23 +118,25 @@ public class MongoEventStorageEngineTest extends AbstractMongoEventStorageEngine
         testSubject.appendEvents(createEvent(0), createEvent(1));
         testSubject.appendEvents(createEvent(2));
 
-        assertEquals(2, (long) testSubject.lastSequenceNumberFor(AGGREGATE).get());
-        assertFalse(testSubject.lastSequenceNumberFor("notexist").isPresent());
+        Optional<Long> optionalResult = testSubject.lastSequenceNumberFor(AGGREGATE);
+        assertTrue(optionalResult.isPresent());
+        assertEquals(2, (long) optionalResult.get());
+        assertFalse(testSubject.lastSequenceNumberFor("not_exist").isPresent());
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
-        return new MongoEventStorageEngine(XStreamSerializer.builder().build(),
-                                           upcasterChain,
-                                           mongoTemplate,
-                                           new DocumentPerEventStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .upcasterChain(upcasterChain)
+                                      .mongoTemplate(mongoTemplate)
+                                      .build();
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        XStreamSerializer serializer = XStreamSerializer.builder().build();
-        return new MongoEventStorageEngine(serializer, NoOpEventUpcaster.INSTANCE,
-                                           persistenceExceptionResolver, serializer, 100, mongoTemplate,
-                                           new DocumentPerEventStorageStrategy());
+        return MongoEventStorageEngine.builder()
+                                      .persistenceExceptionResolver(persistenceExceptionResolver)
+                                      .mongoTemplate(mongoTemplate)
+                                      .build();
     }
 }
