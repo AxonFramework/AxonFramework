@@ -67,7 +67,7 @@ public abstract class AbstractMongoTemplate {
      * specified by using the {@link Builder#mongoDatabase(MongoClient, String)} function. Otherwise, the database name
      * defaults to {@link AbstractMongoTemplate.Builder#DEFAULT_AXONFRAMEWORK_DATABASE}
      */
-    protected static class Builder {
+    public abstract static class Builder {
 
         private static final String DEFAULT_AXONFRAMEWORK_DATABASE = "axonframework";
 
