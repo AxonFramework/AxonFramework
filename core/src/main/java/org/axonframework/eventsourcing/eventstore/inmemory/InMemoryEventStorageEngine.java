@@ -45,6 +45,7 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEve
  * Thread-safe event storage engine that stores events and snapshots in memory.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public class InMemoryEventStorageEngine implements EventStorageEngine {
 

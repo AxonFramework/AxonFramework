@@ -21,6 +21,7 @@ import java.sql.SQLException;
  * Interface describing a factory for JDBC to create the Domain and Snapshot Event tables.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public interface EventTableFactory {
 
@@ -30,6 +31,7 @@ public interface EventTableFactory {
      * @param connection The connection to create the PreparedStatement for
      * @param schema     The event schema with the name of the table and its columns
      * @return The statement to create the table, ready to be executed
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     PreparedStatement createDomainEventTable(Connection connection, EventSchema schema) throws SQLException;
@@ -40,8 +42,8 @@ public interface EventTableFactory {
      * @param connection The connection to create the PreparedStatement for
      * @param schema     The event schema with the name of the table and its columns
      * @return The statement to create the table, ready to be executed
+     *
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     PreparedStatement createSnapshotEventTable(Connection connection, EventSchema schema) throws SQLException;
-
 }
