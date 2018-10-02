@@ -21,33 +21,48 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryProviderInbound;
 import io.axoniq.axonserver.grpc.query.QueryProviderOutbound;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
+import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.PlatformConnectionManager;
 import org.axonframework.axonserver.connector.common.AssertUtils;
+import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Author: marc
@@ -56,12 +71,11 @@ public class AxonServerQueryBusTest {
 
     private AxonServerQueryBus queryBus;
     private DummyMessagePlatformServer dummyMessagePlatformServer;
-    private XStreamSerializer ser;
     private AxonServerConfiguration conf;
     private SimpleQueryBus localSegment;
     private PlatformConnectionManager platformConnectionManager;
     private AtomicReference<StreamObserver<QueryProviderInbound>> inboundStreamObserverRef;
-
+    private XStreamSerializer ser;
 
     @Before
     public void setup() throws Exception {
@@ -81,7 +95,7 @@ public class AxonServerQueryBusTest {
                                           ser,
                                           ser,
                                           new QueryPriorityCalculator() {
-                                       });
+                                          });
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
         platformConnectionManager = mock(PlatformConnectionManager.class);
@@ -116,17 +130,17 @@ public class AxonServerQueryBusTest {
     public void subscribe() throws Exception {
         Registration response = queryBus.subscribe("testQuery", String.class, q -> "test");
         Thread.sleep(1000);
-        assertEquals(1, dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()).size());
+        assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
 
         response.cancel();
-        Thread.sleep(100);
-        assertEquals(0, dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()).size());
+        Thread.sleep(1000);
+        assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
     }
 
     @Test
     public void query() throws Exception {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
-                                                                              ResponseTypes.instanceOf(String.class));
+                                                                              instanceOf(String.class));
 
         assertEquals("test", queryBus.query(queryMessage).get().getPayload());
     }
@@ -142,7 +156,7 @@ public class AxonServerQueryBusTest {
                                                               ser,
                                                               ser,
                                                               new QueryPriorityCalculator() {
-                                                        });
+                                                              });
         Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
 
         QueryProviderInbound inboundMessage = testQueryMessage();
@@ -154,7 +168,7 @@ public class AxonServerQueryBusTest {
     @Test
     public void scatterGather() {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
-                                                                              ResponseTypes.instanceOf(String.class))
+                                                                              instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 10));
 
         assertEquals(10, queryBus.scatterGather(queryMessage, 12, TimeUnit.SECONDS).count());
@@ -163,7 +177,7 @@ public class AxonServerQueryBusTest {
     @Test
     public void scatterGatherTimeout() {
         QueryMessage<String, String> queryMessage = new GenericQueryMessage<>("Hello, World",
-                                                                              ResponseTypes.instanceOf(String.class))
+                                                                              instanceOf(String.class))
                 .andMetaData(MetaData.with("repeat", 10).and("interval", 100));
 
         assertTrue(8 > queryBus.scatterGather(queryMessage, 550, TimeUnit.MILLISECONDS).count());
@@ -189,7 +203,8 @@ public class AxonServerQueryBusTest {
                                                         localSegment,
                                                         ser,
                                                         ser,
-                                                        new QueryPriorityCalculator() {});
+                                                        new QueryPriorityCalculator() {
+                                                        });
         bus.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
         List<Object> results = new LinkedList<>();
         bus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
@@ -199,23 +214,32 @@ public class AxonServerQueryBusTest {
         QueryProviderInbound inboundMessage = testQueryMessage();
         inboundStreamObserverRef.get().onNext(inboundMessage);
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, results.size()));
-        AssertUtils.assertWithin(1, TimeUnit.SECONDS, ()-> assertEquals("Interceptor executed", results.get(0)));
+        AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertEquals("Interceptor executed", results.get(0)));
+    }
+
+    @Test
+    public void reconnectAfterConnectionLost() throws InterruptedException {
+        queryBus.subscribe("testQuery", String.class, q -> "test");
+        Thread.sleep(50);
+        assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
+        dummyMessagePlatformServer.onError("testQuery", String.class.getName());
+        Thread.sleep(200);
+        assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
     }
 
     private QueryProviderInbound testQueryMessage() {
         org.axonframework.serialization.SerializedObject<byte[]> response =
-                ser.serialize(ResponseTypes.instanceOf(String.class), byte[].class);
+                ser.serialize(instanceOf(String.class), byte[].class);
         return QueryProviderInbound.newBuilder().setQuery(
                 QueryRequest.newBuilder().setQuery("testQuery")
                             .setResponseType(SerializedObject.newBuilder().setData(
                                     ByteString.copyFrom(response.getData()))
-                                        .setType(response.getType().getName())
-                                        .setRevision(getOrDefault(response.getType().getRevision(), "")))
+                                                             .setType(response.getType().getName())
+                                                             .setRevision(getOrDefault(response.getType().getRevision(),
+                                                                                       "")))
                             .setPayload(SerializedObject.newBuilder()
-                                                .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
-                                                .setType(String.class.getName()))
+                                                        .setData(ByteString.copyFromUtf8("<string>Hello</string>"))
+                                                        .setType(String.class.getName()))
         ).build();
     }
-
-
 }

@@ -276,6 +276,7 @@ public class AxonServerCommandBus implements CommandBus {
                     public void onError(Throwable throwable) {
                         logger.warn("Received error from server: {}", throwable.getMessage());
                         subscriberStreamObserver = null;
+                        resubscribe();
                     }
 
                     @Override

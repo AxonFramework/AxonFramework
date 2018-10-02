@@ -40,7 +40,7 @@ import java.util.Set;
 public class DummyMessagePlatformServer {
     private final int port;
     private Server server;
-    private Map<String, Set<StreamObserver>> subscriptions = new HashMap<>();
+    private Map<String, StreamObserver> subscriptions = new HashMap<>();
 
     public DummyMessagePlatformServer(int port) {
         this.port = port;
@@ -55,15 +55,16 @@ public class DummyMessagePlatformServer {
     }
 
     public void stop() {
-        subscriptions.clear();
         try {
             server.shutdownNow().awaitTermination();
         } catch (InterruptedException ignore) {
+        } finally {
+            subscriptions.clear();
         }
     }
 
-    public Set subscriptions(String query) {
-        return subscriptions.get(query);
+    public StreamObserver subscriptions(String command) {
+        return subscriptions.get(command);
     }
 
     class CommandHandler extends CommandServiceGrpc.CommandServiceImplBase {
@@ -75,11 +76,10 @@ public class DummyMessagePlatformServer {
                 public void onNext(CommandProviderOutbound queryProviderOutbound) {
                     switch(queryProviderOutbound.getRequestCase()) {
                         case SUBSCRIBE:
-                            subscriptions.computeIfAbsent(queryProviderOutbound.getSubscribe().getCommand(), k -> new HashSet<>()).add(responseObserver);
+                            subscriptions.put(queryProviderOutbound.getSubscribe().getCommand(), responseObserver);
                             break;
                         case UNSUBSCRIBE:
-                            Set<StreamObserver> connected = subscriptions.get(queryProviderOutbound.getUnsubscribe().getCommand());
-                            if( connected != null) connected.remove(responseObserver);
+                            subscriptions.remove(queryProviderOutbound.getUnsubscribe().getCommand(), responseObserver);
                             break;
                         case FLOWCONTROL:
                             break;
@@ -124,6 +124,12 @@ public class DummyMessagePlatformServer {
             responseObserver.onCompleted();
         }
 
+    }
+
+    public void onError(String command){
+        StreamObserver subscription = this.subscriptions(command);
+        subscription.onError(new RuntimeException());
+        subscriptions.remove(subscription);
     }
 
 }
