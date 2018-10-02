@@ -267,7 +267,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
      * {@link AbstractXStreamSerializer#registerConverters(ChainingConverter)} function will be called. Depending on the
      * AbstractXStreamSerializer, this will add a number of Converter instances to the chain.
      */
-    protected static class Builder {
+    public abstract static class Builder {
 
         private XStream xStream;
         private Charset charset = Charset.forName("UTF-8");
