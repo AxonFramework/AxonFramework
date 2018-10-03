@@ -25,16 +25,17 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * This test ensures that any handler interceptor registered via {@link EventHandlingConfiguration} is registered with
@@ -56,7 +57,7 @@ public class EventHandlingConfigurationWithInterceptorsTest {
         assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Configuration
     public static class Context {
 
