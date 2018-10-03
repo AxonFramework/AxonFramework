@@ -85,10 +85,10 @@ public class AxonServerEventStore extends AbstractEventStore {
      * <p>
      * The Event Store will delay creating the connection until the first activity takes place.
      *
-     * @param configuration             The configuration describing the servers to connect with and how to manage flow
+     * @param configuration             the configuration describing the servers to connect with and how to manage flow
      *                                  control
      * @param platformConnectionManager manager for connections to AxonServer platform
-     * @param serializer                a {@link Serializer} used to de/serialize Event payloads, Meta Data ans
+     * @param serializer                a {@link Serializer} used to de/serialize Event payloads, Meta Data and
      *                                  Snapshots with
      */
     public AxonServerEventStore(AxonServerConfiguration configuration,
@@ -103,12 +103,12 @@ public class AxonServerEventStore extends AbstractEventStore {
      * <p>
      * The Event Store will delay creating the connection until the first activity takes place.
      *
-     * @param configuration             The configuration describing the servers to connect with and how to manage flow
+     * @param configuration             the configuration describing the servers to connect with and how to manage flow
      *                                  control
      * @param platformConnectionManager manager for connections to AxonServer platform
-     * @param serializer                a {@link Serializer} used to de/serialize Event payloads, Meta Data ans
+     * @param serializer                a {@link Serializer} used to de/serialize Event payloads, Meta Data and
      *                                  Snapshots with
-     * @param upcasterChain             The upcaster to modify received Event representations with
+     * @param upcasterChain             the upcaster to modify received Event representations with
      */
     public AxonServerEventStore(AxonServerConfiguration configuration,
                                 PlatformConnectionManager platformConnectionManager,
@@ -118,16 +118,17 @@ public class AxonServerEventStore extends AbstractEventStore {
     }
 
     /**
-     * Initialize the Event Store using the given {@code configuration}, snapshot {@link Serializer}, event Serializer
-     * and {@code upcasterChain}. Allows for different serializers for snapshots and events
+     * Initialize the {@link org.axonframework.eventsourcing.eventstore.EventStore} using the given
+     * {@code configuration}, snapshot {@link Serializer}, event Serializer and {@code upcasterChain}. Allows for
+     * different serializers for snapshots and events
      * (required for AxonFramework 3.3 or higher).
      *
-     * @param configuration             The configuration describing the servers to connect with and how to manage flow
+     * @param configuration             the configuration describing the servers to connect with and how to manage flow
      *                                  control
      * @param platformConnectionManager manager for connections to AxonServer platform
-     * @param snapshotSerializer        The serializer to serialize Snapshot payloads with
-     * @param eventSerializer           The serializer to serialize Event payloads with
-     * @param upcasterChain             The upcaster to modify received Event representations with
+     * @param snapshotSerializer        the serializer to serialize Snapshot payloads with
+     * @param eventSerializer           the serializer to serialize Event payloads with
+     * @param upcasterChain             the upcaster to modify received Event representations with
      */
     public AxonServerEventStore(AxonServerConfiguration configuration,
                                 PlatformConnectionManager platformConnectionManager,

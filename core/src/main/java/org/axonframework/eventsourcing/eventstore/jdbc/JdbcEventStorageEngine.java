@@ -127,7 +127,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
-     * <li>The {@link EventSchema} to {@link EventSchema#EventSchema()}.</li>
+     * <li>The {@link EventSchema} defaults to an {@link EventSchema#EventSchema()} call.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
      * <li>The {@code lowestGlobalSequence} defaults to a long of size {@code 1}.</li>
      * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
@@ -709,7 +709,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * <li>The {@code snapshotFilter} defaults to a {@link Predicate} which returns {@code true} regardless.</li>
      * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
      * <li>The {@code dataType} is defaulted to the {@code byte[]} type.</li>
-     * <li>The {@link EventSchema} to {@link EventSchema#EventSchema()}.</li>
+     * <li>The {@link EventSchema} defaults to an {@link EventSchema#EventSchema()} call.</li>
      * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
      * <li>The {@code lowestGlobalSequence} defaults to a long of size {@code 1}.</li>
      * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
@@ -774,7 +774,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
          *
          * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder connectionProvider(ConnectionProvider connectionProvider) {
             assertNonNull(connectionProvider, "ConnectionProvider may not be null");
@@ -783,11 +783,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
 
         /**
-         * Sets the {@link TransactionManager} used to manage transaction around fetching event data. Required by
+         * Sets the {@link TransactionManager} used to manage transactions around fetching event data. Required by
          * certain databases for reading blob data.
          *
-         * @param transactionManager a {@link TransactionManager} used to manage transaction around fetching event data
-         * @return the current Builder instance, for a fluent interfacing
+         * @param transactionManager a {@link TransactionManager} used to manage transactions around fetching event data
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
@@ -800,7 +800,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * Defaults to the {@code byte[]} {@link Class}.
          *
          * @param dataType a {@link Class} specifying the serialized type of the Event Message's payload and Meta Data
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder dataType(Class<?> dataType) {
             assertNonNull(dataType, "dataType may not be null");
@@ -813,7 +813,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * {@link EventSchema#EventSchema()}.
          *
          * @param schema the {@link EventSchema} describing the database schema of event entries
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder schema(EventSchema schema) {
             assertNonNull(schema, "EventSchema may not be null");
@@ -830,7 +830,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param maxGapOffset an {@code int} specifying the maximum distance in sequence numbers between a missing
          *                     event and the event with the highest known index
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxGapOffset(int maxGapOffset) {
             assertPositive(maxGapOffset, "maxGapOffset");
@@ -844,7 +844,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          * ({@link JdbcEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
          *
          * @param lowestGlobalSequence a {@code long} specifying the first expected auto generated sequence number
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder lowestGlobalSequence(long lowestGlobalSequence) {
             assertThat(lowestGlobalSequence,
@@ -857,12 +857,12 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         /**
          * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will
          * affect the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
-         * performance of reading events. Defaults to an  integer of {@code 60000}
+         * performance of reading events. Defaults to an integer of {@code 60000}
          * ({@link JdbcEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
          *
          * @param gapTimeout an {@code int} specifying the amount of time until a 'gap' in a TrackingToken may be
          *                   considered timed out
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder gapTimeout(int gapTimeout) {
             assertPositive(gapTimeout, "gapTimeout");
@@ -876,7 +876,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param gapCleaningThreshold an {@code int} specifying the threshold of number of gaps in a token before an
          *                             attempt to clean gaps up is taken
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder gapCleaningThreshold(int gapCleaningThreshold) {
             assertPositive(gapCleaningThreshold, "gapCleaningThreshold");

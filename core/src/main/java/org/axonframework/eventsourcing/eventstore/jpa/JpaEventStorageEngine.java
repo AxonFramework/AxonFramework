@@ -500,9 +500,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
         /**
          * Sets the {@link PersistenceExceptionResolver} as a {@link SQLErrorCodesResolver}, using the provided
-         * {@link DataSource} to correctly resolve the error codes. <b>Note</b> that the provided DataSource sole
-         * purpose in this {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation is to
-         * be used for instantiating the PersistenceExceptionResolver.
+         * {@link DataSource} to resolve the error codes. <b>Note</b> that the provided DataSource sole purpose in this
+         * {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation is to be used for
+         * instantiating the PersistenceExceptionResolver.
          *
          * @param dataSource the {@link DataSource} used to instantiate a
          *                   {@link SQLErrorCodesResolver#SQLErrorCodesResolver(DataSource)} as the
@@ -536,7 +536,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          * certain databases for reading blob data.
          *
          * @param transactionManager a {@link TransactionManager} used to manage transaction around fetching event data
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
@@ -553,7 +553,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param explicitFlush a {@code boolean} specifying whether to explicitly call {@link EntityManager#flush()}
          *                      after inserting the Events published in this Unit of Work
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder explicitFlush(boolean explicitFlush) {
             this.explicitFlush = explicitFlush;
@@ -569,7 +569,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param maxGapOffset an {@code int} specifying the maximum distance in sequence numbers between a missing
          *                     event and the event with the highest known index
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder maxGapOffset(int maxGapOffset) {
             assertPositive(maxGapOffset, "maxGapOffset");
@@ -583,7 +583,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          * ({@link JpaEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
          *
          * @param lowestGlobalSequence a {@code long} specifying the first expected auto generated sequence number
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder lowestGlobalSequence(long lowestGlobalSequence) {
             assertThat(lowestGlobalSequence,
@@ -599,9 +599,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          * performance of reading events. Defaults to an  integer of {@code 60000}
          * ({@link JpaEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
          *
-         * @param gapTimeout an {@code int} specifying the amount of time until a 'gap' in a TrackingToken may be
-         *                   considered timed out
-         * @return the current Builder instance, for a fluent interfacing
+         * @param gapTimeout an {@code int} specifying the amount of time in milliseconds until a 'gap' in a
+         *                   TrackingToken may be considered timed out
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder gapTimeout(int gapTimeout) {
             assertPositive(gapTimeout, "gapTimeout");
@@ -615,7 +615,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          *
          * @param gapCleaningThreshold an {@code int} specifying the threshold of number of gaps in a token before an
          *                             attempt to clean gaps up is taken
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder gapCleaningThreshold(int gapCleaningThreshold) {
             assertPositive(gapCleaningThreshold, "gapCleaningThreshold");
