@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+import static org.axonframework.axonserver.connector.common.AssertUtils.assertWithin;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.Assert.*;
@@ -130,11 +131,10 @@ public class AxonServerQueryBusTest {
     public void subscribe() throws Exception {
         Registration response = queryBus.subscribe("testQuery", String.class, q -> "test");
         Thread.sleep(1000);
-        assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
+        assertWithin(1000, TimeUnit.MILLISECONDS, () -> assertNotNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
 
         response.cancel();
-        Thread.sleep(1000);
-        assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName()));
+        assertWithin(2000, TimeUnit.MILLISECONDS, () -> assertNull(dummyMessagePlatformServer.subscriptions("testQuery", String.class.getName())));
     }
 
     @Test
@@ -213,8 +213,8 @@ public class AxonServerQueryBusTest {
         });
         QueryProviderInbound inboundMessage = testQueryMessage();
         inboundStreamObserverRef.get().onNext(inboundMessage);
-        AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, results.size()));
-        AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertEquals("Interceptor executed", results.get(0)));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, results.size()));
+        assertWithin(1, TimeUnit.SECONDS, () -> assertEquals("Interceptor executed", results.get(0)));
     }
 
     @Test
