@@ -253,7 +253,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
         int testBatchSize = 2;
         testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver, testBatchSize);
-        EmbeddedEventStore testEventStore = new EmbeddedEventStore(testSubject);
+        EmbeddedEventStore testEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
                                  createEvent(AGGREGATE, 2, "Payload2"));

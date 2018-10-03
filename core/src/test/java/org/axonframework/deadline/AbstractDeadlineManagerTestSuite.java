@@ -72,7 +72,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Before
     public void setUp() {
-        EventStore eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
+        EventStore eventStore = spy(EmbeddedEventStore.builder()
+                                                      .storageEngine(new InMemoryEventStorageEngine())
+                                                      .build());
         configuration = DefaultConfigurer.defaultConfiguration()
                                          .configureEventStore(c -> eventStore)
                                          .configureAggregate(MyAggregate.class)

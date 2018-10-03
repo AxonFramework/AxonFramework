@@ -15,6 +15,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventhandling.EventMessage;
@@ -24,16 +25,25 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PreDestroy;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
+import javax.annotation.PreDestroy;
 
 import static java.util.stream.Collectors.toList;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
@@ -53,7 +63,9 @@ import static java.util.stream.Collectors.toList;
  * @since 3.0
  */
 public class EmbeddedEventStore extends AbstractEventStore {
+
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
+
     private static final ThreadGroup THREAD_GROUP = new ThreadGroup(EmbeddedEventStore.class.getSimpleName());
 
     private final Lock consumerLock = new ReentrantLock();
@@ -67,86 +79,41 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private volatile Node oldest;
 
     /**
-     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and default settings.
+     * Instantiate a {@link EmbeddedEventStore} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if it is {@code null}.
      *
-     * @param storageEngine the storage engine to use
+     * @param builder the {@link Builder} used to instantiate a {@link EmbeddedEventStore} instance
      */
-    public EmbeddedEventStore(EventStorageEngine storageEngine) {
-        this(storageEngine, NoOpMessageMonitor.INSTANCE);
-    }
-
-    /**
-     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and default
-     * settings.
-     *
-     * @param storageEngine the storage engine to use
-     * @param monitor       the metrics monitor that tracks how many events are ingested by the event store
-     */
-    public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor) {
-        this(storageEngine,
-             monitor,
-             10000,
-             1000L,
-             10000L,
-             TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and custom
-     * settings.
-     *
-     * @param storageEngine    the storage engine to use
-     * @param monitor          the metrics monitor that tracks how many events are ingested by the event store
-     * @param cachedEvents     the maximum number of events in the cache that is shared between the streams of tracking
-     *                         event processors
-     * @param fetchDelay       the time to wait before fetching new events from the backing storage engine while
-     *                         tracking after a previous stream was fetched and read. Note that this only applies to
-     *                         situations in which no events from the current application have meanwhile been committed.
-     *                         If the current application commits events then those events are fetched without delay.
-     * @param cleanupDelay     the delay between two clean ups of lagging event processors. An event processor is
-     *                         lagging behind and removed from the set of processors that track cached events if the
-     *                         oldest event in the cache is newer than the last processed event of the event processor.
-     *                         Once removed the processor will be independently fetching directly from the event storage
-     *                         engine until it has caught up again. Event processors will not notice this change during
-     *                         tracking (i.e. the stream is not closed when an event processor falls behind and is
-     *                         removed).
-     * @param timeUnit         time unit for fetch and clean up delay
-     */
-    public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
-                              int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit) {
-        this(storageEngine, monitor, 10000, 1000L, 10000L, TimeUnit.MILLISECONDS,
-            new AxonThreadFactory(THREAD_GROUP));
-    }
-
-    /**
-     * Initializes an {@link EmbeddedEventStore} with given {@code storageEngine} and {@code monitor} and custom
-     * settings.
-     *
-     * @param storageEngine the storage engine to use
-     * @param monitor       the metrics monitor that tracks how many events are ingested by the event store
-     * @param cachedEvents  the maximum number of events in the cache that is shared between the streams of tracking
-     *                      event processors
-     * @param fetchDelay    the time to wait before fetching new events from the backing storage engine while tracking
-     *                      after a previous stream was fetched and read. Note that this only applies to situations in
-     *                      which no events from the current application have meanwhile been committed. If the current
-     *                      application commits events then those events are fetched without delay.
-     * @param cleanupDelay  the delay between two clean ups of lagging event processors. An event processor is lagging
-     *                      behind and removed from the set of processors that track cached events if the oldest event
-     *                      in the cache is newer than the last processed event of the event processor. Once removed the
-     *                      processor will be independently fetching directly from the event storage engine until it has
-     *                      caught up again. Event processors will not notice this change during tracking (i.e. the
-     *                      stream is not closed when an event processor falls behind and is removed).
-     * @param timeUnit      time unit for fetch and clean up delay
-     * @param threadFactory the factory to create threads with
-     */
-    public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
-                              int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit,
-                              ThreadFactory threadFactory) {
-        super(storageEngine, monitor);
-        this.threadFactory = threadFactory;
+    protected EmbeddedEventStore(Builder builder) {
+        super(builder);
+        this.threadFactory = builder.threadFactory;
         cleanupService = Executors.newScheduledThreadPool(1, this.threadFactory);
-        producer = new EventProducer(timeUnit.toNanos(fetchDelay), cachedEvents);
-        cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
+        TimeUnit timeUnit = builder.timeUnit;
+        producer = new EventProducer(timeUnit.toNanos(builder.fetchDelay), builder.cachedEvents);
+        cleanupDelayMillis = timeUnit.toMillis(builder.cleanupDelay);
+    }
+
+    /**
+     * Instantiate a Builder to be able to create an {@link EmbeddedEventStore}.
+     * <p>
+     * The following configurable fields have defaults:
+     * <ul>
+     * <li>The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.</li>
+     * <li>The {@code cachedEvents} is defaulted to {@code 10000}.</li>
+     * <li>The {@code fetchDelay} is defaulted to {@code 1000}.</li>
+     * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
+     * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
+     * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
+     * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * </ul>
+     * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link EmbeddedEventStore}
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -201,6 +168,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     private static class Node {
+
         private final long index;
         private final TrackingToken previousToken;
         private final TrackedEventMessage<?> event;
@@ -214,6 +182,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     private class EventProducer implements AutoCloseable {
+
         private final Lock lock = new ReentrantLock();
         private final Condition dataAvailableCondition = lock.newCondition();
         private final long fetchDelayNanos;
@@ -327,6 +296,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     private class EventConsumer implements TrackingEventStream {
+
         private Stream<? extends TrackedEventMessage<?>> privateStream;
         private Iterator<? extends TrackedEventMessage<?>> privateIterator;
         private volatile TrackingToken lastToken;
@@ -406,7 +376,9 @@ public class EmbeddedEventStore extends AbstractEventStore {
             }
         }
 
-        private TrackedEventMessage<?> peekPrivateStream(boolean allowSwitchToTailingConsumer, int timeout, TimeUnit timeUnit) throws InterruptedException {
+        private TrackedEventMessage<?> peekPrivateStream(boolean allowSwitchToTailingConsumer,
+                                                         int timeout,
+                                                         TimeUnit timeUnit) throws InterruptedException {
             if (privateIterator == null) {
                 privateStream = storageEngine().readEvents(lastToken, false);
                 privateIterator = privateStream.iterator();
@@ -468,6 +440,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     private class Cleaner implements Runnable {
+
         @Override
         public void run() {
             Node oldestCachedNode = oldest;
@@ -479,6 +452,139 @@ public class EmbeddedEventStore extends AbstractEventStore {
                                     "This usually indicates a badly performing event processor.");
                 consumer.stopTailingGlobalStream();
             });
+        }
+    }
+
+    /**
+     * Builder class to instantiate an {@link EmbeddedEventStore}.
+     * <p>
+     * The following configurable fields have defaults:
+     * <ul>
+     * <li>The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor}.</li>
+     * <li>The {@code cachedEvents} is defaulted to {@code 10000}.</li>
+     * <li>The {@code fetchDelay} is defaulted to {@code 1000}.</li>
+     * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
+     * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
+     * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
+     * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * </ul>
+     * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
+     */
+    public static class Builder extends AbstractEventStore.Builder {
+
+        private int cachedEvents = 10000;
+        private long fetchDelay = 1000L;
+        private long cleanupDelay = 10000L;
+        private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+        private ThreadFactory threadFactory = new AxonThreadFactory(THREAD_GROUP);
+
+        @Override
+        public Builder storageEngine(EventStorageEngine storageEngine) {
+            super.storageEngine(storageEngine);
+            return this;
+        }
+
+        @Override
+        public Builder messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            super.messageMonitor(messageMonitor);
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of events in the cache that is shared between the streams of tracking event
+         * processors. Defaults to {@code 10000}.
+         *
+         * @param cachedEvents an {@code int} specifying the maximum number of events in the cache that is shared
+         *                     between the streams of tracking event processors
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder cachedEvents(int cachedEvents) {
+            assertNonNull(cachedEvents, "{} may not be null");
+            this.cachedEvents = cachedEvents;
+            return this;
+        }
+
+        /**
+         * Sets the time to wait before fetching new events from the backing storage engine while tracking after a
+         * previous stream was fetched and read. Note that this only applies to situations in which no events from the
+         * current application have meanwhile been committed. If the current application commits events then those
+         * events are fetched without delay.
+         * <p>
+         * Defaults to {@code 1000}. Together with the {@link Builder#timeUnit}, this will define the exact fetch delay.
+         *
+         * @param fetchDelay a {@code long} specifying the time to wait before fetching new events from the backing
+         *                   storage engine while tracking after a previous stream was fetched and read
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder fetchDelay(long fetchDelay) {
+            assertNonNull(fetchDelay, "{} may not be null");
+            this.fetchDelay = fetchDelay;
+            return this;
+        }
+
+        /**
+         * Sets the delay between two clean ups of lagging event processors. An event processor is lagging behind and
+         * removed from the set of processors that track cached events if the oldest event in the cache is newer than
+         * the last processed event of the event processor. Once removed the processor will be independently fetching
+         * directly from the event storage engine until it has caught up again. Event processors will not notice this
+         * change during tracking (i.e. the stream is not closed when an event processor falls behind and is removed).
+         * <p>
+         * Defaults to {@code 1000}. Together with the {@link Builder#timeUnit}, this will define the exact clean up
+         * delay.
+         *
+         * @param cleanupDelay a {@code long} specifying the delay between two clean ups of lagging event processors
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder cleanupDelay(long cleanupDelay) {
+            assertNonNull(cleanupDelay, "{} may not be null");
+            this.cleanupDelay = cleanupDelay;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TimeUnit} for the {@link Builder#fetchDelay} and {@link Builder#cleanupDelay}. Defaults to
+         * {@link TimeUnit#MILLISECONDS}.
+         *
+         * @param timeUnit the {@link TimeUnit} for the {@link Builder#fetchDelay} and {@link Builder#cleanupDelay}
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder timeUnit(TimeUnit timeUnit) {
+            assertNonNull(timeUnit, "TimeUnit may not be null");
+            this.timeUnit = timeUnit;
+            return this;
+        }
+
+        /**
+         * Sets the {@link ThreadFactory} used to create threads for consuming, producing and cleaning up. Defaults to
+         * a {@link AxonThreadFactory} with {@link ThreadGroup} {@link EmbeddedEventStore#THREAD_GROUP}.
+         *
+         * @param threadFactory a {@link ThreadFactory} used to create threads for consuming, producing and cleaning up
+         * @return the current Builder instance, for a fluent interfacing
+         */
+        public Builder threadFactory(ThreadFactory threadFactory) {
+            assertNonNull(threadFactory, "ThreadFactory may not be null");
+            this.threadFactory = threadFactory;
+            return this;
+        }
+
+        /**
+         * Initializes a {@link EmbeddedEventStore} as specified through this Builder.
+         *
+         * @return a {@link EmbeddedEventStore} as specified through this Builder
+         */
+        public EmbeddedEventStore build() {
+            return new EmbeddedEventStore(this);
+        }
+
+        /**
+         * Validate whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            // Kept to be overridden
         }
     }
 }

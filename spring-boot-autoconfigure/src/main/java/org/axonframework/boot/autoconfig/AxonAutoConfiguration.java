@@ -183,7 +183,10 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(EventBus.class)
     @ConditionalOnBean(EventStorageEngine.class)
     public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, AxonConfiguration configuration) {
-        return new EmbeddedEventStore(storageEngine, configuration.messageMonitor(EventStore.class, "eventStore"));
+        return EmbeddedEventStore.builder()
+                                 .storageEngine(storageEngine)
+                                 .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                                 .build();
     }
 
     @ConditionalOnMissingBean

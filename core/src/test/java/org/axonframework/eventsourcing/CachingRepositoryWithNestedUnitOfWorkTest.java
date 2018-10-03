@@ -104,7 +104,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 
 
-        eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        eventStore = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
         SubscribingEventProcessor eventProcessor =
                 new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(new LoggingEventListener(events)),
                                               eventStore);

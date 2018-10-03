@@ -447,7 +447,10 @@ public class DefaultConfigurer implements Configurer {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
+            EmbeddedEventStore eventStore = EmbeddedEventStore.builder()
+                                                              .storageEngine(storageEngineBuilder.apply(c))
+                                                              .messageMonitor(monitor)
+                                                              .build();
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });

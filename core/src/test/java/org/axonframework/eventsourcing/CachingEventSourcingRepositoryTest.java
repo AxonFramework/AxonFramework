@@ -52,7 +52,7 @@ public class CachingEventSourcingRepositoryTest {
 
     @Before
     public void setUp() {
-        mockEventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
+        mockEventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
 
         final CacheManager cacheManager = CacheManager.getInstance();
         ehCache = cacheManager.getCache("testCache");

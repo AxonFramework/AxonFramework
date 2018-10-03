@@ -139,3 +139,5 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventsourcing.AbstractSnapshotter
 - org.axonframework.eventsourcing.AggregateSnapshotter
 - org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter
+- org.axonframework.eventsourcing.eventstore.AbstractEventStore
+- org.axonframework.eventsourcing.eventstore.EmbeddedEventStore
