@@ -329,7 +329,7 @@ public class SimpleQueryBus implements QueryBus {
         private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
 
         /**
-         * Sets the message monitor to monitor query messages.
+         * Sets the message monitor to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
          *
          * @param messageMonitor The message monitor used to monitor query messages
          * @return the current Builder instance, for fluent interfacing
@@ -341,7 +341,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the transaction manager to handle transactions of handling queries.
+         * Sets the transaction manager to handle transactions of handling queries. Defaults to a
+         * {@link NoTransactionManager}.
          *
          * @param transactionManager The transaction manager to handle transactions of handling queries
          * @return the current Builder instance, for fluent interfacing
@@ -353,7 +354,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the error handler to handle exceptions during query handler invocation.
+         * Sets the error handler to handle exceptions during query handler invocation. Defaults to a
+         * {@link LoggingQueryInvocationErrorHandler} using this instance it's {@link Logger}.
          *
          * @param errorHandler The error handler to handle exceptions during query handler invocation
          * @return the current Builder instance, for fluent interfacing
@@ -365,7 +367,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the query update emitter to emits updates for subscription queries.
+         * Sets the query update emitter to emits updates for subscription queries. Defaults to a
+         * {@link SimpleQueryUpdateEmitter}.
          *
          * @param queryUpdateEmitter The query update emitter to emits updates for subscription queries
          * @return the current Builder instance, for fluent interfacing

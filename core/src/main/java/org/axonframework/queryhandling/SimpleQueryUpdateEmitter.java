@@ -263,10 +263,11 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
         /**
          * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
+         * Defaults to a {@link NoOpMessageMonitor}.
          *
          * @param updateMessageMonitor the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s
          *                             being processed
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder updateMessageMonitor(
                 MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor) {
