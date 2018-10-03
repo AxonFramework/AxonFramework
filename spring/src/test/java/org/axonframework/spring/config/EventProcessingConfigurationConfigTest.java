@@ -25,16 +25,18 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests configuration of {@link EventProcessingConfiguration}.
@@ -71,7 +73,7 @@ public class EventProcessingConfigurationConfigTest {
                      eventProcessingConfiguration.eventProcessorByProcessingGroup("processor4").get().getName());
     }
 
-    @EnableAxon
+    @Import(SpringAxonAutoConfigurer.ImportSelector.class)
     @Configuration
     public static class Context {
 
