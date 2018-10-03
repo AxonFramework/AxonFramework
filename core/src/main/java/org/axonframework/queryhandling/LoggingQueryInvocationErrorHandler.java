@@ -72,10 +72,11 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
 
         /**
          * Sets the {@link Logger} to log errors with from query handlers. Defaults to the result of {@link
-         * LoggerFactory#getLogger(Class)}, using {@code LoggingQueryInvocationErrorHandler.class} as input.
+         * LoggerFactory#getLogger(Class)}, using {@code LoggingQueryInvocationErrorHandler.class} as input. Defaults to
+         * a {@link LoggerFactory#getLogger(Class)} call, providing the {@link LoggingQueryInvocationErrorHandler} type.
          *
          * @param logger the {@link Logger} to log errors with from query handlers
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder logger(Logger logger) {
             assertNonNull(logger, "Logger may not be null");

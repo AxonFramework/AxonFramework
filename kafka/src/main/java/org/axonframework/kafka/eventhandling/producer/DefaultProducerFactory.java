@@ -310,7 +310,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          * @param timeout  the time to wait before invoking {@link Producer#close(long, TimeUnit)}. in units of
          *                 {@code timeUnit}.
          * @param timeUnit a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> closeTimeout(int timeout, TimeUnit timeUnit) {
             assertThat(timeout, time -> time > 0, "The closeTimeout should be a positive number");
@@ -326,7 +326,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          * Will instantiate an {@link ArrayBlockingQueue} based on this number.
          *
          * @param producerCacheSize an {@code int} specifying the number of {@link Producer} instances to cache
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> producerCacheSize(int producerCacheSize) {
             assertThat(producerCacheSize, size -> size > 0, "The producerCacheSize should be a positive number");
@@ -339,7 +339,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          *
          * @param configuration a {@link Map} of {@link String} to {@link Object} containing Kafka properties for
          *                      creating {@link Producer} instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> configuration(Map<String, Object> configuration) {
             assertNonNull(configuration, "The configuration may not be null");
@@ -352,7 +352,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          * {@link ConfirmationMode#NONE}.
          *
          * @param confirmationMode the {@link ConfirmationMode} for producing {@link Producer} instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> confirmationMode(ConfirmationMode confirmationMode) {
             assertNonNull(confirmationMode, "ConfirmationMode may not be null");
@@ -365,7 +365,7 @@ public class DefaultProducerFactory<K, V> implements ProducerFactory<K, V> {
          *
          * @param transactionIdPrefix a {@link String} specifying the prefix used to generate the
          *                            {@code transactional.id} required for transactional {@link Producer}s
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> transactionalIdPrefix(String transactionIdPrefix) {
             this.transactionIdPrefix = transactionIdPrefix;

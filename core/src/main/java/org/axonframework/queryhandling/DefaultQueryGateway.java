@@ -132,7 +132,7 @@ public class DefaultQueryGateway implements QueryGateway {
          *
          * @param queryBus a {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
          *                 implementation
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder queryBus(QueryBus queryBus) {
             assertNonNull(queryBus, "QueryBus may not be null");
