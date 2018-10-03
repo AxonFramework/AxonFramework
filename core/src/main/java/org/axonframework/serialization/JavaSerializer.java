@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,10 @@ public class JavaSerializer implements Serializer {
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
+        if (UnknownSerializedType.class.isAssignableFrom(classForType(serializedObject.getType()))) {
+            return (T) new UnknownSerializedType(this, serializedObject);
+        }
+
         SerializedObject<InputStream> converted =
                 converter.convert(serializedObject, InputStream.class);
         ObjectInputStream ois = null;
@@ -104,10 +108,14 @@ public class JavaSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) {
+        if (SimpleSerializedType.emptyType().equals(type)) {
+            return Void.class;
+        }
+
         try {
             return Class.forName(type.getName());
         } catch (ClassNotFoundException e) {
-            throw new UnknownSerializedTypeException(type, e);
+            return UnknownSerializedType.class;
         }
     }
 

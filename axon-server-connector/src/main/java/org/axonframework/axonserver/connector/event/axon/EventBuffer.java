@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018. AxonIQ
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +19,7 @@ package org.axonframework.axonserver.connector.event.axon;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
@@ -71,8 +72,8 @@ public class EventBuffer implements TrackingEventStream {
         this.events = new LinkedBlockingQueue<>();
         eventStream = EventUtils.upcastAndDeserializeTrackedEvents(StreamSupport.stream(new SimpleSpliterator<>(this::poll), false),
                                                                    new GrpcMetaDataAwareSerializer(serializer),
-                                                                   getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE),
-                                                                   true)
+                                                                   getOrDefault(upcasterChain, NoOpEventUpcaster.INSTANCE)
+        )
                                 .iterator();
     }
 
@@ -147,7 +148,7 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     @Override
-    public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+    public TrackedEventMessage<?> nextAvailable() {
         try {
             hasNextAvailable(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
             return peekEvent == null ? eventStream.next() : peekEvent;
