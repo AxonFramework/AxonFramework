@@ -17,22 +17,19 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
-import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
+import org.junit.*;
+import org.mockito.*;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.Executor;
 
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
@@ -52,7 +49,7 @@ public class AbstractSnapshotterTest {
     @Before
     public void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
-        testSubject = new TestSnapshotter(mockEventStore);
+        testSubject = TestSnapshotter.builder().eventStore(mockEventStore).build();
         logger = mock(Logger.class);
         originalLogger = replaceLogger(logger);
     }
@@ -112,7 +109,10 @@ public class AbstractSnapshotterTest {
         TransactionManager txManager = spy(new StubTransactionManager(mockTransaction));
         when(txManager.startTransaction()).thenReturn(mockTransaction);
 
-        testSubject = new TestSnapshotter(mockEventStore, txManager);
+        testSubject = TestSnapshotter.builder()
+                                     .eventStore(mockEventStore)
+                                     .transactionManager(txManager)
+                                     .build();
 
         testScheduleSnapshot();
 
@@ -128,14 +128,6 @@ public class AbstractSnapshotterTest {
                 && x.getSequenceNumber() == i;
     }
 
-    private long getLastIdentifierFrom(DomainEventStream eventStream) {
-        long lastSequenceNumber = -1;
-        while (eventStream.hasNext()) {
-            lastSequenceNumber = eventStream.next().getSequenceNumber();
-        }
-        return lastSequenceNumber;
-    }
-
     private Logger replaceLogger(Logger mockLogger) throws NoSuchFieldException, IllegalAccessException {
         Field loggerField = AbstractSnapshotter.class.getDeclaredField("logger");
         ReflectionUtils.ensureAccessible(loggerField);
@@ -148,13 +140,14 @@ public class AbstractSnapshotterTest {
         return originalLogger;
     }
 
-    private class TestSnapshotter extends AbstractSnapshotter {
-        public TestSnapshotter(EventStore eventStore) {
-            super(eventStore);
+    private static class TestSnapshotter extends AbstractSnapshotter {
+
+        private TestSnapshotter(Builder builder) {
+            super(builder);
         }
 
-        public TestSnapshotter(EventStore eventStore, TransactionManager transactionManager) {
-            super(eventStore, DirectExecutor.INSTANCE, transactionManager);
+        private static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -166,6 +159,39 @@ public class AbstractSnapshotterTest {
             }
             return new GenericDomainEventMessage<>("test", aggregateIdentifier, lastIdentifier,
                                                    "Mock contents", MetaData.emptyInstance());
+        }
+
+        private long getLastIdentifierFrom(DomainEventStream eventStream) {
+            long lastSequenceNumber = -1;
+            while (eventStream.hasNext()) {
+                lastSequenceNumber = eventStream.next().getSequenceNumber();
+            }
+            return lastSequenceNumber;
+        }
+
+        private static class Builder extends AbstractSnapshotter.Builder {
+
+            @Override
+            public Builder eventStore(EventStore eventStore) {
+                super.eventStore(eventStore);
+                return this;
+            }
+
+            @Override
+            public Builder executor(Executor executor) {
+                super.executor(executor);
+                return this;
+            }
+
+            @Override
+            public Builder transactionManager(TransactionManager transactionManager) {
+                super.transactionManager(transactionManager);
+                return this;
+            }
+
+            private TestSnapshotter build() {
+                return new TestSnapshotter(this);
+            }
         }
     }
 

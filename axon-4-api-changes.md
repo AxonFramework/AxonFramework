@@ -136,3 +136,6 @@ the other Builder implementations introduced. This entails the following changes
 - org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine
 - org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine
 - org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine
+- org.axonframework.eventsourcing.AbstractSnapshotter
+- org.axonframework.eventsourcing.AggregateSnapshotter
+- org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter
