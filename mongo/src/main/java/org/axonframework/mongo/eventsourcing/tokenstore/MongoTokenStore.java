@@ -334,7 +334,7 @@ public class MongoTokenStore implements TokenStore {
          *
          * @param mongoTemplate the {@link MongoTemplate} providing access to the collection which stores the
          *                      {@link TrackingToken}s
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder mongoTemplate(MongoTemplate mongoTemplate) {
             assertNonNull(mongoTemplate, "MongoTemplate may not be null");
