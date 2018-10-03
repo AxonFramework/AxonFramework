@@ -126,7 +126,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
          *
          * @param eventStore the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will
          *                   store snapshots in
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventStore(EventStore eventStore) {
             assertNonNull(eventStore, "EventStore may not be null");
@@ -139,7 +139,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
          * {@link DirectExecutor}.
          *
          * @param executor an {@link Executor} which handles the actual snapshot creation process
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder executor(Executor executor) {
             assertNonNull(executor, "Executor may not be null");
@@ -153,7 +153,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
          *
          * @param transactionManager the {@link TransactionManager} used to manage the transaction around storing the
          *                           snapshot
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder transactionManager(TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");

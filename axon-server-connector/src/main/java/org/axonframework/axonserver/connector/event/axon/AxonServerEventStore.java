@@ -172,7 +172,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          *
          * @param configuration the {@link AxonServerConfiguration} describing the servers to connect with and how to
          *                      manage flow control
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder configuration(AxonServerConfiguration configuration) {
             assertNonNull(configuration, "AxonServerConfiguration may not be null");
@@ -189,7 +189,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          *
          * @param platformConnectionManager the {@link PlatformConnectionManager} managing the connections to the
          *                                  AxonServer platform
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder platformConnectionManager(PlatformConnectionManager platformConnectionManager) {
             assertNonNull(platformConnectionManager, "PlatformConnectionManager may not be null");
@@ -240,7 +240,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          * function to set the EventStorageEngine.
          *
          * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder upcasterChain(EventUpcaster upcasterChain) {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");

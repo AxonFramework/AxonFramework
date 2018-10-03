@@ -192,7 +192,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          * used to create the relevant Aggregate Root instance, which represent the snapshots.
          *
          * @param aggregateFactories an array of {@link AggregateFactory} instances which this snapshotter will support
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder aggregateFactories(AggregateFactory<?>... aggregateFactories) {
             return aggregateFactories(Arrays.asList(aggregateFactories));
@@ -204,7 +204,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          *
          * @param aggregateFactories a {@link List} of {@link AggregateFactory} instances which this snapshotter will
          *                           support
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder aggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
             assertNonNull(aggregateFactories, "AggregateFactories may not be null");
@@ -218,7 +218,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          *
          * @param repositoryProvider the {@link RepositoryProvider} provided to the snapshot aggregates this snapshotter
          *                           creates for correct instantiation
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder repositoryProvider(RepositoryProvider repositoryProvider) {
             this.repositoryProvider = repositoryProvider;
@@ -231,7 +231,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          *
          * @param parameterResolverFactory the {@link ParameterResolverFactory} used to resolve parameter values for
          *                                 annotated handlers in the snapshot aggregate this snapshotter creates
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
@@ -245,7 +245,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          *
          * @param handlerDefinition the {@link HandlerDefinition} used to create concrete handlers in the snapshot
          *                          aggregate this snapshotter creates
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder handlerDefinition(HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");

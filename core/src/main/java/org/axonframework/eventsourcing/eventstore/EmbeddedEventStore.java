@@ -496,7 +496,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          *
          * @param cachedEvents an {@code int} specifying the maximum number of events in the cache that is shared
          *                     between the streams of tracking event processors
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder cachedEvents(int cachedEvents) {
             assertNonNull(cachedEvents, "{} may not be null");
@@ -514,7 +514,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          *
          * @param fetchDelay a {@code long} specifying the time to wait before fetching new events from the backing
          *                   storage engine while tracking after a previous stream was fetched and read
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder fetchDelay(long fetchDelay) {
             assertNonNull(fetchDelay, "{} may not be null");
@@ -533,7 +533,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * delay.
          *
          * @param cleanupDelay a {@code long} specifying the delay between two clean ups of lagging event processors
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder cleanupDelay(long cleanupDelay) {
             assertNonNull(cleanupDelay, "{} may not be null");
@@ -546,7 +546,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * {@link TimeUnit#MILLISECONDS}.
          *
          * @param timeUnit the {@link TimeUnit} for the {@link Builder#fetchDelay} and {@link Builder#cleanupDelay}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder timeUnit(TimeUnit timeUnit) {
             assertNonNull(timeUnit, "TimeUnit may not be null");
@@ -559,7 +559,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
          * a {@link AxonThreadFactory} with {@link ThreadGroup} {@link EmbeddedEventStore#THREAD_GROUP}.
          *
          * @param threadFactory a {@link ThreadFactory} used to create threads for consuming, producing and cleaning up
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder threadFactory(ThreadFactory threadFactory) {
             assertNonNull(threadFactory, "ThreadFactory may not be null");

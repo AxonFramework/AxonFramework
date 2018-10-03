@@ -193,7 +193,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
          * Sets the {@link EventStorageEngine} used to store and load events.
          *
          * @param storageEngine the {@link EventStorageEngine} used to store and load events
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder storageEngine(EventStorageEngine storageEngine) {
             assertNonNull(storageEngine, "EventStorageEngine may not be null");
