@@ -229,7 +229,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                 EventTableFactory tableFactory) {
         return createEngine(upcasterChain,
                             persistenceExceptionResolver,
-                            s -> true,
+                            snapshot -> true,
                             eventSchema,
                             dataType,
                             tableFactory,
@@ -241,7 +241,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                 int batchSize) {
         return createEngine(NoOpEventUpcaster.INSTANCE,
                             persistenceExceptionResolver,
-                            s -> true,
+                            snapshot -> true,
                             eventSchema,
                             byte[].class,
                             HsqlEventTableFactory.INSTANCE,

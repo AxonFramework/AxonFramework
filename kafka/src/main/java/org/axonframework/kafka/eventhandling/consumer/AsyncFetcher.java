@@ -83,7 +83,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
     /**
      * Instantiate a Builder to be able to create a {@link AsyncFetcher}.
      * <p>
-     * The {@code bufferFactory} is defaulted to an {@link SortedKafkaMessageBuffer}, the {@link ExecutorService} to an
+     * The {@code bufferFactory} is defaulted to a {@link SortedKafkaMessageBuffer}, the {@link ExecutorService} to an
      * {@link Executors#newCachedThreadPool()} using an {@link AxonThreadFactory}, the {@link KafkaMessageConverter} to
      * a {@link DefaultKafkaMessageConverter}, the {@code topic} to {@code Axon.Events}, the
      * {@code consumerRecordCallback} to a no-op function and the {@code pollTimeout} to {@code 5000} milliseconds.
@@ -163,7 +163,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          *
          * @param consumerFactory a {@link ConsumerFactory} to be used by this {@link Fetcher} implementation to create
          *                        {@link Consumer} instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> consumerFactory(ConsumerFactory<K, V> consumerFactory) {
             assertNonNull(consumerFactory, "ConsumerFactory may not be null");
@@ -178,7 +178,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          * @param consumerConfiguration a {@link DefaultConsumerFactory} with the given {@code consumerConfiguration},
          *                              to be used by this {@link Fetcher} implementation to create {@link Consumer}
          *                              instances
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> consumerFactory(Map<String, Object> consumerConfiguration) {
             this.consumerFactory = new DefaultConsumerFactory<>(consumerConfiguration);
@@ -194,7 +194,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          *
          * @param executorService a {@link ExecutorService} used to start {@link Consumer} instances for fetching Kafka
          *                        records
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> executorService(ExecutorService executorService) {
             assertNonNull(executorService, "ExecutorService may not be null");
@@ -209,7 +209,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          * {@link SortedKafkaMessageBuffer}.
          *
          * @param bufferFactory a {@link Supplier} to create a buffer for the Kafka records fetcher
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> bufferFactory(Supplier<Buffer<KafkaEventMessage>> bufferFactory) {
             assertNonNull(bufferFactory, "Buffer factory may not be null");
@@ -226,7 +226,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          *
          * @param messageConverter a {@link KafkaMessageConverter} used to convert Kafka messages into
          *                         {@link org.axonframework.eventhandling.EventMessage}s
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> messageConverter(KafkaMessageConverter<K, V> messageConverter) {
             assertNonNull(messageConverter, "MessageConverter may not be null");
@@ -239,7 +239,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          * {@code Axon.Events}.
          *
          * @param topic the Kafka {@code topic} to read {@link org.axonframework.eventhandling.EventMessage}s from
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> topic(String topic) {
             assertThat(topic, name -> Objects.nonNull(name) && !"".equals(name), "The topic may not be null or empty");
@@ -253,7 +253,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          *
          * @param consumerRecordCallback a {@code consumerRecordCallback} {@link BiFunction} used to invoke once a
          *                               {@link ConsumerRecord} is inserted into the {@link Buffer}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> consumerRecordCallback(
                 BiFunction<ConsumerRecord<K, V>, KafkaTrackingToken, Void> consumerRecordCallback) {
@@ -268,7 +268,7 @@ public class AsyncFetcher<K, V> implements Fetcher {
          *
          * @param timeout  the timeout as a {@code long} when reading message from the topic
          * @param timeUnit the {@link TimeUnit} in which the timeout is expressed
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> pollTimeout(long timeout, TimeUnit timeUnit) {
             this.pollTimeout = timeUnit.toMillis(timeout);

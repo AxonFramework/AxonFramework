@@ -63,11 +63,11 @@ public class KafkaIntegrationTest {
                 .topic("integration")
                 .build();
         publisher.start();
-        ConsumerFactory<String, byte[]> cf =
+        ConsumerFactory<String, byte[]> consumerFactory =
                 new DefaultConsumerFactory<>(minimal(kafka, "consumer1", ByteArrayDeserializer.class));
 
         Fetcher fetcher = AsyncFetcher.<String, byte[]>builder()
-                .consumerFactory(cf)
+                .consumerFactory(consumerFactory)
                 .topic("integration")
                 .pollTimeout(300, TimeUnit.MILLISECONDS)
                 .build();

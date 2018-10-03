@@ -226,7 +226,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
          * Sets the {@link MongoTemplate} used to obtain the database and the collections.
          *
          * @param template the {@link MongoTemplate} used to obtain the database and the collections
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder mongoTemplate(MongoTemplate template) {
             assertNonNull(template, "MongoTemplate may not be null");
@@ -237,11 +237,11 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
         /**
          * Sets the {@link StorageStrategy} specifying how to store and retrieve events and snapshots from the
          * collections. Defaults to a {@link DocumentPerEventStorageStrategy}, causing every event and snapshot to be
-         * stored in a separate Mongo document.
+         * stored in a separate Mongo Document.
          *
          * @param storageStrategy the {@link StorageStrategy} specifying how to store and retrieve events and snapshots
          *                        from the collections
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder storageStrategy(StorageStrategy storageStrategy) {
             assertNonNull(storageStrategy, "StorageStrategy may not be null");

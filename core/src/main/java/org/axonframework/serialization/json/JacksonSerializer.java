@@ -251,7 +251,7 @@ public class JacksonSerializer implements Serializer {
          *
          * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
          *                         serialized
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder revisionResolver(RevisionResolver revisionResolver) {
             assertNonNull(revisionResolver, "RevisionResolver may not be null");
@@ -265,7 +265,7 @@ public class JacksonSerializer implements Serializer {
          *
          * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
          *                  upcasters to convert between different content types
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder converter(Converter converter) {
             assertNonNull(converter, "Converter may not be null");
@@ -278,7 +278,7 @@ public class JacksonSerializer implements Serializer {
          * customization of the serialized form. Defaults to the output of {@link ObjectMapper#ObjectMapper()}.
          *
          * @param objectMapper an {@link ObjectMapper} used to serialize and parse the objects to JSON
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder objectMapper(ObjectMapper objectMapper) {
             assertNonNull(objectMapper, "ObjectMapper may not be null");
@@ -291,7 +291,7 @@ public class JacksonSerializer implements Serializer {
          * {@link Object#getClass()#getClassLoader()} call.
          *
          * @param classLoader the {@link ClassLoader} used to load classes with when deserializing
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder classLoader(ClassLoader classLoader) {
             assertNonNull(classLoader, "ClassLoader may not be null");

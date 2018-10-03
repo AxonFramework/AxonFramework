@@ -172,7 +172,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
          * will generally retrieve all events required to rebuild an aggregate's state.
          *
          * @param batchSize an {@code int} specifying the number of events that should be read at each database access
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder batchSize(int batchSize) {
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");

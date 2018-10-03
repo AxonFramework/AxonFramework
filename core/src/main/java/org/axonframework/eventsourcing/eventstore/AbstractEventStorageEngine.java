@@ -231,7 +231,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          * {@link NoOpEventUpcaster}.
          *
          * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder upcasterChain(EventUpcaster upcasterChain) {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
@@ -246,7 +246,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          *
          * @param persistenceExceptionResolver the {@link PersistenceExceptionResolver} used to detect concurrency
          *                                     exceptions from the backing database
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
             this.persistenceExceptionResolver = persistenceExceptionResolver;
@@ -272,7 +272,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          * {@code true} regardless.
          *
          * @param snapshotFilter a {@link Predicate} which decides whether to take a snapshot into account
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder snapshotFilter(Predicate<? super DomainEventData<?>> snapshotFilter) {
             assertNonNull(snapshotFilter, "The snapshotFilter may not be null");

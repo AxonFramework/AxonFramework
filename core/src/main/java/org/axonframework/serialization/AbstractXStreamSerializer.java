@@ -278,7 +278,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          * Sets the {@link XStream} used to perform the serialization of objects to XML, and vice versa.
          *
          * @param xStream the {@link XStream} used to perform the serialization of objects to XML, and vice versa
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder xStream(XStream xStream) {
             assertNonNull(xStream, "XStream may not be null");
@@ -291,7 +291,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          * xml function calls. Defaults to a {@link Charset#forName(String)} using the {@code UTF-8} character set.
          *
          * @param charset the {@link Charset} used for the in- and output streams required by {@link XStream}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder charset(Charset charset) {
             assertNonNull(charset, "Charset may not be null");
@@ -306,7 +306,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          *
          * @param revisionResolver a {@link RevisionResolver} used to resolve the revision from an object to be
          *                         serialized
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder revisionResolver(RevisionResolver revisionResolver) {
             assertNonNull(revisionResolver, "RevisionResolver may not be null");
@@ -321,7 +321,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
          *
          * @param converter a {@link Converter} used as a converter factory providing converter instances utilized by
          *                  upcasters to convert between different content types
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder converter(Converter converter) {
             assertNonNull(converter, "Converter may not be null");
