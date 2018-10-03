@@ -303,7 +303,7 @@ public class KafkaPublisher<K, V> {
          *
          * @param messageSource a {@link SubscribableMessageSource} of type {@link EventMessage} which will provide the
          *                      EventMessages to be published on the Kafka topic
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> messageSource(SubscribableMessageSource<EventMessage<?>> messageSource) {
             assertNonNull(messageSource, "SubscribableMessageSource may not be null");
@@ -317,7 +317,7 @@ public class KafkaPublisher<K, V> {
          *
          * @param producerFactory a {@link ProducerFactory} which will instantiate {@link Producer} instances to publish
          *                        {@link EventMessage}s on the Kafka topic
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> producerFactory(ProducerFactory<K, V> producerFactory) {
             assertNonNull(producerFactory, "ProducerFactory may not be null");
@@ -333,7 +333,7 @@ public class KafkaPublisher<K, V> {
          *
          * @param messageConverter a {@link KafkaMessageConverter} used to convert {@link EventMessage}s into Kafka
          *                         messages
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> messageConverter(KafkaMessageConverter<K, V> messageConverter) {
             assertNonNull(messageConverter, "MessageConverter may not be null");
@@ -346,7 +346,7 @@ public class KafkaPublisher<K, V> {
          * publisher. Defaults to a {@link NoOpMessageMonitor}.
          *
          * @param messageMonitor a {@link MessageMonitor} used to monitor this Kafka publisher
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> messageMonitor(MessageMonitor<? super EventMessage<?>> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
@@ -358,7 +358,7 @@ public class KafkaPublisher<K, V> {
          * Set the Kafka {@code topic} to publish {@link EventMessage}s on. Defaults to {@code Axon.Events}.
          *
          * @param topic the Kafka {@code topic} to publish {@link EventMessage}s on
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> topic(String topic) {
             assertThat(topic, name -> Objects.nonNull(name) && !"".equals(name), "The topic may not be null or empty");
@@ -372,7 +372,7 @@ public class KafkaPublisher<K, V> {
          *
          * @param publisherAckTimeout a {@code long} specifying how long to wait for a publisher to acknowledge a
          *                            message has been sent
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder<K, V> publisherAckTimeout(long publisherAckTimeout) {
             assertThat(publisherAckTimeout,
