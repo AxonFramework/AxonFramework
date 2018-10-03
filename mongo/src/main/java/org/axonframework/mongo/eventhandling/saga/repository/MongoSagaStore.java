@@ -162,7 +162,7 @@ public class MongoSagaStore implements SagaStore<Object> {
          * Sets the {@link MongoTemplate} providing access to the collections.
          *
          * @param mongoTemplate the {@link MongoTemplate} providing access to the collections
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder mongoTemplate(MongoTemplate mongoTemplate) {
             assertNonNull(mongoTemplate, "MongoTemplate may not be null");
@@ -174,7 +174,7 @@ public class MongoSagaStore implements SagaStore<Object> {
          * Sets the {@link Serializer} used to de-/serialize a Saga instance. Defaults to a {@link XStreamSerializer}.
          *
          * @param serializer a {@link Serializer} used to de-/serialize a Saga instance
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");

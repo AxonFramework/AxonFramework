@@ -79,7 +79,7 @@ public abstract class AbstractMongoTemplate {
          * {@link AbstractMongoTemplate.Builder#DEFAULT_AXONFRAMEWORK_DATABASE} as the database name.
          *
          * @param mongoClient the {@link MongoClient} used to retrieve a {@link MongoDatabase} from
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder mongoDatabase(MongoClient mongoClient) {
             return mongoDatabase(mongoClient, DEFAULT_AXONFRAMEWORK_DATABASE);
@@ -92,7 +92,7 @@ public abstract class AbstractMongoTemplate {
          *
          * @param mongoClient  the {@link MongoClient} used to retrieve a {@link MongoDatabase} from
          * @param databaseName a {@link String} denoting the name of the {@link MongoDatabase}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder mongoDatabase(MongoClient mongoClient, String databaseName) {
             assertNonNull(mongoClient, "MongoClient may not be null");
@@ -104,7 +104,7 @@ public abstract class AbstractMongoTemplate {
          * Sets the {@link MongoDatabase} used by this template to connect to a Mongo instance.
          *
          * @param mongoDatabase the {@link MongoDatabase} used by this template to connect to a Mongo instance
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder mongoDatabase(MongoDatabase mongoDatabase) {
             assertNonNull(mongoDatabase, "MongoDatabase may not be null");

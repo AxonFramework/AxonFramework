@@ -174,7 +174,7 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
          * Sets the {@code domainEventsCollectionName} to use as the collection name for Domain Events.
          *
          * @param domainEventsCollectionName a {@link String} specifying the collection name for Domain Events
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder domainEventsCollectionName(String domainEventsCollectionName) {
             assertName(domainEventsCollectionName, "domainEventsCollectionName");
@@ -186,7 +186,7 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
          * Sets the {@code snapshotEventsCollectionName} to use as the collection name for Snapshot Events.
          *
          * @param snapshotEventsCollectionName a {@link String} specifying the collection name for Snapshot Events
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder snapshotEventsCollectionName(String snapshotEventsCollectionName) {
             assertName(snapshotEventsCollectionName, "snapshotEventsCollectionName");
@@ -198,7 +198,7 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
          * Sets the {@code trackingTokensCollectionName} to use as the collection name for Tracking Tokens.
          *
          * @param trackingTokensCollectionName a {@link String} specifying the collection name for Tracking Tokens
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder trackingTokensCollectionName(String trackingTokensCollectionName) {
             assertName(trackingTokensCollectionName, "trackingTokensCollectionName");
@@ -210,7 +210,7 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
          * Sets the {@code sagasCollectionName} to use as the collection name for Saga instances.
          *
          * @param sagasCollectionName a {@link String} specifying the collection name for Sagas
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder sagasCollectionName(String sagasCollectionName) {
             assertName(sagasCollectionName, "sagasCollectionName");
