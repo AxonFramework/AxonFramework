@@ -192,7 +192,7 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
          * the key for the {@link ProducerRecord}. Defaults to a {@link SequentialPerAggregatePolicy} instance.
          *
          * @param sequencingPolicy a {@link SequencingPolicy} used to generate the key for the {@link ProducerRecord}
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder sequencingPolicy(SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
             assertNonNull(sequencingPolicy, "SequencingPolicy may not be null");
@@ -207,7 +207,7 @@ public class DefaultKafkaMessageConverter implements KafkaMessageConverter<Strin
          *
          * @param headerValueMapper a {@link BiFunction} of {@link String}, {@link Object} and {@link RecordHeader},
          *                          used for mapping values to Kafka headers
-         * @return the current Builder instance, for a fluent interfacing
+         * @return the current Builder instance, for fluent interfacing
          */
         public Builder headerValueMapper(BiFunction<String, Object, RecordHeader> headerValueMapper) {
             assertNonNull(headerValueMapper, "{} may not be null");

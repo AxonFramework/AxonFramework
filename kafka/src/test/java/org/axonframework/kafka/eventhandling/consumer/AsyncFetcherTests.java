@@ -68,9 +68,9 @@ public class AsyncFetcherTests {
 
     @SuppressWarnings("unchecked")
     private static ConsumerFactory<String, String> mockConsumerFactory(String topic) {
-        ConsumerFactory<String, String> cf = mock(ConsumerFactory.class);
+        ConsumerFactory<String, String> consumerFactory = mock(ConsumerFactory.class);
         Consumer<String, String> consumer = mock(Consumer.class);
-        when(cf.createConsumer()).thenReturn(consumer);
+        when(consumerFactory.createConsumer()).thenReturn(consumer);
 
         int partition = 0;
         Map<TopicPartition, List<ConsumerRecord<String, String>>> record = new HashMap<>();
@@ -80,7 +80,7 @@ public class AsyncFetcherTests {
         ConsumerRecords<String, String> records = new ConsumerRecords<>(record);
         when(consumer.poll(anyLong())).thenReturn(records);
 
-        return cf;
+        return consumerFactory;
     }
 
     private static void assertMessagesCountPerPartition(int expectedMessages, int p0, int p1, int p2, int p3, int p4,
@@ -137,10 +137,10 @@ public class AsyncFetcherTests {
             put(0, 0L);
         }});
         String topic = "foo";
-        ConsumerFactory<String, String> cf = mockConsumerFactory(topic);
+        ConsumerFactory<String, String> consumerFactory = mockConsumerFactory(topic);
         SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(1);
         Fetcher testSubject = AsyncFetcher.<String, String>builder()
-                .consumerFactory(cf)
+                .consumerFactory(consumerFactory)
                 .bufferFactory(() -> buffer)
                 .executorService(newSingleThreadExecutor())
                 .messageConverter(new ValueConverter())
@@ -171,7 +171,7 @@ public class AsyncFetcherTests {
         int p0 = 0, p1 = 1, p2 = 2, p3 = 3, p4 = 4;
         ProducerFactory<String, String> pf = publishRecords(topic, p0, p1, p2, p3, p4);
         SortedKafkaMessageBuffer<KafkaEventMessage> buffer = new SortedKafkaMessageBuffer<>(expectedMessages);
-        ConsumerFactory<String, String> cf = consumerFactory(kafka, topic);
+        ConsumerFactory<String, String> consumerFactory = consumerFactory(kafka, topic);
         Map<Integer, Long> positions = new HashMap<Integer, Long>() {{
             put(0, 5L);
             put(1, 1L);
@@ -180,7 +180,7 @@ public class AsyncFetcherTests {
             put(4, 0L);
         }};
         Fetcher testSubject = AsyncFetcher.<String, String>builder()
-                .consumerFactory(cf)
+                .consumerFactory(consumerFactory)
                 .bufferFactory(() -> buffer)
                 .messageConverter(new ValueConverter())
                 .topic(topic)
