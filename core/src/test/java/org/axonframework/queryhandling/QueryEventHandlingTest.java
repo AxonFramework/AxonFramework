@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.*;
@@ -37,9 +36,8 @@ public class QueryEventHandlingTest {
                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                   .registerQueryHandler(c -> userSummaryProjection);
 
-        EventHandlingConfiguration ehConfiguration = new EventHandlingConfiguration();
-        ehConfiguration.registerEventHandler(c -> userSummaryProjection);
-        configurer.registerModule(ehConfiguration);
+        configurer.eventProcessing()
+                  .registerEventHandler(c -> userSummaryProjection);
 
         Configuration configuration = configurer.buildConfiguration();
 

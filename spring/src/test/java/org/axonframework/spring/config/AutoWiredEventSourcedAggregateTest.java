@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -65,6 +66,11 @@ public class AutoWiredEventSourcedAggregateTest {
         @Bean
         public EntityManagerProvider entityManagerProvider() {
             return mock(EntityManagerProvider.class);
+        }
+
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            return new EventProcessingModule();
         }
 
         @Aggregate

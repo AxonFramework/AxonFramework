@@ -28,6 +28,8 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition;
 import org.axonframework.commandhandling.model.inspection.MethodCommandHandlerInterceptorDefinition;
 import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition;
 import org.axonframework.eventhandling.EventBus;
@@ -125,6 +127,9 @@ public class SpringAxonAutoConfigurerTest {
     @Autowired(required = false)
     private EventProcessingConfiguration eventProcessingConfiguration;
 
+    @Autowired(required = false)
+    private EventProcessingConfigurer eventProcessingConfigurer;
+
     @Autowired
     private org.axonframework.config.Configuration axonConfig;
 
@@ -162,6 +167,7 @@ public class SpringAxonAutoConfigurerTest {
         assertNotNull(eventStore);
         assertNotNull(commandBus);
         assertNotNull(mySagaConfiguration);
+        assertNotNull(eventProcessingConfigurer);
         assertNotNull(eventProcessingConfiguration);
         assertEquals(eventProcessingConfiguration, axonConfig.eventProcessingConfiguration());
         assertTrue("Expected Axon to have configured an EventStore", eventBus instanceof EventStore);
@@ -183,7 +189,7 @@ public class SpringAxonAutoConfigurerTest {
     @Test
     public void testSagaIsConfigured() {
         AtomicInteger counter = new AtomicInteger();
-        eventProcessingConfiguration.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
+        eventProcessingConfigurer.registerHandlerInterceptor("MySagaProcessor", config -> (uow, chain) -> {
             counter.incrementAndGet();
             return chain.proceed();
         });
@@ -303,6 +309,13 @@ public class SpringAxonAutoConfigurerTest {
     @Scope
     @Configuration
     public static class Context {
+
+        @Bean
+        public EventProcessingModule eventProcessingConfiguration() {
+            EventProcessingModule eventProcessingModule = new EventProcessingModule();
+            eventProcessingModule.usingSubscribingEventProcessors();
+            return eventProcessingModule;
+        }
 
         @Primary
         @Bean(destroyMethod = "shutdown")
@@ -528,8 +541,9 @@ public class SpringAxonAutoConfigurerTest {
         @Bean
         public SagaConfiguration mySagaConfiguration(
                 @Qualifier("customSagaStore") SagaStore<? super MySaga> customSagaStore) {
-            return SagaConfiguration.subscribingSagaManager(MySaga.class)
-                                    .configureSagaStore(c -> customSagaStore);
+            return SagaConfiguration.forType(MySaga.class)
+                                    .storeBuilder(c -> customSagaStore)
+                                    .configure();
         }
 
         @Bean

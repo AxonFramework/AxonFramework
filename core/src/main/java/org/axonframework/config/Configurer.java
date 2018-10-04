@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -183,7 +184,6 @@ public interface Configurer {
      * @param module The module to register
      * @return the current instance of the Configurer, for chaining purposes
      * @see SagaConfiguration
-     * @see EventHandlingConfiguration
      */
     Configurer registerModule(ModuleConfiguration module);
 
@@ -422,6 +422,18 @@ public interface Configurer {
      * @return the current instance of the Configurer, for chaining purposes
      */
     Configurer registerHandlerDefinition(BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
+
+    /**
+     * Gets Event Processing Configurer registered as a module with this Configurer. If there aren't any, it will
+     * create
+     * a {@link EventProcessingModule} and register it as a module. If there are more than one, {@link
+     * AxonConfigurationException} is thrown.
+     *
+     * @return an instance of Event Processing Configurer
+     *
+     * @throws AxonConfigurationException thrown if there are more Event Processing Configurers
+     */
+    EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
 
     /**
      * Returns the completely initialized Configuration built using this configurer. It is not recommended to change
