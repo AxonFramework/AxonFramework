@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,15 +31,15 @@ import static java.util.Collections.synchronizedMap;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
- * {@link #obtainLock} will block until a lock could be obtained or back off limit is reached, based on the 
- * {@link BackoffParameters}, by throwing an exception. The latter will cause the command to fail, but will allow 
+ * {@link #obtainLock} will block until a lock could be obtained or back off limit is reached, based on the
+ * {@link BackoffParameters}, by throwing an exception. The latter will cause the command to fail, but will allow
  * the calling thread to be freed. If a lock is obtained by a thread, that thread has guaranteed unique access.
  * <p/>
  * Each thread can hold the same lock multiple times. The lock will only be released for other threads when the lock
  * has been released as many times as it was obtained.
  * <p/>
  * This lock can be used to ensure thread safe access to a number of objects, such as Aggregates and Sagas.
- *
+ * <p>
  * Back off properties with respect to acquiring locks can be configured through the {@link BackoffParameters}.
  *
  * @author Allard Buijze
@@ -53,6 +53,22 @@ public class PessimisticLockFactory implements LockFactory {
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
     private final BackoffParameters backoffParameters;
 
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
+        return threadsWaitingForMyLocks(owner, INSTANCES);
+    }
+
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
+        Set<Thread> waitingThreads = new HashSet<>();
+        for (PessimisticLockFactory lock : locksInUse) {
+            lock.locks.values().stream()
+                      .filter(disposableLock -> disposableLock.isHeldBy(owner))
+                      .forEach(disposableLock -> disposableLock.queuedThreads().stream()
+                                                               .filter(waitingThreads::add)
+                                                               .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
+        }
+        return waitingThreads;
+    }
+
     /**
      * Creates a new IdentifierBasedLock instance.
      * <p/>
@@ -62,17 +78,15 @@ public class PessimisticLockFactory implements LockFactory {
      * @apiNote Since the previous versions didn't support any backoff properties, this no-arg constructor creates a
      * {@link PessimisticLockFactory} with no backoff properties. This is however a poor default (the system will
      * very likely converge to a state where it no longer handles any commands if any lock is held indefinitely.) In the
-     * next major version of Axon sane defaults should be chosen and thus behavior will change. Should your setup rely
+     * next major version of Axon other defaults will chosen and thus behavior will change. Should your setup rely
      * on the no-backoff behavior then you are advised to call {@link #PessimisticLockFactory(BackoffParameters)} with
      * explicitly specified {@link BackoffParameters}.
-     *
      * @Deprecated use {@link #PessimisticLockFactory(BackoffParameters)} instead
      */
     @Deprecated
     public PessimisticLockFactory() {
         this(new BackoffParameters(-1, -1, 100));
     }
-
 
     /**
      * Creates a new IdentifierBasedLock instance.
@@ -120,69 +134,53 @@ public class PessimisticLockFactory implements LockFactory {
         return lock;
     }
 
-    private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
-        return threadsWaitingForMyLocks(owner, INSTANCES);
-    }
-
-    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
-        Set<Thread> waitingThreads = new HashSet<>();
-        for (PessimisticLockFactory lock : locksInUse) {
-            lock.locks.values().stream()
-                    .filter(disposableLock -> disposableLock.isHeldBy(owner))
-                    .forEach(disposableLock -> disposableLock.queuedThreads().stream()
-                            .filter(waitingThreads::add)
-                            .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
-        }
-        return waitingThreads;
-    }
-
     /**
      * There are 3 values:
-     *
+     * <p>
      * acquireAttempts
-     *  This used to specify the maxium number of attempts to obtain a lock before we back off
-     *  (throwing a {@link LockAcquisitionFailedException} if it does). A value of '-1' means unlimited attempts.
-     *
+     * This used to specify the maxium number of attempts to obtain a lock before we back off
+     * (throwing a {@link LockAcquisitionFailedException} if it does). A value of '-1' means unlimited attempts.
+     * <p>
      * maximumQueued
-     *  Maximum number of queued threads we allow to try and obtain a lock, if another thread tries to obtain the lock
-     *  after the limit is reached we back off (throwing a {@link LockAcquisitionFailedException}). A value of '-1'
-     *  means the maximum queued threads is unbound / no limit.
-     *  NOTE: This relies on approximation given by {@link ReentrantLock#getQueueLength()} so the effective limit may
-     *  be higher then specified. Since this is a back off control this should be ok.
-     *
-     * spinTime
-     *  Time permitted to try and obtain a lock per acquire attempt in milliseconds.
-     *  NOTE: The spintime of the first attempt is always zero, so max wait time is approx
-     *  (acquireAttempts - 1) * spinTime
+     * Maximum number of queued threads we allow to try and obtain a lock, if another thread tries to obtain the lock
+     * after the limit is reached we back off (throwing a {@link LockAcquisitionFailedException}). A value of '-1'
+     * means the maximum queued threads is unbound / no limit.
+     * NOTE: This relies on approximation given by {@link ReentrantLock#getQueueLength()} so the effective limit may
+     * be higher then specified. Since this is a back off control this should be ok.
+     * <p>
+     * lockAttemptTimeout
+     * Time permitted to try and obtain a lock per acquire attempt in milliseconds.
+     * NOTE: The lockAttemptTimeout of the first attempt is always zero, so max wait time is approximately
+     * (acquireAttempts - 1) * lockAttemptTimeout
      */
     public static final class BackoffParameters {
         public final int acquireAttempts;
         public final int maximumQueued;
-        public final int spinTime;
+        public final int lockAttemptTimeout;
 
         /**
-         * A constructor that takes all values for all properties, please see the class level documentation for more
-         * detail on these properties.
-         * @param acquireAttempts   a positive number or -1 for trying indefinitely (no back off)
-         * @param maximumQueued     a positive number or -1 for no limit (no back off)
-         * @param spinTime          a non negative amount of milliseconds
+         * Initialize the BackoffParameters using given parameters.
+         *
+         * @param acquireAttempts    the total number of attempts to make to acquire the lock. A value of {@code -1} means indefinite attempts
+         * @param maximumQueued      the threshold of the number of threads queued for acquiring the lock, or {@code -1} to ignore queue size
+         * @param lockAttemptTimeout the amount of time to wait, in milliseconds, for each lock acquisition attempt
          */
-        public BackoffParameters(int acquireAttempts, int maximumQueued, int spinTime) {
+        public BackoffParameters(int acquireAttempts, int maximumQueued, int lockAttemptTimeout) {
             Assert.isTrue(
                     acquireAttempts > 0 || acquireAttempts == -1,
-                    () -> "acquireAttempts needs to be a positive integer or -1, but was '"+acquireAttempts+"'"
+                    () -> "acquireAttempts needs to be a positive integer or -1, but was '" + acquireAttempts + "'"
             );
             this.acquireAttempts = acquireAttempts;
             Assert.isTrue(
                     maximumQueued > 0 || maximumQueued == -1,
-                    () -> "maximumQueued needs to be a positive integer or -1, but was '"+maximumQueued+"'"
+                    () -> "maximumQueued needs to be a positive integer or -1, but was '" + maximumQueued + "'"
             );
             this.maximumQueued = maximumQueued;
             Assert.isFalse(
-                    spinTime < 0,
-                    () -> "spinTime needs to be a non negative integer, but was '"+spinTime+"'"
+                    lockAttemptTimeout < 0,
+                    () -> "lockAttemptTimeout needs to be a non negative integer, but was '" + lockAttemptTimeout + "'"
             );
-            this.spinTime = spinTime;
+            this.lockAttemptTimeout = lockAttemptTimeout;
         }
 
         public boolean hasAcquireAttemptLimit() {
@@ -194,10 +192,24 @@ public class PessimisticLockFactory implements LockFactory {
         }
 
         public boolean maximumQueuedThreadsReached(int queueLength) {
-            if(!hasAcquireQueueLimit()) {
+            if (!hasAcquireQueueLimit()) {
                 return false;
             }
             return queueLength >= maximumQueued;
+        }
+    }
+
+    private static final class PubliclyOwnedReentrantLock extends ReentrantLock {
+
+        private static final long serialVersionUID = -2259228494514612163L;
+
+        @Override
+        public Collection<Thread> getQueuedThreads() { // NOSONAR
+            return super.getQueuedThreads();
+        }
+
+        public boolean isHeldBy(Thread thread) {
+            return thread.equals(getOwner());
         }
     }
 
@@ -236,12 +248,12 @@ public class PessimisticLockFactory implements LockFactory {
                     do {
                         attempts--;
                         checkForDeadlock();
-                        if(backoffParameters.hasAcquireAttemptLimit() && attempts < 1) {
+                        if (backoffParameters.hasAcquireAttemptLimit() && attempts < 1) {
                             throw new LockAcquisitionFailedException(
                                     "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + backoffParameters.maximumQueued + ")"
                             );
                         }
-                    } while (!lock.tryLock(backoffParameters.spinTime, TimeUnit.MILLISECONDS));
+                    } while (!lock.tryLock(backoffParameters.lockAttemptTimeout, TimeUnit.MILLISECONDS));
                 }
             } catch (InterruptedException e) {
                 throw new LockAcquisitionFailedException("Thread was interrupted", e);
@@ -287,19 +299,5 @@ public class PessimisticLockFactory implements LockFactory {
             return lock.isHeldBy(owner);
         }
 
-    }
-
-    private static final class PubliclyOwnedReentrantLock extends ReentrantLock {
-
-        private static final long serialVersionUID = -2259228494514612163L;
-
-        @Override
-        public Collection<Thread> getQueuedThreads() { // NOSONAR
-            return super.getQueuedThreads();
-        }
-
-        public boolean isHeldBy(Thread thread) {
-            return thread.equals(getOwner());
-        }
     }
 }
