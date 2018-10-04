@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.SagaConfiguration;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
@@ -95,6 +96,7 @@ public class AxonAutoConfigurationTest {
         assertNotNull(applicationContext.getBean(EventStore.class));
         assertNotNull(applicationContext.getBean(CommandGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
+        assertNotNull(applicationContext.getBean(DeadlineManager.class));
         assertEquals(MultiParameterResolverFactory.class, applicationContext.getBean(ParameterResolverFactory.class).getClass());
         assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
         assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());

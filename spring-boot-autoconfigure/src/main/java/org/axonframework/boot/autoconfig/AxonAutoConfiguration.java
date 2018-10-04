@@ -28,8 +28,11 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
+import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -277,6 +280,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
                                   transactionManager,
                                   eh);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DeadlineManager deadlineManager(AxonConfiguration axonConfiguration,
+                                           TransactionManager transactionManager) {
+        return new SimpleDeadlineManager(
+                new ConfigurationScopeAwareProvider(axonConfiguration),
+                transactionManager);
     }
 
     @Override
