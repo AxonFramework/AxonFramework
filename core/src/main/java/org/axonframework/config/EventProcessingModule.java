@@ -253,14 +253,14 @@ public class EventProcessingModule
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))
-                                   .forEach(eventProcessor::registerInterceptor);
+                                   .forEach(eventProcessor::registerHandlerInterceptor);
 
         defaultHandlerInterceptors.stream()
                                   .map(f -> f.apply(configuration, processorName))
                                   .filter(Objects::nonNull)
-                                  .forEach(eventProcessor::registerInterceptor);
+                                  .forEach(eventProcessor::registerHandlerInterceptor);
 
-        eventProcessor.registerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
+        eventProcessor.registerHandlerInterceptor(new CorrelationDataInterceptor<>(configuration.correlationDataProviders()));
 
         return eventProcessor;
     }
@@ -510,7 +510,7 @@ public class EventProcessingModule
                                                                 Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         if (configuration != null) {
             eventProcessor(processorName).ifPresent(eventProcessor -> eventProcessor
-                    .registerInterceptor(interceptorBuilder.apply(configuration)));
+                    .registerHandlerInterceptor(interceptorBuilder.apply(configuration)));
         }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);

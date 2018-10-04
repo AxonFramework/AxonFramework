@@ -30,8 +30,11 @@ import org.springframework.context.annotation.Configuration;
  * @since 4.0
  */
 @Configuration
-@AutoConfigureAfter(name = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
-        "org.axonframework.boot.autoconfig.JpaAutoConfiguration"})
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.axonframework.boot.autoconfig.JpaAutoConfiguration",
+        "org.axonframework.boot.autoconfig.ObjectMapperAutoConfiguration"
+})
 public class EventProcessingAutoConfiguration {
 
     @Bean
