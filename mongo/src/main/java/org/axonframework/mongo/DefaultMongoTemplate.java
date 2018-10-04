@@ -241,7 +241,7 @@ public class DefaultMongoTemplate extends AbstractMongoTemplate implements Mongo
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            super.validate();
         }
     }
 }
