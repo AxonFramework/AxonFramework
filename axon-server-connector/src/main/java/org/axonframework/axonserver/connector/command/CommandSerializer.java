@@ -30,9 +30,7 @@ import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Serializer;
-import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -91,7 +89,7 @@ public class CommandSerializer {
 
     }
 
-    CommandProviderOutbound serialize(CommandResultMessage commandResultMessage, String requestIdentifier) {
+    public CommandProviderOutbound serialize(CommandResultMessage commandResultMessage, String requestIdentifier) {
         CommandResponse.Builder responseBuilder = CommandResponse.newBuilder()
                                                                  .setMessageIdentifier(getOrDefault(commandResultMessage.getIdentifier(),UUID.randomUUID().toString()))
                                                                  .putAllMetaData(metadataSerializer.apply(commandResultMessage.getMetaData()))
