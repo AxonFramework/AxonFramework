@@ -644,6 +644,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
+            super.validate();
             assertNonNull(entityManagerProvider,
                           "The EntityManagerProvider is a hard requirement and should be provided");
             assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");

@@ -97,10 +97,10 @@ public class MongoTokenStore implements TokenStore {
     /**
      * Instantiate a Builder to be able to create a {@link MongoTokenStore}.
      * <p>
-     * The {@code claimTimeout} is defaulted to a 10 seconds duration, {@code nodeId} is defaulted to the
-     * {@link ManagementFactory#getRuntimeMXBean#getName} output and the {@code contentType} to a {@code byte[]}
-     * {@link Class}. The {@link MongoTemplate} and {@link Serializer} are <b>hard requirements</b> and as such should
-     * be provided.
+     * The {@code claimTimeout} is defaulted to a 10 seconds duration (by using {@link Duration#ofSeconds(long)},
+     * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * {@code contentType} to a {@code byte[]} {@link Class}. The {@link MongoTemplate} and {@link Serializer} are
+     * <b>hard requirements</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link MongoTokenStore}
      */
@@ -316,10 +316,10 @@ public class MongoTokenStore implements TokenStore {
     /**
      * Builder class to instantiate a {@link MongoTokenStore}.
      * <p>
-     * The {@code claimTimeout} is defaulted to a 10 seconds duration, {@code nodeId} is defaulted to the
-     * {@link ManagementFactory#getRuntimeMXBean#getName} output and the {@code contentType} to a {@code byte[]}
-     * {@link Class}. The {@link MongoTemplate} and {@link Serializer} are <b>hard requirements</b> and as such should
-     * be provided.
+     * The {@code claimTimeout} is defaulted to a 10 seconds duration (by using {@link Duration#ofSeconds(long)},
+     * {@code nodeId} is defaulted to the {@link ManagementFactory#getRuntimeMXBean#getName} output and the
+     * {@code contentType} to a {@code byte[]} {@link Class}. The {@link MongoTemplate} and {@link Serializer} are
+     * <b>hard requirements</b> and as such should be provided.
      */
     public static class Builder {
 
@@ -385,7 +385,7 @@ public class MongoTokenStore implements TokenStore {
          * Sets the {@code contentType} to which a {@link TrackingToken} should be serialized. Defaults to a
          * {@code byte[]} {@link Class} type.
          *
-         * @param contentType the content type as a {@link Class }to which a {@link TrackingToken} should be serialized
+         * @param contentType the content type as a {@link Class} to which a {@link TrackingToken} should be serialized
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder contentType(Class<?> contentType) {
