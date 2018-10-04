@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -142,5 +143,83 @@ public class PessimisticLockFactoryTest {
                 lock1.release();
             }
         });
+    }
+
+    @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
+    public void testAquireBackoff() throws InterruptedException {
+        PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
+                10,
+                -1,
+                0
+        );
+        final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
+        final CountDownLatch rendezvous = new CountDownLatch(1);
+        try {
+            final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
+            final String id = "aggregateId";
+            // Obtain the lock
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.WAITING, rendezvous, exceptionInThread, id);
+            // backoff triggers, too many spins
+            lockFactory.obtainLock(id);
+        } finally {
+            rendezvous.countDown();
+        }
+    }
+
+    @Test(timeout = 5000, expected = LockAcquisitionFailedException.class)
+    public void testQueueBackoff() throws InterruptedException {
+        PessimisticLockFactory.BackoffParameters backoffConfig = new PessimisticLockFactory.BackoffParameters(
+                -1,
+                2,
+                10000
+        );
+        final PessimisticLockFactory lockFactory = new PessimisticLockFactory(backoffConfig);
+        final CountDownLatch rendezvous = new CountDownLatch(1);
+        try {
+            final AtomicReference<Exception> exceptionInThread = new AtomicReference<>();
+            final String id = "aggregateId";
+            // Obtain the lock
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.WAITING, rendezvous, exceptionInThread, id);
+            // Fill Queue 1/2
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.TIMED_WAITING, rendezvous, exceptionInThread, id);
+            // Fill Queue 2/2
+            createThreadObtainLockAndWaitForState(lockFactory, Thread.State.TIMED_WAITING, rendezvous, exceptionInThread, id);
+            // backoff triggers, queue
+            lockFactory.obtainLock(id);
+        } finally {
+            rendezvous.countDown();
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBackoffParametersConstructorAquireAttempts() {
+        int illegalValue = 0;
+        new PessimisticLockFactory.BackoffParameters(illegalValue, 100, 100);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBackoffParametersConstructorMaximumQueued() {
+        int illegalValue = 0;
+        new PessimisticLockFactory.BackoffParameters(10, illegalValue, 100);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBackoffParametersConstructorSpinTime() {
+        int illegalValue = -1;
+        new PessimisticLockFactory.BackoffParameters(10, 100, illegalValue);
+    }
+
+    private void createThreadObtainLockAndWaitForState(PessimisticLockFactory lockFactory, Thread.State state, CountDownLatch rendezvous, AtomicReference<Exception> exceptionInThread, String id) {
+        Thread thread = new Thread(() -> {
+            try(Lock ignored = lockFactory.obtainLock(id)) {
+                rendezvous.await();
+            } catch (Exception e) {
+                exceptionInThread.set(e);
+            }
+        });
+        thread.start();
+        while(thread.isAlive() && rendezvous.getCount() > 0 && thread.getState() != state) {
+            Thread.yield();
+        }
     }
 }

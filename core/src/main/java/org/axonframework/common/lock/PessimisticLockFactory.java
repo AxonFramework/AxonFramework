@@ -16,6 +16,8 @@
 
 package org.axonframework.common.lock;
 
+import org.axonframework.common.Assert;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,46 +31,59 @@ import static java.util.Collections.synchronizedMap;
 
 /**
  * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
- * {@link #obtainLock} will block until a lock could be obtained. If a lock is obtained by a thread, that
- * thread has guaranteed unique access.
+ * {@link #obtainLock} will block until a lock could be obtained or back off limit is reached, based on the 
+ * {@link BackoffParameters}, by throwing an exception. The latter will cause the command to fail, but will allow 
+ * the calling thread to be freed. If a lock is obtained by a thread, that thread has guaranteed unique access.
  * <p/>
  * Each thread can hold the same lock multiple times. The lock will only be released for other threads when the lock
  * has been released as many times as it was obtained.
  * <p/>
  * This lock can be used to ensure thread safe access to a number of objects, such as Aggregates and Sagas.
  *
+ * Back off properties with respect to acquiring locks can be configured through the {@link BackoffParameters}.
+ *
  * @author Allard Buijze
+ * @author Michael Bischoff
  * @since 1.3
  */
 public class PessimisticLockFactory implements LockFactory {
 
-    private static final Set<PessimisticLockFactory> INSTANCES =
-            newSetFromMap(synchronizedMap(new WeakHashMap<>()));
-
-    private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
-        return threadsWaitingForMyLocks(owner, INSTANCES);
-    }
-
-    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
-        Set<Thread> waitingThreads = new HashSet<>();
-        for (PessimisticLockFactory lock : locksInUse) {
-            lock.locks.values().stream()
-                    .filter(disposableLock -> disposableLock.isHeldBy(owner))
-                    .forEach(disposableLock -> disposableLock.queuedThreads().stream()
-                            .filter(waitingThreads::add)
-                            .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
-        }
-        return waitingThreads;
-    }
+    private static final Set<PessimisticLockFactory> INSTANCES = newSetFromMap(synchronizedMap(new WeakHashMap<>()));
 
     private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
+    private final BackoffParameters backoffParameters;
 
     /**
      * Creates a new IdentifierBasedLock instance.
      * <p/>
      * Deadlocks are detected across instances of the IdentifierBasedLock.
+     * This constructor specifies no back off from lock acquisition
+     *
+     * @apiNote Since the previous versions didn't support any backoff properties, this no-arg constructor creates a
+     * {@link PessimisticLockFactory} with no backoff properties. This is however a poor default (the system will
+     * very likely converge to a state where it no longer handles any commands if any lock is held indefinitely.) In the
+     * next major version of Axon sane defaults should be chosen and thus behavior will change. Should your setup rely
+     * on the no-backoff behavior then you are advised to call {@link #PessimisticLockFactory(BackoffParameters)} with
+     * explicitly specified {@link BackoffParameters}.
+     *
+     * @Deprecated use {@link #PessimisticLockFactory(BackoffParameters)} instead
      */
+    @Deprecated
     public PessimisticLockFactory() {
+        this(new BackoffParameters(-1, -1, 100));
+    }
+
+
+    /**
+     * Creates a new IdentifierBasedLock instance.
+     * <p/>
+     * Deadlocks are detected across instances of the IdentifierBasedLock.
+     * Back off policy as by supplied {@link BackoffParameters}
+     *
+     * @param backoffParameters back off policy configuration
+     */
+    public PessimisticLockFactory(BackoffParameters backoffParameters) {
+        this.backoffParameters = backoffParameters;
         INSTANCES.add(this);
     }
 
@@ -105,11 +120,92 @@ public class PessimisticLockFactory implements LockFactory {
         return lock;
     }
 
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
+        return threadsWaitingForMyLocks(owner, INSTANCES);
+    }
+
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
+        Set<Thread> waitingThreads = new HashSet<>();
+        for (PessimisticLockFactory lock : locksInUse) {
+            lock.locks.values().stream()
+                    .filter(disposableLock -> disposableLock.isHeldBy(owner))
+                    .forEach(disposableLock -> disposableLock.queuedThreads().stream()
+                            .filter(waitingThreads::add)
+                            .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
+        }
+        return waitingThreads;
+    }
+
+    /**
+     * There are 3 values:
+     *
+     * acquireAttempts
+     *  This used to specify the maxium number of attempts to obtain a lock before we back off
+     *  (throwing a {@link LockAcquisitionFailedException} if it does). A value of '-1' means unlimited attempts.
+     *
+     * maximumQueued
+     *  Maximum number of queued threads we allow to try and obtain a lock, if another thread tries to obtain the lock
+     *  after the limit is reached we back off (throwing a {@link LockAcquisitionFailedException}). A value of '-1'
+     *  means the maximum queued threads is unbound / no limit.
+     *  NOTE: This relies on approximation given by {@link ReentrantLock#getQueueLength()} so the effective limit may
+     *  be higher then specified. Since this is a back off control this should be ok.
+     *
+     * spinTime
+     *  Time permitted to try and obtain a lock per acquire attempt in milliseconds.
+     *  NOTE: The spintime of the first attempt is always zero, so max wait time is approx
+     *  (acquireAttempts - 1) * spinTime
+     */
+    public static final class BackoffParameters {
+        public final int acquireAttempts;
+        public final int maximumQueued;
+        public final int spinTime;
+
+        /**
+         * A constructor that takes all values for all properties, please see the class level documentation for more
+         * detail on these properties.
+         * @param acquireAttempts   a positive number or -1 for trying indefinitely (no back off)
+         * @param maximumQueued     a positive number or -1 for no limit (no back off)
+         * @param spinTime          a non negative amount of milliseconds
+         */
+        public BackoffParameters(int acquireAttempts, int maximumQueued, int spinTime) {
+            Assert.isTrue(
+                    acquireAttempts > 0 || acquireAttempts == -1,
+                    () -> "acquireAttempts needs to be a positive integer or -1, but was '"+acquireAttempts+"'"
+            );
+            this.acquireAttempts = acquireAttempts;
+            Assert.isTrue(
+                    maximumQueued > 0 || maximumQueued == -1,
+                    () -> "maximumQueued needs to be a positive integer or -1, but was '"+maximumQueued+"'"
+            );
+            this.maximumQueued = maximumQueued;
+            Assert.isFalse(
+                    spinTime < 0,
+                    () -> "spinTime needs to be a non negative integer, but was '"+spinTime+"'"
+            );
+            this.spinTime = spinTime;
+        }
+
+        public boolean hasAcquireAttemptLimit() {
+            return acquireAttempts != -1;
+        }
+
+        public boolean hasAcquireQueueLimit() {
+            return maximumQueued != -1;
+        }
+
+        public boolean maximumQueuedThreadsReached(int queueLength) {
+            if(!hasAcquireQueueLimit()) {
+                return false;
+            }
+            return queueLength >= maximumQueued;
+        }
+    }
+
     private class DisposableLock implements Lock {
 
         private final String identifier;
         private final PubliclyOwnedReentrantLock lock;
-        private boolean isClosed = false;
+        private volatile boolean isClosed = false;
 
         private DisposableLock(String identifier) {
             this.identifier = identifier;
@@ -131,11 +227,21 @@ public class PessimisticLockFactory implements LockFactory {
         }
 
         public boolean lock() {
+            if (backoffParameters.maximumQueuedThreadsReached(lock.getQueueLength())) {
+                throw new LockAcquisitionFailedException("Failed to acquire lock for aggregate identifier " + identifier + ": too many queued threads.");
+            }
             try {
                 if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {
+                    int attempts = backoffParameters.acquireAttempts - 1;
                     do {
+                        attempts--;
                         checkForDeadlock();
-                    } while (!lock.tryLock(100, TimeUnit.MILLISECONDS));
+                        if(backoffParameters.hasAcquireAttemptLimit() && attempts < 1) {
+                            throw new LockAcquisitionFailedException(
+                                    "Failed to acquire lock for aggregate identifier(" + identifier + "), maximum attempts exceeded (" + backoffParameters.maximumQueued + ")"
+                            );
+                        }
+                    } while (!lock.tryLock(backoffParameters.spinTime, TimeUnit.MILLISECONDS));
                 }
             } catch (InterruptedException e) {
                 throw new LockAcquisitionFailedException("Thread was interrupted", e);
@@ -152,7 +258,8 @@ public class PessimisticLockFactory implements LockFactory {
                 for (Thread thread : threadsWaitingForMyLocks(Thread.currentThread())) {
                     if (lock.isHeldBy(thread)) {
                         throw new DeadlockException(
-                                "An imminent deadlock was detected while attempting to acquire a lock");
+                                "An imminent deadlock was detected while attempting to acquire a lock"
+                        );
                     }
                 }
             }
