@@ -314,7 +314,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            super.validate();
         }
     }
 

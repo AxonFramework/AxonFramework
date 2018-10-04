@@ -284,7 +284,7 @@ public class AxonServerEventStore extends AbstractEventStore {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            super.validate();
         }
     }
 

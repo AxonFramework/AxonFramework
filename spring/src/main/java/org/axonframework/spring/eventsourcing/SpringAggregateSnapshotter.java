@@ -194,7 +194,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            super.validate();
         }
     }
 }
