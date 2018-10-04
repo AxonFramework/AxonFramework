@@ -266,6 +266,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
          */
         @Override
         protected void validate() throws AxonConfigurationException {
+            super.validate();
             assertNonNull(template, "The MongoTemplate is a hard requirement and should be provided");
         }
     }

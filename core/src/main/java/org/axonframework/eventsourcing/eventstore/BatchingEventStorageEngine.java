@@ -188,7 +188,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
          */
         @Override
         protected void validate() throws AxonConfigurationException {
-            // Kept to be overridden
+            super.validate();
         }
     }
 
