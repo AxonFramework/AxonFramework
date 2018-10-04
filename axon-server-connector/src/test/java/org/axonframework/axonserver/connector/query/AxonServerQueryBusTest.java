@@ -72,13 +72,15 @@ public class AxonServerQueryBusTest {
         conf.setInitialNrOfPermits(100);
         conf.setNewPermitsThreshold(10);
         conf.setNrOfNewPermits(1000);
-        localSegment = new SimpleQueryBus();
+        localSegment = SimpleQueryBus.builder().build();
         ser = new XStreamSerializer();
         queryBus = new AxonServerQueryBus(new PlatformConnectionManager(conf),
                                           conf,
-                                          localSegment, localSegment,
+                                          localSegment.queryUpdateEmitter(),
+                                          localSegment,
                                           ser,
-                                          ser, new QueryPriorityCalculator() {
+                                          ser,
+                                          new QueryPriorityCalculator() {
                                        });
         dummyMessagePlatformServer = new DummyMessagePlatformServer(4343);
         dummyMessagePlatformServer.start();
@@ -135,9 +137,11 @@ public class AxonServerQueryBusTest {
 
         AxonServerQueryBus queryBus2 = new AxonServerQueryBus(platformConnectionManager,
                                                               conf,
-                                                              localSegment, localSegment,
+                                                              localSegment.queryUpdateEmitter(),
+                                                              localSegment,
                                                               ser,
-                                                              ser, new QueryPriorityCalculator() {
+                                                              ser,
+                                                              new QueryPriorityCalculator() {
                                                         });
         Registration response = queryBus2.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
 
@@ -179,10 +183,13 @@ public class AxonServerQueryBusTest {
 
     @Test
     public void handlerInterceptor() {
-        SimpleQueryBus localSegment = new SimpleQueryBus();
+        SimpleQueryBus localSegment = SimpleQueryBus.builder().build();
         AxonServerQueryBus bus = new AxonServerQueryBus(platformConnectionManager, conf,
+                                                        localSegment.queryUpdateEmitter(),
                                                         localSegment,
-                                                        localSegment, ser, ser, new QueryPriorityCalculator() {});
+                                                        ser,
+                                                        ser,
+                                                        new QueryPriorityCalculator() {});
         bus.subscribe("testQuery", String.class, q -> "test: " + q.getPayloadType());
         List<Object> results = new LinkedList<>();
         bus.registerHandlerInterceptor((unitOfWork, interceptorChain) -> {

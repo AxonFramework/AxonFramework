@@ -381,7 +381,7 @@ public class EventProcessingModuleTest {
         }
 
         @Override
-        public Registration registerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+        public Registration registerHandlerInterceptor(MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
             interceptors.add(interceptor);
             return () -> interceptors.remove(interceptor);
         }

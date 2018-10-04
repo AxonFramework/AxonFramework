@@ -16,6 +16,7 @@
 
 package org.axonframework.boot.autoconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.boot.EventProcessorProperties;
 import org.axonframework.boot.SerializerProperties;
@@ -43,8 +44,10 @@ import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
@@ -65,6 +68,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -82,13 +86,22 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     private final EventProcessorProperties eventProcessorProperties;
     private final SerializerProperties serializerProperties;
+    private final ApplicationContext applicationContext;
 
     private ClassLoader beanClassLoader;
 
     public AxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
-                                 SerializerProperties serializerProperties) {
+                                 SerializerProperties serializerProperties,
+                                 ApplicationContext applicationContext) {
         this.eventProcessorProperties = eventProcessorProperties;
         this.serializerProperties = serializerProperties;
+        this.applicationContext = applicationContext;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RevisionResolver revisionResolver() {
+        return new AnnotationRevisionResolver();
     }
 
     @Bean
@@ -98,25 +111,15 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return buildSerializer(revisionResolver, serializerProperties.getGeneral());
     }
 
-    private Serializer buildSerializer(RevisionResolver revisionResolver, SerializerProperties.SerializerType serializerType) {
-        switch (serializerType) {
-            case JACKSON:
-                return new JacksonSerializer(revisionResolver, new ChainingConverter(beanClassLoader));
-            case JAVA:
-                return new JavaSerializer(revisionResolver);
-            case XSTREAM:
-            case DEFAULT:
-            default:
-                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
-                xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
-                return xStreamSerializer;
-        }
-    }
-
     @Bean
-    @ConditionalOnMissingBean
-    public RevisionResolver revisionResolver() {
-        return new AnnotationRevisionResolver();
+    @Qualifier("messageSerializer")
+    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
+    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
+        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
+                || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
+            return genericSerializer;
+        }
+        return buildSerializer(revisionResolver, serializerProperties.getMessages());
     }
 
     @Bean
@@ -134,15 +137,28 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return buildSerializer(revisionResolver, serializerProperties.getEvents());
     }
 
-    @Bean
-    @Qualifier("messageSerializer")
-    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
-    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
-        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
-                || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
-            return genericSerializer;
+    private Serializer buildSerializer(RevisionResolver revisionResolver,
+                                       SerializerProperties.SerializerType serializerType) {
+        switch (serializerType) {
+            case JACKSON:
+                Map<String, ObjectMapper> objectMapperBeans = applicationContext.getBeansOfType(ObjectMapper.class);
+                ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
+                        ? objectMapperBeans.get("defaultAxonObjectMapper")
+                        : objectMapperBeans.values().stream().findFirst()
+                                           .orElseThrow(() -> new NoClassDefFoundError(
+                                                   "com/fasterxml/jackson/databind/ObjectMapper"
+                                           ));
+                ChainingConverter converter = new ChainingConverter(beanClassLoader);
+                return new JacksonSerializer(objectMapper, revisionResolver, converter);
+            case JAVA:
+                return new JavaSerializer(revisionResolver);
+            case XSTREAM:
+            case DEFAULT:
+            default:
+                XStreamSerializer xStreamSerializer = new XStreamSerializer(revisionResolver);
+                xStreamSerializer.getXStream().setClassLoader(beanClassLoader);
+                return xStreamSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getMessages());
     }
 
     @Bean
@@ -171,6 +187,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventStore.class, "eventStore"));
     }
 
+    @SuppressWarnings("unchecked")
     @Autowired
     public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
@@ -198,7 +215,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         });
     }
 
-    private Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> resolveMessageSource(ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
+    @SuppressWarnings("unchecked")
+    private Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> resolveMessageSource(
+            ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
         Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource;
         if (v.getSource() == null) {
             messageSource = Configuration::eventStore;
@@ -208,7 +227,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         return messageSource;
     }
 
-    private Function<Configuration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
+    @SuppressWarnings("unchecked")
+    private Function<Configuration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(
+            ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
         Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy;
         if (v.getSequencingPolicy() != null) {
             sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
@@ -237,20 +258,28 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager) {
-        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                  transactionManager,
-                                  axonConfiguration.getComponent(QueryInvocationErrorHandler.class));
+        return SimpleQueryBus.builder()
+                             .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
+                             .transactionManager(transactionManager)
+                             .errorHandler(axonConfiguration.getComponent(QueryInvocationErrorHandler.class,
+                                                                          LoggingQueryInvocationErrorHandler::new))
+                             .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                             .build();
     }
 
     @ConditionalOnBean(QueryInvocationErrorHandler.class)
     @ConditionalOnMissingBean(QueryBus.class)
     @Qualifier("localSegment")
     @Bean
-    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration, TransactionManager transactionManager,
+    public SimpleQueryBus queryBus(AxonConfiguration axonConfiguration,
+                                   TransactionManager transactionManager,
                                    QueryInvocationErrorHandler eh) {
-        return new SimpleQueryBus(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"),
-                                  transactionManager,
-                                  eh);
+        return SimpleQueryBus.builder()
+                             .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
+                             .transactionManager(transactionManager)
+                             .errorHandler(eh)
+                             .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
+                             .build();
     }
 
     @Override

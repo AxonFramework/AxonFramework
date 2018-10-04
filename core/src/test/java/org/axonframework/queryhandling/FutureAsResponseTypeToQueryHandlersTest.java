@@ -44,7 +44,7 @@ public class FutureAsResponseTypeToQueryHandlersTest {
 
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
 
-    private final SimpleQueryBus queryBus = new SimpleQueryBus();
+    private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
     private final MyQueryHandler myQueryHandler = new MyQueryHandler();
     private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             myQueryHandler);

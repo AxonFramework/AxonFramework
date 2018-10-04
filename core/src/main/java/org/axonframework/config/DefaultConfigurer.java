@@ -54,11 +54,13 @@ import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.RevisionResolver;
@@ -243,10 +245,14 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryBus to use.
      */
     protected QueryBus defaultQueryBus(Configuration config) {
-        return new SimpleQueryBus(config.messageMonitor(SimpleQueryBus.class, "queryBus"),
-                                  config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"),
-                                  config.getComponent(TransactionManager.class, NoTransactionManager::instance),
-                                  config.getComponent(QueryInvocationErrorHandler.class));
+        return SimpleQueryBus.builder()
+                             .messageMonitor(config.messageMonitor(SimpleQueryBus.class, "queryBus"))
+                             .transactionManager(config.getComponent(TransactionManager.class,
+                                                                     NoTransactionManager::instance))
+                             .errorHandler(config.getComponent(QueryInvocationErrorHandler.class,
+                                                               LoggingQueryInvocationErrorHandler::new))
+                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                             .build();
     }
 
     /**
@@ -257,12 +263,7 @@ public class DefaultConfigurer implements Configurer {
      * @return The default QueryUpdateEmitter to use
      */
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        QueryBus queryBus = config.getComponent(QueryBus.class);
-        if (!(queryBus instanceof QueryUpdateEmitter)) {
-            throw new AxonConfigurationException(
-                    "Implementation of query bus does not provide emitting functionality. Provide a query update emitter or query bus which supports emitting.");
-        }
-        return (QueryUpdateEmitter) queryBus;
+        return new SimpleQueryUpdateEmitter(config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter"));
     }
 
     /**

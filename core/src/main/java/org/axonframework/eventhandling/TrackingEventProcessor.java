@@ -168,7 +168,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         this.lastTokenResourceKey = "Processor[" + name + "]/Token";
         this.initialTrackingTokenBuilder = config.getInitialTrackingToken();
 
-        registerInterceptor((unitOfWork, interceptorChain) -> {
+        registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
             if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork) unitOfWork).isFirstMessage()) {
                 tokenStore.extendClaim(getName(), unitOfWork.getResource(segmentIdResourceKey));
             }

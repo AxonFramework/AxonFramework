@@ -40,6 +40,7 @@ import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -120,7 +121,9 @@ public class JGroupsConnectorTest {
         distributedCommandBus1.dispatch(commandMessage, futureCallback);
         futureCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
-        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
+        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of
+        // ReplyingCallback is tested in its unit tests
+        //noinspection unchecked
         verify(mockCommandBus1).dispatch(argThat(x -> x != null && x.getPayload().equals(mockPayload)),
                                          any(CommandCallback.class));
     }
@@ -151,6 +154,7 @@ public class JGroupsConnectorTest {
 
         List<FutureCallback> callbacks = new ArrayList<>();
 
+        //noinspection Duplicates
         for (int t = 0; t < 100; t++) {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
@@ -245,6 +249,7 @@ public class JGroupsConnectorTest {
         assertFalse("That message should not have changed the ring",
                     connector1.getConsistentHash().getMembers().stream()
                               .map(i -> i.getConnectionEndpoint(Address.class).orElse(null))
+                              .filter(Objects::nonNull)
                               .anyMatch(a -> a.equals(new IpAddress(12345))));
     }
 
@@ -275,20 +280,6 @@ public class JGroupsConnectorTest {
         waitForConnectorSync();
     }
 
-
-    private void waitForConnectorSync() throws InterruptedException {
-        int t = 0;
-        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
-            // don't have a member for String yet, which means we must wait a little longer
-            if (t++ > 300) {
-                assertEquals("Connectors did not synchronize within 15 seconds.", connector1.getConsistentHash(),
-                             connector2.getConsistentHash());
-            }
-            Thread.sleep(50);
-        }
-        Thread.yield();
-    }
-
     @SuppressWarnings("unchecked")
     @Test
     public void testConnectAndDispatchMessages_SingleCandidate() throws Exception {
@@ -310,6 +301,7 @@ public class JGroupsConnectorTest {
 
         List<FutureCallback> callbacks = new ArrayList<>();
 
+        //noinspection Duplicates
         for (int t = 0; t < 100; t++) {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
@@ -367,6 +359,7 @@ public class JGroupsConnectorTest {
         } catch (Exception e) {
             //expected
         }
+        //noinspection unchecked
         verify(mockCommandBus1).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
 
         callback = new FutureCallback<>();
@@ -419,6 +412,19 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus2, times(66)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
+    private void waitForConnectorSync() throws InterruptedException {
+        int t = 0;
+        while (!connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+            // don't have a member for String yet, which means we must wait a little longer
+            if (t++ > 300) {
+                assertEquals("Connectors did not synchronize within 15 seconds.", connector1.getConsistentHash(),
+                             connector2.getConsistentHash());
+            }
+            Thread.sleep(50);
+        }
+        Thread.yield();
+    }
+
     @Test
     public void testDisconnectClosesJChannelConnection() throws Exception {
         connector1.connect();
@@ -427,6 +433,42 @@ public class JGroupsConnectorTest {
         connector1.disconnect();
 
         assertFalse("Expected channel to be disconnected on connector.disconnect()", channel1.isConnected());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testConnectAndDispatchMessagesWaitingOnCallback() throws Exception {
+        Integer numberOfDispatchedAndWaitedForCommands = 100;
+        String firstCommandHandlerName = "firstCommandHandlerName";
+        String secondCommandHandlerName = "secondCommandHandlerName";
+        int commandHandlingCounter = 0;
+
+        CommandDispatchingCommandHandler commandHandlerOne = new CommandDispatchingCommandHandler(
+                numberOfDispatchedAndWaitedForCommands, distributedCommandBus1, secondCommandHandlerName
+        );
+        distributedCommandBus1.subscribe(firstCommandHandlerName, commandHandlerOne);
+        connector1.connect();
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        CommandDispatchingCommandHandler commandHandlerTwo = new CommandDispatchingCommandHandler(
+                numberOfDispatchedAndWaitedForCommands, distributedCommandBus2, firstCommandHandlerName
+        );
+        distributedCommandBus2.subscribe(secondCommandHandlerName, commandHandlerTwo);
+        connector2.connect();
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        // Wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        FutureCallback<Integer, Integer> futureCallback = new FutureCallback<>();
+        distributedCommandBus1.dispatch(
+                new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), secondCommandHandlerName),
+                futureCallback
+        );
+
+        assertEquals(numberOfDispatchedAndWaitedForCommands, futureCallback.getResult().getPayload());
+        verify(mockCommandBus1, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        verify(mockCommandBus2, times(50)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
     private static void closeSilently(JChannel channel) {
@@ -445,7 +487,7 @@ public class JGroupsConnectorTest {
 
         private final AtomicInteger counter;
 
-        public CountingCommandHandler(AtomicInteger counter) {
+        private CountingCommandHandler(AtomicInteger counter) {
             this.counter = counter;
         }
 
@@ -456,19 +498,32 @@ public class JGroupsConnectorTest {
         }
     }
 
-    public static void assertWithin(int time, TimeUnit unit, Runnable assertion) {
-        long now = System.currentTimeMillis();
-        long deadline = now + unit.toMillis(time);
-        do {
-            try {
-                assertion.run();
-                break;
-            } catch (AssertionError e) {
-                if (now >= deadline) {
-                    throw e;
-                }
+    private static class CommandDispatchingCommandHandler implements MessageHandler<CommandMessage<?>> {
+
+        private final int counterMax;
+        private final CommandBus commandBus;
+        private final String commandHandlerName;
+
+        private CommandDispatchingCommandHandler(int counterMax, CommandBus commandBus, String commandHandlerName) {
+            this.counterMax = counterMax;
+            this.commandBus = commandBus;
+            this.commandHandlerName = commandHandlerName;
+        }
+
+        @Override
+        public Integer handle(CommandMessage<?> commandMessage) {
+            Integer commandHandlingCounter = (Integer) commandMessage.getPayload();
+            int count = ++commandHandlingCounter;
+            if (count == counterMax) {
+                return counterMax;
             }
-            now = System.currentTimeMillis();
-        } while (true);
+
+            FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
+            commandBus.dispatch(
+                    new GenericCommandMessage<>(new GenericMessage<>(commandHandlingCounter), commandHandlerName),
+                    futureCallback
+            );
+            return (Integer) futureCallback.getResult(1000, TimeUnit.MILLISECONDS).getPayload();
+        }
     }
 }

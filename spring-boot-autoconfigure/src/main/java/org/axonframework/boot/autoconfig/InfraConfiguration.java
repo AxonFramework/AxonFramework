@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010-2017. Axon Framework
+ * Copyright (c) 2010-2018. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,18 +16,21 @@
 
 package org.axonframework.boot.autoconfig;
 
-import org.axonframework.spring.config.EnableAxon;
+import org.axonframework.spring.config.AnnotationDriven;
 import org.axonframework.spring.config.SpringAxonAutoConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
-@EnableAxon
 @ConditionalOnClass(SpringAxonAutoConfigurer.class)
 @AutoConfigureAfter({
         AMQPAutoConfiguration.class, AxonAutoConfiguration.class, DistributedAutoConfiguration.class,
         JGroupsAutoConfiguration.class, JpaAutoConfiguration.class, NoOpTransactionAutoConfiguration.class,
         SpringCloudAutoConfiguration.class, TransactionAutoConfiguration.class})
+@Import(SpringAxonAutoConfigurer.ImportSelector.class)
+@AnnotationDriven
 @Configuration
 public class InfraConfiguration {
 }
+

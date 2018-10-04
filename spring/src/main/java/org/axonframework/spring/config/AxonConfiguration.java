@@ -42,7 +42,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -89,7 +88,6 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
 
     @NoBeanOfType(QueryBus.class)
     @Bean("queryBus")
-    @Primary
     public QueryBus defaultQueryBus() {
         return config.queryBus();
     }

@@ -39,6 +39,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.hamcrest.CoreMatchers;
 import org.junit.*;
 import org.mockito.*;
@@ -362,6 +364,16 @@ public class DefaultConfigurerTest {
         inOrder.verify(module2).shutdown();
         inOrder.verify(module1).shutdown();
         inOrder.verify(module3).shutdown();
+    }
+
+    @Test
+    public void testQueryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
+        QueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+        Configuration configuration = DefaultConfigurer.defaultConfiguration()
+                                                       .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
+                                                       .buildConfiguration();
+        assertEquals(queryUpdateEmitter, configuration.queryBus().queryUpdateEmitter());
+        assertEquals(queryUpdateEmitter, configuration.queryUpdateEmitter());
     }
 
     @Entity(name = "StubAggregate")

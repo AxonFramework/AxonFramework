@@ -115,7 +115,6 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  * required components to operate the Aggregate or Saga are registered.
  *
  * @author Allard Buijze
- * @see EnableAxon
  * @since 3.0
  */
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
@@ -465,7 +464,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private static class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
-
 
         private final Supplier<ModuleConfiguration> delegateSupplier;
         private final Class<?> moduleType;

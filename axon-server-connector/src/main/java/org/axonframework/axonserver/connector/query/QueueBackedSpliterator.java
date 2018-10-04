@@ -69,6 +69,7 @@ public class QueueBackedSpliterator<R> implements Spliterator<R>{
                 }
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Interrupted tryAdvance", e);
             return false;
 
@@ -95,6 +96,7 @@ public class QueueBackedSpliterator<R> implements Spliterator<R>{
         try {
             blockingQueue.put(new WrappedElement<>(object));
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Interrupted put", e);
             throw new RuntimeException(e);
         }

@@ -229,6 +229,20 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
+    public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
+            MessageDispatchInterceptor<DeadlineMessage<?>> deadlineDispatchInterceptor) {
+        deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+        deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
+        return this;
+    }
+
+    @Override
     public FixtureConfiguration<T> registerFieldFilter(FieldFilter fieldFilter) {
         this.fieldFilters.add(fieldFilter);
         return this;
@@ -385,15 +399,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
      * @param deadlineMessage     The {@link DeadlineMessage} to be handled
      */
-    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage<?> deadlineMessage) {
+    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage<?> deadlineMessage)
+            throws Exception {
         ensureRepositoryConfiguration();
-        DefaultUnitOfWork.startAndGet(deadlineMessage).execute(() -> {
-            try {
-                repository.send(deadlineMessage, aggregateDescriptor);
-            } catch (Exception e) {
-                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
-            }
-        });
+        repository.send(deadlineMessage, aggregateDescriptor);
     }
 
     private ResultValidator buildResultValidator() {

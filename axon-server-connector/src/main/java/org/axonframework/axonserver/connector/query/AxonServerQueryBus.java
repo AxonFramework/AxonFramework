@@ -89,7 +89,7 @@ import static io.axoniq.axonserver.grpc.query.QueryProviderInbound.RequestCase.S
  *
  * @author Marc Gathier
  */
-public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
+public class AxonServerQueryBus implements QueryBus {
     private final Logger logger = LoggerFactory.getLogger(AxonServerQueryBus.class);
     private final AxonServerConfiguration configuration;
     private final QueryUpdateEmitter updateEmitter;
@@ -107,9 +107,11 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
     /**
      * Creates an instance of the AxonServerQueryBus
+     *
      * @param platformConnectionManager creates connection to AxonServer platform
-     * @param configuration             contains client and component names used to identify the application in AxonServer
-     * @param updateEmitter
+     * @param configuration             contains client and component names used to identify the application in
+     *                                  AxonServer
+     * @param updateEmitter             emits incremental updates to subscription queries
      * @param localSegment              handles incoming query requests
      * @param messageSerializer         serializer/deserializer for payload and metadata of query requests and responses
      * @param genericSerializer         serializer for communication of other objects than payload and metadata
@@ -138,7 +140,6 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
                 new SubscriptionQueryRequestTarget(localSegment, this::publish, subscriptionSerializer);
         this.on(SUBSCRIPTION_QUERY_REQUEST, target::onSubscriptionQueryRequest);
         platformConnectionManager.addDisconnectListener(target::onApplicationDisconnected);
-
     }
 
 
@@ -241,22 +242,6 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
         queryProvider.disconnect();
     }
 
-    @Override
-    public <U> void emit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         SubscriptionQueryUpdateMessage<U> update) {
-        this.updateEmitter.emit(filter, update);
-    }
-
-    @Override
-    public void complete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        this.updateEmitter.complete(filter);
-    }
-
-    @Override
-    public void completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        this.updateEmitter.completeExceptionally(filter, cause);
-    }
-
     class QueryProvider {
         private final ConcurrentMap<QueryDefinition, Set<MessageHandler<? super QueryMessage<?, ?>>>> subscribedQueries = new ConcurrentHashMap<>();
         private final PriorityBlockingQueue<QueryRequest> queryQueue;
@@ -271,7 +256,9 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
 
         private void queryExecutor() {
             logger.debug("Starting Query Executor");
-            while (true) {
+            boolean interrupted = false;
+
+            while (!interrupted) {
                 try {
                     QueryRequest query = queryQueue.poll(10, TimeUnit.SECONDS);
                     if (query != null) {
@@ -279,8 +266,9 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
                         processQuery(query);
                     }
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     logger.warn("Interrupted queryExecutor", e);
-                    return;
+                    interrupted = true;
                 }
             }
 
@@ -500,6 +488,11 @@ public class AxonServerQueryBus implements QueryBus, QueryUpdateEmitter {
                 () -> subscriptions.remove(subscriptionId));
 
         return new DeserializedResult<>(result.get(), subscriptionSerializer);
+    }
+
+    @Override
+    public QueryUpdateEmitter queryUpdateEmitter() {
+        return updateEmitter;
     }
 
     private Runnable interceptReconnectRequest(Runnable reconnect) {
